@@ -1,0 +1,50 @@
+name: "Bug Report (Low Priority)"
+description: "Create a public Bug Report. Note that these may not be addressed as quickly as the helpdesk and that looking up account information will be difficult."
+title: "[BUG]: "
+labels: type:bug
+body:
+  - type: input
+    attributes:
+      label: Tracer Version(s)
+      description: "Version of the tracer used"
+      placeholder: 1.9.0
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Operating system and platform
+      description: "The operating system (Windows, Linux, Ubuntu) and platform (arm64, x64) on which you are experiencing the issue"
+      placeholder: Windows (x64), Linux (arm64)
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Instrumentation Mode
+      description: "How is your application being instrumented"
+      placeholder: automatic with msi installer, manual with NuGet package
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: TFM
+      description: "What Target Framework Moniker (TFM) are you using in your project?"
+      placeholder: "net462, net9.0"
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Bug Report
+      description: Please add a clear and concise description of the bug here
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reproduction Code
+      description: Please add code here to help us reproduce the problem
+    validations:
+      required: false

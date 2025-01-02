@@ -432,7 +432,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
-                        SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
+                        var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
+                        securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
                     }
                 }
             }

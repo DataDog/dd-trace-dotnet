@@ -37,7 +37,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error tainting JsonDocument.Parse result");
+            IastModule.Log.Error(ex, "Error tainting JsonDocument.Parse result");
         }
 
         return doc;
@@ -60,7 +60,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error casting to IJsonElement");
+            IastModule.Log.Error(ex, "Error casting to IJsonElement");
             return null;
         }
 
@@ -77,7 +77,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error tainting JsonElement.GetString result");
+            IastModule.Log.Error(ex, "Error tainting JsonElement.GetString result");
         }
 
         return str;
@@ -101,7 +101,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error casting to IJsonElement");
+            IastModule.Log.Error(ex, "Error casting to IJsonElement");
             return null;
         }
 
@@ -118,7 +118,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error tainting JsonElement.GetRawText result");
+            IastModule.Log.Error(ex, "Error tainting JsonElement.GetRawText result");
         }
 
         return str;

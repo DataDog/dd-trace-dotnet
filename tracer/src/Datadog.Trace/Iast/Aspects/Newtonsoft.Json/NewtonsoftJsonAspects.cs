@@ -85,7 +85,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error while tainting the JObject");
+            IastModule.Log.Error(ex, "Error while tainting the JObject");
         }
 
         return result;
@@ -113,7 +113,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error while tainting the JArray");
+            IastModule.Log.Error(ex, "Error while tainting the JArray");
         }
 
         return result;
@@ -136,7 +136,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error while tainting the JToken");
+            IastModule.Log.Error(ex, "Error while tainting the JToken");
         }
 
         return result;
