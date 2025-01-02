@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -401,6 +402,76 @@ partial class Build
 
             ReplaceReceivedFilesInSnapshots();
       });
+
+    Target RegenerateSolutions
+        => _ => _
+               .Description("Regenerates the 'build' solutions based on the 'master' solution")
+               .Executes(() =>
+                {
+                    // Create a copy of the "full solution"
+                    var sln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
+                        solutions: new[] { Solution },
+                        randomizeProjectIds: false);
+
+                    // Remove everything except the test-application projects
+                    sln.AllProjects
+                       .Where(x => !IsTestApplication(x))
+                       .ForEach(x =>
+                        {
+                            Logger.Information("Removing project '{Name}'", x.Name);
+                            sln.RemoveProject(x);
+                        });
+                    
+                    // Remove the _build project 
+                    sln.RemoveProject(Solution.GetProject("_build"));
+
+                    sln.Save();
+
+                    bool IsTestApplication(Project x)
+                    {
+                        // We explicitly don't build some of these because
+                        // 1. They're a pain to build
+                        // 2. They aren't actually run in the CI (something we should address in the future)
+                        if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject")
+                        {
+                            return false;
+                        }
+
+                        // Include test-applications, but exclude the following for now:
+                        // - test-applications/aspnet
+                        // - test-applications/security/aspnet
+                        // These currently aren't published to separate folders, are minimal, can't be
+                        // built on macos, and don't take long to build, so not a big value in building
+                        // them separately currently
+                        var solutionFolder = x.SolutionFolder;
+                        while (solutionFolder is not null)
+                        {
+                            if(solutionFolder.Name == "aspnet"
+                                && solutionFolder.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if(solutionFolder.Name == "aspnet"
+                                && solutionFolder.SolutionFolder?.Name == "security"
+                                && solutionFolder.SolutionFolder?.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if (solutionFolder.Name == "test-applications")
+                            {
+                                return true;
+                            }
+
+                            solutionFolder = solutionFolder.SolutionFolder;
+                        }
+
+                        return false;
+                    }
+                });
+
 
     private void ReplaceReceivedFilesInSnapshots()
     {
