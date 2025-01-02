@@ -130,6 +130,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingRelativeTracerHome_InstrumentsApp()
+        {
+            SetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
+            var path = Path.GetRelativePath(EnvironmentHelper.GetSampleApplicationOutputDirectory(), EnvironmentHelper.MonitoringHome);
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
+            Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingPathWithDotsInInTracerHome_InstrumentsApp()
+        {
+            SetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
+            // not using Path.Combine here because it resolves the .. and we want it in the path
+            var path = EnvironmentHelper.MonitoringHome + "/../" + Path.GetFileName(EnvironmentHelper.MonitoringHome);
+            Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
 #endif
 
 #if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
