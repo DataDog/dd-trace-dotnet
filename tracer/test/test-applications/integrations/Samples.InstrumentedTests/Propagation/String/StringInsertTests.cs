@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 
 public class StringInsertTests : InstrumentationTestsBase
 {
@@ -64,7 +64,7 @@ public class StringInsertTests : InstrumentationTestsBase
     [Fact]
     public void String_Insert_Index_Two_Tainted_With_Two_Untainted()
     {
-        string str = String.Concat(LargeTaintedString, " and ", OtherTaintedString);
+        string str = System.String.Concat(LargeTaintedString, " and ", OtherTaintedString);
         str = str.Insert(2, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-La-+:UntaintedString:+-rgeTaintedString-+: and UntaintedString:+-OtherTaintedString-+:", str.Insert(38, UntaintedString), () => str.Insert(38, UntaintedString));
     }
@@ -72,7 +72,7 @@ public class StringInsertTests : InstrumentationTestsBase
     [Fact]
     public void String_Insert_Index_Two_Tainted_With_Two_Tainted()
     {
-        string str = String.Concat(LargeTaintedString, " and ", OtherTaintedString);
+        string str = System.String.Concat(LargeTaintedString, " and ", OtherTaintedString);
         str = str.Insert(5, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Large-+::+-OtherTaintedString-+::+-TaintedString-+: and :+-Other-+::+-TaintedString-+::+-TaintedString-+:", str.Insert(46, TaintedString), () => str.Insert(46, TaintedString));
     }
@@ -81,14 +81,14 @@ public class StringInsertTests : InstrumentationTestsBase
     public void String_Insert_Index_Two_Tainted_With_Both()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-Large-+::+-OtherTaintedString-+::+-TaintedString-+: and :+-Other-+:UntaintedString:+-TaintedString-+:",
-            String.Concat(LargeTaintedString, " and ", OtherTaintedString).Insert(5, OtherTaintedString).Insert(46, UntaintedString),
-            () => String.Concat(LargeTaintedString, " and ", OtherTaintedString).Insert(5, OtherTaintedString).Insert(46, UntaintedString));
+            System.String.Concat(LargeTaintedString, " and ", OtherTaintedString).Insert(5, OtherTaintedString).Insert(46, UntaintedString),
+            () => System.String.Concat(LargeTaintedString, " and ", OtherTaintedString).Insert(5, OtherTaintedString).Insert(46, UntaintedString));
     }
 
     [Fact]
     public void String_Insert_Index_Both_With_Two_Untainted()
     {
-        string str = String.Concat(LargeTaintedString, " and ", UntaintedString);
+        string str = System.String.Concat(LargeTaintedString, " and ", UntaintedString);
         str = str.Insert(2, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-La-+:UntaintedString:+-rgeTaintedString-+: and UntaintedStringUntaintedString", str.Insert(38, UntaintedString), () => str.Insert(38, UntaintedString));
     }
@@ -96,7 +96,7 @@ public class StringInsertTests : InstrumentationTestsBase
     [Fact]
     public void String_Insert_Index_Both_With_Two_Tainted()
     {
-        string str = String.Concat(LargeTaintedString, " and ", UntaintedString);
+        string str = System.String.Concat(LargeTaintedString, " and ", UntaintedString);
         str = str.Insert(2, TaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-La-+::+-TaintedString-+::+-rgeTaintedString-+: and Un:+-OtherTaintedString-+:taintedString", str.Insert(38, OtherTaintedString), () => str.Insert(38, OtherTaintedString));
     }

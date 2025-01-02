@@ -2,7 +2,7 @@ using System;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class StringRemoveTests : InstrumentationTestsBase
 {
     protected string TaintedString = "TaintedString";
@@ -44,7 +44,7 @@ public class StringRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk2()
     {
-        string str = String.Concat(TaintedString, UntaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:Untainted", str.Remove(22), () => str.Remove(22));
     }
 
@@ -57,21 +57,21 @@ public class StringRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk4()
     {
-        string str = String.Concat(TaintedString, UntaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Tainted-+:UntaintedString", str.Remove(7, 6), () => str.Remove(7, 6));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk5()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Tainted-+:String:+-OtherTaintedString-+:", str.Remove(7, 15), () => str.Remove(7, 15));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk6()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:Untainted:+-TaintedString-+:", str.Remove(22, 11), () => str.Remove(22, 11));
     }
 
@@ -102,98 +102,98 @@ public class StringRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk12()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaindString-+:UntaintedString:+-OtherTaintedString-+:", str.Remove(4, 2), () => str.Remove(4, 2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk13()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Tain-+:aintedString:+-OtherTaintedString-+:", str.Remove(4, 12), () => str.Remove(4, 12));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk13_2()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Tain-+:UntaintedString:+-OtherTaintedString-+:", str.Remove(4, 9), () => str.Remove(4, 9));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk14()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:taintedString:+-OtherTaintedString-+:", str.Remove(13, 2), () => str.Remove(13, 2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk15()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+::+-OtherTaintedString-+:", str.Remove(13, 15), () => str.Remove(13, 15));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk16()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+::+-TaintedString-+:", str.Remove(13, 20), () => str.Remove(13, 20));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk17()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:U:+-aintedString-+:", str.Remove(14, 20), () => str.Remove(14, 20));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk18()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:U:+-OtherTaintedString-+:", str.Remove(14, 14), () => str.Remove(14, 14));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk19()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UaintedString:+-OtherTaintedString-+:", str.Remove(14, 2), () => str.Remove(14, 2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk20()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString:+-herTaintedString-+:", str.Remove(28, 2), () => str.Remove(28, 2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk21()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString", str.Remove(28, 18), () => str.Remove(28, 18));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk22()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString:+-OtrTaintedString-+:", str.Remove(30, 2), () => str.Remove(30, 2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk23()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString:+-Ottring-+:", str.Remove(30, 11), () => str.Remove(30, 11));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk24()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Tai-+::+-TaintedString-+:", str.Remove(3, 30), () => str.Remove(3, 30));
     }
 
@@ -206,21 +206,21 @@ public class StringRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk26()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-Ta-+:", str.Remove(2), () => str.Remove(2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk27()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:Un", str.Remove(15), () => str.Remove(15));
     }
 
     [Fact]
     public void GivenATaintedString_WhenRemove_ResultIsOk28()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString:+-Ot-+:", str.Remove(30), () => str.Remove(30));
     }
 

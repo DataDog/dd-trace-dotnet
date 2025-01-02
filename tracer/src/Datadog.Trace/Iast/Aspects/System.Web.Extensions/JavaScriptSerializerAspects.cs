@@ -57,7 +57,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, "Error while tainting json in DeserializeObject");
+            IastModule.Log.Error(ex, "Error while tainting json in DeserializeObject");
         }
 
         return result;

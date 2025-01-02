@@ -96,7 +96,7 @@ public static class SignInManagerPasswordSignInIntegration
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
-            SecurityCoordinator.CollectHeaders(span);
+            SecurityReporter.SafeCollectHeaders(span);
             security.SetTraceSamplingPriority(span);
         }
 

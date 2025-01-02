@@ -15,7 +15,7 @@ using System.Text;
 using Castle.Core.Internal;
 using FluentAssertions;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast;
 
 public class InstrumentationTestsBase : IDisposable
 {

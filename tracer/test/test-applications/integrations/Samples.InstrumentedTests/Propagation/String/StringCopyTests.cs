@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 #pragma warning disable CS0618 // Obsolete
 
 public class StringCopyTests : InstrumentationTestsBase
@@ -17,19 +17,19 @@ public class StringCopyTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingCopy_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Copy(taintedValue), () => String.Copy(taintedValue));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", System.String.Copy(taintedValue), () => System.String.Copy(taintedValue));
     }
 
     [Fact]
     public void GivenAUntaintedObject_WhenCallingCopy_ResultIsNotTainted()
     {
-        AssertUntaintedWithOriginalCallCheck(() => String.Copy(UntaintedString), () => String.Copy(UntaintedString));
+        AssertUntaintedWithOriginalCallCheck(() => System.String.Copy(UntaintedString), () => System.String.Copy(UntaintedString));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingCopyWithNull_ArgumentNullException()
     {
-        AssertUntaintedWithOriginalCallCheck(() => String.Copy(null), () => String.Copy(null));
+        AssertUntaintedWithOriginalCallCheck(() => System.String.Copy(null), () => System.String.Copy(null));
     }
 }
 #pragma warning restore CS0618 // Obsolete

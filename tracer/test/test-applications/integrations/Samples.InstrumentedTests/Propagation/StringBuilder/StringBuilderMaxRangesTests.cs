@@ -1,7 +1,7 @@
 using System.Text;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
 
 public class StringBuilderMaxRanges : InstrumentationTestsBase
 {
@@ -21,7 +21,7 @@ public class StringBuilderMaxRanges : InstrumentationTestsBase
         var testString9 = AddTaintedString("9");
         var testString10 = AddTaintedString("10");
 
-        var sb = new StringBuilder();
+        var sb = new System.Text.StringBuilder();
         sb.Append(testString1);
         sb.Append(UntaintedString);
         sb.Append(testString2);
@@ -63,7 +63,7 @@ public class StringBuilderMaxRanges : InstrumentationTestsBase
         var testString10 = AddTaintedString("10");
         var testString11 = AddTaintedString("11");
 
-        var sb = new StringBuilder();
+        var sb = new System.Text.StringBuilder();
         sb.Append(testString1);
         sb.Append(UntaintedString);
         sb.Append(testString2);

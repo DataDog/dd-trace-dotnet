@@ -61,7 +61,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Honeypot\Datadog.Dependabot.Honeypot.template" />
-    <EmbeddedResource Include="Honeypot\Datadog.Dependabot.Honeypot.template" />
+    <None Remove="Honeypot/Datadog.Dependabot.Honeypot.template"/>
+    <EmbeddedResource Include="Honeypot/Datadog.Dependabot.Honeypot.template">
+      <!-- We have to force this name because somehow on macOS, it's named without the first 'Honeypot.' -->
+      <LogicalName>Honeypot.Datadog.Dependabot.Honeypot.template</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

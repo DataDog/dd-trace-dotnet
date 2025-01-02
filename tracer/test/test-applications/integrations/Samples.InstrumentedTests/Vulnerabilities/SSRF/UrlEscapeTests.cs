@@ -4,7 +4,7 @@ using System.Text;
 using System.Web;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class UrlEscapeTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";

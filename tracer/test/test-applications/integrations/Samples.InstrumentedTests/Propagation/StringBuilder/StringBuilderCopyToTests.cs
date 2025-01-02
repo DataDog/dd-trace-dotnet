@@ -1,10 +1,11 @@
-using System.Text;
 using Xunit;
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
+
+namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
 
 public class StringBuilderCopyToTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
+
 
     public StringBuilderCopyToTests()
     {
@@ -15,7 +16,7 @@ public class StringBuilderCopyToTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingCopyTo_ResultIsTainted()
     {
         char[] result = new char[20];
-        new StringBuilder(_taintedValue).CopyTo(0, result, 0, 3);
+        new System.Text.StringBuilder(_taintedValue).CopyTo(0, result, 0, 3);
         AssertTainted(result);
     }
 
@@ -30,8 +31,8 @@ public class StringBuilderCopyToTests : InstrumentationTestsBase
     {
         char[] result = new char[20];
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count), 
-            () => new StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count));
+            () => new System.Text.StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count), 
+            () => new System.Text.StringBuilder(_taintedValue).CopyTo(sourceIndex, result, destinationIndex, count));
     }
 
     [Fact]
@@ -40,8 +41,8 @@ public class StringBuilderCopyToTests : InstrumentationTestsBase
         char[] result = null;
 
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).CopyTo(0, result, 1, 1),
-            () => new StringBuilder(_taintedValue).CopyTo(0, result, 1, 1));
+            () => new System.Text.StringBuilder(_taintedValue).CopyTo(0, result, 1, 1),
+            () => new System.Text.StringBuilder(_taintedValue).CopyTo(0, result, 1, 1));
     }
 }
 

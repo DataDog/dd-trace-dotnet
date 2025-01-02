@@ -3,7 +3,7 @@ using System.Linq;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class StringToCharArrayTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";

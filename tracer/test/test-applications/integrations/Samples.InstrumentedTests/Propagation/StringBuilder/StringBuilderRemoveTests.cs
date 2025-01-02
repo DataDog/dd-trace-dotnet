@@ -1,11 +1,12 @@
 using System.Text;
 using Xunit;
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
+
+namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
 
 public class StringBuilderRemoveTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
-    //private StringBuilder _taintedStringBuilder = new StringBuilder("TaintedStringBuilder");
+    //private StringBuilder _taintedStringBuilder = new System.Text.StringBuilder("TaintedStringBuilder");
     private string _taintedString = "TaintedString";
     private string _untaintedString = "UntaintedString";
 
@@ -19,8 +20,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted()
     {
-        var check = new StringBuilder("TaintedStringBuilder");
-        var tainted = new StringBuilder("TaintedStringBuilder");
+        var check = new System.Text.StringBuilder("TaintedStringBuilder");
+        var tainted = new System.Text.StringBuilder("TaintedStringBuilder");
         AddTainted(tainted);
 
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedBuilder-+:", 
@@ -31,8 +32,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted2()
     {
-        var check = new StringBuilder("TaintedStringBuilder");
-        var tainted = new StringBuilder("TaintedStringBuilder");
+        var check = new System.Text.StringBuilder("TaintedStringBuilder");
+        var tainted = new System.Text.StringBuilder("TaintedStringBuilder");
         AddTainted(tainted);
 
         tainted.Append(_untaintedString);
@@ -46,8 +47,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted3()
     {
-        var check = new StringBuilder("TaintedStringBuilder");
-        var tainted = new StringBuilder("TaintedStringBuilder");
+        var check = new System.Text.StringBuilder("TaintedStringBuilder");
+        var tainted = new System.Text.StringBuilder("TaintedStringBuilder");
         AddTainted(tainted);
 
         tainted.Append(_taintedString);
@@ -61,8 +62,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted4()
     {
-        var check = new StringBuilder("TaintedStringBuilder");
-        var tainted = new StringBuilder("TaintedStringBuilder");
+        var check = new System.Text.StringBuilder("TaintedStringBuilder");
+        var tainted = new System.Text.StringBuilder("TaintedStringBuilder");
         AddTainted(tainted);
 
         tainted.Append(_untaintedString).Append(_taintedString);
@@ -76,8 +77,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted5()
     {
-        var check = new StringBuilder("TaintedStringBuilder");
-        var tainted = new StringBuilder("TaintedStringBuilder");
+        var check = new System.Text.StringBuilder("TaintedStringBuilder");
+        var tainted = new System.Text.StringBuilder("TaintedStringBuilder");
         AddTainted(tainted);
 
         tainted.Append(_untaintedString).Append(_taintedString);
@@ -108,16 +109,16 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted8()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taid-+:", 
-            new StringBuilder(_taintedValue).Remove(3, 3).ToString(), 
-            () => new StringBuilder(_taintedValue).Remove(3, 3).ToString());
+            new System.Text.StringBuilder(_taintedValue).Remove(3, 3).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Remove(3, 3).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTainted_ResultIsTainted9()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taid-+:abc", 
-            new StringBuilder(_taintedValue).Append("abc").Remove(3, 3).ToString(), 
-            () => new StringBuilder(_taintedValue).Append("abc").Remove(3, 3).ToString());
+            new System.Text.StringBuilder(_taintedValue).Append("abc").Remove(3, 3).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Append("abc").Remove(3, 3).ToString());
     }
 
     [Theory]
@@ -128,8 +129,8 @@ public class StringBuilderRemoveTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderRemoveTaintedWrongAnguments_ArgumentOutOfRangeException(int index1, int index2)
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Remove(index1, index2), 
-            () => new StringBuilder(_taintedValue).Remove(index1, index2));
+            () => new System.Text.StringBuilder(_taintedValue).Remove(index1, index2), 
+            () => new System.Text.StringBuilder(_taintedValue).Remove(index1, index2));
     }
 }
 

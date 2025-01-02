@@ -1,6 +1,6 @@
 using System;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
+namespace Samples.InstrumentedTests.Iast;
 struct StructForStringTest
 {
     readonly string str;
