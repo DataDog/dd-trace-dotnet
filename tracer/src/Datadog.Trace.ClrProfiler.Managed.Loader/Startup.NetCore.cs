@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            var fullPath = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
+            var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory));
 
             if (!Directory.Exists(fullPath))
             {
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
             StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
-            var path = Path.GetFullPath(Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll"));
+            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
             StartupLogger.Debug("Looking for: {0}", path);
 
             if (IsDatadogAssembly(path, out var cachedAssembly))

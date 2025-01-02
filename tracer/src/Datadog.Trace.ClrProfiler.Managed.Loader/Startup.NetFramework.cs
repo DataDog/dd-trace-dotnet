@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static string ResolveManagedProfilerDirectory()
         {
             var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
-            var fullPath = Path.Combine(tracerHomeDirectory, "net461");
+            var fullPath = Path.GetFullPath(Path.Combine(tracerHomeDirectory, "net461"));
             if (!Directory.Exists(fullPath))
             {
                 StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}'");
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-            var path = Path.GetFullPath(string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll"));
+            var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
             StartupLogger.Debug("  Looking for: '{0}'", path);
 
             if (File.Exists(path))
