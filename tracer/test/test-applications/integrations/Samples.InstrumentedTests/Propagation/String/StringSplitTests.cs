@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class StringSplitTests : InstrumentationTestsBase
 {
     private string _taintedSeparator = "i";
@@ -84,7 +84,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharAndIndex_ResultIsTainted3()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString);
         var expected = new string[] { _taintedString, _untaintedString };
 
         AssertEqual(expected, str.Split(new char[] { '|' }, 2));
@@ -93,7 +93,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharAndIndex_ResultIsTainted4()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
         var expected = new string[] { _taintedString, _untaintedString, _otherTaintedString + "|" + _otherUntaintedString };
 
         var result = str.Split(new char[] { '|' }, 3);
@@ -151,7 +151,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharArrayAndOptions_ResultIsTainted2()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString);
         var expected = new string[] { _taintedString, _untaintedString };
 
         var result = str.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
@@ -172,7 +172,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharArrayAndOptions_ResultIsTainted4()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
         var expected = new string[] { _taintedString, _untaintedString, _otherTaintedString, _otherUntaintedString };
 
         AssertEqual(expected, str.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries));
@@ -226,7 +226,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharArrayCountAndOptions_ResultIsTainted()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString);
         var expected = new string[] { _taintedString, _untaintedString };
         var results = str.Split(new char[] { '|' }, 2, StringSplitOptions.RemoveEmptyEntries);
         AssertEqual(expected, results);
@@ -236,7 +236,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharArrayCountAndOptions_ResultIsTainted2()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
         var expected = new string[] { _taintedString, _untaintedString, _otherTaintedString + "|" + _otherUntaintedString };
         var results = str.Split(new char[] { '|' }, 3, StringSplitOptions.RemoveEmptyEntries);
         AssertEqual(expected, results);
@@ -413,7 +413,7 @@ public class StringSplitTests : InstrumentationTestsBase
 
     public void GivenATaintedObject_WhenCallingSplitWithCharAndOptions_ResultIsTainted()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString);
         var expected = new string[] { _taintedString, _untaintedString };
 
         AssertEqual(expected, str.Split('|'));
@@ -432,7 +432,7 @@ public class StringSplitTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharAndOptions_ResultIsTainted3()
     {
-        var str = String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
+        var str = System.String.Concat(_taintedString, "|", _untaintedString, "|", _otherTaintedString, "|", _otherUntaintedString);
         var expected = new string[] { _taintedString, _untaintedString, _otherTaintedString, _otherUntaintedString };
 
         AssertEqual(expected, str.Split('|'));

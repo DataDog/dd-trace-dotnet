@@ -185,8 +185,8 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.AppsecEnabled)
                 {
-                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
+                    securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
 
                     // request args
                     var args = securityCoordinator.GetBasicRequestArgsForWaf();
@@ -275,7 +275,7 @@ namespace Datadog.Trace.AspNet
 
                             securityCoordinator.BlockAndReport(args, true);
 
-                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                            securityCoordinator.Reporter.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;
                         }
 

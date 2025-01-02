@@ -1,8 +1,8 @@
 #if NETCOREAPP3_1_OR_GREATER
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
+
+namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
 
 public class StringBuilderAppendJoin : InstrumentationTestsBase
 {
@@ -22,24 +22,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:", 
-            new StringBuilder().AppendJoin(".", new string[] { _taintedValue, _untaintedString }),
-            () => new StringBuilder().AppendJoin(".", new string[] { _taintedValue, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin(".", new string[] { _taintedValue, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new string[] { _taintedValue, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
-            new StringBuilder().AppendJoin(".", new string[] { _untaintedString, _taintedValue }),
-            () => new StringBuilder().AppendJoin(".", new string[] { _untaintedString, _taintedValue }));
+            new System.Text.StringBuilder().AppendJoin(".", new string[] { _untaintedString, _taintedValue }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new string[] { _untaintedString, _taintedValue }));
     }
 
     [Fact]
     public void GivenAStringBuilderNotTainted_WhenAppendJoinStringString_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder().AppendJoin(".", new string[] { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin(".", new string[] { _untaintedString, _untaintedString }));
+            () => new System.Text.StringBuilder().AppendJoin(".", new string[] { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new string[] { _untaintedString, _untaintedString }));
     }
 
     [Fact]
@@ -78,8 +78,8 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinStringString_ThenResultIsTainted7()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untaintedtainteduntainted-+:",
-            new StringBuilder().AppendJoin(_taintedValue, new string[] { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin(_taintedValue, new string[] { _untaintedString, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin(_taintedValue, new string[] { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(_taintedValue, new string[] { _untaintedString, _untaintedString }));
     }
 
     // System.Text.StringBuilder::AppendJoin(System.String,System.Object[])
@@ -88,24 +88,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
-            new StringBuilder().AppendJoin(".", new object[] { _taintedValue, _untaintedString }),
-            () => new StringBuilder().AppendJoin(".", new object[] { _taintedValue, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin(".", new object[] { _taintedValue, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new object[] { _taintedValue, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
-            new StringBuilder().AppendJoin(".", new object[] { _untaintedString, _taintedValue }),
-            () => new StringBuilder().AppendJoin(".", new object[] { _untaintedString, _taintedValue }));
+            new System.Text.StringBuilder().AppendJoin(".", new object[] { _untaintedString, _taintedValue }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new object[] { _untaintedString, _taintedValue }));
     }
 
     [Fact]
     public void GivenAStringBuilderNotTainted_WhenAppendJoinStringObject_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder().AppendJoin(".", new object[] { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin(".", new object[] { _untaintedString, _untaintedString }));
+            () => new System.Text.StringBuilder().AppendJoin(".", new object[] { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new object[] { _untaintedString, _untaintedString }));
     }
 
     [Fact]
@@ -144,8 +144,8 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinStringObject_ThenResultIsTainted7()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untaintedtainteduntainted-+:",
-            new StringBuilder().AppendJoin(_taintedValue, new object[] { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin(_taintedValue, new object[] { _untaintedString, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin(_taintedValue, new object[] { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(_taintedValue, new object[] { _untaintedString, _untaintedString }));
     }
 
     // System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)
@@ -154,24 +154,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
-            new StringBuilder().AppendJoin(".", new List<object> { _taintedValue, _untaintedString }),
-            () => new StringBuilder().AppendJoin(".", new List<object> { _taintedValue, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin(".", new List<object> { _taintedValue, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new List<object> { _taintedValue, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
-            new StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _taintedValue }),
-            () => new StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _taintedValue }));
+            new System.Text.StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _taintedValue }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _taintedValue }));
     }
 
     [Fact]
     public void GivenAStringBuilderNotTainted_WhenAppendJoinStringIEnumerable_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _untaintedString }));
+            () => new System.Text.StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _untaintedString }));
     }
 
     [Fact]
@@ -210,8 +210,8 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted7()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untaintedtainteduntainted-+:",
-            new StringBuilder().AppendJoin(_taintedValue, new List<object> { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin(_taintedValue, new List<object> { _untaintedString, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin(_taintedValue, new List<object> { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin(_taintedValue, new List<object> { _untaintedString, _untaintedString }));
     }
 
     // System.Text.StringBuilder::AppendJoin(System.Char,System.Char[])
@@ -220,24 +220,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinCharString_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
-            new StringBuilder().AppendJoin('.', new string[] { _taintedValue, _untaintedString }),
-            () => new StringBuilder().AppendJoin('.', new string[] { _taintedValue, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin('.', new string[] { _taintedValue, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new string[] { _taintedValue, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharString_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
-            new StringBuilder().AppendJoin('.', new string[] { _untaintedString, _taintedValue }),
-            () => new StringBuilder().AppendJoin('.', new string[] { _untaintedString, _taintedValue }));
+            new System.Text.StringBuilder().AppendJoin('.', new string[] { _untaintedString, _taintedValue }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new string[] { _untaintedString, _taintedValue }));
     }
 
     [Fact]
     public void GivenAStringBuilderNotTainted_WhenAppendJoinCharString_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder().AppendJoin('.', new string[] { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin('.', new string[] { _untaintedString, _untaintedString }));
+            () => new System.Text.StringBuilder().AppendJoin('.', new string[] { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new string[] { _untaintedString, _untaintedString }));
     }
 
     [Fact]
@@ -278,24 +278,24 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinCharObject_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
-            new StringBuilder().AppendJoin('.', new object[] { _taintedValue, _untaintedString }),
-            () => new StringBuilder().AppendJoin('.', new object[] { _taintedValue, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin('.', new object[] { _taintedValue, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new object[] { _taintedValue, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharObject_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
-            new StringBuilder().AppendJoin('.', new object[] { _untaintedString, _taintedValue }),
-            () => new StringBuilder().AppendJoin('.', new object[] { _untaintedString, _taintedValue }));
+            new System.Text.StringBuilder().AppendJoin('.', new object[] { _untaintedString, _taintedValue }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new object[] { _untaintedString, _taintedValue }));
     }
 
     [Fact]
     public void GivenAStringBuilderNotTainted_WhenAppendJoinCharObject_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder().AppendJoin('.', new object[] { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin('.', new object[] { _untaintedString, _untaintedString }));
+            () => new System.Text.StringBuilder().AppendJoin('.', new object[] { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new object[] { _untaintedString, _untaintedString }));
     }
 
     [Fact]
@@ -318,30 +318,30 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
-            new StringBuilder().AppendJoin('.', new List<object> { _taintedValue, _untaintedString }),
-            () => new StringBuilder().AppendJoin('.', new List<object> { _taintedValue, _untaintedString }));
+            new System.Text.StringBuilder().AppendJoin('.', new List<object> { _taintedValue, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new List<object> { _taintedValue, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
-            new StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _taintedValue }),
-            () => new StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _taintedValue }));
+            new System.Text.StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _taintedValue }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _taintedValue }));
     }
 
     [Fact]
     public void GivenAStringBuilderNotTainted_WhenAppendJoinCharIEnumerable_ThenResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _untaintedString }),
-            () => new StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _untaintedString }));
+            () => new System.Text.StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _untaintedString }),
+            () => new System.Text.StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _untaintedString }));
     }
 
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted3()
     {
-        var st = new StringBuilder("test").AppendJoin('.', new List<object> { _untaintedString, _untaintedString });
+        var st = new System.Text.StringBuilder("test").AppendJoin('.', new List<object> { _untaintedString, _untaintedString });
 
         AssertTaintedFormatWithOriginalCallCheck(":+-testuntainted.untainted-+:",
             GetTaintedStringBuilder("test").AppendJoin('.', new List<object> { _untaintedString, _untaintedString }),
