@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests
             childSpan.AddLink(spanLink);
             childSpan.Finish();
 
-            childSpan.SpanLinks.Should().ContainSingle();
+            childSpan.SpanLinks.Should().ContainSingle().Which.Should().Match<SpanLink>(spanLink => spanLink.Context.TraceId128 == parentSpan.TraceId128 && spanLink.Context.SpanId == parentSpan.SpanId);
         }
 
         [Fact]

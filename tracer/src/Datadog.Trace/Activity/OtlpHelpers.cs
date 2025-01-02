@@ -254,9 +254,7 @@ namespace Datadog.Trace.Activity
                 spanContext.LastParentId = traceState.LastParent;
                 spanContext.PropagatedTags = traceTags;
 
-                var spanLink = new SpanLink(spanContext);
-                span.AddLink(spanLink);
-
+                List<KeyValuePair<string, string>> attributes = new();
                 if (duckLink.Tags is not null)
                 {
                     foreach (var kvp in duckLink.Tags)
@@ -271,18 +269,20 @@ namespace Datadog.Trace.Activity
                                 {
                                     if (item?.ToString() is { } value)
                                     {
-                                        spanLink.AddAttribute($"{kvp.Key}.{index}", value);
+                                        attributes.Add(new($"{kvp.Key}.{index}", value));
                                         index++;
                                     }
                                 }
                             }
                             else if (kvp.Value?.ToString() is { } kvpValue)
                             {
-                                spanLink.AddAttribute(kvp.Key, kvpValue);
+                                attributes.Add(new(kvp.Key, kvpValue));
                             }
                         }
                     }
                 }
+
+                span.AddLink(new SpanLink(spanContext, attributes));
             }
         }
 

@@ -34,18 +34,5 @@ internal class SpanLink
 
     public List<KeyValuePair<string, string>>? Attributes { get; private set; }
 
-    public SpanContext Context { get;  }
-
-    /// <summary>
-    /// Adds an Attribute to the SpanLink.
-    /// </summary>
-    /// <param name="name">name of attribute</param>
-    /// <param name="value">value of attribute</param>
-    public void AddAttribute(string name, string value)
-    {
-        var newAttribute = new KeyValuePair<string, string>(name, value);
-        Attributes ??= [];
-
-        Attributes.Add(newAttribute);
-    }
+    public SpanContext Context { get; }
 }
