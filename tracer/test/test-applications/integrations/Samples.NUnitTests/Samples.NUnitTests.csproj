@@ -18,11 +18,23 @@
   <ItemGroup Condition="'$(ApiVersion)'&lt;'4.0.0'">
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0"/>
+    <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
+    <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->
+    <!-- platforms. By excluding this, we use the same dll on all platforms instead -->
+    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="16.5.0">
+      <ExcludeAssets>build;buildtransitive</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(ApiVersion)'&gt;='4.0.0'">
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1"/>
+    <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
+    <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->
+    <!-- platforms. By excluding this, we use the same dll on all platforms instead -->
+    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="16.7.1">
+      <ExcludeAssets>build;buildtransitive</ExcludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
