@@ -53,7 +53,7 @@ public class MongoDatabaseAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Warning(ex, $"Error invoking {nameof(MongoDatabaseAspect)}.{nameof(AnalyzeCommand)}");
+            IastModule.Log.Error(ex, $"Error invoking {nameof(MongoDatabaseAspect)}.{nameof(AnalyzeCommand)}");
             return command;
         }
     }
