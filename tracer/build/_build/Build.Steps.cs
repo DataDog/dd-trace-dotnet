@@ -200,7 +200,7 @@ partial class Build
         var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
         if (IsGitBaseBranch(baseBranch))
         {
-         // do a full run on the main branch
+            // do a full run on the main branch
             return true;
         }
 
@@ -1270,89 +1270,10 @@ partial class Build
         .DependsOn(RunProfilerNativeUnitTestsLinux)
         .After(CompileProfilerNativeTests);
 
-    Target CompileDependencyLibs => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .Executes(() =>
-        {
-            var projects = TracerDirectory.GlobFiles(
-                "test/test-applications/integrations/dependency-libs/**/*.csproj",
-                "test/test-applications/integrations/**/*.vbproj"
-            );
-
-            DotnetBuild(projects, noDependencies: false, noRestore: false);
-        });
-
-    Target CompileRegressionDependencyLibs => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .Executes(() =>
-        {
-            var projects = TracerDirectory.GlobFiles(
-                "test/test-applications/regression/dependency-libs/**/Datadog.StackExchange.Redis*.csproj"
-            );
-
-            DotnetBuild(projects, noDependencies: false);
-        });
-
-    Target CompileRegressionSamples => _ => _
-        .Unlisted()
-        .DependsOn(HackForMissingMsBuildLocation)
-        .After(Restore)
-        .After(CompileRegressionDependencyLibs)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            var regressionLibs = Solution.GetProject(Projects.DataDogThreadTest).Directory.Parent
-                .GlobFiles("**/*.csproj")
-                .Where(absPath =>
-                {
-                    var path = absPath.ToString();
-                    return (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
-                    {
-                        _ when path.Contains("ExpenseItDemo") => false,
-                        _ when path.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject") => false,
-                        _ when path.Contains("MismatchedTracerVersions") => false,
-                        _ when path.Contains("dependency-libs") => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                        (_, { } targets) => targets.Contains(Framework),
-                        _ => true,
-                    };
-                });
-
-            // Allow restore here, otherwise things go wonky with runtime identifiers
-            // in some target frameworks. No, I don't know why
-            DotnetBuild(regressionLibs, framework: Framework, noRestore: false);
-        });
-
-    Target CompileFrameworkReproductions => _ => _
-        .Unlisted()
-        .Description("Builds .NET Framework projects (non SDK-based projects)")
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
-        .Requires(() => IsWin)
-        .Executes(() =>
-        {
-            // We have to use the full MSBuild here, as dotnet msbuild doesn't copy the EDMX assets for embedding correctly
-            // seems similar to https://github.com/dotnet/sdk/issues/8360
-            MSBuild(s => s
-                .SetTargetPath(MsBuildProject)
-                .SetMSBuildPath()
-                .DisableRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .SetTargets("BuildFrameworkReproductions")
-                .SetMaxCpuCount(null));
-        });
-
     Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
-        .After(CompileRegressionSamples)
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
         .Requires(() => Framework)
@@ -1372,151 +1293,6 @@ partial class Build
                 ;
 
             DotnetBuild(projects, framework: Framework);
-        });
-
-    Target CompileSamplesWindows => _ => _
-        .Unlisted()
-        .DependsOn(HackForMissingMsBuildLocation)
-        .After(CompileDependencyLibs)
-        .After(CompileFrameworkReproductions)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            if (TestAllPackageVersions)
-            {
-                // TODO this is hacky as I couldn't figure out what was going on here so I opted to just delete everything each time
-                //      for some reason projects that declare specific TargetFrameworks in the project file
-                //      will duplicate their package versions
-                //      e.g. Samples.GraphQL4\bin\4.1.0\Debug\net7.0\bin\4.3.0
-                //      this will go on and create a ton of folders/files
-                //      my hacky workaround for this at the moment is to simply remove the bin/obj directories beforehand
-                //      GrpcDotNet, GraphQL4, and HotChocolate samples had this issue
-                Logger.Information("Cleaning up sample projects that use multiple package versions");
-
-                var multiPackageProjects = new List<string>();
-                var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
-                using var fs = File.OpenRead(samplesFile);
-                var json = JsonDocument.Parse(fs);
-                multiPackageProjects = json.RootElement
-                                           .EnumerateArray()
-                                           .Select(e => e.GetProperty("SampleProjectName").GetString())
-                                           .Distinct()
-                                           .Where(name => name switch
-                                           {
-                                               "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
-                                               _ => true
-                                           })
-                                           .ToList();
-                var patterns = new List<string>();
-
-                foreach (var dir in multiPackageProjects)
-                {
-                    patterns.Add($"test/test-applications/integrations/{dir}/bin");
-                    patterns.Add($"test/test-applications/integrations/{dir}/obj");
-                }
-
-                TracerDirectory.GlobDirectories(patterns.ToArray()).ForEach(x => DeleteDirectory(x));
-
-                // these are defined in the Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet
-                var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
-
-                // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                foreach (var target in targets)
-                {
-                    MSBuild(x => x
-                        .SetTargetPath(MsBuildProject)
-                        .SetTargets(target)
-                        .SetConfiguration(BuildConfiguration)
-                        .EnableNoDependencies()
-                        .SetProperty("TargetFramework", Framework.ToString())
-                        .SetProperty("BuildInParallel", "true")
-                        .SetProperty("CheckEolTargetFramework", "false")
-                        .SetProperty("SampleName", SampleName ?? string.Empty)
-                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                        .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                        .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    );
-                }
-            }
-            else
-            {
-                // This does some "unnecessary" rebuilding and restoring
-                var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-                var includeInstrumentation = TracerDirectory.GlobFiles("test/test-applications/instrumentation/**/*.csproj");
-                // Don't build aspnet full framework sample in this step
-                var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-
-                var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
-                                             .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"))
-                                             .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
-
-                var projects = includeIntegration
-                    .Concat(includeInstrumentation)
-                    .Concat(includeSecurity)
-                    .Select(x => Solution.GetProject(x))
-                    .Where(project =>
-                    (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
-                    {
-                        _ when exclude.Contains(project.Path) => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
-                        (_, { } targets, _) => targets.Contains(Framework),
-                        _ => true,
-                    }
-                );
-
-                // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                DotNetBuild(config => config
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .EnableNoDependencies()
-                    .SetProperty("BuildInParallel", "true")
-                    .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                    .CombineWith(projects, (s, project) => s
-                        // we have to build this one for all frameworks (because of reasons)
-                        .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
-                        .SetProjectFile(project)));
-
-                var projectsToPublish = includeIntegration
-                   .Select(x =>
-                    {
-                        var project = Solution.GetProject(x);
-                        return project?.Name switch
-                        {
-                            "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
-                            "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
-                            _ => (project, include: false, r2r: false),
-                        };
-                    })
-                   .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
-                    {
-                        ({include: false }, _, _) => false,
-                        _ when exclude.Contains(x.project.Path) => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
-                        (_, { } targets, _) => targets.Contains(Framework),
-                        _ => true,
-                    });
-
-                var rid = TargetPlatform.ToString() switch
-                {
-                    "x64" => "win-x64",
-                    "x86" => "win-x86",
-                    "ARM64" or "ARM64EC" => "win-arm64",
-                    _ => throw new InvalidOperationException("Unsupported architecture " + RuntimeInformation.ProcessArchitecture),
-                };
-
-                DotNetPublish(config => config
-                   .SetConfiguration(BuildConfiguration)
-                   .SetFramework(Framework)
-                   .SetRuntime(rid)
-                   .CombineWith(projectsToPublish, (s, project) => s
-                      .SetProject(project.project)
-                      .When(project.r2r, x => x.SetPublishReadyToRun(true))));
-            }
         });
 
     Target CompileSamples => _ => _
@@ -1694,7 +1470,6 @@ partial class Build
     Target PublishIisSamples => _ => _
         .Unlisted()
         .After(CompileManagedTestHelpers)
-        .After(CompileRegressionSamples)
         .After(CompileSamples)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
@@ -1725,7 +1500,7 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileSamplesWindows)
+        .After(CompileSamples)
         .After(CompileTrimmingSamples)
         .After(BuildWindowsIntegrationTests)
         .DependsOn(CleanTestLogs)
@@ -1859,7 +1634,8 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileRegressionSamples)
+        .After(CompileSamples)
+        .After(CompileTrimmingSamples)
         .After(BuildNativeLoader)
         .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
@@ -1990,199 +1766,10 @@ partial class Build
             ProjectModelTasks.Initialize();
         });
 
-    Target CompileSamplesLinuxOrOsx => _ => _
-        .Unlisted()
-        .DependsOn(HackForMissingMsBuildLocation)
-        .After(CompileManagedSrc)
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            MakeGrpcToolsExecutable();
-
-            // There's nothing specifically linux-y here, it's just that we only build a subset of projects
-            // for testing on linux.
-            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
-            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
-            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
-
-            // These samples are currently skipped.
-            var projectsToSkip = new[]
-            {
-                "Samples.AzureServiceBus", // We are not running in CI because we haven't set up an emulator
-                "Samples.Msmq",  // Doesn't run on Linux
-                "Samples.Owin.WebApi2", // Doesn't run on Linux
-                "Samples.RateLimiter", // I think we _should_ run this one (assuming it has tests)
-                "Samples.SqlServer.NetFramework20",
-                "Samples.TracingWithoutLimits", // I think we _should_ run this one (assuming it has tests)
-                "Samples.Wcf",
-                "Samples.WebRequest.NetFramework20",
-                "DogStatsD.RaceCondition",
-                "StackExchange.Redis.AssemblyConflict.LegacyProject",
-                "MismatchedTracerVersions",
-                "IBM.Data.DB2.DBCommand",
-                "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
-                "Sandbox.LegacySecurityPolicy", // Doesn't run on Linux
-                "Samples.Trimming",
-            };
-
-            // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
-            // so no point building them now
-            var multiPackageProjects = new List<string>();
-            if (TestAllPackageVersions)
-            {
-                var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
-                using var fs = File.OpenRead(samplesFile);
-                var json = JsonDocument.Parse(fs);
-                multiPackageProjects = json.RootElement
-                                           .EnumerateArray()
-                                           .Select(e => e.GetProperty("SampleProjectName").GetString())
-                                           .Distinct()
-                                           .Where(name => name switch
-                                            {
-                                                "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
-                                                _ => true
-                                            })
-                                           .ToList();
-            }
-
-            var projectsToBuild = sampleProjects
-                .Concat(securitySampleProjects)
-                .Concat(regressionProjects)
-                .Concat(instrumentationProjects)
-                .Select(path => (path, project: Solution.GetProject(path)))
-                .Where(x => (IncludeTestsRequiringDocker, x.project) switch
-                {
-                    // filter out or to integration tests that have docker dependencies
-                    (null, _) => true,
-                    (_, null) => true,
-                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.RequiresDockerDependency() is DockerDependencyType.None or DockerDependencyType.Mixed,
-                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
-                })
-                .Where(x =>
-                           x.project?.Name switch
-                                  {
-                                      var name when projectsToSkip.Contains(name) => false,
-                                      var name when multiPackageProjects.Contains(name) => false,
-                                      _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName, StringComparison.OrdinalIgnoreCase) ?? false,
-                                      _ => x.project.TryGetTargetFrameworks().Contains(Framework),
-                                  })
-                .Select(x => x.path)
-                .ToArray();
-
-            // do the build and publish separately to avoid dependency issues
-
-            DotnetBuild(projectsToBuild, framework: Framework, noRestore: false);
-
-            DotNetPublish(x => x
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .EnableNoDependencies()
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(Framework)
-                    .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                    .CombineWith(projectsToBuild, (c, project) => c
-                        .SetProject(project)));
-
-            // We have to explicitly publish the trimming sample separately (written so we can add to this later if needs be)
-            var projectsToPublish = sampleProjects
-               .Select(x =>
-                {
-                    var project = Solution.GetProject(x);
-                    return project?.Name switch
-                    {
-                        "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
-                        "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
-                        _ => (project, include: false, r2r: false),
-                    };
-                })
-               .Where(x => (IncludeTestsRequiringDocker, x) switch
-                {
-                    // filter out or to integration tests that have docker dependencies
-                    (_, {include: false }) => false,
-                    (null, _) => true,
-                    (_, { project: null}) => true,
-                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.project.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None || p.project.RequiresDockerDependency() == DockerDependencyType.Mixed,
-                    (true, { } p) => p.project.RequiresDockerDependency() != DockerDependencyType.None,
-                });
-
-            var rid = (IsLinux, IsArm64) switch
-            {
-                (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
-                (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
-                (false, false) => "osx-x64",
-                (false, true) => "osx-arm64",
-            };
-            DotNetPublish(config => config
-               .SetConfiguration(BuildConfiguration)
-               .SetFramework(Framework)
-               .SetRuntime(rid)
-               .CombineWith(projectsToPublish, (s, project) => s
-                  .SetProject(project.project)
-                  .When(project.r2r, x => x.SetPublishReadyToRun(true))));
-        });
-
-    Target CompileMultiApiPackageVersionSamples => _ => _
-        .Unlisted()
-        .DependsOn(HackForMissingMsBuildLocation)
-        .After(CompileManagedSrc)
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
-        .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinuxOrOsx)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            // Build and restore for all versions
-            // Annoyingly this rebuilds everything again and again.
-            var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
-
-            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            var sampleName = string.IsNullOrWhiteSpace(SampleName) ? string.Empty : SampleName;
-            foreach (var target in targets)
-            {
-                // TODO: When IncludeTestsRequiringDocker is set, only build required samples
-                DotNetMSBuild(x => x
-                    .SetTargetPath(MsBuildProject)
-                    .SetTargets(target)
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoDependencies()
-                    .SetProperty("TargetFramework", Framework.ToString())
-                    .SetProperty("BuildInParallel", "true")
-                    .SetProperty("CheckEolTargetFramework", "false")
-                    .SetProperty("SampleName", sampleName)
-                    .When(IncludeTestsRequiringDocker.HasValue, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker!.Value ? "true" : "false"))
-                    .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
-                    .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                    .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                );
-
-                MakeGrpcToolsExecutable(); // for use in the second target
-            }
-        });
-
     Target CompileLinuxOrOsxIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinuxOrOsx)
-        .After(CompileMultiApiPackageVersionSamples)
         .After(BuildRunnerTool)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -2204,11 +1791,7 @@ partial class Build
     Target CompileLinuxDdDotnetIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
-        .After(CompileSamplesLinuxOrOsx)
-        .After(CompileMultiApiPackageVersionSamples)
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
@@ -2533,7 +2116,7 @@ partial class Build
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
        .Unlisted()
-       .After(CompileSamplesLinuxOrOsx, CompileMultiApiPackageVersionSamples)
+       .After(CompileSamples, CompileTrimmingSamples)
        .Executes(() =>
         {
             // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
@@ -3083,41 +2666,6 @@ partial class Build
                 "error" => LogLevel.Error,
                 _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
             };
-    }
-
-    private void MakeGrpcToolsExecutable()
-    {
-        var packageDirectory = NugetPackageDirectory;
-        if (string.IsNullOrEmpty(NugetPackageDirectory))
-        {
-            Logger.Information("NugetPackageDirectory not set, querying for global-package location");
-            var packageLocation = "global-packages";
-            var output = DotNet($"nuget locals {packageLocation} --list");
-
-            var expected = $"{packageLocation}: ";
-            var location = output
-                              .Where(x => x.Type == OutputType.Std)
-                              .Select(x => x.Text)
-                              .FirstOrDefault(x => x.StartsWith(expected))
-                             ?.Substring(expected.Length);
-
-            if (string.IsNullOrEmpty(location))
-            {
-                Logger.Information("Couldn't determine global-package location, skipping chmod +x on grpc.tools");
-                return;
-            }
-
-            packageDirectory = (AbsolutePath)(location);
-        }
-
-        Logger.Information($"Using '{packageDirectory}' for NuGet package location");
-
-        // GRPC runs a tool for codegen, which apparently isn't automatically marked as executable
-        var grpcTools = GlobFiles(packageDirectory / "grpc.tools", "**/tools/linux_*/*");
-        foreach (var toolPath in grpcTools)
-        {
-            Chmod.Value.Invoke(" +x " + toolPath);
-        }
     }
 
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
