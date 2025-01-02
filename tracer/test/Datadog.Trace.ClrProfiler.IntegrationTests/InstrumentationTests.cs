@@ -160,7 +160,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.Spans.Should().NotBeEmpty();
             agent.Telemetry.Should().NotBeEmpty();
         }
-#endif
 
 #if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
