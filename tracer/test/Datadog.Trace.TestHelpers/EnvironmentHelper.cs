@@ -454,36 +454,23 @@ namespace Datadog.Trace.TestHelpers
             return projectDir;
         }
 
-        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true, bool usePublishWithRID = false)
+        public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishWithRID = false)
         {
-            var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
-            var binDir = Path.Combine(GetSampleProjectDirectory(), "bin");
-            var artifactsBinDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "bin");
-            var artifactsPublishDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "publish");
-
             if (_samplesDirectory.Contains("aspnet"))
             {
+                var binDir = Path.Combine(GetSampleProjectDirectory(), "bin");
                 return Path.Combine(
                     binDir,
                     EnvironmentTools.GetBuildConfiguration(),
                     "publish");
             }
-            else if (EnvironmentTools.GetOS() == "win" && !usePublishWithRID)
-            {
-                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
-            }
-            else if (usePublishWithRID)
-            {
-                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
-            }
-            else if (usePublishFolder)
-            {
-                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
-            }
-            else
-            {
-                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
-            }
+
+            // "normal" apps are not published, unless we have a package version, in which case they are
+            var usePublishFolder = usePublishWithRID || !string.IsNullOrEmpty(packageVersion);
+            var outputDir = usePublishFolder ? "publish" : "bin";
+            var artifactsDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", outputDir);
+
+            return Path.Combine(artifactsDir, FullSampleName, GetPivot());
 
             string GetPivot()
             {
@@ -491,6 +478,7 @@ namespace Datadog.Trace.TestHelpers
                               ? $"_{EnvironmentTools.GetOS()}{(IsAlpine() ? "-musl" : string.Empty)}-{EnvironmentTools.GetPlatform().ToLowerInvariant()}"
                               : string.Empty;
 
+                var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
                 var config = EnvironmentTools.GetBuildConfiguration().ToLowerInvariant();
                 var packageVersionPivot = string.IsNullOrEmpty(packageVersion) ? string.Empty : $"_{packageVersion}";
                 return $"{config}_{targetFramework}{packageVersionPivot}{rid}";
