@@ -1697,6 +1697,40 @@ stages:
           displayName: Upload artifact samples
           artifact: samples
 
+# This is just to test that we _can_ build the solution on macos
+# It's not used by other stages, and just ensures we don't break the macos build
+- stage: build_samples_macos
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [macos]
+
+    - job: macos
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: macos-13
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: ./tracer/build.sh CreateRequiredDirectories CompileSamples
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
