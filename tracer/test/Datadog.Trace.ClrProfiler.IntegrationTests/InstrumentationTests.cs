@@ -154,7 +154,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingPathWithDotsInInTracerHome_InstrumentsApp()
         {
-            // not using Path.Combine here because it resolves the .. and we want it in the path
             var path = Path.Combine(EnvironmentHelper.MonitoringHome, "..", Path.GetFileName(EnvironmentHelper.MonitoringHome)!);
             Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
             SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
