@@ -116,6 +116,8 @@ namespace Datadog.Trace.Propagators
 
         public PropagatorType PropagatorType => PropagatorType.TraceContext;
 
+        public string DisplayName => "tracecontext";
+
         public void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
