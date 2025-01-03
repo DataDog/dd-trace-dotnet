@@ -36,6 +36,7 @@ partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     [Solution("Datadog.Trace.Samples.g.sln")] readonly Solution SamplesSolution;
+    [Solution("Datadog.Trace.Build.g.sln")] readonly Solution BuildSolution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
@@ -1314,6 +1315,20 @@ partial class Build
                 ;
 
             DotnetBuild(projects, framework: Framework);
+        });
+
+    Target CompileTracer => _ => _
+        .Description("Compiles all the tracer projects (excluding samples)")
+        .Unlisted()
+        .After(Clean)
+        .DependsOn(HackForMissingMsBuildLocation)
+        .Executes(() =>
+        {
+            DotNetBuild(config => config
+                .SetConfiguration(BuildConfiguration)
+                .SetProperty("BuildInParallel", "true")
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .SetProjectFile(BuildSolution));
         });
 
     Target CompileSamples => _ => _

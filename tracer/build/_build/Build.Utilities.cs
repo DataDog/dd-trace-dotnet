@@ -408,68 +408,122 @@ partial class Build
                .Description("Regenerates the 'build' solutions based on the 'master' solution")
                .Executes(() =>
                 {
-                    // Create a copy of the "full solution"
-                    var sln = ProjectModelTasks.CreateSolution(
-                        fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
-                        solutions: new[] { Solution },
-                        folderNameProvider: x => x?.Name,
-                        randomizeProjectIds: false);
+                    CreateBuildSolution();
+                    CreateSampleSolution();
 
-                    // Remove everything except the test-application projects
-                    sln.AllProjects
-                       .Where(x => !IsTestApplication(x))
-                       .ForEach(x =>
-                        {
-                            Logger.Information("Removing project '{Name}'", x.Name);
-                            sln.RemoveProject(x);
-                        });
-                    
-                    // Remove the _build project 
-                    sln.RemoveProject(Solution.GetProject("_build"));
-
-                    sln.Save();
-
-                    bool IsTestApplication(Project x)
+                    void CreateBuildSolution()
                     {
-                        // We explicitly don't build some of these because
-                        // 1. They're a pain to build
-                        // 2. They aren't actually run in the CI (something we should address in the future)
-                        if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject")
-                        {
-                            return false;
-                        }
+                        Logger.Information("Creating build solution");
 
-                        // Include test-applications, but exclude the following for now:
-                        // - test-applications/aspnet
-                        // - test-applications/security/aspnet
-                        // These currently aren't published to separate folders, are minimal, can't be
-                        // built on macos, and don't take long to build, so not a big value in building
-                        // them separately currently
-                        var solutionFolder = x.SolutionFolder;
-                        while (solutionFolder is not null)
+                        // Create a copy of the "full solution"
+                        var sln = ProjectModelTasks.CreateSolution(
+                            fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
+                            solutions: new[] { Solution },
+                            folderNameProvider: x => x?.Name,
+                            randomizeProjectIds: false);
+
+                        // Remove all the test-application projects
+                        sln.AllProjects
+                           .Where(x => !IncludeInBuildSolution(x))
+                           .ForEach(x =>
+                            {
+                                Logger.Information("Removing project '{Name}'", x.Name);
+                                sln.RemoveProject(x);
+                            });
+
+                        sln.Save();
+
+                        bool IncludeInBuildSolution(Project x)
                         {
-                            if(solutionFolder.Name == "aspnet"
-                                && solutionFolder.SolutionFolder?.Name == "test-applications")
+                            // don't include the native projects
+                            if(Path.GetExtension(x.Path) == ".vcxproj")
                             {
                                 return false;
                             }
 
-                            if(solutionFolder.Name == "aspnet"
+                            // Exclude everything in test/test-applications and test/benchmarks
+                            var solutionFolder = x.SolutionFolder;
+                            while (solutionFolder is not null)
+                            {
+                                if (solutionFolder.Name is "test-applications" or "benchmarks")
+                                {
+                                    return false;
+                                }
+
+                                solutionFolder = solutionFolder.SolutionFolder;
+                            }
+
+                            return true;
+                        }
+                    }
+
+                    void CreateSampleSolution()
+                    {
+                        Logger.Information("Creating sample solution");
+
+                        // Create a copy of the "full solution"
+                        var sln = ProjectModelTasks.CreateSolution(
+                            fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
+                            solutions: new[] { Solution },
+                            folderNameProvider: x => x?.Name,
+                            randomizeProjectIds: false);
+
+                        // Remove everything except the test-application projects
+                        sln.AllProjects
+                           .Where(x => !IncludeInSamplesSolution(x))
+                           .ForEach(x =>
+                            {
+                                Logger.Information("Removing project '{Name}'", x.Name);
+                                sln.RemoveProject(x);
+                            });
+
+                        // Remove the _build project
+                        sln.RemoveProject(Solution.GetProject("_build"));
+
+                        sln.Save();
+
+                        bool IncludeInSamplesSolution(Project x)
+                        {
+                            // We explicitly don't build some of these because
+                            // 1. They're a pain to build
+                            // 2. They aren't actually run in the CI (something we should address in the future)
+                            if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject")
+                            {
+                                return false;
+                            }
+
+                            // Include test-applications, but exclude the following for now:
+                            // - test-applications/aspnet
+                            // - test-applications/security/aspnet
+                            // These currently aren't published to separate folders, are minimal, can't be
+                            // built on macos, and don't take long to build, so not a big value in building
+                            // them separately currently
+                            var solutionFolder = x.SolutionFolder;
+                            while (solutionFolder is not null)
+                            {
+                                if(solutionFolder.Name == "aspnet"
+                                && solutionFolder.SolutionFolder?.Name == "test-applications")
+                                {
+                                    return false;
+                                }
+
+                                if(solutionFolder.Name == "aspnet"
                                 && solutionFolder.SolutionFolder?.Name == "security"
                                 && solutionFolder.SolutionFolder?.SolutionFolder?.Name == "test-applications")
-                            {
-                                return false;
+                                {
+                                    return false;
+                                }
+
+                                if (solutionFolder.Name == "test-applications")
+                                {
+                                    return true;
+                                }
+
+                                solutionFolder = solutionFolder.SolutionFolder;
                             }
 
-                            if (solutionFolder.Name == "test-applications")
-                            {
-                                return true;
-                            }
-
-                            solutionFolder = solutionFolder.SolutionFolder;
+                            return false;
                         }
-
-                        return false;
                     }
                 });
 
