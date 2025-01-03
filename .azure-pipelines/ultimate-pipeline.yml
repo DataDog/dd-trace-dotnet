@@ -4996,7 +4996,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "essentials,parametric,appsec,remote-config,telemetry,integrations,debugger,profiling"
-    additionalScenarios: '["TRACE_PROPAGATION_STYLE_W3C","LIBRARY_CONF_CUSTOM_HEADER_TAGS"]'
+    additionalScenarios: '[\"TRACE_PROPAGATION_STYLE_W3C\",\"LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -5026,6 +5026,8 @@ stages:
           
         - script: |
             set -e
+            
+            source venv/bin/activate
             PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g appsec > out.txt
 
             endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
@@ -5047,10 +5049,10 @@ stages:
             echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
             echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
             echo 'combined_scenarios = script_scenarios + script_graphql_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
-            echo 'matrix_items = []' >> cross.py
+            echo 'matrix_items = {}' >> cross.py
             echo 'for s in combined_scenarios:' >> cross.py
             echo '    for w in script_weblogs:' >> cross.py
-            echo '        matrix_items.append({"SCENARIO": s, "WEBLOG_VARIANT": w})' >> cross.py
+            echo '        matrix_items[s] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
             echo 'print(json.dumps(matrix_items))' >> cross.py
             
             python cross.py > matrix.json
