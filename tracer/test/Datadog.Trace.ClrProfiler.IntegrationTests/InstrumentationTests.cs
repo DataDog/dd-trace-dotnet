@@ -136,7 +136,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingRelativeTracerHome_InstrumentsApp()
         {
-            SetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
             // the working dir when we run the app is the _test_ project, not the app itself, so we need to be relative to that
             // This is a perfect example of why we don't recommend using relative paths for these variables
             var workingDir = Environment.CurrentDirectory;
@@ -155,7 +154,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task WhenUsingPathWithDotsInInTracerHome_InstrumentsApp()
         {
-            SetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
             // not using Path.Combine here because it resolves the .. and we want it in the path
             var path = Path.Combine(EnvironmentHelper.MonitoringHome, "..", Path.GetFileName(EnvironmentHelper.MonitoringHome)!);
             Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
