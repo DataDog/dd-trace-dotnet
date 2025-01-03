@@ -66,6 +66,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="ganeshnj.libdatadog" Version="14.3.1-ci.771.163" />
     <PackageReference Include="InlineIL.Fody" Version="1.8.0" PrivateAssets="All" />
   </ItemGroup>
 
