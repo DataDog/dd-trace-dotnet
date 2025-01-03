@@ -34,4 +34,16 @@
     </None>
   </ItemGroup>
 
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition=" '$(TargetFramework)' != '' AND '$(ManuallyCopyCodeCoverageFiles)' != 'false' ">
+    <Message Importance="High" Text="Fixing Code Coverage: $(TargetFramework)" />
+    <CallTarget Targets="ComputeFilesToPublish" />
+    <CallTarget Targets="CopyCoverletDataCollectorFiles" />
+
+    <!-- Because we don't publish on windows, we just move the code coverage binaries from the publish folder to the actual build bin folder-->
+    <ItemGroup>
+      <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\%(RecursiveDir)" />
+  </Target>
+
 </Project>
