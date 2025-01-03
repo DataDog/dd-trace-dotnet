@@ -870,14 +870,24 @@ internal static partial class IastModule
     {
         try
         {
-            if (!LoggedAspectExceptionMessages.Add(aspectInfo.GetHashCode()))
+            var hashCode = aspectInfo.GetHashCode();
+            bool alreadyLogged;
+            lock (LoggedAspectExceptionMessages)
             {
-                Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+                alreadyLogged = !LoggedAspectExceptionMessages.Add(hashCode);
+            }
+
+// intentionally using string interpolation in logging, as the resulting string is actually a constant, and contains the important aspect information
+#pragma warning disable DDLOG004 // Message templates should be constant
+            if (alreadyLogged)
+            {
+                Log.Debug(ex, $"Error invoking {aspectInfo}");
             }
             else
             {
-                Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+                Log.Error(ex, $"Error invoking {aspectInfo}");
             }
+#pragma warning restore DDLOG004 // Message templates should be constant
         }
         catch (Exception e)
         {
