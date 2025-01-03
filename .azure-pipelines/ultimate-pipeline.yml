@@ -5001,7 +5001,7 @@ stages:
       jobs: [test]
 
   - job: test
-    timeoutInMinutes: 75
+    timeoutInMinutes: 60
     pool:
       vmImage: ubuntu-latest
 
