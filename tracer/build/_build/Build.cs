@@ -295,7 +295,7 @@ partial class Build : NukeBuild
         .DependsOn(BuildWindowsIntegrationTests)
         .DependsOn(CompileSamples)
         .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunWindowsIntegrationTests);
+        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
@@ -326,7 +326,7 @@ partial class Build : NukeBuild
         .Requires(() => !IsWin)
         .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildLinuxIntegrationTests)
-        .DependsOn(RunLinuxIntegrationTests)
+        .DependsOn(RunIntegrationTests)
         .DependsOn(RunLinuxDdDotnetIntegrationTests);
 
     Target BuildOsxIntegrationTests => _ => _
@@ -343,7 +343,7 @@ partial class Build : NukeBuild
         .DependsOn(BuildOsxIntegrationTests)
         .DependsOn(CompileSamples)
         .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunOsxIntegrationTests);
+        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
