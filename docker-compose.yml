@@ -394,7 +394,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -541,7 +541,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -672,7 +672,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
