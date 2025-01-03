@@ -99,6 +99,7 @@ Configuration::Configuration()
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -745,4 +746,9 @@ bool Configuration::IsTelemetryToDiskEnabled() const
 bool Configuration::IsSsiTelemetryEnabled() const
 {
     return _isSsiTelemetryEnabled;
+}
+
+bool Configuration::IsWaitHandleProfilingEnabled() const
+{
+    return _isWaitHandleProfilingEnabled;
 }

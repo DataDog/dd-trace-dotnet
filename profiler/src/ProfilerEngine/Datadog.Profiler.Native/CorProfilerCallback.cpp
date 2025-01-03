@@ -139,7 +139,7 @@ void CorProfilerCallback::InitializeServices()
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
         _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
-    
+
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
@@ -288,7 +288,10 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsContentionProfilingEnabled())
+        if (
+            (_pConfiguration->IsContentionProfilingEnabled()) ||
+            (_pConfiguration->IsWaitHandleProfilingEnabled())
+            )
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
@@ -372,6 +375,7 @@ void CorProfilerCallback::InitializeServices()
                 MemoryResourceManager::GetDefault());
         }
 
+        // WaitHandle profiling is not supported in .NET Framework
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
@@ -568,7 +572,10 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
-        if (_pConfiguration->IsContentionProfilingEnabled())
+        if (
+            (_pConfiguration->IsContentionProfilingEnabled()) ||
+            (_pConfiguration->IsWaitHandleProfilingEnabled())
+            )
         {
             _pSamplesCollector->Register(_pContentionProvider);
         }
@@ -1145,7 +1152,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsHeapProfilingEnabled() ||
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
-        _pConfiguration->IsGarbageCollectionProfilingEnabled();
+        _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
+        _pConfiguration->IsWaitHandleProfilingEnabled()
+        ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
@@ -1212,6 +1221,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
+    if (_pConfiguration->IsWaitHandleProfilingEnabled())
+    {
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
+    }
+
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
     {
         //              for GC                              for JIT
@@ -1234,6 +1248,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - AllocationTick_V4
         //  - ContentionStop_V1
         //  - GC related events
+        //  - WaitHandle events for .NET 9+
 
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1255,6 +1270,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
+        }
+        if (_pConfiguration->IsWaitHandleProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_WAITHANDLE;
+            verbosity = VerboseVerbosity;
         }
 
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
@@ -1471,6 +1491,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
+    if (_pContentionProvider != nullptr)
+    {
+        _pContentionProvider->OnModuleLoaded(moduleId);
+    }
+
     return S_OK;
 }
 
@@ -1496,6 +1521,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ClassLoadStarted(ClassID classId)
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
 {
+    if (_pContentionProvider != nullptr)
+    {
+        // look for Mutex, Semaphore, AutoResetEvent and ManualResetEvent ClassID
+        _pContentionProvider->OnClassLoaded(classId);
+    }
+
     return S_OK;
 }
 
