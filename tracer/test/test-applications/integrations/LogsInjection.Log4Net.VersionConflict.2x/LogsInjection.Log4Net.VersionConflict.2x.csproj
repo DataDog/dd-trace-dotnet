@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <None Update="log4net.205.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

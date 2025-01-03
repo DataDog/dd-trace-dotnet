@@ -9,10 +9,10 @@
 
   <ItemGroup>
     <None Include="..\DatadogInstall.bat" Link="DatadogInstall.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\DatadogInstall.ps1" Link="DatadogInstall.ps1">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

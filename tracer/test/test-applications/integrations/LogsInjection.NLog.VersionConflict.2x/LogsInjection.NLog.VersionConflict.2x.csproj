@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <None Update="NLog.46.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
