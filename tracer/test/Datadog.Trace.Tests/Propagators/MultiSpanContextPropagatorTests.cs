@@ -453,7 +453,12 @@ namespace Datadog.Trace.Tests.Propagators
                                     PropagatedTags = EmptyPropagatedTags,
                                     IsRemote = true,
                                     LastParentId = ZeroLastParentId,
-                                }
+                                },
+                                Attributes =
+                                [
+                                    new("reason", "propagation_behavior_extract=restart"),
+                                    new("context_headers", "tracecontext")
+                                ],
                             }
                         });
         }
