@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             if (!Directory.Exists(fullPath))
             {
-                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}'");
+                StartupLogger.Log($"The tracer home directory cannot be found at '{fullPath}', based on the DD_DOTNET_TRACER_HOME value '{tracerHomeDirectory}' and current directory {Environment.CurrentDirectory}");
                 return null;
             }
 
