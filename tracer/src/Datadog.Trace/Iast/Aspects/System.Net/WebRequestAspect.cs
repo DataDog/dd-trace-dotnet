@@ -34,7 +34,7 @@ public class WebRequestAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(WebRequestAspect)}.{nameof(Review)}");
+            IastModule.LogAspectException(ex, $"{nameof(WebRequestAspect)}.{nameof(Review)}");
             return parameter;
         }
     }
@@ -56,7 +56,7 @@ public class WebRequestAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(WebRequestAspect)}.{nameof(Review)}");
+            IastModule.LogAspectException(ex, $"{nameof(WebRequestAspect)}.{nameof(Review)}");
             return parameter;
         }
     }

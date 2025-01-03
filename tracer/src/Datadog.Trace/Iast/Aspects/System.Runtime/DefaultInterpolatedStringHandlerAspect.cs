@@ -38,7 +38,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
         }
     }
 
@@ -59,7 +59,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
         }
     }
 

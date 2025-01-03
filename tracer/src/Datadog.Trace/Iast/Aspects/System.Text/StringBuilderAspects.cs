@@ -34,7 +34,7 @@ public class StringBuilderAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringBuilderAspects)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringBuilderAspects)}.{nameof(Init)}");
         }
 
         return result;
@@ -54,7 +54,7 @@ public class StringBuilderAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringBuilderAspects)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringBuilderAspects)}.{nameof(Init)}");
         }
 
         return result;
@@ -76,7 +76,7 @@ public class StringBuilderAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringBuilderAspects)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringBuilderAspects)}.{nameof(Init)}");
         }
 
         return result;

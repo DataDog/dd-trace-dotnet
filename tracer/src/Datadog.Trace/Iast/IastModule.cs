@@ -866,14 +866,16 @@ internal static partial class IastModule
         GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
-    public static void LogAspectException(Exception ex, string message)
+    public static void LogAspectException(Exception ex, string aspectInfo)
     {
-        if (!LoggedAspectExceptionMessages.Add(message.GetHashCode()))
+        if (!LoggedAspectExceptionMessages.Add(aspectInfo.GetHashCode()))
         {
-            return;
+            Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
         }
-
-        Log.Error(ex, "Aspect Exception: {Message}.", message);
+        else
+        {
+            Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+        }
     }
 
     internal static void RegisterDbRecord(object instance)

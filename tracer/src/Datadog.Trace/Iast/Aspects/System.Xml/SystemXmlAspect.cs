@@ -40,7 +40,7 @@ public class SystemXmlAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(SystemXmlAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex, $"{nameof(SystemXmlAspect)}.{nameof(ReviewPath)}");
             return xpath;
         }
     }

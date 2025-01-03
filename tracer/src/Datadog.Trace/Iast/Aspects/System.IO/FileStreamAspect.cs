@@ -45,7 +45,7 @@ public class FileStreamAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(FileStreamAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex, $"{nameof(FileStreamAspect)}.{nameof(ReviewPath)}");
             return path;
         }
     }

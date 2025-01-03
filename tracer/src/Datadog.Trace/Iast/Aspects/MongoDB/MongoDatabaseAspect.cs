@@ -53,7 +53,7 @@ public class MongoDatabaseAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(MongoDatabaseAspect)}.{nameof(AnalyzeCommand)}");
+            IastModule.LogAspectException(ex, $"{nameof(MongoDatabaseAspect)}.{nameof(AnalyzeCommand)}");
             return command;
         }
     }

@@ -43,7 +43,7 @@ public class SessionExtensionsAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(SessionExtensionsAspect)}.{nameof(ReviewTbv)}");
+            IastModule.LogAspectException(ex, $"{nameof(SessionExtensionsAspect)}.{nameof(ReviewTbv)}");
             return value;
         }
     }

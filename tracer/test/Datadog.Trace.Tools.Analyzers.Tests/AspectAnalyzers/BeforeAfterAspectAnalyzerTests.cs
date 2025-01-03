@@ -126,7 +126,7 @@ public class BeforeAfterAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.LogAspectException(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                             return myParam;
                         }
                     }

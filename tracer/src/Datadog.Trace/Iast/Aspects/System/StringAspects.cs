@@ -36,7 +36,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Trim)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Trim)}");
         }
 
         return result;
@@ -65,7 +65,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Trim)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Trim)}");
         }
 
         return result;
@@ -88,7 +88,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Trim)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Trim)}");
         }
 
         return result;
@@ -118,7 +118,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(TrimStart)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimStart)}");
         }
 
         return result;
@@ -141,7 +141,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(TrimStart)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimStart)}");
         }
 
         return result;
@@ -162,7 +162,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(TrimStart)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimStart)}");
         }
 
         return result;
@@ -192,7 +192,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(TrimEnd)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimEnd)}");
         }
 
         return result;

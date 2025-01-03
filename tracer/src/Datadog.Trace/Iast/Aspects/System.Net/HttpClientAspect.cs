@@ -62,7 +62,7 @@ public class HttpClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(Review)}");
+            IastModule.LogAspectException(ex, $"{nameof(HttpClientAspect)}.{nameof(Review)}");
             return parameter;
         }
     }
@@ -108,7 +108,7 @@ public class HttpClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewUri)}");
+            IastModule.LogAspectException(ex, $"{nameof(HttpClientAspect)}.{nameof(ReviewUri)}");
             return parameter;
         }
     }
@@ -143,7 +143,7 @@ public class HttpClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
+            IastModule.LogAspectException(ex, $"{nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
             return parameter;
         }
     }
@@ -166,7 +166,7 @@ public class HttpClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
+            IastModule.LogAspectException(ex, $"{nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
             return parameter;
         }
     }
