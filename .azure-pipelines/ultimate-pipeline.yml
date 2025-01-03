@@ -4990,7 +4990,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "essentials,parametric,appsec,remote-config,telemetry,integrations,debugger,profiling"
-    additionalScenarios: '["TRACE_PROPAGATION_STYLE_W3C","LIBRARY_CONF_CUSTOM_HEADER_TAGS"]'
+    additionalScenarios: '[\"TRACE_PROPAGATION_STYLE_W3C\",\"LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -5020,6 +5020,8 @@ stages:
           
         - script: |
             set -e
+            
+            source venv/bin/activate
             PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g appsec > out.txt
 
             endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
