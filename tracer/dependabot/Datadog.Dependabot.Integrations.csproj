@@ -163,6 +163,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.46.0 -->
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.0" />
 
+    <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
+    <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Functions.Worker.Core/2.0.0 -->
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="2.0.0" />
+
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!--    Assembly: Microsoft.Azure.WebJobs.Host -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.41 -->
