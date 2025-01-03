@@ -85,7 +85,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.ExceptionGenerator")]
         public void GenerateDumpIfDbgRequested(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
+            // The continuous profiler is disabled for this test because it's not needed and it *might* be causing some failures
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, enableProfiler: false, commandLine: "--scenario 7");
 
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
