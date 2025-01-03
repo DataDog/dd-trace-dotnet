@@ -868,13 +868,20 @@ internal static partial class IastModule
 
     public static void LogAspectException(Exception ex, string aspectInfo)
     {
-        if (!LoggedAspectExceptionMessages.Add(aspectInfo.GetHashCode()))
+        try
         {
-            Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+            if (!LoggedAspectExceptionMessages.Add(aspectInfo.GetHashCode()))
+            {
+                Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+            }
+            else
+            {
+                Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+            }
         }
-        else
+        catch (Exception e)
         {
-            Log.Debug(ex, "Error invoking {AspectInfo}", aspectInfo);
+            Log.Debug(e, "Error while logging aspect exception.");
         }
     }
 
