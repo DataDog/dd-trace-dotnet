@@ -223,6 +223,7 @@
       <type fullname="System.Diagnostics.DebuggerBrowsableState" />
       <type fullname="System.Diagnostics.DebuggerDisplayAttribute" />
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
+      <type fullname="System.Diagnostics.DebuggerNonUserCodeAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
    </assembly>
@@ -246,6 +247,7 @@
       <type fullname="System.Diagnostics.SymbolStore.SymDocumentType" />
    </assembly>
    <assembly fullname="System.Diagnostics.Tools">
+      <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
    </assembly>
    <assembly fullname="System.Diagnostics.TraceSource">
@@ -494,6 +496,7 @@
       <type fullname="System.Buffers.SpanAction`2" />
       <type fullname="System.Byte" />
       <type fullname="System.Char" />
+      <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" />
       <type fullname="System.Collections.ArrayList" />
       <type fullname="System.Collections.DictionaryEntry" />
       <type fullname="System.Collections.Generic.ICollection`1" />
@@ -538,6 +541,8 @@
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute" />
@@ -546,6 +551,8 @@
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullWhenAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute" />
       <type fullname="System.Diagnostics.ConditionalAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" />
@@ -554,6 +561,7 @@
       <type fullname="System.Diagnostics.DebuggerBrowsableState" />
       <type fullname="System.Diagnostics.DebuggerDisplayAttribute" />
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
+      <type fullname="System.Diagnostics.DebuggerNonUserCodeAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
       <type fullname="System.Diagnostics.StackTraceHiddenAttribute" />
@@ -719,6 +727,7 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
+      <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
@@ -970,7 +979,10 @@
    </assembly>
    <assembly fullname="System.Security.Cryptography.Primitives">
       <type fullname="System.Security.Cryptography.AsymmetricAlgorithm" />
+      <type fullname="System.Security.Cryptography.CryptoStream" />
+      <type fullname="System.Security.Cryptography.CryptoStreamMode" />
       <type fullname="System.Security.Cryptography.HashAlgorithm" />
+      <type fullname="System.Security.Cryptography.ICryptoTransform" />
    </assembly>
    <assembly fullname="System.Text.Encoding.Extensions">
       <type fullname="System.Text.UnicodeEncoding" />
