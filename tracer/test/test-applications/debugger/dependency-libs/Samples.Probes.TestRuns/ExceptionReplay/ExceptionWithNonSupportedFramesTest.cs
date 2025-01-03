@@ -27,7 +27,9 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
 
         ref struct MeRefStruct
         {
+#pragma warning disable CS0649 // Field 'ExceptionWithNonSupportedFramesTest.MeRefStruct.Field' is never assigned to, and will always have its default value null
             public string Field;
+#pragma warning restore CS0649
         }
     }
 }

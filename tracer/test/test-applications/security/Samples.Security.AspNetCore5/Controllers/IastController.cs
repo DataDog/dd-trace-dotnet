@@ -74,7 +74,6 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         private static SQLiteConnection _dbConnectionSystemData = null;
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
-        private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()

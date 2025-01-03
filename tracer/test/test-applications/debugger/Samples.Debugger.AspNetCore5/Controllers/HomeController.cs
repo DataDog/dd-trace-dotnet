@@ -29,7 +29,7 @@ namespace Samples.Debugger.AspNetCore5.Controllers
 
         public IActionResult LangHeader()
         {
-            Response.Headers.Add("content-language", "krypton");
+            Response.Headers["content-language"] = "krypton";
             return Content("Setting content-language");
         }
 
