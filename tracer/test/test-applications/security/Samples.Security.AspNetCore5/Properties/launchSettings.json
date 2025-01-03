@@ -106,7 +106,8 @@
         "DD_IAST_DEDUPLICATION_ENABLED": "false",
         "DD_IAST_VULNERABILITIES_PER_REQUEST": "100",
         "DD_IAST_REQUEST_SAMPLING": "100",
-        "DD_IAST_MAX_CONCURRENT_REQUESTS": "1"
+        "DD_IAST_MAX_CONCURRENT_REQUESTS": "1",
+        "COMPLUS_ForceEnc": "1"
       },
       "Logging": {
         "LogLevel": {

@@ -126,7 +126,7 @@ public class BeforeAfterAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                             return myParam;
                         }
                     }
@@ -163,7 +163,7 @@ public class BeforeAfterAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                             return myParam;
                         }
                     }
@@ -211,7 +211,7 @@ public class BeforeAfterAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                             return myParam;
                         }
                     }
@@ -259,7 +259,7 @@ public class BeforeAfterAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                             return myParam;
                         }
                     }

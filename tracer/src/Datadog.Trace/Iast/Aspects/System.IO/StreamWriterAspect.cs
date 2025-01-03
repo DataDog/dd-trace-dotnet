@@ -40,7 +40,7 @@ public class StreamWriterAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(StreamWriterAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex, $"{nameof(StreamWriterAspect)}.{nameof(ReviewPath)}");
             return path;
         }
     }

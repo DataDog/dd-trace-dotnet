@@ -40,7 +40,7 @@ public class HashAlgorithmAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(HashAlgorithmAspect)}.{nameof(ComputeHash)}");
+            IastModule.LogAspectException(ex, $"{nameof(HashAlgorithmAspect)}.{nameof(ComputeHash)}");
             return target;
         }
     }
