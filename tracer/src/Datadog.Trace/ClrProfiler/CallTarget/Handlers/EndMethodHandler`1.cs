@@ -35,19 +35,16 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
 
         if (returnType.IsGenericType)
         {
-            var genericReturnType = returnType.GetGenericTypeDefinition();
             if (typeof(Task).IsAssignableFrom(returnType))
             {
                 // The type is a Task<>
                 _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
             }
-#if NETCOREAPP3_1_OR_GREATER
-            else if (genericReturnType == typeof(ValueTask<>))
+            else if (ValueTaskHelper.IsGenericValueTask(returnType))
             {
                 // The type is a ValueTask<>
                 _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
             }
-#endif
         }
         else
         {
@@ -56,13 +53,11 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
                 // The type is a Task
                 _continuationGenerator = new TaskContinuationGenerator<TIntegration, TTarget, TReturn>();
             }
-#if NETCOREAPP3_1_OR_GREATER
-            else if (returnType == typeof(ValueTask))
+            else if (ValueTaskHelper.IsValueTask(returnType))
             {
                 // The type is a ValueTask
                 _continuationGenerator = new ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn>();
             }
-#endif
         }
     }
 
