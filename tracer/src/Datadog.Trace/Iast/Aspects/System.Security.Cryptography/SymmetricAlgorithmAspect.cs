@@ -29,7 +29,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, "Error in SymmetricAlgorithmAspect.");
+            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(ProcessCipherClassCreation)}");
         }
     }
 

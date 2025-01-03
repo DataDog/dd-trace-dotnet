@@ -37,7 +37,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, "Error tainting JsonDocument.Parse result");
+            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(Parse)}");
         }
 
         return doc;
@@ -60,7 +60,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, "Error casting to IJsonElement");
+            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetString)} (DuckCast)");
             return null;
         }
 
@@ -77,7 +77,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, "Error tainting JsonElement.GetString result");
+            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetString)}");
         }
 
         return str;
@@ -101,7 +101,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, "Error casting to IJsonElement");
+            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetRawText)} (DuckCast)");
             return null;
         }
 
@@ -118,7 +118,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, "Error tainting JsonElement.GetRawText result");
+            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetRawText)}");
         }
 
         return str;

@@ -566,7 +566,7 @@ public class UriAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriAspect)}.{nameof(ToString)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriAspect)}.{nameof(ToString)}");
         }
 
         return result;
