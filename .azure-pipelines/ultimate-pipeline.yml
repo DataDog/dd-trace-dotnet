@@ -4995,86 +4995,88 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    scenarioGroups: "essentials,parametric,appsec,remote-config,telemetry,integrations,debugger,profiling"
+    additionalScenarios: '["TRACE_PROPAGATION_STYLE_W3C","LIBRARY_CONF_CUSTOM_HEADER_TAGS"]'
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [test]
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [compute_scenarios, tests]
+        
+    - job: compute_scenarios
+      timeoutInMinutes: 60
+      displayName: Compute system-tests scenarios
+      pool:
+          vmImage: ubuntu-latest
+          
+      steps:
+        - checkout: none
+          
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.12'
+          displayName: Install python 3.12
 
-  - job: test
-    timeoutInMinutes: 60
-    pool:
-      vmImage: ubuntu-latest
+        - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+          displayName: Get system tests repo
+          
+        - script: |
+            ./build.sh -i runner
+          displayName: Install runner
+          workingDirectory: system-tests
+          
+        - script: |
+            set -e
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g appsec > out.txt
 
-    strategy:
-      matrix:
-        parametric_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: PARAMETRIC
-        parametric_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: PARAMETRIC
-        appsec_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: APPSEC_SCENARIOS
-        appsec_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: APPSEC_SCENARIOS
-        rcm_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: REMOTE_CONFIG_SCENARIOS
-        rcm_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: REMOTE_CONFIG_SCENARIOS
-        telemetry_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: TELEMETRY_SCENARIOS
-        telemetry_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: TELEMETRY_SCENARIOS
-        default_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: DEFAULT
-        default_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: DEFAULT
-        integrations_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: INTEGRATIONS
-        integrations_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: INTEGRATIONS
-        integrations_aws_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: INTEGRATIONS_AWS
-        integrations_aws_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: INTEGRATIONS_AWS
-        crossed_tracing_libraries_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: CROSSED_TRACING_LIBRARIES
-        crossed_tracing_libraries_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: CROSSED_TRACING_LIBRARIES
-        # All the other scenarios that aren't in a secenario group
-        remainder_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
-        remainder_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
-        debugger_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: DEBUGGER_SCENARIOS
-        debugger_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: DEBUGGER_SCENARIOS
+            endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
+            graphql_scenarios=$(grep 'graphql_scenarios' out.txt | sed 's/.*=//g')
+            parametric_scenarios=$(grep 'parametric_scenarios' out.txt | sed 's/.*=//g')
+            endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
 
-    steps:
+            echo "Found scenarios: $endtoend_scenarios"
+            echo "Found graphql scenarios: $graphql_scenarios"
+            echo "Found parametric scenarios: $parametric_scenarios"
+            echo "Found weblogs: $endtoend_weblogs"
+            echo "Additional manual scenarios: $(additionalScenarios)"
+            
+            # Inline python script to cross the data into a json
+            echo "import json" > cross.py
+            echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
+            echo "script_graphql_scenarios = json.loads('$graphql_scenarios')" >> cross.py
+            echo "script_parametric_scenarios = json.loads('$parametric_scenarios')" >> cross.py
+            echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
+            echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
+            echo 'combined_scenarios = script_scenarios + script_graphql_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
+            echo 'matrix_items = []' >> cross.py
+            echo 'for s in combined_scenarios:' >> cross.py
+            echo '    for w in script_weblogs:' >> cross.py
+            echo '        matrix_items.append({"SCENARIO": s, "WEBLOG_VARIANT": w})' >> cross.py
+            echo 'print(json.dumps(matrix_items))' >> cross.py
+            
+            python cross.py > matrix.json
+            
+            echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
+            echo "Json: $(cat matrix.json)"
+          displayName: Generate scenarios matrix JSON
+          name: create_matrix
+          workingDirectory: system-tests
+            
+    - job: tests
+      timeoutInMinutes: 60
+      displayName: Run system-tests scenarios
+      pool:
+          vmImage: ubuntu-latest
+      dependsOn: compute_scenarios
+     
+      strategy:
+        matrix: $[ dependencies.compute_scenarios.outputs['create_matrix.matrixJson'] ]
+
+      steps:
       - checkout: none
 
       - task: UsePythonVersion@0
         inputs:
-            versionSpec: '3.12'
+          versionSpec: '3.12'
         displayName: Install python 3.12
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
