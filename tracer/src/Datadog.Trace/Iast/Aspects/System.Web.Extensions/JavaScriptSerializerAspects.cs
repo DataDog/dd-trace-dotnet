@@ -38,7 +38,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error while casting JavaScriptSerializer");
+            IastModule.LogAspectException(ex, $"{nameof(JavaScriptSerializerAspects)}.{nameof(DeserializeObject)} (DuckCast)");
             return null;
         }
 
@@ -57,7 +57,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error while tainting json in DeserializeObject");
+            IastModule.LogAspectException(ex, $"{nameof(JavaScriptSerializerAspects)}.{nameof(DeserializeObject)}");
         }
 
         return result;

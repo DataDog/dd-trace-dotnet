@@ -38,7 +38,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
         }
     }
 
@@ -59,7 +59,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
         }
     }
 
@@ -83,7 +83,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted3)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted3)}");
         }
     }
 
@@ -106,7 +106,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted4)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted4)}");
         }
     }
 
@@ -130,7 +130,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted5)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted5)}");
         }
     }
 
@@ -154,7 +154,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted6)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted6)}");
         }
     }
 
@@ -179,7 +179,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted7)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted7)}");
         }
     }
 
@@ -198,7 +198,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendLiteral)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendLiteral)}");
         }
     }
 
@@ -217,7 +217,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(ToStringAndClear)}");
+            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(ToStringAndClear)}");
         }
 
         return result;
