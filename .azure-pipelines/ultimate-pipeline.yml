@@ -5068,6 +5068,7 @@ stages:
           
         - task: DownloadPipelineArtifact@2
           displayName: Download linux-packages
+          condition: eq( variables['System.JobAttempt'], 1 )
           inputs:
             artifact: linux-packages-linux-x64
             patterns: '**/*tar.gz'
@@ -5078,7 +5079,8 @@ stages:
             echo Moving $PACKAGE_NAME to system-tests/binaries
             mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
           displayName: Move dotnet binary to system test folder
-          
+          condition: eq( variables['System.JobAttempt'], 1 )
+        
         - script: |
             set -e
             cd system-tests
@@ -5099,9 +5101,11 @@ stages:
             docker save system_tests/agent:latest -o ../docker-images/agent.tar
 
           displayName: Build weblogs and agent & save Docker images
-            
+          condition: eq( variables['System.JobAttempt'], 1 )
+        
         - task: PublishPipelineArtifact@1
           displayName: Publish Docker images artifact
+          condition: eq( variables['System.JobAttempt'], 1 )
           inputs:
             path: 'docker-images'
             artifactName: 'docker-images'
