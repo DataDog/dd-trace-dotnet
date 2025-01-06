@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -55,8 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            ContextPropagation.InjectTraceIntoData(request, context);
+            ContextPropagation.InjectTraceIntoData(request, scope, request.StreamName);
 
             return new CallTargetState(scope);
         }

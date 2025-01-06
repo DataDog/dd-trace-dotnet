@@ -975,6 +975,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void IsDataStreamsLegacyHeadersEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsDataStreamsLegacyHeadersEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void IsRareSamplerEnabled(string value, bool expected)
         {
@@ -1275,7 +1285,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var source = new NameValueConfigurationSource(new()
             {
-                { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version" },
+                { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version,git.repository_url:https://Myrepository,git.commit.sha:42" },
             });
 
             var tracerSettings = new TracerSettings(source);
@@ -1283,6 +1293,8 @@ namespace Datadog.Trace.Tests.Configuration
             tracerSettings.Environment.Should().Be("datadog_env");
             tracerSettings.ServiceVersion.Should().Be("datadog_version");
             tracerSettings.ServiceName.Should().Be("datadog_service");
+            tracerSettings.GitRepositoryUrl.Should().Be("https://Myrepository");
+            tracerSettings.GitCommitSha.Should().Be("42");
         }
 
         [Fact]

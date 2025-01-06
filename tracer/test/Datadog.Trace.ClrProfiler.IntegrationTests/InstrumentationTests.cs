@@ -132,6 +132,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingRelativeTracerHome_InstrumentsApp()
+        {
+            // the working dir when we run the app is the _test_ project, not the app itself, so we need to be relative to that
+            // This is a perfect example of why we don't recommend using relative paths for these variables
+            var workingDir = Environment.CurrentDirectory;
+            var monitoringHome = EnvironmentHelper.MonitoringHome;
+            var path = PathUtil.GetRelativePath(workingDir, monitoringHome);
+            var effectivePath = Path.GetFullPath(Path.Combine(workingDir, path));
+            Output.WriteLine($"Using DD_DOTNET_TRACER_HOME={path} with workingDir={workingDir} and monitoringHome={monitoringHome}, giving an effective path of {effectivePath}");
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingPathWithDotsInInTracerHome_InstrumentsApp()
+        {
+            var path = Path.Combine(EnvironmentHelper.MonitoringHome, "..", Path.GetFileName(EnvironmentHelper.MonitoringHome)!);
+            Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
 #if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]

@@ -60,7 +60,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         }
         catch (Exception error)
         {
-            IastModule.Log.Error(error, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(FullTaintIfAnyTainted)} exception");
+            IastModule.LogAspectException(error, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(FullTaintIfAnyTainted)}");
         }
     }
 
@@ -94,7 +94,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         }
         catch (Exception err)
         {
-            IastModule.Log.Error(err, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(PropagateTaint)} exception");
+            IastModule.LogAspectException(err, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(PropagateTaint)}");
         }
 
         return result;

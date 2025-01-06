@@ -528,6 +528,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 
+                    writer.WritePropertyName("data_streams_legacy_headers_enabled");
+                    writer.WriteValue(instanceSettings.IsDataStreamsLegacyHeadersEnabled);
+
                     writer.WritePropertyName("span_sampling_rules");
                     writer.WriteValue(instanceSettings.SpanSamplingRules);
 

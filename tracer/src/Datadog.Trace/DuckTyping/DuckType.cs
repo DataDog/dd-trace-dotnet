@@ -661,9 +661,15 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
+                    case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
                         if (targetProperty is null)
                         {
+                            if (duckAttribute.Kind == DuckKind.PropertyOrField)
+                            {
+                                goto case DuckKind.Field;
+                            }
+
                             if (proxyProperty.CanRead && proxyProperty.GetMethod is not null)
                             {
                                 var getMethod = proxyProperty.GetMethod;
@@ -940,9 +946,15 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
+                    case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
+                            if (duckAttribute.Kind == DuckKind.PropertyOrField)
+                            {
+                                goto case DuckKind.Field;
+                            }
+
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }

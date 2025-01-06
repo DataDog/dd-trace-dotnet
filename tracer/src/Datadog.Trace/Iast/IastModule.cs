@@ -61,6 +61,7 @@ internal static partial class IastModule
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
+    private static readonly HashSet<int> LoggedAspectExceptionMessages = [];
     private static bool _showTimeoutExceptionError = true;
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
@@ -202,7 +203,7 @@ internal static partial class IastModule
         }
     }
 
-    internal static IastModuleResponse OnWeakRandomness(string evidence)
+    internal static IastModuleResponse OnWeakRandomness(string evidence, bool autoCloseScopeWhenSingleSpan = true)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -212,7 +213,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
-            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
         }
         catch (Exception ex)
         {
@@ -863,6 +864,35 @@ internal static partial class IastModule
 
         // We use the same secure marks as XSS, but excluding db sources
         GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+    }
+
+    public static void LogAspectException(Exception ex, string aspectInfo)
+    {
+        try
+        {
+            var hashCode = aspectInfo.GetHashCode();
+            bool alreadyLogged;
+            lock (LoggedAspectExceptionMessages)
+            {
+                alreadyLogged = !LoggedAspectExceptionMessages.Add(hashCode);
+            }
+
+// intentionally using string interpolation in logging, as the resulting string is actually a constant, and contains the important aspect information
+#pragma warning disable DDLOG004 // Message templates should be constant
+            if (alreadyLogged)
+            {
+                Log.Debug(ex, $"Error invoking {aspectInfo}");
+            }
+            else
+            {
+                Log.Error(ex, $"Error invoking {aspectInfo}");
+            }
+#pragma warning restore DDLOG004 // Message templates should be constant
+        }
+        catch (Exception e)
+        {
+            Log.Debug(e, "Error while logging aspect exception.");
+        }
     }
 
     internal static void RegisterDbRecord(object instance)

@@ -123,11 +123,16 @@ namespace Datadog.Trace.Debugger
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
+
+            // Force it to false to disable SymDB compression, will be re-enabled in the next PR
+            SymbolDatabaseCompressionEnabled = false;
         }
 
         public bool Enabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
+
+        public bool SymbolDatabaseCompressionEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
 
