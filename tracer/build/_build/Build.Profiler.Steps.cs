@@ -2,6 +2,7 @@ using System;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
+using System.Net.Http;
 using System.Linq;
 using System.IO;
 using Nuke.Common.Tooling;
@@ -38,9 +39,85 @@ partial class Build
         .DependsOn(CompileProfilerNativeTestsWindows)
         .DependsOn(CompileProfilerNativeTestsLinux);
 
+    Target SetupVcpkg => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(async () =>
+        {
+            var vcpkg = await GetVcpkg();
+            vcpkg("integrate install");
+
+            async Task<Tool> GetVcpkg()
+            {
+                var vcpkgFilePath = string.Empty;
+
+                try
+                {
+                    vcpkgFilePath = ToolPathResolver.GetPathExecutable("vcpkg.exe");
+                }
+                catch (ArgumentException)
+                { }
+
+                if (File.Exists(vcpkgFilePath))
+                {
+                    return ToolResolver.GetLocalTool(vcpkgFilePath);
+                }
+
+                // Check if already downloaded
+                var vcpkgRoot = RootDirectory / "artifacts" / "bin" / "vcpkg";
+                var vcpkgExecPath = vcpkgRoot / "vcpkg.exe";
+
+                if (File.Exists(vcpkgExecPath))
+                {
+                    return ToolResolver.GetLocalTool($"{vcpkgExecPath}");
+                }
+
+                await DownloadAndExtractVcpkg(vcpkgRoot);
+                Cmd.Value(arguments: $"cmd /c {vcpkgRoot / "bootstrap-vcpkg.bat"}");
+                return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
+            }
+
+            async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
+            {
+                var nbTries = 0;
+                var keepTrying = true;
+                var vcpkgZip = TempDirectory / "vcpkg.zip";
+                using var client = new HttpClient();
+                const string vcpkgVersion = "2024.11.16";
+                while (keepTrying)
+                {
+                    nbTries++;
+                    try
+                    {
+                        var response = await client.GetAsync($"https://github.com/microsoft/vcpkg/archive/refs/tags/{vcpkgVersion}.zip");
+                        response.EnsureSuccessStatusCode();
+                        await using var stream = await response.Content.ReadAsStreamAsync();
+                        await using var file = File.Create(vcpkgZip);
+                        await stream.CopyToAsync(file);
+                        keepTrying = false;
+                    }
+                    catch (HttpRequestException)
+                    {
+                        if (nbTries > 3)
+                        {
+                            throw;
+                        }
+                    }
+                }
+
+                EnsureExistingParentDirectory(destinationFolder);
+                var parentFolder = destinationFolder.Parent;
+
+                CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
+
+                RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
+            }
+        });
+
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
@@ -255,6 +332,7 @@ partial class Build
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
+        .DependsOn(SetupVcpkg)
         .After(CompileProfilerNativeSrcWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
@@ -446,6 +524,7 @@ partial class Build
     Target RunClangTidyProfilerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
@@ -475,6 +554,7 @@ partial class Build
     Target RunCppCheckProfiler => _ => _
         .Unlisted()
         .Description("Runs CppCheck on native profiler")
+        .DependsOn(SetupVcpkg)
         .DependsOn(RunCppCheckProfilerWindows)
         .DependsOn(RunCppCheckProfilerLinux);
 

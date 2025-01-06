@@ -17,7 +17,7 @@ steps:
         | awk '{l[NR] = $0} END {for (i=1; i<=NR-1; i++) print l[i]}; END{ if ($0<200||$0>299) {print "The requested URL returned error: " $0; exit 1}}'
     }
 
-    # example usage
+    export IFS=";"
     allChecks="${{ parameters.checkName }}"
     for stageToSkip in $allChecks; do
       TARGET_URL="https://dev.azure.com/datadoghq/$(AZURE_PROJECT_NAME)/_build/results?buildId=$(Build.BuildId)"
