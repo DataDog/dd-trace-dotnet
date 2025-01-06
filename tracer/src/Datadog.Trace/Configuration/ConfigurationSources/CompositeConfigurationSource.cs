@@ -35,6 +35,8 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
+        private string JsonConfigurationSource { get; set; } = "N/A, from composite configuration source";
+
         /// <summary>
         /// Adds a new configuration source to this instance.
         /// </summary>
@@ -44,6 +46,10 @@ namespace Datadog.Trace.Configuration
             if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
+            if (source is JsonConfigurationSource)
+            {
+                JsonConfigurationSource = source.ToString();
+            }
         }
 
         /// <summary>
@@ -56,6 +62,11 @@ namespace Datadog.Trace.Configuration
             if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
 
             _sources.Insert(index, item);
+        }
+
+        public override string ToString()
+        {
+            return JsonConfigurationSource;
         }
 
         /// <inheritdoc />
