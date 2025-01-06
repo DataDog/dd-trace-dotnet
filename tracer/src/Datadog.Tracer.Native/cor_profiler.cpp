@@ -57,7 +57,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         if (isRunningInAas)
         {
-            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected when running in AAS.");
+            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
         }
         else
         {
