@@ -5019,10 +5019,36 @@ stages:
         - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
           
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux-packages
+          inputs:
+            artifact: linux-packages-linux-x64
+            patterns: '**/*tar.gz'
+            path: $(Build.ArtifactStagingDirectory)
+
         - script: |
-            ./build.sh -i runner
-          displayName: Install runner
+            PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
+            echo Moving $PACKAGE_NAME to system-tests/binaries
+            mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
+          displayName: Move dotnet binary to system test folder
+          
+        - script: |
+            ./build.sh dotnet
+          displayName: Install runner + Build weblog and agent images
           workingDirectory: system-tests
+          
+        - script: |
+            docker save \
+              system_tests/weblog:latest \
+              system_tests/agent:latest \
+              -o system-tests-images.tar
+          displayName: Save Docker images to tar
+          
+        - task: PublishPipelineArtifact@1
+          displayName: Publish Docker images artifact
+          inputs:
+            targetPath: 'system-tests-images.tar'
+            artifactName: 'docker-images'
           
         - script: |
             set -e
@@ -5083,23 +5109,18 @@ stages:
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
-
+        
       - task: DownloadPipelineArtifact@2
-        displayName: Download linux-packages
+        displayName: Download Docker images
         inputs:
-          artifact: linux-packages-linux-x64
-          patterns: '**/*tar.gz'
-          path: $(Build.ArtifactStagingDirectory)
-
+          artifact: docker-images
+          path: $(Build.SourcesDirectory)
+  
       - script: |
-          PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
-          echo Moving $PACKAGE_NAME to system-tests/binaries
-          mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
-        displayName: Move dotnet binary to system test folder
-
-      - script: ./build.sh dotnet
-        workingDirectory: system-tests
-        displayName: Build images
+          docker load -i $(Build.SourcesDirectory)/system-tests-images.tar
+          echo "Docker images after loading:"
+          docker images
+        displayName: Load Docker images
 
       - script: ./run.sh $(SCENARIO)
         workingDirectory: system-tests
