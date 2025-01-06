@@ -5019,36 +5019,10 @@ stages:
         - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
           displayName: Get system tests repo
           
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux-packages
-          inputs:
-            artifact: linux-packages-linux-x64
-            patterns: '**/*tar.gz'
-            path: $(Build.ArtifactStagingDirectory)
-
         - script: |
-            PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
-            echo Moving $PACKAGE_NAME to system-tests/binaries
-            mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
-          displayName: Move dotnet binary to system test folder
-          
-        - script: |
-            ./build.sh dotnet
-          displayName: Install runner + Build weblog and agent images
+            ./build.sh -i runner
+          displayName: Install runner
           workingDirectory: system-tests
-          
-        - script: |
-            docker save \
-              system_tests/weblog:latest \
-              system_tests/agent:latest \
-              -o system-tests-images.tar
-          displayName: Save Docker images to tar
-          
-        - task: PublishPipelineArtifact@1
-          displayName: Publish Docker images artifact
-          inputs:
-            targetPath: 'system-tests-images.tar'
-            artifactName: 'docker-images'
           
         - script: |
             set -e
@@ -5067,6 +5041,9 @@ stages:
             echo "Found weblogs: $endtoend_weblogs"
             echo "Additional manual scenarios: $(additionalScenarios)"
             
+            # Write the weblogs to a file (for later use to generate the docker images)
+            python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
+        
             # Inline python script to cross the data into a json
             echo "import json" > cross.py
             echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
@@ -5088,7 +5065,47 @@ stages:
           displayName: Generate scenarios matrix JSON
           name: create_matrix
           workingDirectory: system-tests
+          
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux-packages
+          inputs:
+            artifact: linux-packages-linux-x64
+            patterns: '**/*tar.gz'
+            path: $(Build.ArtifactStagingDirectory)
+
+        - script: |
+            PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
+            echo Moving $PACKAGE_NAME to system-tests/binaries
+            mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
+          displayName: Move dotnet binary to system test folder
+          
+        - script: |
+            set -e
+            cd system-tests
+            mkdir -p ../docker-images
+        
+            while read w; do
+              echo "------------------------------------"
+              echo "Building images for variant: $w"
+              echo "------------------------------------"
+              # Build the images. For example:
+              ./build.sh dotnet --weblog-variant $w
             
+              # Save weblog variant image
+              docker save system_tests/weblog:latest -o ../docker-images/$w.tar
+            done < /tmp/weblogs_list.txt
+            
+            # Save agent image
+            docker save system_tests/agent:latest -o ../docker-images/agent.tar
+
+          displayName: Build weblogs and agent & save Docker images
+            
+        - task: PublishPipelineArtifact@1
+          displayName: Publish Docker images artifact
+          inputs:
+            path: 'docker-images'
+            artifactName: 'docker-images'
+
     - job: tests
       displayName: ""
       timeoutInMinutes: 60
@@ -5115,12 +5132,22 @@ stages:
         inputs:
           artifact: docker-images
           path: $(Build.SourcesDirectory)
-  
+
       - script: |
-          docker load -i $(Build.SourcesDirectory)/system-tests-images.tar
-          echo "Docker images after loading:"
+          echo "Loading images for variant: $(WEBLOG_VARIANT)"
+          docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
+          
+          echo "Loading agent image"
+          docker load -i "$(Build.SourcesDirectory)/agent.tar"
+          
+          echo "Available Docker images after loading:"
           docker images
-        displayName: Load Docker images
+        displayName: Docker load the correct variant
+
+      - script: |
+              ./build.sh -i runner
+        displayName: Install runner
+        workingDirectory: system-tests
 
       - script: ./run.sh $(SCENARIO)
         workingDirectory: system-tests
