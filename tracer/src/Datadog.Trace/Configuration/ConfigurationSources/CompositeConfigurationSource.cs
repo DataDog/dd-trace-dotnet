@@ -48,7 +48,7 @@ namespace Datadog.Trace.Configuration
             _sources.Add(source);
             if (source is JsonConfigurationSource)
             {
-                JsonConfigurationSource = source.ToString();
+                JsonConfigurationSource = source.ToString() ?? "N/A";
             }
         }
 
