@@ -195,7 +195,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -238,7 +238,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -295,7 +295,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -406,7 +406,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -466,7 +466,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -577,7 +577,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.LogAspectException(ex, $"{nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
