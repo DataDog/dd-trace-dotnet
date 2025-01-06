@@ -636,6 +636,8 @@ public class ReplaceAspectAnalyzerTests
                   static class IastModule
                   {
                       public static readonly IDatadogLogger Log = new DatadogLogging();
+                      
+                      public static void LogAspectException(Exception ex, string message) => Log.Error(ex, message);
                   }
               }
               """;
