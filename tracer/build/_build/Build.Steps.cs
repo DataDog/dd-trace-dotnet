@@ -1888,7 +1888,7 @@ partial class Build
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None || p.RequiresDockerDependency() == DockerDependencyType.Mixed,
+                    (false, { } p) => p.RequiresDockerDependency() is DockerDependencyType.None or DockerDependencyType.Mixed,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 })
                 .Where(x =>
