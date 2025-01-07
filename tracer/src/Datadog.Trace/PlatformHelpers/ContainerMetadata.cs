@@ -154,7 +154,7 @@ namespace Datadog.Trace.PlatformHelpers
 
             try
             {
-                var statCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("stat", $"-c %i {path}"));
+                var statCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("stat", $"--printf=%i {path}"));
                 return long.TryParse(statCommand?.Output, out result);
             }
             catch (Exception ex)

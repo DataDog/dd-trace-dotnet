@@ -225,6 +225,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             string sysFsCgroupPath = Path.Combine(Path.GetTempPath(), $"temp-sysfscgroup-{Guid.NewGuid():n}");
             string controllerCgroupPath = Path.Combine(sysFsCgroupPath, relativePathToCreate);
             Directory.CreateDirectory(controllerCgroupPath);
+
             string expected = isSuccess && ContainerMetadata.TryGetInode(controllerCgroupPath, out long inode) ? inode.ToString() : null;
 
             // act
@@ -239,6 +240,22 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             {
                 Directory.Delete(sysFsCgroupPath, recursive: true);
             }
+        }
+
+        // Given an actual file, we should be able to get a result back in all linux environments
+        [Fact]
+        public void Parse_TryGetInode()
+        {
+            if (!EnvironmentTools.IsLinux())
+            {
+                throw new SkipException("Obtaining the inode is only supported on Linux");
+            }
+
+            string currentDirectory = Environment.CurrentDirectory;
+            string actual = ContainerMetadata.TryGetInode(currentDirectory, out long inode) ? inode.ToString() : null;
+
+            Assert.NotEqual("0", actual);
+            Assert.NotNull(actual);
         }
     }
 }
