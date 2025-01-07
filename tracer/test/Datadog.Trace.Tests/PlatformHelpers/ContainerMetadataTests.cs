@@ -225,7 +225,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             string sysFsCgroupPath = Path.Combine(Path.GetTempPath(), $"temp-sysfscgroup-{Guid.NewGuid():n}");
             string controllerCgroupPath = Path.Combine(sysFsCgroupPath, relativePathToCreate);
             Directory.CreateDirectory(controllerCgroupPath);
-
             string expected = isSuccess && ContainerMetadata.TryGetInode(controllerCgroupPath, out long inode) ? inode.ToString() : null;
 
             // act
