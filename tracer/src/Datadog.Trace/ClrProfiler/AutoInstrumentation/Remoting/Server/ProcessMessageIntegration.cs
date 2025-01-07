@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
 
             try
             {
-                extractedContext = SpanContextPropagator.Instance
+                extractedContext = TracerManager.Instance.SpanContextPropagator
                                                         .Extract(requestHeaders, (headers, key) => headers[key] is { } value ? [value.ToString()] : [])
                                                         .MergeBaggageInto(Baggage.Current);
             }

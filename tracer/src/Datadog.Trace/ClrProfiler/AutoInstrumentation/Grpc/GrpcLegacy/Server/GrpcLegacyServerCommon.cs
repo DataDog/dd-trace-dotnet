@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
+// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             {
                 if (metadata is not null)
                 {
-                    return SpanContextPropagator.Instance.Extract(new MetadataHeadersCollection(metadata));
+                    return TracerManager.Instance.SpanContextPropagator.Extract(new MetadataHeadersCollection(metadata));
                 }
             }
             catch (Exception ex)

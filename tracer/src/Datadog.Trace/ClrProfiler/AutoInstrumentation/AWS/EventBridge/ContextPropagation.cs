@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             var jsonBuilder = Util.StringBuilderCache.Acquire();
             jsonBuilder.Append('{');
 
-            SpanContextPropagator.Instance.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
+            TracerManager.Instance.SpanContextPropagator.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
 
             // Inject start time and bus name
             var startTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

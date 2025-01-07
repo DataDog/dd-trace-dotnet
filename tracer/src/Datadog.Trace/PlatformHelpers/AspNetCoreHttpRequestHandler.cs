@@ -61,7 +61,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // extract propagation details from http headers
                 if (request.Headers is { } headers)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(headers));
+                    return TracerManager.Instance.SpanContextPropagator.Extract(new HeadersCollectionAdapter(headers));
                 }
             }
             catch (Exception ex)
@@ -83,7 +83,7 @@ namespace Datadog.Trace.PlatformHelpers
                     // extract propagation details from http headers
                     if (request.Headers is { } requestHeaders)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(
+                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
                             span,
                             new HeadersCollectionAdapter(requestHeaders),
                             headerTagsInternal,

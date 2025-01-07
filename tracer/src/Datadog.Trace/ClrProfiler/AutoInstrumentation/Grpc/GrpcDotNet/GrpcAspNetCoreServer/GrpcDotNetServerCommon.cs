@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcDotNetServerCommon.cs" company="Datadog">
+// <copyright file="GrpcDotNetServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 // extract propagation details from http headers
                 if (request.Headers is { } requestHeaders)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
+                    return TracerManager.Instance.SpanContextPropagator.Extract(new HeadersCollectionAdapter(requestHeaders));
                 }
             }
             catch (Exception ex)
