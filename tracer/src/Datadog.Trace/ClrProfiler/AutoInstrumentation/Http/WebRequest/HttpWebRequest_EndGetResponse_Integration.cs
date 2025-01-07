@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     // We've already propagated baggage through the HTTP headers at this point,
                     // and when this method is called this is presumably the "bottom" of the call chain,
                     // and it may have been called on an entirely different thread.
-                    existingContext = SpanContextPropagator.Instance.Extract(headers);
+                    existingContext = TracerManager.Instance.SpanContextPropagator.Extract(headers);
                 }
 
                 var existingSpanContext = existingContext.SpanContext;

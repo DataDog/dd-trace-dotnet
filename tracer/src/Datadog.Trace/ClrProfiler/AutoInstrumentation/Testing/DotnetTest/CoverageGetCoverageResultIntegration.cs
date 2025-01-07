@@ -64,7 +64,7 @@ public class CoverageGetCoverageResultIntegration
             var percentage = coverageDetails.Percent;
             DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
 
-            var context = SpanContextPropagator.Instance.Extract(
+            var context = TracerManager.Instance.SpanContextPropagator.Extract(
                 EnvironmentHelpers.GetEnvironmentVariables(),
                 new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 

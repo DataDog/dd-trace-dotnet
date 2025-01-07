@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            TracerManager.Instance.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            TracerManager.Instance.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            TracerManager.Instance.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -158,7 +158,7 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            TracerManager.Instance.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -189,11 +189,11 @@ namespace Datadog.Trace.Tests
             var processor = new HeaderTagsProcessor();
             if (provideUserAgent)
             {
-                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix, uaInParameter);
+                TracerManager.Instance.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix, uaInParameter);
             }
             else
             {
-                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+                TracerManager.Instance.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
             }
 
             var tagsFromHeader = processor.TagsFromHeader;

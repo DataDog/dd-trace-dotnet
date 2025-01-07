@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     try
                     {
-                        extractedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -324,7 +324,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                SpanContextPropagator.Instance.Inject(context, adapter);
+                TracerManager.Instance.SpanContextPropagator.Inject(context, adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {

@@ -75,7 +75,8 @@ namespace Datadog.Trace
                 return;
             }
 
-            SpanContextPropagator.Instance.Inject(
+            var tracer = Tracer.Instance;
+            tracer.TracerManager.SpanContextPropagator.Inject(
                 new PropagationContext(spanContext, baggage: null),
                 carrier,
                 setter);
@@ -83,7 +84,7 @@ namespace Datadog.Trace
             // DSM
             if (!string.IsNullOrEmpty(messageType) &&
                 !string.IsNullOrEmpty(target) &&
-                Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
+                tracer.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
                 var edgeTags = new[] { "direction:out", $"topic:{target}", $"type:{messageType}" };
                 spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parent: null);

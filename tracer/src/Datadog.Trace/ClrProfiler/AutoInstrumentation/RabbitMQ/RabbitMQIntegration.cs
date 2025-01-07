@@ -181,7 +181,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
-            if (IsActiveScopeRabbitMQ(Tracer.Instance))
+            var tracer = Tracer.Instance;
+
+            if (IsActiveScopeRabbitMQ(tracer))
             {
                 // we are already instrumenting this,
                 // don't instrument nested methods that belong to the same stacktrace
@@ -204,7 +206,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 try
                 {
-                    extractedContext = SpanContextPropagator.Instance
+                    extractedContext = tracer.TracerManager.SpanContextPropagator
                                                             .Extract(basicProperties.Headers, default(ContextPropagation))
                                                             .MergeBaggageInto(Baggage.Current);
                 }
@@ -215,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
 
             var scope = CreateScope(
-                Tracer.Instance,
+                tracer,
                 out var tags,
                 "basic.deliver",
                 context: extractedContext,

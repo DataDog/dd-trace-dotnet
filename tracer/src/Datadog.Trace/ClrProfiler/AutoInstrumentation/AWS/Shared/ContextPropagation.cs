@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
-            SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
+            TracerManager.Instance.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
 
             if (context.SpanContext?.PathwayContext is { } pathwayContext)
             {
