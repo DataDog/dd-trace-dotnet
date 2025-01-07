@@ -1280,10 +1280,25 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
+            // Compile the dependent samples.
+            // These are either directly used by the integration tests or depend on Datadog.Trace already being built
+            // It would be preferable to have these all in a separate "build" solution to avoid complexity,
+            // but we'll do that later
             if (!Framework.ToString().StartsWith("net46"))
             {
                 // we need to build RazorPages before integration tests for .net46x
                 DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
+
+                // These directly reference Datadog.Trace
+                var directDatadogTraceReferences = Solution
+                                                  .AllProjects
+                                                  .Where(project => project.SolutionFolder.Name == "instrumentation"
+                                                                 && project.ReferencesDatadogTrace()
+                                                                 && project.TryGetTargetFrameworks()?.Contains(Framework) != false);
+                foreach (var project in directDatadogTraceReferences)
+                {
+                    DotnetBuild(project, framework: Framework);
+                }
             }
 
             var projects = TracerDirectory
@@ -1423,6 +1438,7 @@ partial class Build
 
     Target CompileTrimmingSamples => _ => _
         .Description("Compiles the trimming samples")
+        .After(CompileManagedSrc)
         .Requires(() => Framework)
         .Unlisted()
         .After(Clean)
