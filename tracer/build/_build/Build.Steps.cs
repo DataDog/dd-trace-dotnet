@@ -199,7 +199,7 @@ partial class Build
         var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
         if (IsGitBaseBranch(baseBranch))
         {
-            // do a full run on the main branch
+         // do a full run on the main branch
             return true;
         }
 
@@ -207,8 +207,14 @@ partial class Build
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
             {
+                // Changes to the definitions (new integrations etc)
                 $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
                 $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator",
+            })
+            .Concat(new [] {
+                // Changes to the integrations themselves, e.g. change in behaviour
+                "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation",
+                "tracer/src/Datadog.Trace/Iast/Aspects"
             })
             .ToList();
 
@@ -1888,7 +1894,7 @@ partial class Build
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (false, { } p) => p.RequiresDockerDependency() is DockerDependencyType.None or DockerDependencyType.Mixed,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 })
                 .Where(x =>
@@ -1938,7 +1944,7 @@ partial class Build
                     (null, _) => true,
                     (_, { project: null}) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.project.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None,
+                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None || p.project.RequiresDockerDependency() == DockerDependencyType.Mixed,
                     (true, { } p) => p.project.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
