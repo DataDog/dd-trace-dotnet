@@ -1,6 +1,8 @@
 using System;
-using Hangfire;
 using System.Threading;
+using Hangfire;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
 
 namespace Samples.Hangfire;
 
@@ -13,6 +15,10 @@ public static class Program
         GlobalConfiguration.Configuration.UseInMemoryStorage();
         GlobalJobFilters.Filters.Add(new ContinuationsSupportAttribute());
         using var server = new BackgroundJobServer();
+
+        using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+            .AddHangfireInstrumentation()
+            .Build();
 
         RunBackgroundJobs();
         _individualJobsDone.Wait();

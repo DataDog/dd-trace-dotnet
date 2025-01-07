@@ -6,8 +6,10 @@
 #nullable enable
 
 using System;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Logging;
+using static Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Activity
 {
@@ -18,10 +20,10 @@ namespace Datadog.Trace.Activity
         private static readonly InstrumentationLibrary[] Registry =
             [
                 // Package: OpenTelemetry.Instrumentation.Hangfire, Versions: v1.6.0-beta.1+
-                new("OpenTelemetry.Instrumentation.Hangfire", "OpenTelemetry.Instrumentation.Hangfire.Implementation.HangfireInstrumentation", "OpenTelemetry.Trace.HangfireInstrumentationOptions")
+                new("OpenTelemetry.Instrumentation.Hangfire", "OpenTelemetry.Trace.TracerProviderBuilderExtensions.AddHangfireInstrumentation", "OpenTelemetry.Instrumentation.Hangfire.Implementation.HangfireInstrumentation", "OpenTelemetry.Trace.HangfireInstrumentationOptions")
             ];
 
-        private InstrumentationLibrary(string assemblyName, string instrumentationTypeName, string? instrumentationOptionsTypeName)
+        private InstrumentationLibrary(string assemblyName, string publicApiMember, string instrumentationTypeName, string? instrumentationOptionsTypeName)
         {
             AssemblyName = assemblyName;
             InstrumentationTypeName = instrumentationTypeName;
@@ -40,6 +42,15 @@ namespace Datadog.Trace.Activity
             {
                 Log.Debug("Attempting to load OpenTelemetry instrumentation type {InstrumentationTypeName}.", item.InstrumentationTypeName);
 
+                if (Assembly.GetEntryAssembly() is Assembly entryAssembly
+                    && entryAssembly.GetReferencedAssemblies().FirstOrDefault(a => a.Name?.Equals(item.AssemblyName, StringComparison.OrdinalIgnoreCase) == true) is not default(AssemblyName))
+                {
+                    // Can we also tell if there exist a memberref to it?
+                    // entryAssembly.GetModules().First().
+                    Log.Warning("Skipping the initialization of OpenTelemetry Instrumentation type {InstrumentationTypeName}. The application already references assembly {AssemblyName}.", item.InstrumentationTypeName, item.AssemblyName);
+                    continue;
+                }
+
                 if (Type.GetType($"{item.InstrumentationTypeName}, {item.AssemblyName}", throwOnError: false) is Type instrumentationType)
                 {
                     if (!string.IsNullOrEmpty(item.InstrumentationOptionsTypeName)
@@ -49,11 +60,11 @@ namespace Datadog.Trace.Activity
                     {
                         try
                         {
-                            Log.Debug("Initializing OpenTelemetry instrumentation type {InstrumentationTypeName} with options {InstrumentationOptionsTypeName}.", item.InstrumentationTypeName, item.InstrumentationOptionsTypeName);
+                            Log.Information("Initializing OpenTelemetry instrumentation type {InstrumentationTypeName} with options {InstrumentationOptionsTypeName}.", item.InstrumentationTypeName, item.InstrumentationOptionsTypeName);
                             var options = optionsCtor.Invoke(null);
                             typeCtor.Invoke([options]);
 
-                            Log.Debug("Successfully initialized OpenTelemetry instrumentation type {InstrumentationTypeName} with options {InstrumentationOptionsTypeName}.", item.InstrumentationTypeName, item.InstrumentationOptionsTypeName);
+                            Log.Information("Successfully initialized OpenTelemetry instrumentation type {InstrumentationTypeName} with options {InstrumentationOptionsTypeName}.", item.InstrumentationTypeName, item.InstrumentationOptionsTypeName);
                             continue;
                         }
                         catch (Exception ex)
