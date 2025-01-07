@@ -414,7 +414,7 @@ partial class Build
                         solutions: new[] { Solution },
                         randomizeProjectIds: false);
 
-                    // Remove everything except the test-application projects
+                    // Remove everything except the standalone test-application projects
                     sln.AllProjects
                        .Where(x => !IsTestApplication(x))
                        .ForEach(x =>
@@ -423,9 +423,6 @@ partial class Build
                             sln.RemoveProject(x);
                         });
                     
-                    // Remove the _build project 
-                    sln.RemoveProject(Solution.GetProject("_build"));
-
                     sln.Save();
 
                     bool IsTestApplication(Project x)
@@ -433,7 +430,7 @@ partial class Build
                         // We explicitly don't build some of these because
                         // 1. They're a pain to build
                         // 2. They aren't actually run in the CI (something we should address in the future)
-                        if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject")
+                        if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject" or "_build")
                         {
                             return false;
                         }
@@ -462,7 +459,9 @@ partial class Build
 
                             if (solutionFolder.Name == "test-applications")
                             {
-                                return true;
+                                // Exclude projects which directly reference Datadog.Trace - these need to be
+                                // built with the "main" solution as they're inherently not standalone
+                                return !x.ReferencesDatadogTrace();
                             }
 
                             solutionFolder = solutionFolder.SolutionFolder;

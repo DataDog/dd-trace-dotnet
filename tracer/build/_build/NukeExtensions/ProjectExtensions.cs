@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using Nuke.Common.ProjectModel;
 using Logger = Serilog.Log;
 
@@ -40,6 +41,29 @@ public static class ProjectExtensions
         {
             Logger.Information($"Error checking RequiresDockerDependency for {project?.Name}: {ex}");
             return DockerDependencyType.None;
+        }
+    }
+
+    public static bool ReferencesDatadogTrace(this Project project)
+    {
+        try
+        {
+            if(Path.GetExtension(project.Path) != ".csproj")
+            {
+                return false;
+            }
+
+            // Using GetMsBuildProject() instead of built-in so that we can cache the MSBuild projects,
+            // because this is very expensive
+            var propertyValue = GetMsBuildProject(project).GetProperty("AllowDatadogTraceReference")?.EvaluatedValue;
+            return propertyValue is not null
+                && bool.TryParse(propertyValue, out var result)
+                && result;
+        }
+        catch (Exception ex)
+        {
+            Logger.Information(ex, "Error checking ReferencesDatadogTrace for {ProjectName}", project?.Name);
+            return false;
         }
     }
 
