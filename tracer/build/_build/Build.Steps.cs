@@ -43,17 +43,17 @@ partial class Build
     AbsolutePath BuildArtifactsDirectory => RootDirectory / "artifacts";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
-    AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
-    AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
+    AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "symbols";
+    AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
     AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
-    AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
+    AbsolutePath ToolSourceDirectory => ToolSource ?? (BuildArtifactsDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
 
-    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (BuildArtifactsDirectory / "monitoring-home");
 
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
@@ -68,7 +68,7 @@ partial class Build
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
-    AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
+    AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? BuildArtifactsDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
