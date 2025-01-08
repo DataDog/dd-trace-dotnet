@@ -242,13 +242,10 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         // Given an actual file, we should be able to get a result back in all linux environments
-        [Fact]
+        [SkippableFact]
         public void Parse_TryGetInode()
         {
-            if (!EnvironmentTools.IsLinux())
-            {
-                throw new SkipException("Obtaining the inode is only supported on Linux");
-            }
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
             string currentDirectory = Environment.CurrentDirectory;
             string actual = ContainerMetadata.TryGetInode(currentDirectory, out long inode) ? inode.ToString() : null;
