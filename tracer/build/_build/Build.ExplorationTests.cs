@@ -123,7 +123,7 @@ partial class Build
 
         if (!string.IsNullOrEmpty(testDescription.GitRepositorySha))
         {
-            var resetCommand = $"git reset --hard {testDescription.GitRepositorySha}";
+            var resetCommand = $"reset --hard {testDescription.GitRepositorySha}";
             GitTasks.Git(resetCommand);
         }
 
