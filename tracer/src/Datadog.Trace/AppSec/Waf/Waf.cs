@@ -113,7 +113,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string[] GetKnownAddresses()
         {
-            return _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+            _wafLocker.EnterWriteLock();
+            var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+            _wafLocker.ExitWriteLock();
+
+            return result;
         }
 
         private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
