@@ -50,6 +50,10 @@ namespace Datadog.Trace.Configuration
             {
                 JsonConfigurationSource = source.ToString() ?? "N/A";
             }
+            else
+            {
+                JsonConfigurationSource = "failed to identify if composite configuration source is json";
+            }
         }
 
         /// <summary>
