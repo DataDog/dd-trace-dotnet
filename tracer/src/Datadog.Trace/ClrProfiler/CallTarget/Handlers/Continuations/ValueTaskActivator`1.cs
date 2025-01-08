@@ -90,5 +90,7 @@ internal static class ValueTaskActivator<TValueTask, TResult>
         => (TValueTask)Activator.CreateInstance(typeof(TValueTask), task)!;
 
     public static TValueTask CreateInstance(Task<TResult> task) => TaskActivator(task);
+
+    public static TValueTask CreateInstance(TResult result) => ResultActivator(result);
 }
 #endif

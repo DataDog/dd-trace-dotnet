@@ -80,7 +80,7 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TR
                 // ok all good, just run synchronously
                 var unwrappedResult = previousValueTask.Result;
                 _continuation(instance, unwrappedResult, exception, in state);
-                return returnValue;
+                return ValueTaskActivator<TReturn, TResult?>.CreateInstance(unwrappedResult);
             }
 
             // uh oh, need to extract the task, await it, run the continuation
