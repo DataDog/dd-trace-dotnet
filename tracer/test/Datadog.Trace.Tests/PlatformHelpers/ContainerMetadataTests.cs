@@ -248,10 +248,9 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
             string currentDirectory = Environment.CurrentDirectory;
-            string actual = ContainerMetadata.TryGetInode(currentDirectory, out long inode) ? inode.ToString() : null;
-
-            Assert.NotEqual("0", actual);
-            Assert.NotNull(actual);
+            bool success = ContainerMetadata.TryGetInode(currentDirectory, out long inode);
+            Assert.True(inode > 0);
+            Assert.True(success);
         }
     }
 }
