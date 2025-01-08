@@ -34,6 +34,9 @@ steps:
 
         echo "Manually prepending to path"
         echo "##vso[task.prependpath]$path"
+
+        echo "Manually exporting path to DOTNET_ROOT"
+        echo "##vso[task.setvariable variable=DOTNET_ROOT]$path"
       } else {
         $path = "$HOME\AppData\Local\Microsoft\dotnet_32"
         $arch = "x86"
