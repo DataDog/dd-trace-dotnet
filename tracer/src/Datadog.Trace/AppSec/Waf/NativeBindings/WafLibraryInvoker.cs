@@ -243,32 +243,24 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal string[] GetKnownAddresses(IntPtr wafHandle)
         {
-            try
+            uint size = 0;
+            var result = _getKnownAddresses(wafHandle, ref size);
+
+            if (size == 0)
             {
-                uint size = 0;
-                var result = _getKnownAddresses(wafHandle, ref size);
-
-                if (size == 0)
-                {
-                    return Array.Empty<string>();
-                }
-
-                string[] knownAddresses = new string[size];
-
-                for (uint i = 0; i < size; i++)
-                {
-                    // Calculate the pointer to each string
-                    var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
-                    knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
-                }
-
-                return knownAddresses;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while getting known addresses");
                 return Array.Empty<string>();
             }
+
+            string[] knownAddresses = new string[size];
+
+            for (uint i = 0; i < size; i++)
+            {
+                // Calculate the pointer to each string
+                var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
+            }
+
+            return knownAddresses;
         }
 
         internal bool IsKnowAddressesSuported(string libVersion = null)

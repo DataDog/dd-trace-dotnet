@@ -113,16 +113,32 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string[] GetKnownAddresses()
         {
-            if (_wafLocker.EnterWriteLock())
+            bool lockAcquired = false;
+            try
             {
-                var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
-                _wafLocker.ExitWriteLock();
-                return result;
+                if (_wafLocker.EnterWriteLock())
+                {
+                    lockAcquired = true;
+
+                    var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+                    return result;
+                }
+                else
+                {
+                    return Array.Empty<string>();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // Timeout acquiring lock
+                Log.Error(ex, "Error while getting known addresses");
                 return Array.Empty<string>();
+            }
+            finally
+            {
+                if (lockAcquired)
+                {
+                    _wafLocker.ExitWriteLock();
+                }
             }
         }
 
