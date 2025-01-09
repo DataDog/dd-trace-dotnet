@@ -2,37 +2,38 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.Common;
 using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
-using System.Reflection;
-using System.Runtime.Versioning;
 using System.Security.Cryptography;
-using System.Text;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Text.Json;
 #endif
-using System.Threading.Tasks;
+using System.Threading;
 using System.Xml;
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+#if NET5_0_OR_GREATER
+using System.Runtime.Versioning;
+using Ubiety.Dns.Core;
+using System.Reflection;
+
+
+#endif
+
 #if NETCOREAPP3_0_OR_GREATER
 using MySql.Data.MySqlClient;
 using Npgsql;
@@ -584,6 +585,70 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
+        // This method actually performs some file operations after the request has been normally closed.
+        [HttpGet("GetFileContentThread")]
+        [Route("GetFileContentThread")]
+        public IActionResult GetFileContentThread(string file)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                var thread = new Thread(() => { GetFileAux(file, i); });
+                thread.Start();
+            }
+
+            return Content("Ok");
+        }
+
+        private void GetFileAux(string file, int i)
+        {
+            try
+            {
+                Thread.Sleep(i);
+                GetFileContent(file);
+            }
+            catch (Exception ex)
+            {
+                if (!ex.Message.Contains("BlockException"))
+                {
+                    throw;
+                }
+            }
+        }
+
+#if NET5_0_OR_GREATER
+        // This method tests some edge conditions that can happen
+        [HttpGet("GetFileContentEdgeConditions")]
+        [Route("GetFileContentEdgeConditions")]
+        public IActionResult GetFileContentEdgeConditions(string file, bool uninitializeContext = true, bool setStatusCode = true, bool setContent = true, bool abortContext = true)
+        {
+            if (setStatusCode)
+            {
+                Response.StatusCode = 200;
+            }
+
+            if (setContent)
+            {
+                Response.ContentType = "text/plain";
+                Response.WriteAsync("This is a dummy content.").Wait();
+            }
+
+            if (abortContext)
+            {
+                HttpContext.Abort();
+            }
+
+            if (uninitializeContext)
+            {
+                (HttpContext as DefaultHttpContext)?.Uninitialize();
+            }
+
+            // call RASP and IAST
+            GetFileAux(file, 0);
+
+            return Content("Ok");
+        }
+#endif
+
         [HttpGet("GetFileContent")]
         [Route("GetFileContent")]
         public IActionResult GetFileContent(string file)
@@ -1133,7 +1198,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             return View("Xss");
         }
 
-        #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [HttpGet("InterpolatedSqlString")]
         [Route("InterpolatedSqlString")]
         public IActionResult InterpolatedSqlString(string name)
@@ -1173,7 +1238,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return Content("Yey");
         }
-        #endif
+#endif
 
         [HttpGet("TestJsonTagSizeExceeded")]
         [Route("TestJsonTagSizeExceeded")]
