@@ -170,6 +170,38 @@ public abstract class AzureFunctionsTests : TestHelper
     }
 #endif
 
+// v1 is only supported on .NET 6 and 7
+#if NET6_0 || NET7_0
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4SdkV1 : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4SdkV1(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.SdkV1", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 21;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+
+                await AssertIsolatedSpans(spans);
+            }
+        }
+    }
+#endif
+
 #if NET6_0_OR_GREATER
     [UsesVerify]
     [Collection(nameof(AzureFunctionsTestsCollection))]
