@@ -112,15 +112,9 @@ namespace Datadog.Trace.PlatformHelpers
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
-            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags);
+            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
-
-            foreach (var link in extractedContext.Links)
-            {
-                // TODO: We should probably just add this as another argument in StartActiveInternal
-                scope.Span.AddLink(link);
-            }
 
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
             httpContext.Features.Set(new RequestTrackingFeature(originalPath, scope));
