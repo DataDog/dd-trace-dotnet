@@ -1,0 +1,9 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- Azure functions build a separate worker project as part of the build -->
+    <!-- Attempt to clobber the path, because otherwise it overwrites and causes issue -->
+    <ExtensionsCsProjDirectory>$(ArtifactsPath)/WorkerExtensions/Samples.AzureFunctions.V4/bin/$(ArtifactsPivots)</ExtensionsCsProjDirectory>
+  </PropertyGroup>
+</Project>
