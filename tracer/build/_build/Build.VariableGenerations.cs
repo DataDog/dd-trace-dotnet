@@ -204,6 +204,8 @@ partial class Build : NukeBuild
                     // new {framework = TargetFramework.NETCOREAPP3_1, runtimeInstall = v3Install, runtimeUninstall = v3Uninstall },
                     new {framework = TargetFramework.NET6_0 },
                     new {framework = TargetFramework.NET7_0 },
+                    new {framework = TargetFramework.NET8_0 },
+                    new {framework = TargetFramework.NET9_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
