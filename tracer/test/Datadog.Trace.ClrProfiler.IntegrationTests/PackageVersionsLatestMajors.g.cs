@@ -1984,7 +1984,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-      public static IEnumerable<object[]> AzureFunctions =>
+      public static IEnumerable<object[]> AzureFunctionsSdkV1 =>
 
             new List<object[]>
             {
@@ -1993,10 +1993,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NET6_0
                 new object[] { "1.24.0" },
-                new object[] { "2.0.0" },
 #endif
 #if NET7_0
                 new object[] { "1.24.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> AzureFunctions =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET6_0
+                new object[] { "2.0.0" },
+#endif
+#if NET7_0
                 new object[] { "2.0.0" },
 #endif
 #endif
