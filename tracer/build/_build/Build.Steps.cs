@@ -632,7 +632,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()
-                //.EnableNoRestore()
+                .EnableNoRestore()
                 .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
                     .SetOutput(MonitoringHomeDirectory / framework))
@@ -1321,7 +1321,7 @@ partial class Build
                     .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
                 ;
 
-            DotnetBuild(projects, framework: Framework, noRestore: false);
+            DotnetBuild(projects, framework: Framework);
         });
 
     Target CompileSamples => _ => _
@@ -1571,8 +1571,8 @@ partial class Build
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableCrashDumps()
-                    // .EnableNoRestore()
-                    // .EnableNoBuild()
+                    .EnableNoRestore()
+                    .EnableNoBuild()
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
