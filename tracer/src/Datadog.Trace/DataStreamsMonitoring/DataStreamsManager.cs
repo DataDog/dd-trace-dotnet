@@ -43,7 +43,7 @@ internal class DataStreamsManager
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
 
     public static DataStreamsManager Create(
-        ImmutableTracerSettings settings,
+        TracerSettings settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
     {
@@ -51,7 +51,7 @@ internal class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
                          : null;
 
-        return new DataStreamsManager(settings.EnvironmentInternal, defaultServiceName, writer);
+        return new DataStreamsManager(settings.Environment, defaultServiceName, writer);
     }
 
     public async Task DisposeAsync()
@@ -83,21 +83,12 @@ internal class DataStreamsManager
     public void InjectPathwayContext<TCarrier>(PathwayContext? context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
     {
-        if (!IsEnabled)
+        if (!IsEnabled || context is null)
         {
             return;
         }
 
-        if (context is not null)
-        {
-            DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
-            return;
-        }
-
-        // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
-        // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
-        // you will hit this code path
-        Log.Debug("Attempted to inject null pathway context");
+        DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
     }
 
     public void TrackBacklog(string tags, long value)

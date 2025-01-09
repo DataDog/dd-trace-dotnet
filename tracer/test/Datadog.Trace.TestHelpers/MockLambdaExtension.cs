@@ -133,6 +133,11 @@ public class MockLambdaExtension : IDisposable
             string? errorMsg = headers.Get("x-datadog-invocation-error-msg") ?? null;
             string? errorType = headers.Get("x-datadog-invocation-error-type") ?? null;
             string? errorStack = headers.Get("x-datadog-invocation-error-stack") ?? null;
+
+            errorMsg = DecodeBase64(errorMsg);
+            errorType = DecodeBase64(errorType);
+            errorStack = DecodeBase64(errorStack);
+
             var invocation = new EndExtensionRequest(headers, body,  traceId, spanId, samplingPriority, isError, errorMsg, errorType, errorStack);
 
             EndInvocations.Push(invocation);
@@ -145,6 +150,26 @@ public class MockLambdaExtension : IDisposable
 
         ctx.Response.StatusCode = 200;
         ctx.Response.Close();
+    }
+
+    private static string? DecodeBase64(string? input)
+    {
+        if (input == null)
+        {
+            return input;
+        }
+
+        try
+        {
+            // Try to decode the string as base64
+            byte[] decodedBytes = Convert.FromBase64String(input);
+            return System.Text.Encoding.UTF8.GetString(decodedBytes);
+        }
+        catch (FormatException)
+        {
+            // If it is not a valid base64 string, return original input
+            return input;
+        }
     }
 
     private void HandleHttpRequests()

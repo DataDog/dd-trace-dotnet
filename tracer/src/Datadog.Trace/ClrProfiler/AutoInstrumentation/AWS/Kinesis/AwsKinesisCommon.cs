@@ -22,6 +22,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal const string IntegrationName = nameof(IntegrationId.AwsKinesis);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsKinesis;
 
+        public static string? StreamNameFromARN(string? arn)
+        {
+            if (string.IsNullOrEmpty(arn))
+            {
+                return null;
+            }
+
+            var arnComponents = arn!.Split('/');
+            if (arnComponents.Length != 2)
+            {
+                return null;
+            }
+
+            return arnComponents[1];
+        }
+
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext? parentContext, out AwsKinesisTags? tags)
         {
             tags = null;

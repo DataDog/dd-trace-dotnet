@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.7.0";
+    readonly string Version = "3.9.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -129,6 +129,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
+                            Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
 
     Target Clean => _ => _
@@ -205,7 +206,7 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateRootDescriptorsFile);
+        .DependsOn(CreateTrimmingFile);
     
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
@@ -218,7 +219,7 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateRootDescriptorsFile);
+        .DependsOn(CreateTrimmingFile);
 
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -371,7 +372,7 @@ partial class Build : NukeBuild
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
-        .DependsOn(CreateRequiredDirectories, CreateRootDescriptorsFile)
+        .DependsOn(CreateRequiredDirectories, CreateTrimmingFile)
         .Executes(() =>
         {
             DotNetPack(s => s

@@ -31,6 +31,7 @@ public class CreatedumpTests : ConsoleTestHelper
     private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
 #endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
+    private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled";
 
     public CreatedumpTests(ITestOutputHelper output)
         : base(output)
@@ -372,6 +373,28 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
     [SkippableFact]
+    public async Task ResumeProcessWhenCrashing()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-native",
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_INTERNAL_CRASHTRACKING_CRASH", "1")]);
+
+        var completion = await Task.WhenAny(helper.Task, Task.Delay(TimeSpan.FromMinutes(1)));
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        Assert.Equal(completion, helper.Task);
+    }
+
+    [SkippableFact]
     public async Task CheckThreadName()
     {
         // Test that threads prefixed with DD_ are marked as suspicious even if they have nothing of Datadog in the stacktrace
@@ -475,6 +498,32 @@ public class CreatedumpTests : ConsoleTestHelper
         }
 
         File.Exists(reportFile.Path).Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public async Task OptionallyReportNonDatadogCrashes()
+    {
+        // This test only validates the case where DD_CRASHTRACKING_FILTERING_ENABLED is set to 0
+        // The default case is tested by IgnoreNonDatadogCrashes
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash",
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_FILTERING_ENABLED", "0")]);
+
+        await helper.Task;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportUnfilteredExpectedOutput);
+        }
+
+        File.Exists(reportFile.Path).Should().BeTrue();
     }
 
     [SkippableFact]

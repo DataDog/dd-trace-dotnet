@@ -52,7 +52,7 @@ public class HashAlgorithmIntegrationTer
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream data, CancellationToken token)
     {
-        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance));
+        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, false));
     }
 
     /// <summary>

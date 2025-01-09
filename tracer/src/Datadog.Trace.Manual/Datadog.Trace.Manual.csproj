@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>3.7.0</Version>
+    <Version>3.9.0</Version>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
     <PackageId>Datadog.Trace</PackageId>
     <Title>Datadog APM</Title>
@@ -35,7 +35,6 @@
     <Compile Include="..\Datadog.Trace\IScope.cs" />
     <Compile Include="..\Datadog.Trace\ISpan.cs" />
     <Compile Include="..\Datadog.Trace\ISpanContext.cs" />
-    <Compile Include="..\Datadog.Trace\ITracer.cs" />
     <Compile Include="..\Datadog.Trace\SamplingPriority.cs" />
     <Compile Include="..\Datadog.Trace\SamplingPriorityValues.cs" />
     <Compile Include="..\Datadog.Trace\SpanCreationSettings.cs" />

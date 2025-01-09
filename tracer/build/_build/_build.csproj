@@ -14,6 +14,9 @@
     <NukeExcludeDirectoryBuild>True</NukeExcludeDirectoryBuild>
     <NukeTasksEnabled>False</NukeTasksEnabled>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
+    <!-- We need to run with both the .NET 7 and .NET 9 SDKs, because .NET 7 is the -->
+    <!-- latest version we can use in CentOs 7 -->
+    <LangVersion>11</LangVersion>
     <!-- Required, otherwise we can run with .NET 8 -->
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
   </PropertyGroup>
@@ -58,7 +61,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Honeypot\Datadog.Dependabot.Honeypot.template" />
-    <EmbeddedResource Include="Honeypot\Datadog.Dependabot.Honeypot.template" />
+    <None Remove="Honeypot/Datadog.Dependabot.Honeypot.template"/>
+    <EmbeddedResource Include="Honeypot/Datadog.Dependabot.Honeypot.template">
+      <!-- We have to force this name because somehow on macOS, it's named without the first 'Honeypot.' -->
+      <LogicalName>Honeypot.Datadog.Dependabot.Honeypot.template</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 </Project>

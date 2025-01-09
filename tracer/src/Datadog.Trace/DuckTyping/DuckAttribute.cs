@@ -15,14 +15,21 @@ namespace Datadog.Trace.DuckTyping
     internal enum DuckKind
     {
         /// <summary>
-        /// Property
+        /// The target member is a Property
         /// </summary>
         Property,
 
         /// <summary>
-        /// Field
+        /// The target member is a Field
         /// </summary>
-        Field
+        Field,
+
+        /// <summary>
+        /// The target member could be a Property or a Field.
+        /// Both members will be checked for, the first matching member will be used.
+        /// Property members are checked for first.
+        /// </summary>
+        PropertyOrField
     }
 
     /// <summary>

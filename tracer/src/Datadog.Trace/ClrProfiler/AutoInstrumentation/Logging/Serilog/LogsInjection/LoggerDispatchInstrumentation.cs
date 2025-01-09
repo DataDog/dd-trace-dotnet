@@ -48,12 +48,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.Settings.LogsInjectionEnabledInternal)
+            if (tracer.Settings.LogsInjectionEnabled)
             {
                 var dict = loggingEvent.DuckCast<LogEventProxy>().Properties;
                 AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogServiceKey, tracer.DefaultServiceName);
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersionInternal);
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.EnvironmentInternal);
+                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersion);
+                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.Environment);
 
                 var spanContext = tracer.DistributedSpanContext;
                 if (spanContext is not null)

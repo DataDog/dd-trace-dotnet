@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -298,32 +299,30 @@ namespace Datadog.Trace.Ci.Configuration
         }
 
         private TracerSettings InitializeTracerSettings()
+            => InitializeTracerSettings(GlobalConfigurationSource.CreateDefaultConfigurationSource());
+
+        // Internal for testing
+        internal TracerSettings InitializeTracerSettings(CompositeConfigurationSource source)
         {
-            var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
-            var defaultExcludedUrlSubstrings = string.Empty;
-            var configResult = ((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, validator: null, recordValue: false);
-            if (configResult is { IsValid: true, Result: { } substrings } && !string.IsNullOrWhiteSpace(substrings))
-            {
-                defaultExcludedUrlSubstrings = substrings + ", ";
-            }
-
-            source.InsertInternal(0, new NameValueConfigurationSource(
-                                      new NameValueCollection
-                                      {
-                                          [ConfigurationKeys.HttpClientExcludedUrlSubstrings] = defaultExcludedUrlSubstrings + "/session/FakeSessionIdForPollingPurposes",
-                                      },
-                                      ConfigurationOrigins.Calculated));
-
-            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog());
+            // This is a somewhat hacky way to "tell" TracerSettings that we're running in CI Visibility
+            // There's no doubt various other ways we could flag it based on values we're _already_ extracting,
+            // but we don't want to set up too much interdependence there.
+            var telemetry = new ConfigurationTelemetry();
+            var additionalSource = new Dictionary<string, object?> { { ConfigurationKeys.CIVisibility.IsRunningInCiVisMode, true } };
 
             if (Logs)
             {
-                // Enable the direct log submission
-                tracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit");
-                tracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
+                // fetch the "original" values, and update them with the CI Visibility settings
+                var enabledDirectLogSubmissionIntegrations = new ConfigurationBuilder(source, telemetry)
+                                                            .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
+                                                            .AsString();
+                var logIntegrations = enabledDirectLogSubmissionIntegrations + ";XUnit";
+                additionalSource[ConfigurationKeys.DirectLogSubmission.EnabledIntegrations] = logIntegrations;
+                additionalSource[ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds] = 1;
             }
 
-            return tracerSettings;
+            var newSource = new CompositeConfigurationSource([new DictionaryObjectConfigurationSource(additionalSource), source]);
+            return new TracerSettings(newSource, telemetry, new OverrideErrorLog());
         }
     }
 }

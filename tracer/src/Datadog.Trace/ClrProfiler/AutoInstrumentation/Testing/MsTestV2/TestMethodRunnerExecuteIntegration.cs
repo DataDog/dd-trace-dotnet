@@ -38,12 +38,12 @@ public static class TestMethodRunnerExecuteIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         where TTarget : ITestMethodRunner
     {
         if (!MsTestIntegration.IsEnabled)
         {
-            return new CallTargetReturn<TReturn>(returnValue);
+            return new CallTargetReturn<TReturn?>(returnValue);
         }
 
         if (returnValue is IList { Count: > 0 } lstResults)
@@ -54,7 +54,7 @@ public static class TestMethodRunnerExecuteIntegration
                 {
                     if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive)
                     {
-                        if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
+                        if (instance.TestMethodInfo is not null && !MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
                         {
                             // This instrumentation catches all tests being ignored
                             MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false)?
@@ -69,7 +69,7 @@ public static class TestMethodRunnerExecuteIntegration
             }
         }
 
-        return new CallTargetReturn<TReturn>(returnValue);
+        return new CallTargetReturn<TReturn?>(returnValue);
     }
 
     [DuckCopy]

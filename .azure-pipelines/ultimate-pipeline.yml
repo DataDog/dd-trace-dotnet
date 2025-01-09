@@ -171,7 +171,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.7.0
+  ToolVersion: 3.9.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -1039,8 +1039,8 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    # The CreateRootDescriptorsFile tasks expects the native loader but we build that in the other stage
-    - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateRootDescriptorsFile
+    # The CreateTrimmingFile tasks expects the native loader but we build that in the other stage
+    - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile
       displayName: Build managed tracer + native loader
       retryCountOnTaskFailure: 1
 
@@ -1372,7 +1372,7 @@ stages:
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1386,6 +1386,8 @@ stages:
 
     - job: managed
       timeoutInMinutes: 60 #default value
+      strategy:
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_windows_matrix'] ]
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1394,7 +1396,7 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)
+      - script: tracer\build.cmd BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1413,7 +1415,7 @@ stages:
 
 - stage: unit_tests_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_macos, merge_commit_id]
+  dependsOn: [build_macos, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1423,6 +1425,9 @@ stages:
       jobs: [managed]
 
   - job: managed
+    strategy:
+      matrix:
+        $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_macos_matrix'] ]
     timeoutInMinutes: 90
     pool:
       vmImage: macos-13
@@ -1443,7 +1448,7 @@ stages:
           artifact: build-macos-native_tracer
           path: $(monitoringHome)
 
-      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)
+      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
         displayName: Build and Test
         retryCountOnTaskFailure: 1
         env:
@@ -1463,7 +1468,7 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1476,12 +1481,7 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        x64:
-          baseImage: debian
-          artifactSuffix: linux-x64
-        alpine:
-          baseImage: alpine
-          artifactSuffix: linux-musl-x64
+        $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
     pool:
       name: azure-linux-scale-set
 
@@ -1499,7 +1499,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests --code-coverage-enabled $(CodeCoverageEnabled)"
+        command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: artifacts/build_data
@@ -1516,7 +1516,7 @@ stages:
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64_tracer, merge_commit_id]
+  dependsOn: [build_arm64_tracer, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1527,14 +1527,10 @@ stages:
 
     - job: test
       timeoutInMinutes: 60 #default value
+
       strategy:
         matrix:
-          arm64:
-            baseImage: debian
-            artifactSuffix: linux-arm64
-          alpine:
-            baseImage: alpine
-            artifactSuffix: linux-musl-arm64
+          $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_arm64_matrix'] ]
       pool:
         name: aws-arm64-auto-scaling
       workspace:
@@ -1552,7 +1548,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildAndRunManagedUnitTests"
+            command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - publish: artifacts/build_data

@@ -69,14 +69,14 @@ internal class DataStreamsWriter : IDataStreamsWriter
     public long PointsDropped => Interlocked.Read(ref _pointsDropped);
 
     public static DataStreamsWriter Create(
-        ImmutableTracerSettings settings,
+        TracerSettings settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
         => new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings.EnvironmentInternal, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings.Environment, defaultServiceName),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
-            new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.ExporterInternal)),
+            new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
             discoveryService);
 

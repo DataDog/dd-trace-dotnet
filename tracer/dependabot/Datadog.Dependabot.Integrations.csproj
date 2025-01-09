@@ -8,43 +8,43 @@
   <ItemGroup>
     <!-- Integration: AerospikeClient -->
     <!--    Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/7.4.0 -->
-    <PackageReference Include="Aerospike.Client" Version="7.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/8.0.0 -->
+    <PackageReference Include="Aerospike.Client" Version="8.0.0" />
 
     <!-- Integration: Amazon.Lambda.RuntimeSupport -->
     <!--    Assembly: Amazon.Lambda.RuntimeSupport -->
-    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.12.1 -->
-    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.12.1" />
+    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.12.2 -->
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.12.2" />
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.400.57 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.400.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.400.74 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.400.74" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.403.7 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.403.7" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.401.55 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.401.55" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.16 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.16" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.34 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.34" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.51 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.51" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.57 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.74 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.74" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.57 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.74 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.74" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -53,8 +53,8 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!--    Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.6.1 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.6.1" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.8.0 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.8.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
@@ -68,13 +68,13 @@
 
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
-    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.28.3 -->
-    <PackageReference Include="Google.Protobuf" Version="3.28.3" />
+    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.29.2 -->
+    <PackageReference Include="Google.Protobuf" Version="3.29.2" />
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
     <!-- Latest package https://www.nuget.org/packages/GraphQL/8.2.1 -->
-    <PackageReference Include="GraphQL" Version="7.9.0" />
+    <PackageReference Include="GraphQL" Version="8.2.1" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!--    Assembly: GraphQL.SystemReactive -->
@@ -95,8 +95,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/14.1.0 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.14" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/14.3.0 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="14.3.0" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
@@ -163,6 +163,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.46.0 -->
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.0" />
 
+    <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
+    <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Functions.Worker.Core/2.0.0 -->
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Core" Version="2.0.0" />
+
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!--    Assembly: Microsoft.Azure.WebJobs.Host -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.41 -->
@@ -203,10 +208,12 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.VisualStudio.TestPlatform/14.0.0.1 -->
     <PackageReference Include="Microsoft.VisualStudio.TestPlatform" Version="14.0.0.1" />
 
+    <!-- Integration: MongoDB.Driver -->
+    <!--    Assembly: MongoDB.Driver -->
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.0.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="3.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.1.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
@@ -215,8 +222,8 @@
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.6.3 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.6.3" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.7.0 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.7.0" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -235,13 +242,13 @@
 
     <!-- Integration: Npgsql -->
     <!--    Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/9.0.1 -->
-    <PackageReference Include="Npgsql" Version="9.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/9.0.2 -->
+    <PackageReference Include="Npgsql" Version="9.0.2" />
 
     <!-- Integration: nunit.framework -->
     <!--    Assembly: nunit.framework -->
-    <!-- Latest package https://www.nuget.org/packages/NUnit/4.2.2 -->
-    <PackageReference Include="NUnit" Version="4.2.2" />
+    <!-- Latest package https://www.nuget.org/packages/NUnit/4.3.2 -->
+    <PackageReference Include="NUnit" Version="4.3.2" />
 
     <!-- Integration: OpenTelemetry -->
     <!--    Assembly: OpenTelemetry -->
@@ -255,8 +262,8 @@
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!--    Assembly: Oracle.ManagedDataAccess -->
-    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.6.1 -->
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.6.1" />
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.7.0 -->
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.7.0" />
 
     <!-- Integration: RabbitMQ.Client -->
     <!--    Assembly: RabbitMQ.Client -->
@@ -270,18 +277,18 @@
 
     <!-- Integration: Serilog -->
     <!--    Assembly: Serilog -->
-    <!-- Latest package https://www.nuget.org/packages/Serilog/4.1.0 -->
-    <PackageReference Include="Serilog" Version="4.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/Serilog/4.2.0 -->
+    <PackageReference Include="Serilog" Version="4.2.0" />
 
     <!-- Integration: ServiceStack.Redis -->
     <!--    Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.5.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="8.5.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.5.2 -->
+    <PackageReference Include="ServiceStack.Redis" Version="8.5.2" />
 
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.8.22 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.8.22" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.8.24 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!--    Assembly: StackExchange.Redis.StrongName -->
@@ -322,7 +329,7 @@
 
     <!-- Integration: System.ServiceModel -->
     <!--    Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/8.1.0 -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/8.1.1 -->
     <PackageReference Include="System.ServiceModel.Http" Version="4.10.3" />
 
     <!-- Integration: xunit.execution.desktop -->

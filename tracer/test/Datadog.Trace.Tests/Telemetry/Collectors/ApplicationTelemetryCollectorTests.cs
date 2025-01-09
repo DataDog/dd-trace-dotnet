@@ -42,7 +42,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetApplicationData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+        collector.RecordTracerSettings(settings, ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetApplicationData());
@@ -85,7 +85,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetApplicationData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+        collector.RecordTracerSettings(settings, ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetApplicationData());
@@ -130,7 +130,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetHostData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+        collector.RecordTracerSettings(settings, ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetHostData());

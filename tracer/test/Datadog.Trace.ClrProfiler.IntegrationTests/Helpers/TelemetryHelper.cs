@@ -105,18 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal static void AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
         {
-            var payloads =
-                allData
-                   .OrderByDescending(x => x.SeqId)
-                   .Select(
-                        data => data switch
-                        {
-                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
-                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
-                            _ => null,
-                        })
-                   .Where(x => x is not null)
-                   .ToList();
+            var payloads = GetAllConfigurationPayloads(allData);
 
             payloads.Should().NotBeEmpty();
             var config = payloads
@@ -131,6 +120,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 config.Value.Should().Be(value);
             }
+        }
+
+        internal static List<ICollection<ConfigurationKeyValue>> GetAllConfigurationPayloads(IEnumerable<TelemetryData> allData)
+        {
+            var payloads =
+                allData
+                   .OrderByDescending(x => x.SeqId)
+                   .Select(
+                        data => data switch
+                        {
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
+                            _ => null,
+                        })
+                   .Where(x => x is not null)
+                   .ToList();
+            return payloads;
         }
 
         internal static void AssertIntegration(ICollection<TelemetryData> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)

@@ -494,6 +494,11 @@ namespace Datadog.Trace.Configuration
         public static class CIVisibility
         {
             /// <summary>
+            /// An internal key used to "tell" tracer settings that we're running in CI Visibility mode
+            /// </summary>
+            public const string IsRunningInCiVisMode = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
+
+            /// <summary>
             /// Configuration key for enabling or disabling CI Visibility.
             /// Default value is false (disabled).
             /// </summary>
@@ -814,6 +819,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <see cref="TracerSettings.IsDataStreamsMonitoringEnabled"/>
             public const string Enabled = "DD_DATA_STREAMS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling legacy binary headers in Data Streams Monitoring.
+            /// Default is true.
+            /// </summary>
+             /// <see cref="TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+            public const string LegacyHeadersEnabled = "DD_DATA_STREAMS_LEGACY_HEADERS";
         }
     }
 }

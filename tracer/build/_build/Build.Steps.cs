@@ -63,7 +63,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.21.0";
+    const string LibDdwafVersion = "1.22.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -199,7 +199,7 @@ partial class Build
         var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
         if (IsGitBaseBranch(baseBranch))
         {
-            // do a full run on the main branch
+         // do a full run on the main branch
             return true;
         }
 
@@ -207,8 +207,14 @@ partial class Build
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
             {
+                // Changes to the definitions (new integrations etc)
                 $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
                 $"tracer/src/Datadog.Trace/Generated/{tfm}/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator",
+            })
+            .Concat(new [] {
+                // Changes to the integrations themselves, e.g. change in behaviour
+                "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation",
+                "tracer/src/Datadog.Trace/Iast/Aspects"
             })
             .ToList();
 
@@ -1888,7 +1894,7 @@ partial class Build
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (false, { } p) => p.RequiresDockerDependency() is DockerDependencyType.None or DockerDependencyType.Mixed,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 })
                 .Where(x =>
@@ -1938,7 +1944,7 @@ partial class Build
                     (null, _) => true,
                     (_, { project: null}) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.project.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None,
+                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None || p.project.RequiresDockerDependency() == DockerDependencyType.Mixed,
                     (true, { } p) => p.project.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
@@ -2437,8 +2443,8 @@ partial class Build
             Logger.Information("File ordered and saved: {File}", csvFilePath);
         });
 
-    Target CreateRootDescriptorsFile => _ => _
-       .Description("Create RootDescriptors.xml file")
+    Target CreateTrimmingFile => _ => _
+       .Description("Create Datadog.Trace.Trimming.xml file")
        .DependsOn(CompileManagedSrc)
        .Executes(() =>
         {
@@ -2592,6 +2598,8 @@ partial class Build
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException.*", RegexOptions.Compiled),
+               // error thrown to check error handling in RC tests
+               new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);

@@ -568,7 +568,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip = "End point missing due to changes in Samples.Security.AspNetCore2 - refactoring in progess to restore")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastStoredXssRequest()
@@ -591,7 +591,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip = "End point missing due to changes in Samples.Security.AspNetCore2 - refactoring in progess to restore")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastStoredXssEscapedRequest()

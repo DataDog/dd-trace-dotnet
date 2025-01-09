@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -55,16 +55,19 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_4,
+    TraceId: Id_4,
+    SpanId: Id_5,
     Name: aspnet_core.request,
     Resource: POST /greet.tester.greeter/streamingfromclient,
     Service: Samples.GrpcDotNet,
     Type: web,
-    ParentId: Id_5,
+    ParentId: Id_6,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingFromClient,
       aspnet_core.route: /greet.tester.greeter/streamingfromclient,
@@ -113,16 +116,19 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_6,
+    TraceId: Id_7,
+    SpanId: Id_8,
     Name: aspnet_core.request,
     Resource: POST /greet.tester.greeter/streamingfromserver,
     Service: Samples.GrpcDotNet,
     Type: web,
-    ParentId: Id_7,
+    ParentId: Id_9,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/StreamingFromServer,
       aspnet_core.route: /greet.tester.greeter/streamingfromserver,
@@ -171,16 +177,19 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_8,
+    TraceId: Id_10,
+    SpanId: Id_11,
     Name: aspnet_core.request,
     Resource: POST /greet.tester.greeter/unary,
     Service: Samples.GrpcDotNet,
     Type: web,
-    ParentId: Id_9,
+    ParentId: Id_12,
     Tags: {
       aspnet_core.endpoint: gRPC - /greet.tester.Greeter/Unary,
       aspnet_core.route: /greet.tester.greeter/unary,
@@ -229,6 +238,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   }
 ]

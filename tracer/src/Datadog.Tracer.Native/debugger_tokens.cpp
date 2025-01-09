@@ -315,32 +315,23 @@ int DebuggerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& m
 }
 
 void DebuggerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                                         COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
-                                         ULONG& signatureSize, bool isAsyncMethod)
+    SignatureBuilder& signature, bool isAsyncMethod)
 {
     // Gets the calltarget state of line probe type buffer and size
     unsigned callTargetStateTypeRefBuffer;
     const auto callTargetStateTypeRefSize = CorSigCompressToken(GetDebuggerState(isAsyncMethod ? AsyncLineProbe : NonAsyncLineProbe), &callTargetStateTypeRefBuffer);
 
-    // Enlarge the *new* signature size
-    signatureSize += (1 + callTargetStateTypeRefSize);
-
     // CallTarget state of line probe
-    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signatureBuffer[signatureOffset], &callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
-    signatureOffset += callTargetStateTypeRefSize;
+    signature.Append(ELEMENT_TYPE_VALUETYPE);
+    signature.Append(&callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
 
     // Gets the calltarget state of span method probe type buffer and size
     unsigned spanStateTypeRefBuffer;
     const auto spanStateTypeRefSize = CorSigCompressToken(methodSpanProbeDebuggerStateTypeRef, &spanStateTypeRefBuffer);
 
-    // Enlarge the *new* signature size
-    signatureSize += (1 + spanStateTypeRefSize);
-
     // CallTarget state of async method probe
-    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signatureBuffer[signatureOffset], &spanStateTypeRefBuffer, spanStateTypeRefSize);
-    signatureOffset += spanStateTypeRefSize;
+    signature.Append(ELEMENT_TYPE_VALUETYPE);
+    signature.Append(&spanStateTypeRefBuffer, spanStateTypeRefSize);
     
     // CallTarget states of multi-probe scenario
 
@@ -348,13 +339,9 @@ void DebuggerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::
     unsigned methodDebuggerStatesTypeRefBuffer;
     const auto methodDebuggerStatesTypeRefSize = CorSigCompressToken(GetDebuggerState(NonAsyncMethodMultiProbe), &methodDebuggerStatesTypeRefBuffer);
 
-    // Enlarge the *new* signature size
-    signatureSize += (2 + methodDebuggerStatesTypeRefSize);
-
-    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_SZARRAY;
-    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signatureBuffer[signatureOffset], &methodDebuggerStatesTypeRefBuffer, methodDebuggerStatesTypeRefSize);
-    signatureOffset += methodDebuggerStatesTypeRefSize;
+    signature.Append(ELEMENT_TYPE_SZARRAY);
+    signature.Append(ELEMENT_TYPE_VALUETYPE);
+    signature.Append(&methodDebuggerStatesTypeRefBuffer, methodDebuggerStatesTypeRefSize);
 }
 
 /**

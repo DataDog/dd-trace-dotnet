@@ -31,7 +31,7 @@ public class TelemetryTransportFactoryTests
             metricsEnabled: true,
             debugEnabled: false);
 
-        var exporterSettings = new ImmutableExporterSettings(new ExporterSettings());
+        var exporterSettings = new ExporterSettings();
 
         var transports = TelemetryTransportFactory.Create(telemetrySettings, exporterSettings);
 

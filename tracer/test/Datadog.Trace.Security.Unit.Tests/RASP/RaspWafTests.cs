@@ -10,11 +10,12 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class RaspWafTests : WafLibraryRequiredTest
 {
+    private static bool enableDebug = false;
+
     [Theory]
     [InlineData(1, 1000000, false)]
     [InlineData(1000, 1, true)]
@@ -85,8 +88,11 @@ public class RaspWafTests : WafLibraryRequiredTest
     [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
     [InlineData("ls; echo hello", "echo hello", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
     [InlineData("ls &> file; echo hello", "&> file", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
-    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string address)
+    [InlineData(new string[] { "/usr/bin/reboot" }, "/usr/bin/reboot", "rasp-932-110", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.CommandInjection)]
+    public void GivenARaspRule_WhenInsecureAccess_ThenBlock(object value, string paramValue, string rule, string action, string actionType, string address)
     {
+        EnableDebugInfo(enableDebug);
+
         ExecuteRule(
             address,
             value,
@@ -95,6 +101,14 @@ public class RaspWafTests : WafLibraryRequiredTest
             "rasp-rule-set.json",
             action,
             actionType);
+    }
+
+    private void EnableDebugInfo(bool enable)
+    {
+        if (enable)
+        {
+            DatadogLogging.SetLogLevel(LogEventLevel.Debug);
+        }
     }
 
     private void ExecuteRule(string address, object value, string paramValue, string rule, string ruleFile, string expectedAction, string actionType)
@@ -126,7 +140,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
-        var initResult = CreateWaf(newEncoder, ruleFile);
+        var initResult = CreateWaf(newEncoder, ruleFile, wafDebugEnabled: enableDebug);
         waf = initResult.Waf;
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);

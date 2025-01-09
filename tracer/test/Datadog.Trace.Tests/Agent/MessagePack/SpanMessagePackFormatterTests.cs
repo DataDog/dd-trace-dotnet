@@ -80,7 +80,7 @@ public class SpanMessagePackFormatterTests
             actual.Duration.Should().Be(expected.Duration.ToNanoseconds());
             actual.ParentId.Should().Be(expected.Context.ParentId);
             actual.Error.Should().Be(expected.Error ? (byte)0x1 : (byte)0x0);
-            actual.ParentId.Should().Be(expected.Context.ParentIdInternal);
+            actual.ParentId.Should().Be(expected.Context.ParentId);
 
             var tagsProcessor = new TagsProcessor<string>(actual.Tags);
             expected.Tags.EnumerateTags(ref tagsProcessor);
@@ -141,11 +141,17 @@ public class SpanMessagePackFormatterTests
             new("pair", "false"),
             new("arbitrary", "56709")
         };
-        spans[0].AddSpanLink(spans[1], attributesToAdd);
-        var tmpSpanLink = spans[1].AddSpanLink(spans[2]);
-        tmpSpanLink.AddAttribute("attribute1", "value1");
-        tmpSpanLink.AddAttribute("attribute2", "value2");
-        spans[1].AddSpanLink(spans[0]);
+        spans[0].AddLink(new SpanLink(spans[1].Context, attributesToAdd));
+
+        var tmpSpanLinkAttributesToAdd = new List<KeyValuePair<string, string>>
+        {
+            new("attribute1", "value1"),
+            new("attribute2", "value2"),
+        };
+        var tmpSpanLink = new SpanLink(spans[2].Context, tmpSpanLinkAttributesToAdd);
+        spans[1].AddLink(tmpSpanLink);
+
+        spans[1].AddLink(new SpanLink(spans[0].Context));
 
         foreach (var span in spans)
         {

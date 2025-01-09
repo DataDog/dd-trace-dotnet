@@ -48,6 +48,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                     tags.SetName = key.SetName;
                     tags.UserKey = key.UserKey.ToString();
                 }
+                else if (target.TryDuckCast<HasKeyV8>(out var hasKeyV8))
+                {
+                    var key = hasKeyV8.Key;
+
+                    tags.Key = FormatKey(key);
+                    tags.Namespace = key.Ns;
+                    tags.SetName = key.SetName;
+                    tags.UserKey = key.UserKey.ToString();
+                }
                 else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
                     bool isFirstKey = true;
