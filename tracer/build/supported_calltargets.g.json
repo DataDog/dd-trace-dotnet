@@ -87,7 +87,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -111,7 +111,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -135,7 +135,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -157,7 +157,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -181,7 +181,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -344,7 +344,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -366,7 +366,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -390,7 +390,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -414,7 +414,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -438,7 +438,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -462,7 +462,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -484,7 +484,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -506,7 +506,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -530,7 +530,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -554,7 +554,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -717,7 +717,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -741,7 +741,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -765,7 +765,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -787,7 +787,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "AdoNet",
@@ -811,7 +811,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Aerospike",
@@ -9177,7 +9177,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9551,7 +9551,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9575,7 +9575,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9597,7 +9597,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9621,7 +9621,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9643,7 +9643,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9667,7 +9667,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9691,7 +9691,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9713,7 +9713,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -9737,7 +9737,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -10182,7 +10182,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -10206,7 +10206,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -10230,7 +10230,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -10252,7 +10252,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "MySql",
@@ -10276,7 +10276,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "NLog",
@@ -10667,7 +10667,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Npgsql",
@@ -10691,7 +10691,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Npgsql",
@@ -10713,7 +10713,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Npgsql",
@@ -10737,7 +10737,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "NUnit",
@@ -11119,7 +11119,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11143,7 +11143,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11167,7 +11167,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11189,7 +11189,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11213,7 +11213,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11235,7 +11235,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11487,7 +11487,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11511,7 +11511,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11533,7 +11533,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11557,7 +11557,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11579,7 +11579,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11603,7 +11603,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11627,7 +11627,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11649,7 +11649,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Oracle",
@@ -11673,7 +11673,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Process",
@@ -12885,7 +12885,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -12909,7 +12909,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -12933,7 +12933,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -12955,7 +12955,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -12979,7 +12979,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13001,7 +13001,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13025,7 +13025,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13049,7 +13049,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13071,7 +13071,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13095,7 +13095,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13329,7 +13329,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13353,7 +13353,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13377,7 +13377,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13399,7 +13399,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13423,7 +13423,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13657,7 +13657,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13681,7 +13681,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13705,7 +13705,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13727,7 +13727,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13751,7 +13751,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13773,7 +13773,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13797,7 +13797,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13821,7 +13821,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13843,7 +13843,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "SqlClient",
@@ -13867,7 +13867,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Sqlite",

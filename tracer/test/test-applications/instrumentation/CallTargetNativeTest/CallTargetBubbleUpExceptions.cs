@@ -26,11 +26,11 @@ partial class Program
 
         var callTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd = new CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd();
         Console.WriteLine($"{typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd).FullName}.{nameof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething)}");
-        RunMethod(() => callTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething().Wait(), bubblingUpException: true);
+        RunMethod(() => callTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething().Wait(), bubblingUpException: true, asyncMethod: true);
         
         var callTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd = new CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd();
         Console.WriteLine($"{typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd).FullName}.{nameof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething)}");
-        RunMethod(() => callTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething().Wait(), bubblingUpException: true);
+        RunMethod(() => callTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething().Wait(), bubblingUpException: true, asyncMethod: true);
     }
 }
 

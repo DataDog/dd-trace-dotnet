@@ -1811,6 +1811,12 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
+    # This is a hack because otherwise Azure Functions _always_ tries to use the one from program files otherwise
+    - script: |
+        cd /D %PROGRAMFILES%/dotnet
+        rename dotnet.exe dotnet.exe.bak
+        where dotnet
+      displayName: 'Rename default dotnet.exe'
     - template: steps/restore-working-directory.yml
         
     - template: steps/install-msi.yml
