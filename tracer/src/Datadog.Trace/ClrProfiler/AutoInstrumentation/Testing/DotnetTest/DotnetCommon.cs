@@ -91,8 +91,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return null;
             }
 
+            var spanContextPropagator = new SpanContextPropagator(
+                [DatadogContextPropagator.Instance],
+                [DatadogContextPropagator.Instance],
+                propagationExtractFirstValue: false);
+
             // Let's detect if we already have a session for this test process
-            var context = TracerManager.Instance.SpanContextPropagator.Extract(
+            var context = spanContextPropagator.Extract(
                 EnvironmentHelpers.GetEnvironmentVariables(),
                 new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
