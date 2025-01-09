@@ -48,10 +48,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
         // no Close, we need to implement Close(bool, bool, bool) instead
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]
