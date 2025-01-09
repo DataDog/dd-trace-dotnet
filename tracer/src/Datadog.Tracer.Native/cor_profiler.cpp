@@ -1589,6 +1589,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
     else if (module_metadata->assemblyName == WStr("System") ||
              module_metadata->assemblyName == WStr("System.Net.Http") ||
+             module_metadata->assemblyName == WStr("System.Security.AccessControl") ||
+             module_metadata->assemblyName == WStr("System.Security.Principal.Windows") ||
              module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
     {
         valid_startup_hook_callsite = false;
