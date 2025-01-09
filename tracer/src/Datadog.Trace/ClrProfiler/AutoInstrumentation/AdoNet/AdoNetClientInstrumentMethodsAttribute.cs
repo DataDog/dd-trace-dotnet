@@ -297,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderReadIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class ReaderReadAttribute : Attribute
+        internal class IastReaderReadAttribute : Attribute
         {
         }
 
@@ -308,7 +308,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderReadAsyncIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class ReaderReadAsyncAttribute : Attribute
+        internal class IastReaderReadAsyncAttribute : Attribute
         {
         }
 
@@ -318,7 +318,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderCloseIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class ReaderCloseAttribute : Attribute
+        internal class IastReaderCloseAttribute : Attribute
         {
         }
 
@@ -329,7 +329,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderGetStringIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class ReaderGetStringAttribute : Attribute
+        internal class IastReaderGetStringAttribute : Attribute
         {
         }
 
@@ -340,7 +340,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             CallTargetType = typeof(ReaderGetStringIntegration),
             InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-        internal class ReaderGetValueAttribute : Attribute
+        internal class IastReaderGetValueAttribute : Attribute
         {
         }
     }
