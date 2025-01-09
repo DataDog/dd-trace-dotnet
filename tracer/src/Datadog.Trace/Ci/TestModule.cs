@@ -130,13 +130,7 @@ public sealed class TestModule
 
             // Extract session variables (from out of process sessions)
             var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
-
-            var spanContextPropagator = new SpanContextPropagator(
-                [DatadogContextPropagator.Instance],
-                [DatadogContextPropagator.Instance],
-                propagationExtractFirstValue: false);
-
-            var context = spanContextPropagator.Extract(
+            var context = TracerManager.Instance.SpanContextPropagator.Extract(
                 environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
             if (context.SpanContext is { } sessionContext)
