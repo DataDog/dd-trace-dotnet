@@ -1,0 +1,41 @@
+How to reproduce the issue:
+
+- Install Azure Functions Tools v4 - **uninstall v3 if you have v3 installed for some reason before**
+	- https://github.com/Azure/azure-functions-core-tools?tab=readme-ov-file#v4
+- Checkout `https://github.com/DataDog/dd-trace-dotnet/tree/steven/split-azure-functions`
+- Build `Samples.AzureFunctions.V4Isolated.WorkerV2` - note the output location.
+	- We are focusing on .NET 8.0
+	- Override environment variables in the `local.settings.json` - for instance I have `DD_TRACE_DEBUG` in there
+- Build the tracer
+- Install the `dd-trace` tool
+	- `dotnet tool install -g dd-trace`
+- Start `azurite` via an elevated Powershell terminal
+	- ` ./azurite.exe`
+	- *Note* this comes with Visual Studio, likely `"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\Microsoft\Azure Storage Emulator"`
+	- **Unsure if this step is necessary as it may auto-start**
+- Start a WSL terminal and clone and build `wrk`
+	- `sudo apt-get update`
+	- `sudo apt-get install unzip build-essential libssl-dev git -y`
+	- `git clone https://github.com/wg/wrk.git wrk`
+	- `cd wrk`
+	- `make`
+	- `sudo cp wrk /usr/local/bin`
+	- `cat /etc/resolv.conf` -> Get the IP of Windows, necessary for later
+- Start a Powershell instance
+	- Navigate to the output directory `Samples.AzureFunctions.V4Isolated.WorkerV2`
+		- e.g. `source\repos\dd-trace-dotnet\artifacts\bin\Samples.AzureFunctions.V4Isolated.WorkerV2\debug_net8.0`
+	- Run `dd-trace run --tracer-home "PATH_MONITORING_HOME_HERE" -- func start --verbose`
+	- Should see some output, you should see a section with `Functions:` and some listed Azure Functions
+	- The sample application will make requests, some have expected failures if you see red: `Trigger attempt failure for exception as expected` it is expected here
+- Go back to the WSL terminal
+	- Check to see if the function app works
+		- `curl --max-time 10  http://172.19.32.1:7071/api/simple`
+		- IP is from `cat /etc/resolv.conf`
+		- You should get `This HTTP triggered function executed successfully!` in the WSL terminal
+		- In Powershell terminal running the `func` you should see something like: ` Executed 'Functions.SimpleHttpTrigger' (Succeeded, Id=d7a10090-1588-4507-85af-89c036469e71, Duration=9ms)`
+	- After verifying that it works, can run the load test
+		- `wrk -t2 -c50 -d30s http://172.19.32.1:7071/api/simple`
+		- You'll get some output after 30 seconds
+	- Afterwards attempt to `curl` again
+		- If the application has failed it'll timeout: `curl: (28) Operation timed out after 10001 milliseconds with 0 bytes received` 
+		- Sometimes not every load test fails it, but it does seem to be very consistent.
