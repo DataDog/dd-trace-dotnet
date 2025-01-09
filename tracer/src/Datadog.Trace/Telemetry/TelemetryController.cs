@@ -373,7 +373,7 @@ internal class TelemetryController : ITelemetryController
         private bool _isUpdateRequired;
         private string? _tags;
 
-        public void Update(ImmutableTracerSettings settings)
+        public void Update(TracerSettings settings)
         {
             _cloudEnv = settings switch
             {

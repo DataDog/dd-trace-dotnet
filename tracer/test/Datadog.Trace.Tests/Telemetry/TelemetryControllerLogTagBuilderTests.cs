@@ -44,7 +44,7 @@ public class TelemetryControllerLogTagBuilderTests
     public void TagBuilder_UpdateCloudTag()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "DD_AZURE_APP_SERVICES", "true" } }).Build());
+        builder.Update(TracerSettings.Create(new() { { "DD_AZURE_APP_SERVICES", "true" } }));
         builder.GetLogTags().Should().Be("ci:0,asm:0,prof:0,dyn:0,aas");
     }
 
@@ -52,7 +52,7 @@ public class TelemetryControllerLogTagBuilderTests
     public void TagBuilder_AddsEverything()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }).Build());
+        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }));
         builder.Update(TelemetryProductType.Profiler, enabled: true);
         builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
         builder.Update(TelemetryProductType.AppSec, enabled: true);
@@ -64,7 +64,7 @@ public class TelemetryControllerLogTagBuilderTests
     public void TagBuilder_WhenAdded()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }).Build());
+        builder.Update(TracerSettings.Create(new() { { "FUNCTIONS_EXTENSION_VERSION", "true" } }));
         builder.Update(TelemetryProductType.Profiler, enabled: true);
         builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
         builder.Update(TelemetryProductType.AppSec, enabled: true);
