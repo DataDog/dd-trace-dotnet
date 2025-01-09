@@ -245,11 +245,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             try
             {
-                if (!IsKnowAddressesSuported())
-                {
-                    return Array.Empty<string>();
-                }
-
                 uint size = 0;
                 var result = _getKnownAddresses(wafHandle, ref size);
 
