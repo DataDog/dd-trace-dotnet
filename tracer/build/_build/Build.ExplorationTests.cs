@@ -625,7 +625,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
                 TestsToIgnore = new string[]
                 {
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion",
