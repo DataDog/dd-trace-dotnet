@@ -183,7 +183,7 @@ namespace Datadog.Trace.Coverage.Collector
                         {
                             List<Exception>? exceptions = null;
                             var remain = 3;
-                            Retry:
+                        Retry:
                             if (--remain > 0)
                             {
                                 try
@@ -305,7 +305,13 @@ namespace Datadog.Trace.Coverage.Collector
             // Is not part of the spec but useful for support tickets.
             // We try to extract session variables (from out of process sessions)
             // and try to send a message to the IPC server for setting the test.code_coverage.injected tag.
-            var extractedContext = TracerManager.Instance.SpanContextPropagator.Extract(
+
+            var spanContextPropagator = new SpanContextPropagator(
+                        [DatadogContextPropagator.Instance],
+                        [DatadogContextPropagator.Instance],
+                        propagationExtractFirstValue: false);
+
+            var extractedContext = spanContextPropagator.Extract(
                 EnvironmentHelpers.GetEnvironmentVariables(),
                 new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
