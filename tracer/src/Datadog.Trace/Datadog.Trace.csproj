@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>3.7.0</Version>
+    <Version>3.9.0</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -29,6 +29,18 @@
     <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
     <None Include="$(GeneratedFolder)/*/**/*.cs" />
     <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
+    <Compile Update="AppSec\Coordinator\SecurityCoordinator.Core.cs">
+      <DependentUpon>SecurityCoordinator.cs</DependentUpon>
+    </Compile>
+    <Compile Update="AppSec\Coordinator\SecurityCoordinator.Framework.cs">
+      <DependentUpon>SecurityCoordinator.cs</DependentUpon>
+    </Compile>
+    <Compile Update="AppSec\Coordinator\SecurityReporter.Core.cs">
+      <DependentUpon>SecurityReporter.cs</DependentUpon>
+    </Compile>
+    <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
+      <DependentUpon>SecurityReporter.cs</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

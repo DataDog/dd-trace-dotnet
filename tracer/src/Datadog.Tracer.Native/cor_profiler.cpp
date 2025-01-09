@@ -51,6 +51,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         Logger::EnableDebug(true);
     }
 
+    auto isRunningInAas = IsAzureAppServices();
+
+    if (profiler != nullptr)
+    {
+        if (isRunningInAas)
+        {
+            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
+        }
+        else
+        {
+            Logger::Error("The Tracer Profiler is initialized multiple times. This may cause unpredictable failures.",
+                " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
+                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
+        }
+    }
+
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
     // we used to bail-out if tracing was disabled, but we now allow the tracer to be loaded
@@ -157,7 +173,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    if (IsAzureAppServices())
+    if (isRunningInAas)
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
 

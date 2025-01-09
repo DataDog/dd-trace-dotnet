@@ -317,15 +317,10 @@ namespace PrepareRelease
                     // upgrading four part, then three part *seems* safe
                     text => ThreePartVersionReplace(FourPartVersionReplace(text)));
 
-                // Top-level CMakeLists.txt
-                SynchronizeVersion(
-                    "CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
-
                 // Native clr profiler updates
                 SynchronizeVersion(
                     "src/Datadog.Tracer.Native/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Tracer.Native\" VERSION "));
 
                 SynchronizeVersion(
                     "src/Datadog.Tracer.Native/Resource.rc",
@@ -349,11 +344,11 @@ namespace PrepareRelease
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Profiler.Native.Linux\" VERSION "));
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Linux.ApiWrapper\" VERSION "));
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
@@ -372,7 +367,7 @@ namespace PrepareRelease
 
                 SynchronizeVersion(
                     "../shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Trace.ClrProfiler.Native\" VERSION "));
 
                 SynchronizeVersion(
                     "../shared/src/native-src/version.h",

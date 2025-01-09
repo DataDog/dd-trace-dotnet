@@ -30,9 +30,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, uriText);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -51,9 +55,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, uri.OriginalString);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -73,9 +81,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -96,9 +108,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -120,9 +136,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host, path);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -145,9 +165,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host, path, extra);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -166,9 +190,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
     }
 
@@ -185,9 +213,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
         }
     }
 
@@ -204,9 +236,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetPath)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(SetPath)}");
         }
     }
 
@@ -223,9 +259,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetHost)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(GetHost)}");
         }
 
         return result;
@@ -244,9 +284,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetQuery)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(GetQuery)}");
         }
 
         return result;
@@ -265,9 +309,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetPath)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(GetPath)}");
         }
 
         return result;
@@ -287,9 +335,13 @@ public class UriBuilderAspect
         {
             PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, (instance as UriBuilder)?.Uri?.OriginalString);
         }
+        catch (FormatException ex)
+        {
+            IastModule.Log.Debug(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(ToString)}");
+            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(ToString)}");
         }
 
         return result;

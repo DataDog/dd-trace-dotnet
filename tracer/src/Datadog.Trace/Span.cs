@@ -538,21 +538,19 @@ namespace Datadog.Trace
         /// <summary>
         /// Adds a SpanLink to the current Span if the Span is active.
         /// </summary>
-        /// <param name="spanLinkToAdd">The Span to add as a SpanLink</param>
-        /// <param name="attributes">List of KeyValue pairings of attributes to add to the SpanLink. Defaults to null</param>
-        /// <returns>returns the SpanLink on success or null on failure (span is closed already)</returns>
-        internal SpanLink AddSpanLink(Span spanLinkToAdd, List<KeyValuePair<string, string>> attributes = null)
+        /// <param name="spanLink">The SpanLink to add</param>
+        /// <returns>This span to allow method chaining.</returns>
+        internal Span AddLink(SpanLink spanLink)
         {
             if (IsFinished)
             {
-                Log.Warning("AddSpanLink should not be called after the span was closed");
-                return null;
+                Log.Warning("AddLink should not be called after the span was closed");
+                return this;
             }
 
             SpanLinks ??= new List<SpanLink>();
-            var spanLink = new SpanLink(spanLinkToAdd, this, attributes);
             SpanLinks.Add(spanLink);
-            return spanLink;
+            return this;
         }
     }
 }
