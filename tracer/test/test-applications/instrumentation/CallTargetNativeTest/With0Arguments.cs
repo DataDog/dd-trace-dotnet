@@ -119,7 +119,31 @@ partial class Program
         //
         var w0TAsyncEnd = new With0ArgumentsThrowOnAsyncEnd();
         Console.WriteLine($"{typeof(With0ArgumentsThrowOnAsyncEnd).FullName}.Wait2Seconds");
-        RunMethod(() => w0TAsyncEnd.Wait2Seconds().Wait());
+        RunMethod(() => w0TAsyncEnd.Wait2Seconds().Wait(), asyncMethod: true);
+        Console.WriteLine();
+
+        // tasks
+        var w0Task = new With0ArgumentsTasks();
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnTaskSync");
+        RunMethod(() => w0Task.ReturnTaskSync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnTaskAsync");
+        RunMethod(() => w0Task.ReturnTaskAsync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnValueTaskSync");
+        RunMethod(() => w0Task.ReturnValueTaskSync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnValueTaskAsync");
+        RunMethod(() => w0Task.ReturnValueTaskAsync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine();
+
+        // tasks generic
+        var w0TaskGeneric = new With0ArgumentsTasksGeneric<int>();
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnTaskSync");
+        RunMethod(() => w0TaskGeneric.ReturnTaskSync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnTaskAsync");
+        RunMethod(() => w0TaskGeneric.ReturnTaskAsync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnValueTaskSync");
+        RunMethod(() => w0TaskGeneric.ReturnValueTaskSync().GetAwaiter().GetResult(), asyncMethod: true);
+        Console.WriteLine($"{typeof(With0Arguments).FullName}.ReturnValueTaskAsync");
+        RunMethod(() => w0TaskGeneric.ReturnValueTaskAsync().GetAwaiter().GetResult(), asyncMethod: true);
         Console.WriteLine();
     }
 
@@ -513,6 +537,29 @@ class With0ArgumentsThrowOnEnd : With0Arguments { }
 class With0ArgumentsThrowOnAsyncEnd
 {
     public Task Wait2Seconds() => Task.Delay(2000);
+}
+class With0ArgumentsTasks
+{
+    public Task ReturnTaskSync() => Task.CompletedTask;
+    public async Task ReturnTaskAsync() => await Task.Yield();
+    public ValueTask ReturnValueTaskSync() => default;
+    public ValueTask ReturnValueTaskAsync() => new(Task.Delay(TimeSpan.FromSeconds(2)));
+}
+class With0ArgumentsTasksGeneric<T>
+{
+    public Task<T> ReturnTaskSync() => Task.FromResult<T>(default);
+    public async Task<T> ReturnTaskAsync()
+    {
+        await Task.Yield();
+        return default;
+    }
+
+    public ValueTask<T> ReturnValueTaskSync() => default;
+    public async ValueTask<T> ReturnValueTaskAsync()
+    {
+        await Task.Yield();
+        return default;
+    }
 }
 
 partial class ArgumentsParentType
