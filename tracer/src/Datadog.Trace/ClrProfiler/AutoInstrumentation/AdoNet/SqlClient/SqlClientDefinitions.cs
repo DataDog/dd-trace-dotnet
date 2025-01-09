@@ -115,7 +115,6 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
         typeof(ReaderReadAttribute),
         typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
@@ -133,7 +132,6 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
         typeof(ReaderReadAttribute),
         typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),
@@ -151,7 +149,6 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
         typeof(ReaderReadAttribute),
         typeof(ReaderReadAsyncAttribute),
         typeof(ReaderCloseAttribute),

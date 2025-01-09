@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -102,6 +103,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public string[] ParameterTypeNames { get; set; }
 
             /// <summary>
+            /// Gets or sets the return type to use with this signature
+            /// </summary>
+            public AdoNetTargetSignatureReturnType ReturnType { get; set; } = AdoNetTargetSignatureReturnType.Default;
+
+            /// <summary>
             /// Gets or sets the CallTarget Class used to instrument the method
             /// </summary>
             public Type CallTargetType { get; set; }
@@ -112,9 +118,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
 
             /// <summary>
-            /// Gets or sets the return type to use with this signature
+            /// Gets or sets the call target instrumentation category
             /// </summary>
-            public AdoNetTargetSignatureReturnType ReturnType { get; set; } = AdoNetTargetSignatureReturnType.Default;
+            public InstrumentationCategory InstrumentationCategory { get; set; } = InstrumentationCategory.Tracing;
         }
 
         [AdoNetTargetSignature(
@@ -288,7 +294,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.Read,
             ReturnTypeName = ClrNames.Bool,
-            CallTargetType = typeof(ReaderReadIntegration))]
+            CallTargetType = typeof(ReaderReadIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class ReaderReadAttribute : Attribute
         {
@@ -298,7 +305,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.ReadAsync,
             ReturnTypeName = AdoNetConstants.TypeNames.ObjectTaskType,
             ParameterTypeNames = new[] { ClrNames.CancellationToken },
-            CallTargetType = typeof(ReaderReadAsyncIntegration))]
+            CallTargetType = typeof(ReaderReadAsyncIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class ReaderReadAsyncAttribute : Attribute
         {
@@ -307,7 +315,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.Close,
             ReturnTypeName = ClrNames.Void,
-            CallTargetType = typeof(ReaderCloseIntegration))]
+            CallTargetType = typeof(ReaderCloseIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class ReaderCloseAttribute : Attribute
         {
@@ -317,7 +326,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.GetString,
             ReturnTypeName = ClrNames.String,
             ParameterTypeNames = new[] { ClrNames.Int32 },
-            CallTargetType = typeof(ReaderGetStringIntegration))]
+            CallTargetType = typeof(ReaderGetStringIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class ReaderGetStringAttribute : Attribute
         {
@@ -327,7 +337,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             MethodName = AdoNetConstants.MethodNames.GetValue,
             ReturnTypeName = ClrNames.Object,
             ParameterTypeNames = new[] { ClrNames.Int32 },
-            CallTargetType = typeof(ReaderGetStringIntegration))]
+            CallTargetType = typeof(ReaderGetStringIntegration),
+            InstrumentationCategory = InstrumentationCategory.Iast)]
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
         internal class ReaderGetValueAttribute : Attribute
         {
