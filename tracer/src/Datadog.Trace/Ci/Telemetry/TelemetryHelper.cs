@@ -174,12 +174,24 @@ internal static class TelemetryHelper
                 return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module;
             case MetricTags.CIVisibilityTestingEventType.Session:
             {
+                var settings = CIVisibility.Settings;
+                if (settings.Logs)
+                {
+                    return CIEnvironmentValues.Instance switch
+                    {
+                        { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_IsSupportedCi_WithAgentlessLog,
+                        { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_UnsupportedCi_WithAgentlessLog,
+                        { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_IsSupportedCi_WithAgentlessLog,
+                        { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_UnsupportedCi_WithAgentlessLog,
+                    };
+                }
+
                 return CIEnvironmentValues.Instance switch
                 {
-                    { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_IsSupportedCi,
-                    { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_UnsupportedCi,
-                    { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_IsSupportedCi,
-                    { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_UnsupportedCi,
+                    { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+                    { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_HasCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+                    { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+                    { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Session_NoCodeOwner_UnsupportedCi_WithoutAgentlessLog,
                 };
             }
         }
