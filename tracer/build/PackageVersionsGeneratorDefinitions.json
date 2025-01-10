@@ -743,25 +743,5 @@
       "4.20.*",
       "4.*.*"
     ]
-  },
-  {
-    "IntegrationName": "AzureFunctionsSdkV1",
-    "SampleProjectName": "Samples.AzureFunctions.V4Isolated.SdkV1",
-    "NugetPackageSearchName": "Microsoft.Azure.Functions.Worker",
-    "MinVersion": "1.6.0",
-    "MaxVersionExclusive": "2.0.0",
-    "SpecificVersions": [
-      "1.*.*"
-    ]
-  },
-  {
-    "IntegrationName": "AzureFunctions",
-    "SampleProjectName": "Samples.AzureFunctions.V4Isolated",
-    "NugetPackageSearchName": "Microsoft.Azure.Functions.Worker",
-    "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.0.0",
-    "SpecificVersions": [
-      "2.*.*"
-    ]
   }
 ]
