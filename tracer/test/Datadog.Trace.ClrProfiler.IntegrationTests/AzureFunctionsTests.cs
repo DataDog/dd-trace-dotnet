@@ -84,7 +84,7 @@ public abstract class AzureFunctionsTests : TestHelper
                           .DisableRequireUniquePrefix();
     }
 
-    protected async Task AssertIsolatedSpans(IImmutableList<MockSpan> spans)
+    protected async Task AssertIsolatedSpans(IImmutableList<MockSpan> spans, string filename = null)
     {
         // AAS _potentially_ attaches extra tags here, depending on exactly where in the trace the tags are
         // so can't easily validate
@@ -101,8 +101,9 @@ public abstract class AzureFunctionsTests : TestHelper
 
         settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
 
+        filename ??= $"{nameof(AzureFunctionsTests)}.Isolated";
         await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated")
+                          .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
 
@@ -196,7 +197,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
                 using var s = new AssertionScope();
 
-                await AssertIsolatedSpans(spans);
+                await AssertIsolatedSpans(spans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
             }
         }
     }
