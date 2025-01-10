@@ -451,10 +451,16 @@ public class TelemetryMetricGeneratorTests
                     var index = 5 + ((int)tag1 * 3) + (int)tag2;
                     Interlocked.Add(ref _buffer.TestMetric[index], increment);
                 }
+            
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int increment = 1)
+                {
+                    var index = 17 + ((int)tag1 * 9) + ((int)tag2 * 3) + (int)tag3;
+                    Interlocked.Add(ref _buffer.TestMetric[index], increment);
+                }
 
                 public void RecordTestMetricZeroAgainTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.TestMetric[17], increment);
+                    Interlocked.Add(ref _buffer.TestMetric[53], increment);
                 }
             }
             """;
@@ -477,6 +483,10 @@ public class TelemetryMetricGeneratorTests
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int increment = 1)
                 {
                 }
+            
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int increment = 1)
+                {
+                }
 
                 public void RecordTestMetricZeroAgainTagMetric(int increment = 1)
                 {
@@ -494,6 +504,8 @@ public class TelemetryMetricGeneratorTests
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int increment = 1);
 
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int increment = 1);
+            
                 public void RecordTestMetricZeroAgainTagMetric(int increment = 1);
             }
             """;
@@ -514,6 +526,10 @@ public class TelemetryMetricGeneratorTests
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int increment = 1)
+                {
+                }
+
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int increment = 1)
                 {
                 }
 
@@ -745,9 +761,15 @@ public class TelemetryMetricGeneratorTests
                     Interlocked.Exchange(ref _buffer.TestMetric[index], value);
                 }
 
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int value)
+                {
+                    var index = 17 + ((int)tag1 * 9) + ((int)tag2 * 3) + (int)tag3;
+                    Interlocked.Exchange(ref _buffer.TestMetric[index], value);
+                }
+
                 public void RecordTestMetricZeroAgainTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.TestMetric[17], value);
+                    Interlocked.Exchange(ref _buffer.TestMetric[53], value);
                 }
             }
             """;
@@ -771,6 +793,10 @@ public class TelemetryMetricGeneratorTests
                 {
                 }
 
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int value)
+                {
+                }
+
                 public void RecordTestMetricZeroAgainTagMetric(int value)
                 {
                 }
@@ -786,6 +812,8 @@ public class TelemetryMetricGeneratorTests
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int value);
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int value);
+
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int value);
 
                 public void RecordTestMetricZeroAgainTagMetric(int value);
             }
@@ -807,6 +835,10 @@ public class TelemetryMetricGeneratorTests
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int value)
+                {
+                }
+
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, int value)
                 {
                 }
 
@@ -1040,9 +1072,15 @@ public class TelemetryMetricGeneratorTests
                     _buffer.TestMetric[index].TryEnqueue(value);
                 }
 
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, double value)
+                {
+                    var index = 17 + ((int)tag1 * 9) + ((int)tag2 * 3) + (int)tag3;
+                    _buffer.TestMetric[index].TryEnqueue(value);
+                }
+
                 public void RecordTestMetricZeroAgainTagMetric(double value)
                 {
-                    _buffer.TestMetric[17].TryEnqueue(value);
+                    _buffer.TestMetric[53].TryEnqueue(value);
                 }
             }
             """;
@@ -1066,6 +1104,10 @@ public class TelemetryMetricGeneratorTests
                 {
                 }
 
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, double value)
+                {
+                }
+
                 public void RecordTestMetricZeroAgainTagMetric(double value)
                 {
                 }
@@ -1081,6 +1123,8 @@ public class TelemetryMetricGeneratorTests
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, double value);
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, double value);
+
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, double value);
 
                 public void RecordTestMetricZeroAgainTagMetric(double value);
             }
@@ -1102,6 +1146,10 @@ public class TelemetryMetricGeneratorTests
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, double value)
+                {
+                }
+
+                public void RecordTestMetricThreeTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, MyTests.TestMetricNameSpace.OtherTag tag3, double value)
                 {
                 }
 
@@ -1400,7 +1448,7 @@ public class TelemetryMetricGeneratorTests
                 /// <summary>
                 /// The number of separate metrics in the <see cref="MyTests.TestMetricNameSpace.TestMetric" /> metric.
                 /// </summary>
-                public const int Length = 4;
+                public const int Length = 5;
 
                 /// <summary>
                 /// Gets the metric name for the provided metric
@@ -1413,6 +1461,7 @@ public class TelemetryMetricGeneratorTests
                         MyTests.TestMetricNameSpace.TestMetric.ZeroTagMetric => "metric.zero",
                         MyTests.TestMetricNameSpace.TestMetric.OneTagMetric => "metric.one",
                         MyTests.TestMetricNameSpace.TestMetric.TwoTagMetric => "metric.two",
+                        MyTests.TestMetricNameSpace.TestMetric.ThreeTagMetric => "metric.three",
                         MyTests.TestMetricNameSpace.TestMetric.ZeroAgainTagMetric => "metric.zeroagain",
                         _ => null!,
                     };
@@ -2277,7 +2326,7 @@ public class TelemetryMetricGeneratorTests
         {
             var aggregation = isDistribution ? "AggregatedDistribution" : "AggregatedMetric";
             return $$"""
-                private const int TestMetricLength = 18;
+                private const int TestMetricLength = 54;
 
                 /// <summary>
                 /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.TestMetric" /> values.
@@ -2305,7 +2354,44 @@ public class TelemetryMetricGeneratorTests
                         new(new[] { "error" }),
                         new(new[] { "error", "random" }),
                         new(new[] { "error", "ducktyping", "othertag", "somethingelse" }),
-                        // metric.zeroagain, index = 17
+                        // metric.three, index = 17
+                        new(new[] { "one" }),
+                        new(new[] { "two" }),
+                        new(new[] { "three" }),
+                        new(new[] { "random", "one" }),
+                        new(new[] { "random", "two" }),
+                        new(new[] { "random", "three" }),
+                        new(new[] { "ducktyping", "othertag", "somethingelse", "one" }),
+                        new(new[] { "ducktyping", "othertag", "somethingelse", "two" }),
+                        new(new[] { "ducktyping", "othertag", "somethingelse", "three" }),
+                        new(new[] { "debug", "one" }),
+                        new(new[] { "debug", "two" }),
+                        new(new[] { "debug", "three" }),
+                        new(new[] { "debug", "random", "one" }),
+                        new(new[] { "debug", "random", "two" }),
+                        new(new[] { "debug", "random", "three" }),
+                        new(new[] { "debug", "ducktyping", "othertag", "somethingelse", "one" }),
+                        new(new[] { "debug", "ducktyping", "othertag", "somethingelse", "two" }),
+                        new(new[] { "debug", "ducktyping", "othertag", "somethingelse", "three" }),
+                        new(new[] { "info", "one" }),
+                        new(new[] { "info", "two" }),
+                        new(new[] { "info", "three" }),
+                        new(new[] { "info", "random", "one" }),
+                        new(new[] { "info", "random", "two" }),
+                        new(new[] { "info", "random", "three" }),
+                        new(new[] { "info", "ducktyping", "othertag", "somethingelse", "one" }),
+                        new(new[] { "info", "ducktyping", "othertag", "somethingelse", "two" }),
+                        new(new[] { "info", "ducktyping", "othertag", "somethingelse", "three" }),
+                        new(new[] { "error", "one" }),
+                        new(new[] { "error", "two" }),
+                        new(new[] { "error", "three" }),
+                        new(new[] { "error", "random", "one" }),
+                        new(new[] { "error", "random", "two" }),
+                        new(new[] { "error", "random", "three" }),
+                        new(new[] { "error", "ducktyping", "othertag", "somethingelse", "one" }),
+                        new(new[] { "error", "ducktyping", "othertag", "somethingelse", "two" }),
+                        new(new[] { "error", "ducktyping", "othertag", "somethingelse", "three" }),
+                        // metric.zeroagain, index = 53
                         new(null),
                     };
 
@@ -2315,7 +2401,7 @@ public class TelemetryMetricGeneratorTests
                 /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
-                    = new int[]{ 1, 4, 12, 1, };
+                    = new int[]{ 1, 4, 12, 36, 1, };
             """;
         }
 
@@ -2426,6 +2512,9 @@ public class TelemetryMetricGeneratorTests
                 [TelemetryMetric<LogLevel, ErrorType>("metric.two")]
                 TwoTagMetric,
 
+                [TelemetryMetric<LogLevel, ErrorType, OtherTag>("metric.three")]
+                ThreeTagMetric,
+
                 [TelemetryMetric("metric.zeroagain")]
                 ZeroAgainTagMetric,
             }
@@ -2469,6 +2558,13 @@ public class TelemetryMetricGeneratorTests
                 [Description("")] None,
                 [Description("random;;")] Random,
                 [Description("ducktyping;;othertag;somethingelse")] DuckTyping,
+            }
+
+            public enum OtherTag
+            {
+                [Description("one")] One,
+                [Description("two")] Two,
+                [Description("three")] Three,
             }
             """;
     }
