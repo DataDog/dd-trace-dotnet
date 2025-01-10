@@ -18,32 +18,32 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.400.74 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.400.74" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.400.76 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.400.76" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.2 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.16 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.18 -->
     <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.16" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.51 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.53 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.51" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.74 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.76 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.74" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.74 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.76 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.400.74" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
@@ -68,8 +68,8 @@
 
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
-    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.29.2 -->
-    <PackageReference Include="Google.Protobuf" Version="3.29.2" />
+    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.29.3 -->
+    <PackageReference Include="Google.Protobuf" Version="3.29.3" />
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
@@ -160,7 +160,7 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.46.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.46.1 -->
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.0" />
 
     <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
@@ -334,13 +334,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!--    Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.2 -->
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.3 -->
     <PackageReference Include="xunit" Version="2.9.2" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!--    Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.2 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.9.2" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.3 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.9.3" />
 
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->
