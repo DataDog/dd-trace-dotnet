@@ -28,10 +28,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 #if NET5_0_OR_GREATER
 using System.Runtime.Versioning;
-using Ubiety.Dns.Core;
-using System.Reflection;
-
-
 #endif
 
 #if NETCOREAPP3_0_OR_GREATER
