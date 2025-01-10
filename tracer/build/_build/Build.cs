@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.8.0";
+    readonly string Version = "3.9.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -129,6 +129,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
+                            Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
 
     Target Clean => _ => _

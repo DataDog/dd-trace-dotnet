@@ -51,7 +51,7 @@ public class TypeAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(TypeAspect)}.{nameof(ReflectionInjectionParam)}");
+            IastModule.LogAspectException(ex, $"{nameof(TypeAspect)}.{nameof(ReflectionInjectionParam)}");
             return param;
         }
     }
