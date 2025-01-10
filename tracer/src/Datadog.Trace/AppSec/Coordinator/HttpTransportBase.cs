@@ -30,6 +30,8 @@ internal abstract class HttpTransportBase
 
     public abstract HttpContext Context { get; }
 
+    internal abstract bool ContextUninitialized { get; }
+
     internal abstract IContext? GetAdditiveContext();
 
     /// <summary>

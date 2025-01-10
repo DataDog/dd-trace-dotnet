@@ -588,11 +588,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         // This method actually performs some file operations after the request has been normally closed.
         [HttpGet("GetFileContentThread")]
         [Route("GetFileContentThread")]
-        public IActionResult GetFileContentThread(string file)
+        public IActionResult GetFileContentThread(string file, int numThreads = 100, int delayPerThread = 50)
         {
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < numThreads; i++)
             {
-                var thread = new Thread(() => { GetFileAux(file, i); });
+                var thread = new Thread(() => { GetFileAux(file, i * delayPerThread); });
                 thread.Start();
             }
 

@@ -6,14 +6,15 @@
 #nullable enable
 #pragma warning disable CS0282
 #if !NETFRAMEWORK
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 
@@ -141,7 +142,11 @@ internal readonly partial struct SecurityCoordinator
 
     internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
+        private bool _contextUninitialized = false;
+
         public override HttpContext Context { get; } = context;
+
+        internal override bool ContextUninitialized => GetContextFeatures() is null;
 
         internal override bool IsBlocked
         {
@@ -164,7 +169,7 @@ internal readonly partial struct SecurityCoordinator
         {
             get
             {
-                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
+                if (Context.Items?.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value) is true)
                 {
                     return value is bool boolValue && boolValue;
                 }
@@ -176,13 +181,32 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
 
-        internal override IContext GetAdditiveContext() => Context.Features.Get<IContext>();
+        internal override IContext? GetAdditiveContext() => GetContextFeatures()?.Get<IContext>();
 
-        internal override void SetAdditiveContext(IContext additiveContext) => Context.Features.Set(additiveContext);
+        internal override void SetAdditiveContext(IContext additiveContext) => GetContextFeatures()?.Set(additiveContext);
 
         internal override IHeadersCollection GetRequestHeaders() => new HeadersCollectionAdapter(Context.Request.Headers);
 
         internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
+
+        // In some edge situations we can get an ObjectDisposedException when accessing the context features
+        // This means that the context has been uninitiallized and we should not try to access it anymore
+        // Unfortunatelly, there is no way to know that but catching the exception or using reflection
+        // In DefaultHttpContext:
+        // public override IFeatureCollection Features => _features.Collection ?? ContextDisposed();
+        private IFeatureCollection? GetContextFeatures()
+        {
+            try
+            {
+                return _contextUninitialized ? null : Context.Features;
+            }
+            catch (ObjectDisposedException)
+            {
+                // The context has been disposed
+                _contextUninitialized = true;
+                return null;
+            }
+        }
     }
 }
 #endif

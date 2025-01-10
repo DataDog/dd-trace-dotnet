@@ -491,6 +491,8 @@ internal readonly partial struct SecurityCoordinator
 
         public override HttpContext Context { get; } = context;
 
+        internal override bool ContextUninitialized => HttpContext.Current is null;
+
         internal override IDictionary<string, object>? RouteData => Context.Request.RequestContext.RouteData?.Values;
 
         internal override bool ReportedExternalWafsRequestHeaders
