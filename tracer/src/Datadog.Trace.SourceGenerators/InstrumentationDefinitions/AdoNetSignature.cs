@@ -3,19 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators.Helpers;
 
 namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions;
 
 internal record AdoNetSignature
 {
-    public AdoNetSignature(string targetMethodName, string? targetReturnType, string[] targetParameterTypes, string instrumentationTypeName, int callTargetIntegrationKind, int returnType)
+    public AdoNetSignature(string targetMethodName, string? targetReturnType, string[] targetParameterTypes, string instrumentationTypeName, int callTargetIntegrationKind, int returnType, InstrumentationCategory instrumentationCategory)
     {
         TargetMethodName = targetMethodName;
         TargetReturnType = targetReturnType;
         TargetParameterTypes = new(targetParameterTypes);
         InstrumentationTypeName = instrumentationTypeName;
         CallTargetIntegrationKind = callTargetIntegrationKind;
+        InstrumentationCategory = instrumentationCategory;
         ReturnType = returnType;
     }
 
@@ -28,6 +30,8 @@ internal record AdoNetSignature
     public string InstrumentationTypeName { get; }
 
     public int CallTargetIntegrationKind { get; }
+
+    public InstrumentationCategory InstrumentationCategory { get; }
 
     public int ReturnType { get; }
 }

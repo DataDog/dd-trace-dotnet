@@ -191,7 +191,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
                 process.Kill();
                 throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }

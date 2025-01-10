@@ -210,7 +210,9 @@ namespace Datadog.Trace.TestHelpers
 
                 if (testCase.TestMethodArguments != null)
                 {
-                    parameters = string.Join(", ", testCase.TestMethodArguments.Select(a => a?.ToString() ?? "null"));
+                    // We replace ##vso to avoid sending "commands" via the log output when we're testing CI Visibility stuff
+                    // We should redact other CI's command prefixes as well in the future, but for now this is enough
+                    parameters = string.Join(", ", testCase.TestMethodArguments.Select(a => a?.ToString()?.Replace("##vso", "#####") ?? "null"));
                 }
 
                 var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";

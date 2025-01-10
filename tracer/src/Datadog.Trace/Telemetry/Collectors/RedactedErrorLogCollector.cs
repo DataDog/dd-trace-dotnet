@@ -32,7 +32,7 @@ internal class RedactedErrorLogCollector
     private ConcurrentDictionary<uint, int> _logCounts = new();
     private ConcurrentDictionary<uint, int> _logCountsReserve = new();
 
-    public List<List<LogMessageData>>? GetLogs()
+    public List<List<LogMessageData>>? GetLogs(string? tags = null)
     {
         // This method should only be called in a single-threaded loop
         List<List<LogMessageData>>? batches = null;
@@ -42,6 +42,7 @@ internal class RedactedErrorLogCollector
 
         while (_queue.TryDequeue(out var log))
         {
+            log.Tags = tags;
             var logSize = log.GetApproximateSerializationSize();
             // modify the message to add the final log count
             var eventId = EventIdHash.Compute(log.Message, log.StackTrace);
