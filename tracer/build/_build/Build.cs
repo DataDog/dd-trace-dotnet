@@ -155,7 +155,6 @@ partial class Build : NukeBuild
             BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(BuildArtifactsDirectory);
             EnsureCleanDirectory(MonitoringHomeDirectory);
-            EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(NativeTracerProject.Directory / "build");
             EnsureCleanDirectory(NativeTracerProject.Directory / "deps");

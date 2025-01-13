@@ -814,11 +814,13 @@ partial class Build
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, AzureDevopsBuildId.Value, $"{FullVersion}-release-artifacts");
+            var outputPath = TempDirectory / "artifacts";
+            EnsureCleanDirectory(outputPath);
+            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, AzureDevopsBuildId.Value, $"{FullVersion}-release-artifacts", outputPath);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+            Console.WriteLine("::set-output name=artifacts_path::" + outputPath / artifact.Name);
         });
 
     Target DownloadReleaseArtifacts => _ => _
@@ -839,16 +841,20 @@ partial class Build
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
             int buildId = await GetConsolidatedPipelineBuildId(buildHttpClient, TargetBranch, CommitSha);
-            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, buildId, $"{FullVersion}-release-artifacts");
+
+            var outputPath = TempDirectory / "artifacts";
+            EnsureCleanDirectory(outputPath);
+
+            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, buildId, $"{FullVersion}-release-artifacts", outputPath);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            var artifactsPath = OutputDirectory / artifact.Name;
+            var artifactsPath = outputPath / artifact.Name;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + artifactsPath);
 
-            var gitlabPath = OutputDirectory / CommitSha;
-            await DownloadGitlabArtifacts(OutputDirectory, CommitSha, FullVersion);
+            var gitlabPath = outputPath / CommitSha;
+            await DownloadGitlabArtifacts(outputPath, CommitSha, FullVersion);
             Console.WriteLine("::set-output name=gitlab_artifacts_path::" + gitlabPath);
 
             var files = artifactsPath.GlobFiles("*.*")
@@ -872,7 +878,7 @@ partial class Build
                 checksums.Add(checksumLine);
             }
 
-            var checksumPath = OutputDirectory / "sha512.txt";
+            var checksumPath = outputPath / "sha512.txt";
 
             // Use LF so can be read on linux
             File.WriteAllText(checksumPath, string.Join("\n", checksums));
@@ -888,8 +894,10 @@ partial class Build
          .Requires(() => GitHubToken)
          .Executes(async () =>
           {
-              var newReportdir = OutputDirectory / "CodeCoverage" / "New";
-              var oldReportdir = OutputDirectory / "CodeCoverage" / "Old";
+              var outputPath = TempDirectory;
+
+              var newReportdir = outputPath / "CodeCoverage" / "New";
+              var oldReportdir = outputPath / "CodeCoverage" / "Old";
 
               FileSystemTasks.EnsureCleanDirectory(newReportdir);
               FileSystemTasks.EnsureCleanDirectory(oldReportdir);
@@ -1650,7 +1658,7 @@ partial class Build
         }
     }
 
-    private async Task<BuildArtifact> DownloadArtifactsFromConsolidatedPipelineBuild(BuildHttpClient buildHttpClient, int buildId, string artifactName)
+    private async Task<BuildArtifact> DownloadArtifactsFromConsolidatedPipelineBuild(BuildHttpClient buildHttpClient, int buildId, string artifactName, AbsolutePath outputPath)
     {
         try
         {
@@ -1660,7 +1668,7 @@ partial class Build
                             artifactName: artifactName);
 
             Logger.Information("Release artifacts found, downloading...");
-            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
+            await DownloadAzureArtifact(outputPath, artifact, AzureDevopsToken);
 
             return artifact;
         }
