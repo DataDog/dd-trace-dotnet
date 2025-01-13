@@ -49,7 +49,7 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0");
         await RunTest();
     }
 
