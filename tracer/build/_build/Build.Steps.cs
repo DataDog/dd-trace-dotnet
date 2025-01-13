@@ -447,8 +447,14 @@ partial class Build
             DotnetBuild(toBuild, noDependencies: false);
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
-            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, GetDatadogTraceDllPath, nativeGeneratedFilesOutputPath);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, GetDatadogTraceDllPath, nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+
+            // This needs to match the _build_ output path for the dlls, which technically
+            // isn't well defined outside of MSBuild, so we have to hardcode it here
+            string GetDatadogTraceDllPath(string tfm)
+                => BuildArtifactsDirectory / "bin" / Projects.DatadogTrace / $"{BuildConfiguration}_{tfm}".ToLowerInvariant() / $"{Projects.DatadogTrace}.dll";
         });
 
     Target CompileTracerNativeTestsWindows => _ => _
