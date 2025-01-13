@@ -108,13 +108,13 @@ variables:
   # After GA we can do a find and replace and get rid of this
   dotnetCoreSdkLatestVersionShort: 9.0.102
   nativeBuildDotnetSdkVersion: 7.0.306
-  relativeArtifacts: /tracer/src/bin/artifacts
-  monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
-  artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  relativeArtifacts: /artifacts/artifacts
+  monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
+  artifacts: $(System.DefaultWorkingDirectory)/artifacts/artifacts
   outputDir: $(System.DefaultWorkingDirectory)/artifacts
-  symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
-  relativeRunnerTool: tracer/src/bin/runnerTool
-  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
+  symbols: $(System.DefaultWorkingDirectory)/artifacts/symbols
+  relativeRunnerTool: artifacts/runnerTool
+  relativeRunnerStandalone: artifacts/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
@@ -125,8 +125,8 @@ variables:
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
   DD_DOTNET_TRACER_MSBUILD:
-  NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
-  relativeNugetPackageDirectory: packages
+  NugetPackageDirectory: $(System.DefaultWorkingDirectory)/artifacts/packages
+  relativeNugetPackageDirectory: artifacts/packages
   # For scheduled builds, only run benchmarks and throughput (and deps). Always do a full build on master.
   isBenchmarksOnlyBuild: ${{ and(eq(variables['Build.Reason'], 'Schedule'), not(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'))) }} # only works if you have a main branch
   dotnetToolTag: build-dotnet-tool
