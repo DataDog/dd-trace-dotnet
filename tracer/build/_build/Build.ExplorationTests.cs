@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -335,7 +336,12 @@ partial class Build
                 var metadataReaders = new List<Tuple<object, MethodInfo, string>>();
                 foreach (var testAssemblyPath in testAssembliesPaths)
                 {
-                    var currentAssembly = Assembly.LoadFile(testAssemblyPath);
+                    var currentAssembly = LoadAssemblySafe(testAssemblyPath);
+                    if (currentAssembly == null)
+                    {
+                        continue;
+                    }
+
                     var symbolExtractor = createMethod?.Invoke(null, new object[] { currentAssembly });
                     if (symbolExtractor == null)
                     {
@@ -442,6 +448,25 @@ partial class Build
         }
     }
 
+    [CanBeNull]
+    static Assembly LoadAssemblySafe(string testAssemblyPath)
+    {
+        try
+        {
+            return Assembly.LoadFile(testAssemblyPath);
+        }
+        catch (BadImageFormatException e)
+        {
+            // ignore
+        }
+        catch (Exception e)
+        {
+            Logger.Warning($"Fail to load assembly: {testAssemblyPath}");
+        }
+
+        return null;
+    }
+
     string GetTracerAssemblyPath(TargetFramework framework)
     {
         TargetFramework tracerFramework = null;
@@ -483,7 +508,7 @@ partial class Build
 
         bool Exclude(string path)
         {
-            return path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}");
+            return path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") || Path.GetFileNameWithoutExtension(path).Equals("testhost");
         }
 
         bool IsSupportedExtension(string path)
