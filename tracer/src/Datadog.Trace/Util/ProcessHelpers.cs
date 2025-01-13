@@ -232,17 +232,23 @@ namespace Datadog.Trace.Util
                 return null;
             }
 
+            using var cts = command.Timeout.HasValue ? new CancellationTokenSource(command.Timeout.Value) : new CancellationTokenSource();
             using var disposableProcessInfo = processInfo;
             if (input is not null)
             {
+#if NETCOREAPP3_1_OR_GREATER
+                await processInfo.StandardInput.WriteAsync(input.AsMemory(), cts.Token).ConfigureAwait(false);
+                await processInfo.StandardInput.FlushAsync().ConfigureAwait(false);
+#else
                 await processInfo.StandardInput.WriteAsync(input).ConfigureAwait(false);
                 await processInfo.StandardInput.FlushAsync().ConfigureAwait(false);
+#endif
                 processInfo.StandardInput.Close();
             }
 
             var outputStringBuilder = new StringBuilder();
             var errorStringBuilder = new StringBuilder();
-            while (!processInfo.HasExited)
+            while (!processInfo.HasExited && !cts.Token.IsCancellationRequested)
             {
                 if (!processStartInfo.UseShellExecute)
                 {
@@ -250,13 +256,19 @@ namespace Datadog.Trace.Util
                     errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
                 }
 
-                await Task.Delay(15).ConfigureAwait(false);
+                await Task.Delay(15, cts.Token).ConfigureAwait(false);
             }
 
-            if (!processStartInfo.UseShellExecute)
+            if (!processStartInfo.UseShellExecute && !cts.Token.IsCancellationRequested)
             {
                 outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
                 errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
+            }
+
+            if (cts.Token.IsCancellationRequested)
+            {
+                Log.Warning("Process finished due timeout: {Value}.", command.Timeout);
+                return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), -1);
             }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
@@ -343,8 +355,9 @@ namespace Datadog.Trace.Util
             public readonly Encoding? InputEncoding;
             public readonly bool DoNotTrace;
             public readonly bool UseWhereIsIfFileNotFound;
+            public readonly TimeSpan? Timeout;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true, bool useWhereIsIfFileNotFound = false)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true, bool useWhereIsIfFileNotFound = false, TimeSpan? timeout = null)
             {
                 Cmd = cmd;
                 Arguments = arguments;
@@ -355,6 +368,7 @@ namespace Datadog.Trace.Util
                 InputEncoding = inputEncoding;
                 DoNotTrace = doNotTrace;
                 UseWhereIsIfFileNotFound = useWhereIsIfFileNotFound;
+                Timeout = timeout;
             }
         }
 

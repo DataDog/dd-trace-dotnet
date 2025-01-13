@@ -1188,7 +1188,8 @@ internal class IntelligentTestRunnerClient
                                     outputEncoding: Encoding.Default,
                                     errorEncoding: Encoding.Default,
                                     inputEncoding: Encoding.Default,
-                                    useWhereIsIfFileNotFound: true),
+                                    useWhereIsIfFileNotFound: true,
+                                    timeout: TimeSpan.FromMinutes(5)),
                                 input).ConfigureAwait(false);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
             if (gitOutput is null)
