@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void SetCodeOrigin_WhenSpanIsNull_DoesNotThrow()
         {
             // Should not throw
-            SpanCodeOriginManager.Instance.SetCodeOrigin(null);
+            SpanCodeOrigin.Instance.SetCodeOrigin(null);
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Debugger
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
             // Act
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOrigin.Instance.SetCodeOrigin(span);
 
             // Assert
             span.Tags.GetTag(CodeOriginTag + ".type").Should().BeNull();
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void TestMethod(Span span)
         {
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOrigin.Instance.SetCodeOrigin(span);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Tests.Debugger
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void DeepTestMethod3(Span span)
         {
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOrigin.Instance.SetCodeOrigin(span);
         }
 
         internal class CodeOriginSettingsSetter : IDisposable
@@ -125,13 +125,13 @@ namespace Datadog.Trace.Tests.Debugger
 
             public void Dispose()
             {
-                var instance = SpanCodeOriginManager.Instance;
+                var instance = SpanCodeOrigin.Instance;
                 instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, _original);
             }
 
             internal void Set(bool isEnable, int numberOfFrames, string excludeFromFilter)
             {
-                var instance = SpanCodeOriginManager.Instance;
+                var instance = SpanCodeOrigin.Instance;
                 _original = (DebuggerSettings)instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instance);
 
                 var overrideSettings = DebuggerSettings.FromSource(
