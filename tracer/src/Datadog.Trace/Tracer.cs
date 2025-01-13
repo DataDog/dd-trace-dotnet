@@ -528,7 +528,7 @@ namespace Datadog.Trace
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOrigin.Instance.SetCodeOrigin(span);
 
             return span;
         }

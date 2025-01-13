@@ -461,7 +461,7 @@ namespace Datadog.Trace.ClrProfiler
             if (!settings.IsRemoteConfigurationAvailable)
             {
                 // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
-                if (debuggerSettings.Enabled)
+                if (debuggerSettings.DynamicInstrumentationEnabled)
                 {
                     Log.Warning("Live Debugger is enabled but remote configuration is not available in this environment, so live debugger cannot be enabled.");
                 }
@@ -479,6 +479,7 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
                     // to changes in ExporterSettings etc.
+                    await DebuggerManager.Instance.InitializeInstrumentationBasedProducts();
 
                     try
                     {
