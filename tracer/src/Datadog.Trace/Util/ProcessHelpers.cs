@@ -267,7 +267,7 @@ namespace Datadog.Trace.Util
 
             if (cts.Token.IsCancellationRequested)
             {
-                Log.Warning("Process finished due timeout: {Value}.", command.Timeout);
+                Log.Error("Process finished due timeout: {Value}.", command.Timeout);
                 return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), -1);
             }
 
