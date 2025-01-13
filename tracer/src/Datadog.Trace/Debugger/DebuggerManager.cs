@@ -18,6 +18,8 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.dnlib.Threading;
+using Datadog.Trace.Ci.Configuration;
 
 #nullable enable
 
@@ -25,6 +27,57 @@ namespace Datadog.Trace.Debugger
 {
     internal class DebuggerManager(DebuggerSettings settings)
     {
+        // Private instance stored as volatile to ensure atomic reads
+        private static volatile DebuggerManager? _instance;
+    
+        // SemaphoreSlim for async lock control - more lightweight than traditional lock
+        private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+    
+        // Task to track initialization status
+        private static Task<DebuggerManager>? _initializationTask;
+    
+        // Private constructor to prevent direct instantiation
+        private DebuggerManager()
+        {
+        }
+
+        internal static async Task<DebuggerManager> Instance()
+        {
+            // Fast path - return existing initialization task if available
+            if (_initializationTask is not null)
+            {
+                return await _initializationTask;
+            }
+        
+            // Acquire semaphore for initialization
+            await _semaphore.WaitAsync();
+            try
+            {
+                // Double-check pattern inside lock
+                _initializationTask ??= CreateInstanceAsync();
+                return await _initializationTask;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private static async Task<DebuggerManager> CreateInstanceAsync()
+        {
+            var instance = new DebuggerManager();
+            var tracer = Tracer.Instance;
+            var discoveryService = TracerManager.Instance.DiscoveryService;
+            var b = await instance.WaitForDiscoveryService(discoveryService);
+            
+                    var dynamicInstrumentation = DebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, TracerManager.Instance.Settings, serviceName, tracer.TracerManager.Telemetry, instance.Settings, tracer.TracerManager.GitMetadataTagsProvider);
+
+                    var symbolsUploader = DebuggerFactory.CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, debuggerSettings, gitMetadataTagsProvider);
+
+            _instance = instance;
+            return instance;
+        }
+
         internal DebuggerSettings Settings { get; } = settings ?? DebuggerSettings.FromDefaultSource();
 
         public string ServiceName { get; }
@@ -40,21 +93,6 @@ namespace Datadog.Trace.Debugger
         private readonly IDebuggerUploader _symbolsUploader;
 
         private VendoredMicrosoftCode.System.Collections.Immutable.ImmutableList<IDynamicDebuggerConfiguration> _products;
-        private static DebuggerManager _instance;
-        private static bool _globalInstanceInitialized;
-        private static object _globalInstanceLock = new();
-
-        public static DebuggerManager Instance
-        {
-            get
-            {
-                return LazyInitializer.EnsureInitialized(
-                    ref _instance,
-                    ref _globalInstanceInitialized,
-                    ref _globalInstanceLock,
-                    Create);
-            }
-        }
 
         internal static DebuggerManager Create()
         {
@@ -69,6 +107,15 @@ namespace Datadog.Trace.Debugger
 
             return manager;
         }
+
+        private async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
+        {
+            var sw = Stopwatch.StartNew();
+            var isDiscoverySuccessful = await Datadog.Trace.ClrProfiler.Instrumentation.WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
+            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+            return isDiscoverySuccessful;
+        }
+
 
         internal async Task InitializeInstrumentationBasedProducts()
         {
