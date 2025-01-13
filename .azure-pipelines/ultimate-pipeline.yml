@@ -5108,7 +5108,7 @@ stages:
           condition: eq( variables['System.JobAttempt'], 1 )
           inputs:
             path: 'docker-images'
-            artifactName: 'docker-images'
+            artifactName: 'system-test-docker-images'
 
     - job: tests
       displayName: ""
@@ -5134,7 +5134,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         displayName: Download Docker images
         inputs:
-          artifact: docker-images
+          artifact: system-test-docker-images
           path: $(Build.SourcesDirectory)
 
       - script: |
