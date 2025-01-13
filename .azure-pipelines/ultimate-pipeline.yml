@@ -536,7 +536,7 @@ stages:
           managedBaseImage: debian
           artifactSuffix: linux-x64
           useNativeSdkVersion: true
-        x64:
+        x64-r2r:
           baseImage: centos7
           managedBaseImage: debian
           artifactSuffix: linux-x64-r2r
