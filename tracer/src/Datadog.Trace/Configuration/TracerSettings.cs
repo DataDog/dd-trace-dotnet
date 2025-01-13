@@ -586,7 +586,7 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-            this.JsonConfigurationSource = source.ToString() ?? "N/A because Tracer Settings";
+            this.JsonConfigurationFilePath = source.ToString() ?? "N/A";
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
@@ -1078,7 +1078,7 @@ namespace Datadog.Trace.Configuration
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
 
-        internal string JsonConfigurationSource { get; } = "N/A from default";
+        internal string JsonConfigurationFilePath { get; } = "N/A";
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.

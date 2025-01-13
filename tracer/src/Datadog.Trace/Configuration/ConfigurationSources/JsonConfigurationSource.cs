@@ -50,7 +50,7 @@ namespace Datadog.Trace.Configuration
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string filename)
             : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
         {
-            ConfigurationSource = filename;
+            JsonConfigurationFilePath = filename;
         }
 
         private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Configuration
             _origin = origin;
         }
 
-        internal string ConfigurationSource { get; set; } = "N/A because Jsonconfigsource.cs";
+        internal string JsonConfigurationFilePath { get; set; } = "N/A";
 
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Configuration
         /// </returns>
         public override string ToString()
         {
-            return "The datadog.json configuration is coming from " + ConfigurationSource;
+            return JsonConfigurationFilePath;
         }
 
         /// <summary>

@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
-        private string JsonConfigurationSource { get; set; } = "N/A, from composite configuration source";
+        private string JsonConfigurationFilePath { get; set; } = "N/A";
 
         /// <summary>
         /// Adds a new configuration source to this instance.
@@ -46,14 +46,7 @@ namespace Datadog.Trace.Configuration
             if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
-            if (source is JsonConfigurationSource)
-            {
-                JsonConfigurationSource = source.ToString() ?? "N/A";
-            }
-            else
-            {
-                JsonConfigurationSource = "failed to identify if composite configuration source is json";
-            }
+            JsonConfigurationFilePath = source.ToString() ?? "N/A";
         }
 
         /// <summary>
@@ -70,7 +63,7 @@ namespace Datadog.Trace.Configuration
 
         public override string ToString()
         {
-            return JsonConfigurationSource;
+            return JsonConfigurationFilePath;
         }
 
         /// <inheritdoc />
