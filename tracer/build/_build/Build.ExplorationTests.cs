@@ -461,7 +461,7 @@ partial class Build
         }
         catch (Exception e)
         {
-            Logger.Warning($"Fail to load assembly: {testAssemblyPath}");
+            Logger.Warning(e, $"Fail to load assembly: {testAssemblyPath}");
         }
 
         assembly = null;
@@ -509,6 +509,7 @@ partial class Build
 
         bool Exclude(string path)
         {
+            // skip obj folder and the `testhost`process itself
             return path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") || Path.GetFileNameWithoutExtension(path).Equals("testhost");
         }
 
