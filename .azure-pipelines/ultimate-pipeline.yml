@@ -887,7 +887,7 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-        arm64:
+        arm64-r2r:
           baseImage: debian
           artifactSuffix: linux-arm64-r2r
         alpine:
