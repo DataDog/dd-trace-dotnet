@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         Type
     }
 
-    internal class Redaction
+    internal class Redaction : IDynamicDebuggerConfiguration
     {
         private const int MaxStackAlloc = 512;
 
@@ -420,6 +420,15 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void ResetInstance()
         {
            System.Threading.Interlocked.Exchange(ref _instnace, new());
+        }
+		
+		public static void UpdateConfiguration(DebuggerSettings settings)
+        {
+		}
+
+        void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
+        {
+            UpdateConfiguration(settings);
         }
     }
 }
