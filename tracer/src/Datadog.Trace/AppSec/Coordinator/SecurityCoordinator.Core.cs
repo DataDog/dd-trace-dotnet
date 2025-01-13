@@ -146,7 +146,7 @@ internal readonly partial struct SecurityCoordinator
 
         public override HttpContext Context { get; } = context;
 
-        internal override bool ContextUninitialized => GetContextFeatures() is null;
+        internal override bool ContextUninitialized => _contextUninitialized || GetPropertySafe(() => Context.Features) is null;
 
         internal override bool IsBlocked
         {
@@ -169,7 +169,7 @@ internal readonly partial struct SecurityCoordinator
         {
             get
             {
-                if (Context.Items?.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value) is true)
+                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
                 {
                     return value is bool boolValue && boolValue;
                 }
@@ -181,32 +181,31 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
 
-        internal override IContext? GetAdditiveContext() => GetContextFeatures()?.Get<IContext>();
+        internal override IContext GetAdditiveContext() => Context.Features.Get<IContext>();
 
-        internal override void SetAdditiveContext(IContext additiveContext) => GetContextFeatures()?.Set(additiveContext);
+        internal override void SetAdditiveContext(IContext additiveContext) => Context.Features.Set(additiveContext);
 
         internal override IHeadersCollection GetRequestHeaders() => new HeadersCollectionAdapter(Context.Request.Headers);
 
         internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
 
-        // In some edge situations we can get an ObjectDisposedException when accessing the context features
+        // In some edge situations we can get an ObjectDisposedException when accessing the context features or other
+        // properties such as Context.Items or Context.Response.Headers that ultimatelly rely on features
         // This means that the context has been uninitiallized and we should not try to access it anymore
         // Unfortunatelly, there is no way to know that but catching the exception or using reflection
-        // In DefaultHttpContext:
-        // public override IFeatureCollection Features => _features.Collection ?? ContextDisposed();
-        private IFeatureCollection? GetContextFeatures()
+        private T? GetPropertySafe<T>(Func<T> function)
         {
             try
             {
-                return _contextUninitialized ? null : Context.Features;
+                var result = function.Invoke();
+                return result;
             }
             catch (ObjectDisposedException)
             {
-                // The context has been disposed
-                _contextUninitialized = true;
-                return null;
+                return default(T);
             }
         }
     }
 }
 #endif
+

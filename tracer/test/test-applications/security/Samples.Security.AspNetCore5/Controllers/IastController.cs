@@ -595,11 +595,14 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Ok");
         }
 
-        private void GetFileAux(string file, int i)
+        private void GetFileAux(string file, int delay)
         {
             try
             {
-                Thread.Sleep(i);
+                if (delay > 0)
+                {
+                    Thread.Sleep(delay);
+                }
                 GetFileContent(file);
             }
             catch (Exception ex)
