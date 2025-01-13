@@ -123,7 +123,7 @@ namespace Datadog.Trace.Configuration
                 SpanOriginEntryEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
             };
 
-            var oldDebuggerSettings = LiveDebugger.Instance.Settings;
+            var oldDebuggerSettings = DynamicInstrumentation.Instance.Settings;
 
             if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
             {
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Configuration
             Log.Information("Applying new dynamic debugger configuration");
             var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
 
-            LiveDebugger.Instance.UpdateDynamicConfiguration(newDebuggerSettings);
+            DynamicInstrumentation.Instance.UpdateDynamicConfiguration(newDebuggerSettings);
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

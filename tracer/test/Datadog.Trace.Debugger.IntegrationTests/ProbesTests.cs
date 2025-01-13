@@ -311,7 +311,7 @@ public class ProbesTests : TestHelper
 
             await sample.RunCodeSample();
 
-            await logEntryWatcher.WaitForLogEntry($"LiveDebugger.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
+            await logEntryWatcher.WaitForLogEntry($"DynamicInstrumentation.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
 
             Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
 
