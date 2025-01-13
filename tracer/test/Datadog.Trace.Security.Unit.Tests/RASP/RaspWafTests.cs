@@ -7,18 +7,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
+#if NETCOREAPP
+using Microsoft.AspNetCore.Http;
+#endif
+using Moq;
 using Xunit;
-
+using static Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.Unit.Tests;
@@ -117,6 +124,31 @@ public class RaspWafTests : WafLibraryRequiredTest
             addresses.Count().Should().BeGreaterThan(0);
         });
     }
+
+#if NETCOREAPP
+    [Fact]
+    public void GivenWafInstance_WhenGetKnownAddressesInParallel_ThenResultIsOk222()
+    {
+        var contextMoq = new Mock<HttpContext>();
+        contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
+        var context = contextMoq.Object;
+        CoreHttpContextStore.Instance.Set(context);
+        var span = new Span(new SpanContext(1, 1), new DateTimeOffset());
+        var securityCoordinator = SecurityCoordinator.TryGet(AppSec.Security.Instance, span);
+        var result = securityCoordinator.Value.RunWaf(new(), runWithEphemeral: true, isRasp: true);
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void GivenWafInstance_WhenGetKnownAddressesInParallel_ThenResultIsOk2223()
+    {
+        var contextMoq = new Mock<HttpContext>();
+        contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
+        var context = contextMoq.Object;
+        HttpTransport transport = new(context);
+        transport.ContextUninitialized.Should().BeTrue();
+    }
+#endif
 
     private void EnableDebugInfo(bool enable)
     {
