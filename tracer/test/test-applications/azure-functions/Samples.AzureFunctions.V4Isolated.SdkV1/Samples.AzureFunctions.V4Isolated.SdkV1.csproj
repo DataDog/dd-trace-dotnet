@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- We can't build and run these as multi-package versions, so we have to manually update this as required for now -->
-    <ApiVersion Condition="'$(ApiVersion)' == ''">1.24.0</ApiVersion>
     <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <OutputType>Exe</OutputType>
@@ -11,7 +9,8 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.0.12" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.0.1" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.18.1" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="$(ApiVersion)" />
+    <!-- We can't build and run these as multi-package versions, so we have to manually update this as required for now -->
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.24.0" />
   </ItemGroup>
 
   <!-- Just reducing duplication, we can evolve these separate if we need to later -->
