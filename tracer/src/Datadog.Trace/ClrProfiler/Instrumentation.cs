@@ -329,6 +329,9 @@ namespace Datadog.Trace.ClrProfiler
                 {
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
+
+                    Log.Debug("Initializing OpenTelemetry components.");
+                    OpenTelemetry.Sdk.Initialize();
                 }
             }
             catch (Exception ex)

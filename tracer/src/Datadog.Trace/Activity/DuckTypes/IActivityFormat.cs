@@ -11,5 +11,7 @@ namespace Datadog.Trace.Activity.DuckTypes
     internal interface IActivityFormat
     {
         ActivityIdFormat DefaultIdFormat { get; set; }
+
+        bool ForceDefaultIdFormat { get; set; }
     }
 }
