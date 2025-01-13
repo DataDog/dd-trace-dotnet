@@ -628,7 +628,7 @@ stages:
       displayName: Download profiler linux native binary (linux-x64)
       condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
       inputs:
-        artifact: linux-profiler-home-linux-x64
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -915,7 +915,7 @@ stages:
       displayName: Download profiler arm64 native binary
       condition: or(eq(variables['artifactSuffix'], 'linux-arm64'), eq(variables['artifactSuffix'], 'linux-arm64-r2r'))
       inputs:
-        artifact: linux-profiler-home-linux-arm64
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
