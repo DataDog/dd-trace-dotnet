@@ -111,6 +111,7 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  outputDir: $(System.DefaultWorkingDirectory)/artifacts
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
@@ -1530,9 +1531,209 @@ stages:
             testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+- stage: build_samples
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [standalone, multi_version, merge]
+
+    - job: standalone
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: $(outputDir)/bin
+          displayName: Upload artifact samples (bin only)
+          artifact: samples-bin-standalone
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+    - job: multi_version
+      timeoutInMinutes: 60 #default value
+      strategy:
+        # TODO: we could move this generation to the generate_variables stage but it would delay this starting, so just hardcode it for now
+        matrix:
+          net462:
+            framework: net462
+          netcoreapp2.1:
+            framework: netcoreapp2.1
+          netcoreapp3.0:
+            framework: netcoreapp3.0
+          netcoreapp3.1:
+            framework: netcoreapp3.1
+          net5.0:
+            framework: net5.0
+          net6.0:
+            framework: net6.0
+          net7.0:
+            framework: net7.0
+          net8.0:
+            framework: net8.0
+          net9.0:
+            framework: net9.0
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd CreateRequiredDirectories CompileSamples -Framework $(framework) -TestAllPackageVersions
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: $(outputDir)/publish
+          displayName: Upload artifact samples (bin only)
+          artifact: samples-multi-version-$(framework)
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+    - job: merge
+      dependsOn: [ standalone, multi_version ]
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - checkout: none
+        - powershell: |
+            mkdir $(Build.ArtifactStagingDirectory)/bin
+            mkdir $(Build.ArtifactStagingDirectory)/publish
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-bin-standalone
+            path: $(Build.ArtifactStagingDirectory)/bin
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net462
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp2.1
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp3.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp3.1
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net5.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net6.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net7.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net8.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net9.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - publish: $(Build.ArtifactStagingDirectory)
+          displayName: Upload artifact samples
+          artifact: samples
+
+# This is just to test that we _can_ build the solution on macos
+# It's not used by other stages, and just ensures we don't break the macos build
+- stage: build_samples_macos
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [macos]
+
+    - job: macos
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: macos-13
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: ./tracer/build.sh CreateRequiredDirectories CompileSamples
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1557,6 +1758,12 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -1574,7 +1781,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests RunWindowsIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2094,7 +2301,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2124,6 +2331,12 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2131,7 +2344,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -2205,6 +2418,12 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2212,7 +2431,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -2322,6 +2541,12 @@ stages:
       inputs:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2925,11 +3150,18 @@ stages:
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples
+            path: $(outputDir)
+          retryCountOnTaskFailure: 5
+
         - template: steps/run-in-docker.yml
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+            command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
@@ -2995,6 +3227,12 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples
+            path: $(outputDir)
+          retryCountOnTaskFailure: 5
 
         - template: steps/run-in-docker.yml
           parameters:
