@@ -617,8 +617,6 @@ stages:
 
     # Download _both_ musl and glibc if we're building the universal package
     # but only the musl package if we're building alpine package
-    #
-    # R2R only requires the tracer, as the profiler is not used there yet.
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary (linux-x64)
       condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
@@ -628,7 +626,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
+      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
       inputs:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
@@ -915,7 +913,7 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler arm64 native binary
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
+      condition: or(eq(variables['artifactSuffix'], 'linux-arm64'), eq(variables['artifactSuffix'], 'linux-arm64-r2r'))
       inputs:
         artifact: linux-profiler-home-linux-arm64
         path: $(monitoringHome)
