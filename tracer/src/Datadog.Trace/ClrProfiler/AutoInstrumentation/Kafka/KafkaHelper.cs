@@ -324,7 +324,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                TracerManager.Instance.SpanContextPropagator.Inject(context, adapter);
+                Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {

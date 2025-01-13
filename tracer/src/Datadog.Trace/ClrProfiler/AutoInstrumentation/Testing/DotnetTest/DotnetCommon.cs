@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             // Let's detect if we already have a session for this test process
-            var context = TracerManager.Instance.SpanContextPropagator.Extract(
+            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
                 EnvironmentHelpers.GetEnvironmentVariables(),
                 new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
@@ -338,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             var isCollectIndex = -1;
             var isTestAdapterPathIndex = -1;
-            var msbuildArgsList = msbuildArgs as List<string> ?? [.. msbuildArgs];
+            var msbuildArgsList = msbuildArgs as List<string> ?? [..msbuildArgs];
             for (var i = 0; i < msbuildArgsList.Count; i++)
             {
                 var arg = msbuildArgsList[i];

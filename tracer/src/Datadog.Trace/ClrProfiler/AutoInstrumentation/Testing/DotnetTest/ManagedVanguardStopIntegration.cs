@@ -51,7 +51,7 @@ public class ManagedVanguardStopIntegration
                     DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", percentage);
 
                     // Extract session variables (from out of process sessions)
-                    var context = TracerManager.Instance.SpanContextPropagator.Extract(
+                    var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
                         EnvironmentHelpers.GetEnvironmentVariables(),
                         new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 

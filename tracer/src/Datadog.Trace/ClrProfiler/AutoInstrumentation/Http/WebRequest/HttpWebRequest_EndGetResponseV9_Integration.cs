@@ -63,7 +63,7 @@ public class HttpWebRequest_EndGetResponseV9_Integration
                 // We've already propagated baggage through the HTTP headers at this point,
                 // and when this method is called this is presumably the "bottom" of the call chain,
                 // and it may have been called on an entirely different thread.
-                existingContext = TracerManager.Instance.SpanContextPropagator.Extract(headers);
+                existingContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(headers);
             }
 
             var existingSpanContext = existingContext.SpanContext;

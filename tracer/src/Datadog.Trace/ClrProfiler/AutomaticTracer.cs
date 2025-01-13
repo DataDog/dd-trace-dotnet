@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler
                 return spanContext;
             }
 
-            var context = TracerManager.Instance.SpanContextPropagator.Extract(value);
+            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(value);
             return context.SpanContext;
         }
 

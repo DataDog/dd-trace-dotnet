@@ -98,7 +98,7 @@ internal partial class SecurityReporter
         _httpTransport.DisposeAdditiveContext();
     }
 
-    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => TracerManager.Instance.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
+    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
 
     private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {

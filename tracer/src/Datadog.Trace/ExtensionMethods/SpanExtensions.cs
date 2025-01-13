@@ -79,7 +79,7 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 try
                 {
-                    TracerManager.Instance.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
+                    Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
                 }
                 catch (Exception ex)
                 {

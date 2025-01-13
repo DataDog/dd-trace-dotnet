@@ -342,7 +342,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                return TracerManager.Instance.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
             }
             catch (Exception ex)
             {

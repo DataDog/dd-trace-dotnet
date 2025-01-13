@@ -305,7 +305,7 @@ namespace Datadog.Trace.Coverage.Collector
             // Is not part of the spec but useful for support tickets.
             // We try to extract session variables (from out of process sessions)
             // and try to send a message to the IPC server for setting the test.code_coverage.injected tag.
-            var extractedContext = TracerManager.Instance.SpanContextPropagator.Extract(
+            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
                             EnvironmentHelpers.GetEnvironmentVariables(),
                             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 

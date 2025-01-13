@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (spanContext is null)
                 {
-                    var extractedContext = ExtractPropagatedContext(metadata).MergeBaggageInto(Baggage.Current);
+                    var extractedContext = ExtractPropagatedContext(tracer, metadata).MergeBaggageInto(Baggage.Current);
                     spanContext = extractedContext.SpanContext;
                 }
 
@@ -62,13 +62,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             return scope;
         }
 
-        private static PropagationContext ExtractPropagatedContext(IMetadata? metadata)
+        private static PropagationContext ExtractPropagatedContext(Tracer tracer, IMetadata? metadata)
         {
             try
             {
                 if (metadata is not null)
                 {
-                    return TracerManager.Instance.SpanContextPropagator.Extract(new MetadataHeadersCollection(metadata));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new MetadataHeadersCollection(metadata));
                 }
             }
             catch (Exception ex)

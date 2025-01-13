@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             try
             {
-                TracerManager.Instance.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
+                Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
                 jsonData[KinesisKey] = propagatedContext;
 
                 var memoryStreamData = DictionaryToMemoryStream(jsonData);
