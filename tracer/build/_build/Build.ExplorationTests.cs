@@ -121,12 +121,6 @@ partial class Build
         var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
         GitTasks.Git(cloneCommand);
 
-        if (!string.IsNullOrEmpty(testDescription.GitRepositorySha))
-        {
-            var resetCommand = $"reset --hard {testDescription.GitRepositorySha}";
-            GitTasks.Git(resetCommand);
-        }
-
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
         if (!Directory.Exists(projectPath))
         {
@@ -553,12 +547,6 @@ class ExplorationTestDescription
 
     public string GitRepositoryUrl { get; set; }
     public string GitRepositoryTag { get; set; }
-
-    /// <summary>
-    /// Optional, to target a specific commit.
-    /// GitRepositoryTag is still required, must be set to the branch where that commit is.
-    /// </summary>
-    public string GitRepositorySha { get; set; }
     public bool IsGitShallowCloneSupported { get; set; }
     public bool IsGitSubmodulesRequired { get; set; }
 
@@ -611,8 +599,7 @@ class ExplorationTestDescription
             {
                 Name = ExplorationTestName.eShopOnWeb,
                 GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
-                GitRepositoryTag = "main",
-                GitRepositorySha = "2414014bfa0f4d2021b5bc9061429a98d232f440",
+                GitRepositoryTag = "2414014bfa0f4d2021b5bc9061429a98d232f440",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET8_0 }
