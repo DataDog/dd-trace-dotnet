@@ -1,4 +1,4 @@
-// <copyright file="SpanCodeOriginManager.cs" company="Datadog">
+// <copyright file="SpanCodeOrigin.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,21 +12,28 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOriginManager
+    internal class SpanCodeOrigin(DebuggerSettings settings) : IDynamicDebuggerConfiguration
     {
         private const string CodeOriginTag = "_dd.code_origin";
 
         private const string FramesPrefix = "frames";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
-        private readonly DebuggerSettings _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
+        internal static readonly SpanCodeOrigin Instance = new(DebuggerSettings.FromDefaultSource());
+        private bool _isEnabled;
 
-        internal static SpanCodeOriginManager Instance { get; } = new();
+        public void UpdateConfiguration(DebuggerSettings newSettings)
+        {
+            if (newSettings.DynamicSettings.SpanOriginExitEnabled.HasValue)
+            {
+                _isEnabled = newSettings.DynamicSettings.SpanOriginExitEnabled.Value;
+            }
+        }
 
         internal void SetCodeOrigin(Span? span)
         {
-            if (span == null || !_settings.CodeOriginForSpansEnabled)
+            if (span == null || !_isEnabled)
             {
                 return;
             }
@@ -36,7 +43,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private void AddExitSpanTag(Span span)
         {
-            var frames = ArrayPool<FrameInfo>.Shared.Rent(_settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -107,7 +114,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < _settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -117,7 +124,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.ThirdPartyDetectionExcludes, _settings.ThirdPartyDetectionIncludes))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, settings.ThirdPartyDetectionExcludes, settings.ThirdPartyDetectionIncludes))
                 {
                     // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
@@ -130,5 +137,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         }
 
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
+    }
+
+    internal interface IDynamicDebuggerConfiguration
+    {
+        void UpdateConfiguration(DebuggerSettings settings);
     }
 }
