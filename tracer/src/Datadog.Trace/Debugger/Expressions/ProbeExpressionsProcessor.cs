@@ -39,10 +39,10 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal void AddProbeProcessor(ProbeDefinition probe)
         {
-            if (LiveDebugger.Instance?.IsInitialized == false)
+            if (DynamicInstrumentation.Instance?.IsInitialized == false)
             {
                 Log.Error("Failed to create probe processor for probe: {Id}", probe.Id);
-                throw new Exception("AddProbeProcessor can be called only when LiveDebugger is initialized");
+                throw new Exception("AddProbeProcessor can be called only when DynamicInstrumentation is initialized");
             }
 
             try

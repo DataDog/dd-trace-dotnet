@@ -129,7 +129,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception value</param>
         /// <param name="states">Debugger state</param>
-        /// <returns>LiveDebugger return structure</returns>
+        /// <returns>DynamicInstrumentation return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DebuggerReturn<TReturn> EndMethod_StartMarker<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref MethodDebuggerState[] states)
         {

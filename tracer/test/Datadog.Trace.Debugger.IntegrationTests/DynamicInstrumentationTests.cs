@@ -1,4 +1,4 @@
-// <copyright file="LiveDebuggerTests.cs" company="Datadog">
+// <copyright file="DynamicInstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,15 +21,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
 #if !NETCOREAPP2_1
-[CollectionDefinition(nameof(LiveDebuggerTests), DisableParallelization = true)]
-[Collection(nameof(LiveDebuggerTests))]
+[CollectionDefinition(nameof(DynamicInstrumentationTests), DisableParallelization = true)]
+[Collection(nameof(DynamicInstrumentationTests))]
 [UsesVerify]
-public class LiveDebuggerTests : TestHelper
+public class DynamicInstrumentationTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
 
-    public LiveDebuggerTests(ITestOutputHelper output)
+    public DynamicInstrumentationTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");

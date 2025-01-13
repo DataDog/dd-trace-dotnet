@@ -477,7 +477,7 @@ namespace Datadog.Trace.ClrProfiler
             Task.Run(
                 async () =>
                 {
-                    // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
+                    // TODO: DynamicInstrumentation should be initialized in TracerManagerFactory so it can respond
                     // to changes in ExporterSettings etc.
                     await DebuggerManager.Instance.InitializeInstrumentationBasedProducts();
 
@@ -489,7 +489,7 @@ namespace Datadog.Trace.ClrProfiler
 
                         if (isDiscoverySuccessful)
                         {
-                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                            var liveDebugger = DebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
 
                             Log.Debug("Initializing live debugger.");
 
@@ -505,7 +505,7 @@ namespace Datadog.Trace.ClrProfiler
 
         // /!\ This method is called by reflection in the SampleHelpers
         // If you remove it then you need to provide an alternative way to wait for the discovery service
-        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
+        internal static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
         {
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             // Stop waiting if we're shutting down
@@ -521,12 +521,12 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
+        internal static async Task InitializeLiveDebugger(DynamicInstrumentation dynamicInstrumentation)
         {
             var sw = Stopwatch.StartNew();
             try
             {
-                await liveDebugger.InitializeAsync().ConfigureAwait(false);
+                await dynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

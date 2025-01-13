@@ -68,17 +68,17 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal ProbeData ProbeData { get; }
 
         /// <summary>
-        /// Gets the LiveDebugger SnapshotCreator
+        /// Gets the DynamicInstrumentation SnapshotCreator
         /// </summary>
         internal IDebuggerSnapshotCreator SnapshotCreator { get; }
 
         /// <summary>
-        /// Gets or sets the LiveDebugger BeginMethod scope
+        /// Gets or sets the DynamicInstrumentation BeginMethod scope
         /// </summary>
         internal Scope Scope { get; set; }
 
         /// <summary>
-        /// Gets or sets the LiveDebugger state StartTime
+        /// Gets or sets the DynamicInstrumentation state StartTime
         /// </summary>
         internal DateTimeOffset? StartTime { get; set; }
 
