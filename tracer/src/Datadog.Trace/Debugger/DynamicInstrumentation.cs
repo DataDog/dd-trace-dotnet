@@ -1,4 +1,4 @@
-// <copyright file="LiveDebugger.cs" company="Datadog">
+// <copyright file="DynamicInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,9 +32,9 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class LiveDebugger : IDynamicDebuggerConfiguration
+    internal class DynamicInstrumentation : IDynamicDebuggerConfiguration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
         private static readonly object GlobalLock = new();
 
         private readonly IDiscoveryService _discoveryService;
@@ -42,7 +42,6 @@ namespace Datadog.Trace.Debugger
         private readonly ISubscription _subscription;
         private readonly ISnapshotUploader _snapshotUploader;
         private readonly IDebuggerUploader _diagnosticsUploader;
-        private readonly IDebuggerUploader _symbolsUploader;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
@@ -51,13 +50,12 @@ namespace Datadog.Trace.Debugger
         private readonly object _instanceLock = new();
         private bool _isRcmAvailable;
 
-        private LiveDebugger(
+        private DynamicInstrumentation(
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             ISnapshotUploader snapshotUploader,
             IDebuggerUploader diagnosticsUploader,
-            IDebuggerUploader symbolsUploader,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
@@ -66,7 +64,6 @@ namespace Datadog.Trace.Debugger
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
             _diagnosticsUploader = diagnosticsUploader;
-            _symbolsUploader = symbolsUploader;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
@@ -83,11 +80,11 @@ namespace Datadog.Trace.Debugger
             discoveryService?.SubscribeToChanges(DiscoveryCallback);
         }
 
-        public static LiveDebugger Instance { get; private set; }
+        public static DynamicInstrumentation Instance { get; private set; }
 
         public bool IsInitialized { get; private set; }
 
-        public static LiveDebugger Create(
+        public static DynamicInstrumentation Create(
             DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
@@ -103,7 +100,7 @@ namespace Datadog.Trace.Debugger
             lock (GlobalLock)
             {
                 return Instance ??=
-                           new LiveDebugger(
+                           new DynamicInstrumentation(
                                settings: settings,
                                serviceName: serviceName,
                                discoveryService: discoveryService,
@@ -377,7 +374,7 @@ namespace Datadog.Trace.Debugger
 
                 if (lineProbes?.Any() == true)
                 {
-                    Log.Information<int>("LiveDebugger.CheckUnboundProbes: {Count} unbound probes became bound.", noLongerUnboundProbes.Count);
+                    Log.Information<int>("DynamicInstrumentation.CheckUnboundProbes: {Count} unbound probes became bound.", noLongerUnboundProbes.Count);
 
                     DebuggerNativeMethods.InstrumentProbes(Array.Empty<NativeMethodProbeDefinition>(), lineProbes.ToArray(), Array.Empty<NativeSpanProbeDefinition>(), Array.Empty<NativeRemoveProbeRequest>());
 
