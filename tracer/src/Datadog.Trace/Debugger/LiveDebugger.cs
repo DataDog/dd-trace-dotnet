@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
-#nullable disable
+#nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,6 +22,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -31,7 +32,7 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class LiveDebugger
+    internal class LiveDebugger : IDynamicDebuggerConfiguration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
         private static readonly object GlobalLock = new();
@@ -51,8 +52,6 @@ namespace Datadog.Trace.Debugger
         private bool _isRcmAvailable;
 
         private LiveDebugger(
-            DebuggerSettings settings,
-            string serviceName,
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
@@ -63,7 +62,6 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
-            Settings = settings;
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -74,7 +72,6 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater = configurationUpdater;
             _dogStats = dogStats;
             _unboundProbes = new List<ProbeDefinition>();
-            ServiceName = serviceName;
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
@@ -89,10 +86,6 @@ namespace Datadog.Trace.Debugger
         public static LiveDebugger Instance { get; private set; }
 
         public bool IsInitialized { get; private set; }
-
-        public string ServiceName { get; }
-
-        internal DebuggerSettings Settings { get; }
 
         public static LiveDebugger Create(
             DebuggerSettings settings,
@@ -142,8 +135,6 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Live Debugger initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
-                DebuggerSnapshotSerializer.SetConfig(Settings);
-                Redaction.Instance.SetConfig(Settings.RedactedIdentifiers, Settings.RedactedExcludedIdentifiers, Settings.RedactedTypes);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
@@ -157,12 +148,6 @@ namespace Datadog.Trace.Debugger
             {
                 if (IsInitialized)
                 {
-                    return false;
-                }
-
-                if (!Settings.Enabled)
-                {
-                    Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
                     return false;
                 }
 
@@ -529,29 +514,10 @@ namespace Datadog.Trace.Debugger
 
         private void DiscoveryCallback(AgentConfiguration x)
             => _isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
+
+        public void UpdateConfiguration(DebuggerSettings settings)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
-
-internal record BoundLineProbeLocation
-{
-    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
-    {
-        ProbeDefinition = probe;
-        MVID = mvid;
-        MethodToken = methodToken;
-        BytecodeOffset = bytecodeOffset;
-        LineNumber = lineNumber;
-    }
-
-    public ProbeDefinition ProbeDefinition { get; set; }
-
-    public Guid MVID { get; set; }
-
-    public int MethodToken { get; set; }
-
-    public int BytecodeOffset { get; set; }
-
-    public int LineNumber { get; set; }
-}
-
-#pragma warning restore SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
