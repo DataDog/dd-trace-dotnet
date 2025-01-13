@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -336,8 +337,7 @@ partial class Build
                 var metadataReaders = new List<Tuple<object, MethodInfo, string>>();
                 foreach (var testAssemblyPath in testAssembliesPaths)
                 {
-                    var currentAssembly = LoadAssemblySafe(testAssemblyPath);
-                    if (currentAssembly == null)
+                    if (!TryLoadAssembly(testAssemblyPath, out var currentAssembly))
                     {
                         continue;
                     }
@@ -448,12 +448,12 @@ partial class Build
         }
     }
 
-    [CanBeNull]
-    static Assembly LoadAssemblySafe(string testAssemblyPath)
+    static bool TryLoadAssembly(string testAssemblyPath, [NotNullWhen(true)] out Assembly assembly)
     {
         try
         {
-            return Assembly.LoadFile(testAssemblyPath);
+            assembly = Assembly.LoadFile(testAssemblyPath);
+            return true;
         }
         catch (BadImageFormatException e)
         {
@@ -464,7 +464,8 @@ partial class Build
             Logger.Warning($"Fail to load assembly: {testAssemblyPath}");
         }
 
-        return null;
+        assembly = null;
+        return false;
     }
 
     string GetTracerAssemblyPath(TargetFramework framework)
