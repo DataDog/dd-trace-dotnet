@@ -487,12 +487,7 @@ namespace Datadog.Trace.Ci
                         var context = SynchronizationContext.Current;
                         try
                         {
-                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                            {
-                                SynchronizationContext.SetSynchronizationContext(null);
-                            }
-
-                            var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
+                            var osxVersionCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("uname", "-r"));
                             var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
                             if (!string.IsNullOrEmpty(osxVersion))
                             {
@@ -502,13 +497,6 @@ namespace Datadog.Trace.Ci
                         catch (Exception ex)
                         {
                             Log.Warning(ex, "Error getting OS version on macOS");
-                        }
-                        finally
-                        {
-                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                            {
-                                SynchronizationContext.SetSynchronizationContext(null);
-                            }
                         }
 
                         break;
