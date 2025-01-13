@@ -7,12 +7,16 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
+
 #else
 using System.Web;
 #endif
@@ -60,20 +64,12 @@ internal readonly partial struct SecurityCoordinator
 
             _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
 
-            if (additiveContext != null)
-            {
-                // run the WAF and execute the results
-                if (runWithEphemeral)
-                {
-                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp);
-                }
-                else
-                {
-                    result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
-                }
+            // run the WAF and execute the results
+            result = runWithEphemeral
+                         ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
+                         : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
-                SecurityReporter.RecordTelemetry(result);
-            }
+            SecurityReporter.RecordTelemetry(result);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
@@ -95,6 +91,121 @@ internal readonly partial struct SecurityCoordinator
     }
 
     internal static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
+
+    public IResult? RunWafForUser(string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false, Dictionary<string, string>? otherTags = null)
+    {
+        if (_httpTransport.IsBlocked)
+        {
+            return null;
+        }
+
+        IResult? result = null;
+        Dictionary<string, object>? addresses = null;
+        try
+        {
+            var additiveContext = GetOrCreateAdditiveContext();
+            if (additiveContext?.ShouldRunWith(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
+            {
+                addresses = userAddresses.ToDictionary(k => k.Key, object (v) => v.Value);
+
+                if (otherTags is not null)
+                {
+                    foreach (var kvp in otherTags)
+                    {
+                        if (!addresses.ContainsKey(kvp.Key))
+                        {
+                            addresses.Add(kvp.Key, kvp.Value);
+                        }
+                    }
+                }
+
+                SecurityReporter.LogAddressIfDebugEnabled(addresses);
+
+                // run the WAF and execute the results
+                result = additiveContext.Run(addresses, _security.Settings.WafTimeoutMicroSeconds);
+                additiveContext.CommitUserRuns(userAddresses, fromSdk);
+                RecordTelemetry(result);
+
+                if (_localRootSpan.Context.TraceContext is not null)
+                {
+                    _localRootSpan.Context.TraceContext.WafExecuted = true;
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            if (addresses is not null)
+            {
+                var stringBuilder = StringBuilderCache.Acquire();
+                foreach (var kvp in addresses)
+                {
+                    stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
+                }
+
+                Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
+            }
+        }
+
+        return result;
+    }
+
+    internal IContext? GetOrCreateAdditiveContext()
+    {
+        var additiveContext = _httpTransport.GetAdditiveContext();
+
+        if (additiveContext == null)
+        {
+            additiveContext = _security.CreateAdditiveContext();
+            // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
+            if (additiveContext is not null)
+            {
+                _httpTransport.SetAdditiveContext(additiveContext);
+            }
+        }
+
+        if (!_httpTransport.IsAdditiveContextDisposed())
+        {
+            return additiveContext;
+        }
+
+        Log.Warning("Waf could not run as waf additive context is disposed");
+        return null;
+    }
+
+    private static void RecordTelemetry(IResult? result)
+    {
+        if (result == null)
+        {
+            return;
+        }
+
+        if (result.Timeout)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
+        }
+        else if (result.ShouldBlock)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
+        }
+        else if (result.ShouldReportSecurityResult)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
+        }
+        else
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
+        }
+    }
+
+    public void AddResponseHeadersToSpanAndCleanup()
+    {
+        if (_localRootSpan.IsAppsecEvent())
+        {
+            Reporter.AddResponseHeaderTags();
+        }
+
+        _httpTransport.DisposeAdditiveContext();
+    }
 
     internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
     {

@@ -91,7 +91,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             await TryStartApp();
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser&Input.Password=test", contentType: "application/x-www-form-urlencoded");
+            var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser2&Input.Password=test", contentType: "application/x-www-form-urlencoded");
             request.StatusCode.Should().Be(HttpStatusCode.OK);
             await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
