@@ -53,7 +53,7 @@ public class LiveDebuggerTests : TestHelper
     [Flaky("The explicitly disabled tests often hang on x86 .NET and .NET 8, when the debugger is disabled. Needs investigation.")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0");
         await RunTest();
     }
 
