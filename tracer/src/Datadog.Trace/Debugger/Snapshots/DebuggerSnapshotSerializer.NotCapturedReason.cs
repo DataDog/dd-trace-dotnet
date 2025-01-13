@@ -9,7 +9,7 @@ using System.ComponentModel;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal static partial class DebuggerSnapshotSerializer
+    internal partial class DebuggerSnapshotSerializer
     {
         private enum NotCapturedReason
         {
