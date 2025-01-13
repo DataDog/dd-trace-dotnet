@@ -536,6 +536,11 @@ stages:
           managedBaseImage: debian
           artifactSuffix: linux-x64
           useNativeSdkVersion: true
+        x64:
+          baseImage: centos7
+          managedBaseImage: debian
+          artifactSuffix: linux-x64-r2r
+          useNativeSdkVersion: true
         alpine:
           baseImage: alpine
           managedBaseImage: alpine
