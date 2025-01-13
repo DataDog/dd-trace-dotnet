@@ -30,6 +30,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _enableSecurity = enableSecurity;
             _fixture.SetOutput(outputHelper);
             EnableRasp(false);
+            // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
+            EnvironmentHelper.CustomEnvironmentVariables.Add("ASPNETCORE_ENVIRONMENT", "Production");
+
             if (userTrackingMode != null)
             {
                 if (userTrackingMode is "ident" or "anon")
