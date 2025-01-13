@@ -183,7 +183,6 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(test.ToStringAndClear());
     }
 
-    [Fact (Skip = "Flaky test")]
     public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValue_GetString_Vulnerable()
     {
         var number = 5;
@@ -192,7 +191,6 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(str);
     }
 
-    [Fact (Skip = "Flaky test")]
     public void GivenAnImplicitInterpolatedString_WhenAddingUntaintedValue_GetString_NonVulnerable()
     {
         var number = 5;
@@ -201,7 +199,6 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertNotTainted(str);
     }
 
-    [Fact (Skip = "Flaky test")]
     public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValueAsObject_GetString_Vulnerable()
     {
         var number = 5;
@@ -210,7 +207,6 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(str);
     }
 
-    [Fact (Skip = "Flaky test")]
     public void GivenAnImplicitInterpolatedString_WhenAddingMultipleValuesWithTaintedValues_GetString_Vulnerable()
     {
         var order = new
@@ -240,7 +236,6 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(sql);
     }
 
-    [Fact (Skip = "Flaky test")]
     public void GivenImplicitInterpolatedString_WhenAddingTaintedValuesNested_GetString_Vulnerable()
     {
         const int number = 42;
@@ -259,7 +254,6 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(finalString);
     }
 
-    [Fact (Skip = "Flaky test")]
     public void GivenImplicitInterpolatedString_WhenAddingTaintedValuesComplex_GetString_Vulnerable()
     {
         var interpolatedString = $"""
