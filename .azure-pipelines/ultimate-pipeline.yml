@@ -458,7 +458,7 @@ stages:
           parameters:
             target: builder
             baseImage: debian
-            command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
+            command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
             retryCountForRunCommand: 1
 
         - publish: $(monitoringHome)
@@ -600,6 +600,9 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
+        x64-r2r:
+          baseImage: debian
+          artifactSuffix: linux-x64-r2r
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
@@ -614,11 +617,13 @@ stages:
 
     # Download _both_ musl and glibc if we're building the universal package
     # but only the musl package if we're building alpine package
+    #
+    # R2R only requires the tracer, as the profiler is not used there yet.
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
+      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
       inputs:
-        artifact: linux-tracer-home-linux-x64
+        artifact: linux-tracer-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -882,6 +887,9 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+        arm64:
+          baseImage: debian
+          artifactSuffix: linux-arm64-r2r
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
@@ -896,11 +904,13 @@ stages:
       
       # Download _both_ musl and glibc if we're building the universal package
       # but only the musl package if we're building alpine package
+      #
+      # R2R only requires the tracer, as the profiler is not used there yet.
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer arm64 native binary
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
+      condition: or(eq(variables['artifactSuffix'], 'linux-arm64'), eq(variables['artifactSuffix'], 'linux-arm64-r2r'))
       inputs:
-        artifact: linux-tracer-home-linux-arm64
+        artifact: linux-tracer-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -4140,6 +4150,7 @@ stages:
             artifact: linux-universal-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-arm64
 
+        # dd-dotnet
         - task: DownloadPipelineArtifact@2
           displayName: Download dd-dotnet linux-x64 symbols
           inputs:
@@ -4244,6 +4255,31 @@ stages:
           inputs:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
+        
+        # We also don't include R2R packages in the release artifacts
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux x64 r2r packages
+          inputs:
+            artifact: linux-packages-linux-x64-r2r
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Arm64 r2r packages
+          inputs:
+            artifact: linux-packages-linux-arm64-r2r
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer x64 r2r symbols
+          inputs:
+            artifact: linux-tracer-symbols-linux-x64-r2r
+            path: $(Build.ArtifactStagingDirectory)/symbols
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer Arm64 r2r symbols
+          inputs:
+            artifact: linux-tracer-symbols-linux-arm64-r2r
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - bash: |
             # Write tracer version number to version.txt
