@@ -1,4 +1,4 @@
-// <copyright file="LiveDebuggerTests.cs" company="Datadog">
+// <copyright file="DynamicInstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,7 +23,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
 
-public class LiveDebuggerTests
+public class DynamicInstrumentationTests
 {
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
@@ -41,7 +41,7 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = DynamicInstrumentation.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         probeStatusPoller.Called.Should().BeTrue();
@@ -66,7 +66,7 @@ public class LiveDebuggerTests
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
-        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
+        var debugger = DynamicInstrumentation.Create(settings, string.Empty, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, symbolsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
         await debugger.InitializeAsync();
 
         lineProbeResolver.Called.Should().BeFalse();
