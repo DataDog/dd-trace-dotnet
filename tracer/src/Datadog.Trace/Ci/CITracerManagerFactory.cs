@@ -56,6 +56,7 @@ namespace Datadog.Trace.Ci
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager)
         {
+            telemetry.RecordCiVisibilitySettings(_settings);
             if (_useLockedManager)
             {
                 return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);

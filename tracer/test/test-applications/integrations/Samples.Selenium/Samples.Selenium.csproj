@@ -30,14 +30,14 @@
 
   <ItemGroup>
     <None Update="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="ci.runsettings">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
-  <Target Name="CodeCoverageFixTarget" AfterTargets="Build">
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition="'$(TargetFramework)' != '' AND '$(ManuallyCopyCodeCoverageFiles)' != 'false'  ">
     <Message Importance="High" Text="Fixing Code Coverage" />
 
     <!-- Running a target in Microsoft.CodeCoverage.targets to copy the code coverage assemblies to the publish folder -->

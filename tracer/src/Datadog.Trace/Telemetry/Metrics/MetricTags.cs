@@ -239,7 +239,7 @@ internal static class MetricTags
         [Description("integration_name:process")]Process,
         [Description("integration_name:hashalgorithm")]HashAlgorithm,
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
-        [Description("integration_name:opentelemetry")]OpenTelemetry,
+        [Description("integration_name:otel")]OpenTelemetry, // Note: The naming of this tag value breaks the convention of using the integration name to use a standardized value
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,

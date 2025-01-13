@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
@@ -39,6 +40,11 @@ namespace Datadog.Trace.Telemetry
         /// Called to record profiler-related telemetry
         /// </summary>
         public void RecordProfilerSettings(Profiler profiler);
+
+        /// <summary>
+        /// Called to record ci-vis-related telemetry
+        /// </summary>
+        public void RecordCiVisibilitySettings(CIVisibilitySettings settings);
 
         /// <summary>
         /// Dispose resources for sending telemetry
