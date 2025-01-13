@@ -60,7 +60,7 @@ public class LiveDebuggerTests : TestHelper
         // These tests often hang on x86 on .NET 8+. Needs investigation
         Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
 #endif
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0");
         await RunTest();
     }
 

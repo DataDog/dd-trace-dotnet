@@ -30,7 +30,7 @@ internal class LiveDebuggerFactory
 
     public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        if (!debuggerSettings.Enabled)
+        if (!debuggerSettings.DynamicInstrumentationEnabled)
         {
             Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             return LiveDebugger.Create(debuggerSettings, string.Empty, null, null, null, null, null, null, null, null, null);

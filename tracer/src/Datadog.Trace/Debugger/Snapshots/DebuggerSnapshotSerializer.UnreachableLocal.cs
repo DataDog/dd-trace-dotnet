@@ -7,7 +7,7 @@ using System;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal static partial class DebuggerSnapshotSerializer
+    internal partial class DebuggerSnapshotSerializer
     {
         /// <summary>
         /// This class hold a local variable inside an async method that was not hoisted by

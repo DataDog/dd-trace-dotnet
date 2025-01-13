@@ -9,12 +9,13 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DebuggerSettings
+    internal record DebuggerSettings
     {
         public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
         public const int DefaultMaxDepthToSerialize = 3;
@@ -34,7 +35,7 @@ namespace Datadog.Trace.Debugger
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.Enabled).AsBool(false);
+            DynamicInstrumentationEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(false);
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(true);
 
             MaximumDepthOfMembersToCopy = config
@@ -141,7 +142,9 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
         }
 
-        public bool Enabled { get; }
+        internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
+
+        public bool DynamicInstrumentationEnabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 

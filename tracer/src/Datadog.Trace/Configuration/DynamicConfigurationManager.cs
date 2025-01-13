@@ -12,6 +12,9 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
@@ -112,6 +115,26 @@ namespace Datadog.Trace.Configuration
             */
 
             Tracer.ConfigureInternal(newSettings);
+
+            var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
+            {
+                DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
+                ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
+                SpanOriginEntryEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
+            };
+
+            var oldDebuggerSettings = LiveDebugger.Instance.Settings;
+
+            if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
+            {
+                Log.Debug("No changes detected in the new dynamic debugger configuration");
+                return;
+            }
+
+            Log.Information("Applying new dynamic debugger configuration");
+            var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
+
+            LiveDebugger.Instance.UpdateDynamicConfiguration(newDebuggerSettings);
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

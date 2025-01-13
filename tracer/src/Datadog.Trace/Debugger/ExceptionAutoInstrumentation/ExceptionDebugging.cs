@@ -11,16 +11,17 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionDebugging
+    internal class ExceptionDebugging : IDynamicDebuggerConfiguration
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
-
+        internal static readonly ExceptionDebugging Instance = new();
         private static ExceptionReplaySettings? _settings;
         private static int _firstInitialization = 1;
         private static bool _isDisabled;
@@ -56,16 +57,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 ExceptionTrackManager.Initialize();
                 LifetimeManager.Instance.AddShutdownTask(Dispose);
             }
+
+            return;
         }
 
         private static void InitSnapshotsSink()
         {
             var tracer = Tracer.Instance;
             var debuggerSettings = DebuggerSettings.FromDefaultSource();
-
-            // Set configs relevant for DI and Exception Debugging, using DI's environment keys.
-            DebuggerSnapshotSerializer.SetConfig(debuggerSettings);
-            Redaction.Instance.SetConfig(debuggerSettings.RedactedIdentifiers, debuggerSettings.RedactedExcludedIdentifiers, debuggerSettings.RedactedTypes);
 
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
@@ -127,6 +126,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static void AddSnapshot(string probeId, string snapshot)
         {
+            if (!Enabled)
+            {
+                return;
+            }
+
             if (_snapshotSink == null)
             {
                 Log.Debug("The sink of the Exception Debugging is null. Skipping the reporting of the snapshot: {Snapshot}", snapshot);
@@ -140,6 +144,30 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             ExceptionTrackManager.Dispose();
             _uploader?.Dispose();
+            _firstInitialization = 1;
+        }
+
+        public static void UpdateConfiguration(DebuggerSettings settings)
+        {
+            var originalIsDisabled = _isDisabled;
+            if (settings.DynamicSettings.ExceptionReplayEnabled.HasValue)
+            {
+                _isDisabled = !settings.DynamicSettings.ExceptionReplayEnabled.HasValue;
+            }
+
+            if (!_isDisabled)
+            {
+                Initialize();
+            }
+            else if (!originalIsDisabled && _isDisabled)
+            {
+                Dispose(null);
+            }
+        }
+
+        void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
+        {
+            UpdateConfiguration(settings);
         }
     }
 }
