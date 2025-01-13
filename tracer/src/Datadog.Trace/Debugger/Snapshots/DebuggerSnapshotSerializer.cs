@@ -12,21 +12,27 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal static partial class DebuggerSnapshotSerializer
+    internal partial class DebuggerSnapshotSerializer : IDynamicDebuggerConfiguration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
 
         private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
 
-        internal static void SetConfig(DebuggerSettings debuggerSettings)
+        internal static void UpdateConfiguration(DebuggerSettings debuggerSettings)
         {
             _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
+        }
+
+        void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
+        {
+            UpdateConfiguration(settings);
         }
 
         /// <summary>
