@@ -679,7 +679,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: $[format('ZipMonitoringHome --ReadyToRun {0}', eq(variables['artifactSuffix'], 'linux-x64-r2r'))]
+        command: "${{format('ZipMonitoringHome --ReadyToRun {0}', eq(variables['artifactSuffix'], 'linux-x64-r2r'))}}"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
@@ -966,7 +966,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: $[format('ZipMonitoringHome --ReadyToRun {0}', eq(variables['artifactSuffix'], 'linux-x64-r2r'))]
+        command: "${{format('ZipMonitoringHome --ReadyToRun {0}', eq(variables['artifactSuffix'], 'linux-x64-r2r'))}}"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64
