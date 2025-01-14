@@ -7,7 +7,9 @@ using System;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using FluentAssertions;
+#if NETCOREAPP
 using Microsoft.AspNetCore.Http;
+#endif
 using Moq;
 using Xunit;
 using static Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
