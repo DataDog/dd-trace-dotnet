@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             {
                 // try extracting all the details we need
                 var requestMetadataWrapper = new MetadataHeadersCollection(requestMetadata);
-                var existingContext = SpanContextPropagator.Instance.Extract(requestMetadataWrapper);
+                var existingContext = tracer.TracerManager.SpanContextPropagator.Extract(requestMetadataWrapper);
                 var existingSpanContext = existingContext.SpanContext;
 
                 // If this operation creates the trace, then we will need to re-apply the sampling priority
@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 // Add the propagation headers
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                SpanContextPropagator.Instance.Inject(context, collection);
+                tracer.TracerManager.SpanContextPropagator.Inject(context, collection);
             }
             catch (Exception ex)
             {

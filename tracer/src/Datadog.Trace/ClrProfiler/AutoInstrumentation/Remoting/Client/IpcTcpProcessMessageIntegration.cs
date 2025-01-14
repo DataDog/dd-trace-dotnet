@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
             if (tracer.Settings.IsIntegrationEnabled(RemotingIntegration.IntegrationId) && tracer.InternalActiveScope is var scope)
             {
                 var context = new PropagationContext(scope.Span.Context, Baggage.Current);
-                SpanContextPropagator.Instance.Inject(context, requestHeaders, (headers, key, value) => headers[key] = value);
+                tracer.TracerManager.SpanContextPropagator.Inject(context, requestHeaders, (headers, key, value) => headers[key] = value);
             }
 
             return CallTargetState.GetDefault();

@@ -57,7 +57,7 @@ internal static class IbmMqHelper
             span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
             var context = new PropagationContext(span.Context, Baggage.Current);
-            SpanContextPropagator.Instance.Inject(context, GetHeadersAdapter(message));
+            tracer.TracerManager.SpanContextPropagator.Inject(context, GetHeadersAdapter(message));
         }
         catch (Exception ex)
         {
@@ -97,7 +97,7 @@ internal static class IbmMqHelper
             try
             {
                 var headers = GetHeadersAdapter(message);
-                extractedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
+                extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
             }
             catch (Exception ex)
             {

@@ -319,6 +319,9 @@
               },
               {
                 "address": "server.request.path_params"
+              },
+              {
+                "address": "server.response.headers.no_cookies"
               }
             ],
             "list": [
@@ -5945,6 +5948,78 @@
       "transformers": [],
       "on_match": [
         "block"
+      ]
+    },
+    {
+      "id": "block-on-path-params",
+      "name": "Block on path params",
+      "tags": {
+        "type": "nosql_injection",
+        "crs_id": "000009",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "regex": "(?i:(?:\\[blocking_test\\]))",
+            "options": {
+              "case_sensitive": true,
+              "min_length": 5
+            }
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "customblock"
+      ]
+    },
+    {
+      "id": "block-on-path-params-redirect",
+      "name": "Block on path params with block redirection",
+      "tags": {
+        "type": "nosql_injection",
+        "crs_id": "000010",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "regex": "(?i:(?:\\[block_redir\\]))",
+            "options": {
+              "case_sensitive": true,
+              "min_length": 5
+            }
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "blockredir"
       ]
     }
   ]
