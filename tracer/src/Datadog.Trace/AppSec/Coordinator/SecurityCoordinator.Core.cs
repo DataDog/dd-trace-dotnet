@@ -142,11 +142,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
-        private bool _contextUninitialized = false;
-
         public override HttpContext Context { get; } = context;
-
-        internal override bool ContextUninitialized => _contextUninitialized || GetContextFeatures() is null;
 
         internal override bool IsBlocked
         {
@@ -181,7 +177,7 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
 
-        internal override IContext GetAdditiveContext() => Context.Features.Get<IContext>();
+        internal override IContext? GetAdditiveContext() => IsAdditiveContextDisposed() ? null : GetContextFeatures()?.Get<IContext>();
 
         internal override void SetAdditiveContext(IContext additiveContext) => Context.Features.Set(additiveContext);
 
@@ -202,7 +198,7 @@ internal readonly partial struct SecurityCoordinator
             catch (ObjectDisposedException)
             {
                 Log.Debug("ObjectDisposedException while trying to access a Context.");
-                _contextUninitialized = true;
+                SetAdditiveContextDisposed(true);
                 return null;
             }
         }

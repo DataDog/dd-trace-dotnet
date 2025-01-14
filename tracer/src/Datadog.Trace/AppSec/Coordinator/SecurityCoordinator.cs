@@ -46,31 +46,15 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
-        if (_httpTransport.ContextUninitialized)
-        {
-            Log.Debug("Trying to call the WAF with an unitialized context.");
-            return null;
-        }
-
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
 
         try
         {
-            var additiveContext = _httpTransport.GetAdditiveContext();
+            var additiveContext = GetOrCreateAdditiveContext();
 
-            if (additiveContext == null)
+            if (additiveContext is null)
             {
-                additiveContext = _security.CreateAdditiveContext();
-                // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
-                if (additiveContext != null)
-                {
-                    _httpTransport.SetAdditiveContext(additiveContext);
-                }
-            }
-            else if (_httpTransport.IsAdditiveContextDisposed())
-            {
-                Log.Warning("Waf could not run as waf additive context is disposed");
                 return null;
             }
 
@@ -180,5 +164,28 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return headersDic;
+    }
+
+    private IContext? GetOrCreateAdditiveContext()
+    {
+        var additiveContext = _httpTransport.GetAdditiveContext();
+
+        if (_httpTransport.IsAdditiveContextDisposed())
+        {
+            Log.Warning("Waf could not run as waf additive context is disposed");
+            return null;
+        }
+
+        if (additiveContext == null)
+        {
+            additiveContext = _security.CreateAdditiveContext();
+
+            if (additiveContext is not null)
+            {
+                _httpTransport.SetAdditiveContext(additiveContext);
+            }
+        }
+
+        return additiveContext;
     }
 }

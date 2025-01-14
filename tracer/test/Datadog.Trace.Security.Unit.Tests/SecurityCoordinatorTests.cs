@@ -35,7 +35,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
             var context = contextMoq.Object;
             HttpTransport transport = new(context);
-            transport.ContextUninitialized.Should().BeTrue();
+            transport.GetAdditiveContext().Should().BeNull();
+            transport.IsAdditiveContextDisposed().Should().BeTrue();
         }
 
         [Fact]

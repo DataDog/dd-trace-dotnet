@@ -30,8 +30,6 @@ internal abstract class HttpTransportBase
 
     public abstract HttpContext Context { get; }
 
-    internal abstract bool ContextUninitialized { get; }
-
     internal abstract IContext? GetAdditiveContext();
 
     /// <summary>
@@ -44,6 +42,8 @@ internal abstract class HttpTransportBase
     }
 
     internal bool IsAdditiveContextDisposed() => _isAdditiveContextDisposed;
+
+    protected void SetAdditiveContextDisposed(bool value) => _isAdditiveContextDisposed = value;
 
     internal abstract void SetAdditiveContext(IContext additiveContext);
 
