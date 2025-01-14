@@ -11,6 +11,8 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
@@ -38,6 +40,7 @@ internal class TelemetryController : ITelemetryController
     private readonly IMetricsTelemetryCollector _metrics;
     private readonly RedactedErrorLogCollector? _redactedErrorLogs;
     private readonly TaskCompletionSource<bool> _processExit = new();
+    private readonly TagBuilder _logTagBuilder = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
     private TelemetryTransportManager _transportManager;
@@ -93,6 +96,7 @@ internal class TelemetryController : ITelemetryController
         settings.Telemetry.CopyTo(_configuration);
         _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
+        _logTagBuilder.Update(settings);
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }
 
@@ -111,12 +115,21 @@ internal class TelemetryController : ITelemetryController
     }
 
     public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
-        => _products.ProductChanged(product, enabled, error);
+    {
+        _products.ProductChanged(product, enabled, error);
+        _logTagBuilder.Update(product, enabled);
+    }
 
     public void RecordProfilerSettings(Profiler profiler)
     {
         _configuration.Record(ConfigTelemetryData.ProfilerLoaded, profiler.Status.IsProfilerReady, ConfigurationOrigins.Default);
         _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
+    }
+
+    public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
+    {
+        // CI Vis records the settings _directly_ in the global config so don't need to record them again here
+        _logTagBuilder.Update(settings, CIVisibility.Enabled);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
@@ -298,7 +311,7 @@ internal class TelemetryController : ITelemetryController
                 return;
             }
 
-            if (includeLogs && _redactedErrorLogs?.GetLogs() is { } batches)
+            if (includeLogs && _redactedErrorLogs?.GetLogs(_logTagBuilder.GetLogTags()) is { } batches)
             {
                 foreach (var batch in batches)
                 {
@@ -348,6 +361,74 @@ internal class TelemetryController : ITelemetryController
         public ItemType Type { get; }
 
         public object? State { get; }
+    }
+
+    internal class TagBuilder
+    {
+        private bool _isCiVisEnabled;
+        private bool _isAsmEnabled;
+        private bool _isProfilingEnabled;
+        private bool _isDynamicInstrumentationEnabled;
+        private string? _cloudEnv;
+        private bool _isUpdateRequired;
+        private string? _tags;
+
+        public void Update(TracerSettings settings)
+        {
+            _cloudEnv = settings switch
+            {
+                { IsRunningInGCPFunctions: true } => ",gcp",
+                { LambdaMetadata.IsRunningInLambda: true } => ",aws",
+                { IsRunningMiniAgentInAzureFunctions: true } => ",azf",
+                { IsRunningInAzureAppService: true } => ",aas",
+                _ => null,
+            };
+            _isUpdateRequired = true;
+        }
+
+        public void Update(CIVisibilitySettings settings, bool enabled)
+        {
+            // We don't actually need to record these, because they're added to the global config
+            // This isn't nice, as it calls the static property,
+            // but we don't have a better way of getting this info right now
+            _isCiVisEnabled = enabled;
+            _isUpdateRequired = true;
+        }
+
+        public void Update(TelemetryProductType product, bool enabled)
+        {
+            if (product == TelemetryProductType.Profiler)
+            {
+                _isProfilingEnabled = enabled;
+            }
+            else if (product == TelemetryProductType.AppSec)
+            {
+                _isAsmEnabled = enabled;
+            }
+            else if (product == TelemetryProductType.DynamicInstrumentation)
+            {
+                _isDynamicInstrumentationEnabled = enabled;
+            }
+
+            // unknown product, ignore
+            _isUpdateRequired = true;
+        }
+
+        public string GetLogTags()
+        {
+            if (_isUpdateRequired || _tags is null)
+            {
+                _isUpdateRequired = false;
+                // using 1/0 to save bytes!
+                _tags = $"ci:{(_isCiVisEnabled ? '1' : '0')}" +
+                        $",asm:{(_isAsmEnabled ? '1' : '0')}" +
+                        $",prof:{(_isProfilingEnabled ? '1' : '0')}" +
+                        $",dyn:{(_isDynamicInstrumentationEnabled ? '1' : '0')}" +
+                        $"{_cloudEnv}";
+            }
+
+            return _tags;
+        }
     }
 
     /// <summary>

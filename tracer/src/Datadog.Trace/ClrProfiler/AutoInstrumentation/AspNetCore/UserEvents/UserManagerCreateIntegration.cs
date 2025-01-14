@@ -109,7 +109,7 @@ public static class UserManagerCreateIntegration
             }
 
             security.SetTraceSamplingPriority(span);
-            SecurityCoordinator.CollectHeaders(span);
+            SecurityReporter.SafeCollectHeaders(span);
         }
 
         return returnValue;

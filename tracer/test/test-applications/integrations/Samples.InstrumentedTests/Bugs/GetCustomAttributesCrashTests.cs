@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Bugs;
 
-public class GetCustomAttributesCrashTests : Samples.InstrumentedTests.Iast.Vulnerabilities.InstrumentationTestsBase
+public class GetCustomAttributesCrashTests : Samples.InstrumentedTests.Iast.InstrumentationTestsBase
 {
     public GetCustomAttributesCrashTests()
     {

@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
                     // added by us, not the application
                     var context = new PropagationContext(span?.Context, Baggage.Current);
-                    SpanContextPropagator.Instance.Inject(context, request.Headers.Wrap());
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, request.Headers.Wrap());
                     HeadersInjectedCache.SetInjectedHeaders(request.Headers);
                 }
             }

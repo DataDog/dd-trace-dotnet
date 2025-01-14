@@ -892,6 +892,8 @@ bool ParseParamOrLocal(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd)
 
     if (*pbCur == ELEMENT_TYPE_TYPEDBYREF) return false;
 
+    if (*pbCur == ELEMENT_TYPE_PINNED) pbCur++;
+
     if (*pbCur == ELEMENT_TYPE_BYREF) pbCur++;
 
     if (*pbCur == ELEMENT_TYPE_PTR) pbCur++;

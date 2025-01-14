@@ -129,7 +129,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static bool CaptureMemoryDump(Process process, IProgress<string> output = null, bool includeChildProcesses = false)
         {
-            return CaptureMemoryDump(process.Id, output);
+            return CaptureMemoryDump(process.Id, output, includeChildProcesses);
         }
 
         private static bool CaptureMemoryDump(int pid, IProgress<string> output = null, bool includeChildProcesses = false)

@@ -217,6 +217,8 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test", null, null, "test")]
+        // This is the current behaviour - _should_ it be, or should the result be normalized, is a separate question...
+        [InlineData("My Service Name!", null, null, "My Service Name!")]
         [InlineData("test", null, "ignored_otel", "test")]
         [InlineData("test", "error", "ignored_otel", "test")]
         [InlineData(null, "test", null, "test")]
