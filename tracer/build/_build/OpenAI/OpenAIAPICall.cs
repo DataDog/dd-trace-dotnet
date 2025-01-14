@@ -64,7 +64,7 @@ public class OpenAiApiCall
 
             try
             {
-                var response = await httpClient.SendAsync(request);
+                using var response = await httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 return ParseResponseText(await response.Content.ReadAsStringAsync());
             }
