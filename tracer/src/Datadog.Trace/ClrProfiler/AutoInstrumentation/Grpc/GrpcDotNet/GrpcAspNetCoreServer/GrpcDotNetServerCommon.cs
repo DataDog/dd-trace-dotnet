@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcDotNetServerCommon.cs" company="Datadog">
+// <copyright file="GrpcDotNetServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 var tags = new GrpcServerTags();
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
-                var extractedContext = ExtractPropagatedContext(requestMessage).MergeBaggageInto(Baggage.Current);
+                var extractedContext = ExtractPropagatedContext(tracer, requestMessage).MergeBaggageInto(Baggage.Current);
 
                 // If we have a local span (e.g. from aspnetcore) then use that as the parent
                 // Otherwise, use the distributed context as the parent
@@ -57,14 +57,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             return scope;
         }
 
-        private static PropagationContext ExtractPropagatedContext(HttpRequest request)
+        private static PropagationContext ExtractPropagatedContext(Tracer tracer, HttpRequest request)
         {
             try
             {
                 // extract propagation details from http headers
                 if (request.Headers is { } requestHeaders)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new HeadersCollectionAdapter(requestHeaders));
                 }
             }
             catch (Exception ex)
