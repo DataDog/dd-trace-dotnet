@@ -4,14 +4,14 @@
   "count": 10,
   "scenarios": [
     {
-      "name": "Baseline_httprequests",
+      "name": "Baseline_outgoinghttprequests",
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
       }
     },
     {
-      "name": "Profiler_httprequests",
+      "name": "Profiler_outgoinghttprequests",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "name": "Profiler_httprequests_cpu_walltime",
+      "name": "Profiler_outgoinghttprequests_cpu_walltime",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
