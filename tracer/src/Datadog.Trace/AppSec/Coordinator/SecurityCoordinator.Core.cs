@@ -146,7 +146,7 @@ internal readonly partial struct SecurityCoordinator
 
         public override HttpContext Context { get; } = context;
 
-        internal override bool ContextUninitialized => _contextUninitialized || GetPropertySafe(() => Context.Features) is null;
+        internal override bool ContextUninitialized => _contextUninitialized || GetContextFeatures() is null;
 
         internal override bool IsBlocked
         {
@@ -193,16 +193,16 @@ internal readonly partial struct SecurityCoordinator
         // properties such as Context.Items or Context.Response.Headers that ultimatelly rely on features
         // This means that the context has been uninitiallized and we should not try to access it anymore
         // Unfortunatelly, there is no way to know that but catching the exception or using reflection
-        private T? GetPropertySafe<T>(Func<T> function)
+        private IFeatureCollection? GetContextFeatures()
         {
             try
             {
-                var result = function.Invoke();
-                return result;
+                return Context.Features;
             }
             catch (ObjectDisposedException)
             {
-                return default(T);
+                _contextUninitialized = true;
+                return null;
             }
         }
     }
