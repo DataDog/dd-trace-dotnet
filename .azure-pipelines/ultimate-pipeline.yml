@@ -679,7 +679,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        ${{ if contains(variables['artifactSuffix'], 'r2r') }}:
+        ${{ if eq(variables['artifactSuffix'], 'linux-x64-r2r') }}:
           command: "ZipMonitoringHomeR2R"
         ${{ else }}:
           command: "ZipMonitoringHome"
@@ -969,7 +969,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        ${{ if contains(variables['artifactSuffix'], 'r2r') }}:
+        ${{ if eq(variables['artifactSuffix'], 'linux-arm64-r2r') }}:
           command: "ZipMonitoringHomeR2R"
         ${{ else }}:
           command: "ZipMonitoringHome"
