@@ -52,7 +52,7 @@ public class PopulateBasicPropertiesHeadersIntegration
         duckType.Headers ??= new Dictionary<string, object>();
 
         var context = new PropagationContext(span.Context, Baggage.Current);
-        SpanContextPropagator.Instance.Inject(context, duckType.Headers, default(ContextPropagation));
+        tracer.TracerManager.SpanContextPropagator.Inject(context, duckType.Headers, default(ContextPropagation));
 
         RabbitMQIntegration.SetDataStreamsCheckpointOnProduce(
             tracer,
