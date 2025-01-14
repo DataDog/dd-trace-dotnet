@@ -280,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        internal static void OverridePropagatedContext<TTarget, TTypeData>(Tracer tracer, TTypeData typedData, string? useNullableHeadersCapability)
+        internal static void OverridePropagatedContext<TTarget, TTypeData>(Tracer tracer, TTypeData typedData, bool useNullableHeaders)
             where TTypeData : ITypedData
         {
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId)
@@ -294,7 +294,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // In order for the span hierarchy/parenting to work correctly, we need to replace the parentID
                 // in the GRPC http request representation, which is what we're doing here by overwriting all
                 // the existing datadog headers
-                var useNullableHeaders = !string.IsNullOrEmpty(useNullableHeadersCapability);
                 var context = new PropagationContext(span.Context, Baggage.Current);
                 SpanContextPropagator.Instance.Inject(context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
             }
