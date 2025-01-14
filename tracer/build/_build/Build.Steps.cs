@@ -863,14 +863,6 @@ partial class Build
         {
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
-    
-    Target ZipMonitoringHomeR2R => _ => _
-       .Unlisted()
-       .DependsOn(ZipMonitoringHome)
-       .Executes(() =>
-        {
-            ReadyToRun = true;
-        });
 
     Target ZipMonitoringHome => _ => _
        .DependsOn(ZipMonitoringHomeWindows)
