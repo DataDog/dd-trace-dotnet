@@ -115,6 +115,26 @@ internal class SchemaExtractor
 
         /// <summary>
         /// Add the given message's schema and all its sub-messages schemas to the Dictionary that was given to the ctor.
+        /// Returns a hash identifying the schema.
+        ///
+        /// The hash must be stable between tracers/languages to ensure proper tracking across polyglot services.
+        /// It is computed iterating on fields by number order, using in order:
+        ///  - SPECIAL, if relevant:
+        ///     - the name of the referenced type
+        ///     - the enum values
+        ///  - the field number
+        ///  - the type ID as defined in https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/type.proto
+        ///  - the zero-based depth (allowing to distinguish a nested type)
+        /// If a field references a sub-message, that sub-message is expended first, before the current field is added to the hash.
+        /// Extraction stops after 10 nested messages, this affects the hash, so it must be kept consistent across tracers.
+        ///
+        /// The content of the hash has been chosen so that, as much as possible,
+        /// changes to the schema that don't affect the wire format don't change the hash, such as:
+        ///  - renaming fields
+        ///  - changing the order of fields declaration without changing their number
+        /// While changes that impact the wire format should change the hash, such as:
+        ///  - changing a field number
+        ///  - changing the hierarchy of sub-messages
         /// </summary>
         private ulong ExtractSchema(IMessageDescriptorProxy descriptor, int depth = 0)
         {
