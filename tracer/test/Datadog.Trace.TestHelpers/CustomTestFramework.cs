@@ -117,12 +117,15 @@ namespace Datadog.Trace.TestHelpers
                     })
                     .ToList();
 
-                var seed = new Random().Next();
+                if (Environment.GetEnvironmentVariable("RANDOM_SEED") is not { } environmentSeed
+                    || !int.TryParse(environmentSeed, out var seed))
+                {
+                    seed = new Random().Next();
+                }
 
                 DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Using seed {seed} to randomize tests order"));
 
                 var random = new Random(seed);
-
                 Shuffle(collections, random);
 
                 foreach (var collection in collections)
@@ -131,9 +134,7 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 var summary = new RunSummary();
-
                 using var runner = new ConcurrentRunner();
-
                 var tasks = new List<Task<RunSummary>>();
 
                 foreach (var test in collections.Where(t => !t.DisableParallelization))
