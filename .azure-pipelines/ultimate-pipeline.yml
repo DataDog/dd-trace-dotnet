@@ -254,34 +254,6 @@ stages:
       displayName: Generate Matrices
       name: generate_variables_step
 
-- stage: generate_LLM_Report
-  dependsOn: [merge_commit_id]
-  condition: eq(variables['generate_llm_report'], 'true')
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - job: generate_LLM_job
-    timeoutInMinutes: 3
-    dependsOn: []
-    pool:
-      name: azure-windows-scale-set-3
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-
-    - powershell: tracer/build.ps1 LLMReport
-      displayName: Generate LLM report
-      name: generate_llm_step
-      env:
-        PullRequestNumber: $(System.PullRequest.PullRequestNumber)
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
-        OPEN_AI_KEY: $(OPEN_AI_KEY)
-
 - stage: build_windows_tracer
   dependsOn: [merge_commit_id]
   variables:
@@ -6710,3 +6682,31 @@ stages:
         -d '{"commit": "'$sha'"}' \
           $(slackWebhookUrl)
       displayName: "notify"
+
+- stage: generate_LLM_Report
+  dependsOn: [merge_commit_id]
+  condition: eq(variables['generate_llm_report'], 'true')
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: generate_LLM_job
+    timeoutInMinutes: 3
+    dependsOn: []
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - powershell: tracer/build.ps1 LLMReport
+      displayName: Generate LLM report
+      name: generate_llm_step
+      env:
+        PullRequestNumber: $(System.PullRequest.PullRequestNumber)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        OPEN_AI_KEY: $(OPEN_AI_KEY)
