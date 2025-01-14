@@ -11,13 +11,18 @@ target_dir=artifacts
 mkdir -p $target_dir
 
 branchName="refs/heads/$CI_COMMIT_BRANCH"
+branchArg=$CI_COMMIT_BRANCH
+if [ -n "$CI_COMMIT_TAG" ]; then
+  branchName="refs/tags/$CI_COMMIT_TAG"
+  branchArg=$CI_COMMIT_TAG
+fi
 
 echo "Looking for azure devops PR builds for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
 
 # We should _definitely_ have the build by now, so if not, there probably won't be one
 # Check for PR builds first (as more likely to be "full" builds)
 allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
-buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
+buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $branchArg '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
 
 if [ -z "${buildId}" ]; then
   echo "No PR builds found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for standalone builds..."  
