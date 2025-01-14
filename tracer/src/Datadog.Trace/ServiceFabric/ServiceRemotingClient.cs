@@ -69,7 +69,7 @@ namespace Datadog.Trace.ServiceFabric
                     {
                         var context = new PropagationContext(span.Context, Baggage.Current);
 
-                        SpanContextPropagator.Instance.Inject(
+                        tracer.TracerManager.SpanContextPropagator.Inject(
                             context,
                             messageHeaders,
                             default(ServiceRemotingRequestMessageHeaderSetter));

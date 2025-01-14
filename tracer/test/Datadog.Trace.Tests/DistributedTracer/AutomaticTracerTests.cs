@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             using (var scope = Tracer.Instance.StartActive("Test"))
             {
-                var context = SpanContextPropagator.Instance.Extract(automaticTracer.GetDistributedTrace());
+                var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(automaticTracer.GetDistributedTrace());
                 var spanContext = context.SpanContext!;
 
                 spanContext.Should().NotBeNull();
