@@ -117,7 +117,7 @@ public static class SignInManagerPasswordSignInUserIntegration
 
                 UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
-                SecurityCoordinator.CollectHeaders(span);
+                SecurityReporter.SafeCollectHeaders(span);
             }
 #if !NETCOREAPP3_1_OR_GREATER
             else if (userExists)

@@ -498,8 +498,8 @@ namespace Datadog.Trace.Tests
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
 
-            SpanContextPropagator.Instance.Inject(new PropagationContext(secondSpan.Context, baggage: null), headers);
-            var context = SpanContextPropagator.Instance.Extract(headers);
+            _tracer.TracerManager.SpanContextPropagator.Inject(new PropagationContext(secondSpan.Context, baggage: null), headers);
+            var context = _tracer.TracerManager.SpanContextPropagator.Extract(headers);
             var spanContext = context.SpanContext!;
 
             spanContext.Should().NotBeNull();

@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                var context = SpanContextPropagator.Instance.Extract(values);
+                var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(values);
                 return context.SpanContext;
             }
         }

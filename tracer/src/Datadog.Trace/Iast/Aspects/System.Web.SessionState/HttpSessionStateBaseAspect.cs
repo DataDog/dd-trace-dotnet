@@ -40,7 +40,7 @@ public class HttpSessionStateBaseAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpSessionStateBaseAspect)}.{nameof(Add)}");
+            IastModule.LogAspectException(ex, $"{nameof(HttpSessionStateBaseAspect)}.{nameof(Add)}");
             return value;
         }
     }

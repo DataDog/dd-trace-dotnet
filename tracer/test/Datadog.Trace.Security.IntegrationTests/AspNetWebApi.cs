@@ -106,6 +106,28 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData(AddressesConstants.RequestPathParams, "/api/route/2?arg=[blocking_test]")]
+        [InlineData(AddressesConstants.RequestBody, "/api/Home/Upload", "{\"Property1\": \"[blocking_test]\"}")]
+        [InlineData(AddressesConstants.ResponseHeaderNoCookies, "/api/asm/injectedheader")] // Blocked on response
+        public async Task TestBlockedRequests(string test, string url, string body = null)
+        {
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+
+            var expectedSpans = test == AddressesConstants.RequestPathParams ? 1 : 2;
+
+            if (test == AddressesConstants.ResponseHeaderNoCookies && _classicMode)
+            {
+                throw new SkipException("Response header injection is not supported in classic mode");
+            }
+
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, expectedSpans, settings, "application/json");
+        }
+
         [SkippableFact]
         public async Task TestNullAction()
         {

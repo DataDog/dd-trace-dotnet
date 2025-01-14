@@ -115,12 +115,11 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
@@ -133,12 +132,11 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
@@ -151,10 +149,9 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]

@@ -33,6 +33,11 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+#if NETCOREAPP3_0_OR_GREATER
+using MySql.Data.MySqlClient;
+using Npgsql;
+using Oracle.ManagedDataAccess.Client;
+#endif
 using Samples.Security.Data;
 
 #pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
@@ -76,6 +81,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
         private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static IMongoDatabase _mongoDb = null;
+#if NETCOREAPP3_0_OR_GREATER
+        private static NpgsqlConnection _dbConnectionNpgsql = null;
+        private static MySqlConnection _dbConnectionMySql = null;
+        private static OracleConnection _dbConnectionOracle = null;
+#endif
 
         public IActionResult Index()
         {
@@ -87,9 +97,136 @@ namespace Samples.Security.AspNetCore5.Controllers
             get { return _dbConnectionSystemData ??= IastControllerHelper.CreateSystemDataDatabase(); }
         }
         
+        private static SqliteConnection DbConnectionMicrosoftData
+        {
+            get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
+        }
+        
         private static SqliteConnection DbConnectionSystemDataMicrosoftData
         {
             get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
+        }
+
+        private static SqlConnection DbConnectionSystemDataSqlClient
+        {
+            get { return _dbConnectionSystemDataSqlClient ??= IastControllerHelper.CreateSqlServerDatabase(); }
+        }
+
+#if NETCOREAPP3_0_OR_GREATER
+        private static NpgsqlConnection DbConnectionNpgsql
+        {
+            get { return _dbConnectionNpgsql ??= IastControllerHelper.CreatePostgresDatabase(); }
+        }
+
+        private static MySqlConnection DbConnectionMySql
+        {
+            get { return _dbConnectionMySql ??= IastControllerHelper.CreateMySqlDatabase(); }
+        }
+
+        private static OracleConnection DbConnectionOracle
+        {
+            get { return _dbConnectionOracle ??= IastControllerHelper.CreateOracleDatabase(); }
+        }
+
+#endif
+        [HttpGet("StoredXss")]
+        [Route("StoredXss")]
+        public IActionResult StoredXss(string database = null)
+        {
+            var db = GetDbConnectionFromName(database);
+
+            var param = GetDbValue(db);
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("Xss");
+        }
+
+        [HttpGet("StoredXssEscaped")]
+        [Route("StoredXssEscaped")]
+        public IActionResult StoredXssEscaped(string database = null)
+        {
+            var db = GetDbConnectionFromName(database);
+
+            var param = GetDbValue(db);
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("Xss");
+        }
+
+
+        [HttpGet("StoredSqli")]
+        [Route("StoredSqli")]
+        public IActionResult StoredSqli(string database = null)
+        {
+            try
+            {
+
+                var db = GetDbConnectionFromName(database);
+
+                var details = GetDbValue(db, "Michael");
+                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
+
+                var name = db switch
+                {
+                    SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
+                    SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
+                    SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteScalar(),
+#if NETCOREAPP3_0_OR_GREATER
+                    NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteScalar(),
+#endif
+                    _ => null
+                };
+
+                return Content($"Result: " + name);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500);
+            }
+        }
+
+        private static IDbConnection GetDbConnectionFromName(string database)
+        {
+            IDbConnection db =
+                database switch
+                {
+                    "System.Data.SQLite" => DbConnectionSystemData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
+                    "Microsoft.Data.Sqlite" => DbConnectionMicrosoftData,
+#if NETCOREAPP3_0_OR_GREATER
+                    "Npgsql" => DbConnectionNpgsql,
+                    "MySql.Data" => DbConnectionMySql,
+                    "Oracle" => DbConnectionOracle,
+#endif
+                    null => DbConnectionSystemData,
+                    _ => throw new Exception($"unknown db type: {database}")
+                };
+            return db;
+        }
+
+        private static string GetDbValue(IDbConnection db, string name = "Name1")
+        {
+            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
+
+            using IDataReader reader = db switch
+            {
+                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
+                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
+                SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
+#if NETCOREAPP3_0_OR_GREATER
+                NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteReader(),
+                MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteReader(),
+                OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteReader(),
+#endif
+                _ => throw new ArgumentException("Invalid db connection")
+            };
+
+            reader.Read();
+            var res = reader.GetString(0);
+            return res;
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -1161,23 +1298,6 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return Content(result, "text/html");
         }
-
-        private static string GetDbValue(IDbConnection db, string name = "Name1")
-        {
-            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
-
-            using IDataReader reader = db switch
-            {
-                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
-                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
-                _ => throw new ArgumentException("Invalid db connection")
-            };
-
-            reader.Read();
-            var res = reader.GetString(0);
-            return res;
-        }
-
 
         [HttpGet("Print")]
         public ActionResult PrintReport(

@@ -2,7 +2,7 @@ using System.Net;
 using System.Web;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class HtmlEscapeTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
