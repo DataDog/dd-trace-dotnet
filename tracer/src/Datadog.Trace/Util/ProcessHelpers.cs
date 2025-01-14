@@ -152,7 +152,7 @@ namespace Datadog.Trace.Util
                 {
                     Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
                     processInfo.Kill();
-                    return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode, timedOut: true);
+                    return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), exitCode: -1, timedOut: true);
                 }
 
                 if (!processStartInfo.UseShellExecute)
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Util
             {
                 Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
                 processInfo.Kill();
-                return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode, timedOut: true);
+                return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), exitCode: -1, timedOut: true);
             }
 
             if (!processStartInfo.UseShellExecute)
