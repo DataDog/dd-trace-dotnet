@@ -962,7 +962,6 @@ stages:
         path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
-      condition: ne(variables['artifactSuffix'], 'linux-arm64-r2r')
       parameters:
         build: true
         target: builder
