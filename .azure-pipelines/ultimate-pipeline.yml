@@ -605,12 +605,16 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
+          universalArtifactSuffix: linux-x64
         x64-r2r:
           baseImage: debian
           artifactSuffix: linux-x64-r2r
+          # ZipMonitoringHome hardcodes the artifactSuffix, so we need to pass the correct one here
+          universalArtifactSuffix: linux-x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+          universalArtifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -671,7 +675,7 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(artifactSuffix)
+        path: $(monitoringHome)/$(universalArtifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
