@@ -100,76 +100,69 @@ partial class Build
         });
 
     Target LLMReport => _ => _
-           .Unlisted()
-           .Requires(() => GitHubRepositoryName)
-           .Requires(() => GitHubToken)
-           .Requires(() => OpenAIKey)
-           .Requires(() => PullRequestNumber)
-           .Executes(async () =>
-           {
-               var executeLocal = IsLocalBuild;
-               // ..etc
-        var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
-        var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
-        var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
-
-        string result = string.Empty;
-        var client = GetGitHubClient();
-
-        var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-        var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-
-        string changesText = string.Empty;
-        foreach (var file in pullRequestFiles)
+        .Unlisted()
+        .Requires(() => GitHubRepositoryName)
+        .Requires(() => GitHubToken)
+        .Requires(() => OpenAIKey)
+        .Requires(() => PullRequestNumber)
+        .Executes(async () =>
         {
-            if (!extensionsToReview.Any(ext => file.FileName.EndsWith(ext)) || excludePath.Any(x => file.FileName.Contains(x, StringComparison.OrdinalIgnoreCase)))
+            var executeLocal = IsLocalBuild;
+            var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
+            var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
+            var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
+
+            string result = string.Empty;
+            var client = GetGitHubClient();
+
+            var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
+            var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
+
+            string changesText = string.Empty;
+            foreach (var file in pullRequestFiles)
             {
-                continue;
+                if (!extensionsToReview.Any(ext => file.FileName.EndsWith(ext)) || excludePath.Any(x => file.FileName.Contains(x, StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
+                changesText += ($"Filename: {file.FileName}" + Environment.NewLine + ($"{file.Patch}") + Environment.NewLine + Environment.NewLine);
             }
 
-            changesText += ($"Filename: {file.FileName}" + Environment.NewLine + ($"{file.Patch}") + Environment.NewLine + Environment.NewLine);
-        }
+            if (string.IsNullOrEmpty(changesText))
+            {
+                result = "No changes detected.";
+            }
+            else
+            {
+                var fullPrompt = prompt + changesText;
 
-        if (string.IsNullOrEmpty(changesText))
-        {
-            result = "No changes detected.";
-        }
-        else if (string.IsNullOrEmpty(OpenAIKey))
-        {
-            result = "Null or empty OpenAI key.";
-        }
-        else
-        {
-            var fullPrompt = prompt + changesText;
+                result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
 
-            result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
+                if (executeLocal)
+                {
+                    Console.Write(fullPrompt);
+                }
+            }
+
+            if (string.IsNullOrEmpty(result))
+            {
+                Console.WriteLine("Error in OpenAI's response");
+                result = "Error in OpenAI's response";
+            }
+
+            var llmReport = new StringBuilder();
+            llmReport.AppendLine("## LLM Report").AppendLine(result).AppendLine();
 
             if (executeLocal)
             {
-                File.WriteAllText("changes.txt", fullPrompt);
+                Console.WriteLine(llmReport.ToString());
             }
-        }
-
-        Console.WriteLine(result);
-
-        if (string.IsNullOrEmpty(result))
-        {
-            Console.WriteLine("Error in OpenAI's response");
-            result = "Error in OpenAI's response";
-        }
-
-        var llmReport = new StringBuilder();
-        llmReport.AppendLine("## LLM Report").AppendLine(result).AppendLine();
-
-        if (executeLocal)
-        {
-            File.WriteAllText("LLMResult.txt", llmReport.ToString());
-        }
-        else
-        {
-            await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", llmReport.ToString());
-        }
-    }
+            else
+            {
+                await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", llmReport.ToString());
+            }
+        });
 
     Target SummaryOfSnapshotChanges => _ => _
            .Unlisted()
