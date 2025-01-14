@@ -163,7 +163,6 @@ namespace Datadog.Trace.Activity
                 if (Activator.CreateInstance(activityType, "operationName").TryDuckCast<IActivityFormat>(out var activityFormat))
                 {
                     activityFormat.DefaultIdFormat = ActivityIdFormat.W3C;
-                    activityFormat.ForceDefaultIdFormat = true;
                 }
             }
         }
