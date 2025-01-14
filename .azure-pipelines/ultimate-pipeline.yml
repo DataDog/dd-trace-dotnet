@@ -6703,7 +6703,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - powershell: tracer/build.ps1 LLMReport
+    - powershell: tracer/build.ps1 LLMPRReview
       displayName: Generate LLM report
       name: generate_llm_step
       env:

@@ -99,7 +99,7 @@ partial class Build
             Console.WriteLine($"PR assigned");
         });
 
-    Target LLMReport => _ => _
+    Target LLMPRReview => _ => _
         .Unlisted()
         .Requires(() => GitHubRepositoryName)
         .Requires(() => GitHubToken)
