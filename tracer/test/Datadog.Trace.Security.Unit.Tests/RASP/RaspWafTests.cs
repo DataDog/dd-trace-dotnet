@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf;
@@ -101,6 +102,20 @@ public class RaspWafTests : WafLibraryRequiredTest
             "rasp-rule-set.json",
             action,
             actionType);
+    }
+
+    [Fact]
+    public void GivenWafInstance_WhenGetKnownAddressesInParallel_ThenResultIsOk()
+    {
+        var args = CreateArgs("paramValue");
+        var context = InitWaf(true, "rasp-rule-set.json", args, out var waf);
+
+        Parallel.For(0, 100, i =>
+        {
+            var addresses = waf.GetKnownAddresses();
+            addresses.Should().NotBeNull();
+            addresses.Count().Should().BeGreaterThan(0);
+        });
     }
 
     private void EnableDebugInfo(bool enable)

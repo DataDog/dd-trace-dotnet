@@ -262,6 +262,8 @@ namespace Datadog.Trace.TestHelpers
                            Trace.Ci.Tags.CommonTags.RuntimeName => new KeyValuePair<string, string>(kvp.Key, "RuntimeName"),
                            Trace.Ci.Tags.CommonTags.RuntimeVersion => new KeyValuePair<string, string>(kvp.Key, "RuntimeVersion"),
                            Trace.Ci.Tags.CommonTags.LibraryVersion => new KeyValuePair<string, string>(kvp.Key, "LibraryVersion"),
+                           // In CI, we build the samples separately, so can end up with additional prefix in the source file
+                           Trace.Ci.Tags.TestTags.SourceFile => new KeyValuePair<string, string>(kvp.Key, kvp.Value.Substring(kvp.Value.StartsWith(@"D:/a/1/s/") ? 9 : 0)),
                            Trace.Ci.Tags.TestTags.Command => new KeyValuePair<string, string>(kvp.Key, "Command"),
                            Trace.Ci.Tags.TestTags.CommandWorkingDirectory => new KeyValuePair<string, string>(kvp.Key, "CommandWorkingDirectory"),
                            Trace.Ci.Tags.TestTags.FrameworkVersion => new KeyValuePair<string, string>(kvp.Key, "FrameworkVersion"),

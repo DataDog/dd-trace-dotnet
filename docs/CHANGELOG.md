@@ -10,6 +10,64 @@
 
 
 
+
+## [Release 3.8.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.8.0)
+
+## Summary
+
+- [ASM] Improved error handling and reporting
+- [ASM/IAST] Fix a crash occurring when an attribute is decorated with itself
+- [Dynamic Instrumentation] Fix errors in symbol upload and exception replay
+- [AWS Lambda] Encode non-ascii error messages
+
+## Changes
+
+### Tracer
+* [Tracing] Refactor internal Span Links API (#6341)
+* Support relative path in `DD_DOTNET_TRACER_HOME` (#6434)
+* Add support for `[DuckPropertyOrField]` (#6463)
+
+### ASM
+* [ASM] Log `FormatException` from `get_Uri` as debug (#6489)
+* [ASM] Update Iast Log Warning to Error (#6492)
+* [ASM] upgrade warning to error (#6421)
+* [ASM] Fix IAST benchmark tests (#6462)
+* [ASM] Error metric for unknown operator errors (#6465)
+* [ASM] Introduce SecurityReporter for all reporting functions of SecurityCoordinator (#6481)
+* [ASM] Normalise aspects exception logging (#6495)
+* Fix build issues on aspects on net5.0 (#6500)
+
+### Debugger
+* [Dynamic Instrumentation] Hotfix SymDB and ER (#6468)
+
+### Serverless
+* [serverless] encode lambda error.msg and error.type (#6438)
+
+### Fixes
+* [IAST] Fix recursive custom attribute crash (#6470)
+
+### Build / Test
+* [IAST] Skip failing tests (#6455)
+* repo: mandatory issue templates (AIDM-424) (#6456)
+* K8s Lib Injection tests: run on a matrix (#6458)
+* [Build] Fix version bump autogen files error (#6464)
+* Fix the build and some versions (#6466)
+* [IAST] skip dotnet 2.1 tests that can't work (#6467)
+* Exclude common failure in smoke tests (#6469)
+* allow running exploration tests on mac (#6474)
+* [Test Package Versions Bump] Updating package versions (#6450)
+* [Test Package Versions Bump] Updating package versions (#6478)
+* [Test Package Versions Bump] Updating package versions (#6486)
+* Parallelize unit tests (#6483)
+* [IAST] Propagation tests reorg (#6487)
+* fix UpdateVendoredCode on mac (#6490)
+
+### Miscellaneous
+* [Crashtracking] Add a setting to disable crashtracking filtering (#6452)
+
+
+[Changes since 3.7.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.7.0...v3.8.0)
+
 ## [Release 3.7.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.7.0)
 
 ## Summary

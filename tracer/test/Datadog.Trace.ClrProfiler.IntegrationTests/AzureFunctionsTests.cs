@@ -48,7 +48,7 @@ public abstract class AzureFunctionsTests : TestHelper
     protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, string framework = null, int expectedExitCode = 0)
     {
         // run the azure function
-        var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework, usePublishFolder: false);
+        var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
         Output.WriteLine("Using binFolder: " + binFolder);
         var process = await ProfilerHelper.StartProcessWithProfiler(
             executable: "func",
@@ -84,7 +84,7 @@ public abstract class AzureFunctionsTests : TestHelper
                           .DisableRequireUniquePrefix();
     }
 
-    protected async Task AssertIsolatedSpans(IImmutableList<MockSpan> spans)
+    protected async Task AssertIsolatedSpans(IImmutableList<MockSpan> spans, string filename = null)
     {
         // AAS _potentially_ attaches extra tags here, depending on exactly where in the trace the tags are
         // so can't easily validate
@@ -99,8 +99,11 @@ public abstract class AzureFunctionsTests : TestHelper
             new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
             @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
 
+        settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
+
+        filename ??= $"{nameof(AzureFunctionsTests)}.Isolated";
         await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated")
+                          .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
 
@@ -163,6 +166,38 @@ public abstract class AzureFunctionsTests : TestHelper
                 using var s = new AssertionScope();
 
                 await AssertInProcessSpans(filteredSpans);
+            }
+        }
+    }
+#endif
+
+// v1 is only supported on .NET 6 and 7
+#if NET6_0 || NET7_0
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4SdkV1 : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4SdkV1(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.SdkV1", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 21;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+
+                await AssertIsolatedSpans(spans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
             }
         }
     }

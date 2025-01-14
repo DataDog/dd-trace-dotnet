@@ -1,4 +1,4 @@
-﻿// <copyright file="DuckTypingTests.cs" company="Datadog">
+// <copyright file="DuckTypingTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -86,61 +86,69 @@ public class DuckTypingTests
     [Fact]
     public void CanDuckTypeManualTestSessionAsISession()
     {
-        var autoSession = TestSession.GetOrCreate("blah");
+        try
+        {
+            var autoSession = TestSession.GetOrCreate("blah");
 
-        var session = autoSession.DuckCast<ManualITestSession>();
+            var session = autoSession.DuckCast<ManualITestSession>();
 
-        // call the methods to make sure it works
-        var module = session.CreateModule("somemodule");
-        module.Should().NotBeNull();
+            // call the methods to make sure it works
+            var module = session.CreateModule("somemodule");
+            module.Should().NotBeNull();
 
-        var suite = module.GetOrCreateSuite("mysuite");
-        suite.Should().NotBeNull();
+            var suite = module.GetOrCreateSuite("mysuite");
+            suite.Should().NotBeNull();
 
-        var test = suite.CreateTest("mytest");
-        test.Should().NotBeNull();
+            var test = suite.CreateTest("mytest");
+            test.Should().NotBeNull();
 
-        var stats = new ManualBenchmarkDiscreteStats(100, 100, 100, 100, 100, 0, 0, 0, 0, 100, 100, 100);
-        var statsDuckType = stats.DuckCast<IBenchmarkDiscreteStats>();
-        TestExtensionsAddBenchmarkDataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkDiscreteStats>(test, BenchmarkMeasureType.RunTime, "some info", statsDuckType);
-        // test.AddBenchmarkData(BenchmarkMeasureType.ApplicationLaunch, info: "something", in stats);
+            var stats = new ManualBenchmarkDiscreteStats(100, 100, 100, 100, 100, 0, 0, 0, 0, 100, 100, 100);
+            var statsDuckType = stats.DuckCast<IBenchmarkDiscreteStats>();
+            TestExtensionsAddBenchmarkDataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkDiscreteStats>(test, BenchmarkMeasureType.RunTime, "some info", statsDuckType);
+            // test.AddBenchmarkData(BenchmarkMeasureType.ApplicationLaunch, info: "something", in stats);
 
-        var parameters = new ManualTestParameters { Arguments = new(), Metadata = new() };
-        var paramsDuckType = parameters.DuckCast<ITestParameters>();
-        TestExtensionsSetParametersIntegration.OnMethodBegin<ManualITestSession, ManualITest, ITestParameters>(test, paramsDuckType);
-        // test.SetParameters(new TestParameters { Arguments = new(), Metadata = new() });
+            var parameters = new ManualTestParameters { Arguments = new(), Metadata = new() };
+            var paramsDuckType = parameters.DuckCast<ITestParameters>();
+            TestExtensionsSetParametersIntegration.OnMethodBegin<ManualITestSession, ManualITest, ITestParameters>(test, paramsDuckType);
+            // test.SetParameters(new TestParameters { Arguments = new(), Metadata = new() });
 
-        var hostInfo = new ManualBenchmarkHostInfo { RuntimeVersion = "123" };
-        var jobInfo = new ManualBenchmarkJobInfo { Description = "weeble" };
-        var hostInfoDuckType = hostInfo.DuckCast<IBenchmarkHostInfo>();
-        var jobInfoDuckType = jobInfo.DuckCast<IBenchmarkJobInfo>();
-        TestExtensionsSetBenchmarkMetadataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkHostInfo, IBenchmarkJobInfo>(test, in hostInfoDuckType, in jobInfoDuckType);
-        // test.SetBenchmarkMetadata(new BenchmarkHostInfo() { RuntimeVersion = "123" }, new BenchmarkJobInfo() { Description = "weeble" });
+            var hostInfo = new ManualBenchmarkHostInfo { RuntimeVersion = "123" };
+            var jobInfo = new ManualBenchmarkJobInfo { Description = "weeble" };
+            var hostInfoDuckType = hostInfo.DuckCast<IBenchmarkHostInfo>();
+            var jobInfoDuckType = jobInfo.DuckCast<IBenchmarkJobInfo>();
+            TestExtensionsSetBenchmarkMetadataIntegration.OnMethodBegin<ManualITestSession, ManualITest, IBenchmarkHostInfo, IBenchmarkJobInfo>(test, in hostInfoDuckType, in jobInfoDuckType);
+            // test.SetBenchmarkMetadata(new BenchmarkHostInfo() { RuntimeVersion = "123" }, new BenchmarkJobInfo() { Description = "weeble" });
 
-        // basic check that things were pushed down correctly
-        var span = test.Should()
-                       .BeAssignableTo<IDuckType>()
-                       .Subject.Instance.Should()
-                       .BeOfType<Test>()
-                       .Subject.GetInternalSpan()
-                       .Should()
-                       .BeOfType<Span>()
-                       .Subject;
-        span.GetMetric("benchmark.run_time.run").Should().Be(100);
+            // basic check that things were pushed down correctly
+            var span = test.Should()
+                           .BeAssignableTo<IDuckType>()
+                           .Subject.Instance.Should()
+                           .BeOfType<Test>()
+                           .Subject.GetInternalSpan()
+                           .Should()
+                           .BeOfType<Span>()
+                           .Subject;
+            span.GetMetric("benchmark.run_time.run").Should().Be(100);
 
-        span.GetTag("host.runtime_version").Should().Be("123");
-        span.GetTag("test.configuration.job_description").Should().Be("weeble");
+            span.GetTag("host.runtime_version").Should().Be("123");
+            span.GetTag("test.configuration.job_description").Should().Be("weeble");
 
-        var tags = span.Tags.Should().BeOfType<TestSpanTags>().Subject;
-        tags.Parameters
-            .Should()
-            .NotBeNull()
-            .And.Be(new TestParameters { Arguments = new(), Metadata = new() }.ToJSON());
+            var tags = span.Tags.Should().BeOfType<TestSpanTags>().Subject;
+            tags.Parameters
+                .Should()
+                .NotBeNull()
+                .And.Be(new TestParameters { Arguments = new(), Metadata = new() }.ToJSON());
 
-        test.Close(TestStatus.Pass);
-        suite.Close();
-        module.Close();
-        session.Close(TestStatus.Pass);
+            test.Close(TestStatus.Pass);
+            suite.Close();
+            module.Close();
+            session.Close(TestStatus.Pass);
+        }
+        finally
+        {
+            CIVisibility.Close();
+            CIVisibility.Reset();
+        }
     }
 
     [Fact]

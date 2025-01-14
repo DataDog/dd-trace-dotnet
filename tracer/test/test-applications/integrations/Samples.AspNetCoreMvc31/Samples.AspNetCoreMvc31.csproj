@@ -17,6 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Samples.AspNetCoreMvc21\web.config" Link="web.config" CopyToOutputDirectory="Always" />
+    <Content Include="..\Samples.AspNetCoreMvc21\web.config" Link="web.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
