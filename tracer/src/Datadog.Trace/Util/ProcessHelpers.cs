@@ -133,7 +133,8 @@ namespace Datadog.Trace.Util
                 return null;
             }
 
-            bool HasTimedOut() => command.Timeout.HasValue && DateTime.UtcNow - processInfo.StartTime.ToUniversalTime() > command.Timeout;
+            var startTime = DateTime.UtcNow;
+            bool HasTimedOut() => command.Timeout.HasValue && DateTime.UtcNow - startTime > command.Timeout;
             using var disposableProcessInfo = processInfo;
 
             if (input is not null)
