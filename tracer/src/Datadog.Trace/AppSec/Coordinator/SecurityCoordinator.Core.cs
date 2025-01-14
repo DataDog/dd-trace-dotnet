@@ -201,6 +201,7 @@ internal readonly partial struct SecurityCoordinator
             }
             catch (ObjectDisposedException)
             {
+                Log.Debug("ObjectDisposedException while trying to access a Context.");
                 _contextUninitialized = true;
                 return null;
             }
