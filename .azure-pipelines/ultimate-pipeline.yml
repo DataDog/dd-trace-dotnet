@@ -894,12 +894,15 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+          universalArtifactSuffix: linux-arm64
         arm64-r2r:
           baseImage: debian
           artifactSuffix: linux-arm64-r2r
+          universalArtifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
+          universalArtifactSuffix: linux-musl-arm64
     pool:
       name: aws-arm64-auto-scaling
 
@@ -962,7 +965,7 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-arm64
-        path: $(monitoringHome)/$(artifactSuffix)
+        path: $(monitoringHome)/$(universalArtifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
