@@ -872,6 +872,15 @@ partial class Build
             CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
         });
 
+    Target ZipMonitoringHomeLinuxR2R => _ => _
+        .Unlisted()
+        .DependsOn(ZipMonitoringHomeLinux)
+        .Before(ZipMonitoringHomeLinux)
+        .Executes(() =>
+        {
+            ReadyToRun = true;
+        });
+
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildManagedTracerHome, BuildNativeTracerHome, BuildProfilerHome, BuildNativeLoader)
@@ -884,7 +893,8 @@ partial class Build
             var nfpm = Nfpm.Value;
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
+            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}{
+        (ReadyToRun ? "-r2r" : "")}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";

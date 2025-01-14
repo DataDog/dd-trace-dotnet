@@ -605,16 +605,12 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          universalArtifactSuffix: linux-x64
         x64-r2r:
           baseImage: debian
           artifactSuffix: linux-x64-r2r
-          # ZipMonitoringHome hardcodes the artifactSuffix, so we need to pass the correct one here
-          universalArtifactSuffix: linux-x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          universalArtifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -675,14 +671,17 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(universalArtifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome"
+        ${{ if contains(variables['artifactSuffix'], 'r2r') }}:
+          command: "ZipMonitoringHomeR2R"
+        ${{ else }}:
+          command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
@@ -894,15 +893,12 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-          universalArtifactSuffix: linux-arm64
         arm64-r2r:
           baseImage: debian
           artifactSuffix: linux-arm64-r2r
-          universalArtifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
-          universalArtifactSuffix: linux-musl-arm64
     pool:
       name: aws-arm64-auto-scaling
 
@@ -965,14 +961,17 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-arm64
-        path: $(monitoringHome)/$(universalArtifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome"
+        ${{ if contains(variables['artifactSuffix'], 'r2r') }}:
+          command: "ZipMonitoringHomeR2R"
+        ${{ else }}:
+          command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64

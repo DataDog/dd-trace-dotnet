@@ -107,6 +107,9 @@ partial class Build : NukeBuild
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
+
+    [Parameter("Enable ReadyToRun configuration")]
+    bool ReadyToRun = false;
     
     public Build()
     {
