@@ -164,8 +164,15 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_continuousProfilerInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
-                     m_continuousProfilerInstance->GetFilePath());
+                if (result == CORPROF_E_PROFILER_CANCEL_ACTIVATION)
+                {
+                    Log::Info("The continuous profiler is disabled");
+                }
+                else
+                {
+                    Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
+                        m_continuousProfilerInstance->GetFilePath());
+                }
 
                 // If we cannot load the class factory we release the instance.
                 m_continuousProfilerInstance.release();
@@ -178,7 +185,14 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
+                if (result == CORPROF_E_PROFILER_CANCEL_ACTIVATION)
+                {
+                    Log::Info("The tracer is disabled");
+                }
+                else
+                {
+                    Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
+                }
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
@@ -211,7 +225,7 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_continuousProfilerInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
+                    Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
                      m_continuousProfilerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.

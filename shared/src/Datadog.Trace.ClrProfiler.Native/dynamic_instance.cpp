@@ -58,7 +58,14 @@ namespace datadog::shared::nativeloader
         }
         else
         {
-            Log::Warn("DynamicInstanceImpl::LoadClassFactory: Error getting IClassFactory from: ", m_mainLibrary.GetFilePath());
+            if (res == CORPROF_E_PROFILER_CANCEL_ACTIVATION)
+            {
+                Log::Info("DynamicInstanceImpl::LoadClassFactory: The IClassFactory from ", m_mainLibrary.GetFilePath(), " is disabled");
+            }
+            else
+            {
+                Log::Warn("DynamicInstanceImpl::LoadClassFactory: Error getting IClassFactory from: ", m_mainLibrary.GetFilePath());
+            }
         }
 
         Log::Debug("DynamicInstanceImpl::LoadClassFactory: ", res);
