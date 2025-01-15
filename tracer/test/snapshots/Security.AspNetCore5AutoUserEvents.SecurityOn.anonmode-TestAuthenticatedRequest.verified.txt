@@ -24,9 +24,9 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9,
+      usr.id: anon_74ff86ebe90bfdc4f169315d955bacd1,
       _dd.appsec.user.collection_mode: anonymization,
-      _dd.appsec.usr.id: anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9,
+      _dd.appsec.usr.id: anon_74ff86ebe90bfdc4f169315d955bacd1,
       _dd.runtime_family: dotnet
     },
     Metrics: {

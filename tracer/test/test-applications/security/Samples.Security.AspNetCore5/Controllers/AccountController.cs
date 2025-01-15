@@ -70,14 +70,15 @@ public class AccountController : Controller
 
         if (ModelState.IsValid)
         {
+            // This doesn't count login failures towards account lockout
+            // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+            var result = await _signInManager.PasswordSignInAsync(model.Input.UserName, model.Input.Password, model.Input.RememberMe, lockoutOnFailure: false);
+            
             if (userIdSdk is not null)
             {
                 SampleHelpers.TrackUserLoginSuccessEvent(userIdSdk, new Dictionary<string, string> { { "some-metadata", "some-value" } });
             }
 
-            // This doesn't count login failures towards account lockout
-            // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            var result = await _signInManager.PasswordSignInAsync(model.Input.UserName, model.Input.Password, model.Input.RememberMe, lockoutOnFailure: false);
             if (result.Succeeded)
             {
                 return LocalRedirect(returnUrl);

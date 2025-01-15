@@ -149,29 +149,6 @@ internal readonly partial struct SecurityCoordinator
         return result;
     }
 
-    internal IContext? GetOrCreateAdditiveContext()
-    {
-        var additiveContext = _httpTransport.GetAdditiveContext();
-
-        if (additiveContext == null)
-        {
-            additiveContext = _security.CreateAdditiveContext();
-            // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
-            if (additiveContext is not null)
-            {
-                _httpTransport.SetAdditiveContext(additiveContext);
-            }
-        }
-
-        if (!_httpTransport.IsAdditiveContextDisposed())
-        {
-            return additiveContext;
-        }
-
-        Log.Warning("Waf could not run as waf additive context is disposed");
-        return null;
-    }
-
     private static void RecordTelemetry(IResult? result)
     {
         if (result == null)

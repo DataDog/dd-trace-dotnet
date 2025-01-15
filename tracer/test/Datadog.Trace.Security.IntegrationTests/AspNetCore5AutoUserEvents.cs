@@ -10,6 +10,8 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyTests;
@@ -91,8 +93,33 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             await TryStartApp();
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            VerifyScrubber.ScrubSessionFingerprint(settings);
             var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser2&Input.Password=test", contentType: "application/x-www-form-urlencoded");
             request.StatusCode.Should().Be(HttpStatusCode.OK);
+            // this is for testuser2 in the in memory user store and appdb
+            var userId = "7ccfa5b9-14c2-42b9-8064-834b8293aef4";
+            var request2 = await _fixture.Agent.SetupRcmAndWait(
+                               Output,
+                               [
+                                   (new Payload
+                                    {
+                                        RulesData =
+                                        [
+                                            new RuleData
+                                            {
+                                                Id = "blocked_users",
+                                                Type = "data_with_expiration",
+                                                Data =
+                                                [
+                                                    new Data { Expiration = 0, Value = userId }, new Data { Expiration = 0, Value = "blocked-user" }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    RcmProducts.AsmData, nameof(TestAuthenticatedRequest)),
+                               ]);
+            request2.Should().NotBeNull();
+            request2.CachedTargetFiles.Should().HaveCount(_enableSecurity ? 1 : 0);
             await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
