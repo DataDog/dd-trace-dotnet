@@ -15,10 +15,16 @@
     <!-- WebClient is obsolete -->
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="FluentAssertions.Analyzers" Version="0.34.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Moq" Version="4.16.0" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
