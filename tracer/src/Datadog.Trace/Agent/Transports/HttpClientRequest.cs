@@ -187,7 +187,7 @@ namespace Datadog.Trace.Agent.Transports
                     _postRequest.Content = formDataContent;
                 }
 
-                Log.Error("sending symbols or event");
+                Log.Error("sending symbols and event to {Endpoint}", this._client.BaseAddress);
 
                 var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
                 return new HttpClientResponse(response);
