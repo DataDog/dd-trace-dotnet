@@ -3,8 +3,9 @@
   <PropertyGroup>
     <RootNamespace>Datadog.Trace.ClrProfiler.Managed.Loader</RootNamespace>
     <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
-    <OutputPath>..\bin\ProfilerResources\</OutputPath>
-
+    <!-- We exclude the configuration from the artifacts pivots here because it makes it easier -->
+    <!-- to coordinate with the native build -->
+    <ArtifactsPivots>$(TargetFramework.ToLowerInvariant())</ArtifactsPivots>
     <!-- NuGet -->
     <Version>3.15.0</Version>
 

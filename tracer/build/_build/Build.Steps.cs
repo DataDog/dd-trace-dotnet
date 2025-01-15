@@ -2190,11 +2190,11 @@ partial class Build
        .After(CompileManagedSrc)
        .Executes(() =>
         {
-            var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
+            var loaderTypes = GetTypeReferences(GetManagedLoaderDllPath("netcoreapp2.0"));
             List<(string Assembly, string Type)> datadogTraceTypes = new();
             foreach (var tfm in AppTrimmingTFMs)
             {
-                datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
+                datadogTraceTypes.AddRange(GetTypeReferences(GetDatadogTraceDllPath(tfm)));
             }
 
             // add Datadog projects to the root descriptors file
@@ -2836,6 +2836,11 @@ partial class Build
     // isn't well defined outside of MSBuild, so we hardcode it here
     string GetDatadogTraceDllPath(string tfm)
         => BuildArtifactsDirectory / "bin" / Projects.DatadogTrace / $"{BuildConfiguration}_{tfm}".ToLowerInvariant() / $"{Projects.DatadogTrace}.dll";
+
+    // This needs to match the _build_ output path for the dlls, which technically
+    // isn't well defined outside of MSBuild, so we hardcode it here
+    string GetManagedLoaderDllPath(string tfm)
+        => BuildArtifactsDirectory / "bin" / Projects.ManagedLoader / tfm.ToLowerInvariant() / $"{Projects.ManagedLoader}.dll";
 
     private async Task<string> GetVcpkg()
     {
