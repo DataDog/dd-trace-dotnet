@@ -25,6 +25,7 @@ if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
 fi
 
 branchName="refs/heads/$CI_COMMIT_BRANCH"
+artifactName="serverless-artifacts"
 
 echo "Looking for azure devops PR builds for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
 
@@ -46,41 +47,31 @@ fi
 
 echo "Found build with id '$buildId' for commit '$CI_COMMIT_SHA' on branch '$branchName'"
 
-architectures=("x64" "arm64")
-for architecture in "${architectures[@]}"; do
-  echo "Looking for artifacts for architecture '$architecture'"
+# Now try to download the artifacts from the build
+artifactsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/$buildId/artifacts?api-version=7.1&artifactName=$artifactName"
 
-  artifacts=("linux-tracer-home-linux-$architecture-r2r" "linux-universal-home-linux-$architecture")
-
-  # Now try to download the artifacts from the build
-  for artifactName in "${artifacts[@]}"; do
-    artifactsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/$buildId/artifacts?api-version=7.1&artifactName=$artifactName"
-
-    # Keep trying to get the artifact for 30 minutes
-    downloadUrl=""
-    TIMEOUT=1800
-    STARTED=0
-    until (( STARTED == TIMEOUT )) || [ ! -z "${downloadUrl}" ] ; do
-        echo "Checking for '$artifactName' at '$artifactsUrl'..."
-        # If the artifact doesn't exist, .resource.downloadUrl will be null, so we filter that out
-        downloadUrl=$(curl -s $artifactsUrl | jq -r '.resource.downloadUrl | select( . != null )')
-        sleep 100
-        (( STARTED += 100 ))
-    done
-    (( STARTED < TIMEOUT ))
-
-    if [ -z "${downloadUrl}" ]; then
-      echo "No downloadUrl found after 30 minutes for commit '$CI_COMMIT_SHA' on branch '$branchName'"
-      exit 1
-    fi
-
-    echo "Downloading '$artifactName' from '$downloadUrl'..."
-    curl -o $target_dir/artifacts.zip "$downloadUrl"
-    unzip $target_dir/artifacts.zip -d $target_dir/$architecture
-    mv $target_dir/$architecture/$artifactName/* $target_dir/$architecture
-    rm -rf $target_dir/artifacts.zip
-    rmdir $target_dir/$architecture/$artifactName
-  done
+# Keep trying to get the artifact for 40 minutes
+TIMEOUT=2400
+STARTED=0
+until (( STARTED == TIMEOUT )) || [ ! -z "${downloadUrl}" ] ; do
+    echo "Checking for artifacts at '$artifactsUrl'..."
+    # If the artifact doesn't exist, .resource.downloadUrl will be null, so we filter that out
+    downloadUrl=$(curl -s $artifactsUrl | jq -r '.resource.downloadUrl | select( . != null )')
+    sleep 100
+    (( STARTED += 100 ))
 done
+(( STARTED < TIMEOUT ))
+
+if [ -z "${downloadUrl}" ]; then
+  echo "No downloadUrl found after 30 minutes for commit '$CI_COMMIT_SHA' on branch '$branchName'"
+  exit 1
+fi
+
+echo "Downloading artifacts from '$downloadUrl'..."
+curl -o $target_dir/artifacts.zip "$downloadUrl"
+unzip $target_dir/artifacts.zip -d $target_dir
+mv $target_dir/$artifactName/* $target_dir
+rm -rf $target_dir/artifacts.zip
+rmdir $target_dir/$artifactName
 
 ls -l $target_dir
