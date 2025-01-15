@@ -14,12 +14,17 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
 
     public DefaultInterpolatedStringHandlerTests()
     {
+    }
+
+    public void TestInit()
+    {
         AddTainted(TaintedValue);
     }
 
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted1_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted(TaintedValue);
 
@@ -31,6 +36,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted1_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted(UntaintedValue);
 
@@ -42,6 +48,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted2_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted(TaintedValue, 0, string.Empty);
 
@@ -53,6 +60,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted2_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted(UntaintedValue, 0, string.Empty);
 
@@ -64,6 +72,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted3_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)TaintedValue, 0, string.Empty);
 
@@ -75,6 +84,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted3_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)UntaintedValue, 0, string.Empty);
 
@@ -86,6 +96,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted4_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)TaintedValue);
 
@@ -97,6 +108,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted4_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)UntaintedValue);
 
@@ -108,6 +120,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted5_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)TaintedValue, 0);
 
@@ -119,6 +132,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted5_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)UntaintedValue, 0);
 
@@ -130,6 +144,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted6_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)TaintedValue, string.Empty);
 
@@ -141,6 +156,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted6_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)UntaintedValue, string.Empty);
 
@@ -152,6 +168,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted7_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)TaintedValue, 0, string.Empty);
 
@@ -163,6 +180,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted7_GetString_NonVulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)UntaintedValue, 0, string.Empty);
 
@@ -174,6 +192,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueMultipleValues_GetString_Vulnerable()
     {
+        TestInit();
         var test = new DefaultInterpolatedStringHandler();
         test.AppendLiteral(UntaintedValue);
         test.AppendFormatted(new ReadOnlySpan<char>([' ', 'w', 'o', 'r', 'l', 'd', ' ']));
@@ -183,36 +202,40 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(test.ToStringAndClear());
     }
 
-    [Fact (Skip = "Flaky test")]
+    [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValue_GetString_Vulnerable()
     {
+        TestInit();
         var number = 5;
         var str = $"Hello {TaintedValue} {number}";
         str.Should().Be("Hello " + TaintedValue + " " + number);
         AssertTainted(str);
     }
 
-    [Fact (Skip = "Flaky test")]
+    [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingUntaintedValue_GetString_NonVulnerable()
     {
+        TestInit();
         var number = 5;
         var str = $"Hello {UntaintedValue} {number}";
         str.Should().Be("Hello " + UntaintedValue + " " + number);
         AssertNotTainted(str);
     }
 
-    [Fact (Skip = "Flaky test")]
+    [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValueAsObject_GetString_Vulnerable()
     {
+        TestInit();
         var number = 5;
         var str = $"Hello {(object)TaintedValue} {number}";
         str.Should().Be("Hello " + TaintedValue + " " + number);
         AssertTainted(str);
     }
 
-    [Fact (Skip = "Flaky test")]
+    [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingMultipleValuesWithTaintedValues_GetString_Vulnerable()
     {
+        TestInit();
         var order = new
         {
             CustomerId = "VINET",
@@ -240,9 +263,10 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(sql);
     }
 
-    [Fact (Skip = "Flaky test")]
+    [Fact]
     public void GivenImplicitInterpolatedString_WhenAddingTaintedValuesNested_GetString_Vulnerable()
     {
+        TestInit();
         const int number = 42;
         var date = new DateTime(2024, 11, 22, 15, 30, 0);
         const decimal decimalValue = 123;
@@ -259,9 +283,10 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         AssertTainted(finalString);
     }
 
-    [Fact (Skip = "Flaky test")]
+    [Fact]
     public void GivenImplicitInterpolatedString_WhenAddingTaintedValuesComplex_GetString_Vulnerable()
     {
+        TestInit();
         var interpolatedString = $"""
                                   Hello "{TaintedValue}" and "{UntaintedValue}"..
                                   """;
