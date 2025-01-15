@@ -26,67 +26,67 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     internal static CIEnvironmentValues Create(TValueProvider valueProvider)
     {
-        if (valueProvider.GetValue(Constants.Travis) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Travis)))
         {
             return new TravisEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.CircleCI) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.CircleCI)))
         {
             return new CircleCiEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.JenkinsUrl) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.JenkinsUrl)))
         {
             return new JenkinsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.GitlabCI) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.GitlabCI)))
         {
             return new GitlabEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.Appveyor) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Appveyor)))
         {
             return new AppveyorEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.AzureTFBuild) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.AzureTFBuild)))
         {
             return new AzurePipelinesEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BitBucketCommit) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BitBucketCommit)))
         {
             return new BitbucketEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.GitHubSha) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.GitHubSha)))
         {
             return new GithubActionsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.TeamCityVersion) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.TeamCityVersion)))
         {
             return new TeamcityEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BuildKite) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BuildKite)))
         {
             return new BuildkiteEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BitriseBuildSlug) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.BitriseBuildSlug)))
         {
             return new BitriseEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.Buddy) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.Buddy)))
         {
             return new BuddyEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.CodefreshBuildId) is { Length: > 0 })
+        if (!string.IsNullOrEmpty(valueProvider.GetValue(Constants.CodefreshBuildId)))
         {
             return new CodefreshEnvironmentValues<TValueProvider>(valueProvider);
         }

@@ -26,6 +26,8 @@ namespace Datadog.Trace.Ci;
 
 internal static class ImpactedTestsModule
 {
+    private static readonly object _lockObject = new object();
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ImpactedTestsModule));
 
     private static FileCoverageInfo[]? modifiedFiles = null;
@@ -42,10 +44,9 @@ internal static class ImpactedTestsModule
         {
             if (IsEnabled)
             {
-                Log.Debug("Impacted Tests Detection is enabled for {TestName}", test.Name);
-
                 var tags = test.GetTags();
-                bool modified = false;
+                Log.Debug("Impacted Tests Detection is enabled for {TestName}  - {FileName} {From}..{To} ", test.Name, tags.SourceFile, tags.SourceStart, tags.SourceEnd);
+                var modified = false;
                 var testFiles = GetTestCoverage(tags);
                 var modifiedFiles = GetModifiedFiles();
 
@@ -97,7 +98,7 @@ internal static class ImpactedTestsModule
         if (tags.SourceFile is null || tags.SourceStart is null || tags.SourceEnd is null)
         {
             Log.Warning("No test definition file found for {TestName}", tags.Name);
-            return Array.Empty<FileCoverageInfo>();
+            return [];
         }
 
         // Milestone 1 : Return only the test definition file
@@ -119,20 +120,19 @@ internal static class ImpactedTestsModule
     {
         if (modifiedFiles is null)
         {
-            lock (Log)
+            lock (_lockObject)
             {
                 if (modifiedFiles is null)
                 {
                     var workspacePath = CIEnvironmentValues.Instance.WorkspacePath ?? string.Empty;
                     var prBase = BaseCommit;
-                    var commit = CurrentCommit;
                     if (prBase is { Length: > 0 })
                     {
-                        Log.Debug("PR detected. Retrieving diff lines from Git CLI for {Path} {BaseCommit}...{CurrentCommit}", workspacePath, prBase, commit);
+                        Log.Debug("PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit}", workspacePath, prBase);
                         // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
                         try
                         {
-                            modifiedFiles = AsyncUtil.RunSync(() => GitCommandHelper.GetGitDiffFilesAndLinesAsync(workspacePath, prBase, commit));
+                            modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, prBase);
                         }
                         catch (Exception ex)
                         {
@@ -162,16 +162,16 @@ internal static class ImpactedTestsModule
 
         if (CIVisibility.ImpactedTestsDetectionResponse is { } response && response.Files is { Length: > 0 } files)
         {
-            var res = new List<FileCoverageInfo>();
-            foreach (var file in files)
+            var res = new FileCoverageInfo[files.Length];
+            for (int x = 0; x < files.Length; x++)
             {
-                res.Add(new FileCoverageInfo(file));
+                res[x] = new FileCoverageInfo(files[x]);
             }
 
-            return res.ToArray();
+            return res;
         }
 
-        return Array.Empty<FileCoverageInfo>();
+        return [];
     }
 
     private static string? GetBaseCommitFromBackend()

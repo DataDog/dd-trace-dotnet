@@ -813,16 +813,14 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Getting impacted tests detection modified files...");
         var framework = FrameworkDescription.Instance;
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var branch = await _getBranchNameTask.ConfigureAwait(false);
-        var currentSha = await _getShaTask.ConfigureAwait(false);
-        if (string.IsNullOrEmpty(repository))
+
+        if (string.IsNullOrEmpty(_repositoryUrl))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return default;
         }
 
-        if (string.IsNullOrEmpty(currentSha))
+        if (string.IsNullOrEmpty(_commitSha))
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
             return default;
@@ -830,14 +828,14 @@ internal class IntelligentTestRunnerClient
 
         var query = new DataEnvelope<Data<ImpactedTestsDetectionQuery>>(
             new Data<ImpactedTestsDetectionQuery>(
-                currentSha,
+                _commitSha,
                 ImpactedTestsDetectionRequestType,
                 new ImpactedTestsDetectionQuery(
                     _serviceName,
                     _environment,
-                    repository,
-                    branch,
-                    currentSha)),
+                    _repositoryUrl,
+                    _branchName,
+                    _commitSha)),
             default);
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
@@ -1286,33 +1284,11 @@ internal class IntelligentTestRunnerClient
         return gitSha;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ProcessHelpers.CommandOutput? RunGitCommand(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
-        TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
-        try
-        {
-            var sw = Stopwatch.StartNew();
-            var gitOutput = ProcessHelpers.RunCommand(
-                                new ProcessHelpers.Command(
-                                    "git",
-                                    arguments,
-                                    _workingDirectory,
-                                    outputEncoding: Encoding.Default,
-                                    errorEncoding: Encoding.Default,
-                                    inputEncoding: Encoding.Default,
-                                    useWhereIsIfFileNotFound: true,
-                                    timeout: TimeSpan.FromMinutes(5)),
-                                input);
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
-            if (gitOutput is null)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
-                Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
-            }
-            else if (gitOutput.ExitCode != 0)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
-            }
+        return GitCommandHelper.RunGitCommand(_workingDirectory, arguments, ciVisibilityCommand, input);
+    }
 
     private readonly struct SearchCommitResponse
     {

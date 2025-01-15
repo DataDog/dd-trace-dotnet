@@ -27,10 +27,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
     {
 #pragma warning disable SA1401 // FieldsMustBePrivate
+        protected const string ModifiedLine = "// Modified by TestingFrameworkImpactedTests.cs";
         protected const int ExpectedTestCount = 16;
-        protected const string GitHubSha = "c7fd869e31de6b621750c7542822c5001d06e421";
-        protected const string GitHubBaseSha = "340fa40ce6b5c6c8c45b6a07cfa90e84718f1ab6";
-        protected string buildDir = string.Empty;
+        protected const string GitHubBaseSha = "a700b56e12ddcbad5d19a2fa8852a15518ab205b";
+        protected string repositoryRoot = string.Empty;
         protected string repo = string.Empty;
         protected string branch = string.Empty;
         protected bool gitAvailable = false;
@@ -126,38 +126,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        protected async Task SubmitTests(string packageVersion, string scenario, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter = null, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = null)
+        protected async Task SubmitTests(string packageVersion, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter = null, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = null)
         {
-            var tests = new List<MockCIVisibilityTest>();
-            using var agent = GetAgent(tests, agentRequestProcessor);
-
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
-            var deadline = DateTime.UtcNow.AddMilliseconds(5000);
-            testFilter ??= _ => true; // t => t.Meta.ContainsKey("is_modified")
-
-            List<MockCIVisibilityTest> filteredTests = tests;
-            while (DateTime.UtcNow < deadline)
+            try
             {
-                filteredTests = tests.Where(testFilter).ToList();
-                if (tests.Count() >= ExpectedTestCount)
+                ModifyFile();
+
+                var tests = new List<MockCIVisibilityTest>();
+                using var agent = GetAgent(tests, agentRequestProcessor);
+
+                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
+                var deadline = DateTime.UtcNow.AddMilliseconds(5000);
+                testFilter ??= _ => true; // t => t.Meta.ContainsKey("is_modified")
+
+                List<MockCIVisibilityTest> filteredTests = tests;
+                while (DateTime.UtcNow < deadline)
                 {
-                    break;
+                    filteredTests = tests.Where(testFilter).ToList();
+                    if (tests.Count() >= ExpectedTestCount)
+                    {
+                        break;
+                    }
+
+                    Thread.Sleep(500);
                 }
 
-                Thread.Sleep(500);
+                // Sort and aggregate
+                var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();
+
+                tests.Count().Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
+                results.Count().Should().Be(expectedTests, "Expected filtered test count not met");
             }
-
-            // Sort and aggregate
-            var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();
-
-            tests.Count().Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
-            results.Count().Should().Be(expectedTests, "Expected filtered test count not met");
+            finally
+            {
+                RestoreFile();
+            }
         }
 
         protected override Dictionary<string, string> DefineCIEnvironmentValues(Dictionary<string, string> values)
         {
             // Base sets Azure CI values. Take those we can reuse for Git Hub
-            buildDir = values[CIEnvironmentValues.Constants.AzureBuildSourcesDirectory];
             repo = values[CIEnvironmentValues.Constants.AzureBuildRepositoryUri];
             branch = values[CIEnvironmentValues.Constants.AzureBuildSourceBranch];
 
@@ -179,8 +187,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Set relevant GitHub variables
             SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubRepository, repo);
             SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubBaseRef, branch);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubWorkspace, buildDir);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubSha, GitHubSha);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubWorkspace, repositoryRoot);
             if (setupPr)
             {
                 SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubEventPath, GetEventJsonFile());
@@ -196,9 +203,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 string content = $$"""
                 {
                   "pull_request": {
-                    "head": {
-                      "sha": "{{GitHubSha}}"
-                    },
                     "base": {
                       "sha": "{{GitHubBaseSha}}"
                     }
@@ -231,27 +235,60 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private void InitGit()
         {
             // Check git availability
-            var output = RunGitCommandAsync("branch --show-current");
+            var output = RunGitCommand("branch --show-current");
             if (output.ExitCode < 0)
             {
                 // Try to fix the git path
-                RunGitCommandAsync("config --global --add safe.directory '*'");
-                output = RunGitCommandAsync("branch --show-current");
+                RunGitCommand("config --global --add safe.directory '*'");
+                output = RunGitCommand("branch --show-current");
             }
 
             if (output.ExitCode == 0)
             {
-                gitAvailable = true;
+                // Retrieve WS root directory
+                output = RunGitCommand("rev-parse --show-toplevel");
+                if (output.ExitCode == 0)
+                {
+                    gitAvailable = true;
+                    repositoryRoot = output.Output.Trim();
+                    Output.WriteLine($"Git available. Repository: {repositoryRoot}");
+                }
+            }
+
+            if (output.ExitCode < 0)
+            {
                 Output.WriteLine($"Git NOT available. ExitCode: {output.ExitCode} Error: {output.Error}");
             }
         }
 
-        private ProcessHelpers.CommandOutput RunGitCommandAsync(string arguments)
+        private string GetTestFile()
+        {
+            return Path.Combine(repositoryRoot, "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs");
+        }
+
+        private void ModifyFile()
+        {
+            var path = GetTestFile();
+            var lines = File.ReadAllLines(path).ToList();
+            lines.Insert(33, ModifiedLine);
+            lines.Insert(63, ModifiedLine);
+            lines.Insert(64, ModifiedLine);
+            File.WriteAllLines(path, lines);
+        }
+
+        private void RestoreFile()
+        {
+            var path = GetTestFile();
+            var lines = File.ReadAllLines(path).Where(l => l != ModifiedLine).ToList();
+            File.WriteAllLines(path, lines);
+        }
+
+        private ProcessHelpers.CommandOutput RunGitCommand(string arguments)
         {
             try
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                var gitOutput = AsyncUtil.RunSync<ProcessHelpers.CommandOutput>(() => ProcessHelpers.RunCommandAsync(
+                var gitOutput = ProcessHelpers.RunCommand(
                                     new ProcessHelpers.Command(
                                         "git",
                                         arguments,
@@ -260,18 +297,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                         errorEncoding: Encoding.Default,
                                         inputEncoding: Encoding.Default,
                                         useWhereIsIfFileNotFound: true),
-                                    null));
+                                    null);
 
                 if (gitOutput is null || (gitOutput.ExitCode < 0 && gitOutput.Error is not { Length: > 0 }))
                 {
-                    return new ProcessHelpers.CommandOutput(null, "git command returned null output", -1);
+                    return new ProcessHelpers.CommandOutput(null, "git command returned null output", -1, false);
                 }
 
                 return gitOutput;
             }
             catch (Exception err)
             {
-                return new ProcessHelpers.CommandOutput(null, err.ToString(), -1);
+                return new ProcessHelpers.CommandOutput(null, err.ToString(), -1, false);
             }
         }
     }

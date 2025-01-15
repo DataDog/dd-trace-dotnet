@@ -234,8 +234,5 @@ internal enum CountCIVisibility
     /// <summary>
     /// The number of tests marked as Modified by Impacted Tests Detection
     /// </summary>
-    /// <summary>
-    /// Counts the number of tainted objects after a request
-    /// </summary>
     [TelemetryMetric("impacted_tests_detection.is_modified", isCommon: true, NS.CIVisibility)] ImpactedTestsIsModified,
 }

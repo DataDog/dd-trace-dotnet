@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public class XUnitImpactedTests : TestingFrameworkImpactedTests
     {
         private const int ExpectedSpanCount = 41;
+        private const string IsModifiedTag = "test.is_modified";
 
         public XUnitImpactedTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task BaseShaFromPr(string packageVersion)
         {
             InjectGitHubActionsSession();
-            return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+            return SubmitTests(packageVersion, 2, TestIsModified);
         }
 
         [SkippableTheory]
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task BaseShaFromBackend(string packageVersion)
         {
             InjectGitHubActionsSession(false);
-            return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+            return SubmitTests(packageVersion, 2, TestIsModified);
         }
 
         [SkippableTheory]
@@ -66,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 ProcessAgentRequest(request, receivedTests);
             };
-            return SubmitTests(packageVersion, $"baseShaFromPr", 12, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true", agentRequestProcessor);
+            return SubmitTests(packageVersion, 12, TestIsModified, agentRequestProcessor);
         }
 
         [SkippableTheory]
@@ -76,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task DisabledByEnvVar(string packageVersion)
         {
             InjectGitHubActionsSession(true, false);
-            return SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"));
+            return SubmitTests(packageVersion, 0, TestIsModified);
         }
 
         [SkippableTheory]
@@ -86,7 +87,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task EnabledBySettings(string packageVersion)
         {
             InjectGitHubActionsSession(true, null);
-            return SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"));
+            return SubmitTests(packageVersion, 2, TestIsModified);
         }
+
+        private static bool TestIsModified(MockCIVisibilityTest t) => t.Meta.ContainsKey(IsModifiedTag) && t.Meta[IsModifiedTag] == "true";
     }
 }
