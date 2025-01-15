@@ -966,7 +966,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "${{format('ZipMonitoringHome --ReadyToRun {0}', eq(eq($(variables['artifactSuffix']), 'linux-arm64-r2r'))}}"
+        command: "${{format('ZipMonitoringHome --ReadyToRun {0}', eq($(variables['artifactSuffix']), 'linux-arm64-r2r'))}}"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64
