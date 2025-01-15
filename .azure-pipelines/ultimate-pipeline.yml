@@ -635,7 +635,7 @@ stages:
       displayName: Download profiler linux native binary (linux-x64)
       condition: contains(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-profiler-home-linux-x64
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -802,6 +802,9 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+        arm64-r2r:
+          baseImage: debian
+          artifactSuffix: linux-arm64-r2r
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
@@ -923,7 +926,7 @@ stages:
       displayName: Download profiler arm64 native binary
       condition: contains(variables['artifactSuffix'], 'linux-arm64')
       inputs:
-        artifact: linux-profiler-home-linux-arm64
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
