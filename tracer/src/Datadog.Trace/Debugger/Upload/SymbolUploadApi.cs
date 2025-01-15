@@ -91,6 +91,7 @@ namespace Datadog.Trace.Debugger.Upload
                 using var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream);
                 await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
 #else
+                Log.Error("Compressing symbols");
                 using var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
                 await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
 #endif
@@ -110,6 +111,9 @@ namespace Datadog.Trace.Debugger.Upload
                 {
                     return true;
                 }
+
+                var content1 = await response.ReadAsStringAsync().ConfigureAwait(false);
+                Log.Error("Fail to send symbols. Error: {Error}", content1);
 
                 retries++;
                 if (response.ShouldRetry())

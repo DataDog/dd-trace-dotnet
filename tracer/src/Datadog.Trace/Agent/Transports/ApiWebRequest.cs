@@ -125,6 +125,8 @@ namespace Datadog.Trace.Agent.Transports
                             ? $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\n\r\n"
                             : $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
 
+                    Log.Error("Item is: {Item}", item.FileName);
+
                     if (itemsWritten == 0)
                     {
                         // If we are writing the first item, we skip the initial `\r\n` in the array
@@ -138,12 +140,12 @@ namespace Datadog.Trace.Agent.Transports
                     await requestStream.WriteAsync(headerBytes, 0, headerBytes.Length).ConfigureAwait(false);
                     if (item.ContentInBytes is { } arraySegment)
                     {
-                        Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                        Log.Error("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                         await requestStream.WriteAsync(arraySegment.Array, arraySegment.Offset, arraySegment.Count).ConfigureAwait(false);
                     }
                     else if (item.ContentInStream is { } stream)
                     {
-                        Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                        Log.Error("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                         await stream.CopyToAsync(requestStream).ConfigureAwait(false);
                     }
 
