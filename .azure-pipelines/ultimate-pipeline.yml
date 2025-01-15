@@ -4485,6 +4485,35 @@ stages:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
 
+        # Download the artifacts required by the serverless layer and create the zip file
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless tracer home x64
+          inputs:
+            artifact: linux-tracer-home-linux-x64-r2r
+            path: $(Agent.TempDirectory)/serverless-artifacts
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless universal home x64
+          inputs:
+            artifact: linux-universal-home-linux-x64
+            path: $(Agent.TempDirectory)/serverless-artifacts
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless tracer home arm64
+          inputs:
+            artifact: linux-tracer-home-linux-arm64-r2r
+            path: $(Agent.TempDirectory)/serverless-artifacts
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless universal home arm64
+          inputs:
+            artifact: linux-universal-home-linux-arm64
+            path: $(Agent.TempDirectory)/serverless-artifacts
+
+        - bash: |
+            zip -r $(Build.ArtifactStagingDirectory)/serverless-artifacts.zip $(Agent.TempDirectory)/serverless-artifacts
+          displayName: Zip serverless artifacts and store in staging directory
+
         - bash: |
             # Write tracer version number to version.txt
             echo "$(tracer_version)" > $(Build.ArtifactStagingDirectory)/version.txt
