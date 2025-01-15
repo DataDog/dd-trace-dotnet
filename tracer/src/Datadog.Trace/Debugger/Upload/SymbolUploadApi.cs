@@ -102,6 +102,8 @@ namespace Datadog.Trace.Debugger.Upload
                 symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols);
             }
 
+            Log.Error("Compressed array count: {Count}", symbolsItem.ContentInBytes?.Count);
+
             var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };
 
             while (retries < MaxRetries)
