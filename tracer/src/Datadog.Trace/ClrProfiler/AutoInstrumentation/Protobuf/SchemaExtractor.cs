@@ -276,13 +276,14 @@ internal class SchemaExtractor
                     Reference = reference,
                     Format = format,
                     Enum = enumValues,
-                    Extensions = new Dictionary<string, IOpenApiExtension> { { "x-protobuf-number", new OpenApiInteger(field.FieldNumber) } }
                 };
                 if (field.IsRepeated)
                 {
                     // note: maps are seen as arrays of auto-generated XxxEntry type
                     property = new OpenApiSchema { Type = "array", Items = property };
                 }
+
+                property.Extensions = new Dictionary<string, IOpenApiExtension> { { "x-protobuf-number", new OpenApiInteger(field.FieldNumber) } };
 
                 properties.Add(fieldName, property);
                 _propertiesCount++;
