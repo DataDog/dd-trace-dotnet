@@ -90,11 +90,13 @@ namespace Datadog.Trace.Debugger.Upload
 #if NETFRAMEWORK
                 using var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream);
                 await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                await gzipStream.FlushAsync().ConfigureAwait(false);
 #else
                 using var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
                 await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                await gzipStream.FlushAsync().ConfigureAwait(false);
 #endif
-                symbolsItem = new MultipartFormItem("file", "application/gzip", "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
             }
             else
             {
