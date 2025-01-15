@@ -15,11 +15,13 @@ namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public class AerospikeFixture : ContainerFixture
 {
+    private const int AerospikePort = 3000;
+
     protected IContainer Container => GetResource<IContainer>("container");
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
-        yield return new("AEROSPIKE_HOST", $"{Container.Hostname}:{Container.GetMappedPublicPort(3000)}");
+        yield return new("AEROSPIKE_HOST", $"{Container.Hostname}:{Container.GetMappedPublicPort(AerospikePort)}");
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
@@ -28,8 +30,8 @@ public class AerospikeFixture : ContainerFixture
         // (6.3.0.5 at time of issue) causes 'Server memory error' and flake
         var container = new ContainerBuilder()
                        .WithImage("aerospike/aerospike-server:6.2.0.6")
-                       .WithPortBinding(3000, true)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(3000))
+                       .WithPortBinding(AerospikePort, true)
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(AerospikePort))
                        .Build();
 
         await container.StartAsync();
