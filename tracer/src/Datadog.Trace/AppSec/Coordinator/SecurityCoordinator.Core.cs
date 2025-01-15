@@ -6,14 +6,15 @@
 #nullable enable
 #pragma warning disable CS0282
 #if !NETFRAMEWORK
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 
@@ -176,13 +177,32 @@ internal readonly partial struct SecurityCoordinator
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
 
-        internal override IContext GetAdditiveContext() => Context.Features.Get<IContext>();
+        internal override IContext? GetAdditiveContext() => IsAdditiveContextDisposed() ? null : GetContextFeatures()?.Get<IContext>();
 
         internal override void SetAdditiveContext(IContext additiveContext) => Context.Features.Set(additiveContext);
 
         internal override IHeadersCollection GetRequestHeaders() => new HeadersCollectionAdapter(Context.Request.Headers);
 
         internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
+
+        // In some edge situations we can get an ObjectDisposedException when accessing the context features or other
+        // properties such as Context.Items or Context.Response.Headers that ultimatelly rely on features
+        // This means that the context has been uninitiallized and we should not try to access it anymore
+        // Unfortunatelly, there is no way to know that but catching the exception or using reflection
+        private IFeatureCollection? GetContextFeatures()
+        {
+            try
+            {
+                return Context.Features;
+            }
+            catch (ObjectDisposedException)
+            {
+                Log.Debug("ObjectDisposedException while trying to access a Context.");
+                SetAdditiveContextDisposed(true);
+                return null;
+            }
+        }
     }
 }
 #endif
+

@@ -18,7 +18,6 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
 using Xunit;
-
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.Unit.Tests;
