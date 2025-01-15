@@ -4299,7 +4299,7 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id, store_serverless_artifacts]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
