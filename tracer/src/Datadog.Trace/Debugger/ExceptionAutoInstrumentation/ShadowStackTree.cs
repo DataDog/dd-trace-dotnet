@@ -46,6 +46,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return _trackedStackFrameActiveNode.Value;
         }
 
+        public TrackedStackFrameNode EnterFake(MethodBase method)
+        {
+            _trackedStackFrameActiveNode.Value = new FakeTrackedStackFrameNode(_trackedStackFrameActiveNode.Value, method);
+            return _trackedStackFrameActiveNode.Value;
+        }
+
         public bool Leave(TrackedStackFrameNode trackedStackFrameNode, Exception? exception)
         {
             var currentActiveNode = _trackedStackFrameActiveNode.Value;

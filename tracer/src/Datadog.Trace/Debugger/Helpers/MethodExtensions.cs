@@ -19,6 +19,11 @@ namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class MethodExtensions
     {
+        internal static string GetFullName(this MethodBase mb)
+        {
+            return mb.DeclaringType?.FullName + "." + mb.Name;
+        }
+
         /// <summary>
         /// Gets fully qualified name of a method with parameters and generics. For example SkyApm.Sample.ConsoleApp.Program.Main(String[] args).
         /// Code was copied from System.Diagnostics.StackTrace.ToString() - .NET Standard implementation, not .NET Framework

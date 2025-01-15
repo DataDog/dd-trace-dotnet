@@ -8,15 +8,28 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal readonly record struct MethodUniqueIdentifier(Guid Mvid, int MethodToken, MethodBase Method)
     {
+        internal static readonly ConcurrentDictionary<MethodUniqueIdentifier, bool> MightMisleadStacktrace = new();
+
         public override int GetHashCode()
         {
             return HashCode.Combine(Mvid, MethodToken);
+        }
+
+        public bool IsMisleadMethod()
+        {
+            return MightMisleadStacktrace.GetOrAdd(
+                this,
+                identifier => ILAnalyzer.HasDirectCallTo(
+                    identifier.Method,
+                    typeof(System.Runtime.ExceptionServices.ExceptionDispatchInfo),
+                    "Throw"));
         }
     }
 

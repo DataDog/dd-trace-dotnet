@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.ProbeStatuses;
 
+#nullable enable
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal class ProbeStatusPollerMock : IProbeStatusPoller

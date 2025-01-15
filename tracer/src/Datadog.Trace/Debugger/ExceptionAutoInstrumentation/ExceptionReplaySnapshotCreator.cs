@@ -17,36 +17,32 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionReplaySnapshotCreator : DebuggerSnapshotCreator
     {
-        private readonly string _exceptionHash;
-        private readonly string _exceptionCaptureId;
-        private readonly int _frameIndex;
-
-        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, string exceptionHash, string exceptionCaptureId, int frameIndex)
+        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
             : base(isFullSnapshot, location, hasCondition, tags, limitInfo)
         {
-            _exceptionHash = exceptionHash;
-            _exceptionCaptureId = exceptionCaptureId;
-            _frameIndex = frameIndex;
         }
 
-        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo, string exceptionHash, string exceptionCaptureId, int frameIndex)
+        public ExceptionReplaySnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, MethodScopeMembers methodScopeMembers, CaptureLimitInfo limitInfo)
             : base(isFullSnapshot, location, hasCondition, tags, methodScopeMembers, limitInfo)
         {
-            _exceptionHash = exceptionHash;
-            _exceptionCaptureId = exceptionCaptureId;
-            _frameIndex = frameIndex;
         }
+
+        internal static string ExceptionHash { get; } = Guid.NewGuid().ToString();
+
+        internal static string ExceptionCaptureId { get; } = Guid.NewGuid().ToString();
+
+        internal static string FrameIndex { get; } = Guid.NewGuid().ToString();
 
         internal override DebuggerSnapshotCreator EndSnapshot()
         {
-            JsonWriter.WritePropertyName("exception_hash");
-            JsonWriter.WriteValue(_exceptionHash);
+            JsonWriter.WritePropertyName("exceptionHash");
+            JsonWriter.WriteValue(ExceptionHash);
 
-            JsonWriter.WritePropertyName("exception_capture_id");
-            JsonWriter.WriteValue(_exceptionCaptureId);
+            JsonWriter.WritePropertyName("exceptionId");
+            JsonWriter.WriteValue(ExceptionCaptureId);
 
-            JsonWriter.WritePropertyName("frame_index");
-            JsonWriter.WriteValue(_frameIndex);
+            JsonWriter.WritePropertyName("frameIndex");
+            JsonWriter.WriteValue(FrameIndex);
 
             return base.EndSnapshot();
         }

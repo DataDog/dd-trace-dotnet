@@ -91,20 +91,16 @@ namespace Samples.Debugger.AspNetCore5
         {
             try
             {
-                // Code to run before the next middleware in the pipeline
                 Console.WriteLine("FirstLastMiddleware: Entering request pipeline");
 
-                // Call the next middleware in the pipeline
                 await _next(context);
 
-                // Code to run after the next middleware in the pipeline
                 Console.WriteLine("FirstLastMiddleware: Exiting request pipeline normally");
             }
             catch (Exception ex)
             {
-                // Exception handling code
                 Console.WriteLine($"FirstLastMiddleware caught an exception: {ex.Message}");
-                throw; // Re-throw the exception to be handled by the global exception handler
+                throw;
             }
         }
     }

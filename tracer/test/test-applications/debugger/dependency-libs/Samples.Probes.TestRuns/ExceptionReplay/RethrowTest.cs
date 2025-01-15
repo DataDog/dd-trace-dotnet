@@ -12,8 +12,12 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
     [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 4, expectedNumberOfSnaphotsFull: 4)]
     internal class RethrowTest : IAsyncRun
     {
+        private string _tempMethodName;
+        
         public async Task RunAsync()
         {
+            var methodName = nameof(RunAsync);
+            
             await Task.Yield();
 
             try
@@ -37,10 +41,13 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                 await Task.Yield();
             }
 
+            _tempMethodName = methodName;            
         }
 
         public async Task RunAsync2()
         {
+            var methodName = nameof(RunAsync2);
+            
             await Task.Yield();
 
             try
@@ -65,10 +72,13 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                 await Task.Yield();
             }
 
+            _tempMethodName = methodName;
         }
 
         public async Task InTheMiddle()
         {
+            var methodName = nameof(InTheMiddle);
+            
             int num = 3;
             try
             {
@@ -104,10 +114,14 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
             {
                 throw new NotImplementedException("Outer", ex);
             }
+
+            _tempMethodName = methodName;
         }
 
         public async Task InTheMiddle2()
         {
+            var methodName = nameof(InTheMiddle2);
+            
             try
             {
                 await Task.Yield();
@@ -118,6 +132,8 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
             {
                 throw new NotImplementedException("Outer", inner: e);
             }
+
+            _tempMethodName = methodName;
         }
 
         public class RelationalDataReader : IAsyncDisposable, IDisposable
@@ -171,12 +187,16 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
 
         private async ValueTask<RelationalDataReader> AwaitUsingFunc()
         {
+            var methodName = nameof(AwaitUsingFunc);
             await Task.Yield();
+            _tempMethodName = methodName;
             return new RelationalDataReader();
         }
 
         private async Task Foo()
         {
+            var methodName = nameof(Foo);
+            
             await Task.Yield();
 
             try
@@ -188,22 +208,76 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
             {
                 await Task.Yield();
             }
+
+            _tempMethodName = methodName;
         }
 
         void CaptureAndThrow()
         {
+            var methodName = nameof(CaptureAndThrow);
+            
             try
             {
-                Bar();
+                RecursiveThrow();
             }
             catch (Exception e)
             {
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw();
             }
-        }
 
+            _tempMethodName = methodName;
+        }
+        
+        void RecursiveThrow(int depth = 5)
+        {
+            var methodName = nameof(RecursiveThrow);
+            
+            try
+            {
+                if (depth > 0)
+                {
+                    RecursiveThrow(depth - 1);    
+                }
+                else
+                {
+                    RecursiveCaptureAndThrow();   
+                }
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            
+            _tempMethodName = methodName;
+        }
+        
+        void RecursiveCaptureAndThrow(int depth = 5)
+        {
+            var methodName = nameof(RecursiveCaptureAndThrow);
+            
+            try
+            {
+                if (depth > 0)
+                {
+                    RecursiveCaptureAndThrow(depth - 1);    
+                }
+                else
+                {
+                    Bar();   
+                }
+            }
+            catch (Exception e)
+            {
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e).Throw();
+            }
+            
+            _tempMethodName = methodName;
+        }
+        
         private void Bar()
         {
+            var methodName = nameof(Bar);
+            
             try
             {
                 throw new NotImplementedException();
@@ -213,6 +287,8 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                 Console.WriteLine(nameof(RunAsync));
                 throw;
             }
+            
+            _tempMethodName = methodName;
         }
     }
 }
