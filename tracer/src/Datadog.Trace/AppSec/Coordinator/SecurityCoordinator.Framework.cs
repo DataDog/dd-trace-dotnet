@@ -335,6 +335,13 @@ internal readonly partial struct SecurityCoordinator
     private void WriteAndEndResponse(BlockingAction blockingAction)
     {
         var httpResponse = _httpTransport.Context.Response;
+
+        if (httpResponse.HeadersWritten)
+        {
+            Log.Warning("Headers have already been written, unable to modify response and set status code to {0}", blockingAction.StatusCode.ToString());
+            return;
+        }
+
         httpResponse.Clear();
         httpResponse.Cookies.Clear();
 
@@ -349,7 +356,7 @@ internal readonly partial struct SecurityCoordinator
         }
 
         httpResponse.StatusCode = blockingAction.StatusCode;
-
+  
         if (blockingAction.IsRedirect)
         {
             httpResponse.Redirect(blockingAction.RedirectLocation, blockingAction.IsPermanentRedirect);
