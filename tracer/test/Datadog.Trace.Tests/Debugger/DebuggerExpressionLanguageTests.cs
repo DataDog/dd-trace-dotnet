@@ -48,6 +48,7 @@ namespace Datadog.Trace.Tests.Debugger
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
                 String = "Hello world!",
+                EmptyString = string.Empty,
                 Char = 'C',
                 AnotherChar = 'A',
                 BooleanValue = true,
@@ -202,6 +203,7 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("IntLocal", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DoubleLocal", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("StringLocal", TestObject.String.GetType(), TestObject.String, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("EmptyString", TestObject.EmptyString.GetType(), TestObject.EmptyString, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CollectionLocal", TestObject.Collection.GetType(), TestObject.Collection, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CollectionIntLocal", TestObject.CollectionInt.GetType(), TestObject.CollectionInt, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("HashIntLocal", TestObject.HashInt.GetType(), TestObject.HashInt, ScopeMemberKind.Local));

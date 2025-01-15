@@ -1,0 +1,11 @@
+{
+  "dsl": "ref endsWith(EmptyString)",
+  "endsWith": [
+    [
+      {
+        "ref": "EmptyString"
+      }
+    ],
+    "Hello"
+  ]
+}

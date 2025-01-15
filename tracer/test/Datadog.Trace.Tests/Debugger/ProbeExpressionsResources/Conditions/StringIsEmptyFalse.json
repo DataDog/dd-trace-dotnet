@@ -1,0 +1,10 @@
+{
+  "dsl": "ref isEmpty(StringLocal)",
+  "isEmpty": [
+    [
+      {
+        "ref": "StringLocal"
+      }
+    ]
+  ]
+}

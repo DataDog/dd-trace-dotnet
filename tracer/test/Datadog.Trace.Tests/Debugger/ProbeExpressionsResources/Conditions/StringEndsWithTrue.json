@@ -1,0 +1,11 @@
+{
+  "dsl": "ref endsWith(StringLocal)",
+  "endsWith": [
+    [
+      {
+        "ref": "StringLocal"
+      }
+    ],
+    "orld!"
+  ]
+}

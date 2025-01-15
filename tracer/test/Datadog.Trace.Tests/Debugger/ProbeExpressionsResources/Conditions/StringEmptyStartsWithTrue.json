@@ -1,0 +1,11 @@
+{
+  "dsl": "ref startsWith(EmptyString)",
+  "startsWith": [
+    [
+      {
+        "ref": "EmptyString"
+      }
+    ],
+    ""
+  ]
+}
