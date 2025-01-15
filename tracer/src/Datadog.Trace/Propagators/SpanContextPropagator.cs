@@ -20,9 +20,6 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
-        private static readonly object GlobalLock = new();
-        private static SpanContextPropagator? _instance;
-
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
@@ -36,45 +33,6 @@ namespace Datadog.Trace.Propagators
             _propagationExtractFirstOnly = propagationExtractFirstValue;
             _injectors = injectors?.ToArray() ?? [];
             _extractors = extractors?.ToArray() ?? [];
-        }
-
-        public static SpanContextPropagator Instance
-        {
-            get
-            {
-                if (_instance is not null)
-                {
-                    return _instance;
-                }
-
-                lock (GlobalLock)
-                {
-                    if (_instance is not null)
-                    {
-                        return _instance;
-                    }
-
-                    _instance = new SpanContextPropagator(
-                        [DatadogContextPropagator.Instance],
-                        [DistributedContextExtractor.Instance, DatadogContextPropagator.Instance],
-                        propagationExtractFirstValue: false);
-
-                    return _instance;
-                }
-            }
-
-            internal set
-            {
-                if (value == null!)
-                {
-                    ThrowHelper.ThrowArgumentNullException(nameof(value));
-                }
-
-                lock (GlobalLock)
-                {
-                    _instance = value;
-                }
-            }
         }
 
         /// <summary>

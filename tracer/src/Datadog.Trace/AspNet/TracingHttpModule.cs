@@ -140,7 +140,7 @@ namespace Datadog.Trace.AspNet
                     {
                         // extract propagated http headers
                         headers = requestHeaders.Wrap();
-                        extractedContext = SpanContextPropagator.Instance.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -158,7 +158,7 @@ namespace Datadog.Trace.AspNet
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
@@ -174,7 +174,7 @@ namespace Datadog.Trace.AspNet
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
                     var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
-                    SpanContextPropagator.Instance.Inject(injectedContext, requestHeaders.Wrap());
+                    tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -201,7 +201,7 @@ namespace Datadog.Trace.AspNet
                         }
                     }
 
-                    securityCoordinator.BlockAndReport(args);
+                    securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
                 }
 
                 var iastInstance = Iast.Iast.Instance;
@@ -273,7 +273,7 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            securityCoordinator.BlockAndReport(args, true);
+                            securityCoordinator.BlockAndReport(args, true, isInHttpTracingModule: true);
 
                             securityCoordinator.Reporter.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;

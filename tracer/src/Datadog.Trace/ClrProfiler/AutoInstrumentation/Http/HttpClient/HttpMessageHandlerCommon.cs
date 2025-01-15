@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             // add propagation headers to the HTTP request
             var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            SpanContextPropagator.Instance.Inject(context, new HttpHeadersCollection(headers));
+            tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
             return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope);
         }

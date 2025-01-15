@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.Tests.Configuration
 {
     public class CIVisibilitySettingsTests : SettingsTestsBase
     {
+        private static readonly string ExpectedExcludedSession = "/session/FakeSessionIdForPollingPurposes".ToUpperInvariant();
+
         [Theory]
         [MemberData(nameof(BooleanTestCases), null)]
         public void Enabled(string value, bool? expected)
@@ -184,6 +187,108 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
 
             settings.ForceAgentsEvpProxy.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("some-service", "true")]
+        [InlineData(null, "false")]
+        public void AddsUserProvidedTestServiceTagToGlobalTags(string serviceName, string expectedTag)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, serviceName));
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.GlobalTags.Should()
+                          .ContainKey(Datadog.Trace.Ci.Tags.CommonTags.UserProvidedTestServiceTag)
+                          .WhoseValue.Should()
+                          .Be(expectedTag);
+        }
+
+        [Fact]
+        public void ServiceNameIsNormalized()
+        {
+            var originalName = "My Service Name!";
+            var normalizedName = "my_service_name";
+
+            var source = CreateConfigurationSource((ConfigurationKeys.ServiceName, originalName));
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.ServiceName.Should().Be(normalizedName);
+        }
+
+        [Fact]
+        public void AddsFakeSessionToExcludedHttpClientUrls()
+        {
+            var source = CreateConfigurationSource();
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.HttpClientExcludedUrlSubstrings
+                          .Should()
+                          .Contain(ExpectedExcludedSession);
+        }
+
+        [Fact]
+        public void AddsFakeSessionToExcludedHttpClientUrls_WhenUrlsAlreadyExist()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.HttpClientExcludedUrlSubstrings, "/some-url/path"));
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.HttpClientExcludedUrlSubstrings
+                          .Should()
+                          .Contain(ExpectedExcludedSession);
+        }
+
+        [Fact]
+        public void AddsFakeSessionToExcludedHttpClientUrls_WhenRunningInAas()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "true"),
+                (ConfigurationKeys.HttpClientExcludedUrlSubstrings, "/some-url/path"));
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.HttpClientExcludedUrlSubstrings
+                          .Should()
+                          .Contain(ExpectedExcludedSession);
+        }
+
+        [Fact]
+        public void WhenLogsEnabled_AddsDirectSubmission()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.CIVisibility.Logs, "true"));
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.LogSubmissionSettings
+                          .EnabledIntegrationNames
+                          .Should()
+                          .Contain(nameof(IntegrationId.XUnit));
+            tracerSettings.LogSubmissionSettings.BatchPeriod.Should().Be(TimeSpan.FromSeconds(1));
+        }
+
+        [Fact]
+        public void WhenLogsNotEnabled_DoesNotAddDirectSubmission()
+        {
+            var source = CreateConfigurationSource();
+
+            var ciVisSettings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = ciVisSettings.InitializeTracerSettings([source]);
+
+            tracerSettings.LogSubmissionSettings
+                          .EnabledIntegrationNames
+                          .Should()
+                          .NotContain(nameof(IntegrationId.XUnit));
         }
     }
 }

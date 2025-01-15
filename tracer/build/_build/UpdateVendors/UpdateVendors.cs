@@ -71,10 +71,14 @@ namespace UpdateVendors
             File.Delete(projFile);
             Console.WriteLine($"Renamed {libraryName} project file.");
 
-            // Delete the assembly properties
-            var assemblyPropertiesFolder = Path.Combine(sourceLocation, @"Properties");
-            SafeDeleteDirectory(assemblyPropertiesFolder);
-            Console.WriteLine($"Deleted {libraryName} assembly properties file.");
+            // Delete the assembly info file
+            var assemblyInfo = Path.Combine(sourceLocation, @"Properties", "AssemblyInfo.cs");
+            if (File.Exists(assemblyInfo))
+            {
+                File.Delete(assemblyInfo);
+            }
+
+            Console.WriteLine($"Deleted {libraryName} assembly info file.");
 
             Console.WriteLine($"Running transforms on files for {libraryName}.");
 
@@ -111,7 +115,9 @@ namespace UpdateVendors
             foreach (var relativeFileToDrop in dependency.RelativePathsToExclude)
             {
                 var absolutePath = Path.Combine(basePath, relativeFileToDrop).Replace('/', '\\');
-                if (normalizedFilePath.Equals(absolutePath, StringComparison.OrdinalIgnoreCase))
+                if (normalizedFilePath.Equals(absolutePath, StringComparison.OrdinalIgnoreCase)
+                 || (absolutePath.EndsWith('\\') &&
+                     normalizedFilePath.StartsWith(absolutePath, StringComparison.OrdinalIgnoreCase)))
                 {
                     return true;
                 }

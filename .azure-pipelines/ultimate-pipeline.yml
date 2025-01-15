@@ -111,6 +111,7 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  outputDir: $(System.DefaultWorkingDirectory)/artifacts
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
@@ -1530,9 +1531,209 @@ stages:
             testResultsFiles: artifacts/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+- stage: build_samples
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [standalone, multi_version, merge]
+
+    - job: standalone
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: $(outputDir)/bin
+          displayName: Upload artifact samples (bin only)
+          artifact: samples-bin-standalone
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+    - job: multi_version
+      timeoutInMinutes: 60 #default value
+      strategy:
+        # TODO: we could move this generation to the generate_variables stage but it would delay this starting, so just hardcode it for now
+        matrix:
+          net462:
+            framework: net462
+          netcoreapp2.1:
+            framework: netcoreapp2.1
+          netcoreapp3.0:
+            framework: netcoreapp3.0
+          netcoreapp3.1:
+            framework: netcoreapp3.1
+          net5.0:
+            framework: net5.0
+          net6.0:
+            framework: net6.0
+          net7.0:
+            framework: net7.0
+          net8.0:
+            framework: net8.0
+          net9.0:
+            framework: net9.0
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd CreateRequiredDirectories CompileSamples -Framework $(framework) -TestAllPackageVersions
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: $(outputDir)/publish
+          displayName: Upload artifact samples (bin only)
+          artifact: samples-multi-version-$(framework)
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+    - job: merge
+      dependsOn: [ standalone, multi_version ]
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - checkout: none
+        - powershell: |
+            mkdir $(Build.ArtifactStagingDirectory)/bin
+            mkdir $(Build.ArtifactStagingDirectory)/publish
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-bin-standalone
+            path: $(Build.ArtifactStagingDirectory)/bin
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net462
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp2.1
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp3.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp3.1
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net5.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net6.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net7.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net8.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net9.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - publish: $(Build.ArtifactStagingDirectory)
+          displayName: Upload artifact samples
+          artifact: samples
+
+# This is just to test that we _can_ build the solution on macos
+# It's not used by other stages, and just ensures we don't break the macos build
+- stage: build_samples_macos
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [macos]
+
+    - job: macos
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: macos-13
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: ./tracer/build.sh CreateRequiredDirectories CompileSamples
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -1557,6 +1758,12 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -1574,7 +1781,7 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests RunWindowsIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1811,6 +2018,12 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
+    # This is a hack because otherwise Azure Functions _always_ tries to use the one from program files otherwise
+    - script: |
+        cd /D %PROGRAMFILES%/dotnet
+        rename dotnet.exe dotnet.exe.bak
+        where dotnet
+      displayName: 'Rename default dotnet.exe'
     - template: steps/restore-working-directory.yml
         
     - template: steps/install-msi.yml
@@ -2088,7 +2301,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2118,6 +2331,12 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2125,7 +2344,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -2199,6 +2418,12 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2206,7 +2431,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -2316,6 +2541,12 @@ stages:
       inputs:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
+    - task: DownloadPipelineArtifact@2
+      displayName: Download samples
+      inputs:
+        artifact: samples
+        path: $(outputDir)
+      retryCountOnTaskFailure: 5
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2888,7 +3119,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [package_arm64, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2919,11 +3150,18 @@ stages:
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples
+            path: $(outputDir)
+          retryCountOnTaskFailure: 5
+
         - template: steps/run-in-docker.yml
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+            command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
@@ -2989,6 +3227,12 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples
+            path: $(outputDir)
+          retryCountOnTaskFailure: 5
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -4989,107 +5233,163 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    scenarioGroups: "appsec"
+    additionalScenarios: '[\"PARAMETRIC\", \"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [test]
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [compute_scenarios, tests]
+        
+    - job: compute_scenarios
+      timeoutInMinutes: 60
+      displayName: Compute system-tests scenarios
+      pool:
+          vmImage: ubuntu-latest
+          
+      steps:
+        - checkout: none
+          
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.12'
+          displayName: Install python 3.12
 
-  - job: test
-    timeoutInMinutes: 60
-    pool:
-      vmImage: ubuntu-latest
+        - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+          displayName: Get system tests repo
+          
+        - script: |
+            ./build.sh -i runner
+          displayName: Install runner
+          workingDirectory: system-tests
+          
+        - script: |
+            set -e
+            
+            source venv/bin/activate
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) > out.txt
 
-    strategy:
-      matrix:
-        parametric_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: PARAMETRIC
-        parametric_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: PARAMETRIC
-        appsec_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: APPSEC_SCENARIOS
-        appsec_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: APPSEC_SCENARIOS
-        rcm_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: REMOTE_CONFIG_SCENARIOS
-        rcm_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: REMOTE_CONFIG_SCENARIOS
-        telemetry_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: TELEMETRY_SCENARIOS
-        telemetry_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: TELEMETRY_SCENARIOS
-        default_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: DEFAULT
-        default_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: DEFAULT
-        integrations_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: INTEGRATIONS
-        integrations_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: INTEGRATIONS
-        integrations_aws_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: INTEGRATIONS_AWS
-        integrations_aws_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: INTEGRATIONS_AWS
-        crossed_tracing_libraries_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: CROSSED_TRACING_LIBRARIES
-        crossed_tracing_libraries_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: CROSSED_TRACING_LIBRARIES
-        # All the other scenarios that aren't in a secenario group
-        remainder_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
-        remainder_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
-        debugger_poc:
-          WEBLOG_VARIANT: "poc"
-          SCENARIO: DEBUGGER_SCENARIOS
-        debugger_uds:
-          WEBLOG_VARIANT: "uds"
-          SCENARIO: DEBUGGER_SCENARIOS
+            endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
+            graphql_scenarios=$(grep 'graphql_scenarios' out.txt | sed 's/.*=//g')
+            parametric_scenarios=$(grep 'parametric_scenarios' out.txt | sed 's/.*=//g')
+            endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
 
-    steps:
+            echo "Found scenarios: $endtoend_scenarios"
+            echo "Found graphql scenarios: $graphql_scenarios"
+            echo "Found parametric scenarios: $parametric_scenarios"
+            echo "Found weblogs: $endtoend_weblogs"
+            echo "Additional manual scenarios: $(additionalScenarios)"
+            
+            # Write the weblogs to a file (for later use to generate the docker images)
+            python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
+        
+            # Inline python script to cross the data into a json
+            echo "import json" > cross.py
+            echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
+            echo "script_graphql_scenarios = json.loads('$graphql_scenarios')" >> cross.py
+            echo "script_parametric_scenarios = json.loads('$parametric_scenarios')" >> cross.py
+            echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
+            echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
+            echo 'combined_scenarios = script_scenarios + script_graphql_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
+            echo 'matrix_items = {}' >> cross.py
+            echo 'for s in combined_scenarios:' >> cross.py
+            echo '    for w in script_weblogs:' >> cross.py
+            echo '        matrix_items[s + " (" + w + ")"] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
+            echo 'print(json.dumps(matrix_items))' >> cross.py
+            
+            python cross.py > matrix.json
+            
+            echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
+            echo "Json: $(cat matrix.json)"
+          displayName: Generate scenarios matrix JSON
+          name: create_matrix
+          workingDirectory: system-tests
+          
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux-packages
+          condition: eq( variables['System.JobAttempt'], 1 )
+          inputs:
+            artifact: linux-packages-linux-x64
+            patterns: '**/*tar.gz'
+            path: $(Build.ArtifactStagingDirectory)
+
+        - script: |
+            PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
+            echo Moving $PACKAGE_NAME to system-tests/binaries
+            mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
+          displayName: Move dotnet binary to system test folder
+          condition: eq( variables['System.JobAttempt'], 1 )
+        
+        - script: |
+            set -e
+            cd system-tests
+            mkdir -p ../docker-images
+        
+            while read w; do
+              echo "------------------------------------"
+              echo "Building images for variant: $w"
+              echo "------------------------------------"
+              # Build the images. For example:
+              ./build.sh dotnet --weblog-variant $w
+            
+              # Save weblog variant image
+              docker save system_tests/weblog:latest -o ../docker-images/$w.tar
+            done < /tmp/weblogs_list.txt
+            
+            # Save agent image
+            docker save system_tests/agent:latest -o ../docker-images/agent.tar
+
+          displayName: Build weblogs and agent & save Docker images
+          condition: eq( variables['System.JobAttempt'], 1 )
+        
+        - task: PublishPipelineArtifact@1
+          displayName: Publish Docker images artifact
+          condition: eq( variables['System.JobAttempt'], 1 )
+          inputs:
+            path: 'docker-images'
+            artifactName: 'system-test-docker-images'
+
+    - job: tests
+      displayName: ""
+      timeoutInMinutes: 60
+      pool:
+          vmImage: ubuntu-latest
+      dependsOn: compute_scenarios
+     
+      strategy:
+        matrix: $[ dependencies.compute_scenarios.outputs['create_matrix.matrixJson'] ]
+
+      steps:
       - checkout: none
 
       - task: UsePythonVersion@0
         inputs:
-            versionSpec: '3.12'
+          versionSpec: '3.12'
         displayName: Install python 3.12
 
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
-
+        
       - task: DownloadPipelineArtifact@2
-        displayName: Download linux-packages
+        displayName: Download Docker images
         inputs:
-          artifact: linux-packages-linux-x64
-          patterns: '**/*tar.gz'
-          path: $(Build.ArtifactStagingDirectory)
+          artifact: system-test-docker-images
+          path: $(Build.SourcesDirectory)
 
       - script: |
-          PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
-          echo Moving $PACKAGE_NAME to system-tests/binaries
-          mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
-        displayName: Move dotnet binary to system test folder
+          echo "Loading images for variant: $(WEBLOG_VARIANT)"
+          docker load -i "$(Build.SourcesDirectory)/$(WEBLOG_VARIANT).tar"
+          
+          echo "Loading agent image"
+          docker load -i "$(Build.SourcesDirectory)/agent.tar"
+          
+          echo "Available Docker images after loading:"
+          docker images
+        displayName: Docker load the correct variant
 
-      - script: ./build.sh dotnet
+      - script: |
+              ./build.sh -i runner
+        displayName: Install runner
         workingDirectory: system-tests
-        displayName: Build images
 
       - script: ./run.sh $(SCENARIO)
         workingDirectory: system-tests

@@ -165,6 +165,7 @@
     </Compile>
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Controllers\AsmController.cs" />
     <Compile Include="Controllers\IastController.cs" />
     <Compile Include="Controllers\LandingController.cs" />
     <Compile Include="Controllers\UserController.cs" />
