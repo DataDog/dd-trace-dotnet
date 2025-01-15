@@ -609,6 +609,7 @@ stages:
         x64-r2r:
           baseImage: debian
           artifactSuffix: linux-x64-r2r
+          universalArtifactSuffix: linux-x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
@@ -625,14 +626,14 @@ stages:
     # but only the musl package if we're building alpine package
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary (linux-x64)
-      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
+      condition: contains(variables['artifactSuffix'], 'linux-x64')
       inputs:
         artifact: linux-tracer-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary (linux-x64)
-      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
+      condition: contains(variables['artifactSuffix'], 'linux-x64')
       inputs:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
@@ -672,14 +673,14 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(artifactSuffix)
+        path: $(monitoringHome)/${{ coalesce(variables['universalArtifactSuffix'], variables['artifactSuffix']) }}
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "${{format('ZipMonitoringHome --ReadyToRun {0}', eq($(variables['artifactSuffix']), 'linux-x64-r2r'))}}"
+        command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
@@ -894,6 +895,7 @@ stages:
         arm64-r2r:
           baseImage: debian
           artifactSuffix: linux-arm64-r2r
+          universalArtifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
@@ -912,14 +914,14 @@ stages:
       # R2R only requires the tracer, as the profiler is not used there yet.
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer arm64 native binary
-      condition: or(eq(variables['artifactSuffix'], 'linux-arm64'), eq(variables['artifactSuffix'], 'linux-arm64-r2r'))
+      condition: contains(variables['artifactSuffix'], 'linux-arm64')
       inputs:
         artifact: linux-tracer-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler arm64 native binary
-      condition: or(eq(variables['artifactSuffix'], 'linux-arm64'), eq(variables['artifactSuffix'], 'linux-arm64-r2r'))
+      condition: contains(variables['artifactSuffix'], 'linux-arm64')
       inputs:
         artifact: linux-profiler-home-linux-arm64
         path: $(monitoringHome)
@@ -959,14 +961,14 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-arm64
-        path: $(monitoringHome)/$(artifactSuffix)
+        path: $(monitoringHome)/${{ coalesce(variables['universalArtifactSuffix'], variables['artifactSuffix']) }}
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "${{format('ZipMonitoringHome --ReadyToRun {0}', eq($(variables['artifactSuffix']), 'linux-arm64-r2r'))}}"
+        command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64

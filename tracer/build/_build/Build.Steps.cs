@@ -891,8 +891,7 @@ partial class Build
             var nfpm = Nfpm.Value;
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}{
-        (ReadyToRun ? "-r2r" : "")}";
+            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";

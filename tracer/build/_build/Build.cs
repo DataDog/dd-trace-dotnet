@@ -108,9 +108,6 @@ partial class Build : NukeBuild
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
 
-    [Parameter("Enable ReadyToRun configuration")]
-    bool ReadyToRun = false;
-    
     public Build()
     {
         RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
