@@ -582,7 +582,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = CurrentIast.Settings.Enabled;
-            var isCodeOriginEnabled = LiveDebugger.Instance.Settings.CodeOriginForSpansEnabled;
+            var isCodeOriginEnabled = LiveDebugger.Instance?.Settings.CodeOriginForSpansEnabled ?? false;
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
             {
