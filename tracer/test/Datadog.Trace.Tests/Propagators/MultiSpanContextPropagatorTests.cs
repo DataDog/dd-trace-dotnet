@@ -365,7 +365,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Origin = null,
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -397,7 +398,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Origin = null,
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -432,7 +434,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = EmptyPropagatedTags,
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -473,7 +476,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -518,7 +522,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -680,7 +685,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
@@ -734,7 +740,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
@@ -788,7 +795,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
@@ -844,7 +852,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = expectW3cParentIds ? "0123456789abcdef" : null,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
@@ -902,7 +911,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeEquivalentTo(new Baggage([new KeyValuePair<string, string>("usr", "customer")]));
         }
