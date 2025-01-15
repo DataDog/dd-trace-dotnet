@@ -446,11 +446,6 @@ partial class Build
 
             CallSitesGenerator.GenerateCallSites(TargetFrameworks, GetDatadogTraceDllPath, nativeGeneratedFilesOutputPath);
             CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, GetDatadogTraceDllPath, nativeGeneratedFilesOutputPath, Version, BuildDirectory);
-
-            // This needs to match the _build_ output path for the dlls, which technically
-            // isn't well defined outside of MSBuild, so we have to hardcode it here
-            string GetDatadogTraceDllPath(string tfm)
-                => BuildArtifactsDirectory / "bin" / Projects.DatadogTrace / $"{BuildConfiguration}_{tfm}".ToLowerInvariant() / $"{Projects.DatadogTrace}.dll";
         });
 
     Target CompileTracerNativeTestsWindows => _ => _
@@ -2722,4 +2717,9 @@ partial class Build
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
     }
+
+    // This needs to match the _build_ output path for the dlls, which technically
+    // isn't well defined outside of MSBuild, so we hardcode it here
+    string GetDatadogTraceDllPath(string tfm)
+        => BuildArtifactsDirectory / "bin" / Projects.DatadogTrace / $"{BuildConfiguration}_{tfm}".ToLowerInvariant() / $"{Projects.DatadogTrace}.dll";
 }
