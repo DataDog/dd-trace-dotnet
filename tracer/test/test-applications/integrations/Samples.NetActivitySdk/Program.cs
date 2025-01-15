@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using OpenTelemetry.Context.Propagation;
+using OpenTelemetry;
 
 namespace NetActivitySdk;
 
@@ -41,6 +43,8 @@ public static class Program
             RunActivityAddEvent(); // 5 spans (total 8)
             RunActivityAddBaggage(); // 2 spans (total 10)
             RunActivityOperationName(); // 21 spans (total 31)
+
+            RunOpenTelemetryApiInject();
         }
 
         // needs to be outside of the above root span as we don't want a parent here
@@ -308,6 +312,22 @@ public static class Program
         {
             using var activity = _source.StartActivity(name: $"operation name should be-> {data[0]}", kind: (ActivityKind)data[1], tags: (Dictionary<string, object>)data[2]);
         }
+    }
+
+    private static void RunOpenTelemetryApiInject()
+    {
+        // Set Baggage using the OpenTelemetry API, which works with the OpenTelemetry Context Propagation
+        OpenTelemetry.Baggage.SetBaggage("key", "value");
+
+        var headersDict = new Dictionary<string, string>();
+        OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator.Inject(new PropagationContext(Activity.Current.Context, OpenTelemetry.Baggage.Current), headersDict, (carrier, key, value) =>
+        {
+            carrier[key] = value;
+        });
+
+        // The baggage header should be present now, so we'll test by setting a tag on the span with the baggage header information
+        var baggage = headersDict.TryGetValue("baggage", out var value) ? value : null;
+        Activity.Current.SetTag("custom.opentelemetry.defaulttextmappropagator.baggage", baggage);
     }
 
     private static void RunActivityReservedAttributes()
