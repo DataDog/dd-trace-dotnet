@@ -109,7 +109,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             "dburl",
             "encryptionkey",
             "encryptionkeyid",
-            "env",
             "geolocation",
             "gpgkey",
             "ipaddress",
