@@ -54,14 +54,14 @@ namespace Datadog.Trace.PlatformHelpers
             return $"{httpMethod} {resourceUrl}";
         }
 
-        private PropagationContext ExtractPropagatedContext(HttpRequest request)
+        private PropagationContext ExtractPropagatedContext(Tracer tracer, HttpRequest request)
         {
             try
             {
                 // extract propagation details from http headers
                 if (request.Headers is { } headers)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(headers));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new HeadersCollectionAdapter(headers));
                 }
             }
             catch (Exception ex)
@@ -83,7 +83,7 @@ namespace Datadog.Trace.PlatformHelpers
                     // extract propagation details from http headers
                     if (request.Headers is { } requestHeaders)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(
+                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
                             span,
                             new HeadersCollectionAdapter(requestHeaders),
                             headerTagsInternal,
@@ -107,7 +107,7 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            var extractedContext = ExtractPropagatedContext(request).MergeBaggageInto(Baggage.Current);
+            var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
 
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();

@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // extract propagated http headers
                         headersCollection = new HttpHeadersCollection(request.Headers);
-                        extractedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headersCollection.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 if (headersCollection is not null)
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

@@ -265,7 +265,7 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false)
+    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false, bool isInHttpTracingModule = false)
     {
         var result = RunWaf(args, lastWafCall);
         if (result is not null)
@@ -274,7 +274,7 @@ internal readonly partial struct SecurityCoordinator
 
             if (result.ShouldBlock)
             {
-                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo, isInHttpTracingModule);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
@@ -305,12 +305,12 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
+    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo, bool inTracingHttpModule = false)
     {
         var headers = RequestDataHelper.GetHeaders(_httpTransport.Context.Request) ?? new NameValueCollection();
         var blockingAction = _security.GetBlockingAction([headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _httpTransport.Context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
-        if (isWebApiRequest)
+        if (isWebApiRequest && !inTracingHttpModule)
         {
             if (!blockingAction.IsRedirect && _throwHttpResponseException.Value is { } throwException)
             {
