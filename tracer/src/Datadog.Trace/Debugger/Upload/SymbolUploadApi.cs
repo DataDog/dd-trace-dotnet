@@ -88,14 +88,17 @@ namespace Datadog.Trace.Debugger.Upload
             {
                 using var memoryStream = new MemoryStream();
 #if NETFRAMEWORK
-                using var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream);
-                await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
+                {
+                    await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                }
 #else
-                Log.Error("Compressing symbols");
-                using var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
-                await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                {
+                    await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                }
 #endif
-                symbolsItem = new MultipartFormItem("file", "application/gzip", "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
             }
             else
             {
