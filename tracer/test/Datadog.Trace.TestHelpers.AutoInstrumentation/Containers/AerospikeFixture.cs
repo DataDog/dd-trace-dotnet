@@ -29,6 +29,7 @@ public class AerospikeFixture : ContainerFixture
         var container = new ContainerBuilder()
                        .WithImage("aerospike/aerospike-server:6.2.0.6")
                        .WithPortBinding(3000, true)
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(3000))
                        .Build();
 
         await container.StartAsync();
