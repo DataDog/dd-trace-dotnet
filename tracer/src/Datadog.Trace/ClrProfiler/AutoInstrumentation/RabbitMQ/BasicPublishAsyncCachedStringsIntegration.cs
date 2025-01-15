@@ -41,7 +41,6 @@ public class BasicPublishAsyncCachedStringsIntegration
         return BasicPublishAsyncIntegration.OnMethodBegin(instance, exchangeString, routingKeyString, mandatory, basicProperties, body, default);
     }
 
-    // We don't support ValueTask in < .NET Core 3.1, which means this doesn't work and is never called
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         state.Scope.DisposeWithException(exception);
