@@ -601,6 +601,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1\Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1.csproj", "{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore\Samples.AzureFunctions.V4Isolated.AspNetCore.csproj", "{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1441,6 +1443,10 @@ Global
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1675,6 +1681,7 @@ Global
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1689,6 +1696,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0e036453-2c80-4fc9-a517-771f0071734b}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0f0f7d45-0e13-42b0-a158-8f303bbe8358}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0f1d9fb5-4415-40f1-b7b0-6dd5a3bab0c4}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0f8eab52-0c5b-4f60-92c5-42fac21f4e77}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{10619ba2-aed1-482a-8570-bb7c7b83dddc}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{18767a3e-9adc-485c-a8c7-50660d5b579d}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{18a6904a-5afd-4816-ac3f-9f5e433720b5}*SharedItemsImports = 5
