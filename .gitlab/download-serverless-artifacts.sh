@@ -10,6 +10,20 @@ set -eo pipefail
 target_dir=artifacts
 mkdir -p $target_dir
 
+if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
+  echo "Downloading artifacts from Azure"
+  curl --location --fail \
+    --output $target_dir/serverless-artifacts.zip \
+    "https://apmdotnetci.blob.core.windows.net/apm-dotnet-ci-artifacts-master/${CI_COMMIT_SHA}/serverless-artifacts.zip"
+
+  # Extract top level artifact
+  unzip $target_dir/serverless-artifacts.zip -d $target_dir/
+  rm -f $target_dir/serverless-artifacts.zip
+
+  ls -l $target_dir
+  exit 0
+fi
+
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 
 echo "Looking for azure devops PR builds for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
