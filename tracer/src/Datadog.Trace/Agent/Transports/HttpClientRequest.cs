@@ -7,6 +7,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -125,62 +126,78 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
-            if (items is null)
+            try
             {
-                ThrowHelper.ThrowArgumentNullException(nameof(items));
-            }
-
-            Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
-
-            using var formDataContent = new MultipartFormDataContent(boundary: DatadogHttpValues.Boundary);
-            foreach (var item in items)
-            {
-                if (!item.IsValid(Log))
+                if (items is null)
                 {
-                    continue;
+                    ThrowHelper.ThrowArgumentNullException(nameof(items));
                 }
 
-                HttpContent content = null;
+                Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
-                // Adds a form data item
-                if (item.ContentInBytes is { } arraySegment)
+                using var formDataContent = new MultipartFormDataContent(boundary: DatadogHttpValues.Boundary);
+                foreach (var item in items)
                 {
-                    content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
-                    Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                    if (!item.IsValid(Log))
+                    {
+                        continue;
+                    }
+
+                    HttpContent content = null;
+
+                    // Adds a form data item
+                    if (item.ContentInBytes is { } arraySegment)
+                    {
+                        content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
+                        Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                    }
+                    else if (item.ContentInStream is { } stream)
+                    {
+                        content = new StreamContent(stream);
+                        Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                    Log.Error("Item is Name= {Name}, File= {FileName}, Media= {Media}", item.Name, item.FileName, item.ContentType);
+
+                    if (item.FileName is not null)
+                    {
+                        formDataContent.Add(content, item.Name, item.FileName);
+                    }
+                    else
+                    {
+                        formDataContent.Add(content, item.Name);
+                    }
                 }
-                else if (item.ContentInStream is { } stream)
+
+                if (multipartCompression == MultipartCompression.GZip)
                 {
-                    content = new StreamContent(stream);
-                    Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                    Log.Error("Item is gzip");
+                    Log.Debug("Using MultipartCompression.GZip");
+                    _postRequest.Content = new GzipCompressedContent(formDataContent);
                 }
                 else
                 {
-                    continue;
+                    Log.Error("Item is not gzip");
+
+                    _postRequest.Content = formDataContent;
                 }
 
-                content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
-                if (item.FileName is not null)
-                {
-                    formDataContent.Add(content, item.Name, item.FileName);
-                }
-                else
-                {
-                    formDataContent.Add(content, item.Name);
-                }
+                Log.Error("sending symbols or event");
+
+                var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+                return new HttpClientResponse(response);
             }
-
-            if (multipartCompression == MultipartCompression.GZip)
+            catch (Exception e)
             {
-                Log.Debug("Using MultipartCompression.GZip");
-                _postRequest.Content = new GzipCompressedContent(formDataContent);
-            }
-            else
-            {
-                _postRequest.Content = formDataContent;
+                Log.Error(e, "Error");
             }
 
-            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
-            return new HttpClientResponse(response);
+            return new HttpClientResponse(new HttpResponseMessage(HttpStatusCode.BadRequest));
         }
     }
 }
