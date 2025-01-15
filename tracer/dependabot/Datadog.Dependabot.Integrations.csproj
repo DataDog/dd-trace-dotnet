@@ -156,7 +156,7 @@
     <!-- Integration: Microsoft.AspNetCore.StaticFiles -->
     <!--    Assembly: Microsoft.AspNetCore.StaticFiles -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.StaticFiles/2.2.0 -->
-    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.3.0" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
