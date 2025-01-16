@@ -98,6 +98,7 @@ namespace Datadog.Trace.Debugger.Upload
 #endif
                 {
                     await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                    await gzipStream.FlushAsync().ConfigureAwait(false);
                 }
 
                 symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
