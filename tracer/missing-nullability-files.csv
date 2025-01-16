@@ -138,7 +138,6 @@ src/Datadog.Trace/HttpOverStreams/HttpMessage.cs
 src/Datadog.Trace/HttpOverStreams/HttpRequest.cs
 src/Datadog.Trace/HttpOverStreams/HttpResponse.cs
 src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
-src/Datadog.Trace/Iast/Iast.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs

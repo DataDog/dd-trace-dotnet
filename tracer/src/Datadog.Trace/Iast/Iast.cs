@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -19,12 +21,12 @@ namespace Datadog.Trace.Iast;
 /// </summary>
 internal class Iast
 {
-    private static Iast _instance;
+    private static Iast? _instance;
     private static bool _globalInstanceInitialized;
     private static object _globalInstanceLock = new();
     private readonly IastSettings _settings;
     private readonly OverheadController _overheadController;
-    private IDiscoveryService _discoveryService;
+    private IDiscoveryService? _discoveryService;
     private bool _spanMetaStructs;
 
     static Iast()
@@ -35,16 +37,21 @@ internal class Iast
     /// Initializes a new instance of the <see cref="Iast"/> class with default settings.
     /// </summary>
     public Iast()
-        : this(null, null)
+        : this(IastSettings.FromDefaultSources())
     {
     }
 
-    internal Iast(IastSettings settings, IDiscoveryService discoveryService)
+    internal Iast(IastSettings settings)
     {
-        _settings = settings ?? IastSettings.FromDefaultSources();
+        _settings = settings;
+        _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
+    }
+
+    internal Iast(IastSettings settings, IDiscoveryService discoveryService)
+        : this(settings)
+    {
         _discoveryService = discoveryService;
         SubscribeToDiscoveryService(_discoveryService);
-        _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 
     internal IastSettings Settings => _settings;
@@ -56,7 +63,7 @@ internal class Iast
     /// </summary>
     public static Iast Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+        get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock)!;
 
         set
         {
