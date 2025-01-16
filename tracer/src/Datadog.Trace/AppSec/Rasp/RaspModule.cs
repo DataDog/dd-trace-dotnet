@@ -68,7 +68,7 @@ internal static class RaspModule
     {
         var security = Security.Instance;
 
-        if (!security.RaspEnabled || !security.AddressEnabled(address))
+        if (!security.RaspEnabled)
         {
             return;
         }
@@ -76,6 +76,11 @@ internal static class RaspModule
         var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
         if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+        {
+            return;
+        }
+
+        if (!security.AddressEnabled(address))
         {
             return;
         }
