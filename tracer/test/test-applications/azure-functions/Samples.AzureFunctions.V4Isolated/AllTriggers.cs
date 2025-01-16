@@ -58,7 +58,7 @@ public class AllTriggers
         // brutally kill the host, as can't find any other way to signal it should stop
         foreach (var process in Process.GetProcessesByName("func"))
         {
-            _logger.LogInformation("Killing {PID} ({Name}", process.Id, process.ProcessName);
+            _logger.LogInformation("Killing {PID} ({Name})", process.Id, process.ProcessName);
             process.Kill();
         }
     }
