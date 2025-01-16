@@ -10,6 +10,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
@@ -37,12 +38,20 @@ public class GrpcMessageConversionExtensionsToRpcHttpIntegration
     }
 
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget nullInstance, TReturn returnValue, Exception? exception, in CallTargetState state)
-        where TReturn : ITypedData, IDuckType
+        // We can't do this now, as we need to get and return the _real_ underlying type
+        // where TReturn : ITypedData
     {
         var capabilities = state.State.DuckCast<IGrpcCapabilities>();
-        if (capabilities is null)
+        if (capabilities is null || returnValue is null)
         {
             // Something went wrong, this shouldn't happen
+            return returnValue;
+        }
+
+        var tracer = Tracer.Instance;
+        if (!tracer.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId)
+         || tracer.ActiveScope is not Scope { Span: { OperationName: AzureFunctionsCommon.OperationName } span })
+        {
             return returnValue;
         }
 
@@ -66,19 +75,20 @@ public class GrpcMessageConversionExtensionsToRpcHttpIntegration
         // See https://github.com/Azure/azure-functions-host/blob/420a4686802612857cae35cefea2b685283507c9/src/WebJobs.Script.Grpc/MessageExtensions/GrpcMessageConversionExtensions.cs#L104-L126
 
         var isHttpProxying = !string.IsNullOrEmpty(capabilities.GetCapabilityState("HttpUri"));
-        if (isHttpProxying)
-        {
-            // The returnValue might not be the singleton instance, but as the HttpRequest is going
-            // to be forwarded anyway with the correct headers, we don't bother injecting here.
-            // TODO: is that _actually_ correct? Do we actually need to create a new TypedInfo object and inject that?
-            return returnValue;
-        }
-
-        // If we're not proxying, we can safely inject the context into the gRPC request
+        var requiresRouteParameters = !string.IsNullOrEmpty(capabilities.GetCapabilityState("RequiresRouteParameters"));
         var useNullableHeaders = !string.IsNullOrEmpty(capabilities.GetCapabilityState("UseNullableValueDictionaryForHttp"));
-        AzureFunctionsCommon.OverridePropagatedContext<TTarget, TReturn>(Tracer.Instance, returnValue, useNullableHeaders);
 
-        return returnValue;
+        // When proxying, this method returns a singleton value that we must not update, so we create a new one
+        // If we're not proxying, we can safely inject the context into the provided gRPC request
+        var typedData = isHttpProxying && !requiresRouteParameters
+                            ? TypedDataHelper<TReturn>.CreateTypedData()
+                            : returnValue.DuckCast<ITypedData>();
+
+        var context = new PropagationContext(span.Context, Baggage.Current);
+        tracer.TracerManager.SpanContextPropagator.Inject(context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
+
+        // Get the "real" value back out, whether it's the one we were provided or the new one we created
+        return (TReturn)typedData.Instance!;
     }
 }
 #endif
