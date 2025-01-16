@@ -399,7 +399,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = EmptyPropagatedTags,
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
             result.Links.Should().BeEmpty();
@@ -461,7 +462,8 @@ namespace Datadog.Trace.Tests.Propagators
                                     new("context_headers", "tracecontext")
                                 ],
                             }
-                        });
+                        },
+                        opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -1064,7 +1066,8 @@ namespace Datadog.Trace.Tests.Propagators
                                     new("context_headers", w3CHeaderFirst ? "datadog" : "tracecontext")
                                 ]
                             }
-                        ]);
+                        ],
+                        opts => opts.ExcludingMissingMembers());
             }
         }
 
