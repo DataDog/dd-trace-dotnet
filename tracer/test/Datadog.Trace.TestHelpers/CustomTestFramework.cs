@@ -126,12 +126,26 @@ namespace Datadog.Trace.TestHelpers
                     })
                     .ToList();
 
+                if (Environment.GetEnvironmentVariable("RANDOM_SEED") is not { } environmentSeed
+                    || !int.TryParse(environmentSeed, out var seed))
+                {
+                    seed = new Random().Next();
+                }
+
+                DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Using seed {seed} to randomize tests order"));
+
+                var random = new Random(seed);
+                Shuffle(collections, random);
+
+                foreach (var collection in collections)
+                {
+                    Shuffle(collection.TestCases, random);
+                }
+
                 _runTestCollectionsCallback?.Invoke(DiagnosticMessageSink, collections.SelectMany(c => c.TestCases));
 
                 var summary = new RunSummary();
-
                 using var runner = new ConcurrentRunner();
-
                 var tasks = new List<Task<RunSummary>>();
 
                 foreach (var test in collections.Where(t => !t.DisableParallelization))
@@ -171,6 +185,20 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 return attr?.GetNamedArgument<bool>(nameof(CollectionDefinitionAttribute.DisableParallelization)) is true;
+            }
+
+            private static void Shuffle<T>(IList<T> list, Random rng)
+            {
+                int n = list.Count;
+
+                while (n > 1)
+                {
+                    n--;
+                    int k = rng.Next(n + 1);
+                    var value = list[k];
+                    list[k] = list[n];
+                    list[n] = value;
+                }
             }
         }
 

@@ -454,6 +454,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     hostname: integrationtests
     depends_on:
       - servicestackredis
@@ -524,6 +525,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     hostname: integrationtests
 
   IntegrationTests.Serverless:
@@ -580,6 +582,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     hostname: integrationtests
 
   ExplorationTests:
@@ -722,6 +725,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -800,6 +804,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies
