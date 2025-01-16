@@ -4257,9 +4257,49 @@ stages:
           displayName: Publish ssi artifacts
           artifact: ssi-artifacts
 
+- stage: store_serverless_artifacts
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
+  dependsOn: [build_linux_tracer_r2r, build_arm64_tracer_r2r, build_linux_universal, build_arm64_universal]
+  jobs:
+    - job: combine
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - checkout: none
+        # Download the files to the expected locations
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless tracer home x64
+          inputs:
+            artifact: linux-tracer-home-linux-x64-r2r
+            path: $(Build.ArtifactStagingDirectory)/x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless universal home x64
+          inputs:
+            artifact: linux-universal-home-linux-x64
+            path: $(Build.ArtifactStagingDirectory)/x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless tracer home arm64
+          inputs:
+            artifact: linux-tracer-home-linux-arm64-r2r
+            path: $(Build.ArtifactStagingDirectory)/arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless universal home arm64
+          inputs:
+            artifact: linux-universal-home-linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/arm64
+
+        # publish all tar files as single artifact
+        - publish: "$(Build.ArtifactStagingDirectory)"
+          displayName: Publish serverless artifacts
+          artifact: serverless-artifacts
+
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id, store_serverless_artifacts]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4484,6 +4524,19 @@ stages:
           inputs:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
+
+        # Download the artifacts required by the serverless layer and create the zip file
+        # This exapands the directory - but we want a zip file, so re-zip it!
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless artifacts
+          inputs:
+            artifact: serverless-artifacts
+            path: $(Agent.TempDirectory)/serverless-artifacts
+
+        - bash: |
+            cd $(Agent.TempDirectory)/serverless-artifacts
+            zip -r $(Build.ArtifactStagingDirectory)/serverless-artifacts.zip .
+          displayName: Zip serverless artifacts and store in staging directory
 
         - bash: |
             # Write tracer version number to version.txt
