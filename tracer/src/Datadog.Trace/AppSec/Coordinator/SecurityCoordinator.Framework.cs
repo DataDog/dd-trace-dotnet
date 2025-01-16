@@ -356,7 +356,7 @@ internal readonly partial struct SecurityCoordinator
         }
 
         httpResponse.StatusCode = blockingAction.StatusCode;
-  
+
         if (blockingAction.IsRedirect)
         {
             httpResponse.Redirect(blockingAction.RedirectLocation, blockingAction.IsPermanentRedirect);
