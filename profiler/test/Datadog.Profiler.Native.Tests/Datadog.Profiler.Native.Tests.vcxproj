@@ -36,6 +36,18 @@
     <Import Project="..\..\..\packages\gmock.1.11.0\build\native\gmock.targets" Condition="Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
   <ItemGroup Label="Required files from the project(s) being tested">
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
