@@ -10,8 +10,7 @@ set -eo pipefail
 target_dir=artifacts
 mkdir -p $target_dir
 
-CI_COMMIT_SHA=be3a8aa04b0105473a807f14069ec5be88b610d5
-# if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
+if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
   echo "Downloading artifacts from Azure"
   curl --location --fail \
     --output $target_dir/serverless-artifacts.zip \
@@ -23,7 +22,7 @@ CI_COMMIT_SHA=be3a8aa04b0105473a807f14069ec5be88b610d5
 
   ls -l $target_dir
   exit 0
-# fi
+fi
 
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 artifactName="serverless-artifacts"
