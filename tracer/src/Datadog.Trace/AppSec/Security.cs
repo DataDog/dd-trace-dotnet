@@ -81,7 +81,6 @@ namespace Datadog.Trace.AppSec
 
                 RefreshRcmSubscriptions();
                 SetRemoteConfigCapabilites();
-                UpdateActiveAddresses();
             }
             catch (Exception ex)
             {
@@ -674,6 +673,13 @@ namespace Datadog.Trace.AppSec
                 try
                 {
                     _activeAddressesLocker.EnterReadLock();
+
+                    // If we have not updated the active addresses yet, we will do it now
+                    if (_activeAddresses is null)
+                    {
+                        UpdateActiveAddresses();
+                    }
+
                     return _activeAddresses?.Contains(address) ?? false;
                 }
                 finally
