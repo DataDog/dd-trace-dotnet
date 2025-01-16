@@ -191,7 +191,7 @@ namespace Datadog.Trace.Propagators
 
             return _extractBehavior switch
             {
-                ExtractBehavior.Restart when cumulativeSpanContext is not null => new PropagationContext(default, cumulativeBaggage, [new SpanLink(cumulativeSpanContext, attributes: [new("reason", "propagation_behavior_extract=restart"), new("context_headers", initialExtractorDisplayName!)])]),
+                ExtractBehavior.Restart when cumulativeSpanContext is not null => new PropagationContext(default, cumulativeBaggage, [new SpanLink(cumulativeSpanContext, attributes: [new("reason", "propagation_behavior_extract"), new("context_headers", initialExtractorDisplayName!)])]),
                 ExtractBehavior.Restart => new PropagationContext(default, cumulativeBaggage, []),
                 _ => new PropagationContext(cumulativeSpanContext, cumulativeBaggage, spanLinks),
 

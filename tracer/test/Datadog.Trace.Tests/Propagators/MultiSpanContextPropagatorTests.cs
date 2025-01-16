@@ -457,7 +457,7 @@ namespace Datadog.Trace.Tests.Propagators
                                 },
                                 Attributes =
                                 [
-                                    new("reason", "propagation_behavior_extract=restart"),
+                                    new("reason", "propagation_behavior_extract"),
                                     new("context_headers", "tracecontext")
                                 ],
                             }
