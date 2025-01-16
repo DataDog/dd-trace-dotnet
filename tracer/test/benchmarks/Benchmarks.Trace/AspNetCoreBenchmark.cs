@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent1]    
+    [BenchmarkAgent2]
     [BenchmarkCategory(Constants.TracerCategory)]
     public class AspNetCoreBenchmark
     {
