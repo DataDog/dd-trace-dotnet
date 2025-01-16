@@ -2013,7 +2013,6 @@ partial class Build
                        .EnableNoBuild()
                        .SetIsDebugRun(isDebugRun)
                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                       .SetProcessEnvironmentVariable("RUST_BACKTRACE", "1")
                        .SetLogsDirectory(TestLogsDirectory)
                        .EnableTrxLogOutput(GetResultsDirectory(project))
                        .WithDatadogLogger());
