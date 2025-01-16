@@ -42,6 +42,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// _waf locker needs to have a longer lifecycle than the Waf object as it's used to dispose it as well
         /// </summary>
+        private readonly Concurrency.ReaderWriterLock _activeAddressesLocker;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -52,7 +53,6 @@ namespace Datadog.Trace.AppSec
         private bool _spanMetaStructs;
         private string? _blockedHtmlTemplateCache;
         private string? _blockedJsonTemplateCache;
-        private readonly Concurrency.ReaderWriterLock _activeAddressesLocker;
         private HashSet<string>? _activeAddresses;
 
         /// <summary>
