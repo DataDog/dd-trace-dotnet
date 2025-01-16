@@ -4,7 +4,6 @@ endif()
 
 include(FetchContent)
 
-<<<<<<< HEAD
 set(LIBDATADOG_VERSION "v14.3.1" CACHE STRING "libdatadog version")
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
@@ -13,31 +12,14 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL a
         set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
     else()
         set(SHA256_LIBDATADOG "36db8d50ccabb71571158ea13835c0f1d05d30b32135385f97c16343cfb6ddd4" CACHE STRING "libdatadog sha256")
-=======
-set(LIBDATADOG_VERSION "v14.2.0" CACHE STRING "libdatadog version")
-
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
-    if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-        set(SHA256_LIBDATADOG "d794bb19f5d64dcc6b914b818a45003712c518abd0be451df62bab286c123205" CACHE STRING "libdatadog sha256")
-        set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
-    else()
-        set(SHA256_LIBDATADOG "7b45ceb2ae9fd5f143660b9d63373825f6d9d87f3be8458b5a5385f2c2cacee1" CACHE STRING "libdatadog sha256")
->>>>>>> 634b0518b (Bump libdatadog to 14.2.0)
         set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
     endif()
 else()
     if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-<<<<<<< HEAD
         set(SHA256_LIBDATADOG "2f61fd21cf2f8147743e414b4a8c77250a17be3aecc42a69ffe54f0a603d5c92" CACHE STRING "libdatadog sha256")
         set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
     else()
         set(SHA256_LIBDATADOG "f01f05600591063eba4faf388f54c155ab4e6302e5776c7855e3734955f7daf7" CACHE STRING "libdatadog sha256")
-=======
-        set(SHA256_LIBDATADOG "fffefde7c5bdfcc087ab8c8d43e93e6bdc677eddb980497ec405f92d8b00fb5a" CACHE STRING "libdatadog sha256")
-        set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
-    else()
-        set(SHA256_LIBDATADOG "b85ffe35337fd5a9efb6f9c0817a6897c78519863c2c983863158262ea40db9c" CACHE STRING "libdatadog sha256")
->>>>>>> 634b0518b (Bump libdatadog to 14.2.0)
         set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-unknown-linux-gnu.tar.gz)
     endif()
 endif()
