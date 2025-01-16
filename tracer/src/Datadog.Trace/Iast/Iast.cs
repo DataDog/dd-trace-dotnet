@@ -19,7 +19,6 @@ namespace Datadog.Trace.Iast;
 /// </summary>
 internal class Iast
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Iast>();
     private static Iast _instance;
     private static bool _globalInstanceInitialized;
     private static object _globalInstanceLock = new();
@@ -36,13 +35,15 @@ internal class Iast
     /// Initializes a new instance of the <see cref="Iast"/> class with default settings.
     /// </summary>
     public Iast()
-        : this(null)
+        : this(null, null)
     {
     }
 
-    internal Iast(IastSettings settings = null)
+    internal Iast(IastSettings settings, IDiscoveryService discoveryService)
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
+        _discoveryService = discoveryService;
+        SubscribeToDiscoveryService(_discoveryService);
         _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 
@@ -80,9 +81,14 @@ internal class Iast
         if (_discoveryService is null)
         {
             _discoveryService = Tracer.Instance.TracerManager.DiscoveryService;
-            _discoveryService?.SubscribeToChanges(config => _spanMetaStructs = config.SpanMetaStructs);
+            SubscribeToDiscoveryService(_discoveryService);
         }
 
         return _spanMetaStructs;
+    }
+
+    private void SubscribeToDiscoveryService(IDiscoveryService discoveryService)
+    {
+        discoveryService.SubscribeToChanges(config => _spanMetaStructs = config.SpanMetaStructs);
     }
 }
