@@ -36,6 +36,18 @@ public:
     std::uint64_t _currentSpanId;
 };
 
+
+enum class WaitType {
+    Unknown = 0,
+    Lock = 1,
+    Mutex = 2,
+    Semaphore = 3,
+    AutoResetEvent = 4,
+    ManualResetEvent = 5,
+
+    LastWait = 6 // This is used to know the last element in the enum
+};
+
 struct ManagedThreadInfo : public IThreadInfo
 {
 private:
@@ -99,6 +111,13 @@ public:
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
 
+    // TODO: check if we need to create a dedicated dictionary for WaitHandle profiling
+    //       --> this would reduce memory consumption
+    inline void SetWaitStart(std::chrono::nanoseconds timestamp) { _waitStartTimestamp = timestamp; }
+    inline std::chrono::nanoseconds GetWaitStart() { return _waitStartTimestamp; }
+    inline void SetWaitType(WaitType waitType) { _waitType = waitType; }
+    WaitType GetWaitType() { return _waitType; }
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
@@ -145,6 +164,10 @@ private:
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
     dd_mutex_t _objLock;
+
+    // for WaitHandle profiling, keep track of the wait start timestamp
+    std::chrono::nanoseconds _waitStartTimestamp;
+    WaitType _waitType;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()

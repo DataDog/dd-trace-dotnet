@@ -81,6 +81,7 @@ public:
     bool IsSsiTelemetryEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
+    bool IsWaitHandleProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -179,4 +180,5 @@ private:
 
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
+    bool _isWaitHandleProfilingEnabled;
 };

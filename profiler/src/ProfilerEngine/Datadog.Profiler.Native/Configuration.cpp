@@ -25,7 +25,7 @@ std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
 std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
-CpuProfilerType const Configuration::DefaultCpuProfilerType =
+CpuProfilerType const Configuration::DefaultCpuProfilerTypeDefaultCpuProfilerType =
 #ifdef _WINDOWS
     CpuProfilerType::ManualCpuTime;
 #else
@@ -106,6 +106,7 @@ Configuration::Configuration()
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+    _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -752,4 +753,9 @@ bool Configuration::IsTelemetryToDiskEnabled() const
 bool Configuration::IsSsiTelemetryEnabled() const
 {
     return _isSsiTelemetryEnabled;
+}
+
+bool Configuration::IsWaitHandleProfilingEnabled() const
+{
+    return _isWaitHandleProfilingEnabled;
 }
