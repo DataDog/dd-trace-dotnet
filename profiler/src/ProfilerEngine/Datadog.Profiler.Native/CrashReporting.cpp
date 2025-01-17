@@ -77,7 +77,7 @@ int32_t CrashReporting::Initialize()
         return 1;
     }
 
-    return AddTag("severity", "crash");
+    AddTag("severity", "crash");
     return AddTag("is_crash", "true");
 }
 
