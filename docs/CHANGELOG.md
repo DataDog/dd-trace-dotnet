@@ -9,6 +9,204 @@
 
 
 
+
+
+## [Release 3.8.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.8.0)
+
+## Summary
+
+- [ASM] Improved error handling and reporting
+- [ASM/IAST] Fix a crash occurring when an attribute is decorated with itself
+- [Dynamic Instrumentation] Fix errors in symbol upload and exception replay
+- [AWS Lambda] Encode non-ascii error messages
+
+## Changes
+
+### Tracer
+* [Tracing] Refactor internal Span Links API (#6341)
+* Support relative path in `DD_DOTNET_TRACER_HOME` (#6434)
+* Add support for `[DuckPropertyOrField]` (#6463)
+
+### ASM
+* [ASM] Log `FormatException` from `get_Uri` as debug (#6489)
+* [ASM] Update Iast Log Warning to Error (#6492)
+* [ASM] upgrade warning to error (#6421)
+* [ASM] Fix IAST benchmark tests (#6462)
+* [ASM] Error metric for unknown operator errors (#6465)
+* [ASM] Introduce SecurityReporter for all reporting functions of SecurityCoordinator (#6481)
+* [ASM] Normalise aspects exception logging (#6495)
+* Fix build issues on aspects on net5.0 (#6500)
+
+### Debugger
+* [Dynamic Instrumentation] Hotfix SymDB and ER (#6468)
+
+### Serverless
+* [serverless] encode lambda error.msg and error.type (#6438)
+
+### Fixes
+* [IAST] Fix recursive custom attribute crash (#6470)
+
+### Build / Test
+* [IAST] Skip failing tests (#6455)
+* repo: mandatory issue templates (AIDM-424) (#6456)
+* K8s Lib Injection tests: run on a matrix (#6458)
+* [Build] Fix version bump autogen files error (#6464)
+* Fix the build and some versions (#6466)
+* [IAST] skip dotnet 2.1 tests that can't work (#6467)
+* Exclude common failure in smoke tests (#6469)
+* allow running exploration tests on mac (#6474)
+* [Test Package Versions Bump] Updating package versions (#6450)
+* [Test Package Versions Bump] Updating package versions (#6478)
+* [Test Package Versions Bump] Updating package versions (#6486)
+* Parallelize unit tests (#6483)
+* [IAST] Propagation tests reorg (#6487)
+* fix UpdateVendoredCode on mac (#6490)
+
+### Miscellaneous
+* [Crashtracking] Add a setting to disable crashtracking filtering (#6452)
+
+
+[Changes since 3.7.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.7.0...v3.8.0)
+
+## [Release 3.7.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.7.0)
+
+## Summary
+
+* [IAST] Extend stored XXS to cover more databases
+* [IAST] Support of DefaultInterpolatedStringHandler
+* [Tracer] Add support for HotChocolate 14.x.x, GraphQL.NET 8.x.x, Aerospile.Client 8.x.x, MongoDB 3.0.0, and NpgSQL 9.x.x
+* [Tracer] Fix runtime-metrics thread count
+* [CI Visibility] Improve support for MSTest
+
+## Changes
+
+### Tracer
+* Add Support for GraphQL HotChocolate v14 (#6248)
+* Add support for Graph.NET v8 (#6423)
+* Add support for `Aerospike.Client` v8 (#6424)
+* Add support for mongodb v3 (#6354)
+* Update npgsql to support 9.x.x (#6350)
+* Filter out dead threads in runtime metrics (#6298)
+* Fix bug in manual instrumentation (#6330)
+* Bail out if we're in a no-dynamic-code scenario (#6362)
+* Remove settings snapshot generator (#6370)
+* Ducktype instance type check (#6373)
+* Remove old generated public APIs (#6376)
+* Add try catch on shutdown (#6378)
+* Simplify duplication in `IConfigurationSource`  (#6386)
+* Make more integration settings case insensitive (#6393)
+* Update config-in-code manual instrumentation to use an `IConfigurationSource` (#6397)
+* Remove the vendored arraypool eventsource (#6398)
+* Make `DirectLogSubmissionSettings` properly immutable and remove `ImmutableDirectLogSubmissionSettings` (#6400)
+* Make `IntegrationSettings` properly immutable and remove `ImmutableIntegrationSettings` (#6405)
+* Make `ExporterSettings` properly immutable and remove `ImmutableExporterSettings` (#6408)
+* Validate data before EnumNgenModuleMethodsInliningThisMethod call (#6410)
+* Make `TracerSettings` properly immutable and remove `ImmutableTracerSettings` (#6415)
+* [Tracer] Fix git metadata retrieval (#6444)
+* [dd-dotnet] Catch error when failing to read env vars on IIS (#6430)
+
+### CI Visibility
+* [CI Visibility] Fix MSTest integrarion bug (#6336)
+* [CI Visibility] Specify if the user is setting the DD_SERVICE (#6348)
+* [CI Visibility] Adding nullability checks (#6374)
+* [CI Visibility] Use same number of execution in EFD tests (#6416)
+* [CI Visibility] Set `TracerSettings` using a configuration source instead of mutating (#6399)
+
+### ASM
+* [ASM] Native CallTarget definitions (#6252)
+* [APM] Exclude windows only definitions from non windows dlls (#6270)
+* [ASM] IAST events in span's `meta_struct` (#5803)
+* [ASM][ATO] Collect request headers on login user events (failures and success) (#6225)
+* [ASM] Update WAF v1.21.0 Ruleset 1.13.3 (#6287)
+* [ASM] Restore IAST unit tests (#6294)
+* [ASM][ATO] Adapt v3 new login tags and fix signup tags (#6302)
+* [ASM] Extend locking to cover _disposed member variable (#6319)
+* [ASM] RASP: Command injection vulnerability implementation (#6323)
+* [ASM]Fix appsec waf benchmark for real  (#6329)
+* [ASM] iast: Tainting of DefaultInterpolatedStringHandler (#6340)
+* [ASM] Skip integration tests using Microsoft.Data.Sqlite on netcoreapp3.0 (#6342)
+* [ASM] Skip `DefaultInterpolatedStringHandler` flaky tests (#6379)
+* [ASM] Fix possible stackoverflow if nested routedictionary (#6382)
+* [IAST] fix tainting values stored in the db (#6389)
+* [ASM] Fix IAST weak random vulnerability error (#6432)
+* [ASM] Update WAF version to 1.22.0 (#6440)
+* [ASM] Fix database tests (netcoreapp3.0) (#6442)
+* [IAST] Native CallSites Definitions (#6241)
+* [IAST] Fix compilation of Samples.Security.AspNetCore2 (#6441)
+
+### Continuous Profiler
+* [Profiler] Use chrono types instead of integer type (#6288)
+* [Profiler] Clean up profiler code (#6291)
+* [Profiler] Force waiting for the `LibrariesInfoCache` service to be fully started (#6338)
+* [Shared] Fix bug in logger (#6335)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-2256 Do not create ProbeProcessor when LiveDebugger isn't fully initialized (#6092)
+* [Dynamic Instrumentation] DEBUG-3223 Add compression support for SymDB (#6427)
+
+### Data Streams Monitoring
+* Data Streams Monitoring support in Kinesis (#6428)
+* [DSM] Switch from `ManualResetEventSlim` to `AsyncManualResetEvent` (#6356)
+* [DSM] Switch .NET tracer to injecting both base64 & binary headers (#6448)
+
+### Miscellaneous
+* [Crashtracking] Zero the stackframe upon creation (#6346)
+* [Crashtracker] Fix missing GetThreadDescription symbol (#6357)
+* [Crashtracker] Use blazesym API to retrieve buildid (#6347)
+* [Crashtracking] Display a nicer error message when the glibc version is too old (#6402)
+* [Crashtracking] Improve handling of unhandled exceptions on Windows (#6435)
+* Trim whitespace in DBM_PROPAGATION_MODE (#6332)
+* Change `ICorProfilerMethodEnum` to use the `COMPtr` (#6334)
+* Exclude InetMgr.exe from instrumentation (#6355)
+* Introduce a SignatureBuilder to build signatures of arbitrary size (#6383)
+* Use the signature builder in more places (#6384)
+* [APM] Made native definition lists temporary (#6417)
+
+### Build / Test
+* [Test Package Versions Bump] Updating package versions (#6351)
+* [Test Package Versions Bump] Updating package versions (#6372)
+* [Test Package Versions Bump] Updating package versions (#6392)
+* [Test Package Versions Bump] Updating package versions (#6420)
+* [Test Package Versions Bump] Updating package versions (#6437)
+* [Test Package Versions Bump] Updating package versions (#6279)
+* add the filepath we check for datadog.json to the output of diagnostic tool (#6273)
+* Stop hiding build files in github search (#6299)
+* Fix typo in smoke test (#6300)
+* Fix CMake warnings (#6309)
+* Ignore multiple instances of the same version of the tracer (#6310)
+* Fix the debug symbol publish step in release process (#6312)
+* Enable RuntimeMetricsShutdownSmokeTest only for .NET 9+ (#6316)
+* Use agent telemetry proxy instead of the standalone telemetry (#6324)
+* Try to fix flake in ManualInstrumentation tests (#6333)
+* Fix alpine .NET Core 3.1 telemetry failures (#6339)
+* Update `dotnet test` tests to take memory dump on hang (#6343)
+* Bump timeit to 0.3.2 (#6349)
+* Try enabling debug in `EnumerateAssemblyReferencesTest` (#6352)
+* Update CODEOWNERS for IAST owned file (#6358)
+* Add testing for latest Microsoft.Data.Sqlite (#6369)
+* Removing MetaStruct check from TestSessionTimeoutVulnerability (#6395)
+* Adding Delay to CheckForSmoke to Prevent Flakes (#6396)
+* Dump process and children processes when a test hangups (#6401)
+* Removing MetaStruct Check from TestDirectoryListingLeak (#6404)
+* Report failures to update GitHub as build errors in Azure Devops (#6407)
+* Pin the lang version in the Nuke build project (#6411)
+* Fix checking for changes to generated files (#6412)
+* Fix name of target creating trimming file + desc (#6422)
+* Fix codeql to work on newer version of Ubuntu (#6445)
+* Fix the no-op pipeline (#6449)
+* Remove `PublicApiTests.PublicApiHasNotChanged` for Datadog.Trace.dll (#6385)
+* Removing Delay in Smoke Test Helper Method (#6403)
+* [Profiler] Update tests to save output to xunit.txt files (#6160)
+* Add more info when GenerateDumpIfDbgRequested fails (take 3) (#6325)
+* Add more info when GenerateDumpIfDbgRequested fails (take 4) (#6344)
+* [Profiler] Disable flaky check (#6367)
+* [Profiler] Avoid ETW tests flackiness (#6368)
+* [Profiler] Fix UBsan Job (#6380)
+* [Profiler] Use Vcpkg download and install native dependencies (libdatadog) (#6388)
+* [Profiler] Fix static analysis job (#6406)
+
+[Changes since 3.6.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.6.1...v3.7.0)
+
 ## [Release 3.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.6.0)
 
 ## Summary

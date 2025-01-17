@@ -20,7 +20,8 @@ internal static class StackWalker
     {
         "Datadog.Trace.Debugger.Helpers.StringExtensions",
         "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument",
-        "System.Security.IdentityHelper"
+        "System.Security.IdentityHelper",
+        "Npgsql.Internal.NpgsqlConnector"
     };
 
     private static readonly string[] AssemblyNamesToSkip =

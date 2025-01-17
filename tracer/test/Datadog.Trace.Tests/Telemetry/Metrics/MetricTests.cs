@@ -35,8 +35,8 @@ public class MetricTests
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
     {
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
-        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum" } },
-        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled" } },
+        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled" } },
+        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled", "flaky_test_retries_enabled" } },
         { "endpoint_payload.requests_errors", ["status_code"] },
         { "git_requests.search_commits_errors", ["status_code"] },
         { "git_requests.objects_pack_errors", ["status_code"] },
@@ -52,6 +52,9 @@ public class MetricTests
         { "git_requests.search_commits_ms", ["rs_compressed"] },
         { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
         { "early_flake_detection.response_bytes", ["rs_compressed"] },
+        { "rasp.rule.eval", ["rule_variant"] },
+        { "rasp.rule.match", ["rule_variant"] },
+        { "rasp.timeout", ["rule_variant"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()

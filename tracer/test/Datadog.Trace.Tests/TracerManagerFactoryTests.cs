@@ -37,7 +37,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
     [Fact]
     public void RemoteConfigIsAvailableByDefault()
     {
-        var settings = TracerSettings.FromDefaultSourcesInternal().Build();
+        var settings = TracerSettings.FromDefaultSourcesInternal();
         settings.IsRemoteConfigurationAvailable.Should().BeTrue();
 
         _manager = CreateTracerManager(settings);
@@ -60,7 +60,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         Environment.SetEnvironmentVariable("K_SERVICE", "something");
         Environment.SetEnvironmentVariable("_DD_EXTENSION_PATH", Path.GetTempFileName());
 
-        var settings = TracerSettings.FromDefaultSourcesInternal().Build();
+        var settings = TracerSettings.FromDefaultSourcesInternal();
 
         settings.IsRemoteConfigurationAvailable.Should().BeFalse();
 
@@ -71,7 +71,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         _manager.TracerFlareManager.Should().BeOfType<NullTracerFlareManager>();
     }
 
-    private static TracerManager CreateTracerManager(ImmutableTracerSettings settings)
+    private static TracerManager CreateTracerManager(TracerSettings settings)
     {
         return new TracerManagerFactory().CreateTracerManager(
             settings,
@@ -91,7 +91,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(
                 previous: null,
-                settings: new ImmutableTracerSettings(NullConfigurationSource.Instance),
+                settings: new TracerSettings(NullConfigurationSource.Instance),
                 directLogSettings: new TracerSettings().LogSubmissionSettings,
                 azureAppServiceSettings: null,
                 serviceName: "test",

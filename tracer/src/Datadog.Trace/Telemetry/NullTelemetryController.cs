@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 
@@ -25,11 +26,15 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
+        public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
         {
         }
 
         public void RecordProfilerSettings(Profiler profiler)
+        {
+        }
+
+        public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
         {
         }
 

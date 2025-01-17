@@ -44,7 +44,7 @@ namespace Datadog.Trace
         /// The primary factory method, called by <see cref="TracerManager"/>,
         /// providing the previous global <see cref="TracerManager"/> instance (may be null)
         /// </summary>
-        internal TracerManager CreateTracerManager(ImmutableTracerSettings settings, TracerManager previous)
+        internal TracerManager CreateTracerManager(TracerSettings settings, TracerManager previous)
         {
             // TODO: If relevant settings have not changed, continue using existing statsd/agent writer/runtime metrics etc
             // If reusing the runtime metrics/statsd, need to propagate the new value of DD_TAGS from dynamic config
@@ -86,7 +86,7 @@ namespace Datadog.Trace
         /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IDogStatsd, ITelemetryController, IDiscoveryService)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
-            ImmutableTracerSettings settings,
+            TracerSettings settings,
             IAgentWriter agentWriter,
             ITraceSampler sampler,
             IScopeManager scopeManager,
@@ -100,7 +100,7 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager)
         {
-            settings ??= new ImmutableTracerSettings(TracerSettings.FromDefaultSourcesInternal(), true);
+            settings ??= TracerSettings.FromDefaultSourcesInternal();
 
             var defaultServiceName = settings.ServiceName ??
                 GetApplicationName(settings) ??
@@ -149,8 +149,6 @@ namespace Datadog.Trace
             var profiler = Profiler.Instance;
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
-
-            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly);
 
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
@@ -213,24 +211,24 @@ namespace Datadog.Trace
                 tracerFlareManager);
         }
 
-        protected virtual ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        protected virtual ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
         {
             return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
             return new GitMetadataTagsProvider(settings, scopeManager, telemetry);
         }
 
-        protected virtual bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings)
+        protected virtual bool ShouldEnableRemoteConfiguration(TracerSettings settings)
             => settings.IsRemoteConfigurationAvailable;
 
         /// <summary>
         ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.CITracerManager"/>
         /// </summary>
         protected virtual TracerManager CreateTracerManagerFrom(
-            ImmutableTracerSettings settings,
+            TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -248,7 +246,7 @@ namespace Datadog.Trace
             ITracerFlareManager tracerFlareManager)
             => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
 
-        protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
+        protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
             // ISamplingRule is used to implement, in order of precedence:
             // - custom sampling rules
@@ -329,7 +327,7 @@ namespace Datadog.Trace
             return sampler;
         }
 
-        protected virtual ISpanSampler GetSpanSampler(ImmutableTracerSettings settings)
+        protected virtual ISpanSampler GetSpanSampler(TracerSettings settings)
         {
             if (string.IsNullOrWhiteSpace(settings.SpanSamplingRules))
             {
@@ -339,7 +337,7 @@ namespace Datadog.Trace
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules, RegexBuilder.DefaultTimeout));
         }
 
-        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
+        protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
@@ -349,10 +347,10 @@ namespace Datadog.Trace
             return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, appsecStandaloneEnabled: settings.AppsecStandaloneEnabledInternal);
         }
 
-        protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+        protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => DiscoveryService.Create(settings.Exporter);
 
-        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName, List<string> constantTags, string prefix = null)
+        internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null)
         {
             try
             {
@@ -398,7 +396,7 @@ namespace Datadog.Trace
             }
         }
 
-        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
+        private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)
         {
             var customTagCount = settings.GlobalTags.Count;
             var constantTags = new List<string>(5 + customTagCount)
@@ -430,7 +428,7 @@ namespace Datadog.Trace
         /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
         /// </summary>
         /// <returns>The default service name.</returns>
-        private static string GetApplicationName(ImmutableTracerSettings settings)
+        private static string GetApplicationName(TracerSettings settings)
         {
             try
             {

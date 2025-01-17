@@ -79,7 +79,7 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 try
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
+                    Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
                 }
                 catch (Exception ex)
                 {
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, TracerSettings tracerSettings)
         {
             if (statusCode < 100 || statusCode >= 600)
             {

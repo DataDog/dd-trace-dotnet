@@ -110,7 +110,7 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.Exporter, true),
+                        settings.TracerSettings.Exporter,
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -402,12 +402,12 @@ namespace Datadog.Trace.Ci
             return string.Empty;
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        internal static IApiRequestFactory GetRequestFactory(TracerSettings settings)
         {
             return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
+        internal static IApiRequestFactory GetRequestFactory(TracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
             var exporterSettings = tracerSettings.Exporter;
@@ -484,15 +484,9 @@ namespace Datadog.Trace.Ci
 
                         break;
                     case OSPlatformName.MacOS:
-                        var context = SynchronizationContext.Current;
                         try
                         {
-                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                            {
-                                SynchronizationContext.SetSynchronizationContext(null);
-                            }
-
-                            var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
+                            var osxVersionCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("uname", "-r"));
                             var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
                             if (!string.IsNullOrEmpty(osxVersion))
                             {
@@ -502,13 +496,6 @@ namespace Datadog.Trace.Ci
                         catch (Exception ex)
                         {
                             Log.Warning(ex, "Error getting OS version on macOS");
-                        }
-                        finally
-                        {
-                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                            {
-                                SynchronizationContext.SetSynchronizationContext(null);
-                            }
                         }
 
                         break;
@@ -590,23 +577,26 @@ namespace Datadog.Trace.Ci
                 {
                     processName ??= GetProcessName();
                     // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) &&
-                        Environment.CommandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
                     {
-                        Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
-                        return false;
+                        var commandLine = Environment.CommandLine;
+                        if (commandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                        {
+                            Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", commandLine);
+                            return false;
+                        }
                     }
 
                     Log.Information("CI Visibility Enabled by Configuration");

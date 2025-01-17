@@ -728,7 +728,8 @@
     "rasp.rule.eval": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -739,7 +740,8 @@
     "rasp.rule.match": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "matches",
@@ -750,7 +752,8 @@
     "rasp.timeout": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "timeouts",
@@ -760,11 +763,23 @@
     },
     "instrum.user_auth.missing_user_id": {
       "tags": [
-        "framework"
+        "framework",
+        "event_type"
       ],
       "metric_type": "count",
       "data_type": "events",
-      "description": "Number of user events skipped due to not having a user id",
+      "description": "The library was unable to obtain a user ID as part of the login success or failure event. This should only be sent if the user login was also unavailable.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "instrum.user_auth.missing_user_login": {
+      "tags": [
+        "framework",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The library was unable to obtain a user login as part of the login success, login failure or signup event.",
       "send_to_user": false,
       "user_tags": []
     }
@@ -889,7 +904,8 @@
     "test_session": {
       "tags": [
         "provider",
-        "auto_injected"
+        "auto_injected",
+        "agentless_log_submission_enabled",
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1180,6 +1196,7 @@
       "tags": [
         "coverage_enabled",
         "itrskip_enabled",
+        "flaky_test_retries_enabled",
         "early_flake_detection_enabled"
       ],
       "metric_type": "count",

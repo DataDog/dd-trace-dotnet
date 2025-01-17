@@ -123,11 +123,15 @@ namespace Datadog.Trace.Debugger
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
+
+            SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
         }
 
         public bool Enabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
+
+        public bool SymbolDatabaseCompressionEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
 

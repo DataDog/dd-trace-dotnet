@@ -61,6 +61,7 @@ internal static partial class IastModule
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
+    private static readonly HashSet<int> LoggedAspectExceptionMessages = [];
     private static bool _showTimeoutExceptionError = true;
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
@@ -202,7 +203,7 @@ internal static partial class IastModule
         }
     }
 
-    internal static IastModuleResponse OnWeakRandomness(string evidence)
+    internal static IastModuleResponse OnWeakRandomness(string evidence, bool autoCloseScopeWhenSingleSpan = true)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -212,7 +213,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
-            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
         }
         catch (Exception ex)
         {
@@ -398,7 +399,7 @@ internal static partial class IastModule
         if (Iast.Instance.Settings.Enabled)
         {
             // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability);
         }
     }
 
@@ -420,7 +421,7 @@ internal static partial class IastModule
             new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability);
     }
 
     public static void OnSessionTimeout(string methodName, TimeSpan value)
@@ -437,10 +438,10 @@ internal static partial class IastModule
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability).SingleSpan?.Dispose();
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability);
     }
 
-    public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
+    public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId, bool autoCloseScopeWhenSingleSpan = true)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -455,7 +456,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
     }
 
     public static IastModuleResponse OnStackTraceLeak(Exception ex, IntegrationId integrationId)
@@ -472,7 +473,7 @@ internal static partial class IastModule
         return GetScope(evidence, integrationId, VulnerabilityTypeName.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
     }
 
-    public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
+    public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, bool autoCloseScopeWhenSingleSpan = true)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -485,7 +486,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
     }
 
     public static IastModuleResponse OnXss(string? text)
@@ -605,7 +606,8 @@ internal static partial class IastModule
         int? hash = null,
         StackTrace? externalStack = null,
         SecureMarks exclusionSecureMarks = SecureMarks.None,
-        SourceType[]? safeSources = null)
+        SourceType[]? safeSources = null,
+        bool autoCloseScopeWhenSingleSpan = true)
     {
         var tracer = Tracer.Instance;
         if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -679,7 +681,7 @@ internal static partial class IastModule
             }
             else
             {
-                return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, vulnerability);
+                return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, vulnerability, autoCloseScopeWhenSingleSpan);
             }
         }
 
@@ -710,7 +712,7 @@ internal static partial class IastModule
         return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
     }
 
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability, bool closeAfterCreation = true)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be cast to Scope, and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
@@ -745,6 +747,12 @@ internal static partial class IastModule
         traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
         vulnerability.Location?.ReportStack(span);
+
+        if (closeAfterCreation)
+        {
+            scope.Dispose();
+        }
+
         return new IastModuleResponse(scope);
     }
 
@@ -858,6 +866,35 @@ internal static partial class IastModule
         GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
+    public static void LogAspectException(Exception ex, string aspectInfo)
+    {
+        try
+        {
+            var hashCode = aspectInfo.GetHashCode();
+            bool alreadyLogged;
+            lock (LoggedAspectExceptionMessages)
+            {
+                alreadyLogged = !LoggedAspectExceptionMessages.Add(hashCode);
+            }
+
+// intentionally using string interpolation in logging, as the resulting string is actually a constant, and contains the important aspect information
+#pragma warning disable DDLOG004 // Message templates should be constant
+            if (alreadyLogged)
+            {
+                Log.Debug(ex, $"Error invoking {aspectInfo}");
+            }
+            else
+            {
+                Log.Error(ex, $"Error invoking {aspectInfo}");
+            }
+#pragma warning restore DDLOG004 // Message templates should be constant
+        }
+        catch (Exception e)
+        {
+            Log.Debug(e, "Error while logging aspect exception.");
+        }
+    }
+
     internal static void RegisterDbRecord(object instance)
     {
         DbRecords.RegisterDbRecord(instance);
@@ -904,6 +941,14 @@ internal static partial class IastModule
             dataBaseRows.Remove(instance);
         }
 
+        /// <summary>
+        /// Add a DB value to be tainted
+        /// </summary>
+        /// <returns>The return value this method indicates if the value could have been tainted
+        /// if a iast context is available. It will return true if iast is enabled and the row
+        /// count conditions are met. The result is used in the unit tests, don't use it
+        /// anywhere else
+        /// </returns>
         public bool AddDbValue(object instance, string? column, string value)
         {
             if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
@@ -928,7 +973,9 @@ internal static partial class IastModule
             var scope = tracer.ActiveScope as Scope;
             var currentSpan = scope?.Span;
             var traceContext = currentSpan?.Context?.TraceContext;
-            traceContext?.IastRequestContext?.AddDbValue(column, value);
+            var context = traceContext?.IastRequestContext;
+            context?.AddDbValue(column, value);
+
             return true;
         }
 

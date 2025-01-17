@@ -133,6 +133,8 @@ namespace Datadog.Trace.Util
                 return null;
             }
 
+            var startTime = DateTime.UtcNow;
+            bool HasTimedOut() => command.Timeout.HasValue && DateTime.UtcNow - startTime > command.Timeout;
             using var disposableProcessInfo = processInfo;
 
             if (input is not null)
@@ -146,6 +148,13 @@ namespace Datadog.Trace.Util
             var errorStringBuilder = new StringBuilder();
             while (!processInfo.HasExited)
             {
+                if (HasTimedOut())
+                {
+                    Log.Warning("Process timed out after {Timeout}. Killing process.", command.Timeout);
+                    processInfo.Kill();
+                    return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), exitCode: -1, timedOut: true);
+                }
+
                 if (!processStartInfo.UseShellExecute)
                 {
                     outputStringBuilder.Append(processInfo.StandardOutput.ReadToEnd());
@@ -162,105 +171,7 @@ namespace Datadog.Trace.Util
             }
 
             Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
-            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
-        }
-
-        /// <summary>
-        /// Run a command and get the standard output content as a string
-        /// </summary>
-        /// <param name="command">Command to run</param>
-        /// <param name="input">Standard input content</param>
-        /// <returns>Task with the output of the command</returns>
-        public static async Task<CommandOutput?> RunCommandAsync(Command command, string? input = null)
-        {
-            Log.Debug("Running command: {Command} {Args}", command.Cmd, command.Arguments);
-            var processStartInfo = GetProcessStartInfo(command);
-            if (input is not null)
-            {
-                processStartInfo.RedirectStandardInput = true;
-#if NETCOREAPP
-                processStartInfo.StandardInputEncoding = command.InputEncoding ?? processStartInfo.StandardInputEncoding;
-#endif
-            }
-
-            Process? processInfo = null;
-            try
-            {
-                processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
-            }
-            catch (System.ComponentModel.Win32Exception) when (command.UseWhereIsIfFileNotFound)
-            {
-                if (FrameworkDescription.Instance.OSDescription == OSPlatformName.Linux &&
-                    !string.Equals(command.Cmd, "whereis", StringComparison.OrdinalIgnoreCase))
-                {
-                    var cmdResponse = await RunCommandAsync(new Command("whereis", $"-b {processStartInfo.FileName}")).ConfigureAwait(false);
-                    if (cmdResponse?.ExitCode == 0 &&
-                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
-                        outputLines[0] is { Length: > 0 } temporalOutput)
-                    {
-                        foreach (var path in ParseWhereisOutput(temporalOutput))
-                        {
-                            if (File.Exists(path))
-                            {
-                                processStartInfo.FileName = path;
-                                processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
-                                break;
-                            }
-                        }
-                    }
-                }
-                else if (!string.Equals(command.Cmd, "where", StringComparison.OrdinalIgnoreCase))
-                {
-                    var cmdResponse = await RunCommandAsync(new Command("where", processStartInfo.FileName)).ConfigureAwait(false);
-                    if (cmdResponse?.ExitCode == 0 &&
-                        cmdResponse.Output.Split(["\n", "\r\n"], StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } outputLines &&
-                        outputLines[0] is { Length: > 0 } processPath &&
-                        File.Exists(processPath))
-                    {
-                        processStartInfo.FileName = processPath;
-                        processInfo = StartWithDoNotTrace(processStartInfo, command.DoNotTrace);
-                    }
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            if (processInfo is null)
-            {
-                return null;
-            }
-
-            using var disposableProcessInfo = processInfo;
-            if (input is not null)
-            {
-                await processInfo.StandardInput.WriteAsync(input).ConfigureAwait(false);
-                await processInfo.StandardInput.FlushAsync().ConfigureAwait(false);
-                processInfo.StandardInput.Close();
-            }
-
-            var outputStringBuilder = new StringBuilder();
-            var errorStringBuilder = new StringBuilder();
-            while (!processInfo.HasExited)
-            {
-                if (!processStartInfo.UseShellExecute)
-                {
-                    outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-                    errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
-                }
-
-                await Task.Delay(15).ConfigureAwait(false);
-            }
-
-            if (!processStartInfo.UseShellExecute)
-            {
-                outputStringBuilder.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
-                errorStringBuilder.Append(await processInfo.StandardError.ReadToEndAsync().ConfigureAwait(false));
-            }
-
-            Log.Debug<int>("Process finished with exit code: {Value}.", processInfo.ExitCode);
-            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode);
+            return new CommandOutput(outputStringBuilder.ToString(), errorStringBuilder.ToString(), processInfo.ExitCode, timedOut: false);
         }
 
         internal static IEnumerable<string> ParseWhereisOutput(string output)
@@ -343,8 +254,9 @@ namespace Datadog.Trace.Util
             public readonly Encoding? InputEncoding;
             public readonly bool DoNotTrace;
             public readonly bool UseWhereIsIfFileNotFound;
+            public readonly TimeSpan? Timeout;
 
-            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true, bool useWhereIsIfFileNotFound = false)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null, string? verb = null, Encoding? outputEncoding = null, Encoding? errorEncoding = null, Encoding? inputEncoding = null, bool doNotTrace = true, bool useWhereIsIfFileNotFound = false, TimeSpan? timeout = null)
             {
                 Cmd = cmd;
                 Arguments = arguments;
@@ -355,16 +267,18 @@ namespace Datadog.Trace.Util
                 InputEncoding = inputEncoding;
                 DoNotTrace = doNotTrace;
                 UseWhereIsIfFileNotFound = useWhereIsIfFileNotFound;
+                Timeout = timeout;
             }
         }
 
         public class CommandOutput
         {
-            public CommandOutput(string output, string error, int exitCode)
+            public CommandOutput(string output, string error, int exitCode, bool timedOut)
             {
                 Output = output;
                 Error = error;
                 ExitCode = exitCode;
+                TimedOut = timedOut;
             }
 
             public string Output { get; }
@@ -372,6 +286,8 @@ namespace Datadog.Trace.Util
             public string Error { get; }
 
             public int ExitCode { get; }
+
+            public bool TimedOut { get; }
         }
 
         private static class CurrentProcess

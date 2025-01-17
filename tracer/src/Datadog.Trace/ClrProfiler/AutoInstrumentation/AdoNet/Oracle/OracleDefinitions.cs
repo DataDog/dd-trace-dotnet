@@ -81,3 +81,56 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // object Oracle.DataAccess.Client.OracleCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
     })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.ManagedDataAccess",
+    TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
+    // see comment top most attribute on version numbers
+    MinimumVersion = "2.0.0",
+    MaximumVersion = "4.122.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.ManagedDataAccess",
+    TypeName = "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    // see comment top most attribute on version numbers
+    MinimumVersion = "23.0.0",
+    MaximumVersion = "23.*.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Oracle.DataAccess",
+    TypeName = "Oracle.DataAccess.Client.OracleDataReader",
+    MinimumVersion = "4.122.0",
+    MaximumVersion = "4.122.*",
+    IntegrationName = nameof(IntegrationId.Oracle),
+    DataReaderType = "Oracle.DataAccess.Client.OracleDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Oracle.DataAccess.Client.OracleDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
+    })]

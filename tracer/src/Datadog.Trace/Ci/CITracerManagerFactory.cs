@@ -39,7 +39,7 @@ namespace Datadog.Trace.Ci
         }
 
         protected override TracerManager CreateTracerManagerFrom(
-            ImmutableTracerSettings settings,
+            TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -56,6 +56,7 @@ namespace Datadog.Trace.Ci
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager)
         {
+            telemetry.RecordCiVisibilitySettings(_settings);
             if (_useLockedManager)
             {
                 return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
@@ -64,24 +65,24 @@ namespace Datadog.Trace.Ci
             return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
         }
 
-        protected override ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        protected override ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
         {
             return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, discoveryService, isAgentAvailable: !_settings.Agentless);
         }
 
-        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
             return new CIGitMetadataTagsProvider(telemetry);
         }
 
-        protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)
+        protected override ITraceSampler GetSampler(TracerSettings settings)
         {
             return new CISampler();
         }
 
-        protected override bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings) => false;
+        protected override bool ShouldEnableRemoteConfiguration(TracerSettings settings) => false;
 
-        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
+        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -107,7 +108,7 @@ namespace Datadog.Trace.Ci
             return new ApmAgentWriter(settings, updateSampleRates, discoveryService, traceBufferSize);
         }
 
-        protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+        protected override IDiscoveryService GetDiscoveryService(TracerSettings settings)
             => _discoveryService;
     }
 }

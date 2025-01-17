@@ -8,9 +8,11 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -46,7 +48,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_MatchesCaseInsensitiveHeaders(HeaderCollectionType headersType)
+        internal async Task ExtractHeaderTags_MatchesCaseInsensitiveHeaders(HeaderCollectionType headersType)
         {
             var headers = GetHeadersCollection(headersType);
 
@@ -75,7 +77,8 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -85,7 +88,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(HeaderCollectionType headersType)
+        internal async Task ExtractHeaderTags_EmptyHeaders_AddsNoTags(HeaderCollectionType headersType)
         {
             var headers = GetHeadersCollection(headersType);
 
@@ -99,7 +102,8 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -109,7 +113,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(HeaderCollectionType headersType)
+        internal async Task ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(HeaderCollectionType headersType)
         {
             var headers = GetHeadersCollection(headersType);
 
@@ -122,7 +126,8 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -132,7 +137,7 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(HeaderCollectionType headersType)
+        internal async Task ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(HeaderCollectionType headersType)
         {
             var headers = GetHeadersCollection(headersType);
 
@@ -158,7 +163,8 @@ namespace Datadog.Trace.Tests
 
             // Test
             var processor = new HeaderTagsProcessor();
-            SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerToTagMap, TestPrefix);
             var tagsFromHeader = processor.TagsFromHeader;
 
             // Assert
@@ -169,7 +175,7 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        internal void ExtractHeaderTags_WithUserAgent(bool provideUserAgent)
+        internal async Task ExtractHeaderTags_WithUserAgent(bool provideUserAgent)
         {
             // Initialize constants
             const string uaInHeaders = "A wonderful useragent";
@@ -187,13 +193,15 @@ namespace Datadog.Trace.Tests
 
             // Test no user agent
             var processor = new HeaderTagsProcessor();
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
             if (provideUserAgent)
             {
-                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix, uaInParameter);
+                tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix, uaInParameter);
             }
             else
             {
-                SpanContextPropagator.Instance.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
+                tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref processor, headers, headerTags, TestPrefix);
             }
 
             var tagsFromHeader = processor.TagsFromHeader;

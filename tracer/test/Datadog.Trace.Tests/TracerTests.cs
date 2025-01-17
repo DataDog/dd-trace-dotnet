@@ -401,7 +401,7 @@ namespace Datadog.Trace.Tests
         [InlineData("test")]
         public async Task SetEnv(string env)
         {
-            var settings = new TracerSettings { Environment = env };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, env } });
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -414,7 +414,7 @@ namespace Datadog.Trace.Tests
         [InlineData("1.2.3")]
         public async Task SetVersion(string version)
         {
-            var settings = new TracerSettings { ServiceVersion = version };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceVersion, version } });
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -432,10 +432,7 @@ namespace Datadog.Trace.Tests
         [InlineData("tracerService", "spanService", "spanService")]
         public async Task SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
-            var settings = new TracerSettings()
-            {
-                ServiceName = tracerServiceName,
-            };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, tracerServiceName } });
 
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             ISpan span = tracer.StartSpan("operationName", serviceName: spanServiceName);
@@ -501,8 +498,8 @@ namespace Datadog.Trace.Tests
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
 
-            SpanContextPropagator.Instance.Inject(new PropagationContext(secondSpan.Context, baggage: null), headers);
-            var context = SpanContextPropagator.Instance.Extract(headers);
+            _tracer.TracerManager.SpanContextPropagator.Inject(new PropagationContext(secondSpan.Context, baggage: null), headers);
+            var context = _tracer.TracerManager.SpanContextPropagator.Extract(headers);
             var spanContext = context.SpanContext!;
 
             spanContext.Should().NotBeNull();
@@ -528,10 +525,7 @@ namespace Datadog.Trace.Tests
         {
             var agent = new Mock<IAgentWriter>();
 
-            var settings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false
-            };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             var tracer = new Tracer(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
 
@@ -545,10 +539,7 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false
-            };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -587,10 +578,7 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false
-            };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -677,10 +665,7 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false
-            };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");

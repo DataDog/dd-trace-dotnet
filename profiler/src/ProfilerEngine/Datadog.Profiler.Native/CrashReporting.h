@@ -151,7 +151,7 @@ public:
     int32_t STDMETHODCALLTYPE CrashProcess() override;
 
 protected:
-    int32_t _pid;
+    uint32_t _pid;
     int32_t _signal;
     std::optional<ddog_Error> _error;
     ddog_crasht_CrashInfo _crashInfo;

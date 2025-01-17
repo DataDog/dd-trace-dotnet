@@ -24,6 +24,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -53,7 +54,7 @@ namespace Datadog.Trace
         private volatile bool _isClosing = false;
 
         public TracerManager(
-            ImmutableTracerSettings settings,
+            TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -101,6 +102,8 @@ namespace Datadog.Trace
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
+
+            SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly);
         }
 
         /// <summary>
@@ -128,7 +131,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings { get; }
+        public TracerSettings Settings { get; }
 
         public IAgentWriter AgentWriter { get; }
 
@@ -164,13 +167,15 @@ namespace Datadog.Trace
 
         public PerTraceSettings PerTraceSettings { get; }
 
+        public SpanContextPropagator SpanContextPropagator { get; }
+
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
         /// which use the global <see cref="TracerManager"/>
         /// </summary>
         /// <param name="settings">The settings to use </param>
         /// <param name="factory">The factory to use to create the <see cref="TracerManager"/></param>
-        public static void ReplaceGlobalManager(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        public static void ReplaceGlobalManager(TracerSettings settings, TracerManagerFactory factory)
         {
             TracerManager oldManager;
             TracerManager newManager;
@@ -528,6 +533,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 
+                    writer.WritePropertyName("data_streams_legacy_headers_enabled");
+                    writer.WriteValue(instanceSettings.IsDataStreamsLegacyHeadersEnabled);
+
                     writer.WritePropertyName("span_sampling_rules");
                     writer.WriteValue(instanceSettings.SpanSamplingRules);
 
@@ -634,7 +642,7 @@ namespace Datadog.Trace
         }
 
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
-        private static TracerManager CreateInitializedTracer(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        private static TracerManager CreateInitializedTracer(TracerSettings settings, TracerManagerFactory factory)
         {
             if (_instance is ILockedTracer)
             {

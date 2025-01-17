@@ -67,9 +67,9 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _skippableTestsUrl;
     private readonly Uri _earlyFlakeDetectionTestsUrl;
     private readonly EventPlatformProxySupport _eventPlatformProxySupport;
-    private readonly Task<string> _getRepositoryUrlTask;
-    private readonly Task<string> _getBranchNameTask;
-    private readonly Task<string> _getShaTask;
+    private readonly string _repositoryUrl;
+    private readonly string _branchName;
+    private readonly string _commitSha;
 
     public IntelligentTestRunnerClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
@@ -84,10 +84,10 @@ internal class IntelligentTestRunnerClient
         // Extract custom tests configurations from DD_TAGS
         _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
-        _getRepositoryUrlTask = GetRepositoryUrlAsync();
-        _getBranchNameTask = GetBranchNameAsync();
-        _getShaTask = GetCommitShaAsync();
-        _apiRequestFactory = CIVisibility.GetRequestFactory(new ImmutableTracerSettings(_settings.TracerSettings, true), TimeSpan.FromSeconds(45));
+        _repositoryUrl = GetRepositoryUrl();
+        _branchName = GetBranchName();
+        _commitSha = GetCommitSha();
+        _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
         const string searchCommitsUrlPath = "api/v2/git/repository/search_commits";
@@ -166,25 +166,27 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
     {
-        Dictionary<string, string>? customConfiguration = null;
-        if (globalTags is not null)
+        if (globalTags is null)
         {
-            foreach (var tag in globalTags)
-            {
-                const string testConfigKey = "test.configuration.";
-                if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    var key = tag.Key.Substring(testConfigKey.Length);
-                    if (string.IsNullOrEmpty(key))
-                    {
-                        continue;
-                    }
+            return null;
+        }
 
-                    customConfiguration ??= new Dictionary<string, string>();
-                    customConfiguration[key] = tag.Value;
+        Dictionary<string, string>? customConfiguration = null;
+        foreach (var tag in globalTags)
+        {
+            const string testConfigKey = "test.configuration.";
+            if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
+            {
+                var key = tag.Key.Substring(testConfigKey.Length);
+                if (string.IsNullOrEmpty(key))
+                {
+                    continue;
                 }
+
+                customConfiguration ??= new Dictionary<string, string>();
+                customConfiguration[key] = tag.Value;
             }
         }
 
@@ -221,7 +223,7 @@ internal class IntelligentTestRunnerClient
             // We need to check if the git clone is a shallow one before uploading anything.
             // In the case is a shallow clone we need to reconfigure it to upload the git tree
             // without blobs so no content will be downloaded.
-            var gitRevParseShallowOutput = await RunGitCommandAsync("rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
+            var gitRevParseShallowOutput = RunGitCommand("rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow);
             if (gitRevParseShallowOutput is null)
             {
                 Log.Warning("ITR: 'git rev-parse --is-shallow-repository' command is null");
@@ -239,7 +241,7 @@ internal class IntelligentTestRunnerClient
             Log.Debug("ITR: Unshallowing the repository...");
 
             // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-            var gitShallowLogOutput = await RunGitCommandAsync("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
+            var gitShallowLogOutput = RunGitCommand("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
             if (gitShallowLogOutput is null)
             {
                 Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
@@ -253,24 +255,22 @@ internal class IntelligentTestRunnerClient
             {
                 // Just one commit SHA. Fetching previous commits
 
-                ProcessHelpers.CommandOutput? gitUnshallowOutput;
-
                 // ***
                 // Let's try to unshallow the repo:
                 // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
                 // ***
 
                 // git config --default origin --get clone.defaultRemoteName
-                var originNameOutput = await RunGitCommandAsync("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote).ConfigureAwait(false);
+                var originNameOutput = RunGitCommand("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
                 var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
 
                 // git rev-parse HEAD
-                var headOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
-                var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
+                var headOutput = RunGitCommand("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
+                var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
 
                 // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                 Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+                var gitUnshallowOutput = RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
@@ -282,12 +282,12 @@ internal class IntelligentTestRunnerClient
 
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
-                    headOutput = await RunGitCommandAsync("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
-                    head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
+                    headOutput = RunGitCommand("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead);
+                    head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
 
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
                     Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+                    gitUnshallowOutput = RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
                 }
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
@@ -301,7 +301,7 @@ internal class IntelligentTestRunnerClient
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
                     Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                    await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+                    RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
                 }
             }
         }
@@ -323,22 +323,19 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Getting settings...");
         var framework = FrameworkDescription.Instance;
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var branchName = await _getBranchNameTask.ConfigureAwait(false);
-        var currentSha = await _getShaTask.ConfigureAwait(false);
-        if (string.IsNullOrEmpty(repository))
+        if (string.IsNullOrEmpty(_repositoryUrl))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return default;
         }
 
-        if (string.IsNullOrEmpty(branchName))
+        if (string.IsNullOrEmpty(_branchName))
         {
             Log.Warning("ITR: 'git branch --show-current' command returned null or empty");
             return default;
         }
 
-        if (string.IsNullOrEmpty(currentSha))
+        if (string.IsNullOrEmpty(_commitSha))
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
             return default;
@@ -346,14 +343,14 @@ internal class IntelligentTestRunnerClient
 
         var query = new DataEnvelope<Data<SettingsQuery>>(
             new Data<SettingsQuery>(
-                currentSha,
+                _commitSha,
                 SettingsType,
                 new SettingsQuery(
                     _serviceName,
                     _environment,
-                    repository,
-                    branchName,
-                    currentSha,
+                    _repositoryUrl,
+                    _branchName,
+                    _commitSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
                         CIVisibility.GetOperatingSystemVersion(),
@@ -413,14 +410,21 @@ internal class IntelligentTestRunnerClient
                 var settingsResponse = deserializedResult.Data?.Attributes ?? default;
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
                 {
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
-                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled,
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled,
-                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrDisabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrDisabled,
+                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrEnabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrEnabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrEnabled,
+                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_AtrDisabled,
                 });
                 return settingsResponse;
             }
@@ -435,15 +439,13 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var currentSha = await _getShaTask.ConfigureAwait(false);
-        if (string.IsNullOrEmpty(repository))
+        if (string.IsNullOrEmpty(_repositoryUrl))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return new SkippableTestsResponse();
         }
 
-        if (string.IsNullOrEmpty(currentSha))
+        if (string.IsNullOrEmpty(_commitSha))
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
             return default;
@@ -456,8 +458,8 @@ internal class IntelligentTestRunnerClient
                 new SkippableTestsQuery(
                     _serviceName,
                     _environment,
-                    repository,
-                    currentSha,
+                    _repositoryUrl,
+                    _commitSha,
                     new TestsConfigurations(
                         framework.OSPlatform,
                         CIVisibility.GetOperatingSystemVersion(),
@@ -518,7 +520,7 @@ internal class IntelligentTestRunnerClient
                 var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent!);
                 if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
                 {
-                    return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, Array.Empty<SkippableTest>());
+                    return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, []);
                 }
 
                 var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
@@ -571,20 +573,19 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
 
-        var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToInclude, commitsToExclude).ConfigureAwait(false);
-        if (packFilesObject is null || packFilesObject.Files.Length == 0)
+        var packFilesObject = GetObjectsPackFileFromWorkingDirectory(commitsToInclude, commitsToExclude);
+        if (packFilesObject.Files.Length == 0)
         {
             return 0;
         }
 
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        if (string.IsNullOrEmpty(repository))
+        if (string.IsNullOrEmpty(_repositoryUrl))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return 0;
         }
 
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), _repositoryUrl), SerializerSettings);
         Log.Debug("ITR: ObjPack.JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -679,15 +680,13 @@ internal class IntelligentTestRunnerClient
     {
         Log.Debug("ITR: Getting early flake detection tests...");
         var framework = FrameworkDescription.Instance;
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var currentSha = await _getShaTask.ConfigureAwait(false);
-        if (string.IsNullOrEmpty(repository))
+        if (string.IsNullOrEmpty(_repositoryUrl))
         {
             Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
             return default;
         }
 
-        if (string.IsNullOrEmpty(currentSha))
+        if (string.IsNullOrEmpty(_commitSha))
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
             return default;
@@ -695,12 +694,12 @@ internal class IntelligentTestRunnerClient
 
         var query = new DataEnvelope<Data<EarlyFlakeDetectionQuery>>(
             new Data<EarlyFlakeDetectionQuery>(
-                currentSha,
+                _commitSha,
                 EarlyFlakeDetectionRequestType,
                 new EarlyFlakeDetectionQuery(
                     _serviceName,
                     _environment,
-                    repository,
+                    _repositoryUrl,
                     new TestsConfigurations(
                         framework.OSPlatform,
                         CIVisibility.GetOperatingSystemVersion(),
@@ -799,7 +798,7 @@ internal class IntelligentTestRunnerClient
 
     private async Task<SearchCommitResponse> GetCommitsAsync()
     {
-        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
+        var gitLogOutput = RunGitCommand("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
         if (gitLogOutput is null)
         {
             Log.Warning("ITR: 'git log...' command is null");
@@ -821,7 +820,7 @@ internal class IntelligentTestRunnerClient
         {
             if (commits is null)
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             Log.Debug("ITR: Searching commits...");
@@ -829,19 +828,18 @@ internal class IntelligentTestRunnerClient
             Data<object>[] commitRequests;
             if (commits.Length == 0)
             {
-                commitRequests = Array.Empty<Data<object>>();
+                commitRequests = [];
             }
             else
             {
                 commitRequests = new Data<object>[commits.Length];
                 for (var i = 0; i < commits.Length; i++)
                 {
-                    commitRequests[i] = new Data<object>(commits[i], CommitType, default);
+                    commitRequests[i] = new Data<object>(commits[i], CommitType, null);
                 }
             }
 
-            var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-            var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
+            var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, _repositoryUrl), SerializerSettings);
             Log.Debug("ITR: Commits.JSON RQ = {Json}", jsonPushedSha);
             var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -884,13 +882,13 @@ internal class IntelligentTestRunnerClient
                     Log.Debug("ITR: Commits.JSON RS = {Json}", responseContent);
                     if (string.IsNullOrEmpty(responseContent))
                     {
-                        return Array.Empty<string>();
+                        return [];
                     }
 
                     var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
                     if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
                     {
-                        return Array.Empty<string>();
+                        return [];
                     }
 
                     var stringArray = new string[deserializedResult.Data.Length];
@@ -918,21 +916,21 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private async Task<ObjectPackFilesResult> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToInclude, string[]? commitsToExclude)
+    private ObjectPackFilesResult GetObjectsPackFileFromWorkingDirectory(string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("ITR: Getting objects...");
-        commitsToInclude ??= Array.Empty<string>();
-        commitsToExclude ??= Array.Empty<string>();
+        commitsToInclude ??= [];
+        commitsToExclude ??= [];
         var temporaryFolder = string.Empty;
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
-        var getObjectsCommand = await RunGitCommandAsync(getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects).ConfigureAwait(false);
+        var getObjectsCommand = RunGitCommand(getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
             // If not objects has been returned we skip the pack + upload.
             Log.Debug("ITR: No objects were returned from the git rev-list command.");
-            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+            return new ObjectPackFilesResult([], temporaryFolder);
         }
 
         // Sanitize object list (on some cases we get a "fatal: expected object ID, got garbage" error because the object list has invalid escape chars)
@@ -951,18 +949,18 @@ internal class IntelligentTestRunnerClient
         {
             // If not objects has been returned we skip the pack + upload.
             Log.Debug("ITR: No valid objects were returned from the git rev-list command.");
-            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+            return new ObjectPackFilesResult([], temporaryFolder);
         }
 
         objectsOutput = string.Join("\n", lstObjectsSha) + "\n";
 
         Log.Debug<int>("ITR: Packing {NumObjects} objects...", lstObjectsSha.Count);
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput).ConfigureAwait(false);
+        var packObjectsResultCommand = RunGitCommand(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
-            return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+            return new ObjectPackFilesResult([], temporaryFolder);
         }
 
         if (packObjectsResultCommand.ExitCode != 0)
@@ -981,11 +979,11 @@ internal class IntelligentTestRunnerClient
 
                 temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
                 getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-                packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
+                packObjectsResultCommand = RunGitCommand(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output);
                 if (packObjectsResultCommand is null)
                 {
                     Log.Warning("ITR: 'git pack-objects...' command is null");
-                    return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+                    return new ObjectPackFilesResult([], temporaryFolder);
                 }
             }
 
@@ -1133,31 +1131,31 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private async Task<string> GetRepositoryUrlAsync()
+    private string GetRepositoryUrl()
     {
         if (CIEnvironmentValues.Instance.Repository is { Length: > 0 } repository)
         {
             return repository;
         }
 
-        var gitOutput = await RunGitCommandAsync("config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository).ConfigureAwait(false);
+        var gitOutput = RunGitCommand("config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
-    private async Task<string> GetBranchNameAsync()
+    private string GetBranchName()
     {
         if (CIEnvironmentValues.Instance.Branch is { Length: > 0 } branch)
         {
             return branch;
         }
 
-        var gitOutput = await RunGitCommandAsync("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch).ConfigureAwait(false);
+        var gitOutput = RunGitCommand("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
-    private async Task<string> GetCommitShaAsync()
+    private string GetCommitSha()
     {
-        var gitOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+        var gitOutput = RunGitCommand("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
         var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
         if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
         {
@@ -1167,13 +1165,13 @@ internal class IntelligentTestRunnerClient
         return gitSha;
     }
 
-    private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
+    private ProcessHelpers.CommandOutput? RunGitCommand(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            var gitOutput = await ProcessHelpers.RunCommandAsync(
+            var sw = Stopwatch.StartNew();
+            var gitOutput = ProcessHelpers.RunCommand(
                                 new ProcessHelpers.Command(
                                     "git",
                                     arguments,
@@ -1181,8 +1179,9 @@ internal class IntelligentTestRunnerClient
                                     outputEncoding: Encoding.Default,
                                     errorEncoding: Encoding.Default,
                                     inputEncoding: Encoding.Default,
-                                    useWhereIsIfFileNotFound: true),
-                                input).ConfigureAwait(false);
+                                    useWhereIsIfFileNotFound: true,
+                                    timeout: TimeSpan.FromMinutes(5)),
+                                input);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
             if (gitOutput is null)
             {
@@ -1212,8 +1211,8 @@ internal class IntelligentTestRunnerClient
 
         public SearchCommitResponse(string[]? localCommits, string[]? remoteCommits, bool isOk)
         {
-            LocalCommits = localCommits ?? Array.Empty<string>();
-            RemoteCommits = remoteCommits ?? Array.Empty<string>();
+            LocalCommits = localCommits ?? [];
+            RemoteCommits = remoteCommits ?? [];
             IsOk = isOk;
         }
 
@@ -1327,7 +1326,7 @@ internal class IntelligentTestRunnerClient
         public SkippableTestsResponse()
         {
             CorrelationId = null;
-            Tests = Array.Empty<SkippableTest>();
+            Tests = [];
         }
 
         public SkippableTestsResponse(string? correlationId, SkippableTest[] tests)
