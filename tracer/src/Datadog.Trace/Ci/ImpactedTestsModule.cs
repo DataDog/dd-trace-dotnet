@@ -52,7 +52,9 @@ internal static class ImpactedTestsModule
 
                 foreach (var testFile in testFiles)
                 {
-                    var modifiedFile = modifiedFiles.FirstOrDefault(x => x.Path == testFile.Path);
+                    if (string.IsNullOrEmpty(testFile.Path)) { continue; }
+
+                    var modifiedFile = modifiedFiles.FirstOrDefault(x => testFile.Path!.EndsWith(x.Path!));
                     if (modifiedFile is not null)
                     {
                         Log.Debug("DiffFile found {File} ...", modifiedFile.Path);
