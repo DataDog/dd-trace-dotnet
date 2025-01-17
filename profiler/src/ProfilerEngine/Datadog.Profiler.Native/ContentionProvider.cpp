@@ -132,6 +132,9 @@ void ContentionProvider::OnClassLoaded(ClassID classId)
         SetClassIdIfNeeded(_semaphoreClassID, "System.Threading.Semaphore", classId, typeName);
         SetClassIdIfNeeded(_autoResetEventClassID, "System.Threading.AutoResetEvent", classId, typeName);
         SetClassIdIfNeeded(_manualResetEventClassID, "System.Threading.ManualResetEvent", classId, typeName);
+        SetClassIdIfNeeded(_eventWaitHandleClassID, "System.Threading.EventWaitHandle", classId, typeName);
+        SetClassIdIfNeeded(_waitHandleClassID, "System.Threading.WaitHandle", classId, typeName);
+        SetClassIdIfNeeded(_objectClassID, "System.Object", classId, typeName);
     }
 }
 
@@ -143,7 +146,7 @@ void ContentionProvider::SetClassIdIfNeeded(ClassID& field, const char* expected
         {
             field = classId;
 
-            std::cout << "   " << expectedTypeName << " = " << std::hex << "0x" << classId << std::endl;
+            //std::cout << "   " << expectedTypeName << " = " << std::hex << "0x" << classId << std::endl;
         }
     }
 }
@@ -234,14 +237,14 @@ void ContentionProvider::OnWaitStart(std::chrono::nanoseconds timestamp, uintptr
     {
         ClassID classId = *reinterpret_cast<ClassID*>(associatedObjectId);
 
-        std::cout << "   WaitStart(" << std::hex << "0x" << associatedObjectId << ") for classID = 0x" << classId << std::endl;
+        //std::cout << "   WaitStart(" << std::hex << "0x" << associatedObjectId << ") for classID = 0x" << classId << std::endl;
 
         currentThreadInfo->SetWaitType(GetWaitType(classId));
     }
     else
     {
         currentThreadInfo->SetWaitType(WaitType::Unknown);
-        std::cout << "   WaitStart()" << std::endl;
+        //std::cout << "   WaitStart()" << std::endl;
     }
 }
 

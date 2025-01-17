@@ -96,4 +96,7 @@ private:
     ClassID _semaphoreClassID;
     ClassID _autoResetEventClassID;
     ClassID _manualResetEventClassID;
+    ClassID _eventWaitHandleClassID;
+    ClassID _waitHandleClassID;
+    ClassID _objectClassID;
 };

@@ -206,6 +206,8 @@ public:
     MOCK_METHOD(void, OnContention, (std::chrono::nanoseconds contentionDurationNs), (override));
     MOCK_METHOD(void, OnContention, (std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDurationNs, const std::vector<uintptr_t>& stack), (override));
     MOCK_METHOD(void, SetBlockingThread, (uint64_t osThreadId), (override));
+    MOCK_METHOD(void, OnWaitStart, (std::chrono::nanoseconds timestamp, uintptr_t associatedObjectId), (override));
+    MOCK_METHOD(void, OnWaitStop, (std::chrono::nanoseconds timestamp), (override));
 };
 
 class MockAllocationListener : public IAllocationsListener

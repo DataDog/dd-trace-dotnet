@@ -12,23 +12,35 @@ namespace Samples.WaitHandles
 {
     public class Program
     {
-        static AutoResetEvent autoResetEvent = new AutoResetEvent(false);
-        static ManualResetEvent manualResetEvent = new ManualResetEvent(false);
-        static Mutex mutex = new Mutex();
-        static Semaphore semaphore = new Semaphore(1, 1);
+        private static AutoResetEvent autoResetEvent = new AutoResetEvent(false);
+        private static ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+        private static ManualResetEventSlim manualResetEventSlim = new ManualResetEventSlim(false, 20);  // default is 10
+        private static Mutex mutex = new Mutex();
+        private static Semaphore semaphore = new Semaphore(1, 1);
+        private static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
+        private static ReaderWriterLock rwlock = new ReaderWriterLock();
+        private static ReaderWriterLockSlim rwlockSlim = new ReaderWriterLockSlim();
 
-        public static void Main()
+        public static void Main(string[] args)
         {
+            if (args.Length != 1)
+            {
+                Console.WriteLine("Usage: WaitHandles <iterations>");
+                return;
+            }
+
+            int iterations = int.Parse(args[0]);
+
             Console.WriteLine($"pid = {Process.GetCurrentProcess().Id}");
             Console.WriteLine("Press Enter to start the threads...");
-            //Console.ReadLine();
+            // Console.ReadLine();
 
             // Create and start threads for different synchronization scenarios
             Console.WriteLine();
             Console.WriteLine("Starting threads...");
 
             Stopwatch sw = new Stopwatch();
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < iterations; i++)
             {
                 sw.Restart();
 
@@ -43,11 +55,23 @@ namespace Samples.WaitHandles
                 var manualResetEventThread = new Thread(ManualResetEventThread);
                 manualResetEventThread.Start();
 
+                var manualResetEventSlimThread = new Thread(ManualResetEventSlimThread);
+                manualResetEventSlimThread.Start();
+
                 var mutexThread = new Thread(MutexThread);
                 mutexThread.Start();
 
                 var semaphoreThread = new Thread(SemaphoreThread);
                 semaphoreThread.Start();
+
+                var semaphoreSlimThread = new Thread(SemaphoreSlimThread);
+                semaphoreSlimThread.Start();
+
+                var rwLockThread = new Thread(ReaderWriterLockThread);
+                rwLockThread.Start();
+
+                var rwLockSlimThread = new Thread(ReaderWriterLockSlimThread);
+                rwLockSlimThread.Start();
 
                 // wait for all threads to finish
                 owningThread.Join();
@@ -55,6 +79,9 @@ namespace Samples.WaitHandles
                 manualResetEventThread.Join();
                 mutexThread.Join();
                 semaphoreThread.Join();
+                semaphoreSlimThread.Join();
+                rwLockThread.Join();
+                rwLockSlimThread.Join();
 
                 sw.Stop();
                 Console.WriteLine("___________________________________________");
@@ -71,6 +98,9 @@ namespace Samples.WaitHandles
             Console.WriteLine("___________________________________________");
             mutex.WaitOne();
             semaphore.WaitOne();
+            semaphoreSlim.Wait();
+            rwlock.AcquireWriterLock(5000);
+            rwlockSlim.EnterWriteLock();
 
             Thread.Sleep(3000);
             Console.WriteLine();
@@ -78,8 +108,13 @@ namespace Samples.WaitHandles
 
             mutex.ReleaseMutex();
             semaphore.Release(1);
+            semaphoreSlim.Release(1);
+            rwlock.ReleaseWriterLock();
+            rwlockSlim.ExitWriteLock();
+
             autoResetEvent.Set();
             manualResetEvent.Set();
+            manualResetEventSlim.Set();
         }
 
         private static void AutoResetEventThread()
@@ -97,6 +132,14 @@ namespace Samples.WaitHandles
             Console.WriteLine("    <-- ManualResetEvent");
         }
 
+        private static void ManualResetEventSlimThread()
+        {
+            Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for ManualResetEventSlim...");
+            manualResetEventSlim.Wait();
+            manualResetEventSlim.Reset();
+            Console.WriteLine("    <-- ManualResetEventSlim");
+        }
+
         private static void MutexThread()
         {
             Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for Mutex...");
@@ -111,6 +154,30 @@ namespace Samples.WaitHandles
             semaphore.WaitOne();
             semaphore.Release(1);
             Console.WriteLine("    <-- Semaphore");
+        }
+
+        private static void SemaphoreSlimThread()
+        {
+            Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for SemaphoreSlim");
+            semaphoreSlim.Wait();
+            semaphoreSlim.Release(1);
+            Console.WriteLine("    <-- SemaphoreSlim");
+        }
+
+        private static void ReaderWriterLockThread()
+        {
+            Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for ReaderWriteLock");
+            rwlock.AcquireReaderLock(5000);
+            rwlock.ReleaseReaderLock();
+            Console.WriteLine("    <-- ReaderWriterLock");
+        }
+
+        private static void ReaderWriterLockSlimThread()
+        {
+            Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for ReaderWriteLockSlim");
+            rwlockSlim.EnterReadLock();
+            rwlockSlim.ExitReadLock();
+            Console.WriteLine("    <-- ReaderWriterLockSlim");
         }
 
         [DllImport("kernel32.dll")]
