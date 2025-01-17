@@ -1298,8 +1298,8 @@ get_download_link_from_aka_ms() {
 get_feeds_to_use()
 {
     feeds=(
-    "https://dotnetcli.azureedge.net/dotnet"
-    "https://dotnetbuilds.azureedge.net/public"
+    "https://builds.dotnet.microsoft.com/dotnet"
+    "https://ci.dot.net/public"
     )
 
     if [[ -n "$azure_feed" ]]; then
@@ -1308,8 +1308,8 @@ get_feeds_to_use()
 
     if [[ "$no_cdn" == "true" ]]; then
         feeds=(
-        "https://dotnetcli.blob.core.windows.net/dotnet"
-        "https://dotnetbuilds.blob.core.windows.net/public"
+        "https://builds.dotnet.microsoft.com/dotnet"
+        "https://ci.dot.net/public"
         )
 
         if [[ -n "$uncached_feed" ]]; then
