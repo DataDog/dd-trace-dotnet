@@ -77,32 +77,41 @@ namespace Datadog.Trace.TestHelpers
             return null;
         }
 
+        protected virtual Task RunTestCollectionsCallback(IMessageSink diagnosticsMessageSink, IEnumerable<IXunitTestCase> testCases)
+        {
+            return Task.CompletedTask;
+        }
+
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
-            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink, RunTestCollectionsCallback);
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor
         {
-            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink)
+            private readonly Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> _runTestCollectionsCallback;
+
+            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink, Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> runTestCollectionsCallback)
                 : base(assemblyName, sourceInformationProvider, diagnosticMessageSink)
             {
+                _runTestCollectionsCallback = runTestCollectionsCallback;
             }
 
             protected override async void RunTestCases(IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
             {
-                using (var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions))
-                {
-                    await assemblyRunner.RunAsync();
-                }
+                using var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions, _runTestCollectionsCallback);
+                await assemblyRunner.RunAsync();
             }
         }
 
         private class CustomAssemblyRunner : XunitTestAssemblyRunner
         {
-            public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
+            private readonly Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> _runTestCollectionsCallback;
+
+            public CustomAssemblyRunner(ITestAssembly testAssembly, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions, Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> runTestCollectionsCallback)
                 : base(testAssembly, testCases, diagnosticMessageSink, executionMessageSink, executionOptions)
             {
+                _runTestCollectionsCallback = runTestCollectionsCallback;
             }
 
             protected override async Task<RunSummary> RunTestCollectionsAsync(IMessageBus messageBus, CancellationTokenSource cancellationTokenSource)
@@ -117,10 +126,26 @@ namespace Datadog.Trace.TestHelpers
                     })
                     .ToList();
 
+                if (Environment.GetEnvironmentVariable("RANDOM_SEED") is not { } environmentSeed
+                    || !int.TryParse(environmentSeed, out var seed))
+                {
+                    seed = new Random().Next();
+                }
+
+                DiagnosticMessageSink.OnMessage(new DiagnosticMessage($"Using seed {seed} to randomize tests order"));
+
+                var random = new Random(seed);
+                Shuffle(collections, random);
+
+                foreach (var collection in collections)
+                {
+                    Shuffle(collection.TestCases, random);
+                }
+
+                _runTestCollectionsCallback?.Invoke(DiagnosticMessageSink, collections.SelectMany(c => c.TestCases));
+
                 var summary = new RunSummary();
-
                 using var runner = new ConcurrentRunner();
-
                 var tasks = new List<Task<RunSummary>>();
 
                 foreach (var test in collections.Where(t => !t.DisableParallelization))
@@ -160,6 +185,20 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 return attr?.GetNamedArgument<bool>(nameof(CollectionDefinitionAttribute.DisableParallelization)) is true;
+            }
+
+            private static void Shuffle<T>(IList<T> list, Random rng)
+            {
+                int n = list.Count;
+
+                while (n > 1)
+                {
+                    n--;
+                    int k = rng.Next(n + 1);
+                    var value = list[k];
+                    list[k] = list[n];
+                    list[n] = value;
+                }
             }
         }
 

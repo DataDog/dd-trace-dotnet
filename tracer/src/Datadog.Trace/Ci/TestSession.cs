@@ -548,7 +548,7 @@ public sealed class TestSession
             [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
         };
 
-        SpanContextPropagator.Instance.Inject(
+        Tracer.Instance.TracerManager.SpanContextPropagator.Inject(
             new PropagationContext(span.Context, Baggage.Current),
             (IDictionary)environmentVariables,
             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));

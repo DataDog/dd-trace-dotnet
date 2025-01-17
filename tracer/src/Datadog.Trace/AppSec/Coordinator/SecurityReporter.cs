@@ -1,4 +1,4 @@
-﻿// <copyright file="SecurityReporter.cs" company="Datadog">
+// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -98,7 +98,7 @@ internal partial class SecurityReporter
         _httpTransport.DisposeAdditiveContext();
     }
 
-    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
+    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
 
     private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {

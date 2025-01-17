@@ -455,7 +455,7 @@ partial class Build
             assembly = Assembly.LoadFile(testAssemblyPath);
             return true;
         }
-        catch (BadImageFormatException e)
+        catch (BadImageFormatException)
         {
             // ignore
         }
