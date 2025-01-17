@@ -191,7 +191,7 @@
       <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
       <!-- VCPKG setup -->
       <VcpkgEnableManifest>true</VcpkgEnableManifest>
-      <VcpkgUseStatic>true</VcpkgUseStatic>
+      <VcpkgUseStatic>false</VcpkgUseStatic>
       <VcpkgTriplet>$(Platform)-windows</VcpkgTriplet>
     </PropertyGroup>
 
