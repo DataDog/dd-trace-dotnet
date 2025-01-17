@@ -192,8 +192,8 @@ public abstract class AzureFunctionsTests : TestHelper
     }
 #endif
 
-// v1 is only supported on .NET 6 and 7
-#if NET6_0 || NET7_0
+// v1 is only supported on .NET 6 - .NET 8 - they won't build on .NET 9
+#if NET6_0 || NET7_0 || NET8_0
     [UsesVerify]
     [Collection(nameof(AzureFunctionsTestsCollection))]
     public class IsolatedRuntimeV4SdkV1 : AzureFunctionsTests
@@ -219,6 +219,39 @@ public abstract class AzureFunctionsTests : TestHelper
                 using var s = new AssertionScope();
 
                 await AssertIsolatedSpans(spans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
+            }
+        }
+    }
+
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4AspNetCoreV1 : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4AspNetCoreV1(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.AspNetCore.SdkV1", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 26;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                var filteredSpans = FilterOutSocketsHttpHandler(spans);
+
+                using var s = new AssertionScope();
+
+                await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
+
+                spans.Count.Should().Be(expectedSpanCount);
             }
         }
     }
@@ -289,39 +322,6 @@ public abstract class AzureFunctionsTests : TestHelper
                 using var s = new AssertionScope();
 
                 await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
-
-                spans.Count.Should().Be(expectedSpanCount);
-            }
-        }
-    }
-
-    [UsesVerify]
-    [Collection(nameof(AzureFunctionsTestsCollection))]
-    public class IsolatedRuntimeV4AspNetCoreV1 : AzureFunctionsTests
-    {
-        public IsolatedRuntimeV4AspNetCoreV1(ITestOutputHelper output)
-            : base("AzureFunctions.V4Isolated.AspNetCore.SdkV1", output)
-        {
-            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "AzureFunctions")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
-        {
-            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                const int expectedSpanCount = 26;
-                var spans = agent.WaitForSpans(expectedSpanCount);
-
-                var filteredSpans = FilterOutSocketsHttpHandler(spans);
-
-                using var s = new AssertionScope();
-
-                await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
 
                 spans.Count.Should().Be(expectedSpanCount);
             }
