@@ -117,6 +117,20 @@ public class RaspWafTests : WafLibraryRequiredTest
         });
     }
 
+    [Fact]
+    public void GivenWafInstance_WhenGetKnownAddressesSecuential_ThenResultIsOk()
+    {
+        var args = CreateArgs("paramValue");
+        var context = InitWaf(true, "rasp-rule-set.json", args, out var waf);
+
+        for (int i = 0; i < 1000; i++)
+        {
+            var addresses = waf.GetKnownAddresses();
+            addresses.Should().NotBeNull();
+            addresses.Count().Should().BeGreaterThan(0);
+        }
+    }
+
     private void EnableDebugInfo(bool enable)
     {
         if (enable)
