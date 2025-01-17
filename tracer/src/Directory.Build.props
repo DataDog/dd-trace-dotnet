@@ -29,6 +29,13 @@
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
+    <!-- VCPKG setup -->
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+    <VcpkgTriplet>$(Platform)-windows</VcpkgTriplet>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- NuGet -->
     <None Include="$(MSBuildThisFileDirectory)\..\..\datadog-logo-256x256.png" Pack="true" Visible="false" PackagePath="packageIcon.png" />
