@@ -15,6 +15,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
 using System.Net.Mail;
+using System.Threading;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -305,6 +306,63 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("The provided directory could not be opened");
             }
+        }
+
+        // This method actually performs some file operations after the request has been normally closed.
+        [Route("GetFileContentThread")]
+        public ActionResult GetFileContentThread(string file, int numThreads = 100, int delayPerThread = 50)
+        {
+            for (int i = 0; i < numThreads; i++)
+            {
+                var thread = new Thread(() => { GetFileAux(file, i * delayPerThread); });
+                thread.Start();
+            }
+
+            return Content("Ok");
+        }
+
+        private void GetFileAux(string file, int i)
+        {
+            try
+            {
+                Thread.Sleep(i);
+                GetFileContent(file);
+            }
+            catch (Exception ex)
+            {
+                if (!ex.Message.Contains("BlockException"))
+                {
+                    throw;
+                }
+            }
+        }
+
+        // This method tests some edge conditions that can happen
+        [Route("GetFileContentEdgeConditions")]
+        public ActionResult GetFileContentEdgeConditions(string file, bool endRequest = true, bool setStatusCode = true, bool setContent = true)
+        {
+            if (setStatusCode)
+            {
+                Response.StatusCode = 200;
+            }
+
+            if (setContent)
+            {
+                Response.ContentType = "text/plain";
+                Response.Write("This is a dummy content.");
+            }
+
+            if (endRequest)
+            {
+                Response.End();
+                Response.Close();
+                HttpContext.ApplicationInstance.CompleteRequest();
+            }
+
+            // call RASP and IAST
+            GetFileAux(file, 0);
+
+            return Content("Ok");
         }
 
         [Route("GetFileContent")]

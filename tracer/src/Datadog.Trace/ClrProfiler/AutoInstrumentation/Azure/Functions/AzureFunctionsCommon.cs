@@ -296,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // the existing datadog headers
                 var useNullableHeaders = !string.IsNullOrEmpty(useNullableHeadersCapability);
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                SpanContextPropagator.Instance.Inject(context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
+                tracer.TracerManager.SpanContextPropagator.Inject(context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
             }
         }
 
@@ -342,7 +342,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                return SpanContextPropagator.Instance.Extract(new HttpHeadersCollection(httpRequest.Headers));
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
             }
             catch (Exception ex)
             {

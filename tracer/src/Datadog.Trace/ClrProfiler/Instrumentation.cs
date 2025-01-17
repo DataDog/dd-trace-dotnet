@@ -336,6 +336,19 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing activity listener");
             }
 
+            try
+            {
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                {
+                    Log.Debug("Initializing OpenTelemetry components.");
+                    OpenTelemetry.Sdk.Initialize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing OpenTelemetry components.");
+            }
+
             Log.Debug("Initialization of non native parts finished.");
 
             var tracer = Tracer.Instance;
