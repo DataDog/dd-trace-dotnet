@@ -6,7 +6,10 @@
 
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
@@ -28,28 +31,67 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 public static class XUnitTestAssemblyRunnerRunV3Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
+        where TContext : ITestAssemblyRunnerContextV3
     {
+        Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
         if (!XUnitIntegration.IsEnabled || instance is null)
         {
             return CallTargetState.GetDefault();
         }
 
-        Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
+        if (context.TestAssembly.AssemblyName is { } assemblyName)
+        {
+            var testBundleString = new AssemblyName(assemblyName).Name ?? string.Empty;
+
+            // Extract the version of the framework from the TestClassRunner base class
+            var frameworkType = instance.GetType();
+            while (frameworkType.IsAbstract == false)
+            {
+                if (frameworkType.BaseType is { } baseType)
+                {
+                    frameworkType = baseType;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            CIVisibility.WaitForSkippableTaskToFinish();
+            var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnitV3, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
+            module.EnableIpcClient();
+            return new CallTargetState(null, module);
+        }
+
         return CallTargetState.GetDefault();
     }
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
     {
         Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnMethodEnd, instance: {0}, context: {1}", instance, returnValue);
+        if (state.State == TestModule.Current)
+        {
+            // Restore the AsyncLocal set
+            // This is used to mimic the ExecutionContext copy from the StateMachine
+            // CallTarget integrations does this automatically when using a normal `Scope`
+            // in this case we have to do it manually.
+            TestModule.Current = null;
+        }
+
         return new CallTargetReturn<TResult>(returnValue);
     }
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        await Task.Yield();
         Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnAsyncMethodEnd, instance: {0}, context: {1}", instance, returnValue);
+        if (state.State is TestModule testModule)
+        {
+            await testModule.CloseAsync().ConfigureAwait(false);
+
+            // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
+            CIVisibility.Close();
+        }
+
         return returnValue;
     }
 }
-
-#pragma warning disable SA1402
