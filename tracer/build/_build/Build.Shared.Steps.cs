@@ -65,6 +65,7 @@ partial class Build
                 .SetMSBuildPath()
                 .DisableRestore()
                 .SetMaxCpuCount(null)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), x=> x.SetProcessEnvironmentVariable("NukeNugetPackageRestorePath", NugetPackageDirectory))
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
