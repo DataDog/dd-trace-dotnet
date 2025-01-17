@@ -28,7 +28,6 @@
       </AssemblyAttribute>
     </ItemGroup>
   </Target>
-
     <Target Name="PrepareDeployDirectory" AfterTargets="Build">
 
         <ItemGroup>
