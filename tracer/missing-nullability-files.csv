@@ -682,6 +682,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/DirectSubmissi
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/LogsInjection/LogEventProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/LogsInjection/LoggerDispatchInstrumentation.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/Serilog/LogsInjection/SerilogLogPropertyHelper.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/XUnit/V3/XUnitTestOutputHelperQueueTestOutputV3Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Grpc/GrpcLegacy/Client/DuckTypes/ClientSideStatusStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Formatting/NLogDirectSubmissionLogEvent.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/NLog/DirectSubmission/Formatting/NLogLogFormatter.cs
