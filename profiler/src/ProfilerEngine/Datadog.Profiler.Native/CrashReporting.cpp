@@ -78,6 +78,7 @@ int32_t CrashReporting::Initialize()
     }
 
     return AddTag("severity", "crash");
+    return AddTag("is_crash", "true");
 }
 
 void CrashReporting::SetLastError(ddog_Error error)
