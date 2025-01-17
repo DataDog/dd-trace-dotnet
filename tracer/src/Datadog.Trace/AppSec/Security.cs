@@ -54,6 +54,7 @@ namespace Datadog.Trace.AppSec
         private string? _blockedHtmlTemplateCache;
         private string? _blockedJsonTemplateCache;
         private HashSet<string>? _activeAddresses;
+        private bool _activeAddressesInitialized = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -640,6 +641,7 @@ namespace Datadog.Trace.AppSec
                 {
                     _activeAddressesLocker.EnterWriteLock();
                     _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                    _activeAddressesInitialized = true;
                 }
                 finally
                 {
@@ -670,16 +672,15 @@ namespace Datadog.Trace.AppSec
 
             if (_waf?.IsKnowAddressesSuported() == true)
             {
+                // If we have not updated the active addresses yet, we will do it now
+                if (!_activeAddressesInitialized)
+                {
+                    UpdateActiveAddresses();
+                }
+
                 try
                 {
                     _activeAddressesLocker.EnterReadLock();
-
-                    // If we have not updated the active addresses yet, we will do it now
-                    if (_activeAddresses is null)
-                    {
-                        UpdateActiveAddresses();
-                    }
-
                     return _activeAddresses?.Contains(address) ?? false;
                 }
                 finally
