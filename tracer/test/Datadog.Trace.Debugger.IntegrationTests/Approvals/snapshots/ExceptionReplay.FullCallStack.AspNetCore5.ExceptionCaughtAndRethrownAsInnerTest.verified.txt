@@ -279,15 +279,41 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": {
+                        "type": "String",
+                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
+                      }
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -295,8 +321,8 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
               }
             },
             "staticFields": {
@@ -456,14 +482,14 @@
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -505,12 +531,12 @@
           "return": {
             "arguments": {
               "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "ExceptionCaughtAndRethrownAsInnerTest",
+                "value": "ExceptionCaughtAndRethrownAsInnerTest"
               },
               "testClassName": {
                 "type": "String",
-                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest"
               }
             },
             "locals": {
@@ -522,15 +548,41 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": {
+                        "type": "String",
+                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
+                      }
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -538,19 +590,19 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -591,96 +643,9 @@
         "captures": {
           "return": {
             "arguments": {
-              "str": {
-                "type": "String",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              },
-              "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233079"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
-              }
-            },
-            "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "SupportedFrame",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "SupportedFrame",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
               "testName": {
                 "type": "String",
-                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest"
               },
               "this": {
                 "fields": {
@@ -915,15 +880,41 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": {
+                        "type": "String",
+                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
+                      }
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -931,23 +922,23 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
               },
               "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "ExceptionCaughtAndRethrownAsInnerTest",
+                "value": "ExceptionCaughtAndRethrownAsInnerTest"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -989,8 +980,8 @@
           "return": {
             "arguments": {
               "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "ExceptionCaughtAndRethrownAsInnerTest",
+                "value": "ExceptionCaughtAndRethrownAsInnerTest"
               }
             },
             "locals": {
@@ -1002,15 +993,41 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": {
+                        "type": "String",
+                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
+                      }
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -1018,19 +1035,19 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -1044,7 +1061,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Run",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest"
           },
           "version": 1
         },
@@ -1054,7 +1071,7 @@
     },
     "logger": {
       "method": "Run",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.ExceptionReplay
 {
-    [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 5)]
+    [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 8)]
     internal class DeterministicComplexExceptionPropagationTest : IAsyncRun
     {
         public async Task RunAsync()

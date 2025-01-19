@@ -279,7 +279,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -287,7 +287,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -295,8 +295,8 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
               }
             },
             "staticFields": {
@@ -456,21 +456,21 @@
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "The method or operation is not implemented.",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "System.NotImplementedException"
             }
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
+        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
+        "frameIndex": "45",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -504,13 +504,13 @@
         "captures": {
           "return": {
             "arguments": {
-              "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+              "depth": {
+                "type": "Int32",
+                "value": "0"
               },
-              "testClassName": {
-                "type": "String",
-                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+              "this": {
+                "type": "RethrowTest",
+                "value": "RethrowTest"
               }
             },
             "locals": {
@@ -522,7 +522,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -530,7 +530,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -538,70 +538,10 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
-              }
-            },
-            "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "RunTest",
-            "type": "Samples.Debugger.AspNetCore5.Controllers.HomeController"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "RunTest",
-      "name": "Samples.Debugger.AspNetCore5.Controllers.HomeController",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "str": {
-                "type": "String",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
               },
-              "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              }
-            },
-            "locals": {
-              "@exception": {
+              "e": {
                 "fields": {
                   "HelpLink": {
                     "isNull": "true",
@@ -609,7 +549,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -617,293 +557,81 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
                     "value": "Samples.Probes.TestRuns"
                   },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
-              }
-            },
-            "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "SupportedFrame",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "SupportedFrame",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "testName": {
-                "type": "String",
-                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
-              },
-              "this": {
-                "fields": {
-                  "_controllerContext": {
-                    "fields": {
-                      "_valueProviderFactories": {
-                        "type": "IList`1",
-                        "value": "IList`1"
-                      },
-                      "ActionDescriptor": {
-                        "fields": {
-                          "ActionConstraints": {
-                            "elements": [
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "HttpMethodActionConstraint",
-                                "value": "HttpMethodActionConstraint"
-                              }
-                            ],
-                            "size": 1,
-                            "type": "IList`1"
-                          },
-                          "AttributeRouteInfo": {
-                            "notCapturedReason": "depth",
-                            "type": "AttributeRouteInfo",
-                            "value": "AttributeRouteInfo"
-                          },
-                          "BoundProperties": {
-                            "elements": [],
-                            "size": 0,
-                            "type": "IList`1"
-                          },
-                          "DisplayName": {
-                            "type": "String",
-                            "value": "Samples.Debugger.AspNetCore5.Controllers.HomeController.RunTest (Samples.Debugger.AspNetCore5)"
-                          },
-                          "EndpointMetadata": {
-                            "elements": [
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "ControllerAttribute",
-                                "value": "ControllerAttribute"
-                              },
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "AsyncStateMachineAttribute",
-                                "value": "AsyncStateMachineAttribute"
-                              },
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "DebuggerStepThroughAttribute",
-                                "value": "DebuggerStepThroughAttribute"
-                              },
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "HttpGetAttribute",
-                                "value": "HttpGetAttribute"
-                              },
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "HttpMethodMetadata",
-                                "value": "HttpMethodMetadata"
-                              }
-                            ],
-                            "size": 5,
-                            "type": "IList`1"
-                          },
-                          "FilterDescriptors": {
-                            "elements": [
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "FilterDescriptor",
-                                "value": "FilterDescriptor"
-                              },
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "FilterDescriptor",
-                                "value": "FilterDescriptor"
-                              }
-                            ],
-                            "size": 2,
-                            "type": "IList`1"
-                          },
-                          "Id": "ScrubbedValue",
-                          "Parameters": {
-                            "elements": [
-                              {
-                                "notCapturedReason": "depth",
-                                "type": "ControllerParameterDescriptor",
-                                "value": "ControllerParameterDescriptor"
-                              }
-                            ],
-                            "size": 1,
-                            "type": "IList`1"
-                          },
-                          "Properties": {
-                            "entries": [],
-                            "size": 0,
-                            "type": "IDictionary`2"
-                          },
-                          "RouteValues": {
-                            "entries": [
-                              [
-                                {
-                                  "type": "String",
-                                  "value": "action"
-                                },
-                                {
-                                  "type": "String",
-                                  "value": "RunTest"
-                                }
-                              ],
-                              [
-                                {
-                                  "type": "String",
-                                  "value": "controller"
-                                },
-                                {
-                                  "type": "String",
-                                  "value": "Home"
-                                }
-                              ]
-                            ],
-                            "size": 2,
-                            "type": "IDictionary`2"
-                          }
-                        },
-                        "type": "ActionDescriptor",
-                        "value": "ActionDescriptor"
-                      },
-                      "HttpContext": {
-                        "type": "HttpContext",
-                        "value": "HttpContext"
-                      },
-                      "ModelState": {
-                        "fields": {
-                          "_maxAllowedErrors": {
-                            "type": "Int32",
-                            "value": "200"
-                          },
-                          "_root": {
-                            "notCapturedReason": "depth",
-                            "type": "ModelStateNode",
-                            "value": "ModelStateNode"
-                          },
-                          "Count": {
-                            "type": "Int32",
-                            "value": "1"
-                          },
-                          "ErrorCount": {
-                            "type": "Int32",
-                            "value": "0"
-                          },
-                          "HasRecordedMaxModelError": {
-                            "type": "Boolean",
-                            "value": "False"
-                          }
-                        },
-                        "type": "ModelStateDictionary",
-                        "value": "ModelStateDictionary"
-                      },
-                      "RouteData": {
-                        "fields": {
-                          "_dataTokens": {
-                            "isNull": "true",
-                            "type": "RouteValueDictionary"
-                          },
-                          "_routers": {
-                            "isNull": "true",
-                            "type": "List`1"
-                          },
-                          "_values": {
-                            "notCapturedReason": "depth",
-                            "type": "RouteValueDictionary",
-                            "value": "RouteValueDictionary"
-                          }
-                        },
-                        "type": "RouteData",
-                        "value": "RouteData"
-                      }
-                    },
-                    "type": "ControllerContext",
-                    "value": "ControllerContext"
-                  },
-                  "_logger": {
-                    "type": "ILogger`1",
-                    "value": "ILogger`1"
-                  },
-                  "_metadataProvider": {
-                    "isNull": "true",
-                    "type": "IModelMetadataProvider"
-                  },
-                  "_modelBinderFactory": {
-                    "isNull": "true",
-                    "type": "IModelBinderFactory"
-                  },
-                  "_objectValidator": {
-                    "isNull": "true",
-                    "type": "IObjectModelValidator"
-                  },
-                  "_problemDetailsFactory": {
-                    "isNull": "true",
-                    "type": "ProblemDetailsFactory"
-                  },
-                  "_tempData": {
-                    "isNull": "true",
-                    "type": "ITempDataDictionary"
-                  },
-                  "_url": {
-                    "isNull": "true",
-                    "type": "IUrlHelper"
-                  },
-                  "_viewBag": {
-                    "isNull": "true",
-                    "type": "DynamicViewData"
-                  },
-                  "_viewData": {
-                    "isNull": "true",
-                    "type": "ViewDataDictionary"
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
                   }
                 },
-                "type": "HomeController",
-                "value": "HomeController"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              },
+              "methodName": {
+                "type": "String",
+                "value": "RecursiveCaptureAndThrow"
+              }
+            },
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "1",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RecursiveCaptureAndThrow",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RecursiveCaptureAndThrow",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "depth": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "RethrowTest",
+                "value": "RethrowTest"
               }
             },
             "locals": {
@@ -915,7 +643,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -923,7 +651,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -931,37 +659,67 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
               },
-              "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+              "e": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2147467263"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The method or operation is not implemented."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
+                  }
+                },
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              },
+              "methodName": {
+                "type": "String",
+                "value": "RecursiveCaptureAndThrow"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "The method or operation is not implemented.",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "System.NotImplementedException"
             }
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
+        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
+        "frameIndex": "2",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "RunTest",
-            "type": "Samples.Debugger.AspNetCore5.Controllers.HomeController"
+            "method": "RecursiveCaptureAndThrow",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
           },
           "version": 1
         },
@@ -970,8 +728,129 @@
       }
     },
     "logger": {
-      "method": "RunTest",
-      "name": "Samples.Debugger.AspNetCore5.Controllers.HomeController",
+      "method": "RecursiveCaptureAndThrow",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "depth": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "RethrowTest",
+                "value": "RethrowTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2147467263"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The method or operation is not implemented."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              },
+              "e": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2147467263"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The method or operation is not implemented."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
+                  }
+                },
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              },
+              "methodName": {
+                "type": "String",
+                "value": "RecursiveCaptureAndThrow"
+              }
+            },
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "3",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RecursiveCaptureAndThrow",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RecursiveCaptureAndThrow",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -989,8 +868,8 @@
           "return": {
             "arguments": {
               "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "RethrowTest",
+                "value": "RethrowTest"
               }
             },
             "locals": {
@@ -1002,7 +881,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -1010,7 +889,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -1018,33 +897,67 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              },
+              "ex": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2147467263"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The method or operation is not implemented."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": {
+                    "type": "String",
+                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275"
+                  }
+                },
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              },
+              "methodName": {
+                "type": "String",
+                "value": "Bar"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
+              "message": "The method or operation is not implemented.",
               "stacktrace": [
                 {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
                   "lineNumber": "ScrubbedValue"
                 }
               ],
-              "type": "System.InvalidOperationException"
+              "type": "System.NotImplementedException"
             }
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
+        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
+        "frameIndex": "0",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "Run",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+            "method": "Bar",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
           },
           "version": 1
         },
@@ -1053,8 +966,8 @@
       }
     },
     "logger": {
-      "method": "Run",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
+      "method": "Bar",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
