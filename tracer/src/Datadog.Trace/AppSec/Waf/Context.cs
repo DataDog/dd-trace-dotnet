@@ -66,18 +66,25 @@ internal class Context : IContext
     public Dictionary<string, string> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
         var addresses = new Dictionary<string, string>();
-        ShouldRun(userId, _userEventsState.Id.Value, _userEventsState.Id.FromSdk, AddressesConstants.UserId);
-        ShouldRun(userLogin, _userEventsState.Login.Value, _userEventsState.Login.FromSdk, AddressesConstants.UserLogin);
-        ShouldRun(userSessionId, _userEventsState.SessionId.Value, _userEventsState.SessionId.FromSdk, AddressesConstants.UserSessionId);
-
+        ShouldRun(_userEventsState.Id, userId, AddressesConstants.UserId);
+        ShouldRun(_userEventsState.Login, userLogin, AddressesConstants.UserLogin);
+        ShouldRun(_userEventsState.SessionId, userSessionId, AddressesConstants.UserSessionId);
         return addresses;
 
-        void ShouldRun(string? value, string? previousValue, bool previousFromSdk, string address)
+        void ShouldRun(UserEventsState.UserRecord? userRecord, string? value, string address)
         {
+            string? previousValue = null;
+            var cameFromSdk = false;
+            if (userRecord.HasValue)
+            {
+                previousValue = userRecord.Value.Value;
+                cameFromSdk = userRecord.Value.FromSdk;
+            }
+
             if (value is not null && security.AddressEnabled(address))
             {
-                var differentValue = string.Compare(value, previousValue, StringComparison.OrdinalIgnoreCase) != 0;
-                if (differentValue && (fromSdk || !previousFromSdk))
+                var differentValue = string.Compare(previousValue, value, StringComparison.OrdinalIgnoreCase) is not 0;
+                if (differentValue && (fromSdk || !cameFromSdk))
                 {
                     addresses[address] = value;
                 }
@@ -215,22 +222,22 @@ internal class Context : IContext
         GC.SuppressFinalize(this);
     }
 
-    private record UserEventsState
+    internal record UserEventsState
     {
         /// <summary>
         /// Gets or sets a string for the value and bool for if it came from sdk
         /// </summary>
-        internal UserRecord Id { get; set; } = new(null, false);
+        internal UserRecord? Id { get; set; }
 
         /// <summary>
         /// Gets or sets a string for the value and bool for if it came from sdk
         /// </summary>
-        internal UserRecord Login { get; set; } = new(null, false);
+        internal UserRecord? Login { get; set; }
 
         /// <summary>
         /// Gets or sets a string for the value and bool for if it came from sdk
         /// </summary>
-        internal UserRecord SessionId { get; set; } = new(null, false);
+        internal UserRecord? SessionId { get; set; }
 
         internal record struct UserRecord(string? Value, bool FromSdk);
     }
