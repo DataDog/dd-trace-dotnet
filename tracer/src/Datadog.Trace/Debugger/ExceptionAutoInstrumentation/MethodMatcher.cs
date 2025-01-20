@@ -44,6 +44,52 @@ internal static class MethodMatcher
         return DoMethodPartsMatch(stackTraceParts, methodBaseParts);
     }
 
+    private static bool IsAsyncStateMachine(MethodBase method)
+    {
+        if (method.Name != "MoveNext")
+        {
+            return false;
+        }
+
+        var declaringType = method.DeclaringType;
+        if (declaringType == null)
+        {
+            return false;
+        }
+
+        var isAsyncStateMachine = declaringType.GetInterfaces()
+                                             .Any(i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine");
+        if (!isAsyncStateMachine)
+        {
+            return false;
+        }
+
+        // For async lambdas, the pattern is different (ends with ">d")
+        var typeName = declaringType.Name;
+        var isAsyncLambda = typeName.Contains("b__") && typeName.EndsWith(">d");
+
+        // Only return true for regular async methods (not lambdas)
+        return !isAsyncLambda && typeName.Contains(">d__");
+    }
+
+    private static bool IsAsyncLambdaStateMachine(MethodBase method)
+    {
+        if (method.Name != "MoveNext")
+        {
+            return false;
+        }
+
+        var declaringType = method.DeclaringType;
+        if (declaringType == null)
+        {
+            return false;
+        }
+
+        // Check for the async lambda pattern (double angle brackets and b__)
+        var typeName = declaringType.Name;
+        return typeName.Contains("<<") && typeName.Contains("b__") && typeName.EndsWith(">d");
+    }
+
     private static MethodBase? ResolveSpecialMethod(MethodBase method)
     {
         // Check cache first
@@ -54,7 +100,13 @@ internal static class MethodMatcher
 
         MethodBase? resolvedMethod = null;
 
-        if (IsAsyncStateMachine(method))
+        // Important: Check for async lambda first
+        if (IsAsyncLambdaStateMachine(method))
+        {
+            // For async lambdas, we don't resolve - we'll handle them in the name matching
+            resolvedMethod = null;
+        }
+        else if (IsAsyncStateMachine(method))
         {
             resolvedMethod = ResolveAsyncMethod(method);
         }
@@ -72,23 +124,52 @@ internal static class MethodMatcher
         return resolvedMethod;
     }
 
-    private static bool IsAsyncStateMachine(MethodBase method)
+    private static bool AreMethodNamesEquivalent(string stackTraceMethod, string methodBaseMethod)
     {
-        if (method.Name != "MoveNext")
+        // If they're exactly equal, we're done
+        if (stackTraceMethod.Equals(methodBaseMethod, StringComparison.Ordinal))
         {
-            return false;
+            return true;
         }
 
-        var declaringType = method.DeclaringType;
-        if (declaringType == null)
+        // For async state machine methods
+        if (methodBaseMethod == "MoveNext")
         {
-            return false;
+            // Either it's an async method or we've already handled the lambda case
+            return true;
         }
 
-        // Check both the type name pattern and implemented interfaces
-        return declaringType.Name.Contains(">d__") &&
-               declaringType.GetInterfaces()
-                          .Any(i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine");
+        return false;
+    }
+
+    private static string ExtractLambdaIdentifier(string methodName)
+    {
+        // Look for the b__ pattern that identifies lambda methods
+        var lambdaMarkerIndex = methodName.IndexOf("b__", StringComparison.Ordinal);
+        if (lambdaMarkerIndex < 0)
+        {
+            return string.Empty;
+        }
+
+        // Extract everything between < and > or from b__ to the next separator
+        var startIndex = methodName.LastIndexOf('<', lambdaMarkerIndex);
+        startIndex = startIndex >= 0 ? startIndex + 1 : lambdaMarkerIndex;
+
+        var endIndex = methodName.IndexOfAny(new[] { '>', '(', '.', 'd' }, lambdaMarkerIndex);
+        if (endIndex < 0)
+        {
+            endIndex = methodName.Length;
+        }
+
+        var identifier = methodName.Substring(startIndex, endIndex - startIndex);
+
+        // If we got the identifier with angle brackets, clean it up
+        if (identifier.StartsWith("<") && identifier.EndsWith(">"))
+        {
+            identifier = identifier.Substring(1, identifier.Length - 2);
+        }
+
+        return identifier;
     }
 
     private static bool IsIteratorStateMachine(MethodBase method)
@@ -296,14 +377,23 @@ internal static class MethodMatcher
             return false;
         }
 
-        // Type parts must match exactly
-        if (!AreArraysEqual(stackTrace.TypeParts, methodBase.TypeParts))
+        // For async lambdas, we need special handling
+        var stackTraceLambdaId = ExtractLambdaIdentifier(stackTrace.MethodName);
+        if (!string.IsNullOrEmpty(stackTraceLambdaId))
         {
-            return false;
+            // Check if the method base type parts contain the lambda identifier
+            var lastTypePart = methodBase.TypeParts.LastOrDefault() ?? string.Empty;
+            var typePartLambdaId = ExtractLambdaIdentifier(lastTypePart);
+
+            if (!string.IsNullOrEmpty(typePartLambdaId))
+            {
+                return stackTraceLambdaId == typePartLambdaId;
+            }
         }
 
-        // For method names, we need special comparison due to compiler-generated names
-        return AreMethodNamesEquivalent(stackTrace.MethodName, methodBase.MethodName);
+        // If not a lambda match, then both type parts and method name must match exactly
+        return AreArraysEqual(stackTrace.TypeParts, methodBase.TypeParts) &&
+               AreMethodNamesEquivalent(stackTrace.MethodName, methodBase.MethodName);
     }
 
     private static bool AreArraysEqual(string[] arr1, string[] arr2)
@@ -322,57 +412,6 @@ internal static class MethodMatcher
         }
 
         return true;
-    }
-
-    private static bool AreMethodNamesEquivalent(string stackTraceMethod, string methodBaseMethod)
-    {
-        // If they're exactly equal, we're done
-        if (stackTraceMethod.Equals(methodBaseMethod, StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        // For compiler-generated async methods
-        if (stackTraceMethod == "MoveNext" &&
-            (methodBaseMethod.Contains("Async") || methodBaseMethod.Contains("<")))
-        {
-            return true;
-        }
-
-        // For compiler-generated methods, we need exact matches of the base name
-        var baseStackTraceName = RemoveAsyncSuffix(RemoveCompilerGeneratedParts(stackTraceMethod));
-        var baseMethodName = RemoveAsyncSuffix(RemoveCompilerGeneratedParts(methodBaseMethod));
-
-        return baseStackTraceName.Equals(baseMethodName, StringComparison.Ordinal);
-    }
-
-    private static string RemoveCompilerGeneratedParts(string methodName)
-    {
-        // Remove everything between < and > including the brackets
-        var startBracket = methodName.IndexOf('<');
-        var endBracket = methodName.LastIndexOf('>');
-
-        if (startBracket >= 0 && endBracket > startBracket)
-        {
-            methodName = methodName.Substring(0, startBracket) +
-                         methodName.Substring(endBracket + 1);
-        }
-
-        // Remove any remaining compiler-generated suffixes (like "b__1")
-        var index = methodName.IndexOf("b__", StringComparison.Ordinal);
-        if (index > 0)
-        {
-            methodName = methodName.Substring(0, index);
-        }
-
-        return methodName;
-    }
-
-    private static string RemoveAsyncSuffix(string methodName)
-    {
-        return methodName.EndsWith("Async", StringComparison.Ordinal)
-                   ? methodName.Substring(0, methodName.Length - 5)
-                   : methodName;
     }
 
     private static string NormalizeMethodText(string methodText)

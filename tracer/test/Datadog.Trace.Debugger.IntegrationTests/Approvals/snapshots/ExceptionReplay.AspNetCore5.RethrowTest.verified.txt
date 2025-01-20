@@ -468,9 +468,9 @@
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionHash": "ScrubbedValue",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "45",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -540,40 +540,6 @@
                 },
                 "type": "NotImplementedException",
                 "value": "NotImplementedException"
-              },
-              "e": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2147467263"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The method or operation is not implemented."
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
-                  }
-                },
-                "type": "NotImplementedException",
-                "value": "NotImplementedException"
-              },
-              "methodName": {
-                "type": "String",
-                "value": "RecursiveCaptureAndThrow"
               }
             },
             "throwable": {
@@ -589,9 +555,9 @@
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionHash": "ScrubbedValue",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "1",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -661,40 +627,6 @@
                 },
                 "type": "NotImplementedException",
                 "value": "NotImplementedException"
-              },
-              "e": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2147467263"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The method or operation is not implemented."
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
-                  }
-                },
-                "type": "NotImplementedException",
-                "value": "NotImplementedException"
-              },
-              "methodName": {
-                "type": "String",
-                "value": "RecursiveCaptureAndThrow"
               }
             },
             "throwable": {
@@ -710,9 +642,9 @@
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionHash": "ScrubbedValue",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "2",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -782,40 +714,6 @@
                 },
                 "type": "NotImplementedException",
                 "value": "NotImplementedException"
-              },
-              "e": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2147467263"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The method or operation is not implemented."
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
-                  }
-                },
-                "type": "NotImplementedException",
-                "value": "NotImplementedException"
-              },
-              "methodName": {
-                "type": "String",
-                "value": "RecursiveCaptureAndThrow"
               }
             },
             "throwable": {
@@ -831,9 +729,9 @@
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionHash": "ScrubbedValue",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "3",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -899,40 +797,6 @@
                 },
                 "type": "NotImplementedException",
                 "value": "NotImplementedException"
-              },
-              "ex": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2147467263"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The method or operation is not implemented."
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275"
-                  }
-                },
-                "type": "NotImplementedException",
-                "value": "NotImplementedException"
-              },
-              "methodName": {
-                "type": "String",
-                "value": "Bar"
               }
             },
             "throwable": {
@@ -948,9 +812,9 @@
           }
         },
         "duration": "ScrubbedValue",
-        "exceptionHash": "6eedc4a3-fb9e-3efb-a2ad-d63273861f8c",
+        "exceptionHash": "ScrubbedValue",
         "exceptionId": "ScrubbedValue",
-        "frameIndex": "0",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {

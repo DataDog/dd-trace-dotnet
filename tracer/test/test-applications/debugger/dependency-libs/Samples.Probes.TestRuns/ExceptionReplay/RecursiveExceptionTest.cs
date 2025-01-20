@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.ExceptionReplay
 {
-    [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 25)]
+    [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 35)]
     internal class RecursiveExceptionTest : IAsyncRun
     {
         public async Task RunAsync()
