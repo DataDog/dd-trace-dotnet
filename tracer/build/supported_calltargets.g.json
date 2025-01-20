@@ -15882,30 +15882,6 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.v3.core",
-    "TargetTypeName": "Xunit.v3.TestMethodRunner`3",
-    "TargetMethodName": "Run",
-    "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
-    "TargetParameterTypes": [
-      "_"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 1,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerV3Integration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "XUnit",
-    "AssemblyName": "xunit.v3.core",
     "TargetTypeName": "Xunit.v3.TestOutputHelper",
     "TargetMethodName": "QueueTestOutput",
     "TargetReturnType": "System.Void",
@@ -15947,6 +15923,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.XunitTestMethodRunnerBase`3",
+    "TargetMethodName": "RunTestCase",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
+    "TargetParameterTypes": [
+      "_",
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

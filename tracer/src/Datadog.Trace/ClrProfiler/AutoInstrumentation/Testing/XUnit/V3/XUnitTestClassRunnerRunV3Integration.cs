@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 public static class XUnitTestClassRunnerRunV3Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-        where TContext : ITestClassRunnerContextV3
+        where TContext : IXunitTestClassRunnerContextV3
     {
         Common.Log.Warning("XUnitTestClassRunnerRunV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
         if (!XUnitIntegration.IsEnabled || instance is null)

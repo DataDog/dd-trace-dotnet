@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 public static class XUnitTestRunnerV3Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-        where TContext : ITestRunnerContextV3
+        where TContext : IXunitTestRunnerContextV3
     {
         Common.Log.Warning("XUnitTestRunnerV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
         if (!XUnitIntegration.IsEnabled || instance is null)
@@ -81,7 +81,7 @@ public static class XUnitTestRunnerV3Integration
         Common.Log.Warning("XUnitTestRunnerV3Integration.OnAsyncMethodEnd, instance: {0}, context: {1}", instance, returnValue);
         if (state.State is Tuple<Test?, object> { Item1: { } test, Item2: { } context })
         {
-            var testRunnerContext = context.DuckCast<ITestRunnerContextV3>();
+            var testRunnerContext = context.DuckCast<IXunitTestRunnerContextV3>();
             XUnitIntegration.FinishTest(test, testRunnerContext.Aggregator);
         }
 
