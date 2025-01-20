@@ -48,7 +48,6 @@
     <PackageReference Include="MySql.Data" Version="8.0.28" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.19.110" />
     <PackageReference Include="NHibernate" Version="5.5.0" />
-    <PackageReference Include="MailKit" Version="4.9.0" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">

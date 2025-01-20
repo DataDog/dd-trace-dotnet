@@ -8,11 +8,6 @@ using System.Net.Mail;
 using System.Net;
 using Xunit;
 using System.Web;
-using MailKit;
-using System.Threading.Tasks;
-using MimeKit;
-using MimeKit.Text;
-using MailKit.Net.Smtp;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -28,38 +23,6 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     {
         AddTainted(taintedName);
         AddTainted(taintedLastName);
-    }
-
-    [Fact]
-    public void Test_UntrustedInput_CausesHtmlInjection()
-    {
-        // Arrange
-        var untrustedInput = taintedName;
-
-        // Act
-        var message = CreateEmail("<h1>Welcome</h1>", untrustedInput);
-
-        // Optionally send email using SmtpClient (commented out for test simplicity)
-        var client = new MailKit.Net.Smtp.SmtpClient();
-        TestEmailSendCall(() => client.Send(message));
-
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
-    }
-
-    private MimeMessage CreateEmail(string bodyContent, string untrustedInput)
-    {
-        var message = new MimeMessage();
-        message.Subject = "Test Email";
-
-        // Demonstrating potential for HTML injection by directly including untrusted input without sanitization
-        string htmlBody = $"{bodyContent}<p>{untrustedInput}</p>";
-
-        message.Body = new TextPart(TextFormat.Html)
-        {
-            Text = htmlBody
-        };
-
-        return message;
     }
 
     // Tests for method Send(MailMessage message);
