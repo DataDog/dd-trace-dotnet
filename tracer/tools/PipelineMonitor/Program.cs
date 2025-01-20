@@ -9,9 +9,6 @@ using PipelineMonitor;
 const string azDoApi = "https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/";
 var _cli = new HttpClient();
 
-var tracerSettings = new TracerSettings {Environment = "apm-dotnet-pipeline-monitoring", GlobalSamplingRate = 100};
-Tracer.Configure(tracerSettings);
-
 if (args?.Length == 0)
 {
     Console.WriteLine("please provide a buildid");

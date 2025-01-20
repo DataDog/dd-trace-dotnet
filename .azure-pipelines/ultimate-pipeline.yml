@@ -6999,7 +6999,7 @@ stages:
     - bash: |
         mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
         dotnet build
-        dd-trace run --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
+        dd-trace run --dd-env "apm-dotnet-pipeline-monitoring" --set-env "DD_TRACE_SAMPLE_RATE=100" --set-env "DD_TRACE_DEBUG=1" --set-env "DD_INSTRUMENTATION_TELEMETRY_ENABLED=1" --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
         exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
