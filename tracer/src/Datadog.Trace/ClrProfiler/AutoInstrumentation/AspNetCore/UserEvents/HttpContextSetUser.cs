@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
     public static class HttpContextSetUser
     {
         private const string Major2 = "2";
-        private const string AssemblyName = "Microsoft.AspNetCore.Http.Abstractions";
+        private const string AssemblyName = "Microsoft.AspNetCore.Http";
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
 

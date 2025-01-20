@@ -1001,7 +1001,7 @@
   },
   {
     "IntegrationName": "AspNetCore",
-    "AssemblyName": "Microsoft.AspNetCore.Http.Abstractions",
+    "AssemblyName": "Microsoft.AspNetCore.Http",
     "TargetTypeName": "Microsoft.AspNetCore.Http.DefaultHttpContext",
     "TargetMethodName": "set_User",
     "TargetReturnType": "System.Threading.Tasks.Task",
