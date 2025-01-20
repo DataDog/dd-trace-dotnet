@@ -49,7 +49,7 @@
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
     <!-- Latest package https://www.nuget.org/packages/Azure.Messaging.ServiceBus/7.18.2 -->
-    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.5" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.3" />
 
     <!-- Integration: Confluent.Kafka -->
     <!--    Assembly: Confluent.Kafka -->
