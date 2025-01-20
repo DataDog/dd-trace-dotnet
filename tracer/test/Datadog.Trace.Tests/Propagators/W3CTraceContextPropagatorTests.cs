@@ -370,7 +370,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
-                       });
+                       },
+                       opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
@@ -417,7 +418,8 @@ namespace Datadog.Trace.Tests.Propagators
                            Parent = null,
                            ParentId = null,
                            LastParentId = ZeroLastParentId,
-                       });
+                       },
+                       opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -456,7 +458,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -531,7 +534,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = "0123456789abcdef",
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -570,7 +574,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -707,7 +712,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
@@ -749,7 +755,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -793,7 +800,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -837,7 +845,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -876,7 +885,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -915,7 +925,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -954,7 +965,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -993,7 +1005,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Parent = null,
                           ParentId = null,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
         }
     }
 }

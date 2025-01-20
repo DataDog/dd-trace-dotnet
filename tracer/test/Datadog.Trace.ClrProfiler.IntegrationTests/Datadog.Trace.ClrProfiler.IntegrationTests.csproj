@@ -27,6 +27,8 @@
 
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
 
+    <PackageReference Include="Testcontainers" Version="3.6.0" />
+    <PackageReference Include="StrongNamer" Version="0.2.5" />  
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">

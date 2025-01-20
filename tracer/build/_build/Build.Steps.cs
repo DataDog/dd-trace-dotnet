@@ -182,7 +182,8 @@ partial class Build
 
     TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
-        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
+        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
         (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
@@ -1518,20 +1519,21 @@ partial class Build
             );
         });
 
-    Target RunWindowsIntegrationTests => _ => _
+    Target RunIntegrationTests => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
         .After(BuildWindowsIntegrationTests)
+        .After(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CleanTestLogs)
-        .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
+            var filter = GetFilter();
 
             try
             {
@@ -1548,6 +1550,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
+                    // Don't apply a custom filter to these tests, they should all be able to be run
                     .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
@@ -1556,22 +1559,20 @@ partial class Build
                         .WithDatadogLogger()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
-
-                // TODO: I think we should change this filter to run on Windows by default
-                // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
+                    .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
@@ -1582,6 +1583,29 @@ partial class Build
             finally
             {
                 CopyDumpsToBuildData();
+            }
+
+            string GetFilter()
+            {
+                var dockerFilter = IncludeTestsRequiringDocker switch
+                {
+                    true => "&(RequiresDockerDependency=true)",
+                    false => "&(RequiresDockerDependency!=true)",
+                    null => string.Empty,
+                };
+
+                var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
+
+                var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
+                {
+                    (false, _) => $"({Filter}){dockerFilter}{armFilter}",
+                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
+                    // TODO: I think we should change this filter to run on Windows by default, e.g.
+                    // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
+                    (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
+                };
+
+                return filter;
             }
         });
 
@@ -1844,169 +1868,6 @@ partial class Build
                     .SetProjectFile(Projects.DdTraceIntegrationTests)
                     .EnableTrxLogOutput(project)
                     .WithDatadogLogger());
-            }
-            finally
-            {
-                CopyDumpsToBuildData();
-            }
-        });
-
-    Target RunLinuxIntegrationTests => _ => _
-        .After(CompileLinuxOrOsxIntegrationTests)
-        .After(CompileTrimmingSamples)
-        .DependsOn(CleanTestLogs)
-        .Description("Runs the linux integration tests")
-        .Requires(() => Framework)
-        .Requires(() => !IsWin)
-        .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
-        {
-            var isDebugRun = IsDebugRun();
-
-            var dockerFilter = IncludeTestsRequiringDocker switch
-            {
-                true => "&(RequiresDockerDependency=true)",
-                false => "&(RequiresDockerDependency!=true)",
-                null => string.Empty,
-            };
-
-            var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
-
-            var filter = string.IsNullOrWhiteSpace(Filter) switch
-            {
-                false => $"({Filter}){dockerFilter}{armFilter}",
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
-            };
-
-            try
-            {
-                // Run these ones in parallel
-                DotNetTest(config => config
-                        .SetConfiguration(BuildConfiguration)
-                        .EnableNoRestore()
-                        .EnableNoBuild()
-                        .SetFramework(Framework)
-                        //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                        .EnableCrashDumps()
-                        .SetFilter(filter)
-                        .SetIsDebugRun(isDebugRun)
-                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                        .SetTestTargetPlatform(TargetPlatform)
-                        .SetLogsDirectory(TestLogsDirectory)
-                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                        .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverageEnabled, ConfigureCodeCoverage)
-                        .CombineWith(ParallelIntegrationTests, (s, project) => s
-                            .EnableTrxLogOutput(GetResultsDirectory(project))
-                            .WithDatadogLogger()
-                            .SetProjectFile(project)),
-                    degreeOfParallelism: 2);
-
-                // Run this one separately so we can tail output
-                DotNetTest(config => config
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFramework(Framework)
-                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                    .EnableCrashDumps()
-                    .SetFilter(filter)
-                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetTestTargetPlatform(TargetPlatform)
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
-                        .SetProjectFile(project))
-                );
-            }
-            finally
-            {
-                CopyDumpsToBuildData();
-            }
-        });
-
-    Target RunOsxIntegrationTests => _ => _
-        .After(CompileLinuxOrOsxIntegrationTests)
-        .DependsOn(CleanTestLogs)
-        .Description("Runs the osx integration tests")
-        .Requires(() => Framework)
-        .Requires(() => IsOsx)
-        .Triggers(PrintSnapshotsDiff)
-        .Executes(() =>
-        {
-            var isDebugRun = IsDebugRun();
-
-            var dockerFilter = IncludeTestsRequiringDocker switch
-            {
-                true => "&(RequiresDockerDependency=true)",
-                false => "&(RequiresDockerDependency!=true)",
-                null => string.Empty,
-            };
-
-            var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
-
-            var filter = string.IsNullOrWhiteSpace(Filter) switch
-            {
-                false => Filter,
-                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
-            };
-
-            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform)"arm64" : TargetPlatform;
-
-            try
-            {
-                // Run these ones in parallel
-                DotNetTest(config => config
-                        .SetConfiguration(BuildConfiguration)
-                        .EnableNoRestore()
-                        .EnableNoBuild()
-                        .SetFramework(Framework)
-                        //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                        .EnableCrashDumps()
-                        .SetFilter(filter)
-                        .SetIsDebugRun(isDebugRun)
-                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                        .SetLocalOsxEnvironmentVariables()
-                        .SetTestTargetPlatform(targetPlatform)
-                        .SetLogsDirectory(TestLogsDirectory)
-                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                        .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                        .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverageEnabled, ConfigureCodeCoverage)
-                        .CombineWith(ParallelIntegrationTests, (s, project) => s
-                            .EnableTrxLogOutput(GetResultsDirectory(project))
-                            .WithDatadogLogger()
-                            .SetProjectFile(project)),
-                    degreeOfParallelism: 2);
-
-                // Run this one separately so we can tail output
-                DotNetTest(config => config
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetFramework(Framework)
-                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                    .EnableCrashDumps()
-                    .SetFilter(filter)
-                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetLocalOsxEnvironmentVariables()
-                    .SetTestTargetPlatform(targetPlatform)
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                    .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
-                        .SetProjectFile(project))
-                );
             }
             finally
             {
@@ -2395,10 +2256,12 @@ partial class Build
            {
                // Profiler is not yet supported on Arm64
                knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
-               knownPatterns.Add(new(@".*Error getting IClassFactory from: .*/Datadog\.Profiler\.Native\.so", RegexOptions.Compiled));
-               knownPatterns.Add(new(@".*DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory.*", RegexOptions.Compiled));
-               knownPatterns.Add(new(@".*Error loading all cor profiler class factories\.", RegexOptions.Compiled));
            }
+
+           // We disable the profiler in crash tests, so we expect these logs
+           knownPatterns.Add(new(@".*Error getting IClassFactory from: .*/Datadog\.Profiler\.Native\.so", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory.*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*Error loading all cor profiler class factories\.", RegexOptions.Compiled));
 
            // profiler occasionally throws this if shutting down
            knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));

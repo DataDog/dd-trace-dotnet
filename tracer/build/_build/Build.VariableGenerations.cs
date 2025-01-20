@@ -1321,11 +1321,7 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>
                     {
-                        // macos-11 environments are no longer available in Azure Devops
-                        { "macos-12_netcoreapp3.1", new { vmImage = "macos-12", publishFramework = "netcoreapp3.1" } },
-                        { "macos-12_net6.0", new { vmImage = "macos-12", publishFramework = "net6.0" } },
-                        { "macos-12_net8.0", new { vmImage = "macos-12", publishFramework = "net8.0" } },
-                        { "macos-12_net9.0", new { vmImage = "macos-12", publishFramework = "net9.0" } },
+                        // macos-11/12 environments are no longer available in Azure Devops
                         { "macos-13_netcoreapp3.1", new { vmImage = "macos-13", publishFramework = "netcoreapp3.1" } },
                         { "macos-13_net5.0", new { vmImage = "macos-13", publishFramework = "net5.0" } },
                         { "macos-13_net6.0", new { vmImage = "macos-13", publishFramework = "net6.0" } },
