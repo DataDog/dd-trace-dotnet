@@ -3,6 +3,10 @@
 
 #include "NetworkRequestInfo.h"
 
+#include <chrono>
+using namespace std::chrono_literals;
+
+
 NetworkRequestInfo::NetworkRequestInfo(std::string url, std::chrono::nanoseconds timestamp)
     :
     NetworkRequestCommon(std::move(url), timestamp)
@@ -48,16 +52,16 @@ NetworkRequestCommon::NetworkRequestCommon(std::string url, std::chrono::nanosec
     Url(std::move(url)),
     StartTimestamp(timestamp)
 {
-    DnsWait = std::chrono::nanoseconds::zero();
-    DnsStartTime = std::chrono::nanoseconds::zero();
-    DnsDuration = std::chrono::nanoseconds::zero();
-    SocketConnectStartTime = std::chrono::nanoseconds::zero();
-    SocketDuration = std::chrono::nanoseconds::zero();
-    HandshakeWait = std::chrono::nanoseconds::zero();
-    HandshakeStartTime = std::chrono::nanoseconds::zero();
-    HandshakeDuration = std::chrono::nanoseconds::zero();
-    ReqRespStartTime = std::chrono::nanoseconds::zero();
-    ReqRespDuration = std::chrono::nanoseconds::zero();
+    DnsWait = 0ns;
+    DnsStartTime = 0ns;
+    DnsDuration = 0ns;
+    SocketConnectStartTime = 0ns;
+    SocketDuration = 0ns;
+    HandshakeWait = 0ns;
+    HandshakeStartTime = 0ns;
+    HandshakeDuration = 0ns;
+    ReqRespStartTime = 0ns;
+    ReqRespDuration = 0ns;
 }
 
 NetworkRequestCommon::NetworkRequestCommon(NetworkRequestCommon&& other) noexcept

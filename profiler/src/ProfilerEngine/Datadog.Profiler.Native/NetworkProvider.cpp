@@ -8,6 +8,8 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 
+#include <chrono>
+
 std::vector<SampleValueType> NetworkProvider::SampleTypeDefinitions(
 {
     {"request-time", "nanoseconds"}
@@ -42,7 +44,7 @@ NetworkProvider::NetworkProvider(
     _metricsRegistry{metricsRegistry}
 {
     // all other durations in the code are in nanoseconds but the config is in milliseconds
-    _requestDurationThreshold = static_cast<double>(pConfiguration->GetHttpRequestDurationThreshold().count() * 1000000);
+    _requestDurationThreshold = std::chrono::duration_cast<std::chrono::nanoseconds>(pConfiguration->GetHttpRequestDurationThreshold());
 }
 
 bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
@@ -84,7 +86,7 @@ bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
     info.LocalRootSpanID = result->GetLocalRootSpanId();
     info.SpanID = result->GetSpanId();
     info.StartCallStack = result->GetCallstack();
-    info.StartThreadInfo = threadInfo;
+    info.StartThreadInfo = std::move(threadInfo);
 
     return true;
 }
@@ -132,7 +134,7 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
     if (!_pConfiguration->ForceHttpSampling())
     {
         // only requests lasting more than a threshold are captured
-        if ((timestamp - requestInfo->second.StartTimestamp).count() > _requestDurationThreshold)
+        if ((timestamp - requestInfo->second.StartTimestamp) > _requestDurationThreshold)
         {
             // skip this request
             _requests.erase(activity);
@@ -146,15 +148,8 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
     RawNetworkSample rawSample;
     FillRawSample(rawSample, requestInfo->second, timestamp);
     rawSample.StatusCode = statusCode;
-    if (!requestInfo->second.Error.empty())
-    {
-        rawSample.Error = std::move(requestInfo->second.Error);
-    }
-
-    if (!requestInfo->second.HandshakeError.empty())
-    {
-        rawSample.HandshakeError = std::move(requestInfo->second.HandshakeError);
-    }
+    rawSample.Error = std::move(requestInfo->second.Error);
+    rawSample.HandshakeError = std::move(requestInfo->second.HandshakeError);
 
     if (requestInfo->second.Redirect != nullptr)
     {
@@ -195,7 +190,7 @@ void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pAc
         return;
     }
 
-    pInfo->Redirect->Url = redirectUrl;
+    pInfo->Redirect->Url = std::move(redirectUrl);
 }
 
 void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
@@ -326,7 +321,7 @@ void NetworkProvider::OnRequestHeaderStop(std::chrono::nanoseconds timestamp, LP
         return;
     }
 
-    if (statusCode == 301)
+    if (IsRedirect(statusCode))
     {
         // we need to keep track of the duration of the initial processing that ends up to a redirect
         // and count it as part of the request/response phase
@@ -418,13 +413,13 @@ void NetworkProvider::UpdateHandshakeWait(NetworkRequestInfo* pInfo)
     // we need to take into account situations where DNS/socket phases might be missing
     if (pInfo->Redirect == nullptr)
     {
-        if (pInfo->SocketConnectStartTime != std::chrono::nanoseconds::zero())
+        if (pInfo->SocketConnectStartTime != 0ns)
         {
             pInfo->HandshakeWait =        // = socket end time
                 pInfo->HandshakeStartTime - (pInfo->SocketConnectStartTime + pInfo->SocketDuration);
         }
         else
-        if (pInfo->DnsStartTime != std::chrono::nanoseconds::zero())
+        if (pInfo->DnsStartTime != 0ns)
         {
             pInfo->HandshakeWait =        // = DNS end time
                 pInfo->HandshakeStartTime - (pInfo->DnsStartTime + pInfo->DnsDuration);
@@ -436,13 +431,13 @@ void NetworkProvider::UpdateHandshakeWait(NetworkRequestInfo* pInfo)
     }
     else
     {
-        if (pInfo->Redirect->SocketConnectStartTime != std::chrono::nanoseconds::zero())
+        if (pInfo->Redirect->SocketConnectStartTime != 0ns)
         {
             pInfo->Redirect->HandshakeWait =        // = socket end time
                 pInfo->Redirect->HandshakeStartTime - (pInfo->Redirect->SocketConnectStartTime + pInfo->Redirect->SocketDuration);
         }
         else
-        if (pInfo->Redirect->DnsStartTime != std::chrono::nanoseconds::zero())
+        if (pInfo->Redirect->DnsStartTime != 0ns)
         {
             pInfo->Redirect->HandshakeWait =        // = DNS end time
                 pInfo->Redirect->HandshakeStartTime - (pInfo->Redirect->DnsStartTime + pInfo->Redirect->DnsDuration);

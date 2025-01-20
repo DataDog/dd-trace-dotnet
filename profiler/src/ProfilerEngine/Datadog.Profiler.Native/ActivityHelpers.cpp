@@ -5,7 +5,7 @@
 
 bool ActivityHelpers::IsActivityPath(const GUID* pActivityId, int processID)
 {
-    uint32_t* uintPtr = (uint32_t*)pActivityId;
+    const uint32_t* uintPtr = reinterpret_cast<const uint32_t*>(pActivityId);
 
     uint32_t sum = uintPtr[0] + uintPtr[1] + uintPtr[2] + 0x599D99AD;
     if (processID == 0)
@@ -17,7 +17,7 @@ bool ActivityHelpers::IsActivityPath(const GUID* pActivityId, int processID)
         return ((sum & 0xFFF00000) == (uintPtr[3] & 0xFFF00000));
     }
 
-    if ((sum ^ (uint32_t)processID) == uintPtr[3])  // This is the new style
+    if ((sum ^ static_cast<uint32_t>(processID)) == uintPtr[3])  // This is the new style
     {
         return true;
     }
@@ -25,11 +25,11 @@ bool ActivityHelpers::IsActivityPath(const GUID* pActivityId, int processID)
     return (sum == uintPtr[3]);         // THis is old style where we don't make the ID unique machine wide.
 }
 
-int ActivityHelpers::ActivityPathProcessID(const GUID* pActivityId)
+int ActivityHelpers::GetProcessID(const GUID* pActivityId)
 {
-    uint32_t* uintPtr = (uint32_t*)pActivityId;
+    const uint32_t* uintPtr = reinterpret_cast<const uint32_t*>(pActivityId);
     uint32_t sum = uintPtr[0] + uintPtr[1] + uintPtr[2] + 0x599D99AD;
-    return (int)(sum ^ uintPtr[3]);
+    return static_cast<int>(sum ^ uintPtr[3]);
 }
 
 uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
@@ -42,19 +42,19 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
     uint32_t highPart = 0;
     uint32_t lowPart = 0;
 
-    uint8_t* bytePtr = (uint8_t*)pActivityId;
-    uint8_t* endPtr = bytePtr + 12;
+    const uint8_t* bytePtr = reinterpret_cast<const uint8_t*>(pActivityId);
+    const uint8_t* endPtr = bytePtr + 12;
     while (bytePtr < endPtr)
     {
-        uint32_t nibble = (uint32_t)(*bytePtr >> 4);
+        uint32_t nibble = static_cast<uint32_t>(*bytePtr >> 4);
         bool secondNibble = false;              // are we reading the second nibble (low order bits) of the byte.
     NextNibble:
-        if (nibble == (uint32_t)NumberListCodes::End)
+        if (nibble == static_cast<uint32_t>(NumberListCodes::End))
         {
             break;
         }
 
-        if (nibble <= (uint32_t)NumberListCodes::LastImmediateValue)
+        if (nibble <= static_cast<uint32_t>(NumberListCodes::LastImmediateValue))
         {
             if (highPart == 0)
             {
@@ -71,7 +71,7 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
 
             if (!secondNibble)
             {
-                nibble = (uint32_t)(*bytePtr & 0xF);
+                nibble = static_cast<uint32_t>(*bytePtr & 0xF);
                 secondNibble = true;
                 goto NextNibble;
             }
@@ -79,7 +79,7 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
             bytePtr++;
             continue;
         }
-        else if (nibble == (uint32_t)NumberListCodes::PrefixCode)
+        else if (nibble == static_cast<uint32_t>(NumberListCodes::PrefixCode))
         {
             // This are the prefix codes.   If the next nibble is MultiByte, then this is an overflow ID.
             // we we denote with a $ instead of a / separator.
@@ -87,7 +87,7 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
             // Read the next nibble.
             if (!secondNibble)
             {
-                nibble = (uint32_t)(*bytePtr & 0xF);
+                nibble = static_cast<uint32_t>(*bytePtr & 0xF);
             }
             else
             {
@@ -97,10 +97,10 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
                     break;
                 }
 
-                nibble = (uint32_t)(*bytePtr >> 4);
+                nibble = static_cast<uint32_t>(*bytePtr >> 4);
             }
 
-            if (nibble < (uint32_t)NumberListCodes::MultiByte1)
+            if (nibble < static_cast<uint32_t>(NumberListCodes::MultiByte1))
             {
                 // If the nibble is less than MultiByte we have not defined what that means
                 // For now we simply give up, and stop parsing.  We could add more cases here...
@@ -117,12 +117,12 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
 
         // At this point we are decoding a multi-byte number, either a normal number or a
         // At this point we are byte oriented, we are fetching the number as a stream of bytes.
-        uint32_t numBytes = nibble - (uint32_t)NumberListCodes::MultiByte1;
+        uint32_t numBytes = nibble - static_cast<uint32_t>(NumberListCodes::MultiByte1);
 
         uint32_t value = 0;
         if (!secondNibble)
         {
-            value = (uint32_t)(*bytePtr & 0xF);
+            value = static_cast<uint32_t>(*bytePtr & 0xF);
         }
 
         bytePtr++;       // Advance to the value bytes
@@ -134,7 +134,7 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
         }
 
         // Compute the number (little endian) (thus backwards).
-        for (int i = (int)numBytes - 1; 0 <= i; --i)
+        for (int i = static_cast<int>(numBytes) - 1; 0 <= i; --i)
         {
             value = (value << 8) + bytePtr[i];
         }

@@ -81,7 +81,26 @@ private:
     IConfiguration const* const _pConfiguration;
     CallstackProvider _callstackProvider;
     MetricsRegistry& _metricsRegistry;
-    double _requestDurationThreshold;
+    std::chrono::nanoseconds _requestDurationThreshold;
 
     std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
+
+    bool IsRedirect(uint32_t statusCode)
+    {
+        return (
+            (statusCode >= REDIRECT_MULTI_CHOICES) &&
+            (statusCode <= REDIRECT_PERMANENT)
+            );
+    }
+
+private:
+// see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#redirection_messages
+    const uint32_t REDIRECT_MULTI_CHOICES   = 300;
+    const uint32_t REDIRECT_MOVED_PERMENTLY = 301;
+    const uint32_t REDIRECT_FOUND           = 302;
+    const uint32_t REDIRECT_SEE_OTHERS      = 303;
+    const uint32_t REDIRECT_NOT_MODIFIED    = 304;
+    // 305 and 306 are not more used
+    const uint32_t REDIRECT_TEMPORARY       = 307;
+    const uint32_t REDIRECT_PERMANENT       = 308;
 };

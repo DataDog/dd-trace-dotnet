@@ -153,17 +153,16 @@ void BclEventsParser::OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID
     std::string url = shared::ToString(shared::WSTRING(scheme)) + std::string("://") + shared::ToString(shared::WSTRING(host));
     if (port != 0)
     {
-        url = url + ":" + std::to_string(port) + shared::ToString(shared::WSTRING(path));
+        url = url + ":" + std::to_string(port);
     }
-    else
-    {
-        url = url + shared::ToString(shared::WSTRING(path));
-    }
+    url = url + shared::ToString(shared::WSTRING(path));
+
     _pNetworkListener->OnRequestStart(timestamp, pActivityId, url);
 }
 
 void BclEventsParser::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    // payload:
     // int statusCode
 
     ULONG offset = 0;
@@ -178,6 +177,7 @@ void BclEventsParser::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
 
 void BclEventsParser::OnRequestFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    // payload:
     // string exception message
 
     ULONG offset = 0;
@@ -343,7 +343,7 @@ void BclEventsParser::OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUI
         return;
     }
 
-    _pNetworkListener->OnConnectFailed(timestamp, pActivityId, shared::ToString(shared::WSTRING(message)));
+    _pNetworkListener->OnConnectFailed(timestamp, pActivityId, shared::ToString(message));
 }
 
 

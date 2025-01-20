@@ -15,7 +15,7 @@
 /// the value is either encoded into nibble itself or it can spill over into the
 /// bytes that follow.
 /// </summary>
-enum NumberListCodes : uint8_t
+enum class NumberListCodes : uint8_t
 {
     End = 0x0,             // ends the list.   No valid value has this prefix.
     LastImmediateValue = 0xA,
@@ -34,7 +34,7 @@ public:
     static bool IsActivityPath(const GUID* pActivityId, int processID);
 
     // could be used in log / checks
-    static int ActivityPathProcessID(const GUID* pActivityId);
+    static int GetProcessID(const GUID* pActivityId);
 
     // The ActivityID GUID encodes the process ID, the root and request ID
     // The root is stored in the high 4 bytes and the request ID in the lower 4 bytes
