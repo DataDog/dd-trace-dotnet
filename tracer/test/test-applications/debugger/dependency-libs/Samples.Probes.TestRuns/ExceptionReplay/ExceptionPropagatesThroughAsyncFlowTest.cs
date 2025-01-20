@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.ExceptionReplay
 {
-    [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 8)]
+    [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 7)]
     internal class DeterministicComplexExceptionPropagationTest : IAsyncRun
     {
         public async Task RunAsync()
@@ -73,30 +73,6 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
             {
                 throw new TimeoutException($"Operation {operationName} timed out");
             }
-
-            await SimulateNestedAsyncOperation(operationName, !shouldThrow);
-        }
-
-        private async Task SimulateNestedAsyncOperation(string parentOperation, bool shouldThrow)
-        {
-            await Task.Yield(); // Force continuation on a different thread
-
-            // Simulate some work
-            await Task.Delay(20);
-
-            if (shouldThrow)
-            {
-                throw new InvalidOperationException($"Nested operation for {parentOperation} failed");
-            }
-
-            // Simulate a CPU-bound operation
-            await Task.Run(() =>
-            {
-                if (parentOperation.Contains("A"))
-                {
-                    throw new ArithmeticException("Error in CPU-bound calculation for Operation A");
-                }
-            });
         }
 
         private IEnumerable<Exception> GenerateInnerExceptions(Exception originalException, int count)

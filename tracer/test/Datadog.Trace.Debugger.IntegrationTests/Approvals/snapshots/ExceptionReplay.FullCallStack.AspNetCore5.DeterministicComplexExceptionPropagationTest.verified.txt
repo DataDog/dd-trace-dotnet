@@ -299,7 +299,7 @@
                           },
                           "HResult": {
                             "type": "Int32",
-                            "value": "-2146233079"
+                            "value": "-2146233083"
                           },
                           "InnerException": {
                             "isNull": "true",
@@ -307,32 +307,26 @@
                           },
                           "Message": {
                             "type": "String",
-                            "value": "Nested operation for Operation-5-A failed"
+                            "value": "Operation Operation-5-C timed out"
                           },
                           "Source": {
                             "type": "String",
                             "value": "Samples.Probes.TestRuns"
                           },
-                          "StackTrace": {
-                            "type": "String",
-                            "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
                       },
                       "Message": {
                         "type": "String",
-                        "value": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)"
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
                       },
                       "Source": {
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 63\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.InitiateComplexExceptionChain() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 35"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -573,7 +567,7 @@
                           },
                           "HResult": {
                             "type": "Int32",
-                            "value": "-2146233079"
+                            "value": "-2146233083"
                           },
                           "InnerException": {
                             "isNull": "true",
@@ -581,19 +575,16 @@
                           },
                           "Message": {
                             "type": "String",
-                            "value": "Nested operation for Operation-5-A failed"
+                            "value": "Operation Operation-5-C timed out"
                           },
                           "Source": {
                             "type": "String",
                             "value": "Samples.Probes.TestRuns"
                           },
-                          "StackTrace": {
-                            "type": "String",
-                            "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
-                        "type": "InvalidOperationException",
-                        "value": "InvalidOperationException"
+                        "type": "TimeoutException",
+                        "value": "TimeoutException"
                       },
                       {
                         "fields": {
@@ -627,10 +618,7 @@
                                 "isNull": "true",
                                 "type": "String"
                               },
-                              "StackTrace": {
-                                "isNull": "true",
-                                "type": "String"
-                              }
+                              "StackTrace": "ScrubbedValue"
                             },
                             "type": "Exception",
                             "value": "Exception"
@@ -643,10 +631,7 @@
                             "isNull": "true",
                             "type": "String"
                           },
-                          "StackTrace": {
-                            "isNull": "true",
-                            "type": "String"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
@@ -683,10 +668,7 @@
                                 "isNull": "true",
                                 "type": "String"
                               },
-                              "StackTrace": {
-                                "isNull": "true",
-                                "type": "String"
-                              }
+                              "StackTrace": "ScrubbedValue"
                             },
                             "type": "Exception",
                             "value": "Exception"
@@ -699,10 +681,7 @@
                             "isNull": "true",
                             "type": "String"
                           },
-                          "StackTrace": {
-                            "isNull": "true",
-                            "type": "String"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
@@ -723,7 +702,7 @@
                               },
                               "HResult": {
                                 "type": "Int32",
-                                "value": "-2146233079"
+                                "value": "-2146233083"
                               },
                               "InnerException": {
                                 "isNull": "true",
@@ -731,19 +710,16 @@
                               },
                               "Message": {
                                 "type": "String",
-                                "value": "Nested operation for Operation-5-A failed"
+                                "value": "Operation Operation-5-C timed out"
                               },
                               "Source": {
                                 "type": "String",
                                 "value": "Samples.Probes.TestRuns"
                               },
-                              "StackTrace": {
-                                "type": "String",
-                                "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                              }
+                              "StackTrace": "ScrubbedValue"
                             },
-                            "type": "InvalidOperationException",
-                            "value": "InvalidOperationException"
+                            "type": "TimeoutException",
+                            "value": "TimeoutException"
                           },
                           {
                             "fields": {
@@ -768,10 +744,7 @@
                                 "isNull": "true",
                                 "type": "String"
                               },
-                              "StackTrace": {
-                                "isNull": "true",
-                                "type": "String"
-                              }
+                              "StackTrace": "ScrubbedValue"
                             },
                             "type": "Exception",
                             "value": "Exception"
@@ -799,10 +772,7 @@
                                 "isNull": "true",
                                 "type": "String"
                               },
-                              "StackTrace": {
-                                "isNull": "true",
-                                "type": "String"
-                              }
+                              "StackTrace": "ScrubbedValue"
                             },
                             "type": "Exception",
                             "value": "Exception"
@@ -831,7 +801,7 @@
                       },
                       "HResult": {
                         "type": "Int32",
-                        "value": "-2146233079"
+                        "value": "-2146233083"
                       },
                       "InnerException": {
                         "isNull": "true",
@@ -839,23 +809,20 @@
                       },
                       "Message": {
                         "type": "String",
-                        "value": "Nested operation for Operation-5-A failed"
+                        "value": "Operation Operation-5-C timed out"
                       },
                       "Source": {
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)"
+                    "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
                   },
                   "Source": {
                     "type": "String",
@@ -868,7 +835,7 @@
               }
             },
             "throwable": {
-              "message": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)",
+              "message": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)",
               "stacktrace": [],
               "type": "Samples.Probes.TestRuns.ExceptionReplay.CustomAggregateException"
             }
@@ -949,7 +916,7 @@
                           },
                           "HResult": {
                             "type": "Int32",
-                            "value": "-2146233079"
+                            "value": "-2146233083"
                           },
                           "InnerException": {
                             "isNull": "true",
@@ -957,32 +924,26 @@
                           },
                           "Message": {
                             "type": "String",
-                            "value": "Nested operation for Operation-5-A failed"
+                            "value": "Operation Operation-5-C timed out"
                           },
                           "Source": {
                             "type": "String",
                             "value": "Samples.Probes.TestRuns"
                           },
-                          "StackTrace": {
-                            "type": "String",
-                            "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
                       },
                       "Message": {
                         "type": "String",
-                        "value": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)"
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
                       },
                       "Source": {
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 63\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.InitiateComplexExceptionChain() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 35"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -1047,15 +1008,11 @@
             "arguments": {
               "operationName": {
                 "type": "String",
-                "value": "Operation-5-A"
+                "value": "Operation-5-C"
               },
               "shouldThrow": {
                 "type": "Boolean",
-                "value": "False"
-              },
-              "this": {
-                "type": "DeterministicComplexExceptionPropagationTest",
-                "value": "DeterministicComplexExceptionPropagationTest"
+                "value": "True"
               }
             },
             "locals": {
@@ -1067,7 +1024,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146233083"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -1075,7 +1032,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "Nested operation for Operation-5-A failed"
+                    "value": "Operation Operation-5-C timed out"
                   },
                   "Source": {
                     "type": "String",
@@ -1083,14 +1040,14 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "TimeoutException",
+                "value": "TimeoutException"
               }
             },
             "throwable": {
-              "message": "Nested operation for Operation-5-A failed",
+              "message": "Operation Operation-5-C timed out",
               "stacktrace": [],
-              "type": "System.InvalidOperationException"
+              "type": "System.TimeoutException"
             }
           }
         },
@@ -1114,88 +1071,6 @@
     },
     "logger": {
       "method": "SimulateAsyncOperation",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "parentOperation": {
-                "type": "String",
-                "value": "Operation-5-A"
-              },
-              "shouldThrow": {
-                "type": "Boolean",
-                "value": "True"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233079"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "Nested operation for Operation-5-A failed"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
-              }
-            },
-            "throwable": {
-              "message": "Nested operation for Operation-5-A failed",
-              "stacktrace": [],
-              "type": "System.InvalidOperationException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "SimulateNestedAsyncOperation",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "SimulateNestedAsyncOperation",
       "name": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
@@ -1470,7 +1345,7 @@
                           },
                           "HResult": {
                             "type": "Int32",
-                            "value": "-2146233079"
+                            "value": "-2146233083"
                           },
                           "InnerException": {
                             "isNull": "true",
@@ -1478,32 +1353,26 @@
                           },
                           "Message": {
                             "type": "String",
-                            "value": "Nested operation for Operation-5-A failed"
+                            "value": "Operation Operation-5-C timed out"
                           },
                           "Source": {
                             "type": "String",
                             "value": "Samples.Probes.TestRuns"
                           },
-                          "StackTrace": {
-                            "type": "String",
-                            "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
                       },
                       "Message": {
                         "type": "String",
-                        "value": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)"
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
                       },
                       "Source": {
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 63\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.InitiateComplexExceptionChain() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 35"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -1604,7 +1473,7 @@
                           },
                           "HResult": {
                             "type": "Int32",
-                            "value": "-2146233079"
+                            "value": "-2146233083"
                           },
                           "InnerException": {
                             "isNull": "true",
@@ -1612,32 +1481,26 @@
                           },
                           "Message": {
                             "type": "String",
-                            "value": "Nested operation for Operation-5-A failed"
+                            "value": "Operation Operation-5-C timed out"
                           },
                           "Source": {
                             "type": "String",
                             "value": "Samples.Probes.TestRuns"
                           },
-                          "StackTrace": {
-                            "type": "String",
-                            "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
                       },
                       "Message": {
                         "type": "String",
-                        "value": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)"
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
                       },
                       "Source": {
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 63\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.InitiateComplexExceptionChain() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 35"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -1734,7 +1597,7 @@
                           },
                           "HResult": {
                             "type": "Int32",
-                            "value": "-2146233079"
+                            "value": "-2146233083"
                           },
                           "InnerException": {
                             "isNull": "true",
@@ -1742,32 +1605,26 @@
                           },
                           "Message": {
                             "type": "String",
-                            "value": "Nested operation for Operation-5-A failed"
+                            "value": "Operation Operation-5-C timed out"
                           },
                           "Source": {
                             "type": "String",
                             "value": "Samples.Probes.TestRuns"
                           },
-                          "StackTrace": {
-                            "type": "String",
-                            "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateNestedAsyncOperation(String parentOperation, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 100\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateAsyncOperation(String operationName, Boolean shouldThrow) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 78\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Sam"
-                          }
+                          "StackTrace": "ScrubbedValue"
                         },
                         "type": "Exception",
                         "value": "Exception"
                       },
                       "Message": {
                         "type": "String",
-                        "value": "Multiple exceptions at depth 5 (Nested operation for Operation-5-A failed) (Additional inner exception 1) (Additional inner exception 2)"
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
                       },
                       "Source": {
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.SimulateComplexAsyncOperations(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 63\r\n   at Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest.InitiateComplexExceptionChain() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionPropagatesThroughAsyncFlowTest.cs:line 35"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"

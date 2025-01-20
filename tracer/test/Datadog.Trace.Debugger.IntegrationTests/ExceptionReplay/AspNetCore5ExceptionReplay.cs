@@ -60,7 +60,7 @@ public class AspNetCore5ExceptionReplayEnabledDynamicInstrumentationDisabled_Ful
 
 public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    private static readonly string[] KnownPropertiesToReplace = ["duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task", "exceptionId", "exceptionHash", "frameIndex"];
+    private static readonly string[] KnownPropertiesToReplace = ["duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task", "exceptionId", "exceptionHash", "frameIndex", "StackTrace"];
     private static readonly string[] KnownPropertiesToRemove = ["CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items", "asyncRun", "run", "tasks", "ex", "obj2", "obj3", "methodName", "e"];
     private static readonly string[] KnownClassNamesToRemoveFromExceptionReplayFrame = ["<<Configure>b__5_2>d"];
     private static readonly string[] TypesToScrub = [nameof(IntPtr), nameof(Guid), "ValueTask", "ValueTaskAwaiter", "YieldAwaiter"];

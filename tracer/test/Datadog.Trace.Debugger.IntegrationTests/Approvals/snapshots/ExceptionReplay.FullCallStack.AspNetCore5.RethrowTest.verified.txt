@@ -2135,10 +2135,7 @@
                     "type": "String",
                     "value": "Samples.Probes.TestRuns"
                   },
-                  "StackTrace": {
-                    "type": "String",
-                    "value": "   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 288\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n--- End of stack trace from previous location ---\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/RethrowTest.cs:line 275\r\n   at Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.RecursiveCaptureAndThrow(Int32 depth) in /Users/matan.green/go/src/github.com/DataDog/d"
-                  }
+                  "StackTrace": "ScrubbedValue"
                 },
                 "type": "NotImplementedException",
                 "value": "NotImplementedException"

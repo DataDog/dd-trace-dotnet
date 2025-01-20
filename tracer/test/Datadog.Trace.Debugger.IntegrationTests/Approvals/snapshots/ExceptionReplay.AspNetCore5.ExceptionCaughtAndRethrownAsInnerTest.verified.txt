@@ -303,10 +303,7 @@
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -572,10 +569,7 @@
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -904,10 +898,7 @@
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
@@ -1017,10 +1008,7 @@
                         "type": "String",
                         "value": "Samples.Probes.TestRuns"
                       },
-                      "StackTrace": {
-                        "type": "String",
-                        "value": "   at Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run() in {SolutionDirectory}tracer/test/test-applications/debugger/dependency-libs/Samples.Probes.TestRuns/ExceptionReplay/ExceptionCaughtAndRethrownAsInnerTest.cs:line 20"
-                      }
+                      "StackTrace": "ScrubbedValue"
                     },
                     "type": "Exception",
                     "value": "Exception"
