@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -23,7 +24,7 @@ internal static class XUnitIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType, RetryMessageBus? retryMessageBus = null)
+    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, RetryMessageBus? retryMessageBus = null)
     {
         // Get the test suite instance
         var testSuite = TestSuite.Current;
@@ -34,6 +35,12 @@ internal static class XUnitIntegration
         }
 
         var testMethod = runnerInstance.TestMethod;
+        if (testMethod is not null)
+        {
+            // Prepare the method by jit-compiling it before running the test (if possible) and avoid the overhead of the first execution
+            RuntimeHelpers.PrepareMethod(testMethod.MethodHandle);
+        }
+
         var test = testSuite.InternalCreateTest(testMethod?.Name ?? string.Empty);
 
         // Get test parameters
@@ -166,7 +173,8 @@ internal static class XUnitIntegration
             {
                 if (exception.GetType().Name == "SkipException")
                 {
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, exception.Message);
+                    var skipReason = exception.Message.Replace("$XunitDynamicSkip$", string.Empty);
+                    test.Close(TestStatus.Skip, TimeSpan.Zero, skipReason);
                 }
                 else
                 {
@@ -196,9 +204,15 @@ internal static class XUnitIntegration
             return false;
         }
 
-        var testClass = runnerInstance.TestClass;
+        var testClassName = runnerInstance.TestClassTypeOrFulnname switch
+        {
+            Type testClassType => testClassType.ToString(),
+            string testClassFullName => testClassFullName,
+            _ => string.Empty
+        };
+
         var testMethod = runnerInstance.TestMethod;
-        var itrShouldSkip = Common.ShouldSkip(testClass?.ToString() ?? string.Empty, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
+        var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
         traits ??= runnerInstance.TestCase.Traits;
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;

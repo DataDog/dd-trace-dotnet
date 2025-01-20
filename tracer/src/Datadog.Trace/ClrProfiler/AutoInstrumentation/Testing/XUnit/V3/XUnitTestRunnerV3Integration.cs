@@ -4,9 +4,12 @@
 // </copyright>
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading.Tasks;
+using System.Linq;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
@@ -27,26 +30,61 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 public static class XUnitTestRunnerV3Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
+        where TContext : ITestRunnerContextV3
     {
+        Common.Log.Warning("XUnitTestRunnerV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
         if (!XUnitIntegration.IsEnabled || instance is null)
         {
             return CallTargetState.GetDefault();
         }
 
-        Common.Log.Warning("XUnitTestRunnerV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
-        return CallTargetState.GetDefault();
+        var runnerInstance = new TestRunnerStruct
+        {
+            Aggregator = context.Aggregator,
+            TestCase = new TestCaseStruct
+            {
+                DisplayName = context.Test.TestDisplayName,
+                Traits = context.Test.Traits.ToDictionary(
+                    k => k.Key,
+                    v => v.Value as List<string> ?? v.Value.ToList())
+            },
+            TestClassTypeOrFulnname = context.Test.TestCase.TestClass?.TestClassName,
+            TestMethod = context.TestMethod,
+            TestMethodArguments = context.TestMethodArguments!
+        };
+
+        var state = Tuple.Create(
+            XUnitIntegration.CreateTest(
+                ref runnerInstance,
+                retryMessageBus: (context.MessageBus as IDuckType)?.Instance as RetryMessageBus),
+            (object)context);
+        return new CallTargetState(null, state);
     }
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
     {
         Common.Log.Warning("XUnitTestRunnerV3Integration.OnMethodEnd, instance: {0}, context: {1}", instance, returnValue);
+        if (state.State is Tuple<Test?, object> tuple && tuple.Item1 == Test.Current)
+        {
+            // Restore the AsyncLocal set
+            // This is used to mimic the ExecutionContext copy from the StateMachine
+            // CallTarget integrations does this automatically when using a normal `Scope`
+            // in this case we have to do it manually.
+            Test.Current = null;
+        }
+
         return new CallTargetReturn<TResult>(returnValue);
     }
 
-    internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        await Task.Yield();
         Common.Log.Warning("XUnitTestRunnerV3Integration.OnAsyncMethodEnd, instance: {0}, context: {1}", instance, returnValue);
+        if (state.State is Tuple<Test?, object> { Item1: { } test, Item2: { } context })
+        {
+            var testRunnerContext = context.DuckCast<ITestRunnerContextV3>();
+            XUnitIntegration.FinishTest(test, testRunnerContext.Aggregator);
+        }
+
         return returnValue;
     }
 }

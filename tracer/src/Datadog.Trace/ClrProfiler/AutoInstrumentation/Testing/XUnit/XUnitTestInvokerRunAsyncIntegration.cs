@@ -48,7 +48,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
         {
             Aggregator = invokerInstance.Aggregator,
             TestCase = invokerInstance.TestCase,
-            TestClass = invokerInstance.TestClass,
+            TestClassTypeOrFulnname = invokerInstance.TestClass,
             TestMethod = invokerInstance.TestMethod,
             TestMethodArguments = invokerInstance.TestMethodArguments
         };
@@ -57,7 +57,6 @@ public static class XUnitTestInvokerRunAsyncIntegration
             null,
             XUnitIntegration.CreateTest(
                 ref runnerInstance,
-                instance.GetType(),
                 retryMessageBus: (invokerInstance.MessageBus as IDuckType)?.Instance as RetryMessageBus));
     }
 
