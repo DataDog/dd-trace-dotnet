@@ -28,12 +28,12 @@ public class ContextUserEventTests
         var userId = "toto";
         var addresses = context!.ShouldRunWith(security.Object, userId: userId);
         addresses.Should().HaveCount(1);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserId, userId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         context.CommitUserRuns(addresses, false);
         userId = "tata";
         // should run with a different value
         addresses = context!.ShouldRunWith(security.Object, userId: userId);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserId, userId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         addresses.Should().HaveCount(1);
         context.CommitUserRuns(addresses, false);
 
@@ -55,17 +55,17 @@ public class ContextUserEventTests
         var userId = "toto";
         var addresses = context!.ShouldRunWith(security.Object, userId: userId, fromSdk: true);
         addresses.Should().HaveCount(1);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserId, userId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         context.CommitUserRuns(addresses, true);
         var ssessionId = "234";
         addresses = context!.ShouldRunWith(security.Object, userSessionId: ssessionId);
         addresses.Should().HaveCount(1);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserSessionId, ssessionId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserSessionId, ssessionId));
         context.CommitUserRuns(addresses, false);
         ssessionId = "tata";
         // should run with a different value
         addresses = context!.ShouldRunWith(security.Object, userSessionId: ssessionId);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserSessionId, ssessionId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserSessionId, ssessionId));
         addresses.Should().HaveCount(1);
         context.CommitUserRuns(addresses, false);
 
@@ -92,7 +92,7 @@ public class ContextUserEventTests
 
         // should run with a different value
         addresses = context!.ShouldRunWith(security.Object, userId: userId, userSessionId: userSessionId);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserSessionId, userSessionId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserSessionId, userSessionId));
         addresses.Should().HaveCount(1);
         context.CommitUserRuns(addresses, false);
     }
@@ -122,7 +122,7 @@ public class ContextUserEventTests
         var userId = "toto";
         var addresses = context!.ShouldRunWith(security.Object, userId: userId);
         addresses.Should().HaveCount(1);
-        addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserId, userId));
+        addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         context.CommitUserRuns(addresses, true);
         addresses = context!.ShouldRunWith(security.Object, userId: "other");
         addresses.Should().HaveCount(0);

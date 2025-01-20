@@ -16,7 +16,7 @@ internal interface IContext : IDisposable
 
     IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp);
 
-    Dictionary<string, string> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false);
+    Dictionary<string, object> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false);
 
-    void CommitUserRuns(IDictionary<string, string> addresses, bool fromSdk);
+    void CommitUserRuns(Dictionary<string, object> addresses, bool fromSdk);
 }

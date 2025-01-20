@@ -63,9 +63,9 @@ internal class Context : IContext
     public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
         => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
 
-    public Dictionary<string, string> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
+    public Dictionary<string, object> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
-        var addresses = new Dictionary<string, string>();
+        var addresses = new Dictionary<string, object>();
         ShouldRun(_userEventsState.Id, userId, AddressesConstants.UserId);
         ShouldRun(_userEventsState.Login, userLogin, AddressesConstants.UserLogin);
         ShouldRun(_userEventsState.SessionId, userSessionId, AddressesConstants.UserSessionId);
@@ -92,21 +92,21 @@ internal class Context : IContext
         }
     }
 
-    public void CommitUserRuns(IDictionary<string, string> addresses, bool fromSdk)
+    public void CommitUserRuns(Dictionary<string, object> addresses, bool fromSdk)
     {
         if (addresses.TryGetValue(AddressesConstants.UserId, out var address))
         {
-            _userEventsState.Id = new(address, fromSdk);
+            _userEventsState.Id = new(address.ToString(), fromSdk);
         }
 
         if (addresses.TryGetValue(AddressesConstants.UserLogin, out address))
         {
-            _userEventsState.Login = new(address, fromSdk);
+            _userEventsState.Login = new(address.ToString(), fromSdk);
         }
 
         if (addresses.TryGetValue(AddressesConstants.UserSessionId, out address))
         {
-            _userEventsState.SessionId = new(address, fromSdk);
+            _userEventsState.SessionId = new(address.ToString(), fromSdk);
         }
     }
 

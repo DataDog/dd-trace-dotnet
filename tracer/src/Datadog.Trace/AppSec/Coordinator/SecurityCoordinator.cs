@@ -106,23 +106,21 @@ internal readonly partial struct SecurityCoordinator
             var additiveContext = GetOrCreateAdditiveContext();
             if (additiveContext?.ShouldRunWith(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
             {
-                addresses = userAddresses.ToDictionary(k => k.Key, object (v) => v.Value);
-
                 if (otherTags is not null)
                 {
                     foreach (var kvp in otherTags)
                     {
-                        if (!addresses.ContainsKey(kvp.Key))
+                        if (!userAddresses.ContainsKey(kvp.Key))
                         {
-                            addresses.Add(kvp.Key, kvp.Value);
+                            userAddresses.Add(kvp.Key, kvp.Value);
                         }
                     }
                 }
 
-                SecurityReporter.LogAddressIfDebugEnabled(addresses);
+                SecurityReporter.LogAddressIfDebugEnabled(userAddresses);
 
                 // run the WAF and execute the results
-                result = additiveContext.Run(addresses, _security.Settings.WafTimeoutMicroSeconds);
+                result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
                 RecordTelemetry(result);
 
