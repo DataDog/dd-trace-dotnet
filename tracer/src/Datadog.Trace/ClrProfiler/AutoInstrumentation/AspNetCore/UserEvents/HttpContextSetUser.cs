@@ -33,17 +33,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = nameof(IntegrationId.AspNetCore),
         InstrumentationCategory = InstrumentationCategory.AppSec)]
-    [InstrumentMethod(
-        AssemblyName = AssemblyName,
-        TypeName = HttpContextExtensionsTypeName,
-        ParameterTypeNames = ["System.Security.Claims.ClaimsPrincipal"],
-        MethodName = "set_User",
-        ReturnTypeName = ClrNames.Task,
-        MinimumVersion = Major2,
-        CallTargetIntegrationKind = CallTargetKind.Derived,
-        MaximumVersion = SupportedVersions.LatestDotNet,
-        IntegrationName = nameof(IntegrationId.AspNetCore),
-        InstrumentationCategory = InstrumentationCategory.AppSec)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class HttpContextSetUser
@@ -51,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         private const string Major2 = "2";
         private const string AssemblyName = "Microsoft.AspNetCore.Http.Abstractions";
 
-        private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Http.HttpContext";
+        private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Http.DefaultHttpContext";
 
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref ClaimsPrincipal claimsPrincipal)
         {
