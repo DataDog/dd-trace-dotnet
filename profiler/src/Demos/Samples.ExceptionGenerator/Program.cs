@@ -93,7 +93,7 @@ namespace Samples.ExceptionGenerator
 
                                 case Scenario.Unhandled:
                                     Console.WriteLine(" ########### Crashing...");
-                                    throw new InvalidOperationException("Task failed successfully.");
+                                    throw new BadImageFormatException("Task failed successfully.");
 
                                 default:
                                     Console.WriteLine($" ########### Unknown scenario: {scenario}.");
