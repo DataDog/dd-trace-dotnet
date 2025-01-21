@@ -179,6 +179,7 @@ resources:
   containers:
   - container: dd_agent
     image: public.ecr.aws/datadog/agent
+    localImage: true
     ports:
     - 8126:8126
     env:
