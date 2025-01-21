@@ -548,6 +548,20 @@ partial class Build : NukeBuild
 
             void GenerateSmokeTestsMatrices()
             {
+                // Temporary nuke-based smoke tests
+                GenerateNukeSmokeTestsMatrix();
+
+                void GenerateNukeSmokeTestsMatrix()
+                {
+                    var matrix = SmokeTests.SmokeTestBuilder.GetAllScenarios()
+                                           .SelectMany(pair => pair.Value.Keys.Select(scenario => (category: pair.Key, scenario)))
+                                           .ToDictionary(x => x, x => new { x.category, x.scenario });
+
+                    Logger.Information("Temp Installer smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("temp_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
                 // installer smoke tests
                 GenerateLinuxInstallerSmokeTestsMatrix();
                 GenerateLinuxSmokeTestsArm64Matrix();

@@ -4969,6 +4969,55 @@ stages:
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
 
+- stage: temp_installer_smoke_tests
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 20 # should take ~5 mins
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.temp_linux_smoke_tests_matrix'] ]
+
+    pool:
+      name: azure-linux-smoke-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download x64 artifacts to artifact directory
+      inputs:
+        artifact: linux-packages-linux-x64
+        path: $(outputDir)/artifacts/artifacts
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download x64 musl artifacts to artifact directory
+      inputs:
+        artifact: linux-packages-linux-musl-x64
+        path: $(outputDir)/artifacts/artifacts
+
+    - publish: artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "RunArtifactSmokeTests -SmokeTestCategory $(category) -SmokeTestScenario $(scenario)"
+        apikey: $(DD_LOGGER_DD_API_KEY)
+
 - stage: installer_smoke_tests
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
