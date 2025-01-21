@@ -15951,5 +15951,35 @@
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.XunitTestMethodRunnerContext",
+    "TargetMethodName": ".ctor",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "_",
+      "_",
+      "_",
+      "_",
+      "_",
+      "_",
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
   }
 ]

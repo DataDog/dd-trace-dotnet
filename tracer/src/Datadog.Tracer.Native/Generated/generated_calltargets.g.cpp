@@ -320,7 +320,8 @@ WCHAR* sig301[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("System.TimeSpan"),};
 WCHAR* sig302[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("System.Type"),(WCHAR*)WStr("NLog.Internal.TargetWithFilterChain"),(WCHAR*)WStr("NLog.LogEventInfo"),(WCHAR*)WStr("NLog.LogFactory"),};
 WCHAR* sig303[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("Yarp.ReverseProxy.Forwarder.ForwarderHttpClientContext"),(WCHAR*)WStr("System.Net.Http.SocketsHttpHandler"),};
 WCHAR* sig304[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("_"),};
-WCHAR* sig305[]={(WCHAR*)WStr("System.Web.Mvc.ActionResult"),(WCHAR*)WStr("System.Web.Mvc.ControllerContext"),(WCHAR*)WStr("System.Web.Mvc.ActionDescriptor"),(WCHAR*)WStr("System.Collections.Generic.IDictionary`2[System.String,System.Object]"),};
+WCHAR* sig305[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),};
+WCHAR* sig306[]={(WCHAR*)WStr("System.Web.Mvc.ActionResult"),(WCHAR*)WStr("System.Web.Mvc.ControllerContext"),(WCHAR*)WStr("System.Web.Mvc.ActionDescriptor"),(WCHAR*)WStr("System.Collections.Generic.IDictionary`2[System.String,System.Object]"),};
 
 std::vector<CallTargetDefinition3> callTargets =
 {
@@ -386,7 +387,7 @@ std::vector<CallTargetDefinition3> callTargets =
 #if _WIN32
 {(WCHAR*)WStr("System.Web.Mvc"),(WCHAR*)WStr("System.Web.Mvc.Async.AsyncControllerActionInvoker"),(WCHAR*)WStr("BeginInvokeAction"),sig117,5,4,0,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"),CallTargetKind::Default,1,1},
 {(WCHAR*)WStr("System.Web.Mvc"),(WCHAR*)WStr("System.Web.Mvc.Async.AsyncControllerActionInvoker"),(WCHAR*)WStr("EndInvokeAction"),sig097,2,4,0,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"),CallTargetKind::Default,1,1},
-{(WCHAR*)WStr("System.Web.Mvc"),(WCHAR*)WStr("System.Web.Mvc.ControllerActionInvoker"),(WCHAR*)WStr("InvokeActionMethod"),sig305,4,4,0,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"),CallTargetKind::Default,6,1},
+{(WCHAR*)WStr("System.Web.Mvc"),(WCHAR*)WStr("System.Web.Mvc.ControllerActionInvoker"),(WCHAR*)WStr("InvokeActionMethod"),sig306,4,4,0,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"),CallTargetKind::Default,6,1},
 {(WCHAR*)WStr("System.Web.Http"),(WCHAR*)WStr("System.Web.Http.ApiController"),(WCHAR*)WStr("ExecuteAsync"),sig230,3,5,1,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration"),CallTargetKind::Default,1,1},
 {(WCHAR*)WStr("System.Web.Http"),(WCHAR*)WStr("System.Web.Http.Controllers.ReflectedHttpActionDescriptor"),(WCHAR*)WStr("ExecuteAsync"),sig229,4,5,1,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration"),CallTargetKind::Default,6,1},
 {(WCHAR*)WStr("System.Web.Http"),(WCHAR*)WStr("System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions"),(WCHAR*)WStr("HandleAsync"),sig231,4,5,1,0,5,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"),CallTargetKind::Default,1,1},
@@ -995,6 +996,7 @@ std::vector<CallTargetDefinition3> callTargets =
 {(WCHAR*)WStr("xunit.v3.core"),(WCHAR*)WStr("Xunit.v3.TestOutputHelper"),(WCHAR*)WStr("QueueTestOutput"),sig289,2,1,0,0,1,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestOutputHelperQueueTestOutputV3Integration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("xunit.v3.core"),(WCHAR*)WStr("Xunit.v3.TestRunner`2"),(WCHAR*)WStr("RunTest"),sig235,2,1,0,0,1,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("xunit.v3.core"),(WCHAR*)WStr("Xunit.v3.XunitTestMethodRunnerBase`3"),(WCHAR*)WStr("RunTestCase"),sig237,3,1,0,0,1,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration"),CallTargetKind::Default,1,15},
+{(WCHAR*)WStr("xunit.v3.core"),(WCHAR*)WStr("Xunit.v3.XunitTestMethodRunnerContext"),(WCHAR*)WStr(".ctor"),sig305,8,1,0,0,1,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration"),CallTargetKind::Default,1,15},
 };
 return profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), callTargets.data(), callTargets.size(), enabledCategories, platform);
 }

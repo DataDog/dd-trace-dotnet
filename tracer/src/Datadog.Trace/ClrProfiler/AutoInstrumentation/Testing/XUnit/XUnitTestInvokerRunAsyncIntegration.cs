@@ -48,7 +48,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
         {
             Aggregator = invokerInstance.Aggregator,
             TestCase = invokerInstance.TestCase,
-            TestClassTypeOrFulnname = invokerInstance.TestClass,
+            TestClass = invokerInstance.TestClass,
             TestMethod = invokerInstance.TestMethod,
             TestMethodArguments = invokerInstance.TestMethodArguments
         };

@@ -551,6 +551,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestOutputHelperQueueTestOutputV3Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration"
                     => Datadog.Trace.Configuration.IntegrationId.XUnit,
 
                 // adonet integrations

@@ -17,9 +17,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 internal struct TestRunnerStruct
 {
     /// <summary>
-    /// Test class Type or Fullname
+    /// Test class Type
     /// </summary>
-    public object? TestClassTypeOrFulnname;
+    public Type? TestClass;
 
     /// <summary>
     /// Test method MethodInfo

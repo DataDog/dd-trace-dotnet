@@ -56,7 +56,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             if (instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
             {
-                Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", runnerInstance.TestClassTypeOrFulnname?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
+                Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
                 // Refresh values after skip reason change, and create Skip by ITR span.
                 runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
                 testRunnerInstance.SkipReason = runnerInstance.SkipReason;

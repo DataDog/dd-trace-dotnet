@@ -204,13 +204,7 @@ internal static class XUnitIntegration
             return false;
         }
 
-        var testClassName = runnerInstance.TestClassTypeOrFulnname switch
-        {
-            Type testClassType => testClassType.ToString(),
-            string testClassFullName => testClassFullName,
-            _ => string.Empty
-        };
-
+        var testClassName = runnerInstance.TestClass?.ToString() ?? string.Empty;
         var testMethod = runnerInstance.TestMethod;
         var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
         traits ??= runnerInstance.TestCase.Traits;

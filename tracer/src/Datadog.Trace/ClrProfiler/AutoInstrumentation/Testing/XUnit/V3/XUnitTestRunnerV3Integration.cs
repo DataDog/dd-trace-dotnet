@@ -48,7 +48,7 @@ public static class XUnitTestRunnerV3Integration
                     k => k.Key,
                     v => v.Value as List<string> ?? v.Value.ToList())
             },
-            TestClassTypeOrFulnname = context.Test.TestCase.TestClass?.TestClassName,
+            TestClass = context.Test.TestCase.TestClass.Class,
             TestMethod = context.TestMethod,
             TestMethodArguments = context.TestMethodArguments!
         };

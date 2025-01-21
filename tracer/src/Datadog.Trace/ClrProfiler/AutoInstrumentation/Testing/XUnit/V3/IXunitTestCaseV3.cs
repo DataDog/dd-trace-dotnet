@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
@@ -11,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 internal interface IXunitTestCaseV3
 {
     /// <summary>
-    /// Gets the display text for the reason a test that might being skipped.
+    /// Gets or sets the display text for the reason a test that might being skipped.
     /// </summary>
     /// <remarks>
     /// This differs from the contract of ITestCaseMetadata.SkipReason by virtue
@@ -19,7 +20,7 @@ internal interface IXunitTestCaseV3
     /// statically skipped (if both SkipUnless and SkipWhen are
     /// <c>null</c>) or dynamically skipped (if one is non-<c>null</c>).
     /// </remarks>
-    string SkipReason { get; }
+    string SkipReason { get; set; }
 
     /// <summary>
     /// Gets the test class that this test case belongs to.
@@ -65,4 +66,16 @@ internal interface IXunitTestCaseV3
     /// in order to support Test Explorer. Note that this is not the same as <see cref="Type.FullName"/>.
     /// </remarks>
     string TestMethodReturnTypeVSTest { get; }
+
+    /// <summary>
+    /// Gets the test case display name.
+    /// </summary>
+    string TestCaseDisplayName { get; }
+
+    /// <summary>
+    /// Gets the trait values associated with this test case. If
+    /// there are none, or the framework does not support traits,
+    /// this should return an empty dictionary (not <c>null</c>).
+    /// </summary>
+    Dictionary<string, HashSet<string>> Traits { get; }
 }
