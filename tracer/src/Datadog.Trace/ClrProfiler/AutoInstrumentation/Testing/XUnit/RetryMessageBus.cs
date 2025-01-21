@@ -66,6 +66,12 @@ internal class RetryMessageBus : IMessageBus
             Array.Resize(ref _listOfMessages, totalExecutions);
         }
 
+        if (index < 0)
+        {
+            Common.Log.Error<int>("EFD: RetryMessageBus.QueueMessage: Execution index {Index} is less than 0.", index);
+            throw new Exception($"Execution index {index} is less than 0.");
+        }
+
         if (_listOfMessages[index] is not { } lstRetryInstance)
         {
             lstRetryInstance = [];
