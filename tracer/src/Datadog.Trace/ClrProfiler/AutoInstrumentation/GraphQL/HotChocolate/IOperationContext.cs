@@ -15,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ///// <summary>
         ///// Gets the context operation
         ///// </summary>
-        PreparedOperationStruct Operation { get; }
+        IOperationProxy Operation { get; }
     }
 }

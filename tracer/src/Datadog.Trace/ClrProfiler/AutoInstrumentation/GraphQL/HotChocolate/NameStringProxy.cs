@@ -13,6 +13,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     [DuckCopy]
     internal struct NameStringProxy
     {
-        public object Value;
+        public string Value;
     }
 }
