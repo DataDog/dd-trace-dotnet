@@ -81,7 +81,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
 
     private void Send(MailMessage mailMessage)
     {
-        using (var client = BuildClient())
+        using (var client = new SmtpClient())
         {
             client.Send(mailMessage);
         }
@@ -131,7 +131,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
 
     private void SendMailAsync(MailMessage mailMessage)
     {
-        using (var client = BuildClient())
+        using (var client = new SmtpClient())
         {
             client.SendMailAsync(mailMessage);
         }
@@ -181,7 +181,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
 
     private void SendAsync(MailMessage mailMessage, object token)
     {
-        using (var client = BuildClient())
+        using (var client = new SmtpClient())
         {
             client.SendAsync(mailMessage, token);
         }
@@ -233,18 +233,13 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
 
     private void SendMailAsync(MailMessage mailMessage, System.Threading.CancellationToken cancellationToken)
     {
-        using (var client = BuildClient())
+        using (var client = new SmtpClient())
         {
             client.SendMailAsync(mailMessage, cancellationToken);
         }
     }
 
 #endif
-
-    private System.Net.Mail.SmtpClient BuildClient()
-    {
-        return new System.Net.Mail.SmtpClient();
-    }
 
     private MailMessage BuildMailMessage(bool isHtml, string name, string lastName)
     {
