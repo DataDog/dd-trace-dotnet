@@ -3,6 +3,12 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+
+    <!--This is required for smoke test assembly discovery-->
+    <AssemblyName>Samples.ParallelCountSites</AssemblyName>
+    <!-- This is required to avoid compilation error (duplicated). This has been done for test. See Program.cs for more info.-->
+
   </PropertyGroup>
 
 </Project>
