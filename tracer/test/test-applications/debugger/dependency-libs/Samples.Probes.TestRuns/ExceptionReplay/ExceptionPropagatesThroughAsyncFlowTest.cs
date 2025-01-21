@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+#if NET6_0_OR_GREATER
 namespace Samples.Probes.TestRuns.ExceptionReplay
 {
     [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 7)]
@@ -98,3 +99,4 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
         }
     }
 }
+#endif

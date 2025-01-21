@@ -78,6 +78,7 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
         SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
 
         // See https://github.com/dotnet/runtime/issues/91963
         SetEnvironmentVariable("COMPLUS_ForceEnc", "0");

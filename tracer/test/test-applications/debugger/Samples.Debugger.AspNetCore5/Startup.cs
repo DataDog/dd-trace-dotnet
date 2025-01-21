@@ -28,8 +28,6 @@ namespace Samples.Debugger.AspNetCore5
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseMiddleware<FirstLastMiddleware>();
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -77,41 +75,12 @@ namespace Samples.Debugger.AspNetCore5
         }
     }
 
-
-    public class FirstLastMiddleware
-    {
-        private readonly RequestDelegate _next;
-
-        public FirstLastMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
-
-        public async Task InvokeAsync(HttpContext context)
-        {
-            try
-            {
-                Console.WriteLine("FirstLastMiddleware: Entering request pipeline");
-
-                await _next(context);
-
-                Console.WriteLine("FirstLastMiddleware: Exiting request pipeline normally");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FirstLastMiddleware caught an exception: {ex.Message}");
-                throw;
-            }
-        }
-    }
-
     public class CustomStartupFilter : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
         {
             return app =>
             {
-                app.UseMiddleware<FirstLastMiddleware>();
                 next(app);
             };
         }
