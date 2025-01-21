@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
@@ -9,64 +10,73 @@ namespace SmokeTests;
 public static class SmokeTestBuilder
 {
     const string DotnetSdkVersion = "9.0.100";
-    public static SmokeTestCategory[] GetAllScenarios() => Enum.GetValues<SmokeTestCategory>();
 
-    public static SmokeTestImage[] GetSmokeTestImagesForCategory(SmokeTestCategory category)
-        => category switch
+    public static Dictionary<string, SmokeTestScenario> GetAllScenarios()
+        => Enum.GetValues<SmokeTestCategory>().ToDictionary(x => x, GetScenariosForCategory);
+
+    static Dictionary<string, SmokeTestScenario> GetScenariosForCategory(SmokeTestCategory category)
+    {
+        var scenarios = category switch
         {
-            SmokeTestCategory.LinuxX64Installer => LinuxX64InstallerImages(),
+            SmokeTestCategory.LinuxX64Installer => LinuxX64InstallerScenarios(),
             _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
         };
 
-    static SmokeTestImage[] LinuxX64InstallerImages()
-    {
-        return new SmokeTestImage[]
+        return scenarios.ToDictionary(x => x.JobName, x => x);
+
+        static SmokeTestScenario[] LinuxX64InstallerScenarios()
         {
-            // debian
-            new("debian", TargetFramework.NET9_0, "9.0-noble"),
-            new("debian", TargetFramework.NET9_0, "9.0-bookworm-slim"),
-            new("debian", TargetFramework.NET8_0, "8.0-bookworm-slim"),
-            new("debian", TargetFramework.NET8_0, "8.0-jammy"),
-            new("debian", TargetFramework.NET7_0, "7.0-bullseye-slim"),
-            new("debian", TargetFramework.NET6_0, "6.0-bullseye-slim"),
-            new("debian", TargetFramework.NET5_0, "5.0-bullseye-slim"),
-            new("debian", TargetFramework.NET5_0, "5.0-buster-slim"),
-            new("debian", TargetFramework.NET5_0, "5.0-focal"),
-            new("debian", TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
-            new("debian", TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
-            new("debian", TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
-            new("debian", TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
-            new("debian", TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+            return new SmokeTestScenario[]
+            {
+                // debian
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET9_0, "9.0-noble"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET8_0, "8.0-jammy"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET5_0, "5.0-buster-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NET5_0, "5.0-focal"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
+                new(SmokeTestCategory.LinuxX64Installer, "debian", TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
 
-            // fedora
-            new("fedora", TargetFramework.NET7_0, "35-7.0"),
-            new("fedora", TargetFramework.NET6_0, "34-6.0"),
-            new("fedora", TargetFramework.NET5_0, "35-5.0"),
-            new("fedora", TargetFramework.NET5_0, "34-5.0"),
-            new("fedora", TargetFramework.NET5_0, "33-5.0"),
-            new("fedora", TargetFramework.NETCOREAPP3_1, "35-3.1"),
-            new("fedora", TargetFramework.NETCOREAPP3_1, "34-3.1"),
-            new("fedora", TargetFramework.NETCOREAPP3_1, "33-3.1"),
-            new("fedora", TargetFramework.NETCOREAPP3_1, "29-3.1"),
-            new("fedora", TargetFramework.NETCOREAPP2_1, "29-2.1"),
-
-            // alpine
-            new ("alpine", TargetFramework.NET9_0, "9.0-alpine3.20"),
-            new ("alpine", TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
-            new ("alpine", TargetFramework.NET8_0, "8.0-alpine3.18"),
-            new ("alpine", TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
-            new ("alpine", TargetFramework.NET7_0, "7.0-alpine3.16"),
-            new ("alpine", TargetFramework.NET6_0, "6.0-alpine3.16"),
-            new ("alpine", TargetFramework.NET6_0, "6.0-alpine3.14"),
-            new ("alpine", TargetFramework.NET5_0, "5.0-alpine3.14"),
-            new ("alpine", TargetFramework.NET5_0, "5.0-alpine3.13"),
-            new ("alpine", TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-            new ("alpine", TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
-            new ("alpine", TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
-        };
+                // fedora
+                // new("fedora", TargetFramework.NET7_0, "35-7.0"),
+                // new("fedora", TargetFramework.NET6_0, "34-6.0"),
+                // new("fedora", TargetFramework.NET5_0, "35-5.0"),
+                // new("fedora", TargetFramework.NET5_0, "34-5.0"),
+                // new("fedora", TargetFramework.NET5_0, "33-5.0"),
+                // new("fedora", TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                // new("fedora", TargetFramework.NETCOREAPP3_1, "34-3.1"),
+                // new("fedora", TargetFramework.NETCOREAPP3_1, "33-3.1"),
+                // new("fedora", TargetFramework.NETCOREAPP3_1, "29-3.1"),
+                // new("fedora", TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                //
+                // // alpine
+                // new ("alpine", TargetFramework.NET9_0, "9.0-alpine3.20"),
+                // new ("alpine", TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
+                // new ("alpine", TargetFramework.NET8_0, "8.0-alpine3.18"),
+                // new ("alpine", TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                // new ("alpine", TargetFramework.NET7_0, "7.0-alpine3.16"),
+                // new ("alpine", TargetFramework.NET6_0, "6.0-alpine3.16"),
+                // new ("alpine", TargetFramework.NET6_0, "6.0-alpine3.14"),
+                // new ("alpine", TargetFramework.NET5_0, "5.0-alpine3.14"),
+                // new ("alpine", TargetFramework.NET5_0, "5.0-alpine3.13"),
+                // new ("alpine", TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                // new ("alpine", TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                // new ("alpine", TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+            };
+        }
     }
 
-    public static string BuildImage(SmokeTestCategory category, SmokeTestImage image, AbsolutePath tracerDir)
+    public static SmokeTestScenario GetScenario(SmokeTestCategory category, string scenario)
+        => GetScenariosForCategory(category)[scenario];
+
+    public static IReadOnlyCollection<Output> BuildImage(SmokeTestCategory category, SmokeTestScenario scenario, AbsolutePath tracerDir)
     {
         var dockerLogger = DockerTasks.DockerLogger;
         try
@@ -76,7 +86,7 @@ public static class SmokeTestBuilder
 
             return category switch
             {
-                SmokeTestCategory.LinuxX64Installer => LinuxX64InstallerDockerfile(image, tracerDir),
+                SmokeTestCategory.LinuxX64Installer => LinuxX64InstallerDockerfile(scenario, tracerDir),
                 _ => throw new InvalidOperationException($"Unknown smoke test scenario: {category}"),
             };
         }
@@ -84,50 +94,58 @@ public static class SmokeTestBuilder
         {
             DockerTasks.DockerLogger = dockerLogger;
         }
-    }
 
-    static string LinuxX64InstallerDockerfile(SmokeTestImage image, AbsolutePath tracerDir)
-    {
-        var runtimeImage = $"mcr.microsoft.com/dotnet/aspnet:{image.RuntimeTag}";
-        var installCmd = "dpkg -i ./datadog-dotnet-apm*_amd64.deb";
-        var tag = $"dd-trace-dotnet/{image}-tester";
+        static IReadOnlyCollection<Output> LinuxX64InstallerDockerfile(SmokeTestScenario scenario, AbsolutePath tracerDir)
+        {
+            var runtimeImage = $"mcr.microsoft.com/dotnet/aspnet:{scenario.RuntimeTag}";
+            var installCmd = "dpkg -i ./datadog-dotnet-apm*_amd64.deb";
 
-        DockerTasks.DockerBuild(
-            x => x
-                .SetPath(tracerDir)
-                .SetFile(tracerDir / "build" / "_build" / "docker" / "smoke.dockerfile")
-                .SetBuildArg($"DOTNETSDK_VERSION={DotnetSdkVersion}",
-                             $"RUNTIME_IMAGE={runtimeImage}",
-                             $"PUBLISH_FRAMEWORK={image.PublishFramework}",
-                             $"INSTALL_CMD={installCmd}")
-                .SetTag(tag));
-
-        return tag;
+            return DockerTasks.DockerBuild(
+                x => x
+                    .SetPath(tracerDir)
+                    .SetFile(tracerDir / "build" / "_build" / "docker" / "smoke.dockerfile")
+                    .SetBuildArg($"DOTNETSDK_VERSION={DotnetSdkVersion}",
+                                 $"RUNTIME_IMAGE={runtimeImage}",
+                                 $"PUBLISH_FRAMEWORK={scenario.PublishFramework}",
+                                 $"INSTALL_CMD={installCmd}")
+                    .SetTag(scenario.DockerTag));
+        }
     }
 }
 
 public enum SmokeTestCategory
 {
     LinuxX64Installer,
-    LinuxArm64Installer,
+    // LinuxArm64Installer,
 }
 
-public class SmokeTestImage
+public enum InstallType
 {
-    public SmokeTestImage(string shortName, string publishFramework, string runtimeTag, bool runCrashTest = true, bool isNoop = false)
-    {
-        ShortName = shortName;
-        PublishFramework = publishFramework;
-        RuntimeTag = runtimeTag;
-        RunCrashTest = runCrashTest;
-        IsNoop = isNoop;
-    }
+    DebX64,
+    RpmX64,
+    TarX64,
+    DebArm64,
+    RpmArm64,
+    TarArm64,
+}
 
-    public string ShortName { get; init; }
-    public string PublishFramework { get; init; }
-    public string RuntimeTag { get; init; }
-    public bool RunCrashTest { get; init; }
-    public bool IsNoop { get; init; }
+public enum Artifact
+{
+    LinuxX64,
+    LinuxMuslX64,
+    LinuxArm64,
+}
 
-    public override string ToString() => $"{ShortName}_{RuntimeTag.Replace('.', '_')}";
+public record SmokeTestScenario(
+    SmokeTestCategory Category,
+    string ShortName,
+    string PublishFramework,
+    string RuntimeTag,
+    bool IsLinuxContainer = true,
+    bool RunCrashTest = true,
+    bool IsNoop = false)
+{
+    public string JobName { get; } = $"{ShortName}_{RuntimeTag.Replace('.', '_')}";
+    public string FullName => $"{Category}_{JobName}";
+    public string DockerTag => $"dd-trace-dotnet/{JobName}-tester";
 }
