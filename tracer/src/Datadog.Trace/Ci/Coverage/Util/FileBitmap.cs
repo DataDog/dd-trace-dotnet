@@ -134,10 +134,10 @@ internal unsafe ref struct FileBitmap
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with an specified range set to 1.
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct and sets all lines in the specified range (inclusive) set to 1.
     /// </summary>
-    /// <param name="fromLine">Start of range</param>
-    /// <param name="toLine">End of range</param>
+    /// <param name="fromLine">One-based index of start of range</param>
+    /// <param name="toLine">One-based index of end of range</param>
     public static FileBitmap FromActiveRange(int fromLine, int toLine)
     {
         var res = FromLineCount(toLine);

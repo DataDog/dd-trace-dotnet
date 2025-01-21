@@ -236,7 +236,7 @@ internal class IntelligentTestRunnerClient
             // We need to check if the git clone is a shallow one before uploading anything.
             // In the case is a shallow clone we need to reconfigure it to upload the git tree
             // without blobs so no content will be downloaded.
-            var gitRevParseShallowOutput = RunGitCommand("rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow);
+            var gitRevParseShallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow);
             if (gitRevParseShallowOutput is null)
             {
                 Log.Warning("ITR: 'git rev-parse --is-shallow-repository' command is null");
@@ -254,7 +254,7 @@ internal class IntelligentTestRunnerClient
             Log.Debug("ITR: Unshallowing the repository...");
 
             // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-            var gitShallowLogOutput = RunGitCommand("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
+            var gitShallowLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
             if (gitShallowLogOutput is null)
             {
                 Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
@@ -274,16 +274,16 @@ internal class IntelligentTestRunnerClient
                 // ***
 
                 // git config --default origin --get clone.defaultRemoteName
-                var originNameOutput = RunGitCommand("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
+                var originNameOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
                 var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
 
                 // git rev-parse HEAD
-                var headOutput = RunGitCommand("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
+                var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
                 var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
 
                 // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                 Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                var gitUnshallowOutput = RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
@@ -295,12 +295,12 @@ internal class IntelligentTestRunnerClient
 
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
-                    headOutput = RunGitCommand("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead);
+                    headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead);
                     head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
 
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
                     Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
                 }
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
@@ -314,7 +314,7 @@ internal class IntelligentTestRunnerClient
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
                     Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                    RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
+                    GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
                 }
             }
         }
@@ -917,7 +917,7 @@ internal class IntelligentTestRunnerClient
 
     private async Task<SearchCommitResponse> GetCommitsAsync()
     {
-        var gitLogOutput = RunGitCommand("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
+        var gitLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
         if (gitLogOutput is null)
         {
             Log.Warning("ITR: 'git log...' command is null");
@@ -1044,7 +1044,7 @@ internal class IntelligentTestRunnerClient
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
-        var getObjectsCommand = RunGitCommand(getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
+        var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
             // If not objects has been returned we skip the pack + upload.
@@ -1075,7 +1075,7 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug<int>("ITR: Packing {NumObjects} objects...", lstObjectsSha.Count);
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = RunGitCommand(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput);
+        var packObjectsResultCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -1098,7 +1098,7 @@ internal class IntelligentTestRunnerClient
 
                 temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
                 getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-                packObjectsResultCommand = RunGitCommand(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output);
+                packObjectsResultCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output);
                 if (packObjectsResultCommand is null)
                 {
                     Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -1257,7 +1257,7 @@ internal class IntelligentTestRunnerClient
             return repository;
         }
 
-        var gitOutput = RunGitCommand("config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository);
+        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
@@ -1268,13 +1268,13 @@ internal class IntelligentTestRunnerClient
             return branch;
         }
 
-        var gitOutput = RunGitCommand("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
+        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
     private string GetCommitSha()
     {
-        var gitOutput = RunGitCommand("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
+        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
         var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
         if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
         {
@@ -1282,12 +1282,6 @@ internal class IntelligentTestRunnerClient
         }
 
         return gitSha;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private ProcessHelpers.CommandOutput? RunGitCommand(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
-    {
-        return GitCommandHelper.RunGitCommand(_workingDirectory, arguments, ciVisibilityCommand, input);
     }
 
     private readonly struct SearchCommitResponse

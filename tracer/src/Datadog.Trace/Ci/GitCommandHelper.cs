@@ -78,7 +78,7 @@ internal static class GitCommandHelper
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            Log.Warning(ex, "ITR: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
+            Log.Warning(ex, "TestVis: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
             TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
             return null;
         }
@@ -96,14 +96,14 @@ internal static class GitCommandHelper
             {
                 return ParseGitDiff(output.Output).ToArray();
             }
+
+            throw new Exception("Empty git diff command output");
         }
         catch (Exception ex)
         {
             Log.Information(ex, "Error calling git diff");
             throw;
         }
-
-        return Array.Empty<FileCoverageInfo>();
 
         // Parses the Git diff output to extract modified files and their changed lines
         static List<FileCoverageInfo> ParseGitDiff(string diffOutput)
