@@ -15,9 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal interface IOperationContextV13 : IDuckType
     {
-        /// <summary>
-        /// Gets the context operation
-        /// </summary>
-        public IOperationProxyV13? Operation { get; }
+        ///// <summary>
+        ///// Gets the context operation
+        ///// </summary>
+        public OperationStructV13? Operation { get; }
     }
 }

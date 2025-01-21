@@ -36,11 +36,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget, TOperationContext>(TTarget instance, TOperationContext operationContext)
             where TOperationContext : IOperationContext
         {
-            var operation = operationContext.Operation;
-            var operationType = HotChocolateCommon.GetOperation(operation.OperationType);
-            var operationName = operation.Name?.Value;
+            if (operationContext.Instance != null && operationContext.Operation.HasValue)
+            {
+                var operation = operationContext.Operation.Value;
+                var operationType = HotChocolateCommon.GetOperation(operation.OperationType);
+                var operationName = operation.Name?.Value;
 
-            HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, operationType, operationName);
+                HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, operationType, operationName);
+            }
+
             return CallTargetState.GetDefault();
         }
     }

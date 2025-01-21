@@ -10,11 +10,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// <summary>
     /// HotChocolate.Execution.Processing.IOperationContext interface for ducktyping
     /// </summary>
-    internal interface IOperationContext
+    internal interface IOperationContext : IDuckType
     {
         ///// <summary>
         ///// Gets the context operation
         ///// </summary>
-        IOperationProxy Operation { get; }
+        OperationStruct? Operation { get; }
     }
 }
