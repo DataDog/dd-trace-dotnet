@@ -37,8 +37,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
     private static int _totalRetries = -1;
 
     internal static CallTargetState OnMethodBegin<TTarget, TContext, TTestCase>(TTarget instance, TContext context, TTestCase testcaseOriginal)
-        where TContext : IXunitTestMethodRunnerBaseContextV3, IDuckType
-        // where TTestCase : IXunitTestCaseV3
+        where TContext : IXunitTestMethodRunnerBaseContextV3
     {
         Common.Log.Warning("XUnitTestMethodRunnerBaseRunTestCaseV3Integration.OnMethodBegin, instance: {0}, context: {1}, testcase: {2}", instance, context, testcaseOriginal);
         if (!XUnitIntegration.IsEnabled || instance is null)
@@ -81,13 +80,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        if (context.MessageBus is IDuckType { Instance: RetryMessageBus messageBus })
-        {
-            // Decrement the execution number (the method body will do the execution)
-            messageBus.ExecutionNumber--;
-        }
-
-        return new CallTargetState(null, new[] { context.MessageBus, context.Instance, testcaseOriginal });
+        return new CallTargetState(null, new[] { context.MessageBus, context, testcase });
     }
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
@@ -98,10 +91,12 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        Common.Log.Warning("XUnitTestMethodRunnerBaseRunTestCaseV3Integration.OnAsyncMethodEnd, instance: {0}, context: {1}", instance, returnValue);
+        Common.Log.Warning("XUnitTestMethodRunnerBaseRunTestCaseV3Integration.OnAsyncMethodEnd, instance: {0}, returnValue: {1}", instance, returnValue);
 
         await Task.Yield();
         var stateArray = (object[])state.State!;
+        var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[1];
+        var testcase = (IXunitTestCaseV3)stateArray[2];
         if (stateArray[0] is IDuckType { Instance: RetryMessageBus messageBus })
         {
             Common.Log.Warning<int>("ExecutionIndex: {ExecutionIndex}", messageBus.ExecutionIndex);
@@ -119,7 +114,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
                 if (remainingTotalRetries < 1)
                 {
-                    Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                    Common.Log.Debug<int, string>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]. DisplayName: {DisplayName}", CIVisibility.Settings.TotalFlakyRetryCount, testcase.TestCaseDisplayName);
                     doRetry = false;
                 }
 
@@ -128,10 +123,12 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     var mrunner = instance.DuckCast<IXunitTestMethodRunnerV3>()!;
 
                     var retryNumber = messageBus.ExecutionIndex + 1;
-                    Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Running a retry. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
-                    var result = await mrunner.RunTestCase(stateArray[1], stateArray[2]);
+                    Common.Log.Debug<int, int, string>("EFD/Retry: [Retry {Num}] Running a retry. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, messageBus.ExecutionNumber, testcase.TestCaseDisplayName);
+                    // Decrement the execution number (the method body will do the execution)
+                    messageBus.ExecutionNumber--;
+                    var result = await mrunner.RunTestCase(context.Instance!, testcase.Instance!);
                     _ = result;
-                    Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
+                    Common.Log.Debug<int, int, string>("EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, messageBus.ExecutionNumber, testcase.TestCaseDisplayName);
                 }
             }
 
@@ -143,93 +140,5 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         }
 
         return returnValue;
-    }
-
-#pragma warning disable SA1201
-    internal interface IXunitTestMethodRunnerV3
-    {
-        IValueTaskOfTResultDuckType RunTestCase(object context, object testCase);
-    }
-
-    internal interface IValueTaskOfTResultDuckType : ITaskOfResultDuckType
-    {
-        Task AsTask();
-    }
-
-    internal interface ITaskOfResultDuckType
-    {
-        bool IsCompletedSuccessfully { get; }
-
-        object? Result { get; }
-
-        IDuckTypeAwaiter GetAwaiter();
-    }
-
-    internal interface IDuckTypeAwaiter : ICriticalNotifyCompletion, IDuckType
-    {
-        bool IsCompleted { get; }
-
-        object GetResult();
-    }
-}
-
-#pragma warning disable SA1402
-
-/// <summary>
-/// Xunit.v3.TestCaseRunner`3.RunTest calltarget instrumentation
-/// </summary>
-[InstrumentMethod(
-    AssemblyName = "xunit.v3.core",
-    TypeName = "Xunit.v3.XunitTestMethodRunnerContext",
-    MethodName = ".ctor",
-    ParameterTypeNames = ["_", "_", "_", "_", "_", "_", "_"],
-    ReturnTypeName = ClrNames.Void,
-    MinimumVersion = "1.0.0",
-    MaximumVersion = "1.*.*",
-    IntegrationName = XUnitIntegration.IntegrationName)]
-[Browsable(false)]
-[EditorBrowsable(EditorBrowsableState.Never)]
-public static class XunitTestMethodRunnerContextCtorV3Integration
-{
-    internal static CallTargetState OnMethodBegin<TTarget, TIXunitTestMethod, TIReadOnlyCollection, TExplicitOption, TIMessageBus, TExceptionAggregator>(
-        TTarget instance,
-        TIXunitTestMethod testMethod,
-        TIReadOnlyCollection testCases,
-        TExplicitOption explicitOption,
-        ref TIMessageBus messageBus,
-        TExceptionAggregator aggregator,
-        CancellationTokenSource cancellationTokenSource,
-        object?[] constructorArguments)
-        where TIXunitTestMethod : IXunitTestMethodV3
-    {
-        Common.Log.Warning("XunitTestMethodRunnerContextCtorV3Integration.OnMethodBegin, instance: {0}, messageBus: {1}, testMethod: {2}", instance, messageBus, testMethod);
-
-        /*
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
-            CIVisibility.Settings.FlakyRetryEnabled != true)
-        {
-            return CallTargetState.GetDefault();
-        }
-        */
-
-        if (messageBus is null || messageBus is IDuckType)
-        {
-            Common.Log.Warning("XunitTestMethodRunnerContextCtorV3Integration.OnMethodBegin, messageBus is IDuckType");
-            return CallTargetState.GetDefault();
-        }
-
-        Common.Log.Warning("XunitTestMethodRunnerContextCtorV3Integration.OnMethodBegin, messageBus is not IDuckType");
-
-        // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
-        Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
-        var duckMessageBus = messageBus.DuckCast<IMessageBus>();
-        var messageBusInterfaceType = messageBus.GetType().GetInterface("IMessageBus")!;
-        var retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
-
-        // EFD is disabled but FlakeRetry is enabled
-        retryMessageBus.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
-        messageBus = (TIMessageBus)retryMessageBus.DuckImplement(messageBusInterfaceType);
-
-        return CallTargetState.GetDefault();
     }
 }

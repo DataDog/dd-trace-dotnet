@@ -6,7 +6,7 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
 /// <summary>
-/// TestClassRunnerContext proxy
+/// XunitTestClassRunnerContext proxy
 /// </summary>
 internal interface IXunitTestClassRunnerContextV3
 {

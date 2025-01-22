@@ -6,10 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
-internal interface IXunitTestCaseV3
+/// <summary>
+/// XunitTestCase proxy
+/// </summary>
+internal interface IXunitTestCaseV3 : IDuckType
 {
     /// <summary>
     /// Gets or sets the display text for the reason a test that might being skipped.

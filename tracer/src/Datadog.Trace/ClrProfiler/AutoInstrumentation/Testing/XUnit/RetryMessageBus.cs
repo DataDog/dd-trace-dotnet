@@ -5,7 +5,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
@@ -69,6 +68,7 @@ internal class RetryMessageBus : IMessageBus
         if (index < 0)
         {
             Common.Log.Error<int>("EFD: RetryMessageBus.QueueMessage: Execution index {Index} is less than 0.", index);
+            FlushMessages();
             throw new Exception($"Execution index {index} is less than 0.");
         }
 

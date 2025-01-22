@@ -9,6 +9,9 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
+/// <summary>
+/// XunitTestRunnerContext proxy
+/// </summary>
 internal interface IXunitTestRunnerContextV3 : IContextBaseV3
 {
     /// <summary>
