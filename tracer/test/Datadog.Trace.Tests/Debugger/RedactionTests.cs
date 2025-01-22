@@ -3,11 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Snapshots;
 using VerifyXunit;
 using Xunit;
@@ -51,6 +50,38 @@ namespace Datadog.Trace.Tests.Debugger
         public void ShouldRedactKeywordsTest(string keyword, bool shouldRedacted)
         {
             Assert.Equal(shouldRedacted, Redaction.ShouldRedact(keyword, typeof(string), out _));
+        }
+
+        [Theory]
+        [InlineData("password", null, true)] // Basic case - no exclusions
+        [InlineData("password", new[] { "otherword" }, true)] // Exclusion list doesn't affect non-excluded word
+        [InlineData("password", new[] { "password" }, false)] // Basic exclusion
+        [InlineData("PassWord", new[] { "password" }, false)] // Case-insensitive exclusion
+        [InlineData("pass-word", new[] { "password" }, false)] // Normalized form exclusion
+        [InlineData("_Pass-Word_", new[] { "password" }, false)] // Complex normalization exclusion
+        [InlineData("password", new[] { "_Pass-Word_" }, false)] // Complex normalization exclusion
+        [InlineData("_Pass-Word_", new[] { "_Pass-Word_" }, false)] // Complex normalization exclusion
+        [InlineData("password", new[] { "pass" }, true)] // Partial match shouldn't exclude
+        [InlineData("x-api-key", new[] { "password" }, true)] // Different keyword not affected by exclusion
+        [InlineData("x-api-key", new[] { "x-api-key" }, false)] // Exclude specific API keyword
+        public void RedactedKeywords_WithExclusions_Test(string keyword, string excludedKeywords, bool shouldRedact)
+        {
+            // Arrange
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                                                 {
+                                                     { ConfigurationKeys.Debugger.RedactedIdentifiers, "password,x-api-key" },
+                                                     { ConfigurationKeys.Debugger.RedactedExcludedIdentifiers, excludedKeywords }
+                                                 }),
+                NullConfigurationTelemetry.Instance);
+
+            Redaction.SetConfig(settings);
+
+            // Act
+            var isRedacted = Redaction.IsRedactedKeyword(keyword);
+
+            // Assert
+            Assert.Equal(shouldRedact, isRedacted);
         }
     }
 }

@@ -109,6 +109,14 @@ namespace Datadog.Trace.Debugger
 
             RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
 
+            var redactedExcludedIdentifiers = config
+                                     .WithKeys(ConfigurationKeys.Debugger.RedactedExcludedIdentifiers)
+                                     .AsString()?
+                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                      Enumerable.Empty<string>();
+
+            RedactedExcludedIdentifiers = new HashSet<string>(redactedExcludedIdentifiers, StringComparer.OrdinalIgnoreCase);
+
             var redactedTypes = config
                                      .WithKeys(ConfigurationKeys.Debugger.RedactedTypes)
                                      .AsString()?
@@ -154,6 +162,8 @@ namespace Datadog.Trace.Debugger
         public int UploadFlushIntervalMilliseconds { get; }
 
         public HashSet<string> RedactedIdentifiers { get; }
+
+        public HashSet<string> RedactedExcludedIdentifiers { get; }
 
         public HashSet<string> RedactedTypes { get; }
 
