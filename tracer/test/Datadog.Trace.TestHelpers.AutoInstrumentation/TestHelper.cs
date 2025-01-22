@@ -104,7 +104,7 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
-                processToProfile: exec + ";testhost.exe;testhost.x86.exe");
+                ignoreProfilerProcessesVar: true);
 
             Output.WriteLine($"ProcessId: {process.Id}");
 
