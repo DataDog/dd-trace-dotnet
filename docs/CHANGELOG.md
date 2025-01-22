@@ -11,6 +11,113 @@
 
 
 
+
+## [Release 3.9.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.9.0)
+
+## Summary
+
+* [Tracer] Add support for Azure Functions SDK v2 and ASP.NET Core Integration
+* [Tracer] Add support for RabbitMQ v7
+* [Tracer] Add support for OpenTelemetry's DefaultTextMapPropagator when used without the SDK
+* [Tracer] Fix container tagging for Alpine containers
+* [ASM] Various bug fixes and reliability improvements
+
+## Changes
+
+### Tracer
+* Add support for Microsoft.Azure.Functions.Worker.Core v2 (#6472)
+* Add support for RabbitMQ v7 (#6479)
+* Add CallTarget support for `ValueTask` in .NET FX and < .NET Core 3.1 (#6480)
+* Fix container tagging for Alpine containers (#6505)
+* Move SpanContextPropagator to TracerManager (#6511)
+* Fix Isolated Azure Functions performance when using `ASP.NET Core` Integration (#6567)
+* [Tracing] Provide default implementation for OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator [AIDM-504] (#6544)
+
+### CI Visibility
+* [CI Visibility] Add missing telemetry metrics (#6443)
+* Add additional tests for CI Visibility configuration behaviour (#6513)
+* Wait for background task in ConfigureCiCommand (#6535)
+* [CI Visibility] Improve Git commands execution (#6545)
+
+### ASM
+* [ASM] Fix WebApi blocking on Response (#6488)
+* [ASM] Fix access violation exception when reading WAF addresses (#6510)
+* [ASM] Context disposed related exceptions when calling the WAF (#6529)
+* [ASM] Add a lock to handle WAF active addresses (#6566)
+* [ASM] Catch HttpException when reading the request body in .net461 (#6459)
+* [IAST] Lock vulnerabilities list access (#6531)
+* [IAST] Added IAST instrumentation category to ado net Reader integrations (#6523)
+
+### Continuous Profiler
+* [Profiler] Make `timer_create`-based CPU profiler default (#6315)
+* [Profiler] Cleanup repository (#6547)
+* Revert "[Profiler] Make `timer_create`-based CPU profiler default" (#6579)
+
+### Debugger
+* Fix pinned locals parsing + bump dotnet version for protobuf and eShopOnWeb exploration tests (#6475)
+* [Debugger] Don't redact config/address tokens (#6552)
+* [Debugger] Don't redact env tokens from probe snapshots (#6553)
+* [Dynamic Instrumentation] DEBUG-3223 SymDB compression fix (#6556)
+* [Dynamic Instrumentation] Change the way we are using the gzip stream in SymDB (#6562)
+
+### Serverless
+* Run Azure Functions integration tests on .NET 8 and .NET 9 (#6517)
+* [serverless] Upload serverless assets to Azure so we can release for a layer (#6561)
+
+### Build / Test
+* [ASM] Refactor AspNetCore5DatabaseTests (#6482)
+* MVP for test containers (with aerospike) (#5031)
+* Bump FluentAssertions and add analyzers (#5087)
+* Randomize the order of tests (#5831)
+* K8s new tests scenarios (#6451)
+* Vendor in Microsoft.OpenApi (#6461)
+* Minor fixes for build warnings in samples (#6491)
+* Change `CopyToOutputDirectory="Always"` to  `CopyToOutputDirectory="PreserveNewest"` (#6493)
+* Parallelise appsec system tests in CI (#6496)
+* Disable continuous profiler in GenerateDumpIfDbgRequested (#6497)
+* Build the test sample projects in a separate CI stage (#6498)
+* [Test Package Versions Bump] Updating package versions (#6499)
+* Consolidate all integration test targets into a single target (#6501)
+* Ensure analyzer tests run against all TFMs (#6502)
+* Expand number of files that require thorough testing (#6504)
+* Reset CI Visibility after DuckTypingTests (#6509)
+* Fix compilation of Samples.Security.AspNetCore5 (#6512)
+* Fix race condition in TelemetryControllerSchedulerTests (#6514)
+* [Test Package Versions Bump] Updating package versions (#6519)
+* Actually include child processes when requested during a memory dump in tests (#6520)
+* [Test Optimization] Collect more logs on EFD tests (#6522)
+* Fix flakiness in Azure Functions (#6524)
+* Redact `##vso` in CI (#6525)
+* Enable dependabot for Azure Functions sample (#6527)
+* Skip the flaky XUnit named pipes tests (#6528)
+* [Test Package Versions Bump] Updating package versions (#6530)
+* Disable the locked tracer in the runner integration tests (#6532)
+* Bump Microsoft.Azure.Functions.Worker.Extensions.Http from 3.0.12 to 3.2.0 in /tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated (#6533)
+* Bump Microsoft.Azure.Functions.Worker.Extensions.Timer from 4.0.1 to 4.3.1 in /tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated (#6534)
+* Add a Github action that ensures you correctly persist any changes to the samples (#6536)
+* Actually include child processes when requested during a memory dump in tests - part 2 :D  (#6537)
+* Add missing build dependency (#6538)
+* remove unused variable causing warnings (#6546)
+* Disable profiling in smoke tests (#6548)
+* Add wait strategy for aerospike (#6551)
+* Don't run integration tests on `netcoreapp2.1` (#6560)
+* Move the aspnetcore benchmark (#6563)
+* Indentation: fix wrapping issues with rider (#6570)
+* Drop testing for macos-12 (#6572)
+
+### Miscellaneous
+* Add support for more combinations of tags on telemetry metrics (#6429)
+* [Tracing] Update telemetry metrics for OpenTelemetry integration (#6454)
+* Stop using EventIdHash to compare messages in telemetry logs (#6526)
+* Include extra tags in error logs (#6364)
+* Log an error message when the profiler is loaded multiple times (#6503)
+* [Crashtracking] Add more filtering on TypeLoadException (#6539)
+* Don't log a warning for CORPROF_E_PROFILER_CANCEL_ACTIVATION (#6550)
+* [Crashtracking] Tag reports with is_crash: true (#6568)
+
+
+[Changes since 3.8.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.8.0...v3.9.0)
+
 ## [Release 3.8.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.8.0)
 
 ## Summary
