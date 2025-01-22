@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 public static class XUnitTestRunnerRunAsyncIntegration
 {
     private static int _totalRetries = -1;
+    private static Type? _messageBusInterfaceType;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -96,12 +97,12 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
             Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
+            _messageBusInterfaceType ??= messageBus.GetType().GetInterface("IMessageBus")!;
             var duckMessageBus = messageBus.DuckCast<IMessageBus>();
-            var messageBusInterfaceType = messageBus.GetType().GetInterface("IMessageBus")!;
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
             // EFD is disabled but FlakeRetry is enabled
             retryMessageBus.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
-            testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(messageBusInterfaceType);
+            testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(_messageBusInterfaceType);
         }
         else
         {
