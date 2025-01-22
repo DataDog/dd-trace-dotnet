@@ -408,6 +408,11 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var fieldName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(fieldDef.Name));
+                if (fieldName.IsEmpty)
+                {
+                    continue;
+                }
+
                 if (fieldName[0] == '<')
                 {
                     // properties
@@ -418,13 +423,19 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
                 }
 
+                var fieldNameAsString = fieldName.ToString();
+                if (string.IsNullOrEmpty(fieldNameAsString))
+                {
+                    continue;
+                }
+
                 var accessModifiers = (fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(fieldDef.Attributes & System.Reflection.FieldAttributes.FieldAccessMask)] } : null;
                 var fieldAttributes = ((int)fieldDef.Attributes & 0x0070) > 0 ? new[] { FieldAttributes[Convert.ToUInt16((int)fieldDef.Attributes & 0x0070)] } : null;
                 var ls = new LanguageSpecifics() { AccessModifiers = accessModifiers, Annotations = fieldAttributes };
 
                 fieldSymbols[index] = new Symbol
                 {
-                    Name = fieldName.ToString(),
+                    Name = fieldNameAsString,
                     Type = fieldTypeName,
                     SymbolType = ((fieldDef.Attributes & System.Reflection.FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
                     Line = UnknownFieldAndArgLine,

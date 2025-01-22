@@ -14,7 +14,7 @@ internal record struct Scope
 {
     [JsonProperty("scope_type")]
     [JsonConverter(typeof(StringEnumConverter), converterParameters: typeof(SnakeCaseNamingStrategy))]
-    internal ScopeType ScopeType { get; set; }
+    internal ScopeType? ScopeType { get; set; }
 
     [JsonProperty("name")]
     internal string? Name { get; set; }

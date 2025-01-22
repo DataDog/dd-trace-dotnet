@@ -157,6 +157,11 @@ internal class SymbolPdbExtractor : SymbolExtractor
             foreach (var fieldHandle in fields)
             {
                 var field = MetadataReader.GetFieldDefinition(fieldHandle);
+                if (field.Name.IsNil)
+                {
+                    continue;
+                }
+
                 var fieldName = MetadataReader.GetString(field.Name);
                 var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
                 if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(span, generatedClassPrefix, StringComparison.Ordinal) == 0)
@@ -171,7 +176,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 }
 
                 var localName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
-                if (localName[0] != '<')
+                if (localName.IsEmpty || localName[0] != '<')
                 {
                     continue;
                 }
@@ -183,6 +188,10 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 }
 
                 var name = localName.ToString();
+                if (string.IsNullOrEmpty(name))
+                {
+                    continue;
+                }
 
                 if (IsArgument(methodScope.Symbols, name, type))
                 {
@@ -229,6 +238,11 @@ internal class SymbolPdbExtractor : SymbolExtractor
             foreach (var local in localScope.Locals)
             {
                 var nameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Name);
+                if (nameAsSpan.IsEmpty)
+                {
+                    continue;
+                }
+
                 if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(nameAsSpan, generatedClassPrefix, StringComparison.Ordinal) > 0)
                 {
                     var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(rowId);
