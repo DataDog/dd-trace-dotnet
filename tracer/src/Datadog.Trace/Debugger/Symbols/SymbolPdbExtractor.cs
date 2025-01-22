@@ -25,13 +25,17 @@ internal class SymbolPdbExtractor : SymbolExtractor
     {
     }
 
-    protected override Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
+    protected override bool TryCreateMethodScope(TypeDefinition type, MethodDefinition method, out Model.Scope methodScope)
     {
-        var methodScope = base.CreateMethodScope(type, method);
+        if (!base.TryCreateMethodScope(type, method, out methodScope))
+        {
+            return false;
+        }
+
         using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(method.Handle.RowId, false, out var count);
         if (memory == null || count == 0)
         {
-            return methodScope;
+            return true;
         }
 
         VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints = memory.Memory.Span.Slice(0, count);
@@ -55,7 +59,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
 
         var localScopes = GetLocalSymbols(method.Handle.RowId, sequencePoints, methodScope);
         methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes ?? null, localScopes);
-        return methodScope;
+        return true;
     }
 
     private SourceLocationInfo GetSourceLocationInfo(VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
@@ -83,26 +87,20 @@ internal class SymbolPdbExtractor : SymbolExtractor
             endColumn = int.MaxValue;
         }
 
-        return new SourceLocationInfo
-        {
-            StartLine = startLine,
-            EndLine = endLine,
-            StartColumn = startColumn,
-            EndColumn = endColumn,
-            Path = typeSourceFile
-        };
+        return new SourceLocationInfo(startLine: startLine, endLine: endLine, startColumn: startColumn, endColumn: endColumn, path: typeSourceFile);
     }
 
-    protected override Model.Scope? CreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType)
+    protected override bool TryCreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType, out Model.Scope closureMethodScope)
     {
+        closureMethodScope = default;
         if (method.Name.IsNil || generatedMethod.Name.IsNil)
         {
-            return null;
+            return false;
         }
 
         if (!DatadogMetadataReader.HasSequencePoints(generatedMethod.Handle.RowId))
         {
-            return null;
+            return false;
         }
 
         var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(generatedMethod.Handle.RowId);
@@ -117,21 +115,30 @@ internal class SymbolPdbExtractor : SymbolExtractor
             var generatedMethodName = MetadataReader.GetString(generatedMethod.Name);
             if (generatedMethodName[0] != '<')
             {
-                return null;
+                return false;
             }
 
             var notGeneratedMethodName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(generatedMethodName, 1, generatedMethodName.IndexOf('>') - 1);
             methodName = MetadataReader.GetString(method.Name);
             if (!methodName.Equals(notGeneratedMethodName.ToString()))
             {
-                return null;
+                return false;
             }
         }
 
-        var closureMethodScope = CreateMethodScope(nestedType, generatedMethod);
+        if (string.IsNullOrEmpty(methodName))
+        {
+            return false;
+        }
+
+        if (!TryCreateMethodScope(nestedType, generatedMethod, out closureMethodScope))
+        {
+            return false;
+        }
+
         closureMethodScope.Name = methodName;
         closureMethodScope.ScopeType = ScopeType.Closure;
-        return closureMethodScope;
+        return true;
     }
 
     private Model.Scope[]? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
@@ -150,6 +157,11 @@ internal class SymbolPdbExtractor : SymbolExtractor
             foreach (var fieldHandle in fields)
             {
                 var field = MetadataReader.GetFieldDefinition(fieldHandle);
+                if (field.Name.IsNil)
+                {
+                    continue;
+                }
+
                 var fieldName = MetadataReader.GetString(field.Name);
                 var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
                 if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(span, generatedClassPrefix, StringComparison.Ordinal) == 0)
@@ -157,8 +169,14 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     continue;
                 }
 
+                var type = field.DecodeSignature(new TypeProvider(false), 0);
+                if (string.IsNullOrEmpty(type))
+                {
+                    continue;
+                }
+
                 var localName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
-                if (localName[0] != '<')
+                if (localName.IsEmpty || localName[0] != '<')
                 {
                     continue;
                 }
@@ -169,8 +187,11 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     localName = localName.Slice(1, endNameIndex - 1);
                 }
 
-                var type = field.DecodeSignature(new TypeProvider(false), 0);
                 var name = localName.ToString();
+                if (string.IsNullOrEmpty(name))
+                {
+                    continue;
+                }
 
                 if (IsArgument(methodScope.Symbols, name, type))
                 {
@@ -217,6 +238,11 @@ internal class SymbolPdbExtractor : SymbolExtractor
             foreach (var local in localScope.Locals)
             {
                 var nameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Name);
+                if (nameAsSpan.IsEmpty)
+                {
+                    continue;
+                }
+
                 if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(nameAsSpan, generatedClassPrefix, StringComparison.Ordinal) > 0)
                 {
                     var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(rowId);
@@ -265,6 +291,10 @@ internal class SymbolPdbExtractor : SymbolExtractor
                                 }
 
                                 var type = field.DecodeSignature(new TypeProvider(false), 0);
+                                if (string.IsNullOrEmpty(type))
+                                {
+                                    continue;
+                                }
 
                                 if (IsArgument(methodScope.Symbols, fieldName, type))
                                 {
