@@ -21,22 +21,7 @@ internal interface IMessageProxy : IDuckType
     /// use <see cref="Helper.TryGetDescriptor"/> to avoid that.
     /// </summary>
     [Duck(ExplicitInterfaceTypeName = "Google.Protobuf.IMessage")]
-    IMessageDescriptorProxy Descriptor { get; }
-}
-
-internal interface IDescriptorProxy : IDuckType
-{
-    string Name { get; }
-}
-
-/// <summary>
-/// DuckTyping interface for Google.Protobuf.Reflection.MessageDescriptor
-/// </summary>
-internal interface IMessageDescriptorProxy : IDescriptorProxy
-{
-    IFieldCollectionProxy Fields { get; }
-
-    IDescriptorProxy File { get; }
+    MessageDescriptorProxy Descriptor { get; }
 }
 
 /// <summary>
@@ -52,23 +37,45 @@ internal interface IFieldCollectionProxy : IDuckType
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.FieldDescriptor
 /// </summary>
-internal interface IFieldDescriptorProxy : IDescriptorProxy
+internal interface IFieldDescriptorProxy
 {
+    string Name { get; }
+
     bool IsRepeated { get; }
 
     int FieldType { get; } // actually an enum
 
     int FieldNumber { get; }
 
-    IEnumDescriptorProxy EnumType { get; }
+    EnumDescriptorProxy EnumType { get; } // will throw if called on a field that is not an enum
 
-    IMessageDescriptorProxy MessageType { get; }
+    MessageDescriptorProxy MessageType { get; }
+}
+
+/// <summary>
+/// DuckTyping interface for Google.Protobuf.Reflection.MessageDescriptor
+/// </summary>
+[DuckCopy]
+internal struct MessageDescriptorProxy
+{
+    public string Name;
+    public IFieldCollectionProxy Fields;
+
+    public IDescriptorProxy File;
+}
+
+[DuckCopy]
+internal struct IDescriptorProxy
+{
+    public string Name;
 }
 
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.EnumDescriptor
 /// </summary>
-internal interface IEnumDescriptorProxy : IDescriptorProxy
+[DuckCopy]
+internal struct EnumDescriptorProxy
 {
-    IList Values { get; } // <EnumValueDescriptor>
+    public string Name;
+    public IList Values; // <EnumValueDescriptor>
 }

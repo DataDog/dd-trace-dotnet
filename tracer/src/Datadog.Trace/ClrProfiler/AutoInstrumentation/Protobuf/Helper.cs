@@ -43,7 +43,7 @@ internal class Helper
         object? Descriptor { get; } // this is actually a static property
     }
 
-    public static bool TryGetDescriptor(IMessageProxy messageProxy, out IMessageDescriptorProxy? descriptor)
+    public static bool TryGetDescriptor(IMessageProxy messageProxy, out MessageDescriptorProxy? descriptor)
     {
         descriptor = null;
         if (messageProxy.Instance is null)

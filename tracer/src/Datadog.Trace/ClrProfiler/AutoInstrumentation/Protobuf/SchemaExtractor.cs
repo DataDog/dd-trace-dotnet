@@ -31,7 +31,7 @@ internal class SchemaExtractor
     /// Get the current span, add some tags about the schema,
     /// and once in a while, tag it with the whole protobuf schema used
     /// </summary>
-    internal static void EnrichActiveSpanWith(IMessageDescriptorProxy? descriptor, string operationName)
+    internal static void EnrichActiveSpanWith(MessageDescriptorProxy? descriptor, string operationName)
     {
         var tracer = Tracer.Instance;
 
@@ -47,10 +47,10 @@ internal class SchemaExtractor
             return;
         }
 
-        if (descriptor.File.Name.StartsWith("google/protobuf/"))
+        if (descriptor.Value.File.Name.StartsWith("google/protobuf/"))
         {
             // it's a protobuf operation internal to the protobuf library, not the one we want
-            Log.Debug("Skipping instrumentation for internal protobuf schema {Schema}", descriptor.File.Name);
+            Log.Debug("Skipping instrumentation for internal protobuf schema {Schema}", descriptor.Value.File.Name);
             return;
         }
 
@@ -61,7 +61,7 @@ internal class SchemaExtractor
         }
 
         activeSpan.SetTag(Tags.SchemaType, "protobuf");
-        activeSpan.SetTag(Tags.SchemaName, descriptor.Name);
+        activeSpan.SetTag(Tags.SchemaName, descriptor.Value.Name);
         activeSpan.SetTag(Tags.SchemaOperation, operationName);
 
         // check rate limit
@@ -73,11 +73,11 @@ internal class SchemaExtractor
 
         // check cache (it will be disabled if too many schemas)
         var schema = SchemaCache.GetOrAdd(
-            descriptor.Name,
+            descriptor.Value.Name,
             _ =>
             {
-                var schema = Extractor.ExtractSchemas(descriptor);
-                Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Name, schema.JsonDefinition.Length);
+                var schema = Extractor.ExtractSchemas(descriptor.Value);
+                Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Value.Name, schema.JsonDefinition.Length);
                 return schema;
             });
 
@@ -105,7 +105,7 @@ internal class SchemaExtractor
             _schemas = componentsSchemas;
         }
 
-        public static Schema ExtractSchemas(IMessageDescriptorProxy descriptor)
+        public static Schema ExtractSchemas(MessageDescriptorProxy descriptor)
         {
             var components = new OpenApiComponents();
             var hash = new Extractor(components.Schemas).ExtractSchema(descriptor); // fill the component's schemas
@@ -136,7 +136,7 @@ internal class SchemaExtractor
         ///  - changing a field number
         ///  - changing the hierarchy of sub-messages
         /// </summary>
-        private ulong ExtractSchema(IMessageDescriptorProxy descriptor, int depth = 0)
+        private ulong ExtractSchema(MessageDescriptorProxy descriptor, int depth = 0)
         {
             if (depth > MaxExtractionDepth)
             {
@@ -155,7 +155,7 @@ internal class SchemaExtractor
             return _computedHash;
         }
 
-        private Dictionary<string, OpenApiSchema> ExtractFields(IMessageDescriptorProxy descriptor, int depth)
+        private Dictionary<string, OpenApiSchema> ExtractFields(MessageDescriptorProxy descriptor, int depth)
         {
             var properties = new Dictionary<string, OpenApiSchema>();
 
