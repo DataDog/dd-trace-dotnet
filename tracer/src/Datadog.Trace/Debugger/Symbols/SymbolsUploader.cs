@@ -213,7 +213,10 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
-            var assemblyScope = symbolsExtractor.GetAssemblySymbol();
+            if (!symbolsExtractor.TryGetAssemblySymbol(out var assemblyScope))
+            {
+                return;
+            }
 
             var root = new Root
             {
@@ -221,13 +224,13 @@ namespace Datadog.Trace.Debugger.Symbols
                 Env = _environment,
                 Language = "dotnet",
                 Version = _serviceVersion,
-                Scopes = new[] { assemblyScope }
+                Scopes = [assemblyScope]
             };
 
             await UploadClasses(root, symbolsExtractor.GetClassSymbols()).ConfigureAwait(false);
         }
 
-        private async Task UploadClasses(Root root, IEnumerable<Model.Scope?> classes)
+        private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
             var rootAsString = JsonConvert.SerializeObject(root);
             var rootBytes = Encoding.UTF8.GetByteCount(rootAsString);
@@ -238,13 +241,13 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 foreach (var classSymbol in classes)
                 {
-                    if (classSymbol == null)
+                    if (classSymbol == default)
                     {
                         continue;
                     }
 
                     // Try to serialize and append the class
-                    if (!TrySerializeClass(classSymbol.Value, builder, accumulatedBytes, out var newByteCount))
+                    if (!TrySerializeClass(classSymbol, builder, accumulatedBytes, out var newByteCount))
                     {
                         // If we couldn't append because it would exceed capacity,
                         // upload current batch first
@@ -255,13 +258,13 @@ namespace Datadog.Trace.Debugger.Symbols
                             builder.Clear();
                             accumulatedBytes = 0;
                             // Try again with empty builder
-                            succeeded = TrySerializeClass(classSymbol.Value, builder, accumulatedBytes, out newByteCount);
+                            succeeded = TrySerializeClass(classSymbol, builder, accumulatedBytes, out newByteCount);
                         }
 
                         if (!succeeded)
                         {
                             // If it still doesn't fit, this single class is too large
-                            Log.Warning("Class {Name} exceeds maximum capacity", classSymbol.Value.Name);
+                            Log.Warning("Class {Name} exceeds maximum capacity", classSymbol.Name);
                             continue;
                         }
                     }

@@ -175,10 +175,11 @@ public class SymbolExtractorTest
         var root = GetRoot();
         var extractor = SymbolExtractor.Create(assembly);
         Assert.NotNull(extractor);
-        var assemblyScope = extractor.GetAssemblySymbol();
+        var result = extractor.TryGetAssemblySymbol(out var assemblyScope);
+        Assert.True(result);
         var classSymbol = extractor.GetClassSymbols(className);
-        assemblyScope.Scopes = classSymbol.HasValue ? new[] { classSymbol.Value } : null;
-        root.Scopes = new[] { assemblyScope };
+        assemblyScope.Scopes = classSymbol.HasValue ? [classSymbol.Value] : null;
+        root.Scopes = [assemblyScope];
         return root;
     }
 
