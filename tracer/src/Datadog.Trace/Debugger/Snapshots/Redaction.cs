@@ -306,7 +306,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public static void SetConfig(DebuggerSettings settings)
         {
-            _redactKeywords.UnionWith(settings.RedactedIdentifiers.Select(x => Normalize(x.Trim())));
+            if (settings.RedactedIdentifiers.Count > 0)
+            {
+                _redactKeywords.UnionWith(settings.RedactedIdentifiers.Select(x => Normalize(x.Trim())));
+            }
+
             if (settings.RedactedExcludedIdentifiers.Count > 0)
             {
                 _redactKeywords.ExceptWith(settings.RedactedExcludedIdentifiers.Select(x => Normalize(x.Trim())));
