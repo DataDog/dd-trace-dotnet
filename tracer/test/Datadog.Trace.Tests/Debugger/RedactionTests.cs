@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
@@ -53,7 +52,8 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData("password", null, true)] // Basic case - no exclusions
+        [InlineData("password", null, true)] // Basic case - no exclusions - null
+        [InlineData("password", new string[] { " " }, true)] // Basic case - no exclusions - empty
         [InlineData("password", new[] { "otherword" }, true)] // Exclusion list doesn't affect non-excluded word
         [InlineData("password", new[] { "password" }, false)] // Basic exclusion
         [InlineData("PassWord", new[] { "password" }, false)] // Case-insensitive exclusion
@@ -64,14 +64,14 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("password", new[] { "pass" }, true)] // Partial match shouldn't exclude
         [InlineData("x-api-key", new[] { "password" }, true)] // Different keyword not affected by exclusion
         [InlineData("x-api-key", new[] { "x-api-key" }, false)] // Exclude specific API keyword
-        public void RedactedKeywords_WithExclusions_Test(string keyword, string excludedKeywords, bool shouldRedact)
+        public void RedactedKeywords_WithExclusions_Test(string keyword, string[] excludedKeywords, bool shouldRedact)
         {
             // Arrange
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new()
                                                  {
                                                      { ConfigurationKeys.Debugger.RedactedIdentifiers, "password,x-api-key" },
-                                                     { ConfigurationKeys.Debugger.RedactedExcludedIdentifiers, excludedKeywords }
+                                                     { ConfigurationKeys.Debugger.RedactedExcludedIdentifiers, excludedKeywords?[0] }
                                                  }),
                 NullConfigurationTelemetry.Instance);
 
