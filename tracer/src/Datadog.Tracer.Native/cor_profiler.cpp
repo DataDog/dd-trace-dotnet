@@ -908,6 +908,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         }
     }
 
+    // Add the module_id to the module metadata vector (to allow NGEN analysis later)
+    modules.push_back(module_id);
+
     if (module_info.assembly.name == managed_profiler_name)
     {
         // Fix PInvoke Rewriting
@@ -1042,8 +1045,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             // Rewrite Instrumentation.IsManualInstrumentationOnly()
             RewriteIsManualInstrumentationOnly(module_metadata, module_id);
         }
-
-        modules.push_back(module_id);
 
         bool searchForTraceAttribute = trace_annotations_enabled;
         if (searchForTraceAttribute)
@@ -4413,7 +4414,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
-        Logger::Debug("Disabling NGEN. The are no ModuleMetadata for ModuleId=", module_id);
+        Logger::Debug("NGEN Enabled. The are no ModuleMetadata for ModuleId=", module_id);
         *pbUseCachedFunction = true;
         return S_OK;
     }
