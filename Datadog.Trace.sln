@@ -608,6 +608,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsV3", "tracer\test\test-applications\integrations\Samples.XUnitTestsV3\Samples.XUnitTestsV3.csproj", "{7BFC299B-6F13-4A8D-B881-E1E1B3C2217B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsRetriesV3", "tracer\test\test-applications\integrations\Samples.XUnitTestsRetriesV3\Samples.XUnitTestsRetriesV3.csproj", "{E8A22B2B-2DF6-403A-BD94-6916CBB856E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1448,6 +1450,10 @@ Global
 		{7BFC299B-6F13-4A8D-B881-E1E1B3C2217B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BFC299B-6F13-4A8D-B881-E1E1B3C2217B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BFC299B-6F13-4A8D-B881-E1E1B3C2217B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8A22B2B-2DF6-403A-BD94-6916CBB856E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8A22B2B-2DF6-403A-BD94-6916CBB856E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8A22B2B-2DF6-403A-BD94-6916CBB856E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8A22B2B-2DF6-403A-BD94-6916CBB856E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1685,6 +1691,7 @@ Global
 		{FE9F14E0-8DFF-413B-BB9E-49CEA4115A5D} = {F8C637E1-1F4F-4E3B-9E34-AAD61097C3F8}
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {FE9F14E0-8DFF-413B-BB9E-49CEA4115A5D}
 		{7BFC299B-6F13-4A8D-B881-E1E1B3C2217B} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{E8A22B2B-2DF6-403A-BD94-6916CBB856E5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
