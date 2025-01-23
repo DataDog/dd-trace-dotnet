@@ -245,26 +245,36 @@
     "SampleProjectName": "Samples.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
     "MinVersion": "3.6.9",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "3.*.*",
       "4.*.*",
       "5.*.*",
-      "6.*.*"
-    ]
+      "6.*.*",
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "7.0.0",
+      "ExcludeTargetFrameworks": ["net462"]
+    }]
   },
   {
     "IntegrationName": "DataStreamsRabbitMQ",
     "SampleProjectName": "Samples.DataStreams.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
     "MinVersion": "3.6.9",
-    "MaxVersionExclusive": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
       "3.*.*",
       "4.*.*",
       "5.*.*",
-      "6.*.*"
-    ]
+      "6.*.*",
+      "7.*.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "7.0.0",
+      "ExcludeTargetFrameworks": ["net462"]
+    }]
   },
   {
     "IntegrationName": "SystemDataSqlClient",

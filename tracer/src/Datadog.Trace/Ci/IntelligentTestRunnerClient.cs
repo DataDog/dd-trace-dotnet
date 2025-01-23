@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -49,6 +50,7 @@ internal class IntelligentTestRunnerClient
     private const string TestParamsType = "test_params";
     private const string SettingsType = "ci_app_test_service_libraries_settings";
     private const string EarlyFlakeDetectionRequestType = "ci_app_libraries_tests_request";
+    private const string ImpactedTestsDetectionRequestType = "ci_app_tests_diffs_request";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new("[0-9a-f]+", RegexOptions.Compiled);
@@ -66,6 +68,7 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
     private readonly Uri _earlyFlakeDetectionTestsUrl;
+    private readonly Uri _impactedTestsDetectionTestsUrl;
     private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly string _repositoryUrl;
     private readonly string _branchName;
@@ -94,6 +97,7 @@ internal class IntelligentTestRunnerClient
         const string packFileUrlPath = "api/v2/git/repository/packfile";
         const string skippableTestsUrlPath = "api/v2/ci/tests/skippable";
         const string efdTestsUrlPath = "api/v2/ci/libraries/tests";
+        const string itdTestsUrlPath = "api/v2/ci/tests/diffs";
 
         if (_settings.Agentless)
         {
@@ -106,6 +110,7 @@ internal class IntelligentTestRunnerClient
                 _packFileUrl = new UriBuilder(agentlessUrl) { Path = packFileUrlPath }.Uri;
                 _skippableTestsUrl = new UriBuilder(agentlessUrl) { Path = skippableTestsUrlPath }.Uri;
                 _earlyFlakeDetectionTestsUrl = new UriBuilder(agentlessUrl) { Path = efdTestsUrlPath }.Uri;
+                _impactedTestsDetectionTestsUrl = new UriBuilder(agentlessUrl) { Path = itdTestsUrlPath }.Uri;
             }
             else
             {
@@ -138,6 +143,12 @@ internal class IntelligentTestRunnerClient
                     host: "api." + _settings.Site,
                     port: 443,
                     pathValue: efdTestsUrlPath).Uri;
+
+                _impactedTestsDetectionTestsUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: itdTestsUrlPath).Uri;
             }
         }
         else
@@ -152,6 +163,7 @@ internal class IntelligentTestRunnerClient
                     _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{packFileUrlPath}");
                     _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{skippableTestsUrlPath}");
                     _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{efdTestsUrlPath}");
+                    _impactedTestsDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{itdTestsUrlPath}");
                     break;
                 case EventPlatformProxySupport.V4:
                     _settingsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{settingsUrlPath}");
@@ -159,6 +171,7 @@ internal class IntelligentTestRunnerClient
                     _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{packFileUrlPath}");
                     _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{skippableTestsUrlPath}");
                     _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{efdTestsUrlPath}");
+                    _impactedTestsDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{itdTestsUrlPath}");
                     break;
                 default:
                     throw new NotSupportedException("Event platform proxy not supported by the agent.");
@@ -223,7 +236,7 @@ internal class IntelligentTestRunnerClient
             // We need to check if the git clone is a shallow one before uploading anything.
             // In the case is a shallow clone we need to reconfigure it to upload the git tree
             // without blobs so no content will be downloaded.
-            var gitRevParseShallowOutput = RunGitCommand("rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow);
+            var gitRevParseShallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow);
             if (gitRevParseShallowOutput is null)
             {
                 Log.Warning("ITR: 'git rev-parse --is-shallow-repository' command is null");
@@ -241,7 +254,7 @@ internal class IntelligentTestRunnerClient
             Log.Debug("ITR: Unshallowing the repository...");
 
             // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-            var gitShallowLogOutput = RunGitCommand("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
+            var gitShallowLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow);
             if (gitShallowLogOutput is null)
             {
                 Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
@@ -261,16 +274,16 @@ internal class IntelligentTestRunnerClient
                 // ***
 
                 // git config --default origin --get clone.defaultRemoteName
-                var originNameOutput = RunGitCommand("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
+                var originNameOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
                 var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
 
                 // git rev-parse HEAD
-                var headOutput = RunGitCommand("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
+                var headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
                 var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
 
                 // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                 Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                var gitUnshallowOutput = RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                var gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
                 {
@@ -282,12 +295,12 @@ internal class IntelligentTestRunnerClient
 
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
-                    headOutput = RunGitCommand("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead);
+                    headOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead);
                     head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? _branchName;
 
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
                     Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
-                    gitUnshallowOutput = RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
+                    gitUnshallowOutput = GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow);
                 }
 
                 if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
@@ -301,7 +314,7 @@ internal class IntelligentTestRunnerClient
                     // originName = git config --default origin --get clone.defaultRemoteName
                     // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
                     Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
-                    RunGitCommand($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
+                    GitCommandHelper.RunGitCommand(_workingDirectory, $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow);
                 }
             }
         }
@@ -796,9 +809,115 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+    public async Task<ImpactedTestsDetectionResponse> GetImpactedTestsDetectionFilesAsync()
+    {
+        Log.Debug("ITR: Getting impacted tests detection modified files...");
+        var framework = FrameworkDescription.Instance;
+
+        if (string.IsNullOrEmpty(_repositoryUrl))
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            return default;
+        }
+
+        if (string.IsNullOrEmpty(_commitSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
+
+        var query = new DataEnvelope<Data<ImpactedTestsDetectionQuery>>(
+            new Data<ImpactedTestsDetectionQuery>(
+                _commitSha,
+                ImpactedTestsDetectionRequestType,
+                new ImpactedTestsDetectionQuery(
+                    _serviceName,
+                    _environment,
+                    _repositoryUrl,
+                    _branchName,
+                    _commitSha)),
+            default);
+        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
+        Log.Debug("ITR: Efd.JSON RQ = {Json}", jsonQuery);
+
+        return await WithRetries(InternalGetImpactedTestsDetectionFilesAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
+
+        async Task<ImpactedTestsDetectionResponse> InternalGetImpactedTestsDetectionFilesAsync(byte[] state, bool finalTry)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                // We currently always send the request uncompressed
+                TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsDetectionRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
+                var request = _apiRequestFactory.Create(_impactedTestsDetectionTestsUrl);
+                SetRequestHeader(request);
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("ITR: Getting Impacted test file diffs: {Url}", _impactedTestsDetectionTestsUrl.ToString());
+                }
+
+                string? responseContent;
+                try
+                {
+                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(errorType);
+                    }
+
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                    try
+                    {
+                        if (response.ContentLength is { } contentLength and > 0)
+                        {
+                            // TODO: Check for compressed responses - currently these are not handled and will throw when we attempt to deserialize
+                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityImpactedTestsDetectionResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, contentLength);
+                        }
+                    }
+                    catch
+                    {
+                        // If calling ContentLength throws we just ignore it
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+                    Log.Error(ex, "ITR: Impacted tests file diffs request failed.");
+                    throw;
+                }
+
+                Log.Debug("ITR: Efd.JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return default;
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<ImpactedTestsDetectionResponse>?>>(responseContent);
+                var finalResponse = deserializedResult.Data?.Attributes ?? default;
+
+                // Count the number of tests for telemetry
+                var filesCount = 0;
+                if (finalResponse.Files is { Length: > 0 } files)
+                {
+                    filesCount = files.Length;
+                }
+
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(filesCount);
+                return finalResponse;
+            }
+            finally
+            {
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(sw.Elapsed.TotalMilliseconds);
+            }
+        }
+    }
+
     private async Task<SearchCommitResponse> GetCommitsAsync()
     {
-        var gitLogOutput = RunGitCommand("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
+        var gitLogOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits);
         if (gitLogOutput is null)
         {
             Log.Warning("ITR: 'git log...' command is null");
@@ -925,7 +1044,7 @@ internal class IntelligentTestRunnerClient
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
-        var getObjectsCommand = RunGitCommand(getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
+        var getObjectsCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
             // If not objects has been returned we skip the pack + upload.
@@ -956,7 +1075,7 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug<int>("ITR: Packing {NumObjects} objects...", lstObjectsSha.Count);
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = RunGitCommand(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput);
+        var packObjectsResultCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, objectsOutput);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -979,7 +1098,7 @@ internal class IntelligentTestRunnerClient
 
                 temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
                 getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-                packObjectsResultCommand = RunGitCommand(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output);
+                packObjectsResultCommand = GitCommandHelper.RunGitCommand(_workingDirectory, getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output);
                 if (packObjectsResultCommand is null)
                 {
                     Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -1107,7 +1226,7 @@ internal class IntelligentTestRunnerClient
 
                 if (isSocketException)
                 {
-                    Log.Debug(sourceException, "Unable to communicate with the server");
+                    Log.Debug(sourceException, "ITR: Unable to communicate with the server");
                 }
 
                 if (sourceException is RateLimitException { DelayTimeInSeconds: { } delayTimeInSeconds })
@@ -1126,7 +1245,7 @@ internal class IntelligentTestRunnerClient
                 continue;
             }
 
-            Log.Debug("Request was completed successfully.");
+            Log.Debug("ITR: Request was completed successfully.");
             return response;
         }
     }
@@ -1138,7 +1257,7 @@ internal class IntelligentTestRunnerClient
             return repository;
         }
 
-        var gitOutput = RunGitCommand("config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository);
+        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
@@ -1149,13 +1268,13 @@ internal class IntelligentTestRunnerClient
             return branch;
         }
 
-        var gitOutput = RunGitCommand("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
+        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
         return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
     private string GetCommitSha()
     {
-        var gitOutput = RunGitCommand("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
+        var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
         var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
         if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
         {
@@ -1163,44 +1282,6 @@ internal class IntelligentTestRunnerClient
         }
 
         return gitSha;
-    }
-
-    private ProcessHelpers.CommandOutput? RunGitCommand(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
-    {
-        TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
-        try
-        {
-            var sw = Stopwatch.StartNew();
-            var gitOutput = ProcessHelpers.RunCommand(
-                                new ProcessHelpers.Command(
-                                    "git",
-                                    arguments,
-                                    _workingDirectory,
-                                    outputEncoding: Encoding.Default,
-                                    errorEncoding: Encoding.Default,
-                                    inputEncoding: Encoding.Default,
-                                    useWhereIsIfFileNotFound: true,
-                                    timeout: TimeSpan.FromMinutes(5)),
-                                input);
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
-            if (gitOutput is null)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
-                Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
-            }
-            else if (gitOutput.ExitCode != 0)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
-            }
-
-            return gitOutput;
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            Log.Warning(ex, "ITR: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
-            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
-            return null;
-        }
     }
 
     private readonly struct SearchCommitResponse
@@ -1378,6 +1459,9 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("require_git")]
         public readonly bool? RequireGit;
 
+        [JsonProperty("impacted_tests_enabled")]
+        public readonly bool? ImpactedTestsEnabled;
+
         [JsonProperty("flaky_test_retries_enabled")]
         public readonly bool? FlakyTestRetries;
 
@@ -1447,6 +1531,42 @@ internal class IntelligentTestRunnerClient
         public class EfdResponseModules : Dictionary<string, EfdResponseSuites?>
         {
         }
+    }
+
+    public readonly struct ImpactedTestsDetectionQuery
+    {
+        [JsonProperty("service")]
+        public readonly string Service;
+
+        [JsonProperty("env")]
+        public readonly string Environment;
+
+        [JsonProperty("repository_url")]
+        public readonly string RepositoryUrl;
+
+        [JsonProperty("branch")]
+        public readonly string Branch;
+
+        [JsonProperty("sha")]
+        public readonly string Sha;
+
+        public ImpactedTestsDetectionQuery(string service, string environment, string repositoryUrl, string branch, string sha)
+        {
+            Service = service;
+            Environment = environment;
+            RepositoryUrl = repositoryUrl;
+            Branch = branch;
+            Sha = sha;
+        }
+    }
+
+    public readonly struct ImpactedTestsDetectionResponse
+    {
+        [JsonProperty("base_sha")]
+        public readonly string? BaseSha;
+
+        [JsonProperty("files")]
+        public readonly string[]? Files;
     }
 
     private class ObjectPackFilesResult

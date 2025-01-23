@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="body">The message body.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string? consumerTag, ulong deliveryTag, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
-            where TBasicProperties : IBasicProperties
+            where TBasicProperties : IReadOnlyBasicProperties
             where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
             return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, redelivered, exchange, routingKey, basicProperties, body);

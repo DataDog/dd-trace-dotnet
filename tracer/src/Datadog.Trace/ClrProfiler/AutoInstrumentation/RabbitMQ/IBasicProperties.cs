@@ -12,28 +12,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// <summary>
     /// BasicProperties interface for ducktyping
     /// </summary>
-    internal interface IBasicProperties
+    internal interface IBasicProperties : IReadOnlyBasicProperties
     {
         /// <summary>
         /// Gets or sets the headers of the message
         /// </summary>
         /// <returns>Message headers</returns>
-        IDictionary<string, object>? Headers { get; set; }
-
-        /// <summary>
-        /// Gets the delivery mode of the message
-        /// </summary>
-        byte DeliveryMode { get; }
-
-        /// <summary>
-        /// Gets timestamp at which the message was produced
-        /// </summary>
-        AmqpTimestamp Timestamp { get; }
-
-        /// <summary>
-        /// Returns true if the DeliveryMode property is present
-        /// </summary>
-        /// <returns>true if the DeliveryMode property is present</returns>
-        bool IsDeliveryModePresent();
+        /// <remarks>Using <c>new</c> because <see cref="IReadOnlyBasicProperties.Headers"/> is readonly</remarks>
+        new IDictionary<string, object>? Headers { get; set; }
     }
 }
