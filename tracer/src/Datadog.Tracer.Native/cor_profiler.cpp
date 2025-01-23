@@ -568,6 +568,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                         hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
                                                              shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
+
+                        // Store this methodDef token in the internal tokens list
+                        auto intTokens = internal_rewrite_tokens.Get();
+                        intTokens->emplace(methodDef);
+
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
@@ -2714,6 +2719,10 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                 module_metadata.metadata_import));
     }
 
+    // Store this methodDef token in the internal tokens list
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->emplace(getDistributedTraceMethodDef);
+
     return hr;
 }
 
@@ -2786,6 +2795,10 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
                                 module_metadata.metadata_import));
     }
 
+    // Store this methodDef token in the internal tokens list
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->emplace(getNativeTracerVersionMethodDef);
+
     return hr;
 }
 
@@ -2847,6 +2860,10 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
                                 GetFunctionInfo(module_metadata.metadata_import, isAutoEnabledMethodDef),
                                 module_metadata.metadata_import));
     }
+
+    // Store this methodDef token in the internal tokens list
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->emplace(isAutoEnabledMethodDef);
 
     return hr;
 }
@@ -3234,6 +3251,10 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
                      function_token);
         return hr;
     }
+
+    // Store this methodDef token in the internal tokens list
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->emplace(function_token);
 
     return S_OK;
 }
@@ -4427,10 +4448,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // Check if this method has been rejitted, if that's the case we don't accept the image
         bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
-        *pbUseCachedFunction = !hasBeenRejitted;
 
-        // If we are in debug mode and the image is rejected because has been rejitted then let's write a couple of logs
-        if (Logger::IsDebugEnabled() && hasBeenRejitted)
+        // if the method has not been rejitted let's check if was rewritten.
+        bool hasBeenRewritten = false;
+        if (!hasBeenRejitted)
+        {
+            // Check if this method has been internally rewritten, if that's the case we don't accept the image
+            auto internalTokens = internal_rewrite_tokens.Get();
+            hasBeenRewritten = internalTokens->find(function_token) != internalTokens->end();
+        }
+
+        *pbUseCachedFunction = !hasBeenRejitted && !hasBeenRewritten;
+
+        // If we are in debug mode and the image is rejected because has been rejitted or rewritten then let's write a couple of logs
+        if (Logger::IsDebugEnabled() && (hasBeenRejitted || hasBeenRewritten))
         {
             ComPtr<IUnknown> metadata_interfaces;
             if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
@@ -4439,14 +4470,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
                 const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
                 auto functionInfo = GetFunctionInfo(metadata_import, function_token);
 
-                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                Logger::Debug("NGEN Image: Rejected (because rejitted or rewritten) for Module: ", module_info.assembly.name,
                               ", Method:", functionInfo.type.name, ".", functionInfo.name,
                               "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
                               ", methodDef=", HexStr(function_token), "]");
             }
             else
             {
-                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                Logger::Debug("NGEN Image: Rejected (because rejitted or rewritten) for Module: ", module_info.assembly.name,
                               ", Function: ", HexStr(function_token),
                               " previous value = ", *pbUseCachedFunction ? "true" : "false");
             }          
