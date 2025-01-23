@@ -571,7 +571,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
                         // Store this methodDef token in the internal tokens list
                         auto intTokens = internal_rewrite_tokens.Get();
-                        intTokens->emplace(methodDef);
+                        intTokens->insert(methodDef);
 
                         if (FAILED(hr))
                         {
@@ -2721,7 +2721,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     // Store this methodDef token in the internal tokens list
     auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->emplace(getDistributedTraceMethodDef);
+    intTokens->insert(getDistributedTraceMethodDef);
 
     return hr;
 }
@@ -2796,8 +2796,9 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     }
 
     // Store this methodDef token in the internal tokens list
+    Logger::Debug("MethodDef was added as an internal rewrite.");
     auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->emplace(getNativeTracerVersionMethodDef);
+    intTokens->insert(getNativeTracerVersionMethodDef);
 
     return hr;
 }
@@ -2863,7 +2864,7 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
 
     // Store this methodDef token in the internal tokens list
     auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->emplace(isAutoEnabledMethodDef);
+    intTokens->insert(isAutoEnabledMethodDef);
 
     return hr;
 }
@@ -3254,7 +3255,7 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
 
     // Store this methodDef token in the internal tokens list
     auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->emplace(function_token);
+    intTokens->insert(function_token);
 
     return S_OK;
 }
