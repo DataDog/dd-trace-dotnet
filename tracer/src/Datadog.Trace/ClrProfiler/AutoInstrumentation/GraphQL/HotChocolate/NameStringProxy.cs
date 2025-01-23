@@ -15,4 +15,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     {
         public string Value;
     }
+
+    /// <summary>
+    /// HotChocolate.NameString interface for ducktyping
+    /// </summary>
+    [DuckCopy]
+    internal struct NullableNameStringProxy
+    {
+        public NameStringProxy Value;
+        public bool HasValue;
+    }
 }
