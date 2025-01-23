@@ -54,6 +54,7 @@ namespace Datadog.Trace.AppSec
         private string? _blockedHtmlTemplateCache;
         private string? _blockedJsonTemplateCache;
         private HashSet<string>? _activeAddresses;
+        private bool _shutDownRun;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -62,6 +63,7 @@ namespace Datadog.Trace.AppSec
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             _activeAddressesLocker = new Concurrency.ReaderWriterLock();
+            _shutDownRun = false;
 
             try
             {
@@ -617,6 +619,7 @@ namespace Datadog.Trace.AppSec
             }
 
             Dispose();
+            _shutDownRun = true;
         }
 
         internal bool IsMetaStructSupported()
@@ -639,8 +642,14 @@ namespace Datadog.Trace.AppSec
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
                 try
                 {
-                    _activeAddressesLocker.EnterWriteLock();
-                    _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                    if (_activeAddressesLocker.EnterWriteLock())
+                    {
+                        _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                    }
+                    else
+                    {
+                        _activeAddresses = null;
+                    }
                 }
                 finally
                 {
@@ -651,8 +660,10 @@ namespace Datadog.Trace.AppSec
             {
                 try
                 {
-                    _activeAddressesLocker.EnterWriteLock();
-                    _activeAddresses = null;
+                    if (_activeAddressesLocker.EnterWriteLock())
+                    {
+                        _activeAddresses = null;
+                    }
                 }
                 finally
                 {
@@ -664,7 +675,7 @@ namespace Datadog.Trace.AppSec
         internal bool AddressEnabled(string address)
         {
             // So far, RASP is the only one that uses this
-            if (!_settings.RaspEnabled)
+            if (!_settings.RaspEnabled || _shutDownRun)
             {
                 return false;
             }
@@ -673,8 +684,14 @@ namespace Datadog.Trace.AppSec
             {
                 try
                 {
-                    _activeAddressesLocker.EnterReadLock();
-                    return _activeAddresses?.Contains(address) ?? false;
+                    if (_activeAddressesLocker.EnterReadLock())
+                    {
+                        return _activeAddresses?.Contains(address) ?? false;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 finally
                 {
