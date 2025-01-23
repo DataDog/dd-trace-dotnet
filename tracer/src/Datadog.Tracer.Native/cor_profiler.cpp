@@ -2797,7 +2797,7 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     }
 
     // Store this methodDef token in the internal tokens list
-    Logger::Debug("MethodDef was added as an internal rewrite.");
+    Logger::Debug("MethodDef was added as an internal rewrite: ", getNativeTracerVersionMethodDef);
     auto intTokens = internal_rewrite_tokens.Get();
     intTokens->insert(getNativeTracerVersionMethodDef);
 
@@ -4370,7 +4370,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     auto modulesOpt = module_ids.TryGet();
-
     if (!modulesOpt.has_value())
     {
         Logger::Error(
@@ -4414,7 +4413,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
-        Logger::Debug("NGEN Enabled. The are no ModuleMetadata for ModuleId=", module_id);
         *pbUseCachedFunction = true;
         return S_OK;
     }
@@ -4440,40 +4438,51 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    // Let's check if the method has been rewritten internally, we encapsulate the code to release the internal_rewrite_tokens lock earlier.
+    // Let's check if the method has been rewritten internally
+    // if that's the case we don't accept the image
+    auto internalTokensOpt = internal_rewrite_tokens.TryGet();
+    if (!internalTokensOpt.has_value())
     {
-        // if that's the case we don't accept the image
-        auto internalTokens = internal_rewrite_tokens.Get();
-        bool hasBeenRewritten = internalTokens->find(function_token) != internalTokens->end();
-        if (hasBeenRewritten)
+        Logger::Error(
+            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the internal_rewrite_tokens collection for functionId ",
+            functionId);
+        return S_OK;
+    }
+
+    auto& internalTokens = internalTokensOpt.value();
+    bool hasBeenRewritten = internalTokens->find(function_token) != internalTokens->end();
+    if (hasBeenRewritten)
+    {
+        // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
+        if (Logger::IsDebugEnabled())
         {
-            // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
-            if (Logger::IsDebugEnabled())
+            ComPtr<IUnknown> metadata_interfaces;
+            if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf()) == S_OK)
             {
-                ComPtr<IUnknown> metadata_interfaces;
-                if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
-                                                   metadata_interfaces.GetAddressOf()) == S_OK)
-                {
-                    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-                    auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+                const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                auto functionInfo = GetFunctionInfo(metadata_import, function_token);
 
-                    Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
-                                  ", Method:", functionInfo.type.name, ".", functionInfo.name,
-                                  "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
-                                  ", methodDef=", HexStr(function_token), "]");
-                }
-                else
-                {
-                    Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
-                                  ", Function: ", HexStr(function_token),
-                                  " previous value = ", *pbUseCachedFunction ? "true" : "false");
-                }
+                Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                              "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
+                              ", methodDef=", HexStr(function_token), "]");
             }
-
-            // We reject the image and return
-            *pbUseCachedFunction = false;
-            return S_OK;
+            else
+            {
+                Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Function: ", HexStr(function_token),
+                              " previous value = ", *pbUseCachedFunction ? "true" : "false");
+            }
         }
+
+        // We reject the image and return
+        *pbUseCachedFunction = false;
+        return S_OK;
+    }
+    else
+    {
+        Logger::Debug("JITCachedFunctionSearchStarted: non rejected by internal token on token: ", function_token, " Looking into a hashset with ", internalTokens->size(), " elements");
     }
 
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
