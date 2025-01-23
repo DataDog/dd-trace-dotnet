@@ -172,7 +172,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.9.0
+  ToolVersion: 3.10.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -4257,9 +4257,49 @@ stages:
           displayName: Publish ssi artifacts
           artifact: ssi-artifacts
 
+- stage: store_serverless_artifacts
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
+  dependsOn: [build_linux_tracer_r2r, build_arm64_tracer_r2r, build_linux_universal, build_arm64_universal]
+  jobs:
+    - job: combine
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-latest
+      steps:
+        - checkout: none
+        # Download the files to the expected locations
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless tracer home x64
+          inputs:
+            artifact: linux-tracer-home-linux-x64-r2r
+            path: $(Build.ArtifactStagingDirectory)/x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless universal home x64
+          inputs:
+            artifact: linux-universal-home-linux-x64
+            path: $(Build.ArtifactStagingDirectory)/x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless tracer home arm64
+          inputs:
+            artifact: linux-tracer-home-linux-arm64-r2r
+            path: $(Build.ArtifactStagingDirectory)/arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless universal home arm64
+          inputs:
+            artifact: linux-universal-home-linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/arm64
+
+        # publish all tar files as single artifact
+        - publish: "$(Build.ArtifactStagingDirectory)"
+          displayName: Publish serverless artifacts
+          artifact: serverless-artifacts
+
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id, store_serverless_artifacts]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4484,6 +4524,19 @@ stages:
           inputs:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
+
+        # Download the artifacts required by the serverless layer and create the zip file
+        # This exapands the directory - but we want a zip file, so re-zip it!
+        - task: DownloadPipelineArtifact@2
+          displayName: Download serverless artifacts
+          inputs:
+            artifact: serverless-artifacts
+            path: $(Agent.TempDirectory)/serverless-artifacts
+
+        - bash: |
+            cd $(Agent.TempDirectory)/serverless-artifacts
+            zip -r $(Build.ArtifactStagingDirectory)/serverless-artifacts.zip .
+          displayName: Zip serverless artifacts and store in staging directory
 
         - bash: |
             # Write tracer version number to version.txt
@@ -6946,7 +6999,7 @@ stages:
     - bash: |
         mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
         dotnet build
-        dd-trace run --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
+        dd-trace run --dd-env "apm-dotnet-pipeline-monitoring" --set-env "DD_TRACE_SAMPLE_RATE=100" --set-env "DD_TRACE_DEBUG=1" --set-env "DD_INSTRUMENTATION_TELEMETRY_ENABLED=1" --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
         exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
@@ -6982,3 +7035,31 @@ stages:
         -d '{"commit": "'$sha'"}' \
           $(slackWebhookUrl)
       displayName: "notify"
+
+- stage: generate_LLM_Report
+  dependsOn: [merge_commit_id]
+  condition: eq(variables['generate_llm_report'], 'true')
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: generate_LLM_job
+    timeoutInMinutes: 3
+    dependsOn: []
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - powershell: tracer/build.ps1 LLMPRReview
+      displayName: Generate LLM report
+      name: generate_llm_step
+      env:
+        PullRequestNumber: $(System.PullRequest.PullRequestNumber)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        OPEN_AI_KEY: $(OPEN_AI_KEY)

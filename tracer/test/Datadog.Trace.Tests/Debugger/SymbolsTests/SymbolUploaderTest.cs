@@ -101,10 +101,10 @@ public class SymbolUploaderTest
         using var jsonWriter = new JsonTextWriter(streamReader);
         JsonSerializer.CreateDefault().Serialize(jsonWriter, symDbEnablement);
         var content = stream.ToArray();
-        _enablementService.Update(new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.LiveDebuggingSymbolDb, new List<RemoteConfiguration> { new(null, content, 1, null, 1) } } }, new());
+        _enablementService.Update(new Dictionary<string, List<RemoteConfiguration>> { { RcmProducts.LiveDebuggingSymbolDb, [new(null, content, 1, null, 1)] } }, new());
     }
 
-    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> classes)
+    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope> classes)
     {
         var uploadClassesMethod = ((SymbolsUploader)_uploader).GetType().GetMethod("UploadClasses", BindingFlags.Instance | BindingFlags.NonPublic);
         if (uploadClassesMethod == null)
@@ -112,7 +112,7 @@ public class SymbolUploaderTest
             return false;
         }
 
-        await ((Task)uploadClassesMethod.Invoke(_uploader, new object?[] { root, classes })!).ConfigureAwait(false);
+        await ((Task)uploadClassesMethod.Invoke(_uploader, [root, classes])!).ConfigureAwait(false);
         return true;
     }
 
@@ -126,7 +126,7 @@ public class SymbolUploaderTest
                Select(JsonConvert.DeserializeObject<Root>).ToArray();
     }
 
-    private (Root Root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> Classes) GenerateSymbolString(int numberOfTypes)
+    private (Root Root, IEnumerable<Trace.Debugger.Symbols.Model.Scope> Classes) GenerateSymbolString(int numberOfTypes)
     {
         var root = new Root
         {
@@ -137,7 +137,7 @@ public class SymbolUploaderTest
             Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = ScopeType.Assembly, Scopes = null } }
         };
 
-        var scopes = new List<Trace.Debugger.Symbols.Model.Scope?>();
+        var scopes = new List<Trace.Debugger.Symbols.Model.Scope>();
         for (var i = 0; i < numberOfTypes; i++)
         {
             scopes.Add(new Trace.Debugger.Symbols.Model.Scope

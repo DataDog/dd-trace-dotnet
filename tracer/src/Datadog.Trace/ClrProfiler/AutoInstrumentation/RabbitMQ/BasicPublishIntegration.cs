@@ -31,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicPublishIntegration
     {
-        private const string Command = "basic.publish";
+        internal const string Command = "basic.publish";
 
-        private static readonly string?[] DeliveryModeStrings = { null, "1", "2" };
+        internal static readonly string?[] DeliveryModeStrings = [null, "1", "2"];
 
         /// <summary>
         /// OnMethodBegin callback

@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.GenericTaskWithGenericMethodParameter, "System.Threading.Tasks.Task`1[!!0]" };
             yield return new object[] { ClrNames.ObjectTask, "System.Threading.Tasks.Task`1[System.Object]" };
             yield return new object[] { ClrNames.Int32Task, "System.Threading.Tasks.Task`1[System.Int32]" };
+            yield return new object[] { ClrNames.StringTask, "System.Threading.Tasks.Task`1[System.String]" };
             yield return new object[] { ClrNames.TimeSpan, "System.TimeSpan" };
             yield return new object[] { ClrNames.Type, typeof(Type) };
             yield return new object[] { ClrNames.Activity, "System.Diagnostics.Activity" };
