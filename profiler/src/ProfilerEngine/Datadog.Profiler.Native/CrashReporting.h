@@ -38,59 +38,36 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
-#ifdef LINUX
-class ElfBuildId
+struct BuildId
 {
-private:
-    struct ElfBuildIdImpl {
-        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr) {}   
-        ElfBuildIdImpl(const char* path) : _buildId{} {
-            if (path != nullptr)
-            {
-                std::size_t size = 0;
-                auto ptr = blaze_read_elf_build_id(path, &size);
-                if (ptr != nullptr)
-                {
-                    _buildId = to_hex_string(ptr, size);
-                    ::free(ptr);
-                }
-            }
-        };
-        ~ElfBuildIdImpl() = default;
-
-        ElfBuildIdImpl(ElfBuildIdImpl const&) = delete;
-        ElfBuildIdImpl(ElfBuildIdImpl&&) = delete;
-        ElfBuildIdImpl& operator=(ElfBuildIdImpl const&) = delete;
-        ElfBuildIdImpl& operator=(ElfBuildIdImpl&&) = delete;
-
-        static std::string to_hex_string(std::uint8_t* ptr, std::size_t size)
-        {
-            std::ostringstream oss;
-            oss << std::hex << std::setfill('0');
-
-            for (size_t i = 0; i < size; ++i) {
-                oss << std::setw(2) << static_cast<int>(ptr[i]);
-            }
-
-            return oss.str();
-        }
-
-        std::string _buildId;
-    };
 public:
-    ElfBuildId() : ElfBuildId(nullptr) {}
-    ElfBuildId(const char* path)
-    : _impl{std::make_shared<ElfBuildIdImpl>(path)} {}
+#ifdef LINUX
+    static BuildId From(const char* path);
+#else
+    static BuildId From(GUID guid, DWORD age);
+#endif
+
+    BuildId() :
+        _buildId{}
+    {
+    }
 
     operator std::string_view() const
     {
-        return _impl->_buildId;
+        return _buildId;
     }
 
+    BuildId(BuildId const&) = delete;
+    BuildId& operator=(BuildId const&) = delete;
+    BuildId(BuildId&&) = default;
+    BuildId& operator=(BuildId&&) = default;
+
 private:
-    std::shared_ptr<ElfBuildIdImpl> _impl;
+    BuildId(std::string buildId) : _buildId{std::move(buildId)}
+    {}
+
+    std::string _buildId;
 };
-#endif
 
 struct StackFrame 
 {
@@ -100,13 +77,7 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
-#ifdef _WINDOWS
-    bool hasPdbInfo;
-    DWORD pdbAge;
-    GUID pdbSig;
-#else
-    ElfBuildId buildId;
-#endif
+    std::string_view buildId;
 };
 
 struct Tag
