@@ -352,21 +352,19 @@ int32_t CrashReporting::Send()
 int32_t CrashReporting::WriteToFile(const char* url)
 {
     auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
+    on_leave { if (endpoint != nullptr) ddog_endpoint_drop(endpoint); };
     return ExportImpl(endpoint);
 }
 
 int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
 {
+    // _builder.inner will be claimed by the Rust API. No need to call XX_drop.
     auto [crashInfo, succeeded] = ExtractResult(ddog_crasht_CrashInfoBuilder_build(&_builder));
+
     if (!succeeded)
     {
         return 1;
     }
-
-    on_leave
-    {
-        if (endpoint != nullptr) ddog_endpoint_drop(endpoint);
-    };
 
     CHECK_RESULT(ddog_crasht_CrashInfo_upload_to_endpoint(&crashInfo, endpoint));
 
