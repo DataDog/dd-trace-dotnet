@@ -103,7 +103,7 @@ public:
     virtual int32_t STDMETHODCALLTYPE Initialize() = 0;
     virtual int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) = 0;
     // only for tests
-    virtual void STDMETHODCALLTYPE Panic() = 0;
+    virtual int32_t STDMETHODCALLTYPE Panic() = 0;
     virtual int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) = 0;
     virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
@@ -125,7 +125,7 @@ public:
     ULONG STDMETHODCALLTYPE Release() override;
     int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) override;
     int32_t STDMETHODCALLTYPE Initialize() override;
-    int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) override;
+    int32_t STDMETHODCALLTYPE Panic() override;
     int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) override;
     int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) override;
     int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;

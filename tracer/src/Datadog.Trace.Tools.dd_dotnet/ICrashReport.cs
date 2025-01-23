@@ -21,7 +21,7 @@ internal unsafe interface ICrashReport : IUnknown
 
     void GetLastError(out IntPtr message, out int length);
 
-    int AddTag(IntPtr key, IntPtr value);
+    void Panic();
 
     int SetSignalInfo(int signal, IntPtr description);
 
