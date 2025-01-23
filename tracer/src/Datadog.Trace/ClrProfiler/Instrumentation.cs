@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         /// <returns>In a managed-only context, where the profiler is not attached, <c>None</c>,
         /// otherwise the version of the Datadog native tracer library.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetNativeTracerVersion() => "None";
 
         /// <summary>
