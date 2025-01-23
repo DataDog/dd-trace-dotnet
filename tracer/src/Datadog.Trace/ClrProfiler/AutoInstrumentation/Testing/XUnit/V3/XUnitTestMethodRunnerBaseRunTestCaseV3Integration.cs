@@ -116,7 +116,9 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
         var retryMessageBus = stateArray[0] as RetryMessageBus;
         var retryMetadata = stateArray[1] as TestCaseMetadata;
+        var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[2];
         var testcase = (IXunitTestCaseV3)stateArray[3];
+
         if (retryMessageBus is not null && retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true })
         {
             _runSummaryFieldCount ??= typeof(TReturn).GetFields().Length;
@@ -131,7 +133,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
             Common.Log.Warning<int>("ExecutionIndex: {ExecutionIndex}", retryMetadata.ExecutionIndex);
 
-            var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[1];
             var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
             var index = retryMetadata.ExecutionIndex;
 

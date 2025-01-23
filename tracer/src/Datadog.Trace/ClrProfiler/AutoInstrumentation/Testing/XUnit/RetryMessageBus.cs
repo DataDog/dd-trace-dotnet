@@ -57,9 +57,24 @@ internal class RetryMessageBus : IMessageBus
             return false;
         }
 
-        if (message is ITestCaseMessage testCaseMessage)
+        string? uniqueID;
+        if (message.TryDuckCast<ITestCaseMessage>(out var testCaseMessage))
         {
-            var metadata = (RetryTestCaseMetadata)GetMetadata(testCaseMessage.TestCase.UniqueID);
+            uniqueID = testCaseMessage.TestCase.UniqueID;
+        }
+        else if (message.TryDuckCast<ITestCaseMessageV3>(out var testCaseMessageV3))
+        {
+            uniqueID = testCaseMessageV3.TestCaseUniqueID;
+        }
+        else
+        {
+            Common.Log.Error<object>("EFD: RetryMessageBus.QueueMessage: Message is not a TestCaseMessage. Added: {Message}", message);
+            return _innerMessageBus.QueueMessage(message);
+        }
+
+        if (uniqueID is not null)
+        {
+            var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
             var totalExecutions = metadata.TotalExecutions;
 
             // Let's store all messages for all executions of the given test, when the test case is finished,
@@ -80,7 +95,7 @@ internal class RetryMessageBus : IMessageBus
             if (index < 0)
             {
                 Common.Log.Error<int>("EFD: RetryMessageBus.QueueMessage: Execution index {Index} is less than 0.", index);
-                FlushMessages(testCaseMessage.TestCase.UniqueID);
+                FlushMessages(uniqueID);
                 throw new Exception($"Execution index {index} is less than 0.");
             }
 
@@ -95,7 +110,7 @@ internal class RetryMessageBus : IMessageBus
             return true;
         }
 
-        Common.Log.Error<object>("EFD: RetryMessageBus.QueueMessage: Message is not a ITestCaseMessage. Added: {Message}", message);
+        Common.Log.Error<object>("EFD: RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Added: {Message}", message);
         return _innerMessageBus.QueueMessage(message);
     }
 
@@ -152,6 +167,11 @@ internal class RetryMessageBus : IMessageBus
     internal interface ITestCaseMessage
     {
         ITestCase TestCase { get; }
+    }
+
+    internal interface ITestCaseMessageV3
+    {
+        string TestCaseUniqueID { get; }
     }
 
     private class RetryTestCaseMetadata(string uniqueID, int totalExecution, int executionNumber) : TestCaseMetadata(uniqueID, totalExecution, executionNumber)
