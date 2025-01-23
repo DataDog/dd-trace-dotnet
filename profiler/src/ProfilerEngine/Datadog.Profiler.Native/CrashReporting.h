@@ -4,8 +4,10 @@
 #pragma once
 
 #include <stdint.h>
+#include <iomanip>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -42,38 +44,47 @@ class ElfBuildId
 private:
     struct ElfBuildIdImpl {
         ElfBuildIdImpl() : ElfBuildIdImpl(nullptr) {}   
-        ElfBuildIdImpl(const char* path) : _ptr{nullptr}, _size{0} {
+        ElfBuildIdImpl(const char* path) : _buildId{} {
             if (path != nullptr)
             {
-                _ptr = blaze_read_elf_build_id(path, &_size);
+                std::size_t size = 0;
+                auto ptr = blaze_read_elf_build_id(path, &size);
+                if (ptr != nullptr)
+                {
+                    _buildId = to_hex_string(ptr, size);
+                    ::free(ptr);
+                }
             }
         };
-        ~ElfBuildIdImpl()
-        {
-            auto* ptr = std::exchange(_ptr, nullptr);
-            if (ptr != nullptr && _size != 0)
-            {
-                _size = 0;
-                ::free(ptr);
-            }
-        }
+        ~ElfBuildIdImpl() = default;
 
         ElfBuildIdImpl(ElfBuildIdImpl const&) = delete;
         ElfBuildIdImpl(ElfBuildIdImpl&&) = delete;
         ElfBuildIdImpl& operator=(ElfBuildIdImpl const&) = delete;
         ElfBuildIdImpl& operator=(ElfBuildIdImpl&&) = delete;
 
-        std::uint8_t* _ptr;
-        std::size_t _size;
+        static std::string to_hex_string(std::uint8_t* ptr, std::size_t size)
+        {
+            std::ostringstream oss;
+            oss << std::hex << std::setfill('0');
+
+            for (size_t i = 0; i < size; ++i) {
+                oss << std::setw(2) << static_cast<int>(ptr[i]);
+            }
+
+            return oss.str();
+        }
+
+        std::string _buildId;
     };
 public:
     ElfBuildId() : ElfBuildId(nullptr) {}
     ElfBuildId(const char* path)
     : _impl{std::make_shared<ElfBuildIdImpl>(path)} {}
 
-    shared::span<std::uint8_t> AsSpan() const
+    operator std::string_view() const
     {
-        return shared::span(_impl->_ptr, _impl->_size);
+        return _impl->_buildId;
     }
 
 private:
@@ -154,7 +165,7 @@ protected:
     uint32_t _pid;
     int32_t _signal;
     std::optional<ddog_Error> _error;
-    ddog_crasht_CrashInfo _crashInfo;
+    ddog_crasht_Handle_CrashInfoBuilder _builder;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
@@ -163,5 +174,9 @@ protected:
     static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 private:
     int32_t ExportImpl(ddog_Endpoint* endpoint);
+    
+    template <typename T>
+    std::pair<decltype(T::ok), bool> ExtractResult(T v);
+
     int32_t _refCount;
 };

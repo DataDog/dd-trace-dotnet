@@ -222,7 +222,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
                     auto demangleResult = ddog_crasht_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_CRASHT_DEMANGLE_OPTIONS_COMPLETE);
 
-                    if (demangleResult.tag == DDOG_CRASHT_STRING_WRAPPER_RESULT_OK)
+                    if (demangleResult.tag == DDOG_CRASHT_RESULT_STRING_WRAPPER_OK_STRING_WRAPPER)
                     {
                         // TODO: There is currently no safe way to free the StringWrapper
                         auto stringWrapper = demangleResult.ok;
