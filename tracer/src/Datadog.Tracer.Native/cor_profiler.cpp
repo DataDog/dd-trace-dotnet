@@ -4412,6 +4412,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
+        Logger::Debug("Disabling NGEN. The are no ModuleMetadata for ModuleId=", module_id);
         *pbUseCachedFunction = true;
         return S_OK;
     }
@@ -4419,6 +4420,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
     {
+        Logger::Debug("Disabling NGEN. ModuleInfo is not valid. ModuleId=", module_id);
         return S_OK;
     }
 
@@ -4436,6 +4438,42 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // Let's check if the method has been rewritten internally, we encapsulate the code to release the internal_rewrite_tokens lock earlier.
+    {
+        // if that's the case we don't accept the image
+        auto internalTokens = internal_rewrite_tokens.Get();
+        bool hasBeenRewritten = internalTokens->find(function_token) != internalTokens->end();
+        if (hasBeenRewritten)
+        {
+            // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
+            if (Logger::IsDebugEnabled())
+            {
+                ComPtr<IUnknown> metadata_interfaces;
+                if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                                   metadata_interfaces.GetAddressOf()) == S_OK)
+                {
+                    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                    auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+                    Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                                  ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                                  "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
+                                  ", methodDef=", HexStr(function_token), "]");
+                }
+                else
+                {
+                    Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                                  ", Function: ", HexStr(function_token),
+                                  " previous value = ", *pbUseCachedFunction ? "true" : "false");
+                }
+            }
+
+            // We reject the image and return
+            *pbUseCachedFunction = false;
+            return S_OK;
+        }
+    }
+
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
     // On .NET Framework when we reject bcl images the rejit calls of the integrations for those bcl assemblies
     // are not resolved (is not clear why, maybe a bug). So we end up missing spans.
@@ -4448,20 +4486,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // Check if this method has been rejitted, if that's the case we don't accept the image
         bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
+        *pbUseCachedFunction = !hasBeenRejitted;
 
-        // if the method has not been rejitted let's check if was rewritten.
-        bool hasBeenRewritten = false;
-        if (!hasBeenRejitted)
-        {
-            // Check if this method has been internally rewritten, if that's the case we don't accept the image
-            auto internalTokens = internal_rewrite_tokens.Get();
-            hasBeenRewritten = internalTokens->find(function_token) != internalTokens->end();
-        }
-
-        *pbUseCachedFunction = !hasBeenRejitted && !hasBeenRewritten;
-
-        // If we are in debug mode and the image is rejected because has been rejitted or rewritten then let's write a couple of logs
-        if (Logger::IsDebugEnabled() && (hasBeenRejitted || hasBeenRewritten))
+        // If we are in debug mode and the image is rejected because has been rejitted then let's write a couple of logs
+        if (Logger::IsDebugEnabled() && hasBeenRejitted)
         {
             ComPtr<IUnknown> metadata_interfaces;
             if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
@@ -4470,14 +4498,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
                 const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
                 auto functionInfo = GetFunctionInfo(metadata_import, function_token);
 
-                Logger::Debug("NGEN Image: Rejected (because rejitted or rewritten) for Module: ", module_info.assembly.name,
+                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Method:", functionInfo.type.name, ".", functionInfo.name,
                               "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
                               ", methodDef=", HexStr(function_token), "]");
             }
             else
             {
-                Logger::Debug("NGEN Image: Rejected (because rejitted or rewritten) for Module: ", module_info.assembly.name,
+                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Function: ", HexStr(function_token),
                               " previous value = ", *pbUseCachedFunction ? "true" : "false");
             }          
