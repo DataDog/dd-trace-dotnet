@@ -88,10 +88,12 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
         // Let's check if the current message bus is our own implementation.
         RetryMessageBus retryMessageBus;
+        TestCaseMetadata retryMetadata;
         if (testRunnerInstance.MessageBus is IDuckType { Instance: { } } ducktypedMessageBus)
         {
             Common.Log.Debug("EFD/Retry: Current message bus is a duck type, retrieving RetryMessageBus instance");
             retryMessageBus = (RetryMessageBus)ducktypedMessageBus.Instance;
+            retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
         }
         else if (testRunnerInstance.MessageBus is { } messageBus)
         {
@@ -101,7 +103,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             var duckMessageBus = messageBus.DuckCast<IMessageBus>();
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
             // EFD is disabled but FlakeRetry is enabled
-            retryMessageBus.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
+            retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
+            retryMetadata.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
             testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(_messageBusInterfaceType);
         }
         else
@@ -111,9 +114,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
 
         // Decrement the execution number (the method body will do the execution)
-        retryMessageBus.ExecutionNumber--;
+        retryMetadata.ExecutionNumber--;
 
-        return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus));
+        return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus, retryMetadata));
     }
 
     /// <summary>
@@ -128,30 +131,30 @@ public static class XUnitTestRunnerRunAsyncIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        if (state.State is TestRunnerState { MessageBus: { } messageBus } testRunnerState)
+        if (state.State is TestRunnerState { MessageBus: { } messageBus, RetryMetadata: { } retryMetadata } testRunnerState)
         {
-            if (messageBus is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
+            if (retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
              && returnValue.TryDuckCast<IRunSummary>(out var runSummary))
             {
-                var isFlakyRetryEnabled = messageBus.FlakyRetryEnabled;
-                var index = messageBus.ExecutionIndex;
+                var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
+                var index = retryMetadata.ExecutionIndex;
                 if (index == 0)
                 {
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                     if (isFlakyRetryEnabled)
                     {
-                        messageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
+                        retryMetadata.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
                     }
                     else
                     {
                         var duration = TraceClock.Instance.UtcNow - testRunnerState.StartTime;
-                        messageBus.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
+                        retryMetadata.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
                     }
 
-                    messageBus.ExecutionNumber = messageBus.TotalExecutions - 1;
+                    retryMetadata.ExecutionNumber = retryMetadata.TotalExecutions - 1;
                 }
 
-                if (messageBus.ExecutionNumber > 0)
+                if (retryMetadata.ExecutionNumber > 0)
                 {
                     var doRetry = true;
                     if (isFlakyRetryEnabled)
@@ -171,9 +174,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                     if (doRetry)
                     {
-                        var retryNumber = messageBus.ExecutionIndex + 1;
+                        var retryNumber = retryMetadata.ExecutionIndex + 1;
                         // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                        Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
+                        Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
                         var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
                         if (innerReturnValue.TryDuckCast<IRunSummary>(out var innerRunSummary))
                         {
@@ -200,7 +203,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                 if (index == 0)
                 {
-                    messageBus.FlushMessages();
+                    messageBus.FlushMessages(retryMetadata.UniqueID);
 
                     // Let's clear the failed and skipped runs if we have at least one successful run
 #pragma warning disable DDLOG004
@@ -233,7 +236,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             }
             else
             {
-                messageBus.FlushMessages();
+                messageBus.FlushMessages(retryMetadata.UniqueID);
             }
         }
 
@@ -245,12 +248,14 @@ public static class XUnitTestRunnerRunAsyncIntegration
         public readonly DateTimeOffset StartTime;
         public readonly ITestRunner TestRunner;
         public readonly RetryMessageBus MessageBus;
+        public readonly TestCaseMetadata RetryMetadata;
 
-        public TestRunnerState(ITestRunner testRunner, RetryMessageBus messageBus)
+        public TestRunnerState(ITestRunner testRunner, RetryMessageBus messageBus, TestCaseMetadata retryMetadata)
         {
             StartTime = TraceClock.Instance.UtcNow;
             TestRunner = testRunner;
             MessageBus = messageBus;
+            RetryMetadata = retryMetadata;
         }
     }
 }

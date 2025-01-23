@@ -61,12 +61,8 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
         _messageBusInterfaceType ??= messageBus.GetType().GetInterface("IMessageBus")!;
         var duckMessageBus = messageBus.DuckCast<IMessageBus>();
-        var retryMessageBus = new RetryMessageBusV3(duckMessageBus, 1, 0);
-
-        // EFD is disabled but FlakeRetry is enabled
-        retryMessageBus.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
+        var retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 0);
         messageBus = (TIMessageBus)retryMessageBus.DuckImplement(_messageBusInterfaceType);
-
         return CallTargetState.GetDefault();
     }
 }

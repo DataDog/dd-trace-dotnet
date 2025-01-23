@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -56,10 +55,11 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             TestClass = testcase.TestMethod.TestClass.Class,
             TestMethod = testcase.TestMethod.Method,
             TestMethodArguments = testcase.TestMethod.TestMethodArguments!,
-            TestCase = new TestCaseStruct
+            TestCase = new CustomTestCase
             {
                 DisplayName = testcase.TestCaseDisplayName,
                 Traits = testcase.Traits.ToDictionary(k => k.Key, v => v.Value.ToList()),
+                UniqueID = testcase.UniqueID,
             },
             Aggregator = context.Aggregator,
             SkipReason = testcase.SkipReason,
@@ -89,56 +89,69 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, new[] { context.MessageBus, context, testcase });
+        var retryMessageBus = (context.MessageBus as IDuckType)?.Instance as RetryMessageBus;
+        TestCaseMetadata? retryMetadata = null;
+        if (retryMessageBus != null)
+        {
+            // EFD is disabled but FlakeRetry is enabled
+            retryMetadata = retryMessageBus.GetMetadata(testcase.UniqueID);
+            if (retryMetadata.ExecutionIndex == 0)
+            {
+                retryMetadata.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
+            }
+        }
+
+        return new CallTargetState(null, new object?[] { retryMessageBus, retryMetadata, context, testcase });
     }
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
         Common.Log.Warning("XUnitTestMethodRunnerBaseRunTestCaseV3Integration.OnAsyncMethodEnd, instance: {0}, returnValue: {1}", instance, returnValue);
 
-        if (state.State is not object[] { Length: 3 } stateArray)
+        if (state.State is not object[] { Length: 4 } stateArray)
         {
             // State is not the expected array
             return returnValue;
         }
 
-        var retryMessageBus = (stateArray[0] as IDuckType)?.Instance as RetryMessageBusV3;
-        var testcase = (IXunitTestCaseV3)stateArray[2];
-        if (retryMessageBus is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true })
+        var retryMessageBus = stateArray[0] as RetryMessageBus;
+        var retryMetadata = stateArray[1] as TestCaseMetadata;
+        var testcase = (IXunitTestCaseV3)stateArray[3];
+        if (retryMessageBus is not null && retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true })
         {
             _runSummaryFieldCount ??= typeof(TReturn).GetFields().Length;
             if (_runSummaryFieldCount != 5)
             {
                 Common.Log.Warning("RunSummary type doesn't have the field count we are expecting. Flushing messages from RetryMessageBus");
-                retryMessageBus.FlushMessages();
+                retryMessageBus.FlushMessages(retryMetadata.UniqueID);
                 return returnValue;
             }
 
             var runSummaryUnsafe = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref returnValue);
 
-            Common.Log.Warning<int>("ExecutionIndex: {ExecutionIndex}", retryMessageBus.ExecutionIndex);
+            Common.Log.Warning<int>("ExecutionIndex: {ExecutionIndex}", retryMetadata.ExecutionIndex);
 
             var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[1];
-            var isFlakyRetryEnabled = retryMessageBus.FlakyRetryEnabled;
-            var index = retryMessageBus.ExecutionIndex;
+            var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
+            var index = retryMetadata.ExecutionIndex;
 
             if (index == 0)
             {
                 // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                 if (isFlakyRetryEnabled)
                 {
-                    retryMessageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
+                    retryMetadata.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
                 }
                 else
                 {
                     var duration = TimeSpan.FromSeconds((double)runSummaryUnsafe.Time);
-                    retryMessageBus.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
+                    retryMetadata.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
                 }
 
-                retryMessageBus.ExecutionNumber = retryMessageBus.TotalExecutions - 1;
+                retryMetadata.ExecutionNumber = retryMetadata.TotalExecutions - 1;
             }
 
-            if (retryMessageBus.ExecutionNumber > 0)
+            if (retryMetadata.ExecutionNumber > 0)
             {
                 var doRetry = true;
                 if (isFlakyRetryEnabled)
@@ -163,16 +176,16 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
                 if (doRetry)
                 {
-                    var retryNumber = retryMessageBus.ExecutionIndex + 1;
+                    var retryNumber = retryMetadata.ExecutionIndex + 1;
                     // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                    Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMessageBus.ExecutionNumber);
+                    Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
 
                     var mrunner = instance.DuckCast<IXunitTestMethodRunnerV3>()!;
 
                     // Decrement the execution number (the method body will do the execution)
-                    retryMessageBus.ExecutionNumber--;
+                    retryMetadata.ExecutionNumber--;
                     var innerReturnValue = (TReturn)await mrunner.RunTestCase(context.Instance!, testcase.Instance!);
-                    Common.Log.Debug<int, int, string>("EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, retryMessageBus.ExecutionNumber, testcase.TestCaseDisplayName);
+                    Common.Log.Debug<int, int, string>("EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, retryMetadata.ExecutionNumber, testcase.TestCaseDisplayName);
 
                     var innerReturnValueUnsafe = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref innerReturnValue);
                     Common.Log.Debug<int>("EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
@@ -197,7 +210,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
             if (index == 0)
             {
-                retryMessageBus.FlushMessages(testcase.UniqueID);
+                retryMessageBus.FlushMessages(retryMetadata.UniqueID);
 
                 // Let's clear the failed and skipped runs if we have at least one successful run
 #pragma warning disable DDLOG004

@@ -913,6 +913,7 @@
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
+      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />

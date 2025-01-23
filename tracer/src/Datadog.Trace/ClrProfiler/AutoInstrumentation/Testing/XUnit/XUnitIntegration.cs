@@ -24,7 +24,7 @@ internal static class XUnitIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, RetryMessageBus? retryMessageBus = null)
+    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, TestCaseMetadata? testCaseMetadata = null)
     {
         // Get the test suite instance
         var testSuite = TestSuite.Current;
@@ -100,18 +100,18 @@ internal static class XUnitIntegration
             {
                 test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
 
-                if (retryMessageBus is null)
+                if (testCaseMetadata is null)
                 {
                     Interlocked.Increment(ref _newTestCases);
                 }
             }
 
-            if (retryMessageBus is not null)
+            if (testCaseMetadata is not null)
             {
-                retryMessageBus.TestIsNew = testIsNew;
+                testCaseMetadata.TestIsNew = testIsNew;
                 if (testIsNew)
                 {
-                    if (retryMessageBus.ExecutionIndex > 0)
+                    if (testCaseMetadata.ExecutionIndex > 0)
                     {
                         test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
                     }
@@ -128,7 +128,7 @@ internal static class XUnitIntegration
         // Flaky retries
         if (CIVisibility.Settings.FlakyRetryEnabled == true)
         {
-            if (retryMessageBus is { ExecutionIndex: >0 })
+            if (testCaseMetadata is { ExecutionIndex: >0 })
             {
                 test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
             }

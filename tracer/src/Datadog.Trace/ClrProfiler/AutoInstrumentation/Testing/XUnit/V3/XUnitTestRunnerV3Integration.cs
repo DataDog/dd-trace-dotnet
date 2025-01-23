@@ -41,12 +41,13 @@ public static class XUnitTestRunnerV3Integration
         var runnerInstance = new TestRunnerStruct
         {
             Aggregator = context.Aggregator,
-            TestCase = new TestCaseStruct
+            TestCase = new CustomTestCase
             {
-                DisplayName = context.Test.TestDisplayName,
+                DisplayName = context.Test.TestCase.TestCaseDisplayName,
                 Traits = context.Test.Traits.ToDictionary(
                     k => k.Key,
-                    v => v.Value as List<string> ?? v.Value.ToList())
+                    v => v.Value as List<string> ?? v.Value.ToList()),
+                UniqueID = context.Test.TestCase.UniqueID
             },
             TestClass = context.Test.TestCase.TestClass.Class,
             TestMethod = context.TestMethod,
@@ -56,7 +57,7 @@ public static class XUnitTestRunnerV3Integration
         var state = Tuple.Create(
             XUnitIntegration.CreateTest(
                 ref runnerInstance,
-                retryMessageBus: (context.MessageBus as IDuckType)?.Instance as RetryMessageBus),
+                testCaseMetadata: ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(context.Test.TestCase.UniqueID)),
             (object)context);
         return new CallTargetState(null, state);
     }
