@@ -102,7 +102,8 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return returnValue;
         }
 
-        var retryMessageBus = (stateArray[0] as IDuckType)?.Instance as RetryMessageBus;
+        var retryMessageBus = (stateArray[0] as IDuckType)?.Instance as RetryMessageBusV3;
+        var testcase = (IXunitTestCaseV3)stateArray[2];
         if (retryMessageBus is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true })
         {
             _runSummaryFieldCount ??= typeof(TReturn).GetFields().Length;
@@ -118,7 +119,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             Common.Log.Warning<int>("ExecutionIndex: {ExecutionIndex}", retryMessageBus.ExecutionIndex);
 
             var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[1];
-            var testcase = (IXunitTestCaseV3)stateArray[2];
             var isFlakyRetryEnabled = retryMessageBus.FlakyRetryEnabled;
             var index = retryMessageBus.ExecutionIndex;
 
@@ -197,7 +197,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
             if (index == 0)
             {
-                retryMessageBus.FlushMessages();
+                retryMessageBus.FlushMessages(testcase.UniqueID);
 
                 // Let's clear the failed and skipped runs if we have at least one successful run
 #pragma warning disable DDLOG004
@@ -230,7 +230,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         }
         else
         {
-            retryMessageBus?.FlushMessages();
+            retryMessageBus?.FlushMessages(testcase.UniqueID);
         }
 
         return returnValue;

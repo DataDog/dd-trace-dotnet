@@ -33,6 +33,10 @@ internal class RetryMessageBus : IMessageBus
 
     public bool FlakyRetryEnabled { get; set; }
 
+    protected List<object>?[]? ListOfMessages => _listOfMessages;
+
+    protected IMessageBus InnerMessageBus => _innerMessageBus;
+
     [DuckReverseMethod]
     public void Dispose()
     {

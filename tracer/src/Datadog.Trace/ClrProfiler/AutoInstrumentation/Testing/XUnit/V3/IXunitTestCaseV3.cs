@@ -82,4 +82,16 @@ internal interface IXunitTestCaseV3 : IDuckType
     /// this should return an empty dictionary (not <c>null</c>).
     /// </summary>
     Dictionary<string, HashSet<string>> Traits { get; }
+
+    /// <summary>
+    /// Gets a unique identifier for the test case.
+    /// </summary>
+    /// <remarks>
+    /// The unique identifier for a test case should be able to discriminate among test cases, even those
+    /// which are varied invocations against the same test method (i.e., theories). This identifier should
+    /// remain stable until such time as the developer changes some fundamental part of the identity
+    /// (assembly, class name, test name, or test data). Recompilation of the test assembly is reasonable
+    /// as a stability changing event.
+    /// </remarks>
+    string UniqueID { get; }
 }
