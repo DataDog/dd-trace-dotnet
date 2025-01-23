@@ -177,17 +177,12 @@ ULONG CrashReporting::Release()
 }
 
 // Used only to crash in tests
-int32_t CrashReporting::AddTag(const char* key, const char* value)
+int32_t CrashReporting::Panic()
 {
-    // auto result = ddog_crasht_CrashInfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
-    //
-    // if (result.tag == DDOG_CRASHT_RESULT_ERR)
-    //{
-    //    SetLastError(result.err);
-    //    return 1;
-    //}
-
-    return 0;
+    // The goal here (like with CrashProcess), is to crash the app in the test
+    // Here we want the crash to happen in Rust (panic)
+    auto faultySlice = ddog_CharSlice{ .ptr = 0x1, 10 };
+    ddog_Vec_Tag_push(0x1, faultySlice, faultySlice);
 }
 
 int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
@@ -334,6 +329,12 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
         }
     }
 
+    auto result = ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice("severity"), libdatadog::to_char_slice("crash"));
+    if (result.tag != DDOG_VEC_TAG_PUSH_RESULT_OK)
+    {
+        // Let's not stop right here.
+        ddog_Error_drop(&result.err);
+    }
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_metadata(&_builder, metadata));
 
     ddog_Vec_Tag_drop(vecTags);
