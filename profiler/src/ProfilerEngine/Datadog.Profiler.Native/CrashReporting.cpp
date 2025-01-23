@@ -16,6 +16,9 @@
 
 extern "C"
 {
+#ifdef LINUX
+#include "datadog/blazesym.h"
+#endif
 #include "datadog/common.h"
 #include "datadog/crashtracker.h"
 #include "datadog/profiling.h"
@@ -267,24 +270,17 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, libdatadog::to_char_slice(relativeAddress)));
 
             CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, libdatadog::to_char_slice(symbolAddress)));
-#ifdef _WINDOWS
-            if (frame.hasPdbInfo)
-            {
-                stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_PDB;
-                stackFrames[i].normalized_ip.age = frame.pdbAge;
-                stackFrames[i].normalized_ip.build_id = {(uint8_t*)&frame.pdbSig, 16};
-                // create the build id by concatenating the sig and the age
-                ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()});
-                ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_PDB);
-            }
-#else
-            const std::string_view buildId = currentFrame.buildId;
+
+            auto buildId = currentFrame.buildId;
             if (buildId.size() != 0)
             {
                 CHECK_RESULT(ddog_crasht_StackFrame_with_build_id(&frame, {buildId.data(), buildId.size()}));
+#ifdef _WINDOWS
+                CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_PDB));
+#else
                 CHECK_RESULT(ddog_crasht_StackFrame_with_build_id_type(&frame, DDOG_CRASHT_BUILD_ID_TYPE_GNU));
-            }
 #endif
+            }
             CHECK_RESULT(ddog_crasht_StackFrame_with_function(&frame, libdatadog::to_char_slice(currentFrame.method)));
             CHECK_RESULT(ddog_crasht_StackTrace_push_frame(&stackTrace, &frame, /*is incomplete*/ true));
         }
@@ -426,3 +422,43 @@ int32_t CrashReporting::CrashProcess()
     crashThread.join();
     return 0; // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
 }
+
+static void ToHex(std::ostringstream& oss, std::uint8_t* ptr, std::size_t size)
+{
+    oss << std::hex << std::setfill('0');
+
+    for (size_t i = 0; i < size; ++i)
+    {
+        oss << std::setw(2) << static_cast<int>(ptr[i]);
+    }
+}
+
+#ifdef LINUX
+BuildId BuildId::From(const char* path)
+{
+    if (path == nullptr)
+    {
+        return {};
+    }
+
+    std::size_t size = 0;
+    auto ptr = blaze_read_elf_build_id(path, &size);
+    if (ptr != nullptr)
+    {
+        std::ostringstream oss;
+        ToHex(oss, ptr, size);
+        ::free(ptr);
+        return BuildId(std::move(oss.str()));
+    }
+
+    return {};
+}
+#else
+BuildId BuildId::From(GUID sig, DWORD age)
+{
+    std::ostringstream oss;
+    ToHex(oss, (uint8_t*)&sig, 16);
+    oss << std::hex << age; // age should be in hex too ?
+    return BuildId(oss.str());
+}
+#endif
