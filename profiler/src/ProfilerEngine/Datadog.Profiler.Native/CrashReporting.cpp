@@ -426,41 +426,35 @@ int32_t CrashReporting::CrashProcess()
     return 0; // If we get there, somehow we failed to crash. Are we even able to do *anything* properly? ;_;
 }
 
-static void ToHex(std::ostringstream& oss, std::uint8_t* ptr, std::size_t size)
+#ifdef LINUX
+BuildId BuildId::From(const char* path)
 {
+    std::size_t size = 0;
+    auto ptr = std::unique_ptr<uint8_t[], decltype(&::free)>(blaze_read_elf_build_id(path, &size), ::free);
+    if (ptr == nullptr)
+    {
+        return {};
+    }
+
+    std::ostringstream oss;
     oss << std::hex << std::setfill('0');
 
     for (size_t i = 0; i < size; ++i)
     {
         oss << std::setw(2) << static_cast<int>(ptr[i]);
     }
-}
-
-#ifdef LINUX
-BuildId BuildId::From(const char* path)
-{
-    if (path == nullptr)
-    {
-        return {};
-    }
-
-    std::size_t size = 0;
-    auto ptr = blaze_read_elf_build_id(path, &size);
-    if (ptr != nullptr)
-    {
-        std::ostringstream oss;
-        ToHex(oss, ptr, size);
-        ::free(ptr);
-        return BuildId(std::move(oss.str()));
-    }
-
-    return {};
+    return BuildId(oss.str());
 }
 #else
 BuildId BuildId::From(GUID sig, DWORD age)
 {
     std::ostringstream oss;
-    ToHex(oss, (uint8_t*)&sig, 16);
+    oss << shared::Hex(sig.Data1, 8, "")
+        << shared::Hex(sig.Data2, 4, "")
+        << shared::Hex(sig.Data3, 4, "")
+        << shared::Hex(sig.Data4[0], 2, "") << shared::Hex(sig.Data4[1], 2, "")
+        << shared::Hex(sig.Data4[2], 2, "") << shared::Hex(sig.Data4[3], 2, "") << shared::Hex(sig.Data4[4], 2, "")
+        << shared::Hex(sig.Data4[5], 2, "") << shared::Hex(sig.Data4[6], 2, "") << shared::Hex(sig.Data4[7], 2, "");
     oss << std::hex << age; // age should be in hex too ?
     return BuildId(oss.str());
 }
