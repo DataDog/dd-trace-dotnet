@@ -2865,6 +2865,7 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
     }
 
     // Store this methodDef token in the internal tokens list
+    Logger::Debug("MethodDef was added as an internal rewrite: ", isAutoEnabledMethodDef);
     auto intTokens = internal_rewrite_tokens.Get();
     intTokens->insert({ module_id, isAutoEnabledMethodDef });
 
