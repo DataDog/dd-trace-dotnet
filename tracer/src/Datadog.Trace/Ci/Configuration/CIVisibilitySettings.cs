@@ -8,13 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -121,6 +119,9 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Maximum number of retry attempts for the entire session.
             TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
+
+            // Test Impact Analysis enablement
+            ImpactedTestsDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled).AsBool();
         }
 
         /// <summary>
@@ -248,6 +249,8 @@ namespace Datadog.Trace.Ci.Configuration
         /// </summary>
         public int TotalFlakyRetryCount { get; private set; }
 
+        public bool? ImpactedTestsDetectionEnabled { get; private set; }
+
         /// <summary>
         /// Gets the tracer settings
         /// </summary>
@@ -276,6 +279,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetFlakyRetryEnabled(bool value)
         {
             FlakyRetryEnabled = value;
+        }
+
+        internal void SetImpactedTestsEnabled(bool value)
+        {
+            ImpactedTestsDetectionEnabled = value;
         }
 
         internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)

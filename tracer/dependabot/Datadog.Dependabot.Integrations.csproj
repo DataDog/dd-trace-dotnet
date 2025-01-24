@@ -268,7 +268,7 @@
     <!-- Integration: RabbitMQ.Client -->
     <!--    Assembly: RabbitMQ.Client -->
     <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/7.0.0 -->
-    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
 
     <!-- Integration: WebDriver -->
     <!--    Assembly: WebDriver -->

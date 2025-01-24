@@ -13,10 +13,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 internal readonly struct RpcHttpHeadersCollection<T> : IHeadersCollection
 {
-    private readonly RpcHttpStruct _rpcHttp;
+    private readonly IRpcHttp _rpcHttp;
     private readonly bool _useNullableHeaders;
 
-    public RpcHttpHeadersCollection(RpcHttpStruct rpcHttp, bool useNullableHeaders)
+    public RpcHttpHeadersCollection(IRpcHttp rpcHttp, bool useNullableHeaders)
     {
         _rpcHttp = rpcHttp;
         _useNullableHeaders = useNullableHeaders;

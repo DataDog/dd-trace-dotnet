@@ -172,7 +172,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.9.0
+  ToolVersion: 3.10.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -6999,7 +6999,7 @@ stages:
     - bash: |
         mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
         dotnet build
-        dd-trace run --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
+        dd-trace run --dd-env "apm-dotnet-pipeline-monitoring" --set-env "DD_TRACE_SAMPLE_RATE=100" --set-env "DD_TRACE_DEBUG=1" --set-env "DD_INSTRUMENTATION_TELEMETRY_ENABLED=1" --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
         exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
@@ -7035,3 +7035,31 @@ stages:
         -d '{"commit": "'$sha'"}' \
           $(slackWebhookUrl)
       displayName: "notify"
+
+- stage: generate_LLM_Report
+  dependsOn: [merge_commit_id]
+  condition: eq(variables['generate_llm_report'], 'true')
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: generate_LLM_job
+    timeoutInMinutes: 3
+    dependsOn: []
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - powershell: tracer/build.ps1 LLMPRReview
+      displayName: Generate LLM report
+      name: generate_llm_step
+      env:
+        PullRequestNumber: $(System.PullRequest.PullRequestNumber)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        OPEN_AI_KEY: $(OPEN_AI_KEY)
