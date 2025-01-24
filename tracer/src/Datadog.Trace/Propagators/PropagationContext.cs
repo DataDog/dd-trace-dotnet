@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Datadog.Trace.Propagators;
 
@@ -22,14 +21,14 @@ internal readonly struct PropagationContext
     {
         SpanContext = spanContext;
         Baggage = baggage;
-        Links = Enumerable.Empty<SpanLink>();
+        Links = null;
     }
 
     public PropagationContext(SpanContext? spanContext, Baggage? baggage, IEnumerable<SpanLink>? extractionSpanLinks)
     {
         SpanContext = spanContext;
         Baggage = baggage;
-        Links = extractionSpanLinks ?? Enumerable.Empty<SpanLink>();
+        Links = extractionSpanLinks;
     }
 
     public bool IsEmpty => SpanContext is null && Baggage is null;

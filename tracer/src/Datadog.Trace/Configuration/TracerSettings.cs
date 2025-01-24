@@ -484,7 +484,7 @@ namespace Datadog.Trace.Configuration
                                          .AsBool(false);
 
             PropagationBehaviorExtract = config
-                                         .WithKeys(ConfigurationKeys.FeatureFlags.PropagationBehaviorExtract)
+                                         .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
                                              () => new DefaultResult<ExtractBehavior>(ExtractBehavior.Continue, "continue"),
                                              converter: x => x.ToLowerInvariant() switch
