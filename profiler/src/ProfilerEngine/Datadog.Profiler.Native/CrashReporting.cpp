@@ -101,11 +101,6 @@ CrashReporting::~CrashReporting()
     {
         ddog_Error_drop(&_error.value());
     }
-
-    if (_builder.inner != NULL)
-    {
-        ddog_crasht_CrashInfoBuilder_drop(&_builder);
-    }
 }
 
 int32_t CrashReporting::Initialize()
@@ -286,20 +281,26 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
         auto threadIdStr = std::to_string(threadId);
 
-        auto thread = ddog_crasht_ThreadData{
-            .crashed = currentIsCrashingThread,
-            .name = {threadIdStr.data(), threadIdStr.size()},
-            .stack = stackTrace,
-            .state = {nullptr, 0}};
-
-        CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
-
-        successfulThreads++;
-
+        // TODO we cannot have the crashing thread (named and stuff) in the threads field
+        // because both API consume the stack trace and we might end up in a double free situation
         if (currentIsCrashingThread)
         {
+            // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
             CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_stack(&_builder, &stackTrace));
         }
+        else
+        {
+            // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
+            auto thread = ddog_crasht_ThreadData{
+                .crashed = false,
+                .name = {threadIdStr.data(), threadIdStr.size()},
+                .stack = stackTrace,
+                .state = {nullptr, 0}
+            };
+
+            CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
+        }
+        successfulThreads++;
     }
 
     if (successfulThreads != threads.size())
