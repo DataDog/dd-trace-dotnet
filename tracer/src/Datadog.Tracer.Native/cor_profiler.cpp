@@ -946,6 +946,14 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
+        auto native_loader_filename = "datadog_profiling_ffi.dll" // TODO: different extension by OS
+        auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
+        auto native_loader_file_path = module_file_path.parent_path() / native_loader_filename;
+        auto native_loader_file_path_wstr = shared::ToWSTRING(native_loader_file_path.string());
+        
+        RewritingPInvokeMaps(module_metadata, WStr("trace_exporter"), traceexporter_nativemethods_type, native_loader_file_path_wstr); //Maybe this won't happen for nuget manual instrumentation? Check with Andrew Lock
+
+
         mdTypeDef bubbleUpTypeDef;
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
         if(call_target_bubble_up_exception_available)
