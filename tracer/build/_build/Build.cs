@@ -192,7 +192,8 @@ partial class Build : NukeBuild
         .After(Clean, CompileManagedLoader)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileTracerNativeSrc)
-        .DependsOn(PublishNativeTracer);
+        .DependsOn(PublishNativeTracer)
+        .DependsOn(PublishLibdatadog);
 
 
     Target BuildManagedTracerHome => _ => _
