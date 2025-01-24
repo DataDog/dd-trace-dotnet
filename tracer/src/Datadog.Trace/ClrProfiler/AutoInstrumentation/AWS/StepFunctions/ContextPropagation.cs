@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             sb.Remove(sb.Length - 1, 1);
             sb.AppendFormat(", \"{0}\": {{", StepFunctionsKey);
-            SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
+            Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(sb.Length - 1, 1); // remove trailing comma
             sb.Append("}}");
             input = Util.StringBuilderCache.GetStringAndRelease(sb);
