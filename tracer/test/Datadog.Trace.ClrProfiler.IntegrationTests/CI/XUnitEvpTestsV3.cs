@@ -40,7 +40,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
     public static IEnumerable<object[]> GetData()
     {
-        foreach (var version in PackageVersions.XUnit)
+        foreach (var version in PackageVersions.XUnitV3)
         {
             // EVP version to remove, expects gzip
             yield return version.Concat("evp_proxy/v2", true);

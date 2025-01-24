@@ -342,6 +342,11 @@
     <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.3 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.9.3" />
 
+    <!-- Integration: xunit.v3.core -->
+    <!--    Assembly: xunit.v3.core -->
+    <!-- Latest package https://www.nuget.org/packages/xunit.v3/1.0.1 -->
+    <PackageReference Include="xunit.v3" Version="1.0.1" />
+
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->
     <!-- Latest package https://www.nuget.org/packages/Yarp.ReverseProxy/2.2.0 -->
