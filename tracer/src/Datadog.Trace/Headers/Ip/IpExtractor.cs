@@ -2,7 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Headers.Ip
 
         static IpExtractor()
         {
-            _ipv4LocalCidrs = new List<Tuple<int, int>>();
+            _ipv4LocalCidrs = [];
 
             foreach (var currentCidrMask in new[] { "127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16" })
             {
@@ -31,17 +31,15 @@ namespace Datadog.Trace.Headers.Ip
             _ipv6Regex = new Regex(@"\[(\S*)\]:(\d*)");
         }
 
-        internal static int DefaultPort(bool https) => https ? 443 : 80;
-
         /// <summary>
         /// Can be a list of single or comma separated values ips like [ "192.68.12.1", "172.53.22.11, 181.92.91.1, 193.92.91.1".. ]
         /// </summary>
         /// <param name="headerValue">the extracted values from releveant ip related header</param>
         /// <param name="https">is a secure connection</param>
         /// <returns>return ip and port, may be null</returns>
-        internal static IpInfo RealIpFromValue(string headerValue, bool https)
+        internal static IpInfo? RealIpFromValue(string headerValue, bool https)
         {
-            IpInfo privateIpInfo = null;
+            IpInfo? privateIpInfo = null;
             var values = headerValue.Split(',');
             foreach (var potentialIp in values)
             {
@@ -57,7 +55,7 @@ namespace Datadog.Trace.Headers.Ip
                 var success = IPAddress.TryParse(consideredPotentialIp, out var ipAddress);
                 if (success)
                 {
-                    if (ipAddress.IsIPv4MappedToIPv6)
+                    if (ipAddress!.IsIPv4MappedToIPv6)
                     {
                         ipAddress = ipAddress.MapToIPv4();
                     }
@@ -101,7 +99,7 @@ namespace Datadog.Trace.Headers.Ip
             return new IpInfo(ip, port);
         }
 
-        internal static bool IsPrivateIp(IPAddress ipAddress)
+        private static bool IsPrivateIp(IPAddress ipAddress)
         {
             if (ipAddress.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
             {
@@ -124,7 +122,7 @@ namespace Datadog.Trace.Headers.Ip
 #if NET6_0_OR_GREATER
             return ipAddress.IsIPv6UniqueLocal;
 #else
-            var firstWord = ipAddress.ToString().Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries)[0];
+            var firstWord = ipAddress.ToString().Split([':'], StringSplitOptions.RemoveEmptyEntries)[0];
             // These days Unique Local Addresses (ULA) are used in place of Site Local. ULA has two variants:
             // fc00::/8 is not defined yet, but might be used in the future for internal-use addresses
             // fd00::/8 is in use and does not have to registered anywhere.
@@ -139,5 +137,7 @@ namespace Datadog.Trace.Headers.Ip
             return false;
 #endif
         }
+
+        private static int DefaultPort(bool https) => https ? 443 : 80;
     }
 }
