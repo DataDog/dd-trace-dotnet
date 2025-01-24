@@ -4482,6 +4482,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         *pbUseCachedFunction = false;
         return S_OK;
     }
+    else
+    {
+        Logger::Debug("JITCachedFunctionSearchStarted: non rejected by internal token on token: ", function_token, " Looking into a hashset with ", internalTokens->size(), " elements");
+    }
 
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
     // On .NET Framework when we reject bcl images the rejit calls of the integrations for those bcl assemblies
