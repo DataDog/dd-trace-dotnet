@@ -56,13 +56,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 // add distributed tracing headers to the HTTP request
                 // These will be overwritten by the HttpClient integration if that is enabled, per the RFC
                 var context = new PropagationContext(span.Context, Baggage.Current);
-                SpanContextPropagator.Instance.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
+                tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
 
                 // Add the request metadata as tags
                 if (grpcCall.Options.Headers is { Count: > 0 })
                 {
                     var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
-                    span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
@@ -90,20 +90,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             if (grpcCall.HttpResponse is { Headers: { } responseHeaders })
             {
                 var metadata = new HttpResponseHeadersCollection(responseHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             // Note that this will be null if they haven't read the response body yet, but we can't force that on users
             if (grpcCall.TryGetTrailers(out var trailers) && trailers is { Count: > 0 })
             {
                 var metadata = new MetadataHeadersCollection(trailers);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
             else if (grpcCall.HttpResponse is { } httpResponse
                   && httpResponse.DuckCast<HttpResponseStruct>().TrailingHeaders is { } trailingHeaders)
             {
                 var metadata = new HttpResponseHeadersCollection(trailingHeaders);
-                span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
+                span.SetHeaderTags(metadata, tracer.Settings.GrpcTags, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
             GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);

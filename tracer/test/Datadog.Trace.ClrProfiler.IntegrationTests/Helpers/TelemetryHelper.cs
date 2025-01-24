@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryHelper.cs" company="Datadog">
+// <copyright file="TelemetryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -105,18 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal static void AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
         {
-            var payloads =
-                allData
-                   .OrderByDescending(x => x.SeqId)
-                   .Select(
-                        data => data switch
-                        {
-                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
-                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
-                            _ => null,
-                        })
-                   .Where(x => x is not null)
-                   .ToList();
+            var payloads = GetAllConfigurationPayloads(allData);
 
             payloads.Should().NotBeEmpty();
             var config = payloads
@@ -131,6 +120,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 config.Value.Should().Be(value);
             }
+        }
+
+        internal static List<ICollection<ConfigurationKeyValue>> GetAllConfigurationPayloads(IEnumerable<TelemetryData> allData)
+        {
+            var payloads =
+                allData
+                   .OrderByDescending(x => x.SeqId)
+                   .Select(
+                        data => data switch
+                        {
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
+                            _ => null,
+                        })
+                   .Where(x => x is not null)
+                   .ToList();
+            return payloads;
         }
 
         internal static void AssertIntegration(ICollection<TelemetryData> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
@@ -159,9 +165,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
 
+            var spansCreatedByIntegration = new ConcurrentDictionary<string, MetricData>();
+            var metricsPayloads =
+                allData
+                    .Select(
+                        data => data switch
+                        {
+                            _ when data.TryGetPayload<GenerateMetricsPayload>(TelemetryRequestTypes.GenerateMetrics) is { } p => p.Series.Where(s => s.Metric == "spans_created"),
+                            _ => null,
+                        })
+                    .Where(x => x is not null);
+
+            // Flatten the spans_created metrics
+            foreach (var metricPayload in metricsPayloads)
+            {
+                foreach (var metricEntry in metricPayload)
+                {
+                    spansCreatedByIntegration.TryAdd(metricEntry.Tags.First(s => s.StartsWith("integration_name:")), metricEntry);
+                }
+            }
+
+            var integrationName = integrationId.ToString();
+            var integrationNameTagValue = integrationName switch
+            {
+                "OpenTelemetry" => "otel",
+                _ => integrationName.ToLowerInvariant(),
+            };
+
+            if (enabled)
+            {
+                spansCreatedByIntegration.Should().NotBeEmpty();
+
+                var spansCreated = spansCreatedByIntegration.Should().ContainKey($"integration_name:{integrationNameTagValue}").WhoseValue;
+                spansCreated.Points.Should().NotBeEmpty();
+                spansCreated.Points.Sum(p => p.Value).Should().BeGreaterThanOrEqualTo(1);
+            }
+
             latestIntegrations.Should().NotBeEmpty();
 
-            var integration = latestIntegrations.Should().ContainKey(integrationId.ToString()).WhoseValue;
+            var integration = latestIntegrations.Should().ContainKey(integrationName).WhoseValue;
 
             integration.Enabled.Should().Be(enabled, $"{integration.Name} should only be enabled if we generate a span");
             if (autoEnabled.HasValue)

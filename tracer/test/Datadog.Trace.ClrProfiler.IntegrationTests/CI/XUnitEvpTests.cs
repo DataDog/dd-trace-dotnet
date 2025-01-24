@@ -3,15 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
@@ -20,7 +15,6 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using VerifyXunit;
@@ -62,14 +56,14 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
             // EFD for all tests
             yield return row.Concat(
-                """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":5,"30s":3,"5m":2,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
+                """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
                 """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{}}}}""",
                 124,
                 "all_efd");
 
             // EFD with 1 test to bypass (TraitPassTest)
             yield return row.Concat(
-                """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":5,"30s":3,"5m":2,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
+                """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
                 """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{"Samples.XUnitTests":{"Samples.XUnitTests.TestSuite":["TraitPassTest"]}}}}}""",
                 115,
                 "efd_with_test_bypass");
@@ -158,7 +152,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       arguments: "--collect:\"XPlat Code Coverage\"",
-                                      packageVersion: packageVersion);
+                                      packageVersion: packageVersion,
+                                      expectedExitCode: 1);
 
         // Check the tests, suites and modules count
         Assert.Equal(ExpectedTestCount, tests.Count);
@@ -202,6 +197,9 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 // Remove EFD tags
                 targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
                 targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
+                // Remove user provided service tag
+                targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
 
                 // check the name
                 Assert.Equal("xunit.test", targetTest.Name);
@@ -381,6 +379,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();
@@ -452,7 +452,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
 
             // Check the tests, suites and modules count
             Assert.Equal(expectedSpans, tests.Count);

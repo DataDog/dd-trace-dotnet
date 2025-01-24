@@ -97,7 +97,7 @@ internal class BlockingMiddleware
                         securityCoordinator.MarkBlocked();
                     }
 
-                    securityCoordinator.TryReport(result, endedResponse);
+                    securityCoordinator.Reporter.TryReport(result, endedResponse);
                     // security will be disposed in endrequest of diagnostic observer in any case
                 }
             }
@@ -123,13 +123,13 @@ internal class BlockingMiddleware
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
-                        var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
+                        var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context));
                         if (!blockException.Reported)
                         {
-                            securityCoordinator.TryReport(blockException.Result, endedResponse);
+                            securityReporter.TryReport(blockException.Result, endedResponse);
                         }
 
-                        securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                        securityReporter.AddResponseHeadersToSpanAndCleanup();
                     }
                     else
                     {

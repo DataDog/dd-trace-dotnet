@@ -21,10 +21,7 @@ namespace Benchmarks.Trace
 
         static RedisBenchmark()
         {
-            var settings = new TracerSettings
-            {
-                StartupDiagnosticLogEnabled = false
-            };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 
             Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 

@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=3.10.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
 
         private static int _startupCtorInitialized;
@@ -41,6 +41,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             try
             {
+#if NETCOREAPP
+                // Check if we're in some sort of AOT scenario
+                // Equivalent to checking RuntimeFeature.IsDynamicCodeSupported (added in .NET 8)
+                // https://github.com/dotnet/runtime/blob/5535e31a712343a63f5d7d796cd874e563e5ac14/src/libraries/System.Private.CoreLib/src/System/Runtime/CompilerServices/RuntimeFeature.NonNativeAot.cs
+                var dynamicCodeSupported = AppContext.TryGetSwitch("System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported", out bool isDynamicCodeSupported) ? isDynamicCodeSupported : true;
+                if (!dynamicCodeSupported)
+                {
+                    // we require dynamic code so we should just bail out ASAP.
+                    // This doesn't tell us for sure (the switch is only available on .NET 8+) but it's a minimum requirement
+                    StartupLogger.Log("Dynamic code is not supported (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported context switch is false). Automatic instrumentation will be disabled");
+                    return;
+                }
+#endif
+
                 ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
                 if (ManagedProfilerDirectory is null)
                 {

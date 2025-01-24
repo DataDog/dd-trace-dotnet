@@ -81,7 +81,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             "2fa",
             "accesstoken",
-            "address",
             "aiohttpsession",
             "apikey",
             "appkey",
@@ -96,7 +95,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             "cipher",
             "clientid",
             "clientsecret",
-            "config",
             "connectionstring",
             "connectsid",
             "cookie",
@@ -109,7 +107,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             "dburl",
             "encryptionkey",
             "encryptionkeyid",
-            "env",
             "geolocation",
             "gpgkey",
             "ipaddress",

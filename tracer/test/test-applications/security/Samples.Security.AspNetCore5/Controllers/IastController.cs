@@ -2,36 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Data.Common;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
-using System.Reflection;
-using System.Runtime.Versioning;
 using System.Security.Cryptography;
-using System.Text;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Text.Json;
 #endif
-using System.Threading.Tasks;
+using System.Threading;
 using System.Xml;
-using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+#if NET5_0_OR_GREATER
+using System.Runtime.Versioning;
+#endif
+
+#if NETCOREAPP3_0_OR_GREATER
+using MySql.Data.MySqlClient;
+using Npgsql;
+using Oracle.ManagedDataAccess.Client;
+#endif
 using Samples.Security.Data;
 
 #pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
@@ -73,7 +76,13 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         private static SQLiteConnection _dbConnectionSystemData = null;
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
+        private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static IMongoDatabase _mongoDb = null;
+#if NETCOREAPP3_0_OR_GREATER
+        private static NpgsqlConnection _dbConnectionNpgsql = null;
+        private static MySqlConnection _dbConnectionMySql = null;
+        private static OracleConnection _dbConnectionOracle = null;
+#endif
 
         public IActionResult Index()
         {
@@ -85,9 +94,136 @@ namespace Samples.Security.AspNetCore5.Controllers
             get { return _dbConnectionSystemData ??= IastControllerHelper.CreateSystemDataDatabase(); }
         }
         
+        private static SqliteConnection DbConnectionMicrosoftData
+        {
+            get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
+        }
+        
         private static SqliteConnection DbConnectionSystemDataMicrosoftData
         {
             get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
+        }
+
+        private static SqlConnection DbConnectionSystemDataSqlClient
+        {
+            get { return _dbConnectionSystemDataSqlClient ??= IastControllerHelper.CreateSqlServerDatabase(); }
+        }
+
+#if NETCOREAPP3_0_OR_GREATER
+        private static NpgsqlConnection DbConnectionNpgsql
+        {
+            get { return _dbConnectionNpgsql ??= IastControllerHelper.CreatePostgresDatabase(); }
+        }
+
+        private static MySqlConnection DbConnectionMySql
+        {
+            get { return _dbConnectionMySql ??= IastControllerHelper.CreateMySqlDatabase(); }
+        }
+
+        private static OracleConnection DbConnectionOracle
+        {
+            get { return _dbConnectionOracle ??= IastControllerHelper.CreateOracleDatabase(); }
+        }
+
+#endif
+        [HttpGet("StoredXss")]
+        [Route("StoredXss")]
+        public IActionResult StoredXss(string database = null)
+        {
+            var db = GetDbConnectionFromName(database);
+
+            var param = GetDbValue(db);
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("Xss");
+        }
+
+        [HttpGet("StoredXssEscaped")]
+        [Route("StoredXssEscaped")]
+        public IActionResult StoredXssEscaped(string database = null)
+        {
+            var db = GetDbConnectionFromName(database);
+
+            var param = GetDbValue(db);
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("Xss");
+        }
+
+
+        [HttpGet("StoredSqli")]
+        [Route("StoredSqli")]
+        public IActionResult StoredSqli(string database = null)
+        {
+            try
+            {
+
+                var db = GetDbConnectionFromName(database);
+
+                var details = GetDbValue(db, "Michael");
+                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
+
+                var name = db switch
+                {
+                    SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
+                    SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
+                    SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteScalar(),
+#if NETCOREAPP3_0_OR_GREATER
+                    NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteScalar(),
+#endif
+                    _ => null
+                };
+
+                return Content($"Result: " + name);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return StatusCode(500);
+            }
+        }
+
+        private static IDbConnection GetDbConnectionFromName(string database)
+        {
+            IDbConnection db =
+                database switch
+                {
+                    "System.Data.SQLite" => DbConnectionSystemData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
+                    "Microsoft.Data.Sqlite" => DbConnectionMicrosoftData,
+#if NETCOREAPP3_0_OR_GREATER
+                    "Npgsql" => DbConnectionNpgsql,
+                    "MySql.Data" => DbConnectionMySql,
+                    "Oracle" => DbConnectionOracle,
+#endif
+                    null => DbConnectionSystemData,
+                    _ => throw new Exception($"unknown db type: {database}")
+                };
+            return db;
+        }
+
+        private static string GetDbValue(IDbConnection db, string name = "Name1")
+        {
+            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
+
+            using IDataReader reader = db switch
+            {
+                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
+                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
+                SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
+#if NETCOREAPP3_0_OR_GREATER
+                NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteReader(),
+                MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteReader(),
+                OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteReader(),
+#endif
+                _ => throw new ArgumentException("Invalid db connection")
+            };
+
+            reader.Read();
+            var res = reader.GetString(0);
+            return res;
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -279,19 +415,11 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    Process result;
-                    if (fromShell)
-                    {
-                        ProcessStartInfo startInfo = new ProcessStartInfo();
-                        startInfo.FileName = file;
-                        startInfo.Arguments = argumentLine;
-                        startInfo.UseShellExecute = true;
-                        result = Process.Start(startInfo);
-                    }
-                    else
-                    {
-                        result = Process.Start(file, argumentLine);
-                    }
+                    ProcessStartInfo startInfo = new ProcessStartInfo();
+                    startInfo.FileName = file;
+                    startInfo.Arguments = argumentLine;
+                    startInfo.UseShellExecute = fromShell;
+                    var result = Process.Start(startInfo);
 
                     return Content($"Process launched: " + result.ProcessName);
                 }
@@ -452,6 +580,73 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return Content("The provided directory could not be opened");
             }
         }
+
+        // This method actually performs some file operations after the request has been normally closed.
+        [HttpGet("GetFileContentThread")]
+        [Route("GetFileContentThread")]
+        public IActionResult GetFileContentThread(string file, int numThreads = 100, int delayPerThread = 50)
+        {
+            for (int i = 0; i < numThreads; i++)
+            {
+                var thread = new Thread(() => { GetFileAux(file, i * delayPerThread); });
+                thread.Start();
+            }
+
+            return Content("Ok");
+        }
+
+        private void GetFileAux(string file, int delay)
+        {
+            try
+            {
+                if (delay > 0)
+                {
+                    Thread.Sleep(delay);
+                }
+                GetFileContent(file);
+            }
+            catch (Exception ex)
+            {
+                if (!ex.Message.Contains("BlockException"))
+                {
+                    throw;
+                }
+            }
+        }
+
+#if NET5_0_OR_GREATER
+        // This method tests some edge conditions that can happen
+        [HttpGet("GetFileContentEdgeConditions")]
+        [Route("GetFileContentEdgeConditions")]
+        public IActionResult GetFileContentEdgeConditions(string file, bool uninitializeContext = true, bool setStatusCode = true, bool setContent = true, bool abortContext = true)
+        {
+            if (setStatusCode)
+            {
+                Response.StatusCode = 200;
+            }
+
+            if (setContent)
+            {
+                Response.ContentType = "text/plain";
+                Response.WriteAsync("This is a dummy content.").Wait();
+            }
+
+            if (abortContext)
+            {
+                HttpContext.Abort();
+            }
+
+            if (uninitializeContext)
+            {
+                (HttpContext as DefaultHttpContext)?.Uninitialize();
+            }
+
+            // call RASP and IAST
+            GetFileAux(file, 0);
+
+            return Content("Ok");
+        }
+#endif
 
         [HttpGet("GetFileContent")]
         [Route("GetFileContent")]
@@ -1002,78 +1197,74 @@ namespace Samples.Security.AspNetCore5.Controllers
             return View("Xss");
         }
 
-        [HttpGet("StoredXss")]
-        [Route("StoredXss")]
-        public IActionResult StoredXss(bool useMicrosoftDataDb = false)
+#if NET6_0_OR_GREATER
+        [HttpGet("InterpolatedSqlString")]
+        [Route("InterpolatedSqlString")]
+        public IActionResult InterpolatedSqlString(string name)
         {
-            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
-            var param = GetDbValue(db);
-            ViewData["XSS"] = param + "<b>More Text</b>";
-            return View("Xss");
-        }
+            var order = new
+            {
+                CustomerId = "VINET",
+                EmployeeId = 5,
+                OrderDate = new DateTime(2021, 1, 1),
+                RequiredDate = new DateTime(2021, 1, 1),
+                ShipVia = 3,
+                Freight = 32.38M,
+                ShipName = "Vins et alcools Chevalier",
+                ShipAddress = name,
+                ShipCity = "Reims",
+                ShipPostalCode = "51100",
+                ShipCountry = "France"
+            };
+        
+            var sql = "INSERT INTO Orders (" +
+                      "CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, " +
+                      "ShipCity, ShipPostalCode, ShipCountry" +
+                      ") VALUES (" +
+                      $"'{order.CustomerId}','{order.EmployeeId}','{order.OrderDate:yyyy-MM-dd}','{order.RequiredDate:yyyy-MM-dd}'," +
+                      $"'{order.ShipVia}','{order.Freight}','{order.ShipName}','{order.ShipAddress}'," +
+                      $"'{order.ShipCity}','{order.ShipPostalCode}','{order.ShipCountry}')";
+            sql += ";\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;";
 
-        [HttpGet("StoredXssEscaped")]
-        [Route("StoredXssEscaped")]
-        public IActionResult StoredXssEscaped(bool useMicrosoftDataDb = false)
-        {
-            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
-            var param = GetDbValue(db);
-            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
-                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
-            ViewData["XSS"] = escapedText;
-            return View("Xss");
-        }
-
-
-        [HttpGet("StoredSqli")]
-        [Route("StoredSqli")]
-        public IActionResult StoredSqli(bool useMicrosoftDataDb = false)
-        {
             try
             {
-                IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
-                var details = GetDbValue(db, "Michael");
-                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
-
-                var name = db switch
-                {
-                    SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
-                    SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
-                    _ => null
-                };
-
-                return Content($"Result: " + name);
+                new SqliteCommand(sql, DbConnectionSystemDataMicrosoftData).ExecuteScalar();
             }
             catch (Exception)
             {
-                return StatusCode(500);
+                // ignored
             }
+
+            return Content("Yey");
         }
-
-        private static string GetDbValue(IDbConnection db, string name = "Name1")
-        {
-            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
-
-            IDataReader reader = db switch
-            {
-                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
-                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
-                _ => throw new ArgumentException("Invalid db connection")
-            };
-
-            reader.Read();
-            var res = reader.GetString(0);
-            return res;
-        }
+#endif
 
         [HttpGet("TestJsonTagSizeExceeded")]
         [Route("TestJsonTagSizeExceeded")]
         public IActionResult TestJsonTagSizeExceeded(string tainted)
         {
+            const string allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
             // Generate manually a lot of different vulnerabilities
-            for (var i = 0; i < 30; i++)
+            for (var i = 0; i < 35; i++)
             {
-                ExecuteCommandInternal(i.ToString() + "-" + tainted, i.ToString() + "-" + tainted);
+                const int length = 250;
+                var randomBytes = new byte[length];
+                var chars = new char[length];
+                
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(randomBytes);
+                }
+                
+                for (var j = 0; j < length; j++)
+                {
+                    chars[j] = allowedChars[randomBytes[j] % allowedChars.Length];
+                }
+                
+                var randomString = new string(chars);
+                
+                ExecuteCommandInternal(i.ToString() + "-" + tainted + "-" + randomString, i.ToString() + "-" + tainted + "-" + randomString);
             }
 
             return Content("TestJsonTagSizeExceeded");

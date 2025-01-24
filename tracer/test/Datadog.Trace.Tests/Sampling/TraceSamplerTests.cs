@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public async Task Choose_Between_Sampling_Mechanisms()
         {
-            var settings = new TracerSettings { ServiceName = ServiceName };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, ServiceName } });
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             using var scope = (Scope)tracer.StartActive(OperationName);
@@ -181,7 +181,7 @@ namespace Datadog.Trace.Tests.Sampling
             var autoKeeps = 0;
             var userKeeps = 0;
 
-            var settings = new TracerSettings { ServiceName = ServiceName };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, ServiceName } });
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             while (sampleSize-- > 0)

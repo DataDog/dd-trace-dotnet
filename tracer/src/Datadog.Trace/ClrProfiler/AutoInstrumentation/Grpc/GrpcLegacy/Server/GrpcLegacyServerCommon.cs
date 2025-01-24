@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
+// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (spanContext is null)
                 {
-                    var extractedContext = ExtractPropagatedContext(metadata).MergeBaggageInto(Baggage.Current);
+                    var extractedContext = ExtractPropagatedContext(tracer, metadata).MergeBaggageInto(Baggage.Current);
                     spanContext = extractedContext.SpanContext;
                 }
 
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (metadata?.Count > 0)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
@@ -62,13 +62,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             return scope;
         }
 
-        private static PropagationContext ExtractPropagatedContext(IMetadata? metadata)
+        private static PropagationContext ExtractPropagatedContext(Tracer tracer, IMetadata? metadata)
         {
             try
             {
                 if (metadata is not null)
                 {
-                    return SpanContextPropagator.Instance.Extract(new MetadataHeadersCollection(metadata));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new MetadataHeadersCollection(metadata));
                 }
             }
             catch (Exception ex)

@@ -19,7 +19,7 @@ namespace Benchmarks.Trace.Asm
     {
         public string DefaultServiceName => "My Service Name";
 
-        public ImmutableTracerSettings Settings => new(new NullConfigurationSource());
+        public TracerSettings Settings => new(new NullConfigurationSource());
 
         IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => new NullGitMetadataProvider();
 

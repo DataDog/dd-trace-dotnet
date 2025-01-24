@@ -12,10 +12,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -83,6 +83,8 @@ namespace Datadog.Trace.Ci
 
         internal static IntelligentTestRunnerClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse { get; private set; }
 
+        internal static IntelligentTestRunnerClient.ImpactedTestsDetectionResponse? ImpactedTestsDetectionResponse { get; private set; }
+
         public static void Initialize()
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -109,7 +111,7 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
+                        settings.TracerSettings.Exporter,
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -128,21 +130,11 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
-            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -197,21 +189,11 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
-            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -421,15 +403,15 @@ namespace Datadog.Trace.Ci
             return string.Empty;
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        internal static IApiRequestFactory GetRequestFactory(TracerSettings settings)
         {
             return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
+        internal static IApiRequestFactory GetRequestFactory(TracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
-            var exporterSettings = tracerSettings.ExporterInternal;
+            var exporterSettings = tracerSettings.Exporter;
             if (exporterSettings.TracesTransport != TracesTransportType.Default)
             {
                 factory = AgentTransportStrategy.Get(
@@ -445,13 +427,13 @@ namespace Datadog.Trace.Ci
 #if NETCOREAPP
                 Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
                 factory = new HttpClientRequestFactory(
-                    exporterSettings.AgentUriInternal,
+                    exporterSettings.AgentUri,
                     AgentHttpHeaderNames.DefaultHeaders,
                     handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
                     timeout: timeout);
 #else
                 Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-                factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+                factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
                 var settings = Settings;
                 if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
@@ -503,15 +485,9 @@ namespace Datadog.Trace.Ci
 
                         break;
                     case OSPlatformName.MacOS:
-                        var context = SynchronizationContext.Current;
                         try
                         {
-                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                            {
-                                SynchronizationContext.SetSynchronizationContext(null);
-                            }
-
-                            var osxVersionCommand = AsyncUtil.RunSync(() => ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")));
+                            var osxVersionCommand = ProcessHelpers.RunCommand(new ProcessHelpers.Command("uname", "-r"));
                             var osxVersion = osxVersionCommand?.Output.Trim(' ', '\n');
                             if (!string.IsNullOrEmpty(osxVersion))
                             {
@@ -521,13 +497,6 @@ namespace Datadog.Trace.Ci
                         catch (Exception ex)
                         {
                             Log.Warning(ex, "Error getting OS version on macOS");
-                        }
-                        finally
-                        {
-                            if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                            {
-                                SynchronizationContext.SetSynchronizationContext(null);
-                            }
                         }
 
                         break;
@@ -609,23 +578,26 @@ namespace Datadog.Trace.Ci
                 {
                     processName ??= GetProcessName();
                     // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) &&
-                        Environment.CommandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
-                        Environment.CommandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
                     {
-                        Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
-                        return false;
+                        var commandLine = Environment.CommandLine;
+                        if (commandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
+                            commandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                        {
+                            Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", commandLine);
+                            return false;
+                        }
                     }
 
                     Log.Information("CI Visibility Enabled by Configuration");
@@ -729,7 +701,10 @@ namespace Datadog.Trace.Ci
 
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
                 // We query the settings api for those
-                if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null || settings.EarlyFlakeDetectionEnabled != false)
+                if (settings.CodeCoverageEnabled == null
+                    || settings.TestsSkippingEnabled == null
+                    || settings.EarlyFlakeDetectionEnabled != false
+                    || settings.ImpactedTestsDetectionEnabled == null)
                 {
                     var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
 
@@ -772,6 +747,17 @@ namespace Datadog.Trace.Ci
                         Log.Information("CIVisibility: Flaky Retries has been changed to {Value} by the settings api.", itrSettings.FlakyTestRetries.Value);
                         settings.SetFlakyRetryEnabled(itrSettings.FlakyTestRetries.Value);
                     }
+
+                    if (settings.ImpactedTestsDetectionEnabled == null && itrSettings.ImpactedTestsEnabled.HasValue)
+                    {
+                        Log.Information("CIVisibility: Impacted Tests Detection has been changed to {Value} by the settings api.", itrSettings.ImpactedTestsEnabled.Value);
+                        settings.SetImpactedTestsEnabled(itrSettings.ImpactedTestsEnabled.Value);
+                    }
+
+                    if (settings.ImpactedTestsDetectionEnabled == true)
+                    {
+                        ImpactedTestsDetectionResponse = await lazyItrClient.Value.GetImpactedTestsDetectionFilesAsync().ConfigureAwait(false);
+                    }
                 }
 
                 // Log code coverage status
@@ -782,6 +768,9 @@ namespace Datadog.Trace.Ci
 
                 // Log flaky retries status
                 Log.Information("{V}", settings.FlakyRetryEnabled == true ? "CIVisibility: Flaky retries is enabled." : "CIVisibility: Flaky retries is disabled.");
+
+                // Log impacted tests detection status
+                Log.Information("{V}", settings.ImpactedTestsDetectionEnabled == true ? "CIVisibility: Impacted tests detection is enabled." : "CIVisibility: Impacted tests detection is disabled.");
 
                 // For ITR we need the git metadata upload before consulting the skippable tests.
                 // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.

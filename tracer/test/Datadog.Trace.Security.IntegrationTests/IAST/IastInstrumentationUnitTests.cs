@@ -15,6 +15,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -54,10 +55,10 @@ public class IastInstrumentationUnitTests : TestHelper
             var tfm = (uint)Telemetry.ConfigTelemetryData.TargetFramework;
             var aspects = new List<string>();
             // Read aspects from the native definitions file
-            var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.h");
+            var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.cpp");
             foreach (var line in File.ReadAllLines(path))
             {
-                if (!line.Contains("Aspect")) { continue; }
+                if (!line.Contains("[Aspect")) { continue; }
                 var aspect = line.Substring(14, line.Length - 17).Replace("\\\"", "\"");
 
                 // Get TFMs from the aspect
@@ -150,6 +151,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(SmtpClient), "Send", new[] { "Void Send(System.String, System.String, System.String, System.String)" }, true)]
     [InlineData(typeof(SmtpClient), "SendAsync", new[] { "Void SendAsync(System.String, System.String, System.String, System.String, System.Object)" }, true)]
     [InlineData(typeof(SmtpClient), "SendMailAsync", new[] { "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String, System.Threading.CancellationToken)", "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String)" }, true)]
+#if NET6_0_OR_GREATER
+    [InlineData(typeof(DefaultInterpolatedStringHandler), null, new[] { "Void AppendFormatted(System.ReadOnlySpan`1[System.Char], Int32, System.String)" }, true)]
+#endif
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -305,6 +309,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(Assembly))]
 #endif
     [InlineData(typeof(Assembly), new string[] { "System.Reflection.Assembly::Load(System.String,System.Security.Policy.Evidence)" })]
+#if NET6_0_OR_GREATER
+    [InlineData(typeof(DefaultInterpolatedStringHandler), null)]
+#endif
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)
@@ -389,7 +396,7 @@ public class IastInstrumentationUnitTests : TestHelper
 
         return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
             .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("System.", string.Empty)
-            .Replace("ByRef", string.Empty);
+            .Replace("ByRef", string.Empty).Replace("!!0", "T");
     }
 
     private bool MethodShouldBeChecked(MethodBase method)
@@ -445,7 +452,13 @@ public class IastInstrumentationUnitTests : TestHelper
             Output.WriteLine("Checking: " + methodSignature);
             if (MethodShouldBeChecked(method) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
             {
-                var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature) && x.Contains(typeToCheck.FullName));
+                var isCovered = aspects.Any(x =>
+                {
+                    var normalized = NormalizeName(x);
+                    var contains = normalized.Contains(methodSignature);
+                    var xcontains = x.Contains(typeToCheck.FullName);
+                    return contains && xcontains;
+                });
                 isCovered.Should().BeTrue(method.ToString() + " is not covered");
             }
         }

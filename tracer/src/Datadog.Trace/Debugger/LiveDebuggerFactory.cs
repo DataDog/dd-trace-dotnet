@@ -28,7 +28,7 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         if (!debuggerSettings.Enabled)
         {
@@ -46,7 +46,7 @@ internal class LiveDebuggerFactory
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
         var symbolsUploader = CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, debuggerSettings, gitMetadataTagsProvider);
 
         var statsd = GetDogStatsd(tracerSettings, serviceName);
@@ -66,11 +66,11 @@ internal class LiveDebuggerFactory
                 dogStats: statsd);
     }
 
-    private static IDogStatsd GetDogStatsd(ImmutableTracerSettings tracerSettings, string serviceName)
+    private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings, string serviceName)
     {
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
-         && tracerSettings.ExporterInternal.MetricsTransport == TransportType.UDS)
+         && tracerSettings.Exporter.MetricsTransport == TransportType.UDS)
         {
             Log.Information("Metric probes are not supported on Windows when transport type is UDS");
             statsd = new NoOpStatsd();
@@ -103,17 +103,17 @@ internal class LiveDebuggerFactory
         return debuggerSink;
     }
 
-    private static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    private static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceName);
+        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceName, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         return symbolsUploader;
     }
 
-    private static IApiRequestFactory GetApiFactory(ImmutableTracerSettings tracerSettings, bool isMultipart)
+    private static IApiRequestFactory GetApiFactory(TracerSettings tracerSettings, bool isMultipart)
     {
         return AgentTransportStrategy.Get(
-            tracerSettings.ExporterInternal,
+            tracerSettings.Exporter,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,

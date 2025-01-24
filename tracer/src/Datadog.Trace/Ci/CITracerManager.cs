@@ -2,8 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -27,7 +29,7 @@ namespace Datadog.Trace.Ci
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
         public CITracerManager(
-            ImmutableTracerSettings settings,
+            TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -60,7 +62,7 @@ namespace Datadog.Trace.Ci
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                GetProcessors(settings.ExporterInternal.PartialFlushEnabledInternal, agentWriter is CIVisibilityProtocolWriter))
+                GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
 
@@ -68,24 +70,24 @@ namespace Datadog.Trace.Ci
         {
             if (isCiVisibilityProtocol)
             {
-                return new Trace.Processors.ITraceProcessor[]
-                {
+                return
+                [
                     new Trace.Processors.NormalizerTraceProcessor(),
                     new Trace.Processors.TruncatorTraceProcessor(),
-                    new Processors.OriginTagTraceProcessor(partialFlushEnabled, true),
-                };
+                    new Processors.OriginTagTraceProcessor(partialFlushEnabled, true)
+                ];
             }
 
-            return new Trace.Processors.ITraceProcessor[]
-            {
+            return
+            [
                 new Trace.Processors.NormalizerTraceProcessor(),
                 new Trace.Processors.TruncatorTraceProcessor(),
                 new Processors.TestSuiteVisibilityProcessor(),
-                new Processors.OriginTagTraceProcessor(partialFlushEnabled, false),
-            };
+                new Processors.OriginTagTraceProcessor(partialFlushEnabled, false)
+            ];
         }
 
-        private Span ProcessSpan(Span span)
+        private Span? ProcessSpan(Span span)
         {
             if (span is null)
             {
@@ -101,7 +103,14 @@ namespace Datadog.Trace.Ci
 
                 try
                 {
-                    span = processor.Process(span);
+                    if (processor.Process(span) is { } nSpan)
+                    {
+                        span = nSpan;
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -115,13 +124,19 @@ namespace Datadog.Trace.Ci
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteEvent(IEvent @event)
         {
-            if (@event is TestEvent testEvent)
+            if (@event is TestEvent { Content: { } test } testEvent)
             {
-                testEvent.Content = ProcessSpan(testEvent.Content);
+                if (ProcessSpan(test) is { } content)
+                {
+                    testEvent.Content = content;
+                }
             }
-            else if (@event is SpanEvent spanEvent)
+            else if (@event is SpanEvent { Content: { } span } spanEvent)
             {
-                spanEvent.Content = ProcessSpan(spanEvent.Content);
+                if (ProcessSpan(span) is { } content)
+                {
+                    spanEvent.Content = content;
+                }
             }
 
             ((IEventWriter)AgentWriter).WriteEvent(@event);
@@ -130,7 +145,7 @@ namespace Datadog.Trace.Ci
         internal class LockedManager : CITracerManager, ILockedTracer
         {
             public LockedManager(
-                ImmutableTracerSettings settings,
+                TracerSettings settings,
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
                 IDogStatsd statsd,

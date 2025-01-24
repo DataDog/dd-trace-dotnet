@@ -280,26 +280,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        internal static void OverridePropagatedContext<TTarget, TTypeData>(Tracer tracer, TTypeData typedData, string? useNullableHeadersCapability)
-            where TTypeData : ITypedData
-        {
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId)
-             && tracer.ActiveScope is Scope { Span: { OperationName: OperationName } span })
-            {
-                // The HTTP request represented by TypedData is a duplicate of the original incoming
-                // request that was received by func.exe. This is used to create a span representing
-                // the request from the client. The typed data is then sent by the GRPC connection
-                // to the functions app and is used to invoke the actual function. We intercept that
-                // in the functions app and use it to create a span representing the actual work of the app.
-                // In order for the span hierarchy/parenting to work correctly, we need to replace the parentID
-                // in the GRPC http request representation, which is what we're doing here by overwriting all
-                // the existing datadog headers
-                var useNullableHeaders = !string.IsNullOrEmpty(useNullableHeadersCapability);
-                var context = new PropagationContext(span.Context, Baggage.Current);
-                SpanContextPropagator.Instance.Inject(context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
-            }
-        }
-
         private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
@@ -342,7 +322,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     return default;
                 }
 
-                return SpanContextPropagator.Instance.Extract(new HttpHeadersCollection(httpRequest.Headers));
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(new HttpHeadersCollection(httpRequest.Headers));
             }
             catch (Exception ex)
             {

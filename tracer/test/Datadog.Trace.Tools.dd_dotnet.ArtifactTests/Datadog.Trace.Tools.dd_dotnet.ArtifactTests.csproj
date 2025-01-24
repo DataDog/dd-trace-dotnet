@@ -17,10 +17,10 @@
 
   <ItemGroup>
     <Content Include="applicationHost.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   
@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ELFSharp" Version="2.17.3" />
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
   </ItemGroup>
 

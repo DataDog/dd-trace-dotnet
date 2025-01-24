@@ -43,6 +43,8 @@ internal abstract class HttpTransportBase
 
     internal bool IsAdditiveContextDisposed() => _isAdditiveContextDisposed;
 
+    protected void SetAdditiveContextDisposed(bool value) => _isAdditiveContextDisposed = value;
+
     internal abstract void SetAdditiveContext(IContext additiveContext);
 
     internal abstract IHeadersCollection GetRequestHeaders();

@@ -89,6 +89,12 @@
 
     <div><a href="/Iast/UnvalidatedRedirect?param=value">GET /Iast/UnvalidatedRedirect</a></div>
 
+    <div><a href="/Iast/GetFileContent?file=/nonexisting.txt">/Iast/GetFileContent?file=/nonexisting.txt</a></div>
+
+    <div><a href="/Iast/GetFileContentThread?file=/nonexisting.txt&numThreads=100&delayPerThread=50">/Iast/GetFileContentThread?file=/nonexisting.txt&numThreads=100&delayPerThread=50</a></div>
+
+    <div><a href="/Iast/GetFileContentEdgeConditions?file=/nonexisting.txt&endRequest=true&setStatusCode=true&setContent=true">/Iast/GetFileContentEdgeConditions?file=/nonexisting.txt&uninitializeContext=true&setStatusCode=true&setContent=true&abortContext=true</a></div>
+
     <div><a href="/Iast/StackTraceLeak">GET /Iast/StackTraceLeak</a></div>
 
     <div><a href="/Iast/ReflectedXss/?param=<script>alert('Injection!')</script>">GET /Iast/ReflectedXss </a></div>

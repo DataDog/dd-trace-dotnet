@@ -50,6 +50,17 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
 
+    // Let's validate the vars before calling `EnumNgenModuleMethodsInliningThisMethod`
+    if (currentModuleId == NULL ||
+        moduleId == NULL ||
+        currentMethodDef == NULL ||
+        currentMethodDef == mdMethodDefNil)
+    {
+        // we just return true to avoid the retry by the handler.
+        Logger::Warn("NGEN:: EnumNgenModuleMethodsInliningThisMethod call skipped by invalid data.");
+        return true;
+    }
+
 #if DEBUG
     // We generate this log hundreds of times, and isn't typically useful in escalations
     Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ", "[ModuleInliner=", moduleId,

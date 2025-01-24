@@ -259,24 +259,18 @@ int TracerTokens::GetAdditionalLocalsCount(const std::vector<TypeSignature>& met
 }
 
 void TracerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                                       COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
-                                       ULONG& signatureSize, bool isAsyncMethod)
+                                       SignatureBuilder& signature, bool isAsyncMethod)
 {
     // Gets the exception type buffer and size
     unsigned exTypeRefBuffer;
     auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
     
     // Exception value for calltarget exception filters
-    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signatureBuffer[signatureOffset], &exTypeRefBuffer, exTypeRefSize);
-    signatureOffset += exTypeRefSize;
-    signatureSize += 1 + exTypeRefSize;
+    signature.Append(ELEMENT_TYPE_CLASS);
+    signature.Append(&exTypeRefBuffer, exTypeRefSize);
 
-
-    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signatureBuffer[signatureOffset], &exTypeRefBuffer, exTypeRefSize);
-    signatureOffset += exTypeRefSize;
-    signatureSize += 1 + exTypeRefSize;
+    signature.Append(ELEMENT_TYPE_CLASS);
+    signature.Append(&exTypeRefBuffer, exTypeRefSize);
 
     if (enable_by_ref_instrumentation)
     {
@@ -291,10 +285,8 @@ void TracerTokens::AddAdditionalLocals(TypeSignature* methodReturnValue, std::ve
             if (SUCCEEDED(IsTypeByRefLike(_profiler_info, *module_metadata, typeArgument, GetCorLibAssemblyRef(), isByRefLike)) &&
                 isByRefLike)
             {
-                signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
-                memcpy(&signatureBuffer[signatureOffset], &callTargetRefStructTypeRefBuffer, callTargetRefStructTypeRefSize);
-                signatureOffset += callTargetRefStructTypeRefSize;
-                signatureSize += 1 + callTargetRefStructTypeRefSize;
+                signature.Append(ELEMENT_TYPE_VALUETYPE);
+                signature.Append(&callTargetRefStructTypeRefBuffer, callTargetRefStructTypeRefSize);
             }
         }
     }

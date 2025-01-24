@@ -62,7 +62,7 @@ namespace Datadog.Trace.Activity
             // Fixup "version" tag
             // Fallback to static instance if no tracer associated with the trace
             var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
-            if (tracer.Settings.ServiceVersionInternal is null
+            if (tracer.Settings.ServiceVersion is null
              && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
@@ -254,9 +254,7 @@ namespace Datadog.Trace.Activity
                 spanContext.LastParentId = traceState.LastParent;
                 spanContext.PropagatedTags = traceTags;
 
-                var extractedSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
-                var spanLink = span.AddSpanLink(extractedSpan);
-
+                List<KeyValuePair<string, string>> attributes = new();
                 if (duckLink.Tags is not null)
                 {
                     foreach (var kvp in duckLink.Tags)
@@ -271,18 +269,20 @@ namespace Datadog.Trace.Activity
                                 {
                                     if (item?.ToString() is { } value)
                                     {
-                                        spanLink.AddAttribute($"{kvp.Key}.{index}", value);
+                                        attributes.Add(new($"{kvp.Key}.{index}", value));
                                         index++;
                                     }
                                 }
                             }
                             else if (kvp.Value?.ToString() is { } kvpValue)
                             {
-                                spanLink.AddAttribute(kvp.Key, kvpValue);
+                                attributes.Add(new(kvp.Key, kvpValue));
                             }
                         }
                     }
                 }
+
+                span.AddLink(new SpanLink(spanContext, attributes));
             }
         }
 

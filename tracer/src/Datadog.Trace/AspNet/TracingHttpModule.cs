@@ -79,14 +79,14 @@ namespace Datadog.Trace.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (!Tracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty() &&
+            if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
                 httpContext != null &&
                 HttpRuntime.UsingIntegratedPipeline &&
                 _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -140,7 +140,7 @@ namespace Datadog.Trace.AspNet
                     {
                         // extract propagated http headers
                         headers = requestHeaders.Wrap();
-                        extractedContext = SpanContextPropagator.Instance.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -158,7 +158,7 @@ namespace Datadog.Trace.AspNet
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
@@ -174,7 +174,7 @@ namespace Datadog.Trace.AspNet
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
                     var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
-                    SpanContextPropagator.Instance.Inject(injectedContext, requestHeaders.Wrap());
+                    tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -185,8 +185,8 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.AppsecEnabled)
                 {
-                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
+                    securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
 
                     // request args
                     var args = securityCoordinator.GetBasicRequestArgsForWaf();
@@ -201,7 +201,7 @@ namespace Datadog.Trace.AspNet
                         }
                     }
 
-                    securityCoordinator.BlockAndReport(args);
+                    securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
                 }
 
                 var iastInstance = Iast.Iast.Instance;
@@ -273,9 +273,9 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            securityCoordinator.BlockAndReport(args, true);
+                            securityCoordinator.BlockAndReport(args, true, isInHttpTracingModule: true);
 
-                            securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                            securityCoordinator.Reporter.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;
                         }
 

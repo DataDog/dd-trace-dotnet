@@ -16,7 +16,7 @@ namespace Datadog.Trace.TestHelpers
     /// <summary>
     /// Drains the standard and error output of a process
     /// </summary>
-    public class ProcessHelper : IDisposable
+    public partial class ProcessHelper : IDisposable
     {
         private readonly TaskCompletionSource<bool> _errorTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);

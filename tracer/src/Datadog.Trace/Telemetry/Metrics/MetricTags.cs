@@ -240,7 +240,7 @@ internal static class MetricTags
         [Description("integration_name:process")]Process,
         [Description("integration_name:hashalgorithm")]HashAlgorithm,
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
-        [Description("integration_name:opentelemetry")]OpenTelemetry,
+        [Description("integration_name:otel")]OpenTelemetry, // Note: The naming of this tag value breaks the convention of using the integration name to use a standardized value
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
@@ -293,7 +293,8 @@ internal static class MetricTags
         [Description("waf_version;rule_type:lfi")] Lfi = 0,
         [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
         [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
-        [Description("waf_version;rule_type:command_injection")] CommandInjection = 3,
+        [Description("waf_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
+        [Description("waf_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
     }
 
     public enum TruncationReason
@@ -354,10 +355,12 @@ internal static class MetricTags
         [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
     }
 
-    public enum AuthenticationFramework
+    public enum AuthenticationFrameworkWithEventType
     {
-        [Description("framework:aspnetcore_identity")] AspNetCoreIdentity,
-        [Description("framework:unknown")] Unknown,
+        [Description("framework:aspnetcore_identity;event_type:login_success")] AspNetCoreIdentityLoginSuccess,
+        [Description("framework:aspnetcore_identity;event_type:login_failure")] AspNetCoreIdentityLoginFailure,
+        [Description("framework:aspnetcore_identity;event_type:signup")] AspNetCoreIdentitySignup,
+        [Description("framework:unknown;event_type:signup")] Unknown,
     }
 
     public enum CIVisibilityTestFramework
@@ -387,10 +390,17 @@ internal static class MetricTags
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
         [Description("event_type:suite")] Suite,
         [Description("event_type:module")] Module,
-        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
-        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+        // ...
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+        // ...
+        [Description("event_type:session;agentless_log_submission_enabled")] Session_NoCodeOwner_IsSupportedCi_WithAgentlessLog,
+        [Description("event_type:session;is_unsupported_ci;agentless_log_submission_enabled")] Session_NoCodeOwner_UnsupportedCi_WithAgentlessLog,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci;agentless_log_submission_enabled")] Session_HasCodeOwner_UnsupportedCi_WithAgentlessLog,
+        [Description("event_type:session;has_codeowner;agentless_log_submission_enabled")] Session_HasCodeOwner_IsSupportedCi_WithAgentlessLog,
+        // ...
         [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
         [Description("event_type:test;browser_driver:selenium")] Test_BrowserDriverSelenium,
@@ -455,6 +465,7 @@ internal static class MetricTags
         [Description("command:get_local_commits")] GetLocalCommits,
         [Description("command:get_objects")] GetObjects,
         [Description("command:pack_objects")] PackObjects,
+        [Description("command:diff")] Diff,
     }
 
     public enum CIVisibilityExitCodes
@@ -471,14 +482,23 @@ internal static class MetricTags
 
     public enum CIVisibilityITRSettingsResponse
     {
-        [Description("")] CoverageDisabled_ItrSkipDisabled,
-        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
-        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
-        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
-        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
+        [Description("")] CoverageDisabled_ItrSkipDisabled_AtrDisabled,
+        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled_AtrDisabled,
+        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled_AtrDisabled,
+        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled_AtrDisabled,
+        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+        // ...
+        [Description("flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipDisabled_AtrEnabled,
+        [Description("coverage_enabled;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipDisabled_AtrEnabled,
+        [Description("itrskip_enabled;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipEnabled_AtrEnabled,
+        [Description("coverage_enabled;itrskip_enabled;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipEnabled_AtrEnabled,
+        [Description("early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+        [Description("coverage_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+        [Description("itrskip_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
     }
 
     public enum CIVisibilityRequestCompressed

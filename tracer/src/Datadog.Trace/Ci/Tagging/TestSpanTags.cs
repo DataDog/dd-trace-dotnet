@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.SourceGenerators;
@@ -60,13 +61,13 @@ internal partial class TestSpanTags : TestSuiteSpanTags
     }
 
     [Tag(TestTags.Name)]
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     [Tag(TestTags.Parameters)]
-    public string Parameters { get; set; }
+    public string? Parameters { get; set; }
 
     [Tag(TestTags.SourceFile)]
-    public string SourceFile { get; set; }
+    public string? SourceFile { get; set; }
 
     [Metric(TestTags.SourceStart)]
     public double? SourceStart { get; set; }
@@ -75,41 +76,44 @@ internal partial class TestSpanTags : TestSuiteSpanTags
     public double? SourceEnd { get; set; }
 
     [Tag(TestTags.CodeOwners)]
-    public string CodeOwners { get; set; }
+    public string? CodeOwners { get; set; }
 
     [Tag(TestTags.Traits)]
-    public string Traits { get; set; }
+    public string? Traits { get; set; }
 
     [Tag(TestTags.SkipReason)]
-    public string SkipReason { get; set; }
+    public string? SkipReason { get; set; }
 
     [Tag(IntelligentTestRunnerTags.SkippedBy)]
-    public string SkippedByIntelligentTestRunner { get; set; }
+    public string? SkippedByIntelligentTestRunner { get; set; }
 
     [Tag(IntelligentTestRunnerTags.UnskippableTag)]
-    public string Unskippable { get; set; }
+    public string? Unskippable { get; set; }
 
     [Tag(IntelligentTestRunnerTags.ForcedRunTag)]
-    public string ForcedRun { get; set; }
+    public string? ForcedRun { get; set; }
 
     [Tag(EarlyFlakeDetectionTags.TestIsNew)]
-    public string EarlyFlakeDetectionTestIsNew { get; set; }
+    public string? EarlyFlakeDetectionTestIsNew { get; set; }
 
     [Tag(EarlyFlakeDetectionTags.TestIsRetry)]
-    public string EarlyFlakeDetectionTestIsRetry { get; set; }
+    public string? EarlyFlakeDetectionTestIsRetry { get; set; }
 
     [Tag(BrowserTags.BrowserDriver)]
-    public string BrowserDriver { get; set; }
+    public string? BrowserDriver { get; set; }
 
     [Tag(BrowserTags.BrowserDriverVersion)]
-    public string BrowserDriverVersion { get; set; }
+    public string? BrowserDriverVersion { get; set; }
 
     [Tag(BrowserTags.BrowserName)]
-    public string BrowserName { get; set; }
+    public string? BrowserName { get; set; }
 
     [Tag(BrowserTags.BrowserVersion)]
-    public string BrowserVersion { get; set; }
+    public string? BrowserVersion { get; set; }
 
     [Tag(BrowserTags.IsRumActive)]
-    public string IsRumActive { get; set; }
+    public string? IsRumActive { get; set; }
+
+    [Tag(BrowserTags.IsModified)]
+    public string? IsModified { get; set; }
 }

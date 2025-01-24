@@ -1,4 +1,4 @@
-#if RABBITMQ_5_0
+#if RABBITMQ_5_0 && !RABBITMQ_7_0
 using System;
 using System.Collections.Generic;
 using System.Linq;

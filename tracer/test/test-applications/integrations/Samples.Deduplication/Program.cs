@@ -23,6 +23,7 @@ internal static class Program
             // Vulnerable section
             MD5.Create().ComputeHash(new byte[] { 3, 5, 6 });
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
+            Console.WriteLine(new Random().Next());
         }
     }
 

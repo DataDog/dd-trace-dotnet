@@ -537,18 +537,18 @@ public sealed class TestSession
         }
     }
 
-    private Dictionary<string, string> GetPropagateEnvironmentVariables()
+    private Dictionary<string, string?> GetPropagateEnvironmentVariables()
     {
         var span = _span;
         var tags = Tags;
 
-        var environmentVariables = new Dictionary<string, string>
+        var environmentVariables = new Dictionary<string, string?>
         {
             [TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = tags.Command,
             [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
         };
 
-        SpanContextPropagator.Instance.Inject(
+        Tracer.Instance.TracerManager.SpanContextPropagator.Inject(
             new PropagationContext(span.Context, Baggage.Current),
             (IDictionary)environmentVariables,
             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));

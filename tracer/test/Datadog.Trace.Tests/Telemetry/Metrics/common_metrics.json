@@ -728,7 +728,8 @@
     "rasp.rule.eval": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -739,7 +740,8 @@
     "rasp.rule.match": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "matches",
@@ -750,7 +752,8 @@
     "rasp.timeout": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "timeouts",
@@ -760,11 +763,23 @@
     },
     "instrum.user_auth.missing_user_id": {
       "tags": [
-        "framework"
+        "framework",
+        "event_type"
       ],
       "metric_type": "count",
       "data_type": "events",
-      "description": "Number of user events skipped due to not having a user id",
+      "description": "The library was unable to obtain a user ID as part of the login success or failure event. This should only be sent if the user login was also unavailable.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "instrum.user_auth.missing_user_login": {
+      "tags": [
+        "framework",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The library was unable to obtain a user login as part of the login success, login failure or signup event.",
       "send_to_user": false,
       "user_tags": []
     }
@@ -849,6 +864,14 @@
       "description": "Number of times that _dd.iast.json tag exceeds the maximum span tag size",
       "send_to_user": false,
       "user_tags": []
+    },
+    "metastruct.tag.size.exceeded": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "operations",
+      "description": "Number of times that iast data in meta struct tag exceeds the maximum span tag size",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "sidecar": {
@@ -881,7 +904,8 @@
     "test_session": {
       "tags": [
         "provider",
-        "auto_injected"
+        "auto_injected",
+        "agentless_log_submission_enabled",
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1172,6 +1196,7 @@
       "tags": [
         "coverage_enabled",
         "itrskip_enabled",
+        "flaky_test_retries_enabled",
         "early_flake_detection_enabled"
       ],
       "metric_type": "count",
@@ -1333,6 +1358,61 @@
       "metric_type": "distribution",
       "data_type": "tests",
       "description": "The number of known tests returned by the endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.request": {
+      "tags": [
+        "rq_compressed"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the modified files endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the modified files endpoint request in ms",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.request_errors": {
+      "tags": [
+        "error_type",
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of known modified files requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.response_bytes": {
+      "tags": [
+        "rs_compressed"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.response_files": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "files",
+      "description": "The number of modified files received by the endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.is_modified": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "tests",
+      "description": "The number of tests detected as modified",
       "send_to_user": false,
       "user_tags": []
     }

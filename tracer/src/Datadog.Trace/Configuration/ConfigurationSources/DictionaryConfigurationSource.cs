@@ -21,7 +21,7 @@ internal class DictionaryConfigurationSource : StringConfigurationSource
 
     internal override ConfigurationOrigins Origin => ConfigurationOrigins.Code;
 
-    public override string? GetString(string key)
+    protected override string? GetString(string key)
     {
         _dictionary.TryGetValue(key, out var value);
         return value;

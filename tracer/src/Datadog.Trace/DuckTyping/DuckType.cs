@@ -661,9 +661,15 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
+                    case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
                         if (targetProperty is null)
                         {
+                            if (duckAttribute.Kind == DuckKind.PropertyOrField)
+                            {
+                                goto case DuckKind.Field;
+                            }
+
                             if (proxyProperty.CanRead && proxyProperty.GetMethod is not null)
                             {
                                 var getMethod = proxyProperty.GetMethod;
@@ -940,9 +946,15 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
+                    case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
+                            if (duckAttribute.Kind == DuckKind.PropertyOrField)
+                            {
+                                goto case DuckKind.Field;
+                            }
+
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }
@@ -1350,7 +1362,7 @@ namespace Datadog.Trace.DuckTyping
                     return default;
                 }
 
-                return GetProxy(instance.GetType()).CreateInstance<T>(instance);
+                return instance is T tInst ? tInst : GetProxy(instance.GetType()).CreateInstance<T>(instance);
             }
 
             /// <summary>
@@ -1368,7 +1380,7 @@ namespace Datadog.Trace.DuckTyping
                     return default;
                 }
 
-                return GetProxy(typeof(TOriginal)).CreateInstance<T, TOriginal>(instance);
+                return instance is T tInst ? tInst : GetProxy(typeof(TOriginal)).CreateInstance<T, TOriginal>(instance);
             }
 
             /// <summary>
@@ -1384,7 +1396,7 @@ namespace Datadog.Trace.DuckTyping
                     return false;
                 }
 
-                return GetProxy(instance.GetType()).CanCreate();
+                return instance is T || GetProxy(instance.GetType()).CanCreate();
             }
 
             /// <summary>

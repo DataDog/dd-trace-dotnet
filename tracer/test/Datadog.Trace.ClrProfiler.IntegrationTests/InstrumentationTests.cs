@@ -132,6 +132,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingRelativeTracerHome_InstrumentsApp()
+        {
+            // the working dir when we run the app is the _test_ project, not the app itself, so we need to be relative to that
+            // This is a perfect example of why we don't recommend using relative paths for these variables
+            var workingDir = Environment.CurrentDirectory;
+            var monitoringHome = EnvironmentHelper.MonitoringHome;
+            var path = PathUtil.GetRelativePath(workingDir, monitoringHome);
+            var effectivePath = Path.GetFullPath(Path.Combine(workingDir, path));
+            Output.WriteLine($"Using DD_DOTNET_TRACER_HOME={path} with workingDir={workingDir} and monitoringHome={monitoringHome}, giving an effective path of {effectivePath}");
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenUsingPathWithDotsInInTracerHome_InstrumentsApp()
+        {
+            var path = Path.Combine(EnvironmentHelper.MonitoringHome, "..", Path.GetFileName(EnvironmentHelper.MonitoringHome)!);
+            Output.WriteLine("Using DD_DOTNET_TRACER_HOME " + path);
+            SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", path);
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, "traces 1");
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
 #if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
@@ -315,6 +346,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                              }]
                              """;
             AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
+        }
+#endif
+
+        // The dynamic context switch/bail out is only available in .NET 8+
+#if NET8_0_OR_GREATER
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenDynamicCodeIsEnabled_InstrumentsApp()
+        {
+            var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(true);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1", dotnetRuntimeArgs: dotnetRuntimeArgs);
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenDynamicCodeIsDisabled_DoesNotInstrument()
+        {
+            var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(false);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1", dotnetRuntimeArgs: dotnetRuntimeArgs);
+            agent.Spans.Should().BeEmpty();
+            agent.Telemetry.Should().BeEmpty();
+        }
+
+        private string CreateRuntimeConfigWithDynamicCodeEnabled(bool enabled)
+        {
+            // Set to false when PublishAot is set _even if the app is not published with AOT_
+            var name = "System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported";
+            var value = enabled ? "true" : "false";
+
+            // copy the app runtime config to a separate folder before modifying it
+            var fileName = "Samples.Console.runtimeconfig.json";
+            var sourceFile = Path.Combine(Path.GetDirectoryName(EnvironmentHelper.GetSampleApplicationPath())!, fileName);
+            var destDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            var destFile = Path.Combine(destDir, fileName);
+            Directory.CreateDirectory(destDir);
+
+            Output.WriteLine("Reading contents of " + sourceFile);
+            var contents = File.ReadAllText(sourceFile);
+
+            // hacky replacement to add an extra property, but meh, we can expand/fix it later if
+            // we need to support more values or support the value already existing
+            var replacement = $$"""
+                                    "configProperties": {
+                                      "{{name}}": {{value}},
+                                """;
+            var fixedContents = contents.Replace("""    "configProperties": {""", replacement);
+
+            Output.WriteLine("Writing new contents to" + destFile);
+            File.WriteAllText(destFile, fixedContents);
+
+            // return the path to the variable in the format needed to be passed to the dotnet exe
+            // when running the program. Don't ask me why you need to use dotnet exec...
+            // it's weird, but here we are
+            var dotnetRuntimeArgs = $"exec --runtimeconfig \"{destFile}\"";
+            return dotnetRuntimeArgs;
         }
 #endif
 

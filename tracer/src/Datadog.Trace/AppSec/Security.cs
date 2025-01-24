@@ -42,7 +42,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// _waf locker needs to have a longer lifecycle than the Waf object as it's used to dispose it as well
         /// </summary>
-        private readonly Concurrency.ReaderWriterLock _wafLocker;
+        private readonly Concurrency.ReaderWriterLock _activeAddressesLocker;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -61,7 +61,7 @@ namespace Datadog.Trace.AppSec
         public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null, ConfigurationState? configurationState = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
-            _wafLocker = new Concurrency.ReaderWriterLock();
+            _activeAddressesLocker = new Concurrency.ReaderWriterLock();
 
             try
             {
@@ -240,7 +240,7 @@ namespace Datadog.Trace.AppSec
                 catch (Exception e)
                 {
                     rcmUpdateError = e.Message;
-                    Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
+                    Log.Error(e, "An error happened on the rcm subscription callback in class Security");
                 }
 
                 var productsCount = 0;
@@ -482,7 +482,7 @@ namespace Datadog.Trace.AppSec
         {
             _waf?.Dispose();
             Encoder.Pool.Dispose();
-            _wafLocker.Dispose();
+            _activeAddressesLocker.Dispose();
         }
 
         private void SetRemoteConfigCapabilites()
@@ -503,6 +503,7 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspCmd, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspCmd));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
@@ -636,11 +637,27 @@ namespace Datadog.Trace.AppSec
             {
                 var addresses = _waf.GetKnownAddresses();
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
-                _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                try
+                {
+                    _activeAddressesLocker.EnterWriteLock();
+                    _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                }
+                finally
+                {
+                    _activeAddressesLocker.ExitWriteLock();
+                }
             }
             else
             {
-                _activeAddresses = null;
+                try
+                {
+                    _activeAddressesLocker.EnterWriteLock();
+                    _activeAddresses = null;
+                }
+                finally
+                {
+                    _activeAddressesLocker.ExitWriteLock();
+                }
             }
         }
 
@@ -654,7 +671,15 @@ namespace Datadog.Trace.AppSec
 
             if (_waf?.IsKnowAddressesSuported() == true)
             {
-                return _activeAddresses?.Contains(address) ?? false;
+                try
+                {
+                    _activeAddressesLocker.EnterReadLock();
+                    return _activeAddresses?.Contains(address) ?? false;
+                }
+                finally
+                {
+                    _activeAddressesLocker.ExitReadLock();
+                }
             }
             else
             {

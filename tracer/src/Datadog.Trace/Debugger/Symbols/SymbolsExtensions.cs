@@ -13,6 +13,10 @@ namespace Datadog.Trace.Debugger.Symbols;
 
 internal static class SymbolsExtensions
 {
+    private static EntityHandle _nilEntityHandle = new(0);
+
+    internal static ref readonly EntityHandle NilEntityHandle => ref _nilEntityHandle;
+
     internal static bool IsHidden(this SymbolSequencePoint sq)
     {
         return sq is { Line: 0xFEEFEE, EndLine: 0xFEEFEE };
@@ -38,30 +42,30 @@ internal static class SymbolsExtensions
     {
         if (handle.IsNil)
         {
-            return "Unknown";
+            return string.Empty;
         }
 
         switch (handle)
         {
             case { Kind: HandleKind.TypeDefinition }:
-            {
-                return ((TypeDefinitionHandle)handle).FullName(metadataReader);
-            }
+                {
+                    return ((TypeDefinitionHandle)handle).FullName(metadataReader);
+                }
 
             case { Kind: HandleKind.TypeReference }:
-            {
-                return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
-            }
+                {
+                    return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
+                }
 
             case { Kind: HandleKind.TypeSpecification }:
-            {
-                return ((TypeSpecificationHandle)handle).FullName(metadataReader);
-            }
+                {
+                    return ((TypeSpecificationHandle)handle).FullName(metadataReader);
+                }
 
             default:
-            {
-                return "Unknown";
-            }
+                {
+                    return string.Empty;
+                }
         }
     }
 
@@ -79,5 +83,28 @@ internal static class SymbolsExtensions
     internal static bool IsStaticMethod(this MethodDefinition method)
     {
         return (method.Attributes & System.Reflection.MethodAttributes.Static) > 0;
+    }
+
+    internal static EntityHandle GetBaseTypeHandle(this EntityHandle typeHandle, MetadataReader metadataReader)
+    {
+        switch (typeHandle)
+        {
+            case { Kind: HandleKind.TypeDefinition }:
+                {
+                    var typeDef = metadataReader.GetTypeDefinition((TypeDefinitionHandle)typeHandle);
+                    return typeDef.BaseType;
+                }
+
+            case { Kind: HandleKind.TypeReference }:
+                {
+                    var typeRef = metadataReader.GetTypeReference((TypeReferenceHandle)typeHandle);
+                    return typeRef.ResolutionScope.Kind == HandleKind.TypeReference ? typeRef.ResolutionScope : NilEntityHandle;
+                }
+
+            default:
+                {
+                    return NilEntityHandle;
+                }
+        }
     }
 }

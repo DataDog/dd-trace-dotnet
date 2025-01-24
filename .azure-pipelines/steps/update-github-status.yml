@@ -11,17 +11,24 @@
 steps:
   # Use semicolon delimited list of checks, and update each of them
 - script: |
+    # curl is too old so doesn't support --fail-with-body
+    curl_fail_with_body() {
+      curl -o - -w "\n%{http_code}\n" "$@" \
+        | awk '{l[NR] = $0} END {for (i=1; i<=NR-1; i++) print l[i]}; END{ if ($0<200||$0>299) {print "The requested URL returned error: " $0; exit 1}}'
+    }
+
     export IFS=";"
     allChecks="${{ parameters.checkName }}"
     for stageToSkip in $allChecks; do
       TARGET_URL="https://dev.azure.com/datadoghq/$(AZURE_PROJECT_NAME)/_build/results?buildId=$(Build.BuildId)"
-      curl -X POST \
-      -H "Accept: application/vnd.github.v3+json" \
-      -H "Authorization: Bearer $(GITHUB_TOKEN)" \
-      https://api.github.com/repos/DataDog/$(GITHUB_REPOSITORY_NAME)/statuses/$(OriginalCommitId) \
-      -d '{"state":"${{ parameters.status }}","context":"'"$stageToSkip"'","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'    
+      curl_fail_with_body -X POST --silent --show-error \
+        -H "Accept: application/vnd.github.v3+json" \
+        -H "Authorization: Bearer $(GITHUB_TOKEN)" \
+        https://api.github.com/repos/DataDog/$(GITHUB_REPOSITORY_NAME)/statuses/$(OriginalCommitId) \
+        -d '{"state":"${{ parameters.status }}","context":"'"$stageToSkip"'","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'    
     done
   displayName: Set GitHub Status ${{ parameters.status }}
+  failOnStderr: true
   condition: and(succeededOrFailed(), ne(variables['Build.BuildId'], ''))
   continueOnError: true
   env:

@@ -68,6 +68,9 @@
     <ClInclude Include="CrashReportingWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="chrono_helper.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -117,7 +120,6 @@
     <None Include="Datadog.Profiler.Native.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\Datadog.Profiler.Native.Windows\Resource.rc">

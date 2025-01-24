@@ -55,6 +55,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.Extensions.Logging", new [] { "Microsoft.Extensions.Logging" });
             NugetPackages.Add("Microsoft.Extensions.Telemetry", new [] { "Microsoft.Extensions.Telemetry" });
             NugetPackages.Add("Confluent.Kafka", new [] { "Confluent.Kafka" });
+            NugetPackages.Add("MongoDB.Driver", new [] { "MongoDB.Driver" });
             NugetPackages.Add("MongoDB.Driver.Core", new [] { "MongoDB.Driver.Core", "MongoDB.Driver" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.TestFramework", new [] { "Microsoft.VisualStudio.TestPlatform" });
             NugetPackages.Add("Microsoft.VisualStudio.TestPlatform.Common", new [] { "Microsoft.VisualStudio.TestPlatform" });
@@ -81,7 +82,8 @@ namespace Honeypot
             NugetPackages.Add("Serilog", new [] { "Serilog" });
             NugetPackages.Add("NLog", new [] { "NLog" });
             NugetPackages.Add("log4net", new [] { "log4net" });
-            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { "Microsoft.Azure.Functions.Worker.Core" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker", new string[] { "Microsoft.Azure.Functions.Worker" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });

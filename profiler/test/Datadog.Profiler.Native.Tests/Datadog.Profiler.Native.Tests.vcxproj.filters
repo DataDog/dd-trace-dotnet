@@ -19,7 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="..\..\..\..\..\Temp\Datadog.Trace.Manual.dll" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp">
@@ -178,6 +177,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp">
       <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="EtwEventsManagerTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ClrEventsParserTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ChronoHelperTest.cpp">
+      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

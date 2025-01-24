@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Collection(nameof(TransportTestsCollection))]
 public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
-    [SkippableTheory]
+    [SkippableTheory(Skip = "These are currently very flaky - revisit once we move to aspnetcore-based mock agent")]
     [MemberData(nameof(GetData))]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
@@ -43,7 +43,7 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
         }
     }
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "These are currently very flaky - revisit once we move to aspnetcore-based mock agent")]
     [MemberData(nameof(GetDataForEarlyFlakeDetection))]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]

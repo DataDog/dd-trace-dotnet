@@ -20,12 +20,12 @@ namespace Datadog.Trace.Configuration;
 internal class GitMetadataTagsProvider : IGitMetadataTagsProvider
 {
     private readonly ITelemetryController _telemetry;
-    private readonly ImmutableTracerSettings _immutableTracerSettings;
+    private readonly TracerSettings _immutableTracerSettings;
     private readonly IScopeManager _scopeManager;
     private GitMetadata? _cachedGitTags = null;
     private int _tryCount = 0;
 
-    public GitMetadataTagsProvider(ImmutableTracerSettings immutableTracerSettings, IScopeManager scopeManager, ITelemetryController telemetry)
+    public GitMetadataTagsProvider(TracerSettings immutableTracerSettings, IScopeManager scopeManager, ITelemetryController telemetry)
     {
         _immutableTracerSettings = immutableTracerSettings;
         _scopeManager = scopeManager;

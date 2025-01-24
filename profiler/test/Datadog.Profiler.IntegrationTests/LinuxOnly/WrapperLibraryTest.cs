@@ -85,7 +85,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.ExceptionGenerator")]
         public void GenerateDumpIfDbgRequested(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
+            // The continuous profiler is disabled for this test because it's not needed and it *might* be causing some failures
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, enableProfiler: false, commandLine: "--scenario 7");
 
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
@@ -94,7 +95,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             using var processHelper = runner.LaunchProcess();
 
-            var success = runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000);
+            var success = processHelper.Process.WaitForExit(30_000);
             if (!success)
             {
                 var logger = runner.XUnitLogger;
@@ -102,6 +103,9 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 // Note: we don't drain because the process hasn't exited, but it means the output may be incomplete
                 logger.WriteLine("Standard output:");
                 logger.WriteLine(processHelper.StandardOutput);
+
+                logger.WriteLine("Error output:");
+                logger.WriteLine(processHelper.ErrorOutput);
 
                 var pid = processHelper.Process.Id;
 
@@ -138,13 +142,6 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 foreach (var process in processes)
                 {
                     logger.WriteLine($"Process: {process.ProcessName} ({process.Id})");
-
-                    if (process.ProcessName == "createdump")
-                    {
-                        var testBaseOutputDir = runner.Environment.GetTestOutputPath();
-                        process.GetAllThreadsStack(testBaseOutputDir, logger);
-                        process.TakeMemoryDump(testBaseOutputDir, logger);
-                    }
                 }
             }
 

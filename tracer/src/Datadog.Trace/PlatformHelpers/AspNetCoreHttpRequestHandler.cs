@@ -54,14 +54,14 @@ namespace Datadog.Trace.PlatformHelpers
             return $"{httpMethod} {resourceUrl}";
         }
 
-        private PropagationContext ExtractPropagatedContext(HttpRequest request)
+        private PropagationContext ExtractPropagatedContext(Tracer tracer, HttpRequest request)
         {
             try
             {
                 // extract propagation details from http headers
                 if (request.Headers is { } headers)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(headers));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new HeadersCollectionAdapter(headers));
                 }
             }
             catch (Exception ex)
@@ -74,7 +74,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
         {
-            var headerTagsInternal = tracer.Settings.HeaderTagsInternal;
+            var headerTagsInternal = tracer.Settings.HeaderTags;
 
             if (!headerTagsInternal.IsNullOrEmpty())
             {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.PlatformHelpers
                     // extract propagation details from http headers
                     if (request.Headers is { } requestHeaders)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(
+                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
                             span,
                             new HeadersCollectionAdapter(requestHeaders),
                             headerTagsInternal,
@@ -107,7 +107,7 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            var extractedContext = ExtractPropagatedContext(request).MergeBaggageInto(Baggage.Current);
+            var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
 
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
@@ -122,8 +122,8 @@ namespace Datadog.Trace.PlatformHelpers
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
-                Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
-                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+                string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
+                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
             var iastInstance = Iast.Iast.Instance;
@@ -167,11 +167,11 @@ namespace Datadog.Trace.PlatformHelpers
                     }
                 }
 
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 if (security.AppsecEnabled)
                 {
-                    var transport = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
-                    transport.AddResponseHeadersToSpanAndCleanup();
+                    var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
+                    securityCoordinator.Reporter.AddResponseHeadersToSpanAndCleanup();
                 }
                 else
                 {
