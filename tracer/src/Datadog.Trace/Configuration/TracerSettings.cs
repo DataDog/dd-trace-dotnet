@@ -429,6 +429,10 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                    .AsBool(defaultValue: true);
 
+            InferredProxySpansEnabled = config
+                                      .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
+                                      .AsBool(defaultValue: false);
+
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
                                          .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
@@ -875,6 +879,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled"/>
         internal bool WcfObfuscationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to generate an inferred span based on extracted headers from a proxy service.
+        /// </summary>
+        /// <seeaslo cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+        internal bool InferredProxySpansEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
