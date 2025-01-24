@@ -464,6 +464,7 @@ internal static class MetricTags
         [Description("command:get_local_commits")] GetLocalCommits,
         [Description("command:get_objects")] GetObjects,
         [Description("command:pack_objects")] PackObjects,
+        [Description("command:diff")] Diff,
     }
 
     public enum CIVisibilityExitCodes

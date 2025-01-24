@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -88,9 +89,14 @@ internal unsafe ref struct FileBitmap
     }
 
     /// <summary>
-    /// Gets the size of the bitmap.
+    /// Gets the size of the bitmap in Bytes.
     /// </summary>
     public int Size => _size;
+
+    /// <summary>
+    /// Gets the size of the bitmap in bits.
+    /// </summary>
+    public int BitCount => _size * 8;
 
     /// <summary>
     /// Performs a bitwise OR operation on two <see cref="FileBitmap"/> instances.
@@ -117,6 +123,37 @@ internal unsafe ref struct FileBitmap
     /// <returns>The result of the bitwise NOT operation.</returns>
     public static FileBitmap operator ~(FileBitmap fileBitmap)
         => Not(fileBitmap, false);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with a specified line count.
+    /// </summary>
+    /// <param name="lines">Line count</param>
+    public static FileBitmap FromLineCount(int lines)
+    {
+        return new FileBitmap(new byte[GetSize(lines)]);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct and sets all lines in the specified range (inclusive) set to 1.
+    /// </summary>
+    /// <param name="fromLine">One-based index of start of range</param>
+    /// <param name="toLine">One-based index of end of range</param>
+    public static FileBitmap FromActiveRange(int fromLine, int toLine)
+    {
+        var res = FromLineCount(toLine);
+
+        if (fromLine <= 0 || toLine < fromLine)
+        {
+            throw new ArgumentException("Invalid range");
+        }
+
+        for (var i = fromLine; i <= toLine; i++)
+        {
+            res.Set(i);
+        }
+
+        return res;
+    }
 
     /// <summary>
     /// Performs a bitwise OR operation on two <see cref="FileBitmap"/> instances.
@@ -809,6 +846,26 @@ internal unsafe ref struct FileBitmap
                 return true;
             }
 #endif
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets if two bitmaps have at least one enabled bit in common.
+    /// </summary>
+    /// <returns>True if both bitmaps has at least 1 bit set to 1 in the same position; otherwise, false..</returns>
+    public bool IntersectsWith(ref FileBitmap other)
+    {
+        var size = Math.Min(_size, other._size);
+
+        // Iterate over each byte of the bitmap
+        for (var i = 0; i < size; i++)
+        {
+            if ((_bitmap[i] & other._bitmap[i]) > 0)
+            {
+                return true;
+            }
         }
 
         return false;
