@@ -30,6 +30,4 @@ internal readonly struct PropagationContext
         Baggage = baggage;
         Links = extractionSpanLinks;
     }
-
-    public bool IsEmpty => SpanContext is null && Baggage is null;
 }

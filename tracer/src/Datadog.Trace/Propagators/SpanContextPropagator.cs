@@ -71,7 +71,7 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
-            if (context.IsEmpty)
+            if (context.SpanContext is null && context.Baggage is null)
             {
                 // nothing to inject
                 return;
