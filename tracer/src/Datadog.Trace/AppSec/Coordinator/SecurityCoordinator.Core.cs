@@ -174,7 +174,22 @@ internal readonly partial struct SecurityCoordinator
         {
             get
             {
-                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
+                IDictionary<object, object?>? items;
+
+                // In some situations the HttpContext could have already been Uninitialized and the features
+                // are set to null, thus throwing an exception when trying to access the Items
+                try
+                {
+                    items = Context.Items;
+                }
+                catch (NullReferenceException e)
+                {
+                    Log.Debug(e, "NullReferenceException while trying to access Items of a Context.");
+                    IsContextUninitialized = true;
+                    return false;
+                }
+
+                if (items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
                 {
                     return value is bool boolValue && boolValue;
                 }
