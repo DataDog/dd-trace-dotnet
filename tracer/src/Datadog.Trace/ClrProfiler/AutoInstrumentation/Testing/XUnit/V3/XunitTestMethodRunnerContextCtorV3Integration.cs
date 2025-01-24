@@ -41,8 +41,6 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         object?[] constructorArguments)
         where TIXunitTestMethod : IXunitTestMethodV3
     {
-        Common.Log.Warning("XunitTestMethodRunnerContextCtorV3Integration.OnMethodBegin, instance: {0}, messageBus: {1}, testMethod: {2}", instance, messageBus, testMethod);
-
         if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
             CIVisibility.Settings.FlakyRetryEnabled != true)
         {
@@ -51,11 +49,8 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
 
         if (messageBus is null || messageBus is IDuckType)
         {
-            Common.Log.Warning("XunitTestMethodRunnerContextCtorV3Integration.OnMethodBegin, messageBus is IDuckType");
             return CallTargetState.GetDefault();
         }
-
-        Common.Log.Warning("XunitTestMethodRunnerContextCtorV3Integration.OnMethodBegin, messageBus is not IDuckType");
 
         // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
         Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");

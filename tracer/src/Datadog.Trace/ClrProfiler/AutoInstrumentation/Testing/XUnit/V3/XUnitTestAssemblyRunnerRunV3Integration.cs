@@ -33,7 +33,6 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
         where TContext : ITestAssemblyRunnerContextV3
     {
-        Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
         if (!XUnitIntegration.IsEnabled || instance is null)
         {
             return CallTargetState.GetDefault();
@@ -68,7 +67,6 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
     {
-        Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnMethodEnd, instance: {0}, context: {1}", instance, returnValue);
         if (state.State == TestModule.Current)
         {
             // Restore the AsyncLocal set
@@ -83,7 +81,6 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        Common.Log.Warning("XUnitTestAssemblyRunnerRunV3Integration.OnAsyncMethodEnd, instance: {0}, context: {1}", instance, returnValue);
         if (state.State is TestModule testModule)
         {
             await testModule.CloseAsync().ConfigureAwait(false);

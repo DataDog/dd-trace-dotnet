@@ -68,7 +68,7 @@ internal class RetryMessageBus : IMessageBus
         }
         else
         {
-            Common.Log.Error<object>("EFD: RetryMessageBus.QueueMessage: Message is not a TestCaseMessage. Added: {Message}", message);
+            Common.Log.Debug("EFD: RetryMessageBus.QueueMessage: Message is not a TestCaseMessage. Added: {Message}", message);
             return _innerMessageBus.QueueMessage(message);
         }
 
@@ -105,12 +105,11 @@ internal class RetryMessageBus : IMessageBus
                 metadata.ListOfMessages[index] = lstRetryInstance;
             }
 
-            Common.Log.Error<int, object>("EFD: RetryMessageBus.QueueMessage: Execution index {Index}. Added: {Message}", index, message);
             lstRetryInstance.Add(message);
             return true;
         }
 
-        Common.Log.Error<object>("EFD: RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Added: {Message}", message);
+        Common.Log.Error("EFD: RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Added: {Message}", message);
         return _innerMessageBus.QueueMessage(message);
     }
 

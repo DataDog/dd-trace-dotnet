@@ -32,7 +32,6 @@ public static class XUnitTestRunnerV3Integration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
         where TContext : IXunitTestRunnerContextV3
     {
-        Common.Log.Warning("XUnitTestRunnerV3Integration.OnMethodBegin, instance: {0}, context: {1}", instance, context);
         if (!XUnitIntegration.IsEnabled || instance is null)
         {
             return CallTargetState.GetDefault();
@@ -64,7 +63,6 @@ public static class XUnitTestRunnerV3Integration
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
     {
-        Common.Log.Warning("XUnitTestRunnerV3Integration.OnMethodEnd, instance: {0}, context: {1}", instance, returnValue);
         if (state.State is Tuple<Test?, object> tuple && tuple.Item1 == Test.Current)
         {
             // Restore the AsyncLocal set
@@ -79,7 +77,6 @@ public static class XUnitTestRunnerV3Integration
 
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        Common.Log.Warning("XUnitTestRunnerV3Integration.OnAsyncMethodEnd, instance: {0}, context: {1}", instance, returnValue);
         if (state.State is Tuple<Test?, object> { Item1: { } test, Item2: { } context })
         {
             var testRunnerContext = context.DuckCast<IXunitTestRunnerContextV3>();

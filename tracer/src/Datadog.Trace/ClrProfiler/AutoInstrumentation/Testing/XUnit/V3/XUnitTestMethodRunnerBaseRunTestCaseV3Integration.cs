@@ -41,7 +41,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
     internal static CallTargetState OnMethodBegin<TTarget, TContext, TTestCase>(TTarget instance, TContext context, TTestCase testcaseOriginal)
         where TContext : IXunitTestMethodRunnerBaseContextV3
     {
-        Common.Log.Warning("XUnitTestMethodRunnerBaseRunTestCaseV3Integration.OnMethodBegin, instance: {0}, context: {1}, testcase: {2}", instance, context, testcaseOriginal);
         if (!XUnitIntegration.IsEnabled || instance is null)
         {
             return CallTargetState.GetDefault();
@@ -83,8 +82,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
-            CIVisibility.Settings.FlakyRetryEnabled != true)
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -106,8 +104,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        Common.Log.Warning("XUnitTestMethodRunnerBaseRunTestCaseV3Integration.OnAsyncMethodEnd, instance: {0}, returnValue: {1}", instance, returnValue);
-
         if (state.State is not object[] { Length: 4 } stateArray)
         {
             // State is not the expected array
@@ -130,8 +126,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             }
 
             var runSummaryUnsafe = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref returnValue);
-
-            Common.Log.Warning<int>("ExecutionIndex: {ExecutionIndex}", retryMetadata.ExecutionIndex);
 
             var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
             var index = retryMetadata.ExecutionIndex;
@@ -163,7 +157,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                         Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
                         doRetry = false;
                     }
-                    else if (runSummaryUnsafe.NotRun == 0)
+                    else if (runSummaryUnsafe.NotRun > 0)
                     {
                         Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A NotRun test was detected, skipping the remaining executions.");
                         doRetry = false;
