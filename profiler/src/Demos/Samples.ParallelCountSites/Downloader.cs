@@ -28,6 +28,7 @@ namespace Samples.ParallelCountSites
         //    // "https://mvp.microsoft.com/fr-fr/PublicProfile/5536?fullName=Richard%20Clark",
         //    "http://this.does.not.exist.com/sorry",  // should be an error
         //    "http://github.com/Maoni0",              // --> redirect to HTTPS
+        //    "https://www.okx.com/api/v5/trade/order",  // --> Unauthorized
         // };
 
         public Downloader(Scenario scenario)

@@ -117,9 +117,12 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 }
 
                 // request/response happens for all runtimes
-                var requestResponseDurationLabel = labels.FirstOrDefault(l => l.Name == "response.duration");
-                requestResponseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                requestResponseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
+                requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
+                responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                responseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
             }
         }
 
@@ -157,9 +160,12 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 errorLabel.Name.Should().NotBeNullOrWhiteSpace();
                 errorLabel.Value.Should().NotBeNullOrWhiteSpace();
 
-                var requestResponseDurationLabel = labels.FirstOrDefault(l => l.Name == "response.duration");
-                requestResponseDurationLabel.Name.Should().BeNullOrWhiteSpace();
-                requestResponseDurationLabel.Value.Should().BeNullOrWhiteSpace();
+                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
+                requestDurationLabel.Name.Should().BeNullOrWhiteSpace();
+                requestDurationLabel.Value.Should().BeNullOrWhiteSpace();
+                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
+                responseDurationLabel.Name.Should().BeNullOrWhiteSpace();
+                responseDurationLabel.Value.Should().BeNullOrWhiteSpace();
             }
         }
 
@@ -217,9 +223,21 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 securityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
                 securityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
 
-                var requestResponseDurationLabel = labels.FirstOrDefault(l => l.Name == "response.duration");
-                requestResponseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                requestResponseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var requestDurationLabel = labels.FirstOrDefault(l => l.Name == "request.duration");
+                requestDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                requestDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+
+                var responseDurationLabel = labels.FirstOrDefault(l => l.Name == "response_content.duration");
+                responseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                responseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+
+                var responseThreadIdLabel = labels.FirstOrDefault(l => l.Name == "response.thread_id");
+                responseThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
+                responseThreadIdLabel.Value.Should().NotBeNullOrWhiteSpace();
+
+                var responseThreadNameLabel = labels.FirstOrDefault(l => l.Name == "response.thread_name");
+                responseThreadNameLabel.Name.Should().NotBeNullOrWhiteSpace();
+                responseThreadNameLabel.Value.Should().NotBeNullOrWhiteSpace();
 
                 var requestStatusCodeLabel = labels.FirstOrDefault(l => l.Name == "request status code");
                 requestStatusCodeLabel.Name.Should().NotBeNullOrWhiteSpace();

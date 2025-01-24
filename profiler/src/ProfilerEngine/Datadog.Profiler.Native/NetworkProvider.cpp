@@ -190,7 +190,15 @@ void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pAc
         return;
     }
 
-    pInfo->Redirect->Url = std::move(redirectUrl);
+    // To support more than 1 redirection, concatenate the redirect urls with a separator
+    if (pInfo->Redirect->Url.empty())
+    {
+        pInfo->Redirect->Url = std::move(redirectUrl);
+    }
+    else
+    {
+        pInfo->Redirect->Url += " | " + std::move(redirectUrl);
+    }
 }
 
 void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
@@ -304,16 +312,15 @@ void NetworkProvider::OnRequestHeaderStart(std::chrono::nanoseconds timestamp, L
 
     if (pInfo->Redirect == nullptr)
     {
-        pInfo->ReqRespStartTime = timestamp;
+        pInfo->RequestHeadersStartTimestamp = timestamp;
     }
     else
     {
-        pInfo->Redirect->ReqRespStartTime = timestamp;
+        pInfo->Redirect->RequestHeadersStartTimestamp = timestamp;
     }
 }
 
-// received in .NET 7+
-void NetworkProvider::OnRequestHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode)
+void NetworkProvider::OnResponseHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode)
 {
     NetworkRequestInfo* pInfo = nullptr;
     if (!MonitorRequest(pInfo, pActivityId, false))
@@ -321,16 +328,42 @@ void NetworkProvider::OnRequestHeaderStop(std::chrono::nanoseconds timestamp, LP
         return;
     }
 
-    if (IsRedirect(statusCode))
+    if (pInfo->Redirect == nullptr)
     {
-        // we need to keep track of the duration of the initial processing that ends up to a redirect
-        // and count it as part of the request/response phase
-        pInfo->ReqRespDuration = timestamp - pInfo->ReqRespStartTime;
+        pInfo->RequestDuration = timestamp - pInfo->RequestHeadersStartTimestamp;
 
-        // the redirect url will be "" for .NET 7 because the Redirect event is not emitted
-        pInfo->Redirect = std::make_unique<NetworkRequestInfo>("", timestamp);
+        if (IsRedirect(statusCode))
+        {
+            // the redirect url will be "" for .NET 7 because the Redirect event is not emitted
+            pInfo->Redirect = std::make_unique<NetworkRequestInfo>("", timestamp);
+        }
+    }
+    else
+    {
+        // support more than 1 redirection; i.e. accumulate the duration of all redirections
+        pInfo->Redirect->RequestDuration += timestamp - pInfo->Redirect->RequestHeadersStartTimestamp;
+    }
+
+}
+
+void NetworkProvider::OnResponseContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
+{
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
+    {
+        return;
+    }
+
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->ResponseContentStartTimestamp = timestamp;
+    }
+    else
+    {
+        pInfo->Redirect->ResponseContentStartTimestamp = timestamp;
     }
 }
+
 
 void NetworkProvider::OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
@@ -342,11 +375,11 @@ void NetworkProvider::OnResponseContentStop(std::chrono::nanoseconds timestamp, 
 
     if (pInfo->Redirect == nullptr)
     {
-        pInfo->ReqRespDuration = timestamp - pInfo->ReqRespStartTime;
+        pInfo->ResponseDuration = timestamp - pInfo->ResponseContentStartTimestamp;
     }
     else
     {
-        pInfo->Redirect->ReqRespDuration = timestamp - pInfo->Redirect->ReqRespStartTime;
+        pInfo->Redirect->ResponseDuration = timestamp - pInfo->Redirect->ResponseContentStartTimestamp;
     }
 }
 
@@ -462,6 +495,7 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
     sample.ThreadInfo = std::move(info.StartThreadInfo);
     auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
     sample.EndThreadId = currentThreadInfo->GetProfileThreadId();
+    sample.EndThreadName = currentThreadInfo->GetProfileThreadName();
     sample.DnsSuccess = info.DnsResolutionSuccess;
 
     // count the durations for the initial request...
@@ -470,9 +504,10 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
     sample.HandshakeDuration = info.HandshakeDuration;
     sample.HandshakeWait = info.HandshakeWait;
     sample.SocketConnectDuration = info.SocketDuration;
-    sample.ReqRespDuration = info.ReqRespDuration;
+    sample.RequestDuration = info.RequestDuration;
+    sample.ResponseDuration = info.ResponseDuration;
 
-    // ... plus for the redirected request if any
+    // ...plus the redirected requests if any
     if (info.Redirect != nullptr)
     {
         sample.DnsDuration += info.Redirect->DnsDuration;
@@ -480,7 +515,8 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
         sample.HandshakeDuration += info.Redirect->HandshakeDuration;
         sample.HandshakeWait += info.Redirect->HandshakeWait;
         sample.SocketConnectDuration += info.Redirect->SocketDuration;
-        sample.ReqRespDuration += info.Redirect->ReqRespDuration;
+        sample.RequestDuration += info.Redirect->RequestDuration;
+        sample.ResponseDuration += info.Redirect->ResponseDuration;
 
         // The computation of the wait/queueing time is based on the time difference
         // between end of a phase and the start of the next one

@@ -156,10 +156,13 @@ public:
     std::chrono::nanoseconds SocketConnectStartTime;
     std::chrono::nanoseconds SocketDuration;
 
-    // final part of the request
-    // i.e. from when the request header is sent up to when the response content is fully received
-    std::chrono::nanoseconds ReqRespStartTime;
-    std::chrono::nanoseconds ReqRespDuration;
+    // send request header + content and receive response header
+    std::chrono::nanoseconds RequestHeadersStartTimestamp;
+    std::chrono::nanoseconds RequestDuration;
+
+    // receive response content
+    std::chrono::nanoseconds ResponseContentStartTimestamp;
+    std::chrono::nanoseconds ResponseDuration;
 };
 
 // Used to store the details of a complete request; including a redirected one stored in the Redirect field

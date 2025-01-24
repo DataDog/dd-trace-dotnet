@@ -21,6 +21,7 @@ public:
         StatusCode(other.StatusCode),
         Error(std::move(other.Error)),
         EndThreadId(std::move(other.EndThreadId)),
+        EndThreadName(std::move(other.EndThreadName)),
         RedirectUrl(std::move(other.RedirectUrl)),
         HasBeenRedirected(other.HasBeenRedirected),
         DnsWait(other.DnsWait),
@@ -30,8 +31,8 @@ public:
         HandshakeDuration(other.HandshakeDuration),
         HandshakeError(std::move(other.HandshakeError)),
         SocketConnectDuration(other.SocketConnectDuration),
-        ReqRespStartTimestamp(other.ReqRespStartTimestamp),
-        ReqRespDuration(other.ReqRespDuration)
+        RequestDuration(other.RequestDuration),
+        ResponseDuration(other.ResponseDuration)
     {
     }
 
@@ -45,6 +46,7 @@ public:
             StatusCode = other.StatusCode;
             Error = std::move(other.Error);
             EndThreadId = std::move(other.EndThreadId);
+            EndThreadName = std::move(other.EndThreadName);
             RedirectUrl = std::move(other.RedirectUrl);
             HasBeenRedirected = other.HasBeenRedirected;
             DnsWait = other.DnsWait;
@@ -54,8 +56,8 @@ public:
             HandshakeDuration = other.HandshakeDuration;
             HandshakeError = std::move(other.HandshakeError);
             SocketConnectDuration = other.SocketConnectDuration;
-            ReqRespStartTimestamp = other.ReqRespStartTimestamp;
-            ReqRespDuration = other.ReqRespDuration;
+            RequestDuration = other.RequestDuration;
+            ResponseDuration = other.ResponseDuration;
         }
         return *this;
     }
@@ -95,11 +97,16 @@ public:
         {
             sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration.count()));
         }
-        sample->AddLabel(Label(Sample::RequestResponseThreadIdLabel, EndThreadId));
-        if (ReqRespDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of error
+        if (RequestDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of connection/handshake error
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestResponseDurationLabel, ReqRespDuration.count()));
+            sample->AddNumericLabel(NumericLabel(Sample::RequestDurationLabel, RequestDuration.count()));
         }
+        if (ResponseDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of error
+        {
+            sample->AddNumericLabel(NumericLabel(Sample::ResponseContentDurationLabel, ResponseDuration.count()));
+        }
+        sample->AddLabel(Label(Sample::RequestResponseThreadIdLabel, EndThreadId));
+        sample->AddLabel(Label(Sample::RequestResponseThreadNameLabel, EndThreadName));
     }
 
     std::string Url;
@@ -107,6 +114,7 @@ public:
     int32_t StatusCode;
     std::string Error;
     std::string EndThreadId;
+    std::string EndThreadName;
     std::string RedirectUrl;
     bool HasBeenRedirected;
 
@@ -114,14 +122,14 @@ public:
     std::chrono::nanoseconds DnsDuration;
     bool DnsSuccess;
 
+    std::chrono::nanoseconds SocketConnectDuration;
+
     std::chrono::nanoseconds HandshakeWait;
     std::chrono::nanoseconds HandshakeDuration;
     std::string HandshakeError;
 
-    std::chrono::nanoseconds SocketConnectDuration;
-
-    std::chrono::nanoseconds ReqRespStartTimestamp;
-    std::chrono::nanoseconds ReqRespDuration;
+    std::chrono::nanoseconds RequestDuration;
+    std::chrono::nanoseconds ResponseDuration;
 
     // TODO: check with BE if we also need the thread name
 };

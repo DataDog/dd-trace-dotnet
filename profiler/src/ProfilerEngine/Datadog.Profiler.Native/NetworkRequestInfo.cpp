@@ -60,8 +60,10 @@ NetworkRequestCommon::NetworkRequestCommon(std::string url, std::chrono::nanosec
     HandshakeWait = 0ns;
     HandshakeStartTime = 0ns;
     HandshakeDuration = 0ns;
-    ReqRespStartTime = 0ns;
-    ReqRespDuration = 0ns;
+    RequestHeadersStartTimestamp = 0ns;
+    RequestDuration = 0ns;
+    ResponseContentStartTimestamp = 0ns;
+    ResponseDuration = 0ns;
 }
 
 NetworkRequestCommon::NetworkRequestCommon(NetworkRequestCommon&& other) noexcept
@@ -84,8 +86,10 @@ NetworkRequestCommon& NetworkRequestCommon::operator=(NetworkRequestCommon&& oth
         HandshakeWait = other.HandshakeWait;
         HandshakeStartTime = other.HandshakeStartTime;
         HandshakeDuration = other.HandshakeDuration;
-        ReqRespStartTime = other.ReqRespStartTime;
-        ReqRespDuration = other.ReqRespDuration;
+        RequestHeadersStartTimestamp = other.RequestHeadersStartTimestamp;
+        RequestDuration = other.RequestDuration;
+        ResponseContentStartTimestamp = other.ResponseContentStartTimestamp;
+        ResponseDuration = other.ResponseDuration;
     }
     return *this;
 }

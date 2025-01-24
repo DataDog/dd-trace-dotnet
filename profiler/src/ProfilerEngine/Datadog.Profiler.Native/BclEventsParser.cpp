@@ -100,7 +100,7 @@ void BclEventsParser::ParseHttpEvent(
              OnResponseHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
             break;
         case 13: // ResponseContentStart
-            // OnResponseContentStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+            OnResponseContentStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
             break;
         case 14: // ResponseContentStop
             OnResponseContentStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
@@ -258,11 +258,12 @@ void BclEventsParser::OnResponseHeadersStop(std::chrono::nanoseconds timestamp, 
         return;
     }
 
-    _pNetworkListener->OnRequestHeaderStop(timestamp, pActivityId, statusCode);
+    _pNetworkListener->OnResponseHeaderStop(timestamp, pActivityId, statusCode);
 }
 
 void BclEventsParser::OnResponseContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    _pNetworkListener->OnResponseContentStart(timestamp, pActivityId);
 }
 
 void BclEventsParser::OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)

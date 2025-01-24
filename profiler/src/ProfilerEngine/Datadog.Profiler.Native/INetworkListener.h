@@ -22,7 +22,8 @@ public:
     virtual void OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
     virtual void OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) = 0;
     virtual void OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
-    virtual void OnRequestHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode) = 0;
+    virtual void OnResponseHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode) = 0;
+    virtual void OnResponseContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
     virtual void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
 
     virtual ~INetworkListener() = default;
