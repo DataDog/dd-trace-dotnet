@@ -42,7 +42,6 @@ public class ManualInstrumentationTests : TestHelper
     public async Task NGenRunManualAndAutomatic()
     {
         SetEnvironmentVariable("READY2RUN_ENABLED", "1");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath();
         NgenHelper.InstallToNativeImageCache(Output, sampleAppPath);
         try
