@@ -151,6 +151,14 @@ const shared::WSTRING native_dll_filename = WStr("Datadog.Tracer.Native.dylib");
 const shared::WSTRING native_dll_filename = WStr("Datadog.Tracer.Native.so");
 #endif
 
+#ifdef _WIN32 //TODO steal me
+const shared::WSTRING native_libdatadog_filename = WStr("datadog_profiling_ffi.dll");
+#elif MACOS
+const shared::WSTRING native_libdatadog_filename = WStr("datadog_profiling_ffi.dylib");
+#else
+const shared::WSTRING native_libdatadog_filename = WStr("datadog_profiling.so");
+#endif
+
 const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
     managed_profiler_name,
     new BYTE[160]{0,   36,  0,   0,   4,   128, 0,  0,   148, 0,   0,   0,   6,   2,   0,   0,   0,   36,  0,   0,
