@@ -23,6 +23,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+#if NET6_0_OR_GREATER
 [UsesVerify]
 public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 {
@@ -531,3 +532,4 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         }
     }
 }
+#endif
