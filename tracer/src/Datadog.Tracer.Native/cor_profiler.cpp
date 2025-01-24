@@ -942,10 +942,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
         managedProfilerModuleId_ = module_id;
 #ifdef _WIN32
-        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("windows"), windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
 #else
         RewritingPInvokeMaps(module_id, module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
