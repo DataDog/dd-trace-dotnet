@@ -85,6 +85,7 @@ internal class DefaultMemoryChecker : IMemoryChecker
             throw;
         }
 
+        Logger.Debug("Fail to get windows available memory info");
         return false;
     }
 
@@ -94,9 +95,17 @@ internal class DefaultMemoryChecker : IMemoryChecker
         {
             // for linux we can check /proc/meminfo
             var memAvailable = ReadMemInfo();
-            if (long.TryParse(memAvailable, out long availableKB))
+            if (memAvailable.IsEmpty)
             {
-                return availableKB * 1024 < LowMemoryThreshold;
+                Logger.Debug("Fail to get unix available memory info");
+                return false;
+            }
+
+            var asBytes = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal.AsBytes(memAvailable);
+            Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text.Utf8Parser.TryParse(asBytes, out long availableKb, out var bytes);
+            if (bytes > 0 && availableKb > 0)
+            {
+                return availableKb * 1024 < LowMemoryThreshold;
             }
         }
         catch (Exception e)
@@ -107,33 +116,35 @@ internal class DefaultMemoryChecker : IMemoryChecker
             throw;
         }
 
+        Logger.Debug("Fail to get unix available memory info");
         return false;
     }
 
-    protected virtual string? ReadMemInfo()
+    protected virtual Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char> ReadMemInfo()
     {
+        var empty = Datadog.Trace.VendoredMicrosoftCode.System.ReadOnlySpan<char>.Empty;
         var memInfo = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(System.IO.File.ReadAllText("/proc/meminfo"));
         int startIndex = memInfo.IndexOf(Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("MemAvailable:"));
         if (startIndex == -1)
         {
-            return null;
+            return empty;
         }
 
         var line = memInfo.Slice(startIndex);
         int colonIndex = line.IndexOf(':');
         if (colonIndex == -1)
         {
-            return null;
+            return empty;
         }
 
         var value = line.Slice(colonIndex + 1).TrimStart();
         int spaceIndex = value.IndexOf(' ');
         if (spaceIndex == -1)
         {
-            return null;
+            return empty;
         }
 
-        return value.Slice(0, spaceIndex).ToString();
+        return value.Slice(0, spaceIndex);
     }
 
     // Windows API for memory information
