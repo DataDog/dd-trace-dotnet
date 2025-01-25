@@ -6,26 +6,20 @@
 #nullable enable
 
 using System;
-using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Caching;
 
 internal class DefaultEnvironmentChecker : IEnvironmentChecker
 {
-    private static readonly Lazy<DefaultEnvironmentChecker> _instance = new Lazy<DefaultEnvironmentChecker>(() => new DefaultEnvironmentChecker(), LazyThreadSafetyMode.ExecutionAndPublication);
-    private readonly bool _isServerlessEnvironment;
-
     private DefaultEnvironmentChecker()
     {
-        _isServerlessEnvironment = CheckServerlessEnvironment();
+        IsServerlessEnvironment = CheckServerlessEnvironment();
     }
 
-    public static DefaultEnvironmentChecker Instance => _instance.Value;
+    internal static DefaultEnvironmentChecker Instance { get; } = new();
 
-    public bool IsServerlessEnvironment()
-    {
-        return _isServerlessEnvironment;
-    }
+    public bool IsServerlessEnvironment { get; }
 
     private bool CheckServerlessEnvironment()
     {
@@ -37,9 +31,9 @@ internal class DefaultEnvironmentChecker : IEnvironmentChecker
         }
 
         // Checking serverless environment based on environment variables
-        return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
-               !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME")) ||
-               (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("FUNCTION_NAME")) &&
-                Environment.GetEnvironmentVariable("FUNCTION_SIGNATURE_TYPE") is "http" or "event");
+        return !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
+               !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME")) ||
+               (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("FUNCTION_NAME")) &&
+                EnvironmentHelpers.GetEnvironmentVariable("FUNCTION_SIGNATURE_TYPE") is "http" or "event");
     }
 }

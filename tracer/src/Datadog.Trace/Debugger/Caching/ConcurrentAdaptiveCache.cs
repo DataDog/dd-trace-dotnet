@@ -28,12 +28,12 @@ namespace Datadog.Trace.Debugger.Caching
         /// <summary>
         /// Least Recently Used
         /// </summary>
-        LRU,
+        Lru,
 
         /// <summary>
         /// Least Frequently Used
         /// </summary>
-        LFU
+        Lfu
     }
 
     internal sealed class ConcurrentAdaptiveCache<TKey, TValue> : IDisposable
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Debugger.Caching
         internal ConcurrentAdaptiveCache(
             int? capacity = null,
             IEvictionPolicy<TKey>? evictionPolicy = null,
-            EvictionPolicy evictionPolicyKind = EvictionPolicy.LRU,
+            EvictionPolicy evictionPolicyKind = EvictionPolicy.Lru,
             ITimeProvider? timeProvider = null,
             IEqualityComparer<TKey>? comparer = null,
             IEnvironmentChecker? environmentChecker = null,
@@ -368,8 +368,8 @@ namespace Datadog.Trace.Debugger.Caching
         {
             return policy switch
             {
-                EvictionPolicy.LRU => new LRUEvictionPolicy<TKey>(),
-                EvictionPolicy.LFU => new LFUEvictionPolicy<TKey>(),
+                EvictionPolicy.Lru => new LruEvictionPolicy<TKey>(),
+                EvictionPolicy.Lfu => new LfuEvictionPolicy<TKey>(),
                 _ => throw new ArgumentException("Unsupported eviction policy", nameof(policy)),
             };
         }
@@ -378,7 +378,7 @@ namespace Datadog.Trace.Debugger.Caching
         {
             try
             {
-                if (_environmentChecker.IsServerlessEnvironment() || _memoryChecker.IsLowResourceEnvironment())
+                if (_environmentChecker.IsServerlessEnvironment || _memoryChecker.IsLowResourceEnvironment)
                 {
                     return LowResourceCapacity;
                 }

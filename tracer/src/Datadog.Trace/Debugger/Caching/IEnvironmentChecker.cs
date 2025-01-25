@@ -9,6 +9,6 @@ namespace Datadog.Trace.Debugger.Caching
 {
     internal interface IEnvironmentChecker
     {
-        bool IsServerlessEnvironment();
+        bool IsServerlessEnvironment { get; }
     }
 }

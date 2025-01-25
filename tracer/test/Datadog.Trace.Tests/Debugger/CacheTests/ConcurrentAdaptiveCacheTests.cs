@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         [Fact]
         public void Cache_Should_Evict_Items_When_Capacity_Is_Reached()
         {
-            using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.LRU);
+            using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.Lru);
 
             cache.Add("one", keys: 1);
             cache.Add("two", keys: 2);
@@ -66,9 +66,9 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         }
 
         [Fact]
-        public void Cache_Should_Use_LRU_Eviction_Policy_Correctly()
+        public void Cache_Should_Use_Lru_Eviction_Policy_Correctly()
         {
-            using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.LRU);
+            using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.Lru);
 
             cache.Add("one", keys: 1);
             cache.Add("two", keys: 2);
@@ -87,9 +87,9 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         }
 
         [Fact]
-        public void Cache_Should_Use_LFU_Eviction_Policy_Correctly()
+        public void Cache_Should_Use_Lfu_Eviction_Policy_Correctly()
         {
-            using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.LFU);
+            using var cache = new ConcurrentAdaptiveCache<int, string>(capacity: 3, evictionPolicyKind: EvictionPolicy.Lfu);
 
             cache.Add("one", keys: 1);
             cache.Add("two", keys: 2);
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         public void Cache_Should_Adapt_To_Low_Resource_Environment()
         {
             var mockMemoryChecker = new Mock<IMemoryChecker>();
-            mockMemoryChecker.Setup(m => m.IsLowResourceEnvironment()).Returns(true);
+            mockMemoryChecker.Setup(m => m.IsLowResourceEnvironment).Returns(true);
 
             using var cache = new ConcurrentAdaptiveCache<string, int>(
                 capacity: null,
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         {
             var mockEnvironmentChecker = new Mock<IEnvironmentChecker>();
             mockEnvironmentChecker
-               .Setup(m => m.IsServerlessEnvironment())
+               .Setup(m => m.IsServerlessEnvironment)
                .Throws(new Exception("Simulated environment check failure"));
 
             using var cache = new ConcurrentAdaptiveCache<string, int>(

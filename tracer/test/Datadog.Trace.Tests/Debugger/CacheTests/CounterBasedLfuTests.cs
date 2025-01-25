@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests;
 public class CounterBasedLfuTests(ITestOutputHelper output)
 {
     [Fact]
-    public void LFU_BatchOperations_ShouldProvideDeterministicEviction()
+    public void Lfu_BatchOperations_ShouldProvideDeterministicEviction()
     {
         // Arrange
         var mockTimeProvider = new Mock<ITimeProvider>();
@@ -27,7 +27,7 @@ public class CounterBasedLfuTests(ITestOutputHelper output)
 
         using var cache = new ConcurrentAdaptiveCache<string, int>(
             capacity: 3,
-            evictionPolicyKind: EvictionPolicy.LFU,
+            evictionPolicyKind: EvictionPolicy.Lfu,
             timeProvider: mockTimeProvider.Object);
 
         // Act - Add items in sequence to ensure deterministic access order
@@ -51,12 +51,12 @@ public class CounterBasedLfuTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task LFU_ConcurrentAccess_ShouldMaintainFrequencyOrder()
+    public async Task Lru_ConcurrentAccess_ShouldMaintainFrequencyOrder()
     {
         // Arrange
         using var cache = new ConcurrentAdaptiveCache<string, int>(
             capacity: 3,
-            evictionPolicyKind: EvictionPolicy.LFU);
+            evictionPolicyKind: EvictionPolicy.Lfu);
 
         // Add initial items
         cache.Add(1, keys: "A");

@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Logging;
+using Datadog.Trace.VendoredMicrosoftCode.System;
 
 namespace Datadog.Trace.Debugger.Caching;
 
@@ -19,31 +20,24 @@ internal class DefaultMemoryChecker : IMemoryChecker
 
     private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DefaultMemoryChecker>();
 
-    private static readonly Lazy<DefaultMemoryChecker> _instance = new Lazy<DefaultMemoryChecker>(() => new DefaultMemoryChecker(), LazyThreadSafetyMode.ExecutionAndPublication);
-
-    private readonly bool _isLowResourceEnvironment;
-
     private DefaultMemoryChecker()
     {
-        _isLowResourceEnvironment = CheckLowResourceEnvironment();
+        IsLowResourceEnvironment = CheckLowResourceEnvironment();
     }
 
-    public static DefaultMemoryChecker Instance => _instance.Value;
+    internal static DefaultMemoryChecker Instance { get; } = new();
+
+    public bool IsLowResourceEnvironment { get; }
 
     [return: MarshalAs(UnmanagedType.Bool)]
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
 
-    public bool IsLowResourceEnvironment()
-    {
-        return _isLowResourceEnvironment;
-    }
-
     private bool CheckLowResourceEnvironment()
     {
         try
         {
-            Logger.Information("Checking if environment is low on resources");
+            Logger.Debug("Checking if environment is low on resources");
             // Check if we're using more than 75% of available memory or there is less than 1GB of RAM available.
             return IsLowResourceEnvironmentGc() || IsLowResourceEnvironmentSystem();
         }
@@ -56,7 +50,7 @@ internal class DefaultMemoryChecker : IMemoryChecker
 
     private bool IsLowResourceEnvironmentGc()
     {
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP3_1_OR_GREATER
 
         long totalMemory = GC.GetTotalMemory(false);
         long totalAvailableMemory = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
@@ -118,11 +112,28 @@ internal class DefaultMemoryChecker : IMemoryChecker
 
     protected virtual string? ReadMemInfo()
     {
-        string memInfo = System.IO.File.ReadAllText("/proc/meminfo");
-        var memAvailable = memInfo.Split('\n')
-                                  .FirstOrDefault(l => l.StartsWith("MemAvailable:"))
-                                 ?.Split(':')[1].Trim().Split(' ')[0];
-        return memAvailable;
+        var memInfo = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(System.IO.File.ReadAllText("/proc/meminfo"));
+        int startIndex = memInfo.IndexOf(Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("MemAvailable:"));
+        if (startIndex == -1)
+        {
+            return null;
+        }
+
+        var line = memInfo.Slice(startIndex);
+        int colonIndex = line.IndexOf(':');
+        if (colonIndex == -1)
+        {
+            return null;
+        }
+
+        var value = line.Slice(colonIndex + 1).TrimStart();
+        int spaceIndex = value.IndexOf(' ');
+        if (spaceIndex == -1)
+        {
+            return null;
+        }
+
+        return value.Slice(0, spaceIndex).ToString();
     }
 
     // Windows API for memory information

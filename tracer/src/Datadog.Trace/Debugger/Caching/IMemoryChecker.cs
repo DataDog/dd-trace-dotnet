@@ -9,6 +9,6 @@ namespace Datadog.Trace.Debugger.Caching
 {
     internal interface IMemoryChecker
     {
-        bool IsLowResourceEnvironment();
+        bool IsLowResourceEnvironment { get; }
     }
 }
