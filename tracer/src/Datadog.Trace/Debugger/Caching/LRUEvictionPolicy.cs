@@ -35,20 +35,12 @@ namespace Datadog.Trace.Debugger.Caching
             }
         }
 
-        public void Remove(TKey key)
+        private void Remove(TKey key)
         {
-            _lock.EnterWriteLock();
-            try
+            if (_map.TryGetValue(key, out var node))
             {
-                if (_map.TryGetValue(key, out var node))
-                {
-                    _list.Remove(node);
-                    _map.Remove(key);
-                }
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
+                _list.Remove(node);
+                _map.Remove(key);
             }
         }
 

@@ -14,10 +14,16 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Caching
 {
+    internal enum CacheState
+    {
+        Valid,
+        Error
+    }
+
     /// <summary>
     /// Eviction policy for caching
     /// </summary>
-    public enum EvictionPolicy
+    internal enum EvictionPolicy
     {
         /// <summary>
         /// Least Recently Used
@@ -30,7 +36,7 @@ namespace Datadog.Trace.Debugger.Caching
         LFU
     }
 
-    internal class ConcurrentAdaptiveCache<TKey, TValue> : IDisposable
+    internal sealed class ConcurrentAdaptiveCache<TKey, TValue> : IDisposable
         where TKey : notnull
     {
         private const int DefaultCapacity = 2048;
@@ -43,39 +49,55 @@ namespace Datadog.Trace.Debugger.Caching
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ConcurrentAdaptiveCache<TKey, TValue>>();
 
         private readonly TimeSpan _defaultSlidingExpiration = TimeSpan.FromMinutes(60);
+        private readonly ITimeProvider _timeProvider;
         private readonly Dictionary<TKey, CacheItem<TValue>> _cache;
         private readonly ReaderWriterLockSlim _lock;
         private readonly int _capacity;
         private readonly IEvictionPolicy<TKey> _evictionPolicy;
         private readonly IEnvironmentChecker _environmentChecker;
         private readonly IMemoryChecker _memoryChecker;
-        private readonly CancellationTokenSource _cleanupCancellationTokenSource = new();
+        private readonly CancellationTokenSource _cleanupCancellationTokenSource;
         private readonly Task _cleanupTask;
-        private int _lastCleanupItemsRemoved;
+        private volatile int _lastCleanupItemsRemoved;
         private long _hits;
         private long _misses;
-        private bool _disposed;
+        private int _disposed;
+        private int _state;
 
         internal ConcurrentAdaptiveCache(
             int? capacity = null,
             IEvictionPolicy<TKey>? evictionPolicy = null,
             EvictionPolicy evictionPolicyKind = EvictionPolicy.LRU,
+            ITimeProvider? timeProvider = null,
             IEqualityComparer<TKey>? comparer = null,
             IEnvironmentChecker? environmentChecker = null,
-            IMemoryChecker? memoryChecker = null)
+            IMemoryChecker? memoryChecker = null,
+            int maxErrors = 3)
         {
             _evictionPolicy = evictionPolicy ?? CreateEvictionPolicy(evictionPolicyKind);
             _environmentChecker = environmentChecker ?? DefaultEnvironmentChecker.Instance;
             _memoryChecker = memoryChecker ?? DefaultMemoryChecker.Instance;
             _capacity = capacity ?? DetermineCapacity();
             Logger.Information("Cache capacity is: {Capacity}", (object)_capacity);
+            _timeProvider = timeProvider ?? new DefaultTimeProvider();
             _cache = new Dictionary<TKey, CacheItem<TValue>>(_capacity, comparer);
             _lock = new ReaderWriterLockSlim();
-            _hits = 0;
-            _misses = 0;
+            _cleanupCancellationTokenSource = new();
             CurrentCleanupInterval = _defaultSlidingExpiration;
             _lastCleanupItemsRemoved = 0;
-            _cleanupTask = Task.Run(AdaptiveCleanupAsync);
+            _hits = 0;
+            _misses = 0;
+            _lastCleanupItemsRemoved = -1;
+            _cleanupTask = Task.Run(() => { _ = AdaptiveCleanupAsync(maxErrors); });
+        }
+
+        internal CacheState State
+        {
+            get
+            {
+                var state = Volatile.Read(ref _state);
+                return state == 0 ? CacheState.Valid : CacheState.Error;
+            }
         }
 
         internal TimeSpan CurrentCleanupInterval { get; private set; }
@@ -84,7 +106,7 @@ namespace Datadog.Trace.Debugger.Caching
         {
             get
             {
-                ThrowIfDisposed();
+                ThrowIfInvalid();
 
                 _lock.EnterReadLock();
                 try
@@ -102,7 +124,7 @@ namespace Datadog.Trace.Debugger.Caching
         {
             get
             {
-                ThrowIfDisposed();
+                ThrowIfInvalid();
 
                 long totalRequests = Interlocked.Read(ref _hits) + Interlocked.Read(ref _misses);
                 if (totalRequests == 0)
@@ -114,9 +136,20 @@ namespace Datadog.Trace.Debugger.Caching
             }
         }
 
+        private static bool IsExpired(CacheItem<TValue> item, DateTime now)
+        {
+            if (!item.SlidingExpiration.HasValue)
+            {
+                return false;
+            }
+
+            var expirationTime = item.LastAccessed + item.SlidingExpiration.Value;
+            return now >= expirationTime;
+        }
+
         internal void Add(TValue value, TimeSpan? slidingExpiration = null, params TKey[] keys)
         {
-            ThrowIfDisposed();
+            ThrowIfInvalid();
 
             if (keys == null || keys.Length == 0)
             {
@@ -139,7 +172,7 @@ namespace Datadog.Trace.Debugger.Caching
 
         internal void Add(IEnumerable<KeyValuePair<TKey, TValue>> items, TimeSpan? slidingExpiration = null)
         {
-            ThrowIfDisposed();
+            ThrowIfInvalid();
 
             if (items == null)
             {
@@ -162,9 +195,9 @@ namespace Datadog.Trace.Debugger.Caching
 
         internal bool TryGet(TKey key, out TValue? value)
         {
-            ThrowIfDisposed();
+            ThrowIfInvalid();
 
-            if (key == null)
+            if (key is null)
             {
                 throw NullKeyException.Instance;
             }
@@ -175,9 +208,8 @@ namespace Datadog.Trace.Debugger.Caching
             {
                 if (_cache.TryGetValue(key, out var item))
                 {
-                    item.LastAccessed = DateTime.UtcNow;
+                    item.UpdateAccess(_timeProvider.UtcNow);
                     Interlocked.Increment(ref _hits);
-                    item.IncrementAccessCount();
                     value = item.Value;
                     _evictionPolicy.Access(key);
                     return true;
@@ -189,18 +221,15 @@ namespace Datadog.Trace.Debugger.Caching
             }
             finally
             {
-                if (_lock.IsReadLockHeld)
-                {
-                    _lock.ExitReadLock();
-                }
+                _lock.ExitReadLock();
             }
         }
 
         internal TValue? GetOrAdd(TKey key, Func<TKey, TValue?> valueFactory, TimeSpan? slidingExpiration = null)
         {
-            ThrowIfDisposed();
+            ThrowIfInvalid();
 
-            if (key == null)
+            if (key is null)
             {
                 throw NullKeyException.Instance;
             }
@@ -223,21 +252,54 @@ namespace Datadog.Trace.Debugger.Caching
             }
         }
 
-        internal async Task AdaptiveCleanupAsync()
+        private async Task AdaptiveCleanupAsync(int maxError)
         {
-            while (!_cleanupCancellationTokenSource.Token.IsCancellationRequested)
+            try
             {
-                await Task.Delay(CurrentCleanupInterval, _cleanupCancellationTokenSource.Token).ConfigureAwait(false);
+                int consecutiveErrors = 0;
+                while (consecutiveErrors < maxError &&
+                       !_cleanupCancellationTokenSource.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await _timeProvider.Delay(CurrentCleanupInterval, _cleanupCancellationTokenSource.Token).ConfigureAwait(false);
+                        int itemsRemoved = PerformCleanup();
+                        AdjustCleanupInterval(itemsRemoved);
+                        consecutiveErrors = 0; // Reset on success
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        consecutiveErrors++;
+                        if (consecutiveErrors < maxError)
+                        {
+                            Logger.Error(e, "Error during cleanup");
+                        }
+                        else
+                        {
+                            Interlocked.Exchange(ref _state, 1);
+                            Logger.Error("Cache entered error state after {ConsecutiveErrors} consecutive cleanup failures", property: consecutiveErrors);
 
-                try
-                {
-                    int itemsRemoved = PerformCleanup();
-                    AdjustCleanupInterval(itemsRemoved);
+                            _lock.EnterWriteLock();
+                            try
+                            {
+                                _cache.Clear();
+                            }
+                            finally
+                            {
+                                _lock.ExitWriteLock();
+                            }
+
+                            Dispose();
+                            break;
+                        }
+
+                        throw;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, nameof(AdaptiveCleanupAsync));
-                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal cancellation
             }
         }
 
@@ -246,13 +308,12 @@ namespace Datadog.Trace.Debugger.Caching
             _lock.EnterWriteLock();
             try
             {
-                var now = DateTime.UtcNow;
+                var now = _timeProvider.UtcNow;
                 var expiredItems = _cache.Where(kvp => IsExpired(kvp.Value, now)).ToList();
 
                 foreach (var item in expiredItems)
                 {
                     _cache.Remove(item.Key);
-                    _evictionPolicy.Remove(item.Key);
                 }
 
                 while (_cache.Count > _capacity)
@@ -275,15 +336,29 @@ namespace Datadog.Trace.Debugger.Caching
 
         internal void AdjustCleanupInterval(int itemsRemoved)
         {
-            if (itemsRemoved > _lastCleanupItemsRemoved)
+            var lastRemoved = _lastCleanupItemsRemoved;
+            if (lastRemoved == -1)
             {
-                // More items were removed this time, so we should clean up more frequently
-                CurrentCleanupInterval = TimeSpan.FromSeconds(Math.Max(MinCleanupIntervalSeconds, CurrentCleanupInterval.TotalSeconds / CleanupIntervalAdjustmentFactor));
+                // First cleanup - set baseline
+                _lastCleanupItemsRemoved = itemsRemoved;
+                return;
             }
-            else if (itemsRemoved < _lastCleanupItemsRemoved)
+
+            if (itemsRemoved > lastRemoved)
             {
-                // Fewer items were removed this time, so we can clean up less frequently
-                CurrentCleanupInterval = TimeSpan.FromSeconds(Math.Min(MaxCleanupIntervalSeconds, CurrentCleanupInterval.TotalSeconds * CleanupIntervalAdjustmentFactor));
+                // More items removed - decrease interval
+                CurrentCleanupInterval = TimeSpan.FromSeconds(
+                    Math.Max(
+                        MinCleanupIntervalSeconds,
+                        CurrentCleanupInterval.TotalSeconds / CleanupIntervalAdjustmentFactor));
+            }
+            else if (itemsRemoved < lastRemoved)
+            {
+                // Fewer items removed - increase interval
+                CurrentCleanupInterval = TimeSpan.FromSeconds(
+                    Math.Min(
+                        MaxCleanupIntervalSeconds,
+                        CurrentCleanupInterval.TotalSeconds * CleanupIntervalAdjustmentFactor));
             }
 
             _lastCleanupItemsRemoved = itemsRemoved;
@@ -321,7 +396,7 @@ namespace Datadog.Trace.Debugger.Caching
 
         private void AddOrUpdate(TKey key, TValue? value, TimeSpan? slidingExpiration)
         {
-            if (key == null)
+            if (key is null)
             {
                 throw NullKeyException.Instance;
             }
@@ -348,52 +423,60 @@ namespace Datadog.Trace.Debugger.Caching
 
         private void UpdateItem(TKey key, TValue? value)
         {
-            if (key == null)
+            if (key is null)
             {
                 throw NullKeyException.Instance;
             }
 
             var item = _cache[key];
             item.Value = value;
-            item.LastAccessed = DateTime.UtcNow;
-            item.IncrementAccessCount();
-        }
-
-        private bool IsExpired(CacheItem<TValue> item, DateTime now)
-        {
-            if (item.SlidingExpiration.HasValue && now >= item.LastAccessed + item.SlidingExpiration.Value)
-            {
-                return true;
-            }
-
-            return false;
+            item.UpdateAccess(_timeProvider.UtcNow);
         }
 
         public void Dispose()
         {
             Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if (disposing && Interlocked.CompareExchange(ref _disposed, 1, 0) == 0)
             {
-                if (disposing)
+                try
                 {
+                    const int timeoutInSeconds = 2;
                     _cleanupCancellationTokenSource.Cancel();
-                    _cleanupTask.Wait(TimeSpan.FromSeconds(10)); // Give cleanup task time to finish
+
+                    if (!_cleanupTask.Wait(TimeSpan.FromSeconds(timeoutInSeconds)))
+                    {
+                        Logger.Error(
+                            "Cleanup task during {Dispose} failed to complete within {Seconds} timeout. " +
+                            "This could indicate a bug in the cleanup logic. " +
+                            "The task will continue running in the background ",
+                            property0: nameof(Dispose),
+                            property1: timeoutInSeconds);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error occurred while disposing cache");
+                }
+                finally
+                {
                     _cleanupCancellationTokenSource.Dispose();
                     _lock.Dispose();
                 }
-
-                _disposed = true;
             }
         }
 
-        protected void ThrowIfDisposed()
+        private void ThrowIfInvalid()
         {
-            if (_disposed)
+            if (Interlocked.CompareExchange(ref _state, 1, 1) == 1)
+            {
+                throw InvalidCacheStateException.Instance;
+            }
+
+            if (Interlocked.CompareExchange(ref _disposed, 1, 1) == 1)
             {
                 throw new ObjectDisposedException(nameof(ConcurrentAdaptiveCache<TKey, TValue>));
             }

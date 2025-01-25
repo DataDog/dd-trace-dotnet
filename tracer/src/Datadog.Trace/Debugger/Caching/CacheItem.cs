@@ -12,6 +12,7 @@ namespace Datadog.Trace.Debugger.Caching;
 
 internal class CacheItem<TValue>
 {
+    private readonly DateTime _created;
     private long _lastAccessed;
     private long _accessCount;
 
@@ -23,12 +24,12 @@ internal class CacheItem<TValue>
         }
 
         Value = value;
-        Created = DateTime.UtcNow;
-        LastAccessed = Created;
+        _created = DateTime.UtcNow;
+        LastAccessed = _created;
         SlidingExpiration = slidingExpiration;
     }
 
-    public DateTimeOffset Created { get; set; }
+    public DateTimeOffset Created => _created;
 
     public TimeSpan? SlidingExpiration { get; set; }
 
@@ -42,5 +43,9 @@ internal class CacheItem<TValue>
 
     internal long AccessCount => Interlocked.Read(ref _accessCount);
 
-    internal void IncrementAccessCount() => Interlocked.Increment(ref _accessCount);
+    internal void UpdateAccess(DateTime now)
+    {
+        LastAccessed = now;
+        Interlocked.Increment(ref _accessCount);
+    }
 }

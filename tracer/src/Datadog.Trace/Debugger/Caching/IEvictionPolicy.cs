@@ -13,8 +13,6 @@ namespace Datadog.Trace.Debugger.Caching
     {
         void Add(TKey key);
 
-        void Remove(TKey key);
-
         void Access(TKey key);
 
         TKey Evict();

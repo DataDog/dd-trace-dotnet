@@ -18,6 +18,7 @@ namespace Datadog.Trace.Debugger.Caching
         private readonly Dictionary<TKey, FrequencyItem> _frequencyMap = new Dictionary<TKey, FrequencyItem>();
         private readonly SortedDictionary<FrequencyKey, HashSet<TKey>> _frequencySortedSet = new SortedDictionary<FrequencyKey, HashSet<TKey>>();
         private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+        private long _accessCounter;
 
         public void Add(TKey key)
         {
@@ -26,9 +27,9 @@ namespace Datadog.Trace.Debugger.Caching
             {
                 if (!_frequencyMap.ContainsKey(key))
                 {
-                    var now = DateTime.UtcNow;
-                    _frequencyMap[key] = new FrequencyItem(1, now);
-                    AddToFrequencySet(key, 1, now);
+                    var accessOrder = Interlocked.Increment(ref _accessCounter);
+                    _frequencyMap[key] = new FrequencyItem(1, accessOrder);
+                    AddToFrequencySet(key, 1, accessOrder);
                 }
             }
             finally
@@ -37,20 +38,12 @@ namespace Datadog.Trace.Debugger.Caching
             }
         }
 
-        public void Remove(TKey key)
+        private void Remove(TKey key)
         {
-            _lock.EnterWriteLock();
-            try
+            if (_frequencyMap.TryGetValue(key, out var item))
             {
-                if (_frequencyMap.TryGetValue(key, out var item))
-                {
-                    RemoveFromFrequencySet(key, item.Frequency, item.LastAccessed);
-                    _frequencyMap.Remove(key);
-                }
-            }
-            finally
-            {
-                _lock.ExitWriteLock();
+                RemoveFromFrequencySet(key, item.Frequency, item.AccessOrder);
+                _frequencyMap.Remove(key);
             }
         }
 
@@ -61,10 +54,10 @@ namespace Datadog.Trace.Debugger.Caching
             {
                 if (_frequencyMap.TryGetValue(key, out var item))
                 {
-                    RemoveFromFrequencySet(key, item.Frequency, item.LastAccessed);
+                    RemoveFromFrequencySet(key, item.Frequency, item.AccessOrder);
                     item.Frequency++;
-                    item.LastAccessed = DateTime.UtcNow;
-                    AddToFrequencySet(key, item.Frequency, item.LastAccessed);
+                    item.AccessOrder = Interlocked.Increment(ref _accessCounter);
+                    AddToFrequencySet(key, item.Frequency, item.AccessOrder);
                 }
             }
             finally
@@ -94,9 +87,9 @@ namespace Datadog.Trace.Debugger.Caching
             }
         }
 
-        private void AddToFrequencySet(TKey key, int frequency, DateTime lastAccessed)
+        private void AddToFrequencySet(TKey key, int frequency, long accessOrder)
         {
-            var tuple = new FrequencyKey(frequency, lastAccessed);
+            var tuple = new FrequencyKey(frequency, accessOrder);
             if (!_frequencySortedSet.TryGetValue(tuple, out var set))
             {
                 set = new HashSet<TKey>();
@@ -106,9 +99,9 @@ namespace Datadog.Trace.Debugger.Caching
             set.Add(key);
         }
 
-        private void RemoveFromFrequencySet(TKey key, int frequency, DateTime lastAccessed)
+        private void RemoveFromFrequencySet(TKey key, int frequency, long accessOrder)
         {
-            var tuple = new FrequencyKey(frequency, lastAccessed);
+            var tuple = new FrequencyKey(frequency, accessOrder);
             if (_frequencySortedSet.TryGetValue(tuple, out var set))
             {
                 set.Remove(key);
@@ -124,19 +117,22 @@ namespace Datadog.Trace.Debugger.Caching
             _lock.Dispose();
         }
 
-        private record struct FrequencyKey(int Frequency, DateTime LastAccessed);
-
-        private class FrequencyItem
+        private readonly record struct FrequencyKey(int Frequency, long AccessOrder) : IComparable<FrequencyKey>
         {
-            public FrequencyItem(int frequency, DateTime lastAccessed)
+            public int CompareTo(FrequencyKey other)
             {
-                Frequency = frequency;
-                LastAccessed = lastAccessed;
+                var frequencyComparison = Frequency.CompareTo(other.Frequency);
+                return frequencyComparison != 0
+                           ? frequencyComparison
+                           : AccessOrder.CompareTo(other.AccessOrder);
             }
+        }
 
-            public int Frequency { get; set; }
+        private class FrequencyItem(int frequency, long accessOrder)
+        {
+            public int Frequency { get; set; } = frequency;
 
-            public DateTime LastAccessed { get; set; }
+            public long AccessOrder { get; set; } = accessOrder;
         }
     }
 }
