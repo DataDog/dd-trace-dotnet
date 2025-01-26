@@ -4366,7 +4366,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
     if (!pbUseCachedFunction)
     {
-        return S_OK;
+        // return S_OK;
     }
 
     // keep this lock until we are done using the module,
@@ -4392,6 +4392,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
                         functionId);
         return S_OK;
+    }
+
+    ComPtr<IUnknown> metadata_interfaces;
+    FunctionInfo* function_info = nullptr;
+    hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf());
+    if (SUCCEEDED(hr))
+    {
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        function_info = new FunctionInfo(GetFunctionInfo(metadata_import, function_token));
+        Logger::Debug("JITCachedFunctionSearchStarted: Method:", function_info->type.name, ".", function_info->name, " Value: ", *pbUseCachedFunction);
     }
 
     // Call RequestRejitOrRevert for register inliners and current NGEN module.
@@ -4425,16 +4436,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         Logger::Debug("JITCachedFunctionSearchStarted: ModuleInfo is not valid. ModuleId=", module_id);
         return S_OK;
-    }
-
-    ComPtr<IUnknown> metadata_interfaces;
-    FunctionInfo* function_info = nullptr;
-    hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
-                                               metadata_interfaces.GetAddressOf());
-    if (SUCCEEDED(hr))
-    {
-        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-        function_info = new FunctionInfo(GetFunctionInfo(metadata_import, function_token));
     }
 
     const auto& appDomainId = module_info.assembly.app_domain_id;
@@ -4487,22 +4488,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // We reject the image and return
         *pbUseCachedFunction = false;
         return S_OK;
-    }
-    else
-    {
-        if (function_info != nullptr)
-        {
-            Logger::Debug("JITCachedFunctionSearchStarted: NGEN Image: Not Rejected (because rewritten) for Module: ", module_info.assembly.name,
-                          ", Method:", function_info->type.name, ".", function_info->name,
-                          "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
-                          ", methodDef=", HexStr(function_token), "]");
-        }
-        else
-        {
-            Logger::Debug("JITCachedFunctionSearchStarted: NGEN Image: Not Rejected (because rewritten) for Module: ", module_info.assembly.name,
-                          ", Function: ", HexStr(function_token),
-                          " previous value = ", *pbUseCachedFunction ? "true" : "false");
-        }
     }
 
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
