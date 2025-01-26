@@ -10,7 +10,7 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <GenerateProgramFile>false</GenerateProgramFile>
+    <!--<GenerateProgramFile>false</GenerateProgramFile>-->
 
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
