@@ -603,6 +603,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore\Samples.AzureFunctions.V4Isolated.AspNetCore.csproj", "{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.S3", "tracer\test\test-applications\integrations\Samples.AWS.S3\Samples.AWS.S3.csproj", "{0C0578CB-3B67-4F95-8547-206CD2A560CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1447,6 +1449,10 @@ Global
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1682,6 +1688,7 @@ Global
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1691,6 +1698,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{061ab58b-8235-4dae-8d56-5f081dd78f5e}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{086ff8a0-9cee-470a-9751-78b0f1340649}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0980bcdd-a231-42d1-b689-41a41bba161a}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0c0578cb-3b67-4f95-8547-206cd2a560cd}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0d996eee-7c04-4888-af48-9c1e2f261a00}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0df4363a-0df4-4882-a39f-3c9f404b8de5}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0e036453-2c80-4fc9-a517-771f0071734b}*SharedItemsImports = 5
