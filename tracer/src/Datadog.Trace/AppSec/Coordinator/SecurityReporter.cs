@@ -177,7 +177,7 @@ internal partial class SecurityReporter
     internal void TryReport(IResult result, bool blocked, int? status = null)
     {
         IHeadersCollection? headers = null;
-        if (!_httpTransport.ReportedExternalWafsRequestHeaders && !_httpTransport.IsContextUninitialized)
+        if (!_httpTransport.ReportedExternalWafsRequestHeaders && !_httpTransport.IsAdditiveContextDisposed())
         {
             headers = _httpTransport.GetRequestHeaders();
             AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
@@ -220,7 +220,7 @@ internal partial class SecurityReporter
             _span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
 
-            if (headers is null && !_httpTransport.IsContextUninitialized)
+            if (headers is null && !_httpTransport.IsAdditiveContextDisposed())
             {
                 headers = _httpTransport.GetRequestHeaders();
             }

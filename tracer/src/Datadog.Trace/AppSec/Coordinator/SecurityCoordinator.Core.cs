@@ -185,7 +185,7 @@ internal readonly partial struct SecurityCoordinator
                 catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
                 {
                     Log.Debug(e, "Exception while trying to access Items of a Context.");
-                    IsContextUninitialized = true;
+                    SetAdditiveContextDisposed(true);
                     return false;
                 }
 

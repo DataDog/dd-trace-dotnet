@@ -22,8 +22,6 @@ internal abstract class HttpTransportBase
 
     internal abstract bool IsBlocked { get; }
 
-    internal bool IsContextUninitialized { get; set; }
-
     internal abstract int StatusCode { get; }
 
     internal abstract IDictionary<string, object>? RouteData { get; }
