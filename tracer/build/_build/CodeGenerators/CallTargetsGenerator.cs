@@ -13,9 +13,7 @@ namespace CodeGenerators
 {
     internal static class CallTargetsGenerator
     {
-        private const string NullLiteral = "null";
-
-        public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version, AbsolutePath dependabotPath) 
+        public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version, AbsolutePath dependabotPath)
         {
             Logger.Debug("Generating CallTarget definitions file ...");
 
@@ -536,7 +534,7 @@ namespace CodeGenerators
             {
                 signatureTexts.Add(GetSignature(definition.Key));
             }
-           
+
             var signatures = new Dictionary<string, string>();
             foreach (var sig in signatureTexts.OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
             {
@@ -595,7 +593,6 @@ namespace CodeGenerators
                 }
                 }
                 """);
-
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
             var fileName = outputPath / "generated_calltargets.g.cpp";

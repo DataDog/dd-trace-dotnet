@@ -197,7 +197,7 @@ partial class Build : NukeBuild
 
     Target BuildManagedTracerHome => _ => _
         .Unlisted()
-        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .Description("Builds the managed src, and publishes the tracer home directory")
         .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
@@ -207,10 +207,10 @@ partial class Build : NukeBuild
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile);
-    
+
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
-        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .Description("Builds the managed src, and publishes the tracer home directory")
         .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
