@@ -176,15 +176,15 @@ internal readonly partial struct SecurityCoordinator
             {
                 IDictionary<object, object?>? items;
 
-                // In some situations the HttpContext could have already been Uninitialized and the features
-                // are set to null, thus throwing an exception when trying to access the Items
+                // In some situations the HttpContext could have already been Uninitialized,
+                // thus throwing an exception when trying to access the Items
                 try
                 {
                     items = Context.Items;
                 }
-                catch (NullReferenceException e)
+                catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
                 {
-                    Log.Debug(e, "NullReferenceException while trying to access Items of a Context.");
+                    Log.Debug(e, "Exception while trying to access Items of a Context.");
                     IsContextUninitialized = true;
                     return false;
                 }
