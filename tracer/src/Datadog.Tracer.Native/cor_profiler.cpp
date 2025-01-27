@@ -570,10 +570,6 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleID module_id,
                                                              shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
 
-                        // Store this methodDef token in the internal tokens list
-                        auto intTokens = internal_rewrite_tokens.Get();
-                        intTokens->insert({ module_id, methodDef });
-
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
@@ -940,7 +936,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
-        managedProfilerModuleId_ = module_id;
+        managedInternalModules_.push_back(module_id);
 #ifdef _WIN32
         RewritingPInvokeMaps(module_id, module_metadata, WStr("windows"), windows_nativemethods_type);
         RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
@@ -1042,6 +1038,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             const auto& assemblyVersion = assemblyImport.version.str();
 
             Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
+            managedInternalModules_.push_back(module_id);
 
             // Rewrite Instrumentation.IsManualInstrumentationOnly()
             RewriteIsManualInstrumentationOnly(module_metadata, module_id);
@@ -2721,10 +2718,8 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                 module_metadata.metadata_import));
     }
 
-    // Store this methodDef token in the internal tokens list
-    auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->insert({ module_id, getDistributedTraceMethodDef });
-
+    Logger::Debug("MethodDef was added as an internal rewrite: ", getDistributedTraceMethodDef);
+    getDistributedTraceMethodDef_ = getDistributedTraceMethodDef;
     return hr;
 }
 
@@ -2799,8 +2794,7 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
 
     // Store this methodDef token in the internal tokens list
     Logger::Debug("MethodDef was added as an internal rewrite: ", getNativeTracerVersionMethodDef);
-    auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->insert({ module_id, getNativeTracerVersionMethodDef });
+    getNativeTracerVersionMethodDef_ = getNativeTracerVersionMethodDef;
 
     return hr;
 }
@@ -2866,8 +2860,7 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
 
     // Store this methodDef token in the internal tokens list
     Logger::Debug("MethodDef was added as an internal rewrite: ", isAutoEnabledMethodDef);
-    auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->insert({ module_id, isAutoEnabledMethodDef });
+    isManualInstrumentationOnlyMethodDef_ = isAutoEnabledMethodDef;
 
     return hr;
 }
@@ -3255,10 +3248,6 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
                      function_token);
         return hr;
     }
-
-    // Store this methodDef token in the internal tokens list
-    auto intTokens = internal_rewrite_tokens.Get();
-    intTokens->insert({ module_id, function_token });
 
     return S_OK;
 }
@@ -4442,17 +4431,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     // Let's check if the method has been rewritten internally
     // if that's the case we don't accept the image
-    auto internalTokensOpt = internal_rewrite_tokens.TryGet();
-    if (!internalTokensOpt.has_value())
-    {
-        Logger::Error(
-            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the internal_rewrite_tokens collection for functionId ",
-            functionId);
-        return S_OK;
-    }
-
-    auto& internalTokens = internalTokensOpt.value();
-    bool hasBeenRewritten = internalTokens->find({ module_id, function_token }) != internalTokens->end();
+    bool isKnownMethodDef = function_token == getDistributedTraceMethodDef_ || function_token == getNativeTracerVersionMethodDef_ || function_token == isManualInstrumentationOnlyMethodDef_;
+    bool hasBeenRewritten = isKnownMethodDef && shared::Contains(managedInternalModules_, module_id);
     if (hasBeenRewritten)
     {
         // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
@@ -4481,10 +4461,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // We reject the image and return
         *pbUseCachedFunction = false;
         return S_OK;
-    }
-    else
-    {
-        Logger::Debug("JITCachedFunctionSearchStarted: non rejected by internal token on token: ", function_token, " Looking into a hashset with ", internalTokens->size(), " elements");
     }
 
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core

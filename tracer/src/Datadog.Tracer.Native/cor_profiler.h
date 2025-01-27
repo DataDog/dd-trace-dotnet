@@ -78,9 +78,6 @@ private:
     bool call_target_bubble_up_exception_available = false;
     bool call_target_bubble_up_exception_function_available = false;
 
-    // Internal rewrite tokens
-    Synchronized<std::unordered_set<ModuleIDMethodDef, ModuleIDMethodDef, ModuleIDMethodDef>> internal_rewrite_tokens;
-
     //
     // Debugger Members
     //
@@ -101,11 +98,13 @@ private:
     std::vector<std::string> opcodes_names;
 
     //
-    // Module helper variables
+    // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
     //
     Synchronized<std::vector<ModuleID>> module_ids;
-
-    ModuleID managedProfilerModuleId_;
+    std::vector<ModuleID> managedInternalModules_;
+    mdMethodDef getDistributedTraceMethodDef_;
+    mdMethodDef getNativeTracerVersionMethodDef_;
+    mdMethodDef isManualInstrumentationOnlyMethodDef_;
 
     //
     // Dataflow members
