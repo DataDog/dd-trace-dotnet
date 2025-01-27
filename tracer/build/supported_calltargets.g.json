@@ -2060,6 +2060,55 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "PutObject",
+    "TargetReturnType": "Amazon.S3.Model.PutObjectResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.PutObjectRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "PutObjectAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.PutObjectResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.PutObjectRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AwsSdk",
     "AssemblyName": "AWSSDK.Core",
     "TargetTypeName": "Amazon.Runtime.Internal.RuntimePipeline",

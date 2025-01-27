@@ -116,6 +116,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AwsS3,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSdk,

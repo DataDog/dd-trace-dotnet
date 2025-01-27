@@ -36,6 +36,11 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.54 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.54" />
 
+    <!-- Integration: AWSSDK.S3 -->
+    <!--    Assembly: AWSSDK.S3 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.412.4 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.412.4" />
+
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.77 -->
