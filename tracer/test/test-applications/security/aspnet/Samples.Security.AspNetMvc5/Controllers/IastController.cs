@@ -354,6 +354,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (endRequest)
             {
+                Response.Flush();
                 Response.End();
                 Response.Close();
                 HttpContext.ApplicationInstance.CompleteRequest();
