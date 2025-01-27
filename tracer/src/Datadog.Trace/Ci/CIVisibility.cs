@@ -15,13 +15,11 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
@@ -576,30 +574,6 @@ namespace Datadog.Trace.Ci
             {
                 if (enabled)
                 {
-                    processName ??= GetProcessName();
-                    // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
-                    {
-                        var commandLine = Environment.CommandLine;
-                        if (commandLine.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet.exe test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet.exe\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet.exe' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet.dll test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet.dll\" test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("dotnet.dll' test", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf(" test ", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("datacollector", StringComparison.OrdinalIgnoreCase) == -1 &&
-                            commandLine.IndexOf("vstest.console.dll", StringComparison.OrdinalIgnoreCase) == -1)
-                        {
-                            Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", commandLine);
-                            return false;
-                        }
-                    }
-
                     Log.Information("CI Visibility Enabled by Configuration");
                     return true;
                 }

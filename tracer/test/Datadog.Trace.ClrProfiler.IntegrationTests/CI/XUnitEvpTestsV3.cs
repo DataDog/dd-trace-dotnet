@@ -156,9 +156,9 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
-                                      arguments: "--collect:\"XPlat Code Coverage\"",
                                       packageVersion: packageVersion,
-                                      expectedExitCode: 1);
+                                      expectedExitCode: 1,
+                                      useDotnetExec: true);
 
         // Check the tests, suites and modules count
         Assert.Equal(ExpectedTestCount, tests.Count);
@@ -312,7 +312,10 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                             "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}",
                             "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
                             "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
-                            "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
+                            "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}",
+                            "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleParameterizedTest\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                            "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleParameterizedTest\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                            "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleParameterizedTest\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
                         break;
 
                     case "SimpleSkipParameterizedTest":
@@ -330,7 +333,10 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                             "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}",
                             "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
                             "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
-                            "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                            "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}",
+                            "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleErrorParameterizedTest\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                            "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleErrorParameterizedTest\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                            "{\"metadata\":{\"test_name\":\"Samples.XUnitTestsV3.TestSuite.SimpleErrorParameterizedTest\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
                         break;
 
                     case "UnskippableTest":
@@ -342,9 +348,6 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
                 // check remaining tag (only the name)
                 Assert.Single(targetTest.Meta);
-
-                // check if we received code coverage information at session level
-                codeCoverageReceived.Value.Should().BeTrue();
             }
         }
         catch
@@ -389,8 +392,6 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [Trait("Category", "EarlyFlakeDetection")]
     public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();
