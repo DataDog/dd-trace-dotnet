@@ -64,9 +64,10 @@ const shared::WSTRING include_assemblies[]{
 };
 
 // Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
-// Note that you also consider adding to the SSI tracer/build/artifacts/requirements.json file
+// Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 const shared::WSTRING default_exclude_assemblies[]{
     WStr("aspnet_state.exe"),
+    WStr("CollectGuestLogs.exe"),                       // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
@@ -93,7 +94,9 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
-};
+    WStr("WaAppAgent.exe"),                             // https://github.com/Azure/WindowsVMAgent
+    WStr("WindowsAzureGuestAgent.exe")                  // https://github.com/Azure/WindowsVMAgent
+};                
 
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
     WStr("System."), WStr("Microsoft."), WStr("Datadog.")};
