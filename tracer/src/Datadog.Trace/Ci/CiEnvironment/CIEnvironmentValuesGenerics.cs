@@ -211,7 +211,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
                 if (string.IsNullOrEmpty(defaultValue))
                 {
-                    Log.Error("The Git repository couldn't be automatically extracted.");
+                    Log.Warning("The Git repository couldn't be automatically extracted.");
                 }
 
                 // If not set use the default value
@@ -245,7 +245,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
                 if (string.IsNullOrEmpty(defaultValue))
                 {
-                    Log.Error("The Git commit sha couldn't be automatically extracted.");
+                    Log.Warning("The Git commit sha couldn't be automatically extracted.");
                 }
 
                 // If not set use the default value
