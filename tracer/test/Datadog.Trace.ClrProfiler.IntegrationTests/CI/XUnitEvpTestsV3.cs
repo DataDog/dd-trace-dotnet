@@ -463,7 +463,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: true);
 
             // Check the tests, suites and modules count
             Assert.Equal(expectedSpans, tests.Count);
