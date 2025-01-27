@@ -145,6 +145,8 @@ private:
     //
     void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool isInterface, bool enable = true);
 
+    // Get function full name helper
+    WSTRING GetFunctionFullName(FunctionID functionId);
 public:
     CorProfiler() = default;
 

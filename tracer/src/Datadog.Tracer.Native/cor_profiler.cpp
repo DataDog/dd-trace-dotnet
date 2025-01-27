@@ -1498,6 +1498,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
+    Logger::Debug("JITCompilationStarted: ", GetFunctionFullName(function_id));
+
     ModuleID module_id;
     mdToken function_token = mdTokenNil;
 
@@ -4366,7 +4368,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
     if (!pbUseCachedFunction)
     {
-        return S_OK;
+        // return S_OK;
     }
 
     // keep this lock until we are done using the module,
@@ -4394,6 +4396,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    ComPtr<IUnknown> metadata_interfaces;
+    FunctionInfo* function_info = nullptr;
+    hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf());
+    if (SUCCEEDED(hr))
+    {
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        function_info = new FunctionInfo(GetFunctionInfo(metadata_import, function_token));
+        Logger::Debug("JITCachedFunctionSearchStarted: Method:", function_info->type.name, ".", function_info->name, " Value: ", *pbUseCachedFunction);
+    }
+
     // Call RequestRejitOrRevert for register inliners and current NGEN module.
     if (rejit_handler != nullptr)
     {
@@ -4415,6 +4428,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
+        Logger::Debug("JITCachedFunctionSearchStarted: Enabling NGEN. we haven't stored a ModuleMetadata for this module. ModuleId=", module_id);
         *pbUseCachedFunction = true;
         return S_OK;
     }
@@ -4422,7 +4436,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
     {
-        Logger::Debug("Disabling NGEN. ModuleInfo is not valid. ModuleId=", module_id);
+        Logger::Debug("JITCachedFunctionSearchStarted: ModuleInfo is not valid. ModuleId=", module_id);
         return S_OK;
     }
 
@@ -4433,7 +4447,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (!has_loader_injected_in_appdomain)
     {
-        Logger::Debug("Disabling NGEN due to missing loader.");
+        Logger::Debug("JITCachedFunctionSearchStarted: Disabling NGEN due to missing loader.");
         // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject
         // it.
         *pbUseCachedFunction = false;
@@ -4458,21 +4472,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
         if (Logger::IsDebugEnabled())
         {
-            ComPtr<IUnknown> metadata_interfaces;
-            if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
-                                               metadata_interfaces.GetAddressOf()) == S_OK)
+            if (function_info != nullptr)
             {
-                const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-                auto functionInfo = GetFunctionInfo(metadata_import, function_token);
-
-                Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
-                              ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                Logger::Debug("JITCachedFunctionSearchStarted: NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Method:", function_info->type.name, ".", function_info->name,
                               "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
                               ", methodDef=", HexStr(function_token), "]");
             }
             else
             {
-                Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                Logger::Debug("JITCachedFunctionSearchStarted: NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
                               ", Function: ", HexStr(function_token),
                               " previous value = ", *pbUseCachedFunction ? "true" : "false");
             }
@@ -4481,10 +4490,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // We reject the image and return
         *pbUseCachedFunction = false;
         return S_OK;
-    }
-    else
-    {
-        Logger::Debug("JITCachedFunctionSearchStarted: non rejected by internal token on token: ", function_token, " Looking into a hashset with ", internalTokens->size(), " elements");
     }
 
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
@@ -4511,14 +4516,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
                 const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
                 auto functionInfo = GetFunctionInfo(metadata_import, function_token);
 
-                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                Logger::Debug("JITCachedFunctionSearchStarted: NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Method:", functionInfo.type.name, ".", functionInfo.name,
                               "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
                               ", methodDef=", HexStr(function_token), "]");
             }
             else
             {
-                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                Logger::Debug("JITCachedFunctionSearchStarted: NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Function: ", HexStr(function_token),
                               " previous value = ", *pbUseCachedFunction ? "true" : "false");
             }          
@@ -4526,6 +4531,36 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     return S_OK;
+}
+
+WSTRING CorProfiler::GetFunctionFullName(FunctionID functionId)
+{
+    // Extract Module metadata
+    ModuleID module_id;
+    mdToken function_token = mdTokenNil;
+
+    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GetFunctionFullName: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
+                        functionId);
+        return EmptyWStr;
+    }
+
+    ComPtr<IUnknown> metadata_interfaces;
+    FunctionInfo* function_info = nullptr;
+    hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf());
+    if (FAILED(hr))
+    {
+        Logger::Warn("GetFunctionFullName: Call to ICorProfilerInfo4.GetModuleMetaData() failed for ",
+                        module_id);
+        return EmptyWStr;
+    }
+
+    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    function_info = new FunctionInfo(GetFunctionInfo(metadata_import, function_token));
+    return function_info->type.name + WStr(".") + function_info->name;
 }
 
 } // namespace trace
