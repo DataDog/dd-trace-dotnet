@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
@@ -274,7 +275,7 @@ public class CreatedumpTests : ConsoleTestHelper
         File.Exists(reportFile.Path).Should().BeTrue();
 
         var report = JObject.Parse(reportFile.GetContent());
-        report["tags"]["is_crash"].Value<string>().Should().Be("true");
+        report["error"]["is_crash"].Value<string>().Should().Be("true");
 
         var metadataTags = (JArray)report["metadata"]!["tags"];
 
@@ -286,7 +287,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
+            report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
         }
     }
 
@@ -464,7 +465,7 @@ public class CreatedumpTests : ConsoleTestHelper
             }
 
             var report = JObject.Parse(log.Logs[0].Message);
-            return report["additional_stacktraces"] != null;
+            return report["threads"] != null;
         }
 
         var agent = helper.Agent;
@@ -575,20 +576,19 @@ public class CreatedumpTests : ConsoleTestHelper
         using var assertionScope = new AssertionScope();
         assertionScope.AddReportable("Report", report.ToString());
 
-        ValidateStacktrace(report["stacktrace"]);
-        ValidateStacktrace(report["additional_stacktraces"][mainThreadId.Value.ToString()]);
+        ValidateStacktrace(report["error"]["stack"]);
 
         void ValidateStacktrace(JToken callstack)
         {
             callstack.Should().BeOfType<JArray>();
 
-            var frames = (JArray)callstack;
+            var frames = (JArray)callstack["frames"];
 
             using var assertionScope = new AssertionScope();
 
             try
             {
-                assertionScope.AddReportable("Frames", string.Join(Environment.NewLine, frames.Select(f => f["names"][0]["name"].Value<string>())));
+                assertionScope.AddReportable("Frames", string.Join(Environment.NewLine, frames.Select(f => f["function"].Value<string>())));
             }
             catch (Exception e)
             {
@@ -597,7 +597,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var expectedFrame in expectedCallstack)
             {
-                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["names"][0]["name"].Value<string>()));
+                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["function"].Value<string>()));
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
             }
@@ -606,7 +606,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var frame in frames)
             {
-                var moduleName = frame["names"][0]["name"].Value<string>().Split('!').First();
+                var moduleName = frame["function"].Value<string>().Split('!').First();
 
                 if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
                 {
@@ -615,13 +615,10 @@ public class CreatedumpTests : ConsoleTestHelper
                         continue;
                     }
 
+                    var expectedBuildId = string.Empty;
+
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     {
-                        // Validate PDBs
-                        var pdbNode = frame["normalized_ip"]["meta"]["Pdb"];
-                        var hash = ((JArray)pdbNode["guid"]).Select(g => g.Value<byte>()).ToArray();
-                        var age = pdbNode["age"].Value<uint>();
-
                         // Open the PE file
                         using var file = File.OpenRead(moduleName);
                         using var peReader = new PEReader(file);
@@ -630,27 +627,19 @@ public class CreatedumpTests : ConsoleTestHelper
                         var codeViewEntry = debugDirectoryEntries.Single(e => e.Type == DebugDirectoryEntryType.CodeView);
                         var pdbInfo = peReader.ReadCodeViewDebugDirectoryData(codeViewEntry);
 
-                        age.Should().Be(unchecked((uint)pdbInfo.Age));
-                        hash.Should().Equal(pdbInfo.Guid.ToByteArray());
+                        frame["build_id_type"].Value<string>().Should().Be("PDB");
+                        expectedBuildId = $"{pdbInfo.Guid.ToString("N")}{unchecked((uint)pdbInfo.Age)}".ToLower();
                     }
                     else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     {
-                        // Validate sofile
-                        if (frame["normalized_ip"] == null)
-                        {
-                            // On linux we can face cases where the build_id is not available:
-                            // - specifically on alpine, /lib/ld-musl-XX do not have a build_id.
-                            // - We are looking at a frame for which the library was unloaded /memfd:doublemapper (deleted)
-                            continue;
-                        }
-
-                        var elfNode = frame["normalized_ip"]["meta"]["Elf"];
-                        var buildId = ((JArray)elfNode["build_id"]).Select(g => g.Value<byte>()).ToArray();
+                        frame["build_id_type"].Value<string>().Should().Be("GNU"); // or SHA1??
 
                         using var elf = ELFReader.Load(moduleName);
                         var buildIdNote = elf.GetSection(".note.gnu.build-id") as INoteSection;
-                        buildId.Should().Equal(buildIdNote.Description);
+                        expectedBuildId = ToHexString(buildIdNote.Description).ToLower();
                     }
+
+                    frame["build_id"].Value<string>().Should().Be(expectedBuildId);
                 }
             }
 
@@ -666,6 +655,17 @@ public class CreatedumpTests : ConsoleTestHelper
             {
                 validatedModules.Should().ContainMatch($@"*{Path.DirectorySeparatorChar}{clrModuleName}");
             }
+        }
+
+        string ToHexString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+
+            return hex.ToString();
         }
     }
 
