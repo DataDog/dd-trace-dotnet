@@ -379,7 +379,7 @@ partial class Build
         .DependsOn(CompileTracerNativeSrcWindows)
         .DependsOn(CompileNativeSrcMacOs)
         .DependsOn(CompileTracerNativeSrcLinux)
-        .After(CompileManagedSrc);
+        .After(GenerateIntegrationDefinitionFiles);
 
     Target CompileTracerNativeTests => _ => _
         .Unlisted()
@@ -442,10 +442,6 @@ partial class Build
             var toBuild = include.Except(exclude);
 
             DotnetBuild(toBuild, noDependencies: false);
-
-            var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
-            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
         });
 
     Target CompileTracerNativeTestsWindows => _ => _

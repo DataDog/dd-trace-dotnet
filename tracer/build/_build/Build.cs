@@ -189,16 +189,16 @@ partial class Build : NukeBuild
     Target BuildNativeTracerHome => _ => _
         .Unlisted()
         .Description("Builds the native src ")
-        .After(Clean, CompileManagedLoader)
+        .After(Clean, CompileManagedLoader, BuildManagedTracerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(CompileTracerNativeSrc)
-        .DependsOn(PublishNativeTracer);
-
+        .DependsOn(PublishNativeTracer)
+        .DependsOn(GenerateIntegrationDefinitionFiles);
 
     Target BuildManagedTracerHome => _ => _
         .Unlisted()
         .Description("Builds the managed src, and publishes the tracer home directory")
-        .After(Clean, BuildNativeTracerHome)
+        .After(Clean)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)

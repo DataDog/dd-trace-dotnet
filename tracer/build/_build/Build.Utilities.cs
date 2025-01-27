@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
+using CodeGenerators;
 using DiffMatchPatch;
 using GenerateSpanDocumentation;
 using GeneratePackageVersions;
@@ -471,6 +472,17 @@ partial class Build
                     }
                 });
 
+    Target GenerateIntegrationDefinitionFiles => _ => _
+        .Description("Regenerates integration definition files for call target and call site")
+        .After(CompileManagedSrc)
+        .Executes(() =>
+        {
+            Func<string,string> getDllPath = tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll";
+            var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, getDllPath, nativeGeneratedFilesOutputPath);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, getDllPath, nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+        });
 
     private void ReplaceReceivedFilesInSnapshots()
     {
