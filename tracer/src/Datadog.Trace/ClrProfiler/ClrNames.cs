@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string GenericTaskWithGenericMethodParameter = "System.Threading.Tasks.Task`1[!!0]";
         public const string ObjectTask = "System.Threading.Tasks.Task`1[System.Object]";
         public const string Int32Task = "System.Threading.Tasks.Task`1[System.Int32]";
+        public const string StringTask = "System.Threading.Tasks.Task`1[System.String]";
 
         public const string Type = "System.Type";
         public const string Exception = "System.Exception";

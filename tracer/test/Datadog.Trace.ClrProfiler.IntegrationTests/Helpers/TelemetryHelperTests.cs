@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -48,25 +49,35 @@ public class TelemetryHelperTests
     public void AssertIntegration_HandlesMultipleTelemetryPushes()
     {
         var collector = new IntegrationTelemetryCollector();
+        var metricsCollector = new MetricsTelemetryCollector();
         var telemetryData = new List<TelemetryData>();
 
         collector.IntegrationRunning(IntegrationId.Aerospike);
 
-        telemetryData.Add(BuildTelemetryData(collector.GetData()));
+        metricsCollector.AggregateMetrics();
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), metrics: metricsCollector.GetMetrics()));
 
+        // The updates to both the IntegrationTelemetryCollector and the MetricsTelemetryCollector
+        // are typically handled by TelemetryController.IntegrationGeneratedSpan(IntegrationId),
+        // so we simulate that here with the separate calls
         collector.IntegrationGeneratedSpan(IntegrationId.Aerospike);
+        metricsCollector.RecordCountSpanCreated(IntegrationId.Aerospike.GetMetricTag());
+
         collector.IntegrationRunning(IntegrationId.Couchbase);
-        telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppStarted: false));
+
+        metricsCollector.AggregateMetrics();
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), metrics: metricsCollector.GetMetrics(), sendAppStarted: false));
 
         collector.IntegrationRunning(IntegrationId.Kafka);
-        collector.IntegrationGeneratedSpan(IntegrationId.Msmq);
+        collector.IntegrationRunning(IntegrationId.Msmq);
         var tracerSettings = TracerSettings.Create(new()
         {
             { ConfigurationKeys.DisabledIntegrations, $"{nameof(IntegrationId.Kafka)};{nameof(IntegrationId.Msmq)}" }
         });
 
         collector.RecordTracerSettings(tracerSettings);
-        telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppClosing: true));
+        metricsCollector.AggregateMetrics();
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), metrics: metricsCollector.GetMetrics(), sendAppClosing: true));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
@@ -150,12 +161,13 @@ public class TelemetryHelperTests
     private TelemetryData BuildTelemetryData(
         ICollection<IntegrationTelemetryData> integrations,
         ICollection<ConfigurationKeyValue> configuration = null,
+        MetricResults? metrics = null,
         bool sendAppStarted = true,
         bool sendAppClosing = false)
         => _dataBuilder.BuildTelemetryData(
                 _app,
                 _host,
-                new TelemetryInput(configuration, null, integrations, null, null, sendAppStarted),
+                new TelemetryInput(configuration, null, integrations, metrics, null, sendAppStarted),
                 namingSchemeVersion: "1",
                 sendAppClosing);
 }

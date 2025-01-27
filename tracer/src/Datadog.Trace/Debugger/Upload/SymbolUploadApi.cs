@@ -84,21 +84,24 @@ namespace Datadog.Trace.Debugger.Upload
 
             MultipartFormItem symbolsItem;
 
-            if (_enableCompression)
+            if (!this._enableCompression)
             {
-                using var memoryStream = new MemoryStream();
-#if NETFRAMEWORK
-                using var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream);
-                await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
-#else
-                using var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
-                await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
-#endif
-                symbolsItem = new MultipartFormItem("file", "gzip", "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols);
             }
             else
             {
-                symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols);
+                using var memoryStream = new MemoryStream();
+#if NETFRAMEWORK
+                using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
+#else
+                using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+#endif
+                {
+                    await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
+                    await gzipStream.FlushAsync().ConfigureAwait(false);
+                }
+
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
             }
 
             var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };

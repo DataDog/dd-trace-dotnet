@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -249,6 +251,7 @@ partial class Build
                 x =>
                 {
                     x = x
+                       .SetDotnetPath(TargetPlatform)
                        .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
                        .EnableNoRestore()
                        .EnableNoBuild()
@@ -334,7 +337,11 @@ partial class Build
                 var metadataReaders = new List<Tuple<object, MethodInfo, string>>();
                 foreach (var testAssemblyPath in testAssembliesPaths)
                 {
-                    var currentAssembly = Assembly.LoadFile(testAssemblyPath);
+                    if (!TryLoadAssembly(testAssemblyPath, out var currentAssembly))
+                    {
+                        continue;
+                    }
+
                     var symbolExtractor = createMethod?.Invoke(null, new object[] { currentAssembly });
                     if (symbolExtractor == null)
                     {
@@ -441,6 +448,26 @@ partial class Build
         }
     }
 
+    static bool TryLoadAssembly(string testAssemblyPath, [NotNullWhen(true)] out Assembly assembly)
+    {
+        try
+        {
+            assembly = Assembly.LoadFile(testAssemblyPath);
+            return true;
+        }
+        catch (BadImageFormatException)
+        {
+            // ignore
+        }
+        catch (Exception e)
+        {
+            Logger.Warning(e, $"Fail to load assembly: {testAssemblyPath}");
+        }
+
+        assembly = null;
+        return false;
+    }
+
     string GetTracerAssemblyPath(TargetFramework framework)
     {
         TargetFramework tracerFramework = null;
@@ -482,7 +509,8 @@ partial class Build
 
         bool Exclude(string path)
         {
-            return path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}");
+            // skip obj folder and the `testhost`process itself
+            return path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") || Path.GetFileNameWithoutExtension(path).Equals("testhost");
         }
 
         bool IsSupportedExtension(string path)
@@ -598,20 +626,20 @@ class ExplorationTestDescription
             {
                 Name = ExplorationTestName.eShopOnWeb,
                 GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
-                GitRepositoryTag = "netcore2.1",
+                GitRepositoryTag = "main",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET8_0 }
             },
             ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
                 Name = ExplorationTestName.protobuf,
                 GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
-                GitRepositoryTag = "v3.19.1",
+                GitRepositoryTag = "v3.23.0", // min version targeting net6.0 in tests
                 IsGitShallowCloneSupported = true,
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
                 TestsToIgnore = new string[]
                 {
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion",

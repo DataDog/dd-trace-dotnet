@@ -12,6 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     [DuckCopy]
     internal struct AmqpTimestamp
     {
+        [DuckPropertyOrField]
         public long UnixTime;
     }
 }

@@ -26,6 +26,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -191,7 +192,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
                 process.Kill();
                 throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }
@@ -364,6 +365,17 @@ namespace Datadog.Trace.TestHelpers
         public void SetEnvironmentVariable(string key, string value)
         {
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
+        }
+
+        public void ConfigureContainers(params ContainerFixture[] containers)
+        {
+            foreach (var container in containers)
+            {
+                foreach (var variable in container.GetEnvironmentVariables())
+                {
+                    SetEnvironmentVariable(variable.Key, variable.Value);
+                }
+            }
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)

@@ -49,6 +49,12 @@ public partial class ProcessHelper
             Console.WriteLine($"Error retrieving child processes: {ex.Message}");
         }
 
+        // Now we will check for children of the children (recursively)
+        foreach (var childPid in childPids.ToArray())
+        {
+            childPids.AddRange(GetChildrenIds(childPid));
+        }
+
         return childPids;
     }
 

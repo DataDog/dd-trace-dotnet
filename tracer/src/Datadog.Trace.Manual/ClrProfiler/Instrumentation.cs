@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.SourceGenerators;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler;
 
@@ -14,5 +14,6 @@ internal class Instrumentation
     /// Rewritten by the tracer to return false if automatic instrumentation is enabled.
     /// </summary>
     // [Instrumented] This is auto-rewritten, not instrumented with calltarget
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsManualInstrumentationOnly() => true;
 }

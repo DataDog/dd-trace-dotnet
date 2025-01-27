@@ -912,8 +912,12 @@ std::vector<WSTRING> ModuleInfo::GetCustomAttributes(mdToken token)
                                                                  &attributeCtorToken, &attribute_data, &data_size);
             if (SUCCEEDED(hr))
             {
-                auto attrCtor = GetMemberRefInfo(attributeCtorToken);
-                res.push_back(attrCtor->GetTypeName());
+                mdTypeRef typeToken;
+                if (SUCCEEDED(_metadataImport->GetMemberRefProps(attributeCtorToken, &typeToken, nullptr, 0, nullptr, nullptr, nullptr)))
+                {
+                    auto typeInfo = GetTypeInfo(typeToken);
+                    res.push_back(typeInfo->GetName());
+                }
             }
         }
     }

@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 }
 
                 UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
-                SecurityCoordinator.CollectHeaders(span);
+                SecurityReporter.SafeCollectHeaders(span);
             }
 
             return returnValue;

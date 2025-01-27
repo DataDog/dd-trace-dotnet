@@ -51,6 +51,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         Logger::EnableDebug(true);
     }
 
+    auto isRunningInAas = IsAzureAppServices();
+
+    if (profiler != nullptr)
+    {
+        if (isRunningInAas)
+        {
+            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
+        }
+        else
+        {
+            Logger::Error("The Tracer Profiler is initialized multiple times. This may cause unpredictable failures.",
+                " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
+                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
+        }
+    }
+
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
     // we used to bail-out if tracing was disabled, but we now allow the tracer to be loaded
@@ -157,7 +173,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    if (IsAzureAppServices())
+    if (isRunningInAas)
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
 
@@ -488,7 +504,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
+void CorProfiler::RewritingPInvokeMaps(const ModuleID module_id,
+                                       const ModuleMetadata& module_metadata,
                                        const shared::WSTRING& rewrite_reason,
                                        const shared::WSTRING& nativemethods_type_name,
                                        const shared::WSTRING& library_path)
@@ -552,6 +569,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                         hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
                                                              shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
+
+                        // Store this methodDef token in the internal tokens list
+                        auto intTokens = internal_rewrite_tokens.Get();
+                        intTokens->insert({ module_id, methodDef });
+
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
@@ -887,6 +909,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         }
     }
 
+    // Add the module_id to the module metadata vector (to allow NGEN analysis later)
+    modules.push_back(module_id);
+
     if (module_info.assembly.name == managed_profiler_name)
     {
         // Fix PInvoke Rewriting
@@ -917,15 +942,15 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
         managedProfilerModuleId_ = module_id;
 #ifdef _WIN32
-        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("windows"), windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
 #else
-        RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_id, module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         mdTypeDef bubbleUpTypeDef;
@@ -939,7 +964,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (fs::exists(native_loader_library_path))
         {
             auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
-            RewritingPInvokeMaps(module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
+            RewritingPInvokeMaps(module_id, module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
         }
 
         if (ShouldRewriteProfilerMaps())
@@ -947,7 +972,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
             if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
             {
-                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+                RewritingPInvokeMaps(module_id, module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
             }
         }
 
@@ -1021,8 +1046,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             // Rewrite Instrumentation.IsManualInstrumentationOnly()
             RewriteIsManualInstrumentationOnly(module_metadata, module_id);
         }
-
-        modules.push_back(module_id);
 
         bool searchForTraceAttribute = trace_annotations_enabled;
         if (searchForTraceAttribute)
@@ -2698,6 +2721,10 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                 module_metadata.metadata_import));
     }
 
+    // Store this methodDef token in the internal tokens list
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->insert({ module_id, getDistributedTraceMethodDef });
+
     return hr;
 }
 
@@ -2770,6 +2797,11 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
                                 module_metadata.metadata_import));
     }
 
+    // Store this methodDef token in the internal tokens list
+    Logger::Debug("MethodDef was added as an internal rewrite: ", getNativeTracerVersionMethodDef);
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->insert({ module_id, getNativeTracerVersionMethodDef });
+
     return hr;
 }
 
@@ -2831,6 +2863,11 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
                                 GetFunctionInfo(module_metadata.metadata_import, isAutoEnabledMethodDef),
                                 module_metadata.metadata_import));
     }
+
+    // Store this methodDef token in the internal tokens list
+    Logger::Debug("MethodDef was added as an internal rewrite: ", isAutoEnabledMethodDef);
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->insert({ module_id, isAutoEnabledMethodDef });
 
     return hr;
 }
@@ -3218,6 +3255,10 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
                      function_token);
         return hr;
     }
+
+    // Store this methodDef token in the internal tokens list
+    auto intTokens = internal_rewrite_tokens.Get();
+    intTokens->insert({ module_id, function_token });
 
     return S_OK;
 }
@@ -4331,7 +4372,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     auto modulesOpt = module_ids.TryGet();
-
     if (!modulesOpt.has_value())
     {
         Logger::Error(
@@ -4382,6 +4422,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
     {
+        Logger::Debug("Disabling NGEN. ModuleInfo is not valid. ModuleId=", module_id);
         return S_OK;
     }
 
@@ -4397,6 +4438,53 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // it.
         *pbUseCachedFunction = false;
         return S_OK;
+    }
+
+    // Let's check if the method has been rewritten internally
+    // if that's the case we don't accept the image
+    auto internalTokensOpt = internal_rewrite_tokens.TryGet();
+    if (!internalTokensOpt.has_value())
+    {
+        Logger::Error(
+            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the internal_rewrite_tokens collection for functionId ",
+            functionId);
+        return S_OK;
+    }
+
+    auto& internalTokens = internalTokensOpt.value();
+    bool hasBeenRewritten = internalTokens->find({ module_id, function_token }) != internalTokens->end();
+    if (hasBeenRewritten)
+    {
+        // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
+        if (Logger::IsDebugEnabled())
+        {
+            ComPtr<IUnknown> metadata_interfaces;
+            if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf()) == S_OK)
+            {
+                const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+                Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                              "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
+                              ", methodDef=", HexStr(function_token), "]");
+            }
+            else
+            {
+                Logger::Debug("NGEN Image: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Function: ", HexStr(function_token),
+                              " previous value = ", *pbUseCachedFunction ? "true" : "false");
+            }
+        }
+
+        // We reject the image and return
+        *pbUseCachedFunction = false;
+        return S_OK;
+    }
+    else
+    {
+        Logger::Debug("JITCachedFunctionSearchStarted: non rejected by internal token on token: ", function_token, " Looking into a hashset with ", internalTokens->size(), " elements");
     }
 
     // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core

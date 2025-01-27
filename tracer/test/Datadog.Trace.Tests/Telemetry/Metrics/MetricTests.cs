@@ -35,23 +35,26 @@ public class MetricTests
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
     {
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
-        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum" } },
-        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled" } },
+        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled" } },
+        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled", "flaky_test_retries_enabled" } },
         { "endpoint_payload.requests_errors", ["status_code"] },
         { "git_requests.search_commits_errors", ["status_code"] },
         { "git_requests.objects_pack_errors", ["status_code"] },
         { "git_requests.settings_errors", ["status_code"] },
         { "itr_skippable_tests.request_errors", ["status_code"] },
         { "early_flake_detection.request_errors", ["status_code"] },
+        { "impacted_tests_detection.request_errors", ["status_code"] },
         { "endpoint_payload.requests", ["rq_compressed"] },
         { "git_requests.search_commits", ["rq_compressed"] },
         { "git_requests.objects_pack", ["rq_compressed"] },
         { "git_requests.settings", ["rq_compressed"] },
         { "itr_skippable_tests.request", ["rq_compressed"] },
         { "early_flake_detection.request", ["rq_compressed"] },
+        { "impacted_tests_detection.request", ["rq_compressed"] },
         { "git_requests.search_commits_ms", ["rs_compressed"] },
         { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
         { "early_flake_detection.response_bytes", ["rs_compressed"] },
+        { "impacted_tests_detection.response_bytes", ["rs_compressed"] },
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },
         { "rasp.timeout", ["rule_variant"] },
@@ -118,7 +121,7 @@ public class MetricTests
 
                 if (permutationPrefixes.Count == 0)
                 {
-                    permutationPrefixes.Should().HaveCount(expectedPrefixes.Count);
+                    permutationPrefixes.Should().HaveCount(expectedPrefixes.Count, $"{implementation.Metric} tags has unexpected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})");
                 }
                 else
                 {

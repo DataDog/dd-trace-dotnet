@@ -31,6 +31,7 @@ public class CreatedumpTests : ConsoleTestHelper
     private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
 #endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
+    private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled";
 
     public CreatedumpTests(ITestOutputHelper output)
         : base(output)
@@ -273,6 +274,7 @@ public class CreatedumpTests : ConsoleTestHelper
         File.Exists(reportFile.Path).Should().BeTrue();
 
         var report = JObject.Parse(reportFile.GetContent());
+        report["tags"]["is_crash"].Value<string>().Should().Be("true");
 
         var metadataTags = (JArray)report["metadata"]!["tags"];
 
@@ -497,6 +499,32 @@ public class CreatedumpTests : ConsoleTestHelper
         }
 
         File.Exists(reportFile.Path).Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public async Task OptionallyReportNonDatadogCrashes()
+    {
+        // This test only validates the case where DD_CRASHTRACKING_FILTERING_ENABLED is set to 0
+        // The default case is tested by IgnoreNonDatadogCrashes
+
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash",
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_FILTERING_ENABLED", "0")]);
+
+        await helper.Task;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportUnfilteredExpectedOutput);
+        }
+
+        File.Exists(reportFile.Path).Should().BeTrue();
     }
 
     [SkippableFact]

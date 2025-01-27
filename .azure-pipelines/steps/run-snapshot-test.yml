@@ -151,7 +151,9 @@ steps:
       do
         echo "$line"  # Output the log line to stdout in real-time
         LOGS+="$line"$'\n'  # Capture each line into LOGS variable
-      done < <(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
+        # Profiling is disabled using DD_PROFILING_ENABLED=0 because there is a flaky freeze we are working around
+        # Once we figure out the freeze, we can re-enable
+      done < <(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_PROFILING_ENABLED=0 -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
 
       # check logs for evidence of crash detection in the output
       expected="The crash may have been caused by automatic instrumentation"

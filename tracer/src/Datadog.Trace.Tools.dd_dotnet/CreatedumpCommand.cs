@@ -586,22 +586,39 @@ internal class CreatedumpCommand : Command
                 "System.InvalidProgramException",
                 "System.MissingFieldException",
                 "System.MissingMemberException",
-                "System.BadImageFormatException",
-                "System.TypeLoadException"
+                "System.BadImageFormatException"
             };
 
             if (exceptionType.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase) || suspiciousExceptionTypes.Contains(exceptionType))
             {
                 isSuspicious = true;
             }
+            else if (exceptionType == "System.TypeLoadException")
+            {
+                isSuspicious = exception.Message?.Contains("datadog", StringComparison.OrdinalIgnoreCase) == true
+                    || exception.StackTrace.Any(f => f.Method != null && IsMethodSuspicious(f.Method));
+            }
         }
 
         if (!isSuspicious)
         {
-            return;
-        }
+            var filteringEnabled = Environment.GetEnvironmentVariable("DD_CRASHTRACKING_FILTERING_ENABLED") ?? string.Empty;
 
-        AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
+            if (filteringEnabled == "0"
+                || filteringEnabled.Equals("false", StringComparison.OrdinalIgnoreCase)
+                || filteringEnabled.Equals("off", StringComparison.OrdinalIgnoreCase))
+            {
+                AnsiConsole.WriteLine("Datadog - The crash is not suspicious, but filtering has been disabled with DD_CRASHTRACKING_FILTERING_ENABLED, sending crash report...");
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
+            AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
+        }
 
         if (signal.HasValue)
         {

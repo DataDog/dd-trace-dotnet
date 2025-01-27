@@ -27,32 +27,14 @@ internal readonly partial struct SecurityCoordinator
     private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
     private static readonly Lazy<Action<IResult, HttpStatusCode, string>?> _throwHttpResponseRedirectException = new(CreateThrowHttpResponseExceptionDynMethForRedirect);
     private static readonly Lazy<Action<IResult, HttpStatusCode, string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
-    private static readonly bool? UsingIntegratedPipeline;
-
-    static SecurityCoordinator()
-    {
-        if (UsingIntegratedPipeline == null)
-        {
-            try
-            {
-                UsingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-            }
-            catch (Exception ex)
-            {
-                UsingIntegratedPipeline = false;
-                Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-            }
-        }
-    }
 
     private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
         _httpTransport = transport;
+        Reporter = new SecurityReporter(_localRootSpan, transport, true);
     }
-
-    private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
@@ -283,16 +265,16 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false)
+    internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false, bool isInHttpTracingModule = false)
     {
         var result = RunWaf(args, lastWafCall);
         if (result is not null)
         {
-            var reporting = MakeReportingFunction(result);
+            var reporting = Reporter.MakeReportingFunction(result);
 
             if (result.ShouldBlock)
             {
-                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+                ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo, isInHttpTracingModule);
             }
 
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
@@ -304,7 +286,7 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            var reporting = MakeReportingFunction(result);
+            var reporting = Reporter.MakeReportingFunction(result);
             reporting(null, result.ShouldBlock);
 
             if (result.ShouldBlock)
@@ -323,26 +305,12 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private Action<int?, bool> MakeReportingFunction(IResult result)
-    {
-        var securityCoordinator = this;
-        return (status, blocked) =>
-        {
-            if (result.ShouldBlock)
-            {
-                securityCoordinator._httpTransport.MarkBlocked();
-            }
-
-            securityCoordinator.TryReport(result, blocked, status);
-        };
-    }
-
-    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
+    private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo, bool inTracingHttpModule = false)
     {
         var headers = RequestDataHelper.GetHeaders(_httpTransport.Context.Request) ?? new NameValueCollection();
         var blockingAction = _security.GetBlockingAction([headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _httpTransport.Context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
-        if (isWebApiRequest)
+        if (isWebApiRequest && !inTracingHttpModule)
         {
             if (!blockingAction.IsRedirect && _throwHttpResponseException.Value is { } throwException)
             {
@@ -367,11 +335,18 @@ internal readonly partial struct SecurityCoordinator
     private void WriteAndEndResponse(BlockingAction blockingAction)
     {
         var httpResponse = _httpTransport.Context.Response;
+
+        if (httpResponse.HeadersWritten)
+        {
+            Log.Warning("Headers have already been written, unable to modify response and set status code to {0}", blockingAction.StatusCode.ToString());
+            return;
+        }
+
         httpResponse.Clear();
         httpResponse.Cookies.Clear();
 
         // cant clear headers, on some iis version we get a platform not supported exception
-        if (CanAccessHeaders)
+        if (Reporter.CanAccessHeaders)
         {
             var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
             foreach (var key in keys)
@@ -400,8 +375,8 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headers = RequestDataHelper.GetHeaders(request);
-        var headersDic = ExtractHeadersFromRequest(request.Headers);
+        var headers = request.Headers;
+        var headersDic = ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
         var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
@@ -473,8 +448,6 @@ internal readonly partial struct SecurityCoordinator
         return dict;
     }
 
-    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers) => ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
-
     private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
 
     private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(RequestDataHelper.GetNameValueCollectionValues(headers, currentKey) ?? []);
@@ -511,18 +484,7 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
-    internal static void CollectHeaders(Span internalSpan)
-    {
-        var context = HttpContext.Current;
-
-        if (context != null)
-        {
-            var headers = new NameValueHeadersCollection(context.Request.Headers);
-            AddRequestHeaders(internalSpan, headers);
-        }
-    }
-
-    internal class HttpTransport : HttpTransportBase
+    internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
         private const string WafKey = "waf";
 
@@ -530,16 +492,11 @@ internal readonly partial struct SecurityCoordinator
 
         private static bool _canReadHttpResponseHeaders = true;
 
-        public HttpTransport(HttpContext context)
-        {
-            Context = context;
-        }
-
         internal override bool IsBlocked => Context.Items[BlockingAction.BlockDefaultActionName] is true;
 
         internal override int StatusCode => Context.Response.StatusCode;
 
-        public override HttpContext Context { get; }
+        public override HttpContext Context { get; } = context;
 
         internal override IDictionary<string, object>? RouteData => Context.Request.RequestContext.RouteData?.Values;
 
