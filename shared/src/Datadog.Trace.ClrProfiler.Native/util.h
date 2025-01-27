@@ -25,6 +25,7 @@ const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 const shared::WSTRING default_exclude_assemblies[]{
     WStr("aspnet_state.exe"),
+    WStr("CollectGuestLogs.exe"),                       // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
@@ -51,6 +52,8 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
+    WStr("WaAppAgent.exe"),                             // https://github.com/Azure/WindowsVMAgent
+    WStr("WindowsAzureGuestAgent.exe")                  // https://github.com/Azure/WindowsVMAgent
 };
 
 inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
