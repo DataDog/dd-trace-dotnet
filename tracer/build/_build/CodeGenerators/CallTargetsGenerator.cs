@@ -595,7 +595,7 @@ namespace CodeGenerators
                 """);
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
-            var fileName = outputPath / "generated_calltargets.g.cpp";
+            var fileName = outputPath / FileNames.CallTargetDefinitionsCpp;
             File.WriteAllText(fileName, sb.ToString());
 
             Logger.Information("CallTarget definitions File saved: {File}", fileName);

@@ -55,4 +55,6 @@ public static class FileNames
     public const string AfterRemoveScript = "after-remove.sh";
 
     public const string DefinitionsJson = "supported_calltargets.g.json";
+    public const string CallTargetDefinitionsCpp = "generated_calltargets.g.cpp";
+    public const string CallSitesDefinitionsCpp = "generated_callsites.g.cpp";
 }

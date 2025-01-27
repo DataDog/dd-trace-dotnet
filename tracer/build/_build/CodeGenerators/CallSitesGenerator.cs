@@ -305,7 +305,7 @@ namespace CodeGenerators
 
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
-            var fileName = outputPath / "generated_callsites.g.cpp";
+            var fileName = outputPath / FileNames.CallSitesDefinitionsCpp;
             File.WriteAllText(fileName, sb.ToString());
 
             Logger.Information("CallSite definitions File saved: {File}", fileName);
