@@ -662,7 +662,7 @@ namespace CodeGenerators
             string jsonString = JsonConvert.SerializeObject(orderedDefinitions, Formatting.Indented);
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
-            var fileName = outputPath / FileNames.DefinitionsJson;
+            var fileName = outputPath / FileNames.CallTargetDefinitionsJson;
             File.WriteAllText(fileName, jsonString);
 
             Logger.Information("CallTarget definitions File saved: {File}", fileName);
