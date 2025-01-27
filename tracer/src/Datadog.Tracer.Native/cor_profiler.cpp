@@ -1498,6 +1498,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
+    Logger::Debug("JITCompilationStarted: ", GetFunctionFullName(function_id));
+
     ModuleID module_id;
     mdToken function_token = mdTokenNil;
 
@@ -4529,6 +4531,36 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     return S_OK;
+}
+
+WSTRING CorProfiler::GetFunctionFullName(FunctionID functionId)
+{
+    // Extract Module metadata
+    ModuleID module_id;
+    mdToken function_token = mdTokenNil;
+
+    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GetFunctionFullName: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
+                        functionId);
+        return EmptyWStr;
+    }
+
+    ComPtr<IUnknown> metadata_interfaces;
+    FunctionInfo* function_info = nullptr;
+    hr = this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf());
+    if (FAILED(hr))
+    {
+        Logger::Warn("GetFunctionFullName: Call to ICorProfilerInfo4.GetModuleMetaData() failed for ",
+                        module_id);
+        return EmptyWStr;
+    }
+
+    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    function_info = new FunctionInfo(GetFunctionInfo(metadata_import, function_token));
+    return function_info->type.name + WStr(".") + function_info->name;
 }
 
 } // namespace trace
