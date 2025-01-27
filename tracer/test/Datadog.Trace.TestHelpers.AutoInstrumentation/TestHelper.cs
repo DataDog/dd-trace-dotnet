@@ -422,7 +422,6 @@ namespace Datadog.Trace.TestHelpers
         /// We have a dedicated run that tests with debug mode enabled, so want to make
         /// sure that "normal" runs don't set this flag.
         /// </summary>
-        [Obsolete("Setting this forces debug mode, whereas we want to automatically test in both modes")]
         protected void EnableDebugMode()
         {
             EnvironmentHelper.DebugModeEnabled = true;
