@@ -7,8 +7,10 @@
 #include "Configuration.h"
 #include "EnvironmentHelper.h"
 #include "EnvironmentVariables.h"
+#include "FfiHelper.h"
 #include "OpSysTools.h"
 
+#include "shared/src/native-src/library_config.h"
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
@@ -1163,4 +1165,44 @@ TEST_F(ConfigurationTest, CheckSsiTelemetryIsEnabledIfTelemetryEnvVarIsEnabled)
     auto configuration = Configuration{};
     auto expectedValue = true;
     ASSERT_THAT(configuration.IsSsiTelemetryEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckLibraryConfigWorksAsExpected)
+{
+    fs::path testDir = fs::temp_directory_path() / "test_config_dir";
+    fs::create_directories(testDir);
+    ASSERT_TRUE(fs::exists(testDir));
+
+    auto configPath = (testDir / "config.yaml").string();
+    auto previousPath = shared::LibraryConfig::config_path;
+    shared::LibraryConfig::config_path = configPath;
+
+    // Ensure the directory is removed at the end of the test
+    struct TestCleaner {
+        fs::path dir;
+        std::string previousPath;
+        ~TestCleaner() {
+            fs::remove_all(dir);
+            shared::LibraryConfig::config_path = previousPath;
+        }
+    } testCleaner{testDir, previousPath};
+
+    std::ofstream configFile(configPath);
+    configFile << R"(
+rules:
+- selectors:
+  - origin: language
+    matches: ["dotnet"]
+    operator: equals
+  configuration:
+    DD_SERVICE: my_service
+)";
+    configFile.close();
+
+    auto configuration = Configuration{};
+    #ifndef _WINDOWS
+        ASSERT_EQ(configuration.GetServiceName(), "my_service");
+    #else
+        ASSERT_EQ(configuration.GetServiceName(), OpSysTools::GetProcessName());
+    #endif
 }

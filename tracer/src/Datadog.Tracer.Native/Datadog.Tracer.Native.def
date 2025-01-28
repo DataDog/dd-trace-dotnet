@@ -26,3 +26,4 @@ EXPORTS
     GetUserStrings
     InitEmbeddedCallSiteDefinitions
     InitEmbeddedCallTargetDefinitions
+    LoadConfigurationFromDisk

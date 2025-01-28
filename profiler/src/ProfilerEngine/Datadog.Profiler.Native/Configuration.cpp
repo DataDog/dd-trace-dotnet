@@ -12,6 +12,7 @@
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
+#include "shared/src/native-src/library_config.h"
 #include "shared/src/native-src/string.h"
 #include "shared/src/native-src/util.h"
 
@@ -26,55 +27,61 @@ std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
 std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
 
+std::vector<shared::ConfigEntry> Configuration::_configFromFile = {};
+
 Configuration::Configuration()
 {
-    _debugLogEnabled = GetEnvironmentValue(EnvironmentVariables::DebugLogEnabled, GetDefaultDebugLogEnabled());
+    if (_configFromFile.empty()) {
+        _configFromFile = shared::LibraryConfig::get_configuration(false);
+    }
+
+    _debugLogEnabled = GetConfigValue(EnvironmentVariables::DebugLogEnabled, GetDefaultDebugLogEnabled());
     _logDirectory = ExtractLogDirectory();
     _pprofDirectory = ExtractPprofDirectory();
-    _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
-    _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
-    _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true);
-    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
-    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, true);
-    _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
+    _isOperationalMetricsEnabled = GetConfigValue(EnvironmentVariables::OperationalMetricsEnabled, false);
+    _isNativeFrameEnabled = GetConfigValue(EnvironmentVariables::NativeFramesEnabled, false);
+    _isCpuProfilingEnabled = GetConfigValue(EnvironmentVariables::CpuProfilingEnabled, true);
+    _isWallTimeProfilingEnabled = GetConfigValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
+    _isExceptionProfilingEnabled = GetConfigValue(EnvironmentVariables::ExceptionProfilingEnabled, true);
+    _isAllocationProfilingEnabled = GetConfigValue(EnvironmentVariables::AllocationProfilingEnabled, false);
     _isContentionProfilingEnabled = GetContention();
-    _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true);
-    _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false);
+    _isGarbageCollectionProfilingEnabled = GetConfigValue(EnvironmentVariables::GCProfilingEnabled, true);
+    _isHeapProfilingEnabled = GetConfigValue(EnvironmentVariables::HeapProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
-    _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
-    _environmentName = GetEnvironmentValue(EnvironmentVariables::Environment, DefaultEnvironment);
-    _hostname = GetEnvironmentValue(EnvironmentVariables::Hostname, OpSysTools::GetHostname());
-    _agentUrl = GetEnvironmentValue(EnvironmentVariables::AgentUrl, DefaultEmptyString);
-    _agentHost = GetEnvironmentValue(EnvironmentVariables::AgentHost, DefaultAgentHost);
-    _agentPort = GetEnvironmentValue(EnvironmentVariables::AgentPort, DefaultAgentPort);
+    _version = GetConfigValue(EnvironmentVariables::Version, DefaultVersion);
+    _environmentName = GetConfigValue(EnvironmentVariables::Environment, DefaultEnvironment);
+    _hostname = GetConfigValue(EnvironmentVariables::Hostname, OpSysTools::GetHostname());
+    _agentUrl = GetConfigValue(EnvironmentVariables::AgentUrl, DefaultEmptyString);
+    _agentHost = GetConfigValue(EnvironmentVariables::AgentHost, DefaultAgentHost);
+    _agentPort = GetConfigValue(EnvironmentVariables::AgentPort, DefaultAgentPort);
     _site = ExtractSite();
-    _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
-    _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
-    _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
-    _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 500);
-    _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
-    _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 3000);
-    _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
+    _apiKey = GetConfigValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
+    _serviceName = GetConfigValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
+    _isAgentLess = GetConfigValue(EnvironmentVariables::Agentless, false);
+    _exceptionSampleLimit = GetConfigValue(EnvironmentVariables::ExceptionSampleLimit, 500);
+    _allocationSampleLimit = GetConfigValue(EnvironmentVariables::AllocationSampleLimit, 2000);
+    _contentionSampleLimit = GetConfigValue(EnvironmentVariables::ContentionSampleLimit, 3000);
+    _contentionDurationThreshold = GetConfigValue(EnvironmentVariables::ContentionDurationThreshold, 100);
     _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
     _walltimeThreadsThreshold = ExtractWallTimeThreadsThreshold();
     _cpuThreadsThreshold = ExtractCpuThreadsThreshold();
     _codeHotspotsThreadsThreshold = ExtractCodeHotspotsThreadsThreshold();
-    _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
-    _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
-    _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, true);
-    _useBacktrace2 = GetEnvironmentValue(EnvironmentVariables::UseBacktrace2, true);
-    _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
-    _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
-    _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
-    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
-    _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
-    _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
-    _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
-    _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
+    _minimumCores = GetConfigValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
+    _namedPipeName = GetConfigValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
+    _isTimestampsAsLabelEnabled = GetConfigValue(EnvironmentVariables::TimestampsAsLabelEnabled, true);
+    _useBacktrace2 = GetConfigValue(EnvironmentVariables::UseBacktrace2, true);
+    _isAllocationRecorderEnabled = GetConfigValue(EnvironmentVariables::AllocationRecorderEnabled, false);
+    _isDebugInfoEnabled = GetConfigValue(EnvironmentVariables::DebugInfoEnabled, false);
+    _isGcThreadsCpuTimeEnabled = GetConfigValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
+    _isThreadLifetimeEnabled = GetConfigValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
+    _gitRepositoryUrl = GetConfigValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
+    _gitCommitSha = GetConfigValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
+    _isInternalMetricsEnabled = GetConfigValue(EnvironmentVariables::InternalMetricsEnabled, false);
+    _isSystemCallsShieldEnabled = GetConfigValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
 
     // Check CI Visibility mode
-    _isCIVisibilityEnabled = GetEnvironmentValue(EnvironmentVariables::CIVisibilityEnabled, false);
+    _isCIVisibilityEnabled = GetConfigValue(EnvironmentVariables::CIVisibilityEnabled, false);
     _internalCIVisibilitySpanId = uint64_t{0};
     _cpuProfilingInterval = ExtractCpuProfilingInterval();
     if (_isCIVisibilityEnabled)
@@ -82,7 +89,7 @@ Configuration::Configuration()
         // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
         // But on Linux, it's std::uint64_t == unsigned long (=> 0ul)and it fails to compile.
         // Here we create a 0 value of type std::uint64_t which will succeed the compilation
-        _internalCIVisibilitySpanId = GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId, uint64_t{0});
+        _internalCIVisibilitySpanId = GetConfigValue(EnvironmentVariables::InternalCIVisibilitySpanId, uint64_t{0});
 
         // If we detect CI Visibility we allow to reduce the minimum ms in sampling rate down to 1ms.
         _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate(1);
@@ -90,15 +97,15 @@ Configuration::Configuration()
         _cpuProfilingInterval = ExtractCpuProfilingInterval(1ms);
     }
 
-    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
-    _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
-    _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
-    _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
+    _isEtwEnabled = GetConfigValue(EnvironmentVariables::EtwEnabled, false);
+    _deploymentMode = GetConfigValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
+    _isEtwLoggingEnabled = GetConfigValue(EnvironmentVariables::EtwLoggingEnabled, false);
+    _etwReplayEndpoint = GetConfigValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
-    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
-    _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _isTelemetryToDiskEnabled = GetConfigValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
+    _isSsiTelemetryEnabled = GetConfigValue(EnvironmentVariables::SsiTelemetryEnabled, false);
+    _cpuProfilerType = GetConfigValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -347,7 +354,7 @@ tags Configuration::ExtractUserTags()
 
 std::string Configuration::GetDefaultSite()
 {
-    auto isDev = GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration, false);
+    auto isDev = GetConfigValue(EnvironmentVariables::DevelopmentConfiguration, false);
 
     if (isDev)
     {
@@ -467,14 +474,14 @@ std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval(std::chrono
 {
     // For normal path (no CI-visibility), 9ms is the default and lowest value we can have
     // for CI-Visibility we allow it to be less
-    auto interval = GetEnvironmentValue(EnvironmentVariables::CpuProfilingInterval, DefaultCpuProfilingInterval);
+    auto interval = GetConfigValue(EnvironmentVariables::CpuProfilingInterval, DefaultCpuProfilingInterval);
     return std::max(interval, minimum);
 }
 
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
 {
     // default sampling rate is 9 ms; could be changed via env vars but down to a minimum of 5 ms
-    int64_t rate = std::max(GetEnvironmentValue(EnvironmentVariables::CpuWallTimeSamplingRate, 9), minimum);
+    int64_t rate = std::max(GetConfigValue(EnvironmentVariables::CpuWallTimeSamplingRate, 9), minimum);
     rate *= 1000000;
     return std::chrono::nanoseconds(rate);
 }
@@ -484,7 +491,7 @@ int32_t Configuration::ExtractWallTimeThreadsThreshold()
     // default threads to sample for wall time is 5; could be changed via env vars from 5 to 64
     int32_t threshold =
         std::min(
-            std::max(GetEnvironmentValue(EnvironmentVariables::WalltimeThreadsThreshold, 5), 5),
+            std::max(GetConfigValue(EnvironmentVariables::WalltimeThreadsThreshold, 5), 5),
             64);
     return threshold;
 }
@@ -492,7 +499,7 @@ int32_t Configuration::ExtractWallTimeThreadsThreshold()
 int32_t Configuration::ExtractCodeHotspotsThreadsThreshold()
 {
     // default threads to sample for codehotspots is 10; could be changed via env vars but down to 1ms
-    int32_t threshold = std::max(GetEnvironmentValue(EnvironmentVariables::CodeHotspotsThreadsThreshold, 10), 1);
+    int32_t threshold = std::max(GetConfigValue(EnvironmentVariables::CodeHotspotsThreadsThreshold, 10), 1);
     return threshold;
 }
 
@@ -501,7 +508,7 @@ int32_t Configuration::ExtractCpuThreadsThreshold()
     // default threads to sample for CPU profiling is 64; could be changed via env vars from 5 to 128
     int32_t threshold =
         std::min(
-            std::max(GetEnvironmentValue(EnvironmentVariables::CpuTimeThreadsThreshold, 64), 5),
+            std::max(GetConfigValue(EnvironmentVariables::CpuTimeThreadsThreshold, 64), 5),
             128);
     return threshold;
 }
@@ -518,7 +525,7 @@ bool Configuration::GetContention()
     }
 
     // if not there, look at the deprecated one
-    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled);
+    return GetConfigValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled);
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()
@@ -665,8 +672,18 @@ static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
 
 
 template <typename T>
-T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
+T Configuration::GetConfigValue(shared::WSTRING const& name, T const& defaultValue)
 {
+    std::string nameStr = shared::ToString(name);
+    for (const auto& entry : _configFromFile) {
+        if (entry.key == nameStr) {
+            T result{};
+            if (convert_to(shared::ToWSTRING(entry.value), result)) {
+                return result;
+            }
+        }
+    }
+
     if (!shared::EnvironmentExist(name)) return defaultValue;
 
     T result{};
@@ -730,7 +747,7 @@ EnablementStatus Configuration::ExtractEnablementStatus()
 std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
 {
     auto const defaultValue = 30'000ms;
-    auto value = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
+    auto value = GetConfigValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
 
     if (value < 0ms)
         return defaultValue;

@@ -12,6 +12,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)loader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)library_config.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)miniutf.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)string.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)util.cpp" />
@@ -21,6 +22,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)library_config.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)logmanager.h" />
