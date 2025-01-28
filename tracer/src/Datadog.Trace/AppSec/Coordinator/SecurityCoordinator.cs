@@ -110,10 +110,14 @@ internal readonly partial struct SecurityCoordinator
                 {
                     foreach (var kvp in otherTags)
                     {
+#if NETCOREAPP
+                        userAddresses.TryAdd(kvp.Key, kvp.Value);
+#else
                         if (!userAddresses.ContainsKey(kvp.Key))
                         {
                             userAddresses.Add(kvp.Key, kvp.Value);
                         }
+#endif
                     }
                 }
 

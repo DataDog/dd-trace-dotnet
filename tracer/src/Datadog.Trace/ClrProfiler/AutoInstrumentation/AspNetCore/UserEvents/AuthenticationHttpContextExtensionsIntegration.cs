@@ -64,70 +64,69 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
         {
-            if (state.State is ClaimsAndHttpContext stateTuple)
+            if (state.State is ClaimsAndHttpContext stateTuple
+             && Security.Instance is { IsTrackUserEventsEnabled: true } security
+             && state.Scope is { } scope)
             {
-                if (Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
+                var span = scope.Span;
+                string? userId = null;
+                string? userLogin = null;
+                Func<string, string>? processPii = null;
+                string successAutoMode;
+                if (security.IsAnonUserTrackingMode)
                 {
-                    var span = scope.Span;
-                    string? userId = null;
-                    string? userLogin = null;
-                    Func<string, string>? processPii = null;
-                    string successAutoMode;
-                    if (security.IsAnonUserTrackingMode)
-                    {
-                        processPii = UserEventsCommon.Anonymize;
-                        successAutoMode = SecuritySettings.UserTrackingAnonMode;
-                    }
-                    else
-                    {
-                        successAutoMode = SecuritySettings.UserTrackingIdentMode;
-                    }
+                    processPii = UserEventsCommon.Anonymize;
+                    successAutoMode = SecuritySettings.UserTrackingAnonMode;
+                }
+                else
+                {
+                    successAutoMode = SecuritySettings.UserTrackingIdentMode;
+                }
 
-                    var setTag = TaggingUtils.GetSpanSetter(span, out _);
-                    var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                    foreach (var claim in stateTuple.ClaimsPrincipal.Claims)
+                var setTag = TaggingUtils.GetSpanSetter(span, out _);
+                var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+                foreach (var claim in stateTuple.ClaimsPrincipal.Claims)
+                {
+                    if (string.IsNullOrEmpty(claim.Value))
                     {
-                        if (string.IsNullOrEmpty(claim.Value))
-                        {
-                            continue;
-                        }
-
-                        if (claim.Type is ClaimTypes.NameIdentifier && userId is null)
-                        {
-                            userId = processPii?.Invoke(claim.Value) ?? claim.Value;
-                            tryAddTag(Tags.User.Id, userId);
-                            setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
-                        }
-                        else if (LoginsClaimsToTest.Contains(claim.Type) && userLogin is null)
-                        {
-                            userLogin = processPii?.Invoke(claim.Value) ?? claim.Value;
-                            setTag(Tags.AppSec.EventsUsers.InternalLogin, userLogin);
-                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, userLogin);
-                        }
-
-                        if (userId is not null && userLogin is not null)
-                        {
-                            break;
-                        }
+                        continue;
                     }
 
-                    var foundUserId = userId is not null;
-                    var foundLogin = userLogin is not null;
-                    UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
-                    security.SetTraceSamplingPriority(span);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
-
-                    if (stateTuple.HttpContext is { } httpContext)
+                    if (claim.Type is ClaimTypes.NameIdentifier && userId is null)
                     {
-                        var secCoordinator = SecurityCoordinator.Get(security, span, httpContext);
-                        secCoordinator.Reporter.CollectHeaders();
-                        if (userId is not null || userLogin is not null)
-                        {
-                            // if the current collection mode is anonymization, the ID must be provided after anonymization, instead of the original one.
-                            var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } });
-                            secCoordinator.BlockAndReport(result);
-                        }
+                        userId = processPii?.Invoke(claim.Value) ?? claim.Value;
+                        tryAddTag(Tags.User.Id, userId);
+                        setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                    }
+                    else if (LoginsClaimsToTest.Contains(claim.Type) && userLogin is null)
+                    {
+                        userLogin = processPii?.Invoke(claim.Value) ?? claim.Value;
+                        setTag(Tags.AppSec.EventsUsers.InternalLogin, userLogin);
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, userLogin);
+                    }
+
+                    if (userId is not null && userLogin is not null)
+                    {
+                        break;
+                    }
+                }
+
+                var foundUserId = userId is not null;
+                var foundLogin = userLogin is not null;
+                UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
+                security.SetTraceSamplingPriority(span);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
+
+                if (stateTuple.HttpContext is { } httpContext)
+                {
+                    var secCoordinator = SecurityCoordinator.Get(security, span, httpContext);
+                    secCoordinator.Reporter.CollectHeaders();
+                    if (userId is not null || userLogin is not null)
+                    {
+                        // if the current collection mode is anonymization, the ID must be provided after anonymization, instead of the original one.
+                        var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } });
+                        secCoordinator.BlockAndReport(result);
                     }
                 }
             }
