@@ -2063,6 +2063,104 @@
     "IntegrationName": "AwsS3",
     "AssemblyName": "AWSSDK.S3",
     "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CompleteMultipartUpload",
+    "TargetReturnType": "Amazon.S3.Model.CompleteMultipartUploadResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CompleteMultipartUploadRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CompleteMultipartUploadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CompleteMultipartUploadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.CompleteMultipartUploadResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CompleteMultipartUploadRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CompleteMultipartUploadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CopyObject",
+    "TargetReturnType": "Amazon.S3.Model.CopyObjectResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CopyObjectRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CopyObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CopyObjectAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.CopyObjectResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CopyObjectRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CopyObjectAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
     "TargetMethodName": "PutObject",
     "TargetReturnType": "Amazon.S3.Model.PutObjectResponse",
     "TargetParameterTypes": [

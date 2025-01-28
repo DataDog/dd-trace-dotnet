@@ -120,7 +120,11 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda.HandlerWrapperSetHandlerIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsLambda,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CompleteMultipartUploadIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CompleteMultipartUploadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CopyObjectIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.CopyObjectAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.PutObjectAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsS3,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
