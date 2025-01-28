@@ -48,8 +48,8 @@
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.28 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.28" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
