@@ -8,7 +8,6 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 
@@ -23,20 +22,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
     ParameterTypeNames = ["Amazon.S3.Model.PutObjectRequest", ClrNames.CancellationToken],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = nameof(IntegrationId.AwsS3))]
+    IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class PutObjectAsyncIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, ref TRequest? request, ref CancellationToken cancellationToken)
+    private const string Operation = "PutObject";
+    private const string SpanKind = SpanKinds.Producer;
+
+    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
+        where TRequest : IPutObjectRequest
     {
-        Console.WriteLine("[tracer] PutObjectAsync start.");
-        return CallTargetState.GetDefault();
+        if (request.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
+
+        return new CallTargetState(scope);
     }
 
-    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        Console.WriteLine("[tracer] PutObjectAsync end.");
+        state.Scope.DisposeWithException(exception);
         return returnValue;
     }
 }

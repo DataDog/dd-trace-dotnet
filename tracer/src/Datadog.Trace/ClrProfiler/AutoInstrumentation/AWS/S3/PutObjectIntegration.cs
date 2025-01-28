@@ -6,10 +6,7 @@
 
 using System;
 using System.ComponentModel;
-using System.IO;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 
@@ -24,20 +21,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
     ParameterTypeNames = ["Amazon.S3.Model.PutObjectRequest"],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = nameof(IntegrationId.AwsS3))]
+    IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class PutObjectIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, ref TRequest? request)
+    private const string Operation = "PutObject";
+    private const string SpanKind = SpanKinds.Producer;
+
+    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
+        where TRequest : IPutObjectRequest
     {
-        Console.WriteLine("[tracer] PutObject start.");
-        return CallTargetState.GetDefault();
+        if (request.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
+
+        return new CallTargetState(scope);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        Console.WriteLine("[tracer] PutObject start.");
+        state.Scope.DisposeWithException(exception);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
