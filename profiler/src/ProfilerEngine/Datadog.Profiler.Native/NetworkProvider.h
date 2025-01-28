@@ -12,7 +12,6 @@
 #include "NetworkActivity.h"
 #include "NetworkRequestInfo.h"
 #include "RawNetworkSample.h"
-#include "SumMetric.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -84,7 +83,24 @@ private:
     MetricsRegistry& _metricsRegistry;
     std::chrono::nanoseconds _requestDurationThreshold;
 
+    std::mutex _requestsLock;
     std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
+
+    // count ALL requests (success or failure)
+    std::shared_ptr<CounterMetric> _requestsCountMetric;
+
+    // count non successful requests
+    std::shared_ptr<CounterMetric> _failedRequestsCountMetric;
+
+    // count redirection requests
+    std::shared_ptr<CounterMetric> _redirectionRequestsCountMetric;
+
+    std::shared_ptr<MeanMaxMetric> _totalDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _waitDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _dnsDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _handshakeDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _requestResponseDurationMetric;
+
 
     bool IsRedirect(uint32_t statusCode)
     {

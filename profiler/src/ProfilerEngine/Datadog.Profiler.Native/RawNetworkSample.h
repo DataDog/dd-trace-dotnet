@@ -130,6 +130,4 @@ public:
 
     std::chrono::nanoseconds RequestDuration;
     std::chrono::nanoseconds ResponseDuration;
-
-    // TODO: check with BE if we also need the thread name
 };

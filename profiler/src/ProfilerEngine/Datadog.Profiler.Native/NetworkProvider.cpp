@@ -45,6 +45,15 @@ NetworkProvider::NetworkProvider(
 {
     // all other durations in the code are in nanoseconds but the config is in milliseconds
     _requestDurationThreshold = std::chrono::duration_cast<std::chrono::nanoseconds>(pConfiguration->GetHttpRequestDurationThreshold());
+
+    _requestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_request_count");
+    _failedRequestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_failed_request_count");
+    _redirectionRequestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_redirected_request_count");
+    _totalDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_duration");
+    _waitDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_wait_duration");
+    _dnsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_dns_duration");
+    _handshakeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_handshake_duration");
+    _requestResponseDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_response_duration");
 }
 
 bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
@@ -99,6 +108,8 @@ void NetworkProvider::OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID
         return;
     }
 
+    std::lock_guard<std::mutex> lock(_requestsLock);
+
     auto existingInfo = _requests.find(activity);
     if (existingInfo != _requests.end())
     {
@@ -123,6 +134,8 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
         return;
     }
 
+    std::lock_guard<std::mutex> lock(_requestsLock);
+
     auto requestInfo = _requests.find(activity);
     if (requestInfo == _requests.end())
     {
@@ -133,8 +146,8 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
     // sampling can be forced for tests
     if (!_pConfiguration->ForceHttpSampling())
     {
-        // only requests lasting more than a threshold are captured
-        if ((timestamp - requestInfo->second.StartTimestamp) > _requestDurationThreshold)
+        // requests lasting less than a threshold are skipped
+        if ((timestamp - requestInfo->second.StartTimestamp) < _requestDurationThreshold)
         {
             // skip this request
             _requests.erase(activity);
@@ -147,7 +160,14 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
 
     RawNetworkSample rawSample;
     FillRawSample(rawSample, requestInfo->second, timestamp);
+    _requestsCountMetric->Incr();
+
     rawSample.StatusCode = statusCode;
+    if ((statusCode < 200) || (statusCode > 299))
+    {
+        _failedRequestsCountMetric->Incr();
+    }
+
     rawSample.Error = std::move(requestInfo->second.Error);
     rawSample.HandshakeError = std::move(requestInfo->second.HandshakeError);
 
@@ -156,6 +176,8 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
         // will be an empty string for .NET 7
         rawSample.RedirectUrl = std::move(requestInfo->second.Redirect->Url);
         rawSample.HasBeenRedirected = true;
+
+        _redirectionRequestsCountMetric->Incr();
     }
 
     Add(std::move(rawSample));
@@ -523,6 +545,12 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
         // --> high values usually reflect the lack of ThreadPool threads availability
         // During the tests, the wait time before the socket connection is very short so no need to provide it
     }
+
+    _totalDurationMetric->Add((sample.Timestamp - sample.StartTimestamp).count());
+    _waitDurationMetric->Add((sample.DnsWait + sample.HandshakeWait).count());
+    _dnsDurationMetric->Add(sample.DnsDuration.count());
+    _handshakeDurationMetric->Add(sample.HandshakeDuration.count());
+    _requestResponseDurationMetric->Add((sample.RequestDuration + sample.ResponseDuration).count());
 }
 
 
@@ -539,6 +567,8 @@ bool NetworkProvider::MonitorRequest(NetworkRequestInfo*& pInfo, LPCGUID pActivi
     {
         return false;
     }
+
+    std::lock_guard<std::mutex> lock(_requestsLock);
 
     auto existingInfo = _requests.find(activity);
     if (existingInfo == _requests.end())
