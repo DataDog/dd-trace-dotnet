@@ -115,7 +115,7 @@ private:
     //
     // Helper methods
     //
-    void RewritingPInvokeMaps(const ModuleID module_id, const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
+    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
                               const shared::WSTRING& nativemethods_type_name,
                               const shared::WSTRING& library_path = shared::WSTRING());
     static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);

@@ -343,6 +343,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
+    managedInternalModules_.reserve(10);
 
     const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
@@ -504,8 +505,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(const ModuleID module_id,
-                                       const ModuleMetadata& module_metadata,
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                                        const shared::WSTRING& rewrite_reason,
                                        const shared::WSTRING& nativemethods_type_name,
                                        const shared::WSTRING& library_path)
@@ -906,9 +906,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         }
     }
 
-    // Add the module_id to the module metadata vector (to allow NGEN analysis later)
-    modules.push_back(module_id);
-
     if (module_info.assembly.name == managed_profiler_name)
     {
         // Fix PInvoke Rewriting
@@ -939,15 +936,15 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
         managedInternalModules_.push_back(module_id);
 #ifdef _WIN32
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("windows"), windows_nativemethods_type);
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
 #else
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_id, module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         mdTypeDef bubbleUpTypeDef;
@@ -961,7 +958,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (fs::exists(native_loader_library_path))
         {
             auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
-            RewritingPInvokeMaps(module_id, module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
+            RewritingPInvokeMaps(module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
         }
 
         if (ShouldRewriteProfilerMaps())
@@ -969,7 +966,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
             if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
             {
-                RewritingPInvokeMaps(module_id, module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
             }
         }
 
@@ -1044,6 +1041,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             // Rewrite Instrumentation.IsManualInstrumentationOnly()
             RewriteIsManualInstrumentationOnly(module_metadata, module_id);
         }
+
+        modules.push_back(module_id);
 
         bool searchForTraceAttribute = trace_annotations_enabled;
         if (searchForTraceAttribute)
@@ -4407,13 +4406,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    bool isAnInternalModule = false;
+
     // Verify that we have the metadata for this module
     if (!shared::Contains(modules.Ref(), module_id))
     {
-        // we haven't stored a ModuleMetadata for this module,
-        // so there's nothing to do here, we accept the NGEN image.
-        *pbUseCachedFunction = true;
-        return S_OK;
+        isAnInternalModule = shared::Contains(managedInternalModules_, module_id);
+        if (!isAnInternalModule)
+        {
+            // we haven't stored a ModuleMetadata for this module,
+            // so there's nothing to do here, we accept the NGEN image.
+            *pbUseCachedFunction = true;
+            return S_OK;
+        }
     }
 
     // let's get the AssemblyID
@@ -4457,7 +4462,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         function_token == getDistributedTraceMethodDef_ ||
             function_token == getNativeTracerVersionMethodDef_ ||
                 function_token == isManualInstrumentationOnlyMethodDef_;
-    bool hasBeenRewritten = isKnownMethodDef && shared::Contains(managedInternalModules_, module_id);
+    bool hasBeenRewritten = isKnownMethodDef && isAnInternalModule;
     if (hasBeenRewritten)
     {
         // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
