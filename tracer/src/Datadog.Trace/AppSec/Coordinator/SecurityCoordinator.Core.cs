@@ -170,7 +170,21 @@ internal readonly partial struct SecurityCoordinator
             get => GetItems()?.TryGetValue(BlockingAction.BlockDefaultActionName, out var value) == true && value is true;
         }
 
-        internal override int StatusCode => Context.Response.StatusCode;
+        internal override int? StatusCode
+        {
+            get
+            {
+                try
+                {
+                    return Context.Response.StatusCode;
+                }
+                catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
+                {
+                    Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
+                    return null;
+                }
+            }
+        }
 
         internal override IDictionary<string, object>? RouteData => Context.GetRouteData()?.Values;
 
