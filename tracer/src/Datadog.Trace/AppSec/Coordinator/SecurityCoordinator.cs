@@ -233,17 +233,18 @@ internal readonly partial struct SecurityCoordinator
                 {
                     currentKey = currentKey.ToLowerInvariant();
                     var value = getHeaderValue(currentKey);
-
-                    if (value is not null)
+#if NETCOREAPP
+                    if (!headersDic.TryAdd(currentKey, value))
                     {
-                        if (!headersDic.ContainsKey(currentKey))
-                        {
-                            headersDic.Add(currentKey, value);
-                        }
-                        else
-                        {
-                            Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
-                        }
+#else
+                    if (!headersDic.ContainsKey(currentKey))
+                    {
+                        headersDic.Add(currentKey, value);
+                    }
+                    else
+                    {
+#endif
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
                     }
                 }
             }
