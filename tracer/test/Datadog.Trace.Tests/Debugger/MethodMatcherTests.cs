@@ -151,9 +151,9 @@ public class MethodMatcherTests
             stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
 
             var iteratorType = typeof(MethodMatcherTests)
-                              .GetNestedTypes(BindingFlags.NonPublic)
-                              .FirstOrDefault(t => t.Name.Contains(nameof(TestIteratorMethod)) && t.GetInterfaces()
-                                                                                                   .Any(i => i.FullName == "System.Collections.IEnumerator"));
+                .GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.GetInterfaces()
+                    .Any(i => i.FullName == "System.Collections.IEnumerator"));
 
             iteratorType.Should().NotBeNull("Test setup failed - iterator type not found");
 
@@ -221,8 +221,30 @@ public class MethodMatcherTests
     [Fact]
     public void IsMethodMatch_LocalFunction_MatchesCorrectly()
     {
-        // Will be implemented when we have the actual local function test case
-        TestMethodWithLocalFunction();
+        try
+        {
+            TestMethodWithLocalFunction();
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            // Get the exact name from the stack trace
+            var method = typeof(MethodMatcherTests).GetMethods(
+                                                        BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
+                                                   .FirstOrDefault(m => m.Name.StartsWith("<TestMethodWithLocalFunction>g__LocalFunction|") &&
+                                                                        m.Name.EndsWith("_0"));
+
+            method.Should().NotBeNull("Test setup failed - local function method not found");
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, method);
+
+            // Assert
+            result.Should().BeTrue();
+        }
     }
 
     // Edge cases
@@ -287,7 +309,7 @@ public class MethodMatcherTests
     {
         static void LocalFunction()
         {
-            Console.WriteLine("Local function");
+            throw new Exception("Test exception from local function");
         }
 
         LocalFunction();

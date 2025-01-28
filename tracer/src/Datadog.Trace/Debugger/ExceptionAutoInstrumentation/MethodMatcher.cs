@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.Util;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
@@ -31,12 +32,14 @@ internal static class MethodMatcher
         // First try to resolve special method types (async, iterator, etc.)
         var resolvedMethod = ResolveSpecialMethod(methodBase);
 
-        // Use resolved method if available, otherwise use original
-        methodBase = resolvedMethod ?? methodBase;
-
         // Normalize and parse both representations
         var normalizedStackTrace = NormalizeMethodText(stackTraceMethodText);
-        var methodBaseName = BuildMethodSignature(methodBase);
+
+        // For state machines, we want to match against the original method/type
+        // but still get the correct method name from the resolved method
+        var methodBaseName = resolvedMethod != null
+                                 ? BuildMethodSignature(methodBase, resolvedMethod.Name)
+                                 : BuildMethodSignature(methodBase);
 
         var stackTraceParts = ParseMethodName(normalizedStackTrace);
         var methodBaseParts = ParseMethodName(methodBaseName);
@@ -46,7 +49,98 @@ internal static class MethodMatcher
             return normalizedStackTrace.Equals(methodBaseName, StringComparison.Ordinal);
         }
 
-        return DoMethodPartsMatch(stackTraceParts, methodBaseParts);
+        return DoMethodPartsMatch(stackTraceParts.Value, methodBaseParts.Value);
+    }
+
+    private static string BuildMethodSignature(MethodBase method, string? methodName = null)
+    {
+        var sb = StringBuilderCache.Acquire();
+
+        // Add declaring type's full name
+        if (method.DeclaringType != null)
+        {
+            var typeFullName = method.DeclaringType.FullName ?? method.DeclaringType.Name;
+
+            // Don't replace + with . for state machine types
+            if (IsStateMachineType(method.DeclaringType))
+            {
+                sb.Append(typeFullName);
+            }
+            else
+            {
+                // For normal types, optimize the + to . replacement
+                var lastIndex = 0;
+                var plusIndex = typeFullName.IndexOf('+');
+                while (plusIndex != -1)
+                {
+                    sb.Append(typeFullName, lastIndex, plusIndex - lastIndex);
+                    sb.Append('.');
+                    lastIndex = plusIndex + 1;
+                    plusIndex = typeFullName.IndexOf('+', lastIndex);
+                }
+
+                sb.Append(typeFullName, lastIndex, typeFullName.Length - lastIndex);
+            }
+        }
+
+        sb.Append('.');
+        sb.Append(methodName ?? method.Name);
+
+        return StringBuilderCache.GetStringAndRelease(sb);
+    }
+
+    private static string NormalizeMethodText(string methodText)
+    {
+        // Handle .NET Core state machine format: Method()+MoveNext()
+        if (methodText.Contains("()+MoveNext()"))
+        {
+            var index = methodText.IndexOf("()+MoveNext()");
+            if (index > 0)
+            {
+                return methodText.Substring(0, index);
+            }
+        }
+
+        var parenthesesIndex = methodText.IndexOf('(');
+        if (parenthesesIndex > 0)
+        {
+            methodText = methodText.Substring(0, parenthesesIndex);
+        }
+
+        var genericIndex = methodText.IndexOf('[');
+        if (genericIndex <= 0)
+        {
+            return methodText;
+        }
+
+        var closeIndex = methodText.IndexOf(']', genericIndex);
+        if (closeIndex <= genericIndex)
+        {
+            return methodText;
+        }
+
+        // Count type parameters without string splits
+        var typeParams = 1;
+        for (int i = genericIndex + 1; i < closeIndex; i++)
+        {
+            if (methodText[i] == ',')
+            {
+                typeParams++;
+            }
+        }
+
+        var sb = StringBuilderCache.Acquire();
+        sb.Append(methodText, 0, genericIndex);
+        sb.Append('`');
+        sb.Append(typeParams);
+
+        return StringBuilderCache.GetStringAndRelease(sb);
+    }
+
+    private static string NormalizeMethodName(string methodName)
+    {
+        var backtickIndex = methodName.IndexOf('`');
+        return backtickIndex > 0 ? methodName.Substring(0, backtickIndex) : methodName;
     }
 
     private static bool IsAsyncStateMachine(MethodBase method)
@@ -137,10 +231,9 @@ internal static class MethodMatcher
             return true;
         }
 
-        // For async state machine methods
-        if (methodBaseMethod == "MoveNext")
+        // For state machine methods (iterators and async methods)
+        if (stackTraceMethod == "MoveNext")
         {
-            // Either it's an async method or we've already handled the lambda case
             return true;
         }
 
@@ -340,7 +433,25 @@ internal static class MethodMatcher
 
     private static MethodNameParts? ParseMethodName(string fullName)
     {
-        var parts = fullName.Split('.');
+        // First normalize the separation of nested types to use + consistently
+        var normalizedName = fullName;
+        if (fullName.Contains(">d__") && !fullName.Contains("+"))
+        {
+            // For state machine types in stack traces, convert the last dot before the state machine name to a +
+            var stateMachineIndex = fullName.IndexOf("<");
+            if (stateMachineIndex > 0)
+            {
+                var lastDotBeforeStateMachine = fullName.LastIndexOf('.', stateMachineIndex);
+                if (lastDotBeforeStateMachine > 0)
+                {
+                    normalizedName = fullName.Substring(0, lastDotBeforeStateMachine) +
+                                     "+" +
+                                     fullName.Substring(lastDotBeforeStateMachine + 1);
+                }
+            }
+        }
+
+        var parts = normalizedName.Split('.');
         if (parts.Length < 2)
         {
             return null;
@@ -396,7 +507,22 @@ internal static class MethodMatcher
             }
         }
 
-        // If not a lambda match, then both type parts and method name must match exactly
+        // Check if this is a .NET Core state machine format
+        var isNetCoreStateMachine = stackTrace.TypeParts.Length > 0 &&
+                                     methodBase.TypeParts.Length > 0 &&
+                                     methodBase.TypeParts.Last().Contains("d__") &&
+                                     !stackTrace.TypeParts.Last().Contains("d__");
+
+        if (isNetCoreStateMachine)
+        {
+            // For .NET Core, we only match the base type part (without the state machine suffix)
+            var baseStackTracePart = stackTrace.TypeParts.Last();
+            var baseMethodPart = methodBase.TypeParts.Last().Split('+')[0];
+            return baseStackTracePart.Equals(baseMethodPart, StringComparison.Ordinal) &&
+                   AreMethodNamesEquivalent(stackTrace.MethodName, methodBase.MethodName);
+        }
+
+        // If not a special case, then both type parts and method name must match exactly
         return AreArraysEqual(stackTrace.TypeParts, methodBase.TypeParts) &&
                AreMethodNamesEquivalent(stackTrace.MethodName, methodBase.MethodName);
     }
@@ -419,80 +545,22 @@ internal static class MethodMatcher
         return true;
     }
 
-    private static string NormalizeMethodText(string methodText)
+    private static bool IsStateMachineType(Type type)
     {
-        // Remove parameter list if present (content within parentheses)
-        var parenthesesIndex = methodText.IndexOf('(');
-        if (parenthesesIndex > 0)
-        {
-            methodText = methodText.Substring(0, parenthesesIndex);
-        }
-
-        // Special handling for generic method type arguments in stack trace format [T1,T2]
-        var genericIndex = methodText.IndexOf('[');
-        if (genericIndex > 0)
-        {
-            var closeIndex = methodText.IndexOf(']', genericIndex);
-            if (closeIndex > genericIndex)
-            {
-                // Count the number of type parameters
-                var typeParams = methodText.Substring(genericIndex + 1, closeIndex - genericIndex - 1)
-                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Length;
-
-                // Replace with a normalized form
-                methodText = methodText.Substring(0, genericIndex) + "`" + typeParams;
-            }
-        }
-
-        return methodText;
-    }
-
-    private static string NormalizeMethodName(string methodName)
-    {
-        // Remove generic arity if present
-        var backtickIndex = methodName.IndexOf('`');
-        if (backtickIndex > 0)
-        {
-            methodName = methodName.Substring(0, backtickIndex);
-        }
-
-        return methodName;
-    }
-
-    private static string BuildMethodSignature(MethodBase method)
-    {
-        var sb = new StringBuilder();
-
-        // Add declaring type's full name
-        if (method.DeclaringType != null)
-        {
-            var typeFullName = method.DeclaringType.FullName ?? method.DeclaringType.Name;
-            sb.Append(typeFullName.Replace("+", "."));
-        }
-
-        sb.Append('.');
-        sb.Append(method.Name);
-
-        return sb.ToString();
+        return type.Name.Contains("d__") &&
+               (type.GetInterfaces().Any(i => i.FullName == "System.Runtime.CompilerServices.IAsyncStateMachine") ||
+                type.GetInterfaces().Any(i => i.FullName == "System.Collections.IEnumerator"));
     }
 
     /// <summary>
     /// Represents the parts of a method's full name
     /// </summary>
-    private class MethodNameParts
+    private readonly struct MethodNameParts(string[] namespaceParts, string[] typeParts, string methodName)
     {
-        public MethodNameParts(string[] namespaceParts, string[] typeParts, string methodName)
-        {
-            NamespaceParts = namespaceParts;
-            TypeParts = typeParts;
-            MethodName = methodName;
-        }
+        public string[] NamespaceParts { get; } = namespaceParts;
 
-        public string[] NamespaceParts { get; }
+        public string[] TypeParts { get; } = typeParts;
 
-        public string[] TypeParts { get; }
-
-        public string MethodName { get; }
+        public string MethodName { get; } = methodName;
     }
 }
