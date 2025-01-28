@@ -88,8 +88,16 @@ internal class IntelligentTestRunnerClient
         _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
         _repositoryUrl = GetRepositoryUrl();
-        _branchName = GetBranchName();
+        _repositoryUrl = GetRepositoryUrl();
         _commitSha = GetCommitSha();
+        _branchName = GetBranchName();
+
+        if (string.IsNullOrEmpty(_branchName))
+        {
+            Log.Warning("ITR: empty branch indicates a detached head at commit {Commit}", _commitSha);
+            _branchName = $"detached-at-{_commitSha}";
+        }
+
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";

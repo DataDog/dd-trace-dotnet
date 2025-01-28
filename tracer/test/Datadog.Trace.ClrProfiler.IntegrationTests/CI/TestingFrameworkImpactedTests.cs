@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 #pragma warning disable SA1401 // FieldsMustBePrivate
         protected const string ModifiedLine = "// Modified by TestingFrameworkImpactedTests.cs";
         protected const int ExpectedTestCount = 16;
-        protected const string GitHubBaseSha = "a700b56e12ddcbad5d19a2fa8852a15518ab205b";
+        protected string baseSha = string.Empty;
         protected string repositoryRoot = string.Empty;
         protected string repo = string.Empty;
         protected string branch = string.Empty;
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         protected string GetDiffFilesJson(bool baseCommit = true)
         {
-            var commitValue = baseCommit ? GitHubBaseSha : string.Empty;
+            var commitValue = baseCommit ? baseSha : string.Empty;
             return $$"""
             {
               "data": {
@@ -167,7 +167,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // Base sets Azure CI values. Take those we can reuse for Git Hub
             repo = values[CIEnvironmentValues.Constants.AzureBuildRepositoryUri];
-            branch = values[CIEnvironmentValues.Constants.AzureBuildSourceBranch];
 
             return values;
         }
@@ -198,13 +197,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, enabled.Value ? "True" : "False");
             }
 
-            static string GetEventJsonFile()
+            string GetEventJsonFile()
             {
                 string content = $$"""
                 {
                   "pull_request": {
                     "base": {
-                      "sha": "{{GitHubBaseSha}}"
+                      "sha": "{{baseSha}}"
                     }
                   }
                 }
@@ -245,13 +244,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             if (output.ExitCode == 0)
             {
+                // Retrieve branch name
+                branch = output.Output.Trim();
+            }
+
+            if (output.ExitCode == 0)
+            {
+                // Retrieve last commit
+                output = RunGitCommand("rev-parse --verify HEAD");
+                if (output.ExitCode == 0)
+                {
+                    baseSha = output.Output.Trim();
+                    if (string.IsNullOrEmpty(branch))
+                    {
+                        branch = $"detached-at-{baseSha}";
+                    }
+                }
+            }
+
+            if (output.ExitCode == 0)
+            {
                 // Retrieve WS root directory
                 output = RunGitCommand("rev-parse --show-toplevel");
                 if (output.ExitCode == 0)
                 {
                     gitAvailable = true;
                     repositoryRoot = output.Output.Trim();
-                    Output.WriteLine($"Git available. Repository: {repositoryRoot}");
+                    Output.WriteLine($"Git available. Repository: {repositoryRoot} Branch: {branch} Sha: {baseSha}");
                 }
             }
 
