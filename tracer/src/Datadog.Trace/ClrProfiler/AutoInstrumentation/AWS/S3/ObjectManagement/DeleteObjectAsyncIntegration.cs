@@ -13,8 +13,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 
 /// <summary>
 /// AWSSDK.S3 DeleteObjectAsync CallTarget instrumentation
-/// DeleteObjectAsync has three overloaded methods, but the other two eventually
-/// call this final method, so this instrumentation captures all 3 calls.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
