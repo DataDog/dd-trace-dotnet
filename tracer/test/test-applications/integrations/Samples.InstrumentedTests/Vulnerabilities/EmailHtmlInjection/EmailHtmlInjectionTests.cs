@@ -8,7 +8,6 @@ using System.Net.Mail;
 using System.Net;
 using Xunit;
 using System.Web;
-using System.Threading.Tasks;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
