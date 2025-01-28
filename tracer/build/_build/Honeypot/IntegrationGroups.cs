@@ -96,6 +96,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Identity", new [] { "Microsoft.AspNetCore.Identity" });
             NugetPackages.Add("Microsoft.Extensions.Identity.Core", new [] { "Microsoft.Extensions.Identity.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Authentication.Abstractions", new [] { "Microsoft.AspNetCore.Authentication.Abstractions" });
+            NugetPackages.Add("Microsoft.AspNetCore.Http.Abstractions", new [] { "Microsoft.AspNetCore.Http.Abstractions" });
             NugetPackages.Add("OpenTelemetry.Api", new [] { "OpenTelemetry.Api" });
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });

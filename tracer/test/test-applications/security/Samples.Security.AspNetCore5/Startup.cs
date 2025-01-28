@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -62,6 +61,17 @@ namespace Samples.Security.AspNetCore5
                     o.Password.RequireUppercase = false;
                     o.Password.RequireNonAlphanumeric = false;
                 });
+            services.AddAuthentication();
+            services.AddAuthorization();
+            services.ConfigureApplicationCookie(options =>  
+            {  
+                // Cookie settings  
+                options.Cookie.HttpOnly = true;  
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);  
+  
+                options.LoginPath = "/Account";     //set the login path.  
+                options.SlidingExpiration = true;  
+            });  
             // sql lite provider doesnt seem to work on linux (even with EF libs) so use in memory store 
             if (Configuration.ShouldUseSqlLite())
             {
@@ -127,8 +137,9 @@ namespace Samples.Security.AspNetCore5
             app.UseSession();
             app.UseRouting();
 
-            app.UseAuthorization();
             app.UseAuthentication();
+            app.UseAuthorization();
+            
             app.Map(
                 "/alive-check",
                 builder =>

@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int DistributionCIVisibilityLength = 32;
+    private const int DistributionCIVisibilityLength = 36;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" /> values.
@@ -67,6 +67,13 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "rs_compressed:true" }),
             // early_flake_detection.response_tests, index = 31
             new(null),
+            // impacted_tests_detection.request_ms, index = 32
+            new(null),
+            // impacted_tests_detection.response_bytes, index = 33
+            new(null),
+            new(new[] { "rs_compressed:true" }),
+            // impacted_tests_detection.response_files, index = 35
+            new(null),
         };
 
     /// <summary>
@@ -75,7 +82,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionCIVisibilityEntryCounts { get; }
-        = new int[]{ 2, 2, 2, 2, 10, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, };
+        = new int[]{ 2, 2, 2, 2, 10, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, };
 
     public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
@@ -163,5 +170,21 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value)
     {
         _buffer.DistributionCIVisibility[31].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(double value)
+    {
+        _buffer.DistributionCIVisibility[32].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    {
+        var index = 33 + (int)tag;
+        _buffer.DistributionCIVisibility[index].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(double value)
+    {
+        _buffer.DistributionCIVisibility[35].TryEnqueue(value);
     }
 }

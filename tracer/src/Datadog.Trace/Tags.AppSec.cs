@@ -20,6 +20,7 @@ public static partial class Tags
         {
             private const string EventsUsersRoot = Events + "users";
             private const string PropagatedPrefix = "_dd.appsec.usr";
+            internal const string CollectionMode = "_dd.appsec.user.collection_mode";
             internal const string InternalUserId = $"{PropagatedPrefix}.id";
             internal const string InternalLogin = $"{PropagatedPrefix}.login";
             internal const string True = "true";
