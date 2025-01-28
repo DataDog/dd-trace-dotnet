@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 
 /// <summary>
 /// AWSSDK.S3 ListObjectsAsync CallTarget instrumentation
+/// ListObjectsAsync has three overloaded methods, but the other two eventually
+/// call this final method, so this instrumentation captures all 3 calls.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
@@ -44,7 +46,7 @@ public class ListObjectsAsyncIntegration
         return new CallTargetState(scope);
     }
 
-    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
         state.Scope.DisposeWithException(exception);
         return returnValue;

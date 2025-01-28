@@ -44,7 +44,7 @@ public class PutObjectAsyncIntegration
         return new CallTargetState(scope);
     }
 
-    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
     {
         state.Scope.DisposeWithException(exception);
         return returnValue;
