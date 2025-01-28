@@ -24,6 +24,7 @@ internal class DefaultEnvironmentChecker : IEnvironmentChecker
     private bool CheckServerlessEnvironment()
     {
         // First we are checking the tracer RCM, this will return true only in a non-serverless environment
+        // IMPORTANT: this a temporary solution, absence of RCM doesn't necessarily means it's a serverless environment.
         var isRcmAvailable = Tracer.Instance?.Settings?.IsRemoteConfigurationAvailable;
         if (isRcmAvailable.HasValue)
         {
@@ -31,9 +32,6 @@ internal class DefaultEnvironmentChecker : IEnvironmentChecker
         }
 
         // Checking serverless environment based on environment variables
-        return !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
-               !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME")) ||
-               (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable("FUNCTION_NAME")) &&
-                EnvironmentHelpers.GetEnvironmentVariable("FUNCTION_SIGNATURE_TYPE") is "http" or "event");
+        return EnvironmentHelpers.IsServerlessEnvironment();
     }
 }

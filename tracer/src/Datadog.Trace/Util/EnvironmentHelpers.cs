@@ -93,5 +93,13 @@ namespace Datadog.Trace.Util
 
             return new Dictionary<object, object>();
         }
+
+        public static bool IsServerlessEnvironment()
+        {
+            return !string.IsNullOrEmpty(GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME")) ||
+                   (!string.IsNullOrEmpty(GetEnvironmentVariable("FUNCTION_NAME")) &&
+                    GetEnvironmentVariable("FUNCTION_SIGNATURE_TYPE") is "http" or "event");
+        }
     }
 }
