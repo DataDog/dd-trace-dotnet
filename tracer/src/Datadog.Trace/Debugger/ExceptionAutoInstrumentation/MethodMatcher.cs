@@ -23,6 +23,11 @@ internal static class MethodMatcher
     /// </summary>
     internal static bool IsMethodMatch(string stackTraceMethodText, MethodBase methodBase)
     {
+        if (methodBase == null || string.IsNullOrWhiteSpace(stackTraceMethodText))
+        {
+            return false;
+        }
+
         // First try to resolve special method types (async, iterator, etc.)
         var resolvedMethod = ResolveSpecialMethod(methodBase);
 

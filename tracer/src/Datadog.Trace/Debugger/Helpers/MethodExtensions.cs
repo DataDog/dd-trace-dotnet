@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Helpers
     {
         internal static string GetFullName(this MethodBase mb)
         {
-            return mb.DeclaringType?.FullName + "." + mb.Name;
+            return mb.DeclaringType?.FullName + "." + mb?.Name ?? "<Unknown>";
         }
 
         /// <summary>

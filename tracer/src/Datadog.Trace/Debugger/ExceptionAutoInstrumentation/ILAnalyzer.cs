@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static bool AnalyzeMethodBody(MethodBase methodToAnalyze, Type targetType, string methodName)
         {
-            var methodBody = methodToAnalyze.GetMethodBody();
+            var methodBody = methodToAnalyze?.GetMethodBody();
             if (methodBody == null)
             {
                 return false;
@@ -84,10 +84,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     try
                     {
                         var calledMethod = methodToAnalyze?.Module?.ResolveMethod(token);
-                        if (calledMethod?.DeclaringType == targetType &&
-                            calledMethod.Name == methodName)
+                        if (calledMethod?.Name == methodName)
                         {
-                            return true;
+                            // Check if the declaring type is our target type or if our target type inherits from it
+                            var declaringType = calledMethod.DeclaringType;
+                            if (declaringType == targetType ||
+                                (targetType != null && declaringType != null &&
+                                (targetType.IsSubclassOf(declaringType) || declaringType.IsAssignableFrom(targetType))))
+                            {
+                                return true;
+                            }
                         }
                     }
                     catch
