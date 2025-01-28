@@ -44,9 +44,12 @@ namespace Datadog.Trace
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
 
-            foreach (var link in links ?? Enumerable.Empty<SpanLink>())
+            if (links is not null)
             {
-                AddLink(link);
+                foreach (var link in links)
+                {
+                    AddLink(link);
+                }
             }
 
             if (IsLogLevelDebugEnabled)
