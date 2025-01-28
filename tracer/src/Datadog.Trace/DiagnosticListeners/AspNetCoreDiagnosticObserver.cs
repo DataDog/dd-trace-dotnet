@@ -525,6 +525,12 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+                var isCodeOriginEnabled = CurrentLiveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
+                if (isCodeOriginEnabled && routeEndpoint?.RequestDelegate?.Target is { Handler: { } handler })
+                {
+                    CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                }
+
                 if (isFirstExecution)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
@@ -622,9 +628,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (span is not null)
                 {
-                    if (isCodeOriginEnabled)
+                    if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        AddCodeOriginTags(typedArg, span);
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
 
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
@@ -637,25 +643,39 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void AddCodeOriginTags(BeforeActionStruct typedArg, Span span)
+        private bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, out Type type, out MethodInfo method)
         {
-            var codeOrigin = CurrentCodeOriginManager;
-            if (typedArg.ActionDescriptor.TryDuckCast<ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
+            try
             {
-                codeOrigin.SetCodeOriginForEntrySpan(span, controllerActionDescriptor.ControllerTypeInfo, controllerActionDescriptor.MethodInfo);
-            }
-            else if (typedArg.ActionDescriptor.TryDuckCast<CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
-            {
-                foreach (var part in compiledPageActionDescriptor.HandlerMethods)
+                if (beforeAction.ActionDescriptor.TryDuckCast<ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
                 {
-                    if (part.TryDuckCast(out HandlerMethodDescriptorStruct method)
-                     && string.Equals(method.HttpMethod, typedArg.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                    type = controllerActionDescriptor.ControllerTypeInfo;
+                    method = controllerActionDescriptor.MethodInfo;
+                    return true;
+                }
+
+                if (beforeAction.ActionDescriptor.TryDuckCast<CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
+                {
+                    foreach (var part in compiledPageActionDescriptor.HandlerMethods)
                     {
-                        codeOrigin.SetCodeOriginForEntrySpan(span, compiledPageActionDescriptor.HandlerTypeInfo, method.MethodInfo);
-                        break;
+                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc)
+                         && string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                        {
+                            type = compiledPageActionDescriptor.HandlerTypeInfo;
+                            method = methodDesc.MethodInfo;
+                            return true;
+                        }
                     }
                 }
             }
+            catch (Exception e)
+            {
+                Log.Error(e, "Fail to extract type and method from ActionDescriptor");
+            }
+
+            type = null;
+            method = null;
+            return false;
         }
 
         private void OnMvcAfterAction(object arg)
@@ -774,41 +794,41 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.controllers.controlleractiondescriptor
+        /// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.Core/src/Controllers/ControllerActionDescriptor.cs
         /// </summary>
         [DuckCopy]
         internal struct ControllerActionDescriptorStruct
         {
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags)]
+            [Duck]
             public MethodInfo MethodInfo;
 
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags)]
+            [Duck]
             public TypeInfo ControllerTypeInfo;
         }
 
         /// <summary>
-        /// https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.razorpages.compiledpageactiondescriptor
+        /// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/CompiledPageActionDescriptor.cs
         /// </summary>
         [DuckCopy]
         internal struct CompiledPageActionDescriptorStruct
         {
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags)]
+            [Duck]
             public IEnumerable HandlerMethods;
 
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags)]
+            [Duck]
             public TypeInfo HandlerTypeInfo;
         }
 
         /// <summary>
-        /// https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.mvc.razorpages.infrastructure.handlermethoddescriptor
+        /// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/Infrastructure/HandlerMethodDescriptor.cs
         /// </summary>
         [DuckCopy]
         internal struct HandlerMethodDescriptorStruct
         {
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags)]
+            [Duck]
             public MethodInfo MethodInfo;
 
-            [Duck(BindingFlags = DuckAttribute.DefaultFlags)]
+            [Duck]
             public string HttpMethod;
         }
 

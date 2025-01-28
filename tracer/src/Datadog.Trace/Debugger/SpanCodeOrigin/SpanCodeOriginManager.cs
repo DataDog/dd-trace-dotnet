@@ -138,7 +138,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
                     try
                     {
-                        var endpointMethodTokens = EndpointDetector.GetEndpointMethodTokens(reader.MetadataReader);
+                        var endpointMethodTokens = EndpointDetector.GetEndpointMethodTokens(reader);
 
                         // Build dictionary of sequence points only for endpoint methods
                         var builder = ImmutableDictionary.CreateBuilder<int, DatadogMetadataReader.DatadogSequencePoint?>();

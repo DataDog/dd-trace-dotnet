@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
@@ -35,7 +36,9 @@ internal static class EndpointDetector
         "Microsoft.AspNetCore.Mvc.HttpPostAttribute",
         "Microsoft.AspNetCore.Mvc.HttpPutAttribute",
         "Microsoft.AspNetCore.Mvc.HttpDeleteAttribute",
-        "Microsoft.AspNetCore.Mvc.HttpPatchAttribute"
+        "Microsoft.AspNetCore.Mvc.HttpPatchAttribute",
+        "Microsoft.AspNetCore.Mvc.HttpHeadAttribute",
+        "Microsoft.AspNetCore.Mvc.HttpOptionsAttribute",
     ];
 
     private static readonly HashSet<string> SignalRHubBaseNames =
@@ -46,10 +49,12 @@ internal static class EndpointDetector
 
     private static readonly HashSet<string> PageModelBaseNames = ["Microsoft.AspNetCore.Mvc.RazorPages.PageModel"];
 
-    public static ImmutableHashSet<int> GetEndpointMethodTokens(MetadataReader metadataReader)
+    private static readonly HashSet<string> NoHandlerAttributes = ["Microsoft.AspNetCore.Mvc.RazorPages.NonHandlerAttribute"];
+
+    public static ImmutableHashSet<int> GetEndpointMethodTokens(DatadogMetadataReader datadogMetadataReader)
     {
         var builder = ImmutableHashSet.CreateBuilder<int>();
-
+        var metadataReader = datadogMetadataReader.MetadataReader;
         foreach (var typeHandle in metadataReader.TypeDefinitions)
         {
             var typeDef = metadataReader.GetTypeDefinition(typeHandle);
@@ -59,7 +64,7 @@ internal static class EndpointDetector
                 continue;
             }
 
-            bool isPageModel = false, isSignalRHub = false;
+            bool isPageModel = false, isSignalRHub = false, isCompilerGeneratedType = false;
             var isController = IsInheritFromTypesOrHasAttribute(typeDef, metadataReader, ControllerAttributes, ControllerBaseNames);
             if (!isController)
             {
@@ -69,7 +74,11 @@ internal static class EndpointDetector
                     isSignalRHub = IsInheritFromTypes(typeDef, metadataReader, SignalRHubBaseNames);
                     if (!isSignalRHub)
                     {
-                        continue;
+                        isCompilerGeneratedType = datadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId);
+                        if (!isCompilerGeneratedType)
+                        {
+                            continue;
+                        }
                     }
                 }
             }
@@ -102,7 +111,7 @@ internal static class EndpointDetector
                 }
 
                 // minimal API endpoints
-                if (HasEndpointAttribute(methodDef, metadataReader))
+                if (isCompilerGeneratedType && MightBeEndpoint(methodDef, metadataReader))
                 {
                     builder.Add(metadataReader.GetToken(methodHandle));
                 }
@@ -219,7 +228,14 @@ internal static class EndpointDetector
 
     private static bool IsPageModelHandler(MethodDefinition methodDef, MetadataReader reader)
     {
+        // First check if the method has [NonHandler] attribute
+        if (HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, NoHandlerAttributes))
+        {
+            return false;
+        }
+
         var name = reader.GetString(methodDef.Name);
+        // https://learn.microsoft.com/en-us/dotnet/api/system.web.mvc.httpverbs
         return name.StartsWith("On", StringComparison.Ordinal) &&
                (name.Equals("OnGet", StringComparison.Ordinal) ||
                 name.Equals("OnGetAsync", StringComparison.Ordinal) ||
@@ -228,23 +244,21 @@ internal static class EndpointDetector
                 name.Equals("OnPut", StringComparison.Ordinal) ||
                 name.Equals("OnPutAsync", StringComparison.Ordinal) ||
                 name.Equals("OnDelete", StringComparison.Ordinal) ||
-                name.Equals("OnDeleteAsync", StringComparison.Ordinal));
+                name.Equals("OnDeleteAsync", StringComparison.Ordinal) ||
+                name.Equals("OnHead", StringComparison.Ordinal) ||
+                name.Equals("OnHeadAsync", StringComparison.Ordinal) ||
+                name.Equals("OnPatch", StringComparison.Ordinal) ||
+                name.Equals("OnPatchAsync", StringComparison.Ordinal) ||
+                name.Equals("OnOptions", StringComparison.Ordinal) ||
+                name.Equals("OnOptionsAsync", StringComparison.Ordinal));
     }
 
-    private static bool HasEndpointAttribute(MethodDefinition methodDef, MetadataReader reader)
+    private static bool MightBeEndpoint(MethodDefinition methodDef, MetadataReader reader)
     {
-        foreach (var attributeHandle in methodDef.GetCustomAttributes())
+        var name = reader.GetString(methodDef.Name);
+        if (name.StartsWith("<", StringComparison.Ordinal))
         {
-            var attribute = reader.GetCustomAttribute(attributeHandle);
-            var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
-            var attributeType = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
-            var attributeName = reader.GetString(attributeType.Name);
-
-            if (attributeName.Contains("Endpoint") ||
-                attributeName.Contains("Http"))
-            {
-                return true;
-            }
+            return true;
         }
 
         return false;
