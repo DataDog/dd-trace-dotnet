@@ -26,15 +26,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class CopyObjectIntegration
 {
+    private const string Operation = "CopyObject";
+    private const string SpanKind = SpanKinds.Producer;
+
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
+        where TRequest : ICopyObjectRequest
     {
-        Console.WriteLine("[tracer] CopyObject start");
-        return CallTargetState.GetDefault();
+        if (request.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        AwsS3Common.SetTags(tags, request.DestinationBucketName, request.DestinationObjectKey);
+
+        return new CallTargetState(scope);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        Console.WriteLine("[tracer] CopyObject end");
+        state.Scope.DisposeWithException(exception);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
