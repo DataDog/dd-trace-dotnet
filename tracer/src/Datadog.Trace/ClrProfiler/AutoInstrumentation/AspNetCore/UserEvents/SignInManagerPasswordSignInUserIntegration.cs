@@ -5,7 +5,10 @@
 
 #nullable enable
 
+#if !NETFRAMEWORK
+
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -14,8 +17,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Microsoft.AspNetCore.Http;
 
-#if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
@@ -68,8 +71,7 @@ public static class SignInManagerPasswordSignInUserIntegration
         if (Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { Span: { } span })
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
-            var user = state.State as IIdentityUser;
-            if (user is null)
+            if (state.State is not IIdentityUser user)
             {
                 UserEventsCommon.RecordMetricsLoginFailureIfNotFound(false, false);
                 return returnValue;
@@ -91,7 +93,6 @@ public static class SignInManagerPasswordSignInUserIntegration
 
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-
             if (!returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
@@ -110,14 +111,26 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (!string.IsNullOrEmpty(userLogin))
                 {
                     foundLogin = true;
-                    var login = processPii?.Invoke(userLogin!) ?? userLogin;
-                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login!);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login!);
+                    var login = processPii?.Invoke(userLogin!) ?? userLogin!;
+                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
                 }
 
-                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
-                SecurityReporter.SafeCollectHeaders(span);
+                var duckCast = instance.TryDuckCast<ISignInManager>(out var value);
+                if (duckCast && value is not null)
+                {
+                    var httpContext = value.Context;
+                    var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext!);
+                    securityCoordinator.Reporter.CollectHeaders();
+                    UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
+                    if (userLogin is not null)
+                    {
+                        // userId must not be provided on login failure
+                        var result = securityCoordinator.RunWafForUser(userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                        securityCoordinator.BlockAndReport(result);
+                    }
+                }
             }
 #if !NETCOREAPP3_1_OR_GREATER
             else if (userExists)
