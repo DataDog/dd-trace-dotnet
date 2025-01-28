@@ -88,7 +88,6 @@ internal class IntelligentTestRunnerClient
         _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
         _repositoryUrl = GetRepositoryUrl();
-        _repositoryUrl = GetRepositoryUrl();
         _commitSha = GetCommitSha();
         _branchName = GetBranchName();
 
