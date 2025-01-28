@@ -1,4 +1,4 @@
-// <copyright file="DeleteObjectAsyncIntegration.cs" company="Datadog">
+// <copyright file="CompleteMultipartUploadIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,34 +6,31 @@
 
 using System;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement;
 
 /// <summary>
-/// AWSSDK.S3 DeleteObjectAsync CallTarget instrumentation
-/// DeleteObjectAsync has three overloaded methods, but the other two eventually
-/// call this final method, so this instrumentation captures all 3 calls.
+/// AWSSDK.S3 CompleteMultipartUpload CallTarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
     TypeName = "Amazon.S3.AmazonS3Client",
-    MethodName = "DeleteObjectAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.S3.Model.DeleteObjectResponse]",
-    ParameterTypeNames = ["Amazon.S3.Model.DeleteObjectRequest", ClrNames.CancellationToken],
+    MethodName = "CompleteMultipartUpload",
+    ReturnTypeName = "Amazon.S3.Model.CompleteMultipartUploadResponse",
+    ParameterTypeNames = ["Amazon.S3.Model.CompleteMultipartUploadRequest"],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class DeleteObjectAsyncIntegration
+public class CompleteMultipartUploadIntegration
 {
-    private const string Operation = "DeleteObject";
+    private const string Operation = "CompleteMultipartUpload";
     private const string SpanKind = SpanKinds.Producer;
 
-    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
-        where TRequest : IDeleteObjectRequest
+    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
+        where TRequest : ICompleteMultipartUploadRequest
     {
         if (request.Instance is null)
         {
@@ -46,9 +43,9 @@ public class DeleteObjectAsyncIntegration
         return new CallTargetState(scope);
     }
 
-    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         state.Scope.DisposeWithException(exception);
-        return returnValue;
+        return new CallTargetReturn<TReturn?>(returnValue);
     }
 }

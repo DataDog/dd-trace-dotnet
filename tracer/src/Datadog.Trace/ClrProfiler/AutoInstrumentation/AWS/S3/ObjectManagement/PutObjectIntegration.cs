@@ -1,4 +1,4 @@
-// <copyright file="ListObjectsV2Integration.cs" company="Datadog">
+// <copyright file="PutObjectIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,29 +8,29 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 
 /// <summary>
-/// AWSSDK.S3 ListObjectsV2 CallTarget instrumentation
+/// AWSSDK.S3 PutObject CallTarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
     TypeName = "Amazon.S3.AmazonS3Client",
-    MethodName = "ListObjectsV2",
-    ReturnTypeName = "Amazon.S3.Model.ListObjectsV2Response",
-    ParameterTypeNames = ["Amazon.S3.Model.ListObjectsV2Request"],
+    MethodName = "PutObject",
+    ReturnTypeName = "Amazon.S3.Model.PutObjectResponse",
+    ParameterTypeNames = ["Amazon.S3.Model.PutObjectRequest"],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class ListObjectsV2Integration
+public class PutObjectIntegration
 {
-    private const string Operation = "ListObjectsV2";
+    private const string Operation = "PutObject";
     private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
-        where TRequest : IListObjectsV2Request
+        where TRequest : IPutObjectRequest
     {
         if (request.Instance is null)
         {
@@ -38,7 +38,7 @@ public class ListObjectsV2Integration
         }
 
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
-        AwsS3Common.SetTags(tags, request.BucketName, null); // there is no key in a ListObjectsV2Request
+        AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
 
         return new CallTargetState(scope);
     }

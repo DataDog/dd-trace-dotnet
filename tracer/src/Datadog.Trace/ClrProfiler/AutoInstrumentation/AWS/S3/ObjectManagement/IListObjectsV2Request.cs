@@ -1,4 +1,4 @@
-// <copyright file="IPutBucketRequest.cs" company="Datadog">
+// <copyright file="IListObjectsV2Request.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,13 +6,13 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 
 /// <summary>
-/// PutBucketRequest interface for ducktyping.
-/// Mirrors Amazon.S3.Model.PutBucketRequest with unused values removed.
+/// ListObjectsV2Request interface for ducktyping.
+/// Mirrors Amazon.S3.Model.ListObjectsV2Request with unused values removed.
 /// </summary>
-internal interface IPutBucketRequest : IDuckType
+internal interface IListObjectsV2Request : IDuckType
 {
     /// <summary>
     /// Gets the S3 bucket name.

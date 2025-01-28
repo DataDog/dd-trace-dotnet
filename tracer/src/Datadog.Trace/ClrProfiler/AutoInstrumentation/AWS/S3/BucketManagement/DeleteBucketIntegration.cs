@@ -1,4 +1,4 @@
-// <copyright file="GetObjectIntegration.cs" company="Datadog">
+// <copyright file="DeleteBucketIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,29 +8,29 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
 
 /// <summary>
-/// AWSSDK.S3 GetObject CallTarget instrumentation
+/// AWSSDK.S3 DeleteBucket CallTarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
     TypeName = "Amazon.S3.AmazonS3Client",
-    MethodName = "GetObject",
-    ReturnTypeName = "Amazon.S3.Model.GetObjectResponse",
-    ParameterTypeNames = ["Amazon.S3.Model.GetObjectRequest"],
+    MethodName = "DeleteBucket",
+    ReturnTypeName = "Amazon.S3.Model.DeleteBucketResponse",
+    ParameterTypeNames = ["Amazon.S3.Model.DeleteBucketRequest"],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class GetObjectIntegration
+public class DeleteBucketIntegration
 {
-    private const string Operation = "GetObject";
+    private const string Operation = "DeleteBucket";
     private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
-        where TRequest : IGetObjectRequest
+        where TRequest : IDeleteBucketRequest
     {
         if (request.Instance is null)
         {
@@ -38,7 +38,7 @@ public class GetObjectIntegration
         }
 
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
-        AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
+        AwsS3Common.SetTags(tags, request.BucketName, null); // there is no key in a DeleteBucketRequest
 
         return new CallTargetState(scope);
     }

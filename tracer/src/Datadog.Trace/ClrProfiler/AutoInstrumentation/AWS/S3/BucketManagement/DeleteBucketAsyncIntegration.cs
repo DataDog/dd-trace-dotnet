@@ -9,7 +9,7 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
 
 /// <summary>
 /// AWSSDK.S3 DeleteBucketAsync CallTarget instrumentation

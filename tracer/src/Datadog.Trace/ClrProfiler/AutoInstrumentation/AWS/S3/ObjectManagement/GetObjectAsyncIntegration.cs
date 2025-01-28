@@ -1,4 +1,4 @@
-// <copyright file="PutObjectAsyncIntegration.cs" company="Datadog">
+// <copyright file="GetObjectAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,29 +9,31 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 
 /// <summary>
-/// AWSSDK.S3 PutObjectAsync CallTarget instrumentation
+/// AWSSDK.S3 GetObjectAsync CallTarget instrumentation
+/// GetObjectAsync has three overloaded methods, but the other two eventually
+/// call this final method, so this instrumentation captures all 3 calls.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
     TypeName = "Amazon.S3.AmazonS3Client",
-    MethodName = "PutObjectAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.S3.Model.PutObjectResponse]",
-    ParameterTypeNames = ["Amazon.S3.Model.PutObjectRequest", ClrNames.CancellationToken],
+    MethodName = "GetObjectAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.S3.Model.GetObjectResponse]",
+    ParameterTypeNames = ["Amazon.S3.Model.GetObjectRequest", ClrNames.CancellationToken],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class PutObjectAsyncIntegration
+public class GetObjectAsyncIntegration
 {
-    private const string Operation = "PutObject";
+    private const string Operation = "GetObject";
     private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
-        where TRequest : IPutObjectRequest
+        where TRequest : IGetObjectRequest
     {
         if (request.Instance is null)
         {

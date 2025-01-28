@@ -1,4 +1,4 @@
-// <copyright file="CompleteMultipartUploadAsyncIntegration.cs" company="Datadog">
+// <copyright file="CopyObjectAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,29 +9,31 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 
 /// <summary>
-/// AWSSDK.S3 CompleteMultipartUploadAsync CallTarget instrumentation
+/// AWSSDK.S3 CopyObjectAsync CallTarget instrumentation
+/// CopyObjectAsync has three overloaded methods, but the other two eventually
+/// call this final method, so this instrumentation captures all 3 calls.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "AWSSDK.S3",
     TypeName = "Amazon.S3.AmazonS3Client",
-    MethodName = "CompleteMultipartUploadAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.S3.Model.CompleteMultipartUploadResponse]",
-    ParameterTypeNames = ["Amazon.S3.Model.CompleteMultipartUploadRequest", ClrNames.CancellationToken],
+    MethodName = "CopyObjectAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.S3.Model.CopyObjectResponse]",
+    ParameterTypeNames = ["Amazon.S3.Model.CopyObjectRequest", ClrNames.CancellationToken],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public class CompleteMultipartUploadAsyncIntegration
+public class CopyObjectAsyncIntegration
 {
-    private const string Operation = "CompleteMultipartUpload";
+    private const string Operation = "CopyObject";
     private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
-        where TRequest : ICompleteMultipartUploadRequest
+        where TRequest : ICopyObjectRequest
     {
         if (request.Instance is null)
         {
@@ -39,7 +41,7 @@ public class CompleteMultipartUploadAsyncIntegration
         }
 
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
-        AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
+        AwsS3Common.SetTags(tags, request.DestinationBucketName, request.DestinationObjectKey);
 
         return new CallTargetState(scope);
     }
