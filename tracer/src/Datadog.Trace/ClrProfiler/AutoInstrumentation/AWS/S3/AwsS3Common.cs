@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
                        : tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(S3OperationName);
         }
 
-        public static void SetTags(AwsS3Tags? tags, string bucketName, string objectKey)
+        public static void SetTags(AwsS3Tags? tags, string? bucketName, string? objectKey)
         {
             if (tags == null)
             {
