@@ -35,8 +35,10 @@ public sealed class ImmutableTracerSettings
         ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
         StartupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
         StatsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
-        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
         TracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+
+        // TraceEnabled defaults to false because tracing is disabled unless auto-instrumentation is enabled
+        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, false);
 
 #pragma warning disable CS0618 // Type or member is obsolete
         Exporter = new ImmutableExporterSettings(this);
