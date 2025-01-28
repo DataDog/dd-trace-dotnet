@@ -60,6 +60,7 @@ private:
     bool first_jit_compilation_completed = false;
 
     bool corlib_module_loaded = false;
+    ModuleID corlib_module_id = 0;
     AppDomainID corlib_app_domain_id = 0;
     bool managed_profiler_loaded_domain_neutral = false;
     std::unordered_map<AppDomainID, Version> managed_profiler_loaded_app_domains;

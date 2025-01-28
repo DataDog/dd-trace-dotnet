@@ -795,6 +795,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                   module_info.assembly.name == system_private_corelib_assemblyName))
     {
         corlib_module_loaded = true;
+        corlib_module_id = module_id;
         corlib_app_domain_id = app_domain_id;
 
         ComPtr<IUnknown> metadata_interfaces;
@@ -4352,8 +4353,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
-    if (!pbUseCachedFunction)
+    if (pbUseCachedFunction == nullptr || !*pbUseCachedFunction)
     {
+        return S_OK;
+    }
+
+    // Extract Module metadata
+    ModuleID module_id;
+    mdToken function_token = mdTokenNil;
+
+    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetFunctionInfo() failed for ",
+                        functionId);
+        return S_OK;
+    }
+
+    // Verify if is the COR module
+    if (module_id == corlib_module_id)
+    {
+        // we don't rewrite the COR module, so we accept all the images from there.
+        *pbUseCachedFunction = true;
         return S_OK;
     }
 
@@ -4369,18 +4390,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     auto& modules = modulesOpt.value();
-
-    // Extract Module metadata
-    ModuleID module_id;
-    mdToken function_token = mdTokenNil;
-
-    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
-    if (FAILED(hr))
-    {
-        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetFunctionInfo() failed for ",
-                        functionId);
-        return S_OK;
-    }
 
     // Call RequestRejitOrRevert for register inliners and current NGEN module.
     if (rejit_handler != nullptr)
