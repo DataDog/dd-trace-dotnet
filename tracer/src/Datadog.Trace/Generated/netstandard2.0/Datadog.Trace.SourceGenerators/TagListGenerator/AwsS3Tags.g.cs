@@ -14,6 +14,10 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsS3Tags
     {
+        // BucketNameBytes = MessagePack.Serialize("aws.bucket.name");
+        private static ReadOnlySpan<byte> BucketNameBytes => new byte[] { 175, 97, 119, 115, 46, 98, 117, 99, 107, 101, 116, 46, 110, 97, 109, 101 };
+        // ObjectKeyBytes = MessagePack.Serialize("aws.object.key");
+        private static ReadOnlySpan<byte> ObjectKeyBytes => new byte[] { 174, 97, 119, 115, 46, 111, 98, 106, 101, 99, 116, 46, 107, 101, 121 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 
@@ -21,6 +25,8 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
+                "aws.bucket.name" => BucketName,
+                "aws.object.key" => ObjectKey,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -30,6 +36,12 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "aws.bucket.name": 
+                    BucketName = value;
+                    break;
+                case "aws.object.key": 
+                    ObjectKey = value;
+                    break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsS3Tags));
                     break;
@@ -41,6 +53,16 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (BucketName is not null)
+            {
+                processor.Process(new TagItem<string>("aws.bucket.name", BucketName, BucketNameBytes));
+            }
+
+            if (ObjectKey is not null)
+            {
+                processor.Process(new TagItem<string>("aws.object.key", ObjectKey, ObjectKeyBytes));
+            }
+
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
@@ -51,6 +73,20 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (BucketName is not null)
+            {
+                sb.Append("aws.bucket.name (tag):")
+                  .Append(BucketName)
+                  .Append(',');
+            }
+
+            if (ObjectKey is not null)
+            {
+                sb.Append("aws.object.key (tag):")
+                  .Append(ObjectKey)
+                  .Append(',');
+            }
+
             if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")

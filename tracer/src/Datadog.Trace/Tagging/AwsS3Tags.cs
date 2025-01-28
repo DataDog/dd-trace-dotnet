@@ -23,6 +23,12 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
+        [Tag(Trace.Tags.BucketName)]
+        public string? BucketName { get; set; }
+
+        [Tag(Trace.Tags.ObjectKey)]
+        public string? ObjectKey { get; set; }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
     }
@@ -60,7 +66,7 @@ namespace Datadog.Trace.Tagging
                     return null;
                 }
 
-                return _peerServiceOverride ?? string.Empty; // TODO bucket name
+                return _peerServiceOverride ?? BucketName;
             }
             private set => _peerServiceOverride = value;
         }
@@ -77,7 +83,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : string.Empty; // TODO bucket name
+                           : BucketName;
             }
         }
     }
