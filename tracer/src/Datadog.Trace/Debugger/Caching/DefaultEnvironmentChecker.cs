@@ -23,14 +23,6 @@ internal class DefaultEnvironmentChecker : IEnvironmentChecker
 
     private bool CheckServerlessEnvironment()
     {
-        // First we are checking the tracer RCM, this will return true only in a non-serverless environment
-        // IMPORTANT: this a temporary solution, absence of RCM doesn't necessarily means it's a serverless environment.
-        var isRcmAvailable = Tracer.Instance?.Settings?.IsRemoteConfigurationAvailable;
-        if (isRcmAvailable.HasValue)
-        {
-            return !isRcmAvailable.Value;
-        }
-
         // Checking serverless environment based on environment variables
         return EnvironmentHelpers.IsServerlessEnvironment();
     }

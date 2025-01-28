@@ -8,7 +8,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using static Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Util
 {
@@ -94,12 +97,15 @@ namespace Datadog.Trace.Util
             return new Dictionary<object, object>();
         }
 
-        public static bool IsServerlessEnvironment()
+        internal static bool IsServerlessEnvironment()
         {
             return !string.IsNullOrEmpty(GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable("AWS_LAMBDA_FUNCTION_NAME")) ||
-                   (!string.IsNullOrEmpty(GetEnvironmentVariable("FUNCTION_NAME")) &&
-                    GetEnvironmentVariable("FUNCTION_SIGNATURE_TYPE") is "http" or "event");
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(AzureAppService.FunctionsWorkerRuntimeKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.DeprecatedFunctionNameKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.DeprecatedProjectKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.FunctionNameKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.FunctionTargetKey));
         }
     }
 }
