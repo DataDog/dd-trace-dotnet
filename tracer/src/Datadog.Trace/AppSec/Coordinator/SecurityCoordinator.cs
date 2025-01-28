@@ -154,22 +154,15 @@ internal readonly partial struct SecurityCoordinator
             return;
         }
 
-        if (result.Timeout)
+        var metric = result switch
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
-        }
-        else if (result.ShouldBlock)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
-        }
-        else if (result.ShouldReportSecurityResult)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
-        }
-        else
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
-        }
+            { Timeout: true } => MetricTags.WafAnalysis.WafTimeout,
+            { ShouldBlock: true } => MetricTags.WafAnalysis.RuleTriggeredAndBlocked,
+            { ShouldReportSecurityResult: true } => MetricTags.WafAnalysis.RuleTriggered,
+            _ => MetricTags.WafAnalysis.Normal,
+        };
+
+        TelemetryFactory.Metrics.RecordCountWafRequests(metric);
     }
 
     public void AddResponseHeadersToSpanAndCleanup()
