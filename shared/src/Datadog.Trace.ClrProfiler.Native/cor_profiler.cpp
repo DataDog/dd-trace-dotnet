@@ -146,9 +146,11 @@ namespace datadog::shared::nativeloader
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
 
+            WSTRING process_name_lower = to_lower(process_name);
+
             for (auto&& exclude_assembly : default_exclude_assemblies)
             {
-                if (string_iequal(process_name, exclude_assembly))
+                if (string_lower_equal(process_name_lower, exclude_assembly))
                 {
                     Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
@@ -497,21 +499,6 @@ namespace datadog::shared::nativeloader
 
         single_step_guard_rails.RecordBootstrapSuccess(runtimeInformation);
         return S_OK;
-    }
-
-    bool icompare_pred(WCHAR a, WCHAR b)
-    {
-        return std::tolower(a) == std::tolower(b);
-    }
-
-    bool string_iequal(WSTRING const& s1, WSTRING const& s2)
-    {
-        if (s1.length() == s2.length())
-        {
-            return std::equal(s2.begin(), s2.end(), s1.begin(), icompare_pred);
-        }
-
-        return false;
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
