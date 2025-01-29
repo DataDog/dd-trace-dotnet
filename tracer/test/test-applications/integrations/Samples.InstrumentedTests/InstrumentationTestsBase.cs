@@ -122,7 +122,7 @@ public class InstrumentationTestsBase : IDisposable
 
     protected void AssertTainted(object tainted, string additionalInfo = "")
     {
-        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted. " + additionalInfo);
+        GetTainted(tainted).Should().NotBeNull("is not tainted. " + additionalInfo);
     }
 
     protected void AssertSecureMarks(object value, SecureMarks secureMarks)

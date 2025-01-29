@@ -16,6 +16,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 #endif
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -638,11 +639,18 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (uninitializeContext)
             {
-                (HttpContext as DefaultHttpContext)?.Uninitialize();
+                // Task async execute uninitialized context
+                Task.Run(() =>
+                {
+                    Thread.Sleep(5000);
+                    (HttpContext as DefaultHttpContext)?.Uninitialize();
+                });
             }
 
+            ExecuteCommandInternal(file, "");
+
             // call RASP and IAST
-            GetFileAux(file, 0);
+            //GetFileAux(file, 0);
 
             return Content("Ok");
         }

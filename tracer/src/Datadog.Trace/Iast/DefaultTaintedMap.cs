@@ -79,6 +79,10 @@ internal class DefaultTaintedMap : ITaintedMap
                 {
                     return entry;
                 }
+                else
+                {
+                    IastModule.Log.Debug("Didn't find the object: {0} - Entry value: {1}", objectToFind, entry.Value);
+                }
             }
 
             entry = entry.Next;
@@ -120,6 +124,15 @@ internal class DefaultTaintedMap : ITaintedMap
         // - Stop updating the estimated size.
 
         _map[index] = entry;
+        var stringBuilder = new System.Text.StringBuilder();
+        stringBuilder.Append(entry.Value);
+        stringBuilder.Append(" - With Index: ");
+        stringBuilder.Append(index);
+        stringBuilder.Append(" - Has Next: ");
+        stringBuilder.Append(entry.Next != null);
+        stringBuilder.Append(" - Entry count: ");
+        stringBuilder.Append(_entriesCount);
+        IastModule.Log.Debug("Put: {0}", stringBuilder.ToString());
 
         if ((entry.PositiveHashCode & PurgeMask) == 0)
         {
@@ -133,6 +146,7 @@ internal class DefaultTaintedMap : ITaintedMap
     /// </summary>
     internal void Purge()
     {
+        IastModule.Log.Debug("Purging tainted map");
         // Ensure we enter only once concurrently.
         lock (_purgingLock)
         {

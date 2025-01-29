@@ -63,6 +63,7 @@ namespace Datadog.Trace.Iast
                 var objectAsString = objectToTaint as string;
                 if (objectAsString is null || objectAsString != string.Empty)
                 {
+                    IastModule.Log.Debug("Tainting object: {0} with ranges: {1}", objectToTaint, ranges);
                     _map.Put(new TaintedObject(objectToTaint, ranges));
                 }
             }

@@ -1,6 +1,7 @@
 #if NET6_0_OR_GREATER
 
 using System;
+using System.Runtime;
 using Xunit;
 using System.Runtime.CompilerServices;
 using FluentAssertions;
@@ -14,6 +15,25 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
 
     public DefaultInterpolatedStringHandlerTests()
     {
+        GCLatencyMode oldMode = GCSettings.LatencyMode;
+
+        // Make sure we can always go to the catch block, 
+        // so we can set the latency mode back to `oldMode`
+        RuntimeHelpers.PrepareConstrainedRegions();
+
+        try
+        {
+            GCSettings.LatencyMode = GCLatencyMode.LowLatency;
+
+            // Generation 2 garbage collection is now
+            // deferred, except in extremely low-memory situations
+        }
+        finally
+        {
+            // ALWAYS set the latency mode back
+            GCSettings.LatencyMode = oldMode;
+        }
+        
         AddTainted(TaintedValue);
     }
 
@@ -172,10 +192,45 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void a1()
+    {
+        for (var i = 0; i < 8192; i++)
+        {
+            Test(i);
+        }
+    }
+    
+    [Fact]
+    public void a2()
+    {
+        for (var i = 0; i < 8192; i++)
+        {
+            Test(i);
+        }
+    }
+    
+    [Fact]
+    public void a3()
+    {
+        for (var i = 0; i < 8192; i++)
+        {
+            Test(i);
+        }
+    }
+    
+    [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueMultipleValues_GetString_Vulnerable()
     {
+        for (var i = 0; i < 8192; i++)
+        {
+            Test(i);
+        }
+    }
+
+    private void Test(int i)
+    {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendLiteral(UntaintedValue);
+        //test.AppendLiteral(UntaintedValue);
         test.AppendFormatted(new ReadOnlySpan<char>([' ', 'w', 'o', 'r', 'l', 'd', ' ']));
         test.AppendFormatted(TaintedValue);
         test.AppendFormatted(42);

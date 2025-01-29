@@ -48,14 +48,21 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return;
             }
 
+            if (targetIsTainted && tainted!.Value is null)
+            {
+                IastModule.Log.Debug("From method: Tainted value is null");
+            }
+
             var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
             if (!targetIsTainted)
             {
                 taintedObjects.Taint(target, rangesResult);
+                IastModule.Log.Debug("From method: Tainted : {0}", target);
             }
             else
             {
                 tainted.Ranges = rangesResult;
+                IastModule.Log.Debug("From method: already tainted : {0}", target);
             }
         }
         catch (Exception error)
@@ -86,6 +93,8 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
 
             if (taintedSelf == null)
             {
+                IastModule.LogAspectException(new InvalidOperationException("Tainted object not found"), $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(PropagateTaint)}: input: {input} - result: {result}");
+                var tt = taintedObjects.Get(input);
                 return result;
             }
 
