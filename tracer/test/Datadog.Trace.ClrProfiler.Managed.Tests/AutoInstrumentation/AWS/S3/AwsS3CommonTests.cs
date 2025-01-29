@@ -2,17 +2,117 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
+using System.Collections.Specialized;
+using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.S3;
 
 public class AwsS3CommonTests
 {
+    private const string BucketName = "MyBucketName";
+    private const string ObjectKey = "MyObjectKey";
+
     [Fact]
-    public void GetCorrectBucketName()
+    public void GetCorrectOperationName()
     {
-        "1".Should().Be("1");
+        var tracerV0 = GetTracer("v0");
+        AwsS3Common.GetOperationName(tracerV0).Should().Be("s3.request");
+
+        var tracerV1 = GetTracer("v1");
+        AwsS3Common.GetOperationName(tracerV1).Should().Be("aws.s3.send");
+    }
+
+    [Fact]
+    public void CreateScopeCorrectAttributes()
+    {
+        var tracer = GetTracer();
+        var scope = AwsS3Common.CreateScope(tracer, "PutObject", out var tags);
+        scope.Should().NotBeNull();
+
+        var span = scope!.Span;
+        span.Type.Should().Be(SpanTypes.Http);
+        span.ResourceName.Should().Be("S3.PutObject");
+
+        tags.Should().NotBeNull();
+        tags!.SpanKind.Should().Be(SpanKinds.Client);
+        tags.InstrumentationName.Should().Be("aws-sdk");
+        tags.Operation.Should().Be("PutObject");
+        tags.AwsService.Should().Be("S3");
+    }
+
+    [Fact]
+    public void SetTags_WithValidParams()
+    {
+        var tracer = GetTracer();
+        AwsS3Common.CreateScope(tracer, "PutObject", out var tags);
+        tags.Should().NotBeNull();
+
+        AwsS3Common.SetTags(tags, BucketName, ObjectKey);
+        tags!.BucketName.Should().Be(BucketName);
+        tags.ObjectKey.Should().Be(ObjectKey);
+    }
+
+    [Fact]
+    public void SetTags_WithNullTags()
+    {
+        AwsS3Tags? tags = null;
+
+        AwsS3Common.SetTags(tags, BucketName, ObjectKey);
+        tags.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetTags_WithEmptyTags()
+    {
+        AwsS3Tags tags = new();
+        AwsS3Common.SetTags(tags, BucketName, ObjectKey);
+        tags.Should().NotBeNull();
+
+        tags.BucketName.Should().Be(BucketName);
+        tags.ObjectKey.Should().Be(ObjectKey);
+    }
+
+    [Fact]
+    public void SetTags_WithMissingBucketName()
+    {
+        var tracer = GetTracer();
+        AwsS3Common.CreateScope(tracer, "SomeOperation", out var tags);
+        tags.Should().NotBeNull();
+
+        AwsS3Common.SetTags(tags, null, ObjectKey);
+        tags!.BucketName.Should().BeNull();
+        tags.ObjectKey.Should().Be(ObjectKey);
+    }
+
+    [Fact]
+    public void SetTags_WithMissingObjectKey()
+    {
+        var tracer = GetTracer();
+        AwsS3Common.CreateScope(tracer, "PutBucket", out var tags);
+        tags.Should().NotBeNull();
+
+        AwsS3Common.SetTags(tags, BucketName, null);
+        tags!.BucketName.Should().Be(BucketName);
+        tags.ObjectKey.Should().BeNull();
+    }
+
+    private static Tracer GetTracer(string schemaVersion = "v1")
+    {
+        var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
+        IConfigurationSource source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        var writerMock = new Mock<IAgentWriter>();
+        var samplerMock = new Mock<ITraceSampler>();
+
+        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
     }
 }
