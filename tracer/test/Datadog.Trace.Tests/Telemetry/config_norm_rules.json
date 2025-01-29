@@ -654,5 +654,6 @@
   "crashtracking_debug_url": "crashtracking_debug_url",
   "debug_stack_enabled": "debug_stack_enabled",
   "DD_TRACE_BAGGAGE_MAX_ITEMS": "trace_baggage_max_items",
-  "DD_TRACE_BAGGAGE_MAX_BYTES": "trace_baggage_max_bytes"
+  "DD_TRACE_BAGGAGE_MAX_BYTES": "trace_baggage_max_bytes",
+  "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED": "trace_bypass_http_request_url_caching_enabled"
 }
