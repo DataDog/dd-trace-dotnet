@@ -19,7 +19,7 @@ namespace Datadog.Trace.Iast.Propagation;
 internal static class DefaultInterpolatedStringHandlerModuleImpl
 {
     [ThreadStatic]
-    private static Queue<object> _taintedRefStructs = new();  // Keep alive the tainted ref structs
+    private static Stack<object> _taintedRefStructs = new(5);  // Keep alive the tainted ref structs
 
     public static unsafe void Append(IntPtr target, string? value)
     {
@@ -56,12 +56,12 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             if (!targetIsTainted)
             {
                 object targetObj = target;
-                _taintedRefStructs.Enqueue(targetObj);
+                _taintedRefStructs.Push(targetObj);
 
                 // Safe guard to avoid memory leak
                 while (_taintedRefStructs.Count > 20)
                 {
-                    _taintedRefStructs.Dequeue();
+                    _taintedRefStructs.Pop();
                 }
 
                 taintedObjects.Taint(targetObj, rangesResult);
@@ -104,8 +104,11 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
 
             var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
             taintedObjects.Taint(result, [range]);
-            _taintedRefStructs.Dequeue();
             taintedSelf.Invalidate();
+            if (_taintedRefStructs.Count > 0)
+            {
+                _taintedRefStructs.Pop();
+            }
         }
         catch (Exception err)
         {
