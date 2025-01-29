@@ -151,9 +151,7 @@ namespace Datadog.Trace.AspNet
                 string host = requestHeaders.Get("Host");
                 var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
-                    ? httpContext.Request.BuildUrlForSpan(tracer.TracerManager.QueryStringManager)
-                    : httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest

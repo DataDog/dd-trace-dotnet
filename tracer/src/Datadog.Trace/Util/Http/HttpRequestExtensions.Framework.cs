@@ -25,27 +25,26 @@ namespace Datadog.Trace.Util.Http
         /// for all future callers (example the customer's application) if we are the first to call <see cref="HttpRequest.Url"/>.
         /// </para>
         /// <para>
-        /// To avoid this, use <see cref="BuildUrlForSpan(HttpRequest, QueryStringManager)"/> instead.
+        /// To bypass this set <paramref name="bypassHttpRequestUrl"/> to <c>true</c> which is controlled by
+        /// <see cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>.
         /// </para>
         /// </summary>
         /// <param name="request">The <see cref="HttpRequest"/> to get the Uri of.</param>
         /// <param name="queryStringManager">The <see cref="QueryStringManager"/> for obfuscation/quantization.</param>
+        /// <param name="bypassHttpRequestUrl">Whether or not to call access HttpRequest.Url (which caches the URL in HttpRequest).</param>
         /// <returns>The retrieved Url.</returns>
-        internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager)
-            => HttpRequestUtils.GetUrl(RequestDataHelper.GetUrl(request), queryStringManager);
-
-        /// <summary>
-        /// Builds the Url from the <paramref name="request"/>.
-        /// <para>
-        /// Note that this will <em>bypass</em> the caching behavior of the <see cref="HttpRequest.Url"/> property.
-        /// </para>
-        /// </summary>
-        /// <param name="request">The <see cref="HttpRequest"/> to build the <c>Uri</c> from.</param>
-        /// <param name="queryStringManager">The <see cref="QueryStringManager"/> for obfuscation/quantization.</param>
-        /// <returns>The built Url.</returns>
-        /// <remarks>While not <em>required</em> to be set this is controlled by <see cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>.</remarks>
-        internal static string BuildUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager)
-            => HttpRequestUtils.GetUrl(RequestDataHelper.BuildUrl(request), queryStringManager);
+        /// <seealso cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>
+        internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager, bool bypassHttpRequestUrl)
+        {
+            if (bypassHttpRequestUrl)
+            {
+                return HttpRequestUtils.GetUrl(RequestDataHelper.BuildUrl(request), queryStringManager);
+            }
+            else
+            {
+                return HttpRequestUtils.GetUrl(RequestDataHelper.GetUrl(request), queryStringManager);
+            }
+        }
     }
 }
 #endif
