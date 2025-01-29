@@ -2,8 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.S3.Model;
-using Samples.AWS.S3;
 
 namespace Samples.AWS.S3
 {
@@ -12,20 +10,6 @@ namespace Samples.AWS.S3
         private static async Task Main(string[] args)
         {
             var s3Client = GetAmazonS3Client();
-            try 
-            {
-                await s3Client.PutBucketAsync(new PutBucketRequest { BucketName = "bucket" });
-            }
-            catch (AmazonS3Exception) { } // Ignore if bucket already exists
-    
-            Console.WriteLine("[App] Calling PutObjectAsync...");
-            await s3Client.PutObjectAsync(new PutObjectRequest
-            {
-                BucketName = "bucket",
-                Key = "key",
-                ContentBody = "content"
-            });
-            Console.WriteLine("[App] Done calling PutObjectAsync.");
 #if NETFRAMEWORK
             SyncHelpers.StartS3Tasks(s3Client);
 #endif
@@ -47,7 +31,7 @@ namespace Samples.AWS.S3
                 var s3Config = new AmazonS3Config 
                 {
                     ServiceURL = "http://" + Host(),
-                    ForcePathStyle = true, // Add this line
+                    ForcePathStyle = true,
                     UseHttp = true
                 };
                 return new AmazonS3Client(awsCredentials, s3Config);
