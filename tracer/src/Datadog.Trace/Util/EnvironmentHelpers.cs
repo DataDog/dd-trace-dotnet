@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using static Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Util
 {
@@ -100,12 +99,12 @@ namespace Datadog.Trace.Util
         internal static bool IsServerlessEnvironment()
         {
             return !string.IsNullOrEmpty(GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable(AzureAppService.FunctionsWorkerRuntimeKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey)) ||
                    !string.IsNullOrEmpty(GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar)) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.DeprecatedFunctionNameKey)) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.DeprecatedProjectKey)) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.FunctionNameKey)) ||
-                   !string.IsNullOrEmpty(GetEnvironmentVariable(GCPFunction.FunctionTargetKey));
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey));
         }
     }
 }
