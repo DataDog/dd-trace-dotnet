@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Samples.Probes.TestRuns.ExceptionReplay
 {
     [ExceptionReplayTestData(expectedNumberOfSnapshotsDefault: 5, expectedNumberOfSnaphotsFull: 22)]
-    internal class RethrowTest : IAsyncRun
+    public class RethrowTest : IAsyncRun
     {
         private string _tempMethodName;
         

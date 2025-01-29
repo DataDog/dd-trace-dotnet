@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Util;
 
@@ -29,64 +31,23 @@ internal static class MethodMatcher
             return false;
         }
 
-        // First try to resolve special method types (async, iterator, etc.)
-        var resolvedMethod = ResolveSpecialMethod(methodBase);
+        // First check if this is a state machine
+        var isStateMachine = methodBase.Name == "MoveNext" &&
+                             methodBase.DeclaringType != null &&
+                             (typeof(IAsyncStateMachine).IsAssignableFrom(methodBase.DeclaringType) ||
+                              typeof(IEnumerator).IsAssignableFrom(methodBase.DeclaringType));
 
         // Normalize and parse both representations
         var normalizedStackTrace = NormalizeMethodText(stackTraceMethodText);
-
-        // For state machines, we want to match against the original method/type
-        // but still get the correct method name from the resolved method
-        var methodBaseName = resolvedMethod != null
-                                 ? BuildMethodSignature(methodBase, resolvedMethod.Name)
-                                 : BuildMethodSignature(methodBase);
-
         var stackTraceParts = ParseMethodName(normalizedStackTrace);
-        var methodBaseParts = ParseMethodName(methodBaseName);
+        var methodBaseParts = ParseMethodName(methodBase.DeclaringType?.FullName + "." + methodBase.Name);
 
         if (stackTraceParts == null || methodBaseParts == null)
         {
-            return normalizedStackTrace.Equals(methodBaseName, StringComparison.Ordinal);
+            return normalizedStackTrace.Equals(methodBase.Name, StringComparison.Ordinal);
         }
 
-        return DoMethodPartsMatch(stackTraceParts.Value, methodBaseParts.Value);
-    }
-
-    private static string BuildMethodSignature(MethodBase method, string? methodName = null)
-    {
-        var sb = StringBuilderCache.Acquire();
-
-        // Add declaring type's full name
-        if (method.DeclaringType != null)
-        {
-            var typeFullName = method.DeclaringType.FullName ?? method.DeclaringType.Name;
-
-            // Don't replace + with . for state machine types
-            if (IsStateMachineType(method.DeclaringType))
-            {
-                sb.Append(typeFullName);
-            }
-            else
-            {
-                // For normal types, optimize the + to . replacement
-                var lastIndex = 0;
-                var plusIndex = typeFullName.IndexOf('+');
-                while (plusIndex != -1)
-                {
-                    sb.Append(typeFullName, lastIndex, plusIndex - lastIndex);
-                    sb.Append('.');
-                    lastIndex = plusIndex + 1;
-                    plusIndex = typeFullName.IndexOf('+', lastIndex);
-                }
-
-                sb.Append(typeFullName, lastIndex, typeFullName.Length - lastIndex);
-            }
-        }
-
-        sb.Append('.');
-        sb.Append(methodName ?? method.Name);
-
-        return StringBuilderCache.GetStringAndRelease(sb);
+        return DoMethodPartsMatch(stackTraceParts.Value, methodBaseParts.Value, isStateMachine);
     }
 
     private static string NormalizeMethodText(string methodText)
@@ -433,11 +394,9 @@ internal static class MethodMatcher
 
     private static MethodNameParts? ParseMethodName(string fullName)
     {
-        // First normalize the separation of nested types to use + consistently
         var normalizedName = fullName;
         if (fullName.Contains(">d__") && !fullName.Contains("+"))
         {
-            // For state machine types in stack traces, convert the last dot before the state machine name to a +
             var stateMachineIndex = fullName.IndexOf("<");
             if (stateMachineIndex > 0)
             {
@@ -451,53 +410,82 @@ internal static class MethodMatcher
             }
         }
 
+        // For generic type parameters, temporarily replace dots inside square brackets
+        // This prevents incorrect splitting of the assembly-qualified type name
+        var sb = StringBuilderCache.Acquire();
+        sb.Append(normalizedName);
+        var insideBrackets = false;
+        var bracketCount = 0;
+        for (var i = 0; i < sb.Length; i++)
+        {
+            var c = sb[i];
+            if (c == '[')
+            {
+                insideBrackets = true;
+                bracketCount++;
+            }
+            else if (c == ']')
+            {
+                bracketCount--;
+                insideBrackets = bracketCount > 0;
+            }
+            else if (insideBrackets && c == '.')
+            {
+                sb[i] = '\u0001'; // Use a temporary character that won't appear in normal type names
+            }
+        }
+
+        normalizedName = StringBuilderCache.GetStringAndRelease(sb);
+
         var parts = normalizedName.Split('.');
         if (parts.Length < 2)
         {
             return null;
         }
 
-        // The last part is always the method name
-        var methodName = NormalizeMethodName(parts[parts.Length - 1]);
+        var lastPart = parts[parts.Length - 1];
+        var parenIndex = lastPart.IndexOf('(');
+        var methodName = parenIndex > 0 ? lastPart.Substring(0, parenIndex) : lastPart;
+        methodName = NormalizeMethodName(methodName);
 
-        // Find where the type name starts (looking for capital letter after namespace)
-        var typeStartIndex = -1;
-        for (var i = 0; i < parts.Length - 1; i++)
+        // Everything except the method name is type parts
+        var typeParts = parts.Take(parts.Length - 1)
+                            .SelectMany(p => p.Split('+'))
+                            .ToArray();
+
+        // Normalize generic type parts by only keeping up to the first [ character
+        typeParts = typeParts.Select(p =>
         {
-            if (parts[i].Length > 0 && char.IsUpper(parts[i][0]))
+            var bracketIndex = p.IndexOf('[');
+            if (bracketIndex > 0)
             {
-                typeStartIndex = i;
-                break;
+                // Keep type name and its arity (e.g., "NestedGeneric`1")
+                var backtickIndex = p.IndexOf('`');
+                if (backtickIndex > 0)
+                {
+                    return p.Substring(0, bracketIndex);
+                }
             }
-        }
 
-        if (typeStartIndex == -1)
-        {
-            return null;
-        }
+            return p;
+        }).ToArray();
 
-        var namespaceParts = new string[typeStartIndex];
-        Array.Copy(parts, 0, namespaceParts, 0, typeStartIndex);
-
-        var typeParts = new string[parts.Length - typeStartIndex - 1];
-        Array.Copy(parts, typeStartIndex, typeParts, 0, parts.Length - typeStartIndex - 1);
-
-        return new MethodNameParts(namespaceParts, typeParts, methodName);
+        return new MethodNameParts(typeParts, methodName);
     }
 
-    private static bool DoMethodPartsMatch(MethodNameParts stackTrace, MethodNameParts methodBase)
+    private static bool DoMethodPartsMatch(MethodNameParts stackTrace, MethodNameParts methodBase, bool isStateMachine)
     {
-        // Namespace must match exactly
-        if (!AreArraysEqual(stackTrace.NamespaceParts, methodBase.NamespaceParts))
+        // If we have an exact match on both type parts and method name, return true first
+        if (AreArraysEqual(stackTrace.TypeParts, methodBase.TypeParts) &&
+            stackTrace.MethodName == methodBase.MethodName)
         {
-            return false;
+            return true;
         }
 
         // For async lambdas, we need special handling
         var stackTraceLambdaId = ExtractLambdaIdentifier(stackTrace.MethodName);
         if (!string.IsNullOrEmpty(stackTraceLambdaId))
         {
-            // Check if the method base type parts contain the lambda identifier
             var lastTypePart = methodBase.TypeParts.LastOrDefault() ?? string.Empty;
             var typePartLambdaId = ExtractLambdaIdentifier(lastTypePart);
 
@@ -507,22 +495,66 @@ internal static class MethodMatcher
             }
         }
 
-        // Check if this is a .NET Core state machine format
-        var isNetCoreStateMachine = stackTrace.TypeParts.Length > 0 &&
-                                     methodBase.TypeParts.Length > 0 &&
-                                     methodBase.TypeParts.Last().Contains("d__") &&
-                                     !stackTrace.TypeParts.Last().Contains("d__");
+        // Check if this is a local function (but not an async lambda)
+        var isLocalFunction = methodBase.TypeParts.Length > 0 &&
+                             methodBase.TypeParts.Last().StartsWith("<<") &&
+                             methodBase.TypeParts.Last().EndsWith(">d") &&
+                             !methodBase.TypeParts.Last().Contains("b__");
 
-        if (isNetCoreStateMachine)
+        if (isLocalFunction)
         {
-            // For .NET Core, we only match the base type part (without the state machine suffix)
-            var baseStackTracePart = stackTrace.TypeParts.Last();
-            var baseMethodPart = methodBase.TypeParts.Last().Split('+')[0];
-            return baseStackTracePart.Equals(baseMethodPart, StringComparison.Ordinal) &&
-                   AreMethodNamesEquivalent(stackTrace.MethodName, methodBase.MethodName);
+            var baseTypeParts = methodBase.TypeParts.Take(methodBase.TypeParts.Length - 1).ToArray();
+            if (!AreArraysEqual(stackTrace.TypeParts, baseTypeParts))
+            {
+                return false;
+            }
+
+            // For .NET Framework local functions, they appear as state machines with MoveNext
+            if (isStateMachine && stackTrace.MethodName == "MoveNext")
+            {
+                return true;
+            }
+
+            // For .NET Core local functions, extract the original method name
+            var lastPart = methodBase.TypeParts.Last();
+            var functionName = lastPart.Substring(1, lastPart.Length - 3);
+            return stackTrace.MethodName == functionName;
         }
 
-        // If not a special case, then both type parts and method name must match exactly
+        // Handle other state machines (async methods and iterators)
+        if (isStateMachine)
+        {
+            var baseTypeParts = methodBase.TypeParts.Take(methodBase.TypeParts.Length - 1).ToArray();
+
+            // For .NET Framework, the stack trace shows the state machine type directly
+            var isDirectStateMachineMatch = AreArraysEqual(stackTrace.TypeParts, methodBase.TypeParts);
+
+            // For .NET Core, the stack trace might not show the state machine type
+            var isBaseTypeMatch = AreArraysEqual(stackTrace.TypeParts, baseTypeParts);
+
+            if (!isDirectStateMachineMatch && !isBaseTypeMatch)
+            {
+                return false;
+            }
+
+            if (stackTrace.MethodName == "MoveNext")
+            {
+                return true;
+            }
+
+            var lastPart = methodBase.TypeParts.Last();
+            var methodStart = lastPart.IndexOf('<') + 1;
+            var methodEnd = lastPart.LastIndexOf('>');
+            if (methodStart <= 0 || methodEnd <= methodStart)
+            {
+                return false;
+            }
+
+            var originalMethod = lastPart.Substring(methodStart, methodEnd - methodStart);
+            return stackTrace.MethodName == originalMethod;
+        }
+
+        // Regular case
         return AreArraysEqual(stackTrace.TypeParts, methodBase.TypeParts) &&
                AreMethodNamesEquivalent(stackTrace.MethodName, methodBase.MethodName);
     }
@@ -555,10 +587,8 @@ internal static class MethodMatcher
     /// <summary>
     /// Represents the parts of a method's full name
     /// </summary>
-    private readonly struct MethodNameParts(string[] namespaceParts, string[] typeParts, string methodName)
+    private readonly struct MethodNameParts(string[] typeParts, string methodName)
     {
-        public string[] NamespaceParts { get; } = namespaceParts;
-
         public string[] TypeParts { get; } = typeParts;
 
         public string MethodName { get; } = methodName;

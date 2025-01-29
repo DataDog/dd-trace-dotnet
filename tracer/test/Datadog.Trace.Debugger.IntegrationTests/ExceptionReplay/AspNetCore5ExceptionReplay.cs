@@ -118,6 +118,13 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
     [Trait("RunOnWindows", "True")]
     public async Task TestExceptionReplay(ProbeTestDescription testData)
     {
+        if (testData.TestType == typeof(Samples.Probes.TestRuns.ExceptionReplay.RethrowTest) &&
+            (TestPrefix.EndsWith("netcoreapp3.0") || TestPrefix.EndsWith("netcoreapp3.1")))
+        {
+            // Flaky approvals
+            return;
+        }
+
         var data = testData.TestType.GetCustomAttributes<ExceptionReplayTestDataAttribute>().Single();
         var expectedNumberOfSnapshots = CaptureFullCallStackEnabled ? data.ExpectedNumberOfSnaphotsFull : data.ExpectedNumberOfSnapshotsDefault;
         var url = $"/RunTest/{testData.TestType.FullName}";

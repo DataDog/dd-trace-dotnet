@@ -281,7 +281,193 @@ public class MethodMatcherTests
         result.Should().BeFalse();
     }
 
-    // Helper methods used for testing
+    [Fact]
+    public async Task IsMethodMatch_AsyncDisposable_MatchesCorrectly()
+    {
+        // Arrange
+        try
+        {
+            await using (var resource = new AsyncDisposableResource())
+            {
+                await resource.DoWorkAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            var stateMachineType = typeof(AsyncDisposableResource)
+                                  .GetNestedTypes(BindingFlags.NonPublic)
+                                  .FirstOrDefault(t => t.Name.Contains("DisposeAsync") && t.Name.Contains("d__"));
+
+            stateMachineType.Should().NotBeNull("Test setup failed - async disposable state machine type not found");
+
+            var moveNextMethod = stateMachineType.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+            moveNextMethod.Should().NotBeNull("Test setup failed - MoveNext method not found");
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, moveNextMethod);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task IsMethodMatch_AsyncIterator_MatchesCorrectly()
+    {
+        // Arrange
+        try
+        {
+            await foreach (var item in TestAsyncIteratorMethod())
+            {
+            }
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            var stateMachineType = typeof(MethodMatcherTests)
+                .GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.Name.Contains(nameof(TestAsyncIteratorMethod)) && t.Name.Contains("d__"));
+
+            stateMachineType.Should().NotBeNull("Test setup failed - async iterator state machine type not found");
+
+            var moveNextMethod = stateMachineType.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+            moveNextMethod.Should().NotBeNull("Test setup failed - MoveNext method not found");
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, moveNextMethod);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void IsMethodMatch_AsyncMethodWithGenerics_MatchesCorrectly()
+    {
+        // Arrange
+        try
+        {
+            AsyncMethodWithGenerics<int, string>(42, "test").GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            var stateMachineType = typeof(MethodMatcherTests)
+                .GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.Name.Contains(nameof(AsyncMethodWithGenerics)) && t.Name.Contains("d__"));
+
+            var moveNextMethod = stateMachineType!.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, moveNextMethod);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task IsMethodMatch_AsyncMethodInGenericClass_MatchesCorrectly()
+    {
+        // Arrange
+        try
+        {
+            var genericClass = new GenericTestClass<int>();
+            await genericClass.AsyncMethod();
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            var stateMachineType = typeof(GenericTestClass<>)
+                .MakeGenericType(typeof(int))
+                .GetNestedTypes(BindingFlags.NonPublic)
+                .FirstOrDefault(t => t.Name.Contains("AsyncMethod") && t.Name.Contains("d__"));
+
+            var moveNextMethod = stateMachineType!.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, moveNextMethod);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void IsMethodMatch_NestedGenericClass_MatchesCorrectly()
+    {
+        // Arrange
+        try
+        {
+            var nested = new OuterClass.NestedGeneric<int>();
+            nested.ThrowingMethod();
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            var method = typeof(OuterClass.NestedGeneric<>)
+                .MakeGenericType(typeof(int))
+                .GetMethod(nameof(OuterClass.NestedGeneric<int>.ThrowingMethod));
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, method);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task IsMethodMatch_AsyncLocalFunction_MatchesCorrectly()
+    {
+        // Arrange
+        try
+        {
+            await TestMethodWithAsyncLocalFunction();
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            // Look for the async state machine of the local function
+            // Pattern is "<<OuterMethod>g__LocalFunctionName|x_y>d"
+            var stateMachineType = typeof(MethodMatcherTests)
+                                  .GetNestedTypes(BindingFlags.NonPublic)
+                                  .FirstOrDefault(t => t.Name.StartsWith("<<TestMethodWithAsyncLocalFunction>g__LocalFunction") &&
+                                                       t.Name.EndsWith(">d"));
+
+            stateMachineType.Should().NotBeNull("Test setup failed - async local function state machine type not found");
+
+            var moveNextMethod = stateMachineType.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+            moveNextMethod.Should().NotBeNull("Test setup failed - MoveNext method not found");
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, moveNextMethod);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+    }
+
+    // Helper methods used for the tests
     private void TestMethodWithParams(string param1, int param2)
     {
     }
@@ -315,11 +501,70 @@ public class MethodMatcherTests
         LocalFunction();
     }
 
+    private async IAsyncEnumerable<int> TestAsyncIteratorMethod()
+    {
+        await Task.Delay(1);
+        yield return 1;
+        throw new Exception("Test exception from async iterator");
+    }
+
+    private async Task<TResult> AsyncMethodWithGenerics<T1, TResult>(T1 param1, TResult param2)
+    {
+        await Task.Delay(1);
+        throw new Exception("Test exception from generic async method");
+    }
+
+    private async Task TestMethodWithAsyncLocalFunction()
+    {
+        async Task LocalFunction()
+        {
+            await Task.Delay(1);
+            throw new Exception("Test exception from async local function");
+        }
+
+        await LocalFunction();
+    }
+
     private class NestedTestClass
     {
         public void TestMethod()
         {
             throw new Exception("Test exception");
+        }
+    }
+
+    private class GenericTestClass<T>
+    {
+        public async Task AsyncMethod()
+        {
+            await Task.Delay(1);
+            throw new Exception("Test exception from generic class async method");
+        }
+    }
+
+    private class OuterClass
+    {
+        public class NestedGeneric<T>
+        {
+            public void ThrowingMethod()
+            {
+                throw new Exception("Test exception from nested generic class");
+            }
+        }
+    }
+
+    private class AsyncDisposableResource : IAsyncDisposable
+    {
+        public async Task DoWorkAsync()
+        {
+            await Task.Delay(1);
+            throw new Exception("Test exception from async disposable");
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await Task.Delay(1); // Simulate some async cleanup
+            throw new Exception("Test exception during async dispose");
         }
     }
 }
