@@ -314,6 +314,14 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
         }
     }
 
+    // Load security controls
+    auto securityControlsConfig = shared::GetEnvironmentValue(environment::security_controls_configuration);
+    if (securityControlsConfig.size() > 0)
+    {
+        trace::Logger::Debug("Dataflow::LoadAspects -> Processing Security Controls Config... ", securityControlsConfig);
+
+    }
+
     auto moduleAspects = _moduleAspects;
     _moduleAspects.clear();
     DEL_MAP_VALUES(moduleAspects);

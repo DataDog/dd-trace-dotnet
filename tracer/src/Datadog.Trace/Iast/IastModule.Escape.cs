@@ -17,29 +17,40 @@ internal static partial class IastModule
 {
     public static string? OnXssEscape(string? text, string? encoded)
     {
-        return OnEscape(text, encoded, SecureMarks.Xss, IntegrationId.Xss);
+        return (string?)OnEscape(text, encoded, SecureMarks.Xss, true, IntegrationId.Xss);
     }
 
     public static string? OnSsrfEscape(string? text, string? encoded)
     {
-        return OnEscape(text, encoded, SecureMarks.Ssrf, IntegrationId.Ssrf);
+        return (string?)OnEscape(text, encoded, SecureMarks.Ssrf, true, IntegrationId.Ssrf);
     }
 
-    private static string? OnEscape(string? text, string? encoded, SecureMarks secureMarks, params IntegrationId[] integrations)
+    public static object? OnCustomEscape(object? text, SecureMarks marks)
+    {
+        return OnEscape(text, text, marks, false);
+    }
+
+    private static object? OnEscape(object? textObj, object? encodedObj, SecureMarks secureMarks, bool ensureDifferentInstance, params IntegrationId[] integrations)
     {
         try
         {
             if (!IastSettings.Enabled ||
-                text is null || encoded is null ||
-                text.Length == 0 || encoded.Length == 0)
+                textObj is null || encodedObj is null)
             {
-                return encoded;
+                return encodedObj;
+            }
+
+            var text = textObj as string;
+            var encoded = encodedObj as string;
+            if (text is { Length: 0 } || encoded is { Length: 0 })
+            {
+                return encodedObj;
             }
 
             var tracer = Tracer.Instance;
             if (integrations != null && !integrations.Any((i) => tracer.Settings.IsIntegrationEnabled(i)))
             {
-                return encoded;
+                return encodedObj;
             }
 
             var scope = tracer.ActiveScope as Scope;
@@ -48,17 +59,17 @@ internal static partial class IastModule
 
             if (iastContext is null || iastContext.AddVulnerabilitiesAllowed() != true)
             {
-                return encoded;
+                return encodedObj;
             }
 
-            var tainted = traceContext?.IastRequestContext?.GetTainted(text!);
+            var tainted = traceContext?.IastRequestContext?.GetTainted(textObj!);
             if (tainted is null)
             {
-                return encoded;
+                return encodedObj;
             }
 
             // Special case. The encoded string is already tainted. We must check instance is not the same as the original text
-            if (object.ReferenceEquals(text, encoded))
+            if (ensureDifferentInstance && text is not null && encoded is not null && object.ReferenceEquals(text, encoded))
             {
                 // return a new instance of the encoded string and taint it whole
 #if NETCOREAPP3_0_OR_GREATER
@@ -70,14 +81,14 @@ internal static partial class IastModule
                 return newEncoded;
             }
 
-            // Taint the escaped string whole with the new secure marks
-            iastContext.GetTaintedObjects().Taint(encoded, [new Range(0, encoded.Length, tainted.Ranges[0].Source, tainted.Ranges[0].SecureMarks | secureMarks)]);
+            // Taint the escaped string with the new secure marks
+            iastContext.GetTaintedObjects().Taint(encodedObj, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while escaping string for XSS.");
+            Log.Error(ex, "Error while escaping string.");
         }
 
-        return encoded;
+        return encodedObj;
     }
 }

@@ -304,7 +304,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSources
+    public enum IastSourceType
     {
         [Description("source_type:http.request.body")] RequestBody = 0,
         [Description("source_type:http.request.path")] RequestPath = 1,
@@ -323,7 +323,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSinks
+    public enum IastVulnerabilityType
     {
         [Description("vulnerability_type:none")] None = 0,
         [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
