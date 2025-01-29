@@ -74,20 +74,6 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAwsKinesisOutboundV0(),
             };
 
-        public static Result IsAwsS3Inbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsS3InboundV1(),
-                _ => span.IsAwsS3RequestV0(),
-            };
-
-        public static Result IsAwsS3Outbound(this MockSpan span, string metadataSchemaVersion) =>
-            metadataSchemaVersion switch
-            {
-                "v1" => span.IsAwsS3OutboundV1(),
-                _ => span.IsAwsS3RequestV0(),
-            };
-
         public static Result IsAwsS3Request(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

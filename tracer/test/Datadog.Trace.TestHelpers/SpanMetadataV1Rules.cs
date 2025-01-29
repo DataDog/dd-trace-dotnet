@@ -185,53 +185,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));
 
-        public static Result IsAwsS3InboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.s3.process")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "S3")
-                .Matches("aws_service", "S3")
-                .IsPresent("aws.queue.name")
-                .IsPresent("queuename")
-                .IsOptional("aws.queue.url")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsOptional("_dd.base_service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "consumer"));
-
-        public static Result IsAwsS3OutboundV1(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "aws.s3.send")
-                .Matches(Type, "http"))
-            .Tags(s => s
-                .Matches("aws.agent", "dotnet-aws-sdk")
-                .IsPresent("aws.operation")
-                .IsOptional("aws.region")
-                .IsOptional("region")
-                .IsPresent("aws.requestId")
-                .Matches("aws.service", "S3")
-                .Matches("aws_service", "S3")
-                .IsPresent("aws.queue.name")
-                .IsPresent("queuename")
-                .IsOptional("aws.queue.url")
-                .IsPresent("http.method")
-                .IsPresent("http.status_code")
-                .IsPresent("http.url")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .IsOptional("_dd.base_service")
-                .MatchesOneOf("_dd.peer.service.source", "queuename", "peer.service")
-                .Matches("component", "aws-sdk")
-                .Matches("span.kind", "producer"));
-
         public static Result IsAwsS3RequestV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aws.s3.request")
@@ -244,15 +197,15 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "S3")
                 .Matches("aws_service", "S3")
-                .IsPresent("aws.queue.name")
-                .IsPresent("queuename")
-                .IsOptional("aws.queue.url")
+                .IsPresent("aws.bucket.name")
+                .IsPresent("bucketname")
+                .IsOptional("aws.object.key")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "queuename", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "bucketname", "peer.service")
                 .Matches("component", "aws-sdk")
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));

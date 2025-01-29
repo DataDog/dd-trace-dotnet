@@ -32,8 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsS3Inbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsS3Outbound(metadataSchemaVersion),
             SpanKinds.Client => span.IsAwsS3Request(metadataSchemaVersion),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS S3 integration: {span.Tags["span.kind"]}", nameof(span)),
         };
@@ -83,7 +81,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.DisableRequireUniquePrefix();
 
                 // Note: http.request spans are expected for the S3 APIs that don't have explicit support
-                // (Only PutEvents and PutEventsAsync are supported right now)
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsS3);
