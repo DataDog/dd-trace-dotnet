@@ -167,7 +167,7 @@ public class RequestDataHelperTests
         urlField.SetValue(request, null);
 
         // simulate tracer calling HttpRequest.Url
-        // Call GetUrl to get the initial URL and reset _url
+        // Call BuildUrl to build the URL and ensure it doesn't get cached
         var initialUrl = RequestDataHelper.BuildUrl(request);
 
         // Modify the HttpRequest object by changing the host
@@ -191,6 +191,46 @@ public class RequestDataHelperTests
         updatedUrl.Should().NotBeNull(); // what customer would get: http://example.com/test/test.aspx
         initialUrl.ToString().Should().NotBe(updatedUrlString);
         updatedUrl.ToString().Should().Contain(newHost);
+    }
+
+    [Fact]
+    public void GetUrl_CachesInitialHttpRequestUrl_ShouldReturnCachedUrl()
+    {
+        var initialHost = "localhost";
+        var newHost = "example.com";
+
+        // Create a TestWorkerRequest with the initial host
+        var workerRequest = new TestWorkerRequest("/test", null, new StringWriter(), initialHost);
+        var context = new HttpContext(workerRequest);
+        var request = context.Request;
+
+        var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Ensure _url is null before the test
+        // this will mean that Url will need to be built
+        urlField.SetValue(request, null);
+
+        // simulate tracer calling HttpRequest.Url
+        // Call GetUrl to cause the HttpRequest to build the URL and cache the result
+        var initialUrl = RequestDataHelper.GetUrl(request); // this would be http://localhost/test/test.aspx
+
+        // Modify the HttpRequest object by changing the host
+        // This is emulating some middleware that is running after us
+        workerRequest.SetHost(newHost); // expected URL would be http://example.com/test/test.aspx
+
+        // Note: we aren't resetting the private _url field of the HTTPRequest here to demonstrate the caching behavior
+
+        // directly call request.Url to emulate what a customer may do
+        // they would expect to get the updated URL (example.com)
+        // but instead they'd get the cached URL (localhost)
+        var updatedUrl = request.Url;
+        var updatedUrlString = updatedUrl?.ToString();
+
+        initialUrl.Should().NotBeNull(); // what tracer would get:   http://localhost/test/test.aspx
+        updatedUrl.Should().NotBeNull(); // what customer would get: http://localhost/test/test.aspx
+        // NOTE: the customer would ideally get http://example.com/test/test.aspx
+        initialUrl.ToString().Should().Be(updatedUrlString);
+        updatedUrl.ToString().Should().NotContain(newHost);
     }
 
     [Fact]
