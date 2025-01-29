@@ -55,14 +55,14 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
             if (!targetIsTainted)
             {
-                object targetObj = target;
-                _taintedRefStructs.Push(targetObj);
-
                 // Safe guard to avoid memory leak
                 while (_taintedRefStructs.Count > 20)
                 {
                     _taintedRefStructs.Pop();
                 }
+
+                object targetObj = target;
+                _taintedRefStructs.Push(targetObj);
 
                 taintedObjects.Taint(targetObj, rangesResult);
             }
