@@ -105,6 +105,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
             taintedObjects.Taint(result, [range]);
             _taintedRefStructs.Dequeue();
+            taintedSelf.Invalidate();
         }
         catch (Exception err)
         {
