@@ -226,7 +226,7 @@ void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pAc
 void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkRequestInfo* pInfo = nullptr;
-    if (!MonitorRequest(pInfo, pActivityId))
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
@@ -244,7 +244,7 @@ void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, L
 void NetworkProvider::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, bool success)
 {
     NetworkRequestInfo* pInfo = nullptr;
-    if (!MonitorRequest(pInfo, pActivityId))
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
