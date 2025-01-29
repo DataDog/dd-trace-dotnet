@@ -1,4 +1,5 @@
 #include "string.h"
+#include <algorithm>
 #ifdef _WIN32
 #include <Windows.h>
 #define tmp_buffer_size 512
@@ -150,6 +151,18 @@ namespace shared {
     bool StartsWith(const WSTRING &str, const WSTRING &prefix)
     {
         return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+    }
+
+    WSTRING to_lower(const WSTRING& str)
+    {
+        WSTRING lower(str);
+        transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
+        return lower;
+    }
+
+    bool string_lower_equal(WSTRING const& s1, WSTRING const& s2)
+    {
+        return s1 == s2;
     }
 
     bool icompare_pred(WCHAR a, WCHAR b)
