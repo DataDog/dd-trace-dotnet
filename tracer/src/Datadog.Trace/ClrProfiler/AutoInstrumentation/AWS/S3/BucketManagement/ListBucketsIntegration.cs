@@ -27,11 +27,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
 public class ListBucketsIntegration
 {
     private const string Operation = "ListBuckets";
-    private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
     {
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         return new CallTargetState(scope);
     }
 

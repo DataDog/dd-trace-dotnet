@@ -28,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 public class DeleteObjectAsyncIntegration
 {
     private const string Operation = "DeleteObject";
-    private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
         where TRequest : IDeleteObjectRequest
@@ -38,7 +37,7 @@ public class DeleteObjectAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
 
         return new CallTargetState(scope);

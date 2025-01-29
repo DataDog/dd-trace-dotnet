@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
         internal const string IntegrationName = nameof(IntegrationId.AwsS3);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AwsS3;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsS3Tags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, out AwsS3Tags? tags, string spanKind = SpanKinds.Client, ISpanContext? parentContext = null)
         {
             tags = null;
 

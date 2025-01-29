@@ -27,7 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadMa
 public class CompleteMultipartUploadIntegration
 {
     private const string Operation = "CompleteMultipartUpload";
-    private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request)
         where TRequest : ICompleteMultipartUploadRequest
@@ -37,7 +36,7 @@ public class CompleteMultipartUploadIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
 
         return new CallTargetState(scope);

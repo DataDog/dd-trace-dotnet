@@ -28,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
 public class PutBucketAsyncIntegration
 {
     private const string Operation = "PutBucket";
-    private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
         where TRequest : IPutBucketRequest
@@ -38,7 +37,7 @@ public class PutBucketAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.BucketName, null); // there is no key in a PutBucketRequest
 
         return new CallTargetState(scope);

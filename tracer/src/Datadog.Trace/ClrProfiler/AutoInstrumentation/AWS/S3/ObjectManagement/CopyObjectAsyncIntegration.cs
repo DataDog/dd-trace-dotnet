@@ -28,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
 public class CopyObjectAsyncIntegration
 {
     private const string Operation = "CopyObject";
-    private const string SpanKind = SpanKinds.Producer;
 
     internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest request, ref CancellationToken cancellationToken)
         where TRequest : ICopyObjectRequest
@@ -38,7 +37,7 @@ public class CopyObjectAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.DestinationBucketName, request.DestinationObjectKey);
 
         return new CallTargetState(scope);
