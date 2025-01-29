@@ -82,21 +82,6 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static void CheckUser(this Security security, HttpContext context, Span span, string userId)
-    {
-        if (security.AppsecEnabled)
-        {
-            var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.IsBlocked)
-            {
-                var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
-                var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
-                var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.BlockAndReport(result);
-            }
-        }
-    }
-
     internal static void CheckPathParamsFromAction(this Security security, HttpContext context, Span span, IList<ParameterDescriptor>? actionPathParams, RouteValueDictionary routeValues)
     {
         if (security.AppsecEnabled && actionPathParams != null)
