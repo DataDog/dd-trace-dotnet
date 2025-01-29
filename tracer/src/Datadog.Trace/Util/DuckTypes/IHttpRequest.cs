@@ -18,7 +18,6 @@ namespace Datadog.Trace.Util.DuckTypes
         [DuckField(Name = "_wr")]
         object? WorkerRequest { get; }
 
-        [Duck(Name = "BuildUrl")]
         Uri BuildUrl(Func<string> pathAccessor);
     }
 }
