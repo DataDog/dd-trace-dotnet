@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -17,6 +18,9 @@ namespace Datadog.Trace.Iast.Propagation;
 
 internal static class DefaultInterpolatedStringHandlerModuleImpl
 {
+    [ThreadStatic]
+    private static Queue<object> _taintedRefStructs = new();  // Keep alive the tainted ref structs
+
     public static unsafe void Append(IntPtr target, string? value)
     {
         FullTaintIfAnyTainted(target, value);
@@ -51,7 +55,16 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
             if (!targetIsTainted)
             {
-                taintedObjects.Taint(target, rangesResult);
+                object targetObj = target;
+                _taintedRefStructs.Enqueue(targetObj);
+
+                // Safe guard to avoid memory leak
+                while (_taintedRefStructs.Count > 20)
+                {
+                    _taintedRefStructs.Dequeue();
+                }
+
+                taintedObjects.Taint(targetObj, rangesResult);
             }
             else
             {
@@ -91,6 +104,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
 
             var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
             taintedObjects.Taint(result, [range]);
+            _taintedRefStructs.Dequeue();
         }
         catch (Exception err)
         {
