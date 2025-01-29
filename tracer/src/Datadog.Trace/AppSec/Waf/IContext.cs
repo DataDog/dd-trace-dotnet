@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+
 #nullable enable
 
 namespace Datadog.Trace.AppSec.Waf;
@@ -14,4 +15,8 @@ internal interface IContext : IDisposable
     IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds);
 
     IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp);
+
+    Dictionary<string, object> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false);
+
+    void CommitUserRuns(Dictionary<string, object> addresses, bool fromSdk);
 }

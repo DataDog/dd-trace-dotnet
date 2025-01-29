@@ -14,6 +14,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
+/// <summary>
+/// Note that this middleware will be shortcircuited by the DeveloperMiddleware which is inserted at aspnetcore startup in development mode in general : app.UseDeveloperExceptionPage();
+/// </summary>
 internal class BlockingMiddleware
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
