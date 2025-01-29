@@ -66,9 +66,10 @@ public:
     {
         auto networkCountIndex = valueOffsets[0];
         sample->AddValue((Timestamp - StartTimestamp).count(), networkCountIndex);
+        // Note: we don't need to add the start timestamp as a label because it is computed
+        // by the backend from the end timestamp and the duration; i.e. the value of this sample
 
         sample->AddLabel(Label(Sample::RequestUrlLabel, Url));
-        sample->AddNumericLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp.count()));
         sample->AddNumericLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
         if (!Error.empty())
         {

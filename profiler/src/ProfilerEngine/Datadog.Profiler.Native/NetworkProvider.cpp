@@ -46,9 +46,9 @@ NetworkProvider::NetworkProvider(
     // all other durations in the code are in nanoseconds but the config is in milliseconds
     _requestDurationThreshold = std::chrono::duration_cast<std::chrono::nanoseconds>(pConfiguration->GetHttpRequestDurationThreshold());
 
-    _requestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_request_count");
-    _failedRequestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_failed_request_count");
-    _redirectionRequestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_redirected_request_count");
+    _requestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_request_all");
+    _failedRequestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_request_failed");
+    _redirectionRequestsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_request_redirect");
     _totalDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_duration");
     _waitDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_wait_duration");
     _dnsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_request_dns_duration");
@@ -546,11 +546,11 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
         // During the tests, the wait time before the socket connection is very short so no need to provide it
     }
 
-    _totalDurationMetric->Add((sample.Timestamp - sample.StartTimestamp).count());
-    _waitDurationMetric->Add((sample.DnsWait + sample.HandshakeWait).count());
-    _dnsDurationMetric->Add(sample.DnsDuration.count());
-    _handshakeDurationMetric->Add(sample.HandshakeDuration.count());
-    _requestResponseDurationMetric->Add((sample.RequestDuration + sample.ResponseDuration).count());
+    _totalDurationMetric->Add(static_cast<double_t>((sample.Timestamp - sample.StartTimestamp).count()));
+    _waitDurationMetric->Add(static_cast<double_t>((sample.DnsWait + sample.HandshakeWait).count()));
+    _dnsDurationMetric->Add(static_cast<double_t>(sample.DnsDuration.count()));
+    _handshakeDurationMetric->Add(static_cast<double_t>(sample.HandshakeDuration.count()));
+    _requestResponseDurationMetric->Add(static_cast<double_t>((sample.RequestDuration + sample.ResponseDuration).count()));
 }
 
 

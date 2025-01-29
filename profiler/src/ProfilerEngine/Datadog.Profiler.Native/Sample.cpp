@@ -33,7 +33,6 @@ const std::string Sample::ObjectGenerationLabel = "object generation";
 
 // network requests related labels
 const std::string Sample::RequestUrlLabel = "request url";
-const std::string Sample::RequestTimeStampLabel = "start_timestamp_ns";
 const std::string Sample::RequestStatusCodeLabel = "response status code";
 const std::string Sample::RequestErrorLabel = "response error";
 const std::string Sample::RequestRedirectUrlLabel = "redirect url";
