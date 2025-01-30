@@ -38,7 +38,7 @@
             "value": "INSERT INTO Orders (CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, ShipCity, ShipPostalCode, ShipCountry) VALUES ('VINET','5','2021-01-01','2021-01-01',"
           },
           {
-            "value": "'3','32,38','Vins et alcools Chevalier','John',",
+            "value": "'3','32','Vins et alcools Chevalier','John',",
             "source": 0
           },
           {

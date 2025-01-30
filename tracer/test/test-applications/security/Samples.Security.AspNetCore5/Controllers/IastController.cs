@@ -1209,7 +1209,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 OrderDate = new DateTime(2021, 1, 1),
                 RequiredDate = new DateTime(2021, 1, 1),
                 ShipVia = 3,
-                Freight = 32.38M,
+                Freight = 32,
                 ShipName = "Vins et alcools Chevalier",
                 ShipAddress = name,
                 ShipCity = "Reims",
@@ -1222,7 +1222,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                       "ShipCity, ShipPostalCode, ShipCountry" +
                       ") VALUES (" +
                       $"'{order.CustomerId}','{order.EmployeeId}','{order.OrderDate:yyyy-MM-dd}','{order.RequiredDate:yyyy-MM-dd}'," +
-                      $"'{order.ShipVia}','{order.Freight:0.00}','{order.ShipName}','{order.ShipAddress}'," +
+                      $"'{order.ShipVia}','{order.Freight}','{order.ShipName}','{order.ShipAddress}'," +
                       $"'{order.ShipCity}','{order.ShipPostalCode}','{order.ShipCountry}')";
             sql += ";\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;";
 
