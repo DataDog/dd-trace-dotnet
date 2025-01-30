@@ -14,65 +14,37 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Remove all version of the .NET tracer. Should be called for each version to be removed.
 /// </summary>
-internal class UninstallAllCommand : Command
+internal class UninstallAllCommand : CommandBase
 {
-    private readonly Option<string> _symlinkPathOption = new("--symlink-path", () => null!) { IsRequired = true };
-    private readonly Option<string> _versionedPathOption = new("--versioned-path", () => null!) { IsRequired = true };
-
     public UninstallAllCommand()
         : base("uninstall-all")
     {
-        AddOption(_symlinkPathOption);
-        AddOption(_versionedPathOption);
-
-        AddValidator(Validate);
-
-        this.SetHandler(ExecuteAsync);
-    }
-
-    /// <inheritdoc cref="Command"/>
-    public Task ExecuteAsync(InvocationContext context)
-    {
-        var symlinkPath = context.ParseResult.GetValueForOption(_symlinkPathOption)!;
-        var versionedPath = context.ParseResult.GetValueForOption(_versionedPathOption)!;
-        var log = Log.Instance;
-
-        var result = ExecuteAsync(
-            log,
-            new SymlinkedTracerValues(symlinkPath),
-            new VersionedTracerValues(versionedPath),
-            Defaults.TracerLogDirectory,
-            Defaults.CrashTrackingRegistryKey);
-
-        context.ExitCode = (int)result;
-        return Task.CompletedTask;
     }
 
     // Internal for testing
-    internal static ReturnCodes ExecuteAsync(
+    internal static ReturnCode ExecuteAsync(
         ILogger log,
-        SymlinkedTracerValues symlinkTracerValues,
-        VersionedTracerValues versionedTracerValues,
+        TracerValues tracerValues,
         string tracerLogDirectory,
         string registryKeyName)
     {
         log.WriteInfo("Uninstalling .NET tracer product");
 
-        if (!RegistryHelper.RemoveCrashTrackingKey(log, versionedTracerValues, registryKeyName))
+        if (!RegistryHelper.RemoveCrashTrackingKey(log, tracerValues, registryKeyName))
         {
             // Not a big deal if this isn't actually removed
         }
 
         // Remove the tracer references
-        if (!AppHostHelper.RemoveAllEnvironmentVariables(log, symlinkTracerValues))
+        if (!AppHostHelper.RemoveAllEnvironmentVariables(log, tracerValues))
         {
             // hard to be sure exactly of the state at this point,
             // but probably don't want to do anything else if we couldn't remove the variables,
             // as apps may fail
-            return ReturnCodes.ErrorRemovingAppPoolVariables;
+            return ReturnCode.ErrorRemovingAppPoolVariables;
         }
 
-        if (!GacInstaller.TryGacUninstall(log, versionedTracerValues))
+        if (!GacInstaller.TryGacUninstall(log, tracerValues))
         {
             // We don't actually care if this fails (and it probably _will_, if we haven't yet deleted the tracer files)
             // as it just leaves some files around
@@ -85,15 +57,6 @@ internal class UninstallAllCommand : Command
         return 0;
     }
 
-    private void Validate(CommandResult commandResult)
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            commandResult.ErrorMessage = $"This installer is only intended to run on Windows, it cannot be used on {RuntimeInformation.OSDescription}";
-        }
-
-        var path = commandResult.GetValueForOption(_symlinkPathOption);
-
-        // TODO: do the file exists etc validation here?
-    }
+    protected override Task<ReturnCode> ExecuteAsync(ILogger log, InvocationContext context, TracerValues versionedPath)
+        => Task.FromResult(ExecuteAsync(log, versionedPath, Defaults.TracerLogDirectory, Defaults.CrashTrackingRegistryKey));
 }
