@@ -438,15 +438,15 @@ namespace Datadog.Trace
         /// <summary>
         /// The bucket name associated with the AWS S3 span.
         /// </summary>
-        internal const string BucketName = "aws.bucket.name";
+        internal const string BucketName = "bucketname";
 
         /// <summary>
-        /// The key associated with the AWS S3 span.
+        /// The object key associated with the AWS S3 span.
         /// </summary>
-        internal const string ObjectKey = "aws.object.key";
+        internal const string ObjectKey = "objectkey";
 
         /// <summary>
-        /// The stream name associated wit˚h the AWS SDK Kinesis span.
+        /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
         internal const string StreamName = "streamname";
 
