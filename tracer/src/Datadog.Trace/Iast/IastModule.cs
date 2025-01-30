@@ -137,7 +137,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastVulnerabilityType.UnvalidatedRedirect);
-            return GetScope(evidence, integrationId, VulnerabilityTypeName.UnvalidatedRedirect, OperationNameUnvalidatedRedirect, HasInvalidOrigin);
+            return GetScope(evidence, integrationId, VulnerabilityTypeUtils.UnvalidatedRedirect, OperationNameUnvalidatedRedirect, HasInvalidOrigin);
         }
         catch (Exception ex)
         {
@@ -156,7 +156,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastVulnerabilityType.TrustBoundaryViolation);
-            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeUtils.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -175,7 +175,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastVulnerabilityType.LdapInjection);
-            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeUtils.LdapInjection, OperationNameLdapInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -194,7 +194,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.Ssrf);
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Ssrf);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeUtils.Ssrf, OperationNameSsrf, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Ssrf);
         }
         catch (Exception ex)
         {
@@ -213,7 +213,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.WeakRandomness);
-            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeUtils.WeakRandomness, OperationNameWeakRandomness, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
         }
         catch (Exception ex)
         {
@@ -232,7 +232,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.PathTraversal);
-            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeUtils.PathTraversal, OperationNamePathTraversal, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -251,7 +251,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.SqlInjection);
-            return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, Always);
+            return GetScope(query, integrationId, VulnerabilityTypeUtils.SqlInjection, OperationNameSqlInjection, Always);
         }
         catch (Exception ex)
         {
@@ -270,7 +270,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.NoSqlMongoDbInjection);
-            return GetScope(query, integrationId, VulnerabilityTypeName.NoSqlMongoDbInjection, OperationNameNoSqlMongoDbInjection, Always);
+            return GetScope(query, integrationId, VulnerabilityTypeUtils.NoSqlMongoDbInjection, OperationNameNoSqlMongoDbInjection, Always);
         }
         catch (Exception ex)
         {
@@ -290,7 +290,7 @@ internal static partial class IastModule
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, taintValidator: Always, safeSources: _dbSources);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeUtils.CommandInjection, OperationNameCommandInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -304,7 +304,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.ReflectionInjection);
-            return GetScope(param, integrationId, VulnerabilityTypeName.ReflectionInjection, OperationNameReflectionInjection, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(param, integrationId, VulnerabilityTypeUtils.ReflectionInjection, OperationNameReflectionInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -367,7 +367,7 @@ internal static partial class IastModule
 
         OnExecutedSinkTelemetry(IastVulnerabilityType.InsecureCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, GetCookieHash(VulnerabilityTypeName.InsecureCookie, cookieName, isFiltered));
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeUtils.InsecureCookie, GetCookieHash(VulnerabilityTypeUtils.InsecureCookie, cookieName, isFiltered));
     }
 
     public static IastModuleResponse OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName, bool isFiltered)
@@ -379,7 +379,7 @@ internal static partial class IastModule
 
         OnExecutedSinkTelemetry(IastVulnerabilityType.NoHttpOnlyCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, GetCookieHash(VulnerabilityTypeName.NoHttpOnlyCookie, cookieName, isFiltered));
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeUtils.NoHttpOnlyCookie, GetCookieHash(VulnerabilityTypeUtils.NoHttpOnlyCookie, cookieName, isFiltered));
     }
 
     public static IastModuleResponse OnNoSamesiteCookie(IntegrationId integrationId, string cookieName, bool isFiltered)
@@ -391,7 +391,7 @@ internal static partial class IastModule
 
         OnExecutedSinkTelemetry(IastVulnerabilityType.NoSameSiteCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, GetCookieHash(VulnerabilityTypeName.NoSameSiteCookie, cookieName, isFiltered));
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeUtils.NoSameSiteCookie, GetCookieHash(VulnerabilityTypeUtils.NoSameSiteCookie, cookieName, isFiltered));
     }
 
     public static void OnHardcodedSecret(Vulnerability vulnerability)
@@ -407,7 +407,7 @@ internal static partial class IastModule
     {
         OnExecutedSinkTelemetry(IastVulnerabilityType.InsecureAuthProtocol);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeName.InsecureAuthProtocol, (VulnerabilityTypeName.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
+        return AddWebVulnerability(authHeader, integrationId, VulnerabilityTypeUtils.InsecureAuthProtocol, (VulnerabilityTypeUtils.InsecureAuthProtocol + ':' + authHeader).GetStaticHashCode());
     }
 
     public static void OnDirectoryListingLeak(string methodName)
@@ -415,8 +415,8 @@ internal static partial class IastModule
         if (!Iast.Instance.Settings.Enabled) { return; }
 
         var vulnerability = new Vulnerability(
-            VulnerabilityTypeName.DirectoryListingLeak,
-            VulnerabilityTypeName.DirectoryListingLeak.GetStaticHashCode(),
+            VulnerabilityTypeUtils.DirectoryListingLeak,
+            VulnerabilityTypeUtils.DirectoryListingLeak.GetStaticHashCode(),
             GetLocation(),
             new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
@@ -432,8 +432,8 @@ internal static partial class IastModule
         if (value.TotalMinutes < 30) { return; }
 
         var vulnerability = new Vulnerability(
-            VulnerabilityTypeName.SessionTimeout,
-            (VulnerabilityTypeName.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes).GetStaticHashCode(),
+            VulnerabilityTypeUtils.SessionTimeout,
+            (VulnerabilityTypeUtils.SessionTimeout + ':' + methodName + ':' + value.TotalMinutes).GetStaticHashCode(),
             GetLocation(),
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);
@@ -456,7 +456,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeUtils.WeakCipher, OperationNameWeakCipher, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
     }
 
     public static IastModuleResponse OnStackTraceLeak(Exception ex, IntegrationId integrationId)
@@ -470,7 +470,7 @@ internal static partial class IastModule
         var evidence = $"{ex.Source},{ex.GetType().Name}";
         // We report the stack of the exception instead of the current stack
         var stack = new StackTrace(ex, true);
-        return GetScope(evidence, integrationId, VulnerabilityTypeName.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
+        return GetScope(evidence, integrationId, VulnerabilityTypeUtils.StackTraceLeak, OperationNameStackTraceLeak, externalStack: stack);
     }
 
     public static IastModuleResponse OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, bool autoCloseScopeWhenSingleSpan = true)
@@ -486,7 +486,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+        return GetScope(algorithm, integrationId, VulnerabilityTypeUtils.WeakHash, OperationNameWeakHash, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
     }
 
     public static IastModuleResponse OnXss(string? text)
@@ -499,7 +499,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastVulnerabilityType.Xss);
-            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeName.Xss, OperationNameXss, Always, exclusionSecureMarks: SecureMarks.Xss);
+            return GetScope(text!, IntegrationId.Xss, VulnerabilityTypeUtils.Xss, OperationNameXss, Always, exclusionSecureMarks: SecureMarks.Xss);
         }
         catch (Exception ex)
         {
@@ -658,8 +658,7 @@ internal static partial class IastModule
             var unsafeRanges = Ranges.GetUnsafeRanges(ranges, exclusionSecureMarks, safeSources);
             if (unsafeRanges is null || unsafeRanges.Length == 0)
             {
-                // TODO: Fix this by rebasing when the vulnerability type source generator is merged
-                OnSupressedVulnerabilityTelemetry(IastVulnerabilityType.Xss);
+                OnSupressedVulnerabilityTelemetry(VulnerabilityTypeUtils.GetTag(vulnerabilityType));
                 return IastModuleResponse.Empty;
             }
 
@@ -812,12 +811,12 @@ internal static partial class IastModule
     internal static IastModuleResponse OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
     {
         string? evidence = string.IsNullOrEmpty(headerValue) ? null : headerValue;
-        return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing + ":" + serviceName).GetStaticHashCode());
+        return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeUtils.XContentTypeHeaderMissing, (VulnerabilityTypeUtils.XContentTypeHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
 
     internal static IastModuleResponse OnStrictTransportSecurityHeaderMissing(IntegrationId integrationId, string serviceName)
     {
-        return AddWebVulnerability(null, integrationId, VulnerabilityTypeName.HstsHeaderMissing, (VulnerabilityTypeName.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
+        return AddWebVulnerability(null, integrationId, VulnerabilityTypeUtils.HstsHeaderMissing, (VulnerabilityTypeUtils.HstsHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
 
     internal static void OnHeaderInjection(IntegrationId integrationId, string headerName, string headerValue)
@@ -829,7 +828,7 @@ internal static partial class IastModule
 
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
-        GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, taintValidator: Always, safeSources: _dbSources, addLocation: false, hash: hash);
+        GetScope(evidence, integrationId, VulnerabilityTypeUtils.HeaderInjection, OperationNameHeaderInjection, taintValidator: Always, safeSources: _dbSources, addLocation: false, hash: hash);
     }
 
     internal static IastModuleResponse OnXpathInjection(string xpath)
@@ -842,7 +841,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastVulnerabilityType.XPathInjection);
-            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, taintValidator: Always, safeSources: _dbSources);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeUtils.XPathInjection, OperationNameXPathInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
@@ -873,7 +872,7 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS, but excluding db sources
-        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
     public static void LogAspectException(Exception ex, string aspectInfo)
