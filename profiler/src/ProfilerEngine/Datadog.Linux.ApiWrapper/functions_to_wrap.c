@@ -580,6 +580,18 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
     return result;
 }
 
+static void (*__real_pthread_exit)(void *retval) = NULL;
+void pthread_exit(void *retval)
+{
+    check_init();
+    // Call into the profiler to do extra cleanup.
+    // The CLR explicitly call pthread_exit and if the thread was about to collect a callstack,
+    // we could end up crashing the application.
+    // This will usually happen at shutdown
+    __dd_on_thread_routine_finished();
+    __real_pthread_exit(retval);
+}
+
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_pthread_attr_init)(pthread_attr_t* a) = NULL;
 
@@ -666,6 +678,7 @@ static void init()
     __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
 #ifdef DD_ALPINE
     __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
+    __real_pthread_exit = __dd_dlsym(RTLD_NEXT, "pthread_exit");
     __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");
     __real_pthread_getattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_getattr_default_np");
     __real_pthread_setattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_setattr_default_np");
