@@ -279,15 +279,61 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146232832"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233083"
+                          },
+                          "InnerException": {
+                            "isNull": "true",
+                            "type": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Operation Operation-5-C timed out"
+                          },
+                          "Source": {
+                            "type": "String",
+                            "value": "Samples.Probes.TestRuns"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Top-level exception in InitiateComplexExceptionChain"
                   },
                   "Source": {
                     "type": "String",
@@ -295,8 +341,8 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ApplicationException",
+                "value": "ApplicationException"
               }
             },
             "staticFields": {
@@ -456,14 +502,9 @@
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
+              "message": "Top-level exception in InitiateComplexExceptionChain",
+              "stacktrace": [],
+              "type": "System.ApplicationException"
             }
           }
         },
@@ -504,13 +545,346 @@
         "captures": {
           "return": {
             "arguments": {
+              "depth": {
+                "type": "Int32",
+                "value": "5"
+              },
+              "this": {
+                "type": "DeterministicComplexExceptionPropagationTest",
+                "value": "DeterministicComplexExceptionPropagationTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "_innerExceptions": {
+                    "elements": [
+                      {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233083"
+                          },
+                          "InnerException": {
+                            "isNull": "true",
+                            "type": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Operation Operation-5-C timed out"
+                          },
+                          "Source": {
+                            "type": "String",
+                            "value": "Samples.Probes.TestRuns"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "TimeoutException",
+                        "value": "TimeoutException"
+                      },
+                      {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233088"
+                          },
+                          "InnerException": {
+                            "fields": {
+                              "HelpLink": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "HResult": {
+                                "type": "Int32",
+                                "value": "-2146233079"
+                              },
+                              "InnerException": {
+                                "isNull": "true",
+                                "type": "Exception"
+                              },
+                              "Message": {
+                                "type": "String",
+                                "value": "Nested invalid operation 1"
+                              },
+                              "Source": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "StackTrace": "ScrubbedValue"
+                            },
+                            "type": "Exception",
+                            "value": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Additional inner exception 1"
+                          },
+                          "Source": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      },
+                      {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233088"
+                          },
+                          "InnerException": {
+                            "fields": {
+                              "HelpLink": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "HResult": {
+                                "type": "Int32",
+                                "value": "-2146233079"
+                              },
+                              "InnerException": {
+                                "isNull": "true",
+                                "type": "Exception"
+                              },
+                              "Message": {
+                                "type": "String",
+                                "value": "Nested invalid operation 2"
+                              },
+                              "Source": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "StackTrace": "ScrubbedValue"
+                            },
+                            "type": "Exception",
+                            "value": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Additional inner exception 2"
+                          },
+                          "Source": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      }
+                    ],
+                    "size": 3,
+                    "type": "Exception[]"
+                  },
+                  "_rocView": {
+                    "fields": {
+                      "list": {
+                        "elements": [
+                          {
+                            "fields": {
+                              "HelpLink": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "HResult": {
+                                "type": "Int32",
+                                "value": "-2146233083"
+                              },
+                              "InnerException": {
+                                "isNull": "true",
+                                "type": "Exception"
+                              },
+                              "Message": {
+                                "type": "String",
+                                "value": "Operation Operation-5-C timed out"
+                              },
+                              "Source": {
+                                "type": "String",
+                                "value": "Samples.Probes.TestRuns"
+                              },
+                              "StackTrace": "ScrubbedValue"
+                            },
+                            "type": "TimeoutException",
+                            "value": "TimeoutException"
+                          },
+                          {
+                            "fields": {
+                              "HelpLink": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "HResult": {
+                                "type": "Int32",
+                                "value": "-2146233088"
+                              },
+                              "InnerException": {
+                                "notCapturedReason": "depth",
+                                "type": "Exception",
+                                "value": "Exception"
+                              },
+                              "Message": {
+                                "type": "String",
+                                "value": "Additional inner exception 1"
+                              },
+                              "Source": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "StackTrace": "ScrubbedValue"
+                            },
+                            "type": "Exception",
+                            "value": "Exception"
+                          },
+                          {
+                            "fields": {
+                              "HelpLink": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "HResult": {
+                                "type": "Int32",
+                                "value": "-2146233088"
+                              },
+                              "InnerException": {
+                                "notCapturedReason": "depth",
+                                "type": "Exception",
+                                "value": "Exception"
+                              },
+                              "Message": {
+                                "type": "String",
+                                "value": "Additional inner exception 2"
+                              },
+                              "Source": {
+                                "isNull": "true",
+                                "type": "String"
+                              },
+                              "StackTrace": "ScrubbedValue"
+                            },
+                            "type": "Exception",
+                            "value": "Exception"
+                          }
+                        ],
+                        "size": 3,
+                        "type": "IList`1"
+                      }
+                    },
+                    "type": "ReadOnlyCollection`1",
+                    "value": "ReadOnlyCollection`1"
+                  },
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233088"
+                  },
+                  "InnerException": {
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233083"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "Operation Operation-5-C timed out"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "CustomAggregateException",
+                "value": "CustomAggregateException"
+              }
+            },
+            "throwable": {
+              "message": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)",
+              "stacktrace": [],
+              "type": "Samples.Probes.TestRuns.ExceptionReplay.CustomAggregateException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "SimulateComplexAsyncOperations",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "SimulateComplexAsyncOperations",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
               "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "DeterministicComplexExceptionPropagationTest",
+                "value": "DeterministicComplexExceptionPropagationTest"
               },
               "testClassName": {
                 "type": "String",
-                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+                "value": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
               }
             },
             "locals": {
@@ -522,15 +896,61 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146232832"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233083"
+                          },
+                          "InnerException": {
+                            "isNull": "true",
+                            "type": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Operation Operation-5-C timed out"
+                          },
+                          "Source": {
+                            "type": "String",
+                            "value": "Samples.Probes.TestRuns"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Top-level exception in InitiateComplexExceptionChain"
                   },
                   "Source": {
                     "type": "String",
@@ -538,19 +958,14 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ApplicationException",
+                "value": "ApplicationException"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
+              "message": "Top-level exception in InitiateComplexExceptionChain",
+              "stacktrace": [],
+              "type": "System.ApplicationException"
             }
           }
         },
@@ -591,13 +1006,13 @@
         "captures": {
           "return": {
             "arguments": {
-              "str": {
+              "operationName": {
                 "type": "String",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "value": "Operation-5-C"
               },
-              "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+              "shouldThrow": {
+                "type": "Boolean",
+                "value": "True"
               }
             },
             "locals": {
@@ -609,7 +1024,7 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146233083"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -617,7 +1032,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Operation Operation-5-C timed out"
                   },
                   "Source": {
                     "type": "String",
@@ -625,19 +1040,14 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "TimeoutException",
+                "value": "TimeoutException"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
+              "message": "Operation Operation-5-C timed out",
+              "stacktrace": [],
+              "type": "System.TimeoutException"
             }
           }
         },
@@ -650,8 +1060,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "SupportedFrame",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+            "method": "SimulateAsyncOperation",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
           },
           "version": 1
         },
@@ -660,8 +1070,8 @@
       }
     },
     "logger": {
-      "method": "SupportedFrame",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
+      "method": "SimulateAsyncOperation",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -680,7 +1090,7 @@
             "arguments": {
               "testName": {
                 "type": "String",
-                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+                "value": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
               },
               "this": {
                 "fields": {
@@ -915,15 +1325,61 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146232832"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233083"
+                          },
+                          "InnerException": {
+                            "isNull": "true",
+                            "type": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Operation Operation-5-C timed out"
+                          },
+                          "Source": {
+                            "type": "String",
+                            "value": "Samples.Probes.TestRuns"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Top-level exception in InitiateComplexExceptionChain"
                   },
                   "Source": {
                     "type": "String",
@@ -931,23 +1387,18 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ApplicationException",
+                "value": "ApplicationException"
               },
               "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "DeterministicComplexExceptionPropagationTest",
+                "value": "DeterministicComplexExceptionPropagationTest"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
+              "message": "Top-level exception in InitiateComplexExceptionChain",
+              "stacktrace": [],
+              "type": "System.ApplicationException"
             }
           }
         },
@@ -989,8 +1440,8 @@
           "return": {
             "arguments": {
               "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
+                "type": "DeterministicComplexExceptionPropagationTest",
+                "value": "DeterministicComplexExceptionPropagationTest"
               }
             },
             "locals": {
@@ -1002,15 +1453,61 @@
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233079"
+                    "value": "-2146232832"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233083"
+                          },
+                          "InnerException": {
+                            "isNull": "true",
+                            "type": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Operation Operation-5-C timed out"
+                          },
+                          "Source": {
+                            "type": "String",
+                            "value": "Samples.Probes.TestRuns"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
+                    "value": "Top-level exception in InitiateComplexExceptionChain"
                   },
                   "Source": {
                     "type": "String",
@@ -1018,19 +1515,14 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "ApplicationException",
+                "value": "ApplicationException"
               }
             },
             "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
+              "message": "Top-level exception in InitiateComplexExceptionChain",
+              "stacktrace": [],
+              "type": "System.ApplicationException"
             }
           }
         },
@@ -1043,8 +1535,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "Run",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+            "method": "InitiateComplexExceptionChain",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
           },
           "version": 1
         },
@@ -1053,8 +1545,132 @@
       }
     },
     "logger": {
-      "method": "Run",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
+      "method": "InitiateComplexExceptionChain",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "DeterministicComplexExceptionPropagationTest",
+                "value": "DeterministicComplexExceptionPropagationTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146232832"
+                  },
+                  "InnerException": {
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "fields": {
+                          "HelpLink": {
+                            "isNull": "true",
+                            "type": "String"
+                          },
+                          "HResult": {
+                            "type": "Int32",
+                            "value": "-2146233083"
+                          },
+                          "InnerException": {
+                            "isNull": "true",
+                            "type": "Exception"
+                          },
+                          "Message": {
+                            "type": "String",
+                            "value": "Operation Operation-5-C timed out"
+                          },
+                          "Source": {
+                            "type": "String",
+                            "value": "Samples.Probes.TestRuns"
+                          },
+                          "StackTrace": "ScrubbedValue"
+                        },
+                        "type": "Exception",
+                        "value": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "Multiple exceptions at depth 5 (Operation Operation-5-C timed out) (Additional inner exception 1) (Additional inner exception 2)"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Top-level exception in InitiateComplexExceptionChain"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "ApplicationException",
+                "value": "ApplicationException"
+              }
+            },
+            "throwable": {
+              "message": "Top-level exception in InitiateComplexExceptionChain",
+              "stacktrace": [],
+              "type": "System.ApplicationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RunAsync",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RunAsync",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.DeterministicComplexExceptionPropagationTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
