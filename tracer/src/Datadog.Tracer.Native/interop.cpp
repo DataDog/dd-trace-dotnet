@@ -17,8 +17,16 @@
 #define EXTERN_C extern "C" __attribute__((visibility("default")))
 #endif
 
+// this is a hack to force vcpkg to copy dll output dir
+extern "C"
+{
+    #include "datadog/profiling.h"
+}
+
 EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached()
 {
+    // this is a hack to force vcpkg to copy dll output dir
+    ddog_ArrayQueue_is_empty(nullptr);
     return trace::profiler != nullptr && trace::profiler->IsAttached();
 }
 
