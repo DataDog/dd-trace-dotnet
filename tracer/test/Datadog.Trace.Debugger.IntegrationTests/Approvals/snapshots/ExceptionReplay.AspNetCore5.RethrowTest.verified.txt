@@ -273,21 +273,13 @@
             "locals": {
               "@exception": {
                 "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
                   "HelpLink": {
                     "isNull": "true",
                     "type": "String"
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233043"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -295,7 +287,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "The depth of iterations reached 0"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -303,8 +295,8 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
               }
             },
             "staticFields": {
@@ -464,9 +456,14 @@
               }
             },
             "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
             }
           }
         },
@@ -507,149 +504,25 @@
         "captures": {
           "return": {
             "arguments": {
-              "iteration": {
-                "type": "Int32",
-                "value": "0"
-              },
-              "method": {
-                "fields": {
-                  "_invocationCount": {
-                    "type": "IntPtr",
-                    "value": "ScrubbedValue"
-                  },
-                  "_invocationList": {
-                    "isNull": "true",
-                    "type": "Object"
-                  },
-                  "_methodBase": {
-                    "isNull": "true",
-                    "type": "Object"
-                  },
-                  "_methodPtr": {
-                    "type": "IntPtr",
-                    "value": "ScrubbedValue"
-                  },
-                  "_methodPtrAux": {
-                    "type": "IntPtr",
-                    "value": "ScrubbedValue"
-                  },
-                  "_target": {
-                    "type": "Object",
-                    "value": "Object"
-                  }
-                },
-                "type": "Func`2",
-                "value": "Func`2"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233043"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The depth of iterations reached 0"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
-              }
-            },
-            "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Me",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest+PingPonged"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "Me",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest+PingPonged",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "iteration": {
+              "depth": {
                 "type": "Int32",
                 "value": "0"
               },
               "this": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
+                "type": "RethrowTest",
+                "value": "RethrowTest"
               }
             },
             "locals": {
               "@exception": {
                 "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
                   "HelpLink": {
                     "isNull": "true",
                     "type": "String"
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233043"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -657,7 +530,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "The depth of iterations reached 0"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -665,14 +538,19 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
               }
             },
             "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
             }
           }
         },
@@ -685,8 +563,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "<Recursive>b__1_0",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
+            "method": "RecursiveCaptureAndThrow",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
           },
           "version": 1
         },
@@ -695,8 +573,8 @@
       }
     },
     "logger": {
-      "method": "<Recursive>b__1_0",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
+      "method": "RecursiveCaptureAndThrow",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -713,123 +591,25 @@
         "captures": {
           "return": {
             "arguments": {
-              "iterations": {
-                "type": "Int32",
-                "value": "0"
-              },
-              "this": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233043"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The depth of iterations reached 0"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
-              }
-            },
-            "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Recursive",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "Recursive",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "iterations": {
+              "depth": {
                 "type": "Int32",
                 "value": "1"
               },
               "this": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
+                "type": "RethrowTest",
+                "value": "RethrowTest"
               }
             },
             "locals": {
               "@exception": {
                 "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
                   "HelpLink": {
                     "isNull": "true",
                     "type": "String"
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233043"
+                    "value": "-2147467263"
                   },
                   "InnerException": {
                     "isNull": "true",
@@ -837,7 +617,7 @@
                   },
                   "Message": {
                     "type": "String",
-                    "value": "The depth of iterations reached 0"
+                    "value": "The method or operation is not implemented."
                   },
                   "Source": {
                     "type": "String",
@@ -845,14 +625,19 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
               }
             },
             "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
             }
           }
         },
@@ -865,8 +650,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "Recursive",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
+            "method": "RecursiveCaptureAndThrow",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
           },
           "version": 1
         },
@@ -875,8 +660,178 @@
       }
     },
     "logger": {
-      "method": "Recursive",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
+      "method": "RecursiveCaptureAndThrow",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "depth": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "RethrowTest",
+                "value": "RethrowTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2147467263"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The method or operation is not implemented."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              }
+            },
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RecursiveCaptureAndThrow",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RecursiveCaptureAndThrow",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "RethrowTest",
+                "value": "RethrowTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2147467263"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The method or operation is not implemented."
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "NotImplementedException",
+                "value": "NotImplementedException"
+              }
+            },
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest.Bar",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Bar",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Bar",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RethrowTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

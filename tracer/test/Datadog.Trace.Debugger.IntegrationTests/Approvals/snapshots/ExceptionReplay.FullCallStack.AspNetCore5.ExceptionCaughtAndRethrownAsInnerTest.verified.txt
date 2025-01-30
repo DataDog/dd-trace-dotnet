@@ -273,29 +273,44 @@
             "locals": {
               "@exception": {
                 "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
                   "HelpLink": {
                     "isNull": "true",
                     "type": "String"
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233043"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "The depth of iterations reached 0"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -303,8 +318,8 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
               }
             },
             "staticFields": {
@@ -464,9 +479,14 @@
               }
             },
             "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -507,67 +527,385 @@
         "captures": {
           "return": {
             "arguments": {
-              "iteration": {
-                "type": "Int32",
-                "value": "0"
+              "instance": {
+                "type": "ExceptionCaughtAndRethrownAsInnerTest",
+                "value": "ExceptionCaughtAndRethrownAsInnerTest"
               },
-              "method": {
+              "testClassName": {
+                "type": "String",
+                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest"
+              }
+            },
+            "locals": {
+              "@exception": {
                 "fields": {
-                  "_invocationCount": {
-                    "type": "IntPtr",
-                    "value": "ScrubbedValue"
-                  },
-                  "_invocationList": {
+                  "HelpLink": {
                     "isNull": "true",
-                    "type": "Object"
+                    "type": "String"
                   },
-                  "_methodBase": {
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233088"
+                  },
+                  "InnerException": {
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
+              }
+            },
+            "throwable": {
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RunTest",
+            "type": "Samples.Debugger.AspNetCore5.Controllers.HomeController"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RunTest",
+      "name": "Samples.Debugger.AspNetCore5.Controllers.HomeController",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "testName": {
+                "type": "String",
+                "value": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest"
+              },
+              "this": {
+                "fields": {
+                  "_controllerContext": {
+                    "fields": {
+                      "_valueProviderFactories": {
+                        "type": "IList`1",
+                        "value": "IList`1"
+                      },
+                      "ActionDescriptor": {
+                        "fields": {
+                          "ActionConstraints": {
+                            "elements": [
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "HttpMethodActionConstraint",
+                                "value": "HttpMethodActionConstraint"
+                              }
+                            ],
+                            "size": 1,
+                            "type": "IList`1"
+                          },
+                          "AttributeRouteInfo": {
+                            "notCapturedReason": "depth",
+                            "type": "AttributeRouteInfo",
+                            "value": "AttributeRouteInfo"
+                          },
+                          "BoundProperties": {
+                            "elements": [],
+                            "size": 0,
+                            "type": "IList`1"
+                          },
+                          "DisplayName": {
+                            "type": "String",
+                            "value": "Samples.Debugger.AspNetCore5.Controllers.HomeController.RunTest (Samples.Debugger.AspNetCore5)"
+                          },
+                          "EndpointMetadata": {
+                            "elements": [
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "ControllerAttribute",
+                                "value": "ControllerAttribute"
+                              },
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "AsyncStateMachineAttribute",
+                                "value": "AsyncStateMachineAttribute"
+                              },
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "DebuggerStepThroughAttribute",
+                                "value": "DebuggerStepThroughAttribute"
+                              },
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "HttpGetAttribute",
+                                "value": "HttpGetAttribute"
+                              },
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "HttpMethodMetadata",
+                                "value": "HttpMethodMetadata"
+                              }
+                            ],
+                            "size": 5,
+                            "type": "IList`1"
+                          },
+                          "FilterDescriptors": {
+                            "elements": [
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "FilterDescriptor",
+                                "value": "FilterDescriptor"
+                              },
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "FilterDescriptor",
+                                "value": "FilterDescriptor"
+                              }
+                            ],
+                            "size": 2,
+                            "type": "IList`1"
+                          },
+                          "Id": "ScrubbedValue",
+                          "Parameters": {
+                            "elements": [
+                              {
+                                "notCapturedReason": "depth",
+                                "type": "ControllerParameterDescriptor",
+                                "value": "ControllerParameterDescriptor"
+                              }
+                            ],
+                            "size": 1,
+                            "type": "IList`1"
+                          },
+                          "Properties": {
+                            "entries": [],
+                            "size": 0,
+                            "type": "IDictionary`2"
+                          },
+                          "RouteValues": {
+                            "entries": [
+                              [
+                                {
+                                  "type": "String",
+                                  "value": "action"
+                                },
+                                {
+                                  "type": "String",
+                                  "value": "RunTest"
+                                }
+                              ],
+                              [
+                                {
+                                  "type": "String",
+                                  "value": "controller"
+                                },
+                                {
+                                  "type": "String",
+                                  "value": "Home"
+                                }
+                              ]
+                            ],
+                            "size": 2,
+                            "type": "IDictionary`2"
+                          }
+                        },
+                        "type": "ActionDescriptor",
+                        "value": "ActionDescriptor"
+                      },
+                      "HttpContext": {
+                        "type": "HttpContext",
+                        "value": "HttpContext"
+                      },
+                      "ModelState": {
+                        "fields": {
+                          "_maxAllowedErrors": {
+                            "type": "Int32",
+                            "value": "200"
+                          },
+                          "_root": {
+                            "notCapturedReason": "depth",
+                            "type": "ModelStateNode",
+                            "value": "ModelStateNode"
+                          },
+                          "Count": {
+                            "type": "Int32",
+                            "value": "1"
+                          },
+                          "ErrorCount": {
+                            "type": "Int32",
+                            "value": "0"
+                          },
+                          "HasRecordedMaxModelError": {
+                            "type": "Boolean",
+                            "value": "False"
+                          }
+                        },
+                        "type": "ModelStateDictionary",
+                        "value": "ModelStateDictionary"
+                      },
+                      "RouteData": {
+                        "fields": {
+                          "_dataTokens": {
+                            "isNull": "true",
+                            "type": "RouteValueDictionary"
+                          },
+                          "_routers": {
+                            "isNull": "true",
+                            "type": "List`1"
+                          },
+                          "_values": {
+                            "notCapturedReason": "depth",
+                            "type": "RouteValueDictionary",
+                            "value": "RouteValueDictionary"
+                          }
+                        },
+                        "type": "RouteData",
+                        "value": "RouteData"
+                      }
+                    },
+                    "type": "ControllerContext",
+                    "value": "ControllerContext"
+                  },
+                  "_logger": {
+                    "type": "ILogger`1",
+                    "value": "ILogger`1"
+                  },
+                  "_metadataProvider": {
                     "isNull": "true",
-                    "type": "Object"
+                    "type": "IModelMetadataProvider"
                   },
-                  "_methodPtr": {
-                    "type": "IntPtr",
-                    "value": "ScrubbedValue"
+                  "_modelBinderFactory": {
+                    "isNull": "true",
+                    "type": "IModelBinderFactory"
                   },
-                  "_methodPtrAux": {
-                    "type": "IntPtr",
-                    "value": "ScrubbedValue"
+                  "_objectValidator": {
+                    "isNull": "true",
+                    "type": "IObjectModelValidator"
                   },
-                  "_target": {
-                    "type": "Object",
-                    "value": "Object"
+                  "_problemDetailsFactory": {
+                    "isNull": "true",
+                    "type": "ProblemDetailsFactory"
+                  },
+                  "_tempData": {
+                    "isNull": "true",
+                    "type": "ITempDataDictionary"
+                  },
+                  "_url": {
+                    "isNull": "true",
+                    "type": "IUrlHelper"
+                  },
+                  "_viewBag": {
+                    "isNull": "true",
+                    "type": "DynamicViewData"
+                  },
+                  "_viewData": {
+                    "isNull": "true",
+                    "type": "ViewDataDictionary"
                   }
                 },
-                "type": "Func`2",
-                "value": "Func`2"
+                "type": "HomeController",
+                "value": "HomeController"
               }
             },
             "locals": {
               "@exception": {
                 "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
                   "HelpLink": {
                     "isNull": "true",
                     "type": "String"
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233043"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "The depth of iterations reached 0"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -575,14 +913,23 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
+              },
+              "instance": {
+                "type": "ExceptionCaughtAndRethrownAsInnerTest",
+                "value": "ExceptionCaughtAndRethrownAsInnerTest"
               }
             },
             "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -595,8 +942,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "Me",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest+PingPonged"
+            "method": "RunTest",
+            "type": "Samples.Debugger.AspNetCore5.Controllers.HomeController"
           },
           "version": 1
         },
@@ -605,8 +952,8 @@
       }
     },
     "logger": {
-      "method": "Me",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest+PingPonged",
+      "method": "RunTest",
+      "name": "Samples.Debugger.AspNetCore5.Controllers.HomeController",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -623,41 +970,52 @@
         "captures": {
           "return": {
             "arguments": {
-              "iteration": {
-                "type": "Int32",
-                "value": "0"
-              },
               "this": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
+                "type": "ExceptionCaughtAndRethrownAsInnerTest",
+                "value": "ExceptionCaughtAndRethrownAsInnerTest"
               }
             },
             "locals": {
               "@exception": {
                 "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
                   "HelpLink": {
                     "isNull": "true",
                     "type": "String"
                   },
                   "HResult": {
                     "type": "Int32",
-                    "value": "-2146233043"
+                    "value": "-2146233088"
                   },
                   "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
+                    "fields": {
+                      "HelpLink": {
+                        "isNull": "true",
+                        "type": "String"
+                      },
+                      "HResult": {
+                        "type": "Int32",
+                        "value": "-2146233088"
+                      },
+                      "InnerException": {
+                        "isNull": "true",
+                        "type": "Exception"
+                      },
+                      "Message": {
+                        "type": "String",
+                        "value": "My future is unknown"
+                      },
+                      "Source": {
+                        "type": "String",
+                        "value": "Samples.Probes.TestRuns"
+                      },
+                      "StackTrace": "ScrubbedValue"
+                    },
+                    "type": "Exception",
+                    "value": "Exception"
                   },
                   "Message": {
                     "type": "String",
-                    "value": "The depth of iterations reached 0"
+                    "value": "Intentional exception that was thrown from an integration test. My future is unknown"
                   },
                   "Source": {
                     "type": "String",
@@ -665,14 +1023,19 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
+                "type": "ExceptionReplayIntentionalException",
+                "value": "ExceptionReplayIntentionalException"
               }
             },
             "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
+              "message": "Intentional exception that was thrown from an integration test. My future is unknown",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest.Run",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.TestRuns.ExceptionReplayIntentionalException"
             }
           }
         },
@@ -685,8 +1048,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "<Recursive>b__1_0",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
+            "method": "Run",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest"
           },
           "version": 1
         },
@@ -695,188 +1058,8 @@
       }
     },
     "logger": {
-      "method": "<Recursive>b__1_0",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "iterations": {
-                "type": "Int32",
-                "value": "0"
-              },
-              "this": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233043"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The depth of iterations reached 0"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
-              }
-            },
-            "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Recursive",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "Recursive",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "iterations": {
-                "type": "Int32",
-                "value": "1"
-              },
-              "this": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "_mutex": {
-                    "isNull": "true",
-                    "type": "Mutex"
-                  },
-                  "_mutexIndex": {
-                    "type": "Int32",
-                    "value": "-1"
-                  },
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233043"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "The depth of iterations reached 0"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "AbandonedMutexException",
-                "value": "AbandonedMutexException"
-              }
-            },
-            "throwable": {
-              "message": "The depth of iterations reached 0",
-              "stacktrace": [],
-              "type": "System.Threading.AbandonedMutexException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "exceptionHash": "ScrubbedValue",
-        "exceptionId": "ScrubbedValue",
-        "frameIndex": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Recursive",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "Recursive",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionCaughtAndRethrownAsInnerTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
