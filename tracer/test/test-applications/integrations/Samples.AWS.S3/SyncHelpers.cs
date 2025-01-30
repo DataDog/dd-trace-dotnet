@@ -10,7 +10,7 @@ namespace Samples.AWS.S3
 {
     static class SyncHelpers
     {
-        private const string BucketName = "MyBucket";
+        private const string BucketName = "my-bucket";
         private const string ObjectKey = "sample.txt";
         private const string ObjectContent = "Hello World!";
 
@@ -49,14 +49,35 @@ namespace Samples.AWS.S3
 
         private static void DeleteBucket(AmazonS3Client s3Client, string bucketName)
         {
-            var deleteBucketRequest = new DeleteBucketRequest
+            try 
             {
-                BucketName = bucketName
-            };
+                // First, delete all objects in the bucket
+                var listRequest = new ListObjectsV2Request
+                {
+                    BucketName = bucketName
+                };
+                
+                var listResponse = s3Client.ListObjectsV2(listRequest);
+                foreach (var obj in listResponse.S3Objects)
+                {
+                    s3Client.DeleteObject(bucketName, obj.Key);
+                    Console.WriteLine($"Deleted object {obj.Key} from bucket {bucketName}");
+                }
 
-            var response = s3Client.DeleteBucket(deleteBucketRequest);
+                // Now delete the empty bucket
+                var deleteBucketRequest = new DeleteBucketRequest
+                {
+                    BucketName = bucketName
+                };
 
-            Console.WriteLine($"DeleteBucket(DeleteBucketRequest) HTTP status code: {response.HttpStatusCode}");
+                var response = s3Client.DeleteBucket(deleteBucketRequest);
+                Console.WriteLine($"DeleteBucket(DeleteBucketRequest) HTTP status code: {response.HttpStatusCode}");
+            }
+            catch (AmazonS3Exception ex)
+            {
+                Console.WriteLine($"Error in DeleteBucket: {ex.Message}");
+                throw;
+            }
         }
 
         private static void CreateBucket(AmazonS3Client s3Client, string bucketName)

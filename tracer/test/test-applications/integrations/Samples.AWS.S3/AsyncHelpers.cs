@@ -9,7 +9,7 @@ namespace Samples.AWS.S3
 {
     static class AsyncHelpers
     {
-        private const string BucketName = "MyBucket";
+        private const string BucketName = "my-bucket";
         private const string ObjectKey = "sample.txt";
         private const string ObjectContent = "Hello World!";
 
@@ -48,14 +48,35 @@ namespace Samples.AWS.S3
 
         private static async Task DeleteBucketAsync(AmazonS3Client s3Client, string bucketName)
         {
-            var deleteBucketRequest = new DeleteBucketRequest
+            try 
             {
-                BucketName = bucketName
-            };
+                // First, delete all objects in the bucket
+                var listRequest = new ListObjectsV2Request
+                {
+                    BucketName = bucketName
+                };
+        
+                var listResponse = await s3Client.ListObjectsV2Async(listRequest);
+                foreach (var obj in listResponse.S3Objects)
+                {
+                    await s3Client.DeleteObjectAsync(bucketName, obj.Key);
+                    Console.WriteLine($"Deleted object {obj.Key} from bucket {bucketName}");
+                }
 
-            var response = await s3Client.DeleteBucketAsync(deleteBucketRequest);
+                // Now delete the empty bucket
+                var deleteBucketRequest = new DeleteBucketRequest
+                {
+                    BucketName = bucketName
+                };
 
-            Console.WriteLine($"DeleteBucketAsync(DeleteBucketRequest) HTTP status code: {response.HttpStatusCode}");
+                var response = await s3Client.DeleteBucketAsync(deleteBucketRequest);
+                Console.WriteLine($"DeleteBucketAsync(DeleteBucketRequest) HTTP status code: {response.HttpStatusCode}");
+            }
+            catch (AmazonS3Exception ex)
+            {
+                Console.WriteLine($"Error in DeleteBucketAsync: {ex.Message}");
+                throw;
+            }
         }
 
         private static async Task CreateBucketAsync(AmazonS3Client s3Client, string bucketName)
