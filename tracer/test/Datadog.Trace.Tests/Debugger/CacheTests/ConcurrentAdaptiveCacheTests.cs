@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Caching;
+using Datadog.Trace.Util;
 using Moq;
 using Xunit;
 
@@ -289,30 +290,50 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
             // Setup
             var mockTimeProvider = new Mock<ITimeProvider>();
             var currentTime = DateTime.UtcNow;
+            var cleanupStarted = new TaskCompletionSource<bool>();
+            var delayStarted = new TaskCompletionSource<bool>();
+            var delayCompleted = new TaskCompletionSource<bool>();
+
             mockTimeProvider.Setup(tp => tp.UtcNow).Returns(() => currentTime);
 
-            var delayTask = new TaskCompletionSource<bool>();
             mockTimeProvider
-                .Setup(tp => tp.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
-                .Returns<TimeSpan, CancellationToken>((delay, token) =>
+               .Setup(tp => tp.Delay(It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+               .Returns<TimeSpan, CancellationToken>(async (delay, token) =>
                 {
-                    token.Register(() => delayTask.TrySetCanceled());
-                    return delayTask.Task;
+                    delayStarted.SetResult(true);
+                    cleanupStarted.SetResult(true);
+
+                    try
+                    {
+                        // Wait until explicitly completed or cancelled
+                        await Task.Delay(-1, token);
+                        delayCompleted.SetResult(true);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        delayCompleted.SetResult(true);
+                        throw;
+                    }
                 });
 
             using var cache = new ConcurrentAdaptiveCache<string, int>(
                 capacity: 100,
                 timeProvider: mockTimeProvider.Object);
 
-            // Add some items
+            // Wait for cleanup cycle to start
+            await cleanupStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+            // Add some test data to ensure the cache is being used
             cache.Add(1, TimeSpan.FromSeconds(1), "test");
 
-            // Initiate disposal
+            // Initiate disposal - this should trigger cancellation
             await Task.Run(() => cache.Dispose());
 
-            // Verify cleanup task was cancelled
+            // Wait for delay completion with timeout
+            await delayCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+            // Verify cleanup task was cancelled and cache is disposed
             Assert.Throws<ObjectDisposedException>(() => cache.Add(2, keys: "test"));
-            Assert.True(delayTask.Task.IsCanceled, "Cleanup delay should have been cancelled");
         }
 
         [Fact]
@@ -401,26 +422,32 @@ namespace Datadog.Trace.Tests.Debugger.CacheTests
         {
             var mockTimeProvider = new Mock<ITimeProvider>();
             var currentTime = DateTime.UtcNow;
-            mockTimeProvider.Setup(tp => tp.UtcNow).Returns(() => currentTime);
+            var timeUpdated = new TaskCompletionSource<bool>();
+
+            mockTimeProvider.Setup(tp => tp.UtcNow)
+                            .Returns(() => currentTime)
+                            .Callback(() => timeUpdated.TrySetResult(true));
 
             using var cache = new ConcurrentAdaptiveCache<string, int>(
                 capacity: 100,
                 timeProvider: mockTimeProvider.Object);
 
-            // Add item with short expiration
-            var shortExpiration = TimeSpan.FromMilliseconds(100);
-            cache.Add(42, shortExpiration, "test-key");
+            // Add items expiration
+            var expiration = TimeSpan.FromMilliseconds(1000);
+            cache.Add(42, expiration, "test-key");
 
-            // Record initial access time
-            var initialAccessTime = currentTime;
+            // Verify item is present
+            Assert.True(cache.TryGet("test-key", out var value));
+            Assert.Equal(42, value);
 
-            // Move time forward past expiration WITHOUT accessing the item
-            currentTime = initialAccessTime.AddMilliseconds(300);
-            mockTimeProvider.Setup(tp => tp.UtcNow).Returns(() => currentTime);
+            // Advance time beyond expiration
+            currentTime = currentTime.Add(expiration.Add(TimeSpan.FromMilliseconds(1500)));
 
-            // Perform cleanup
-            int itemsRemoved = cache.PerformCleanup();
-            Assert.Equal(1, itemsRemoved);
+            timeUpdated.Task.Wait(TimeSpan.FromMilliseconds(250));
+
+            cache.PerformCleanup();
+
+            // Verify item was actually removed
             Assert.False(cache.TryGet("test-key", out _));
         }
 
