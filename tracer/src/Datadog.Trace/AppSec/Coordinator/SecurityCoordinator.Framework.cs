@@ -40,7 +40,16 @@ internal readonly partial struct SecurityCoordinator
     {
         if (HttpContext.Current is not { } current)
         {
-            Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+            if (!_nullContextReported)
+            {
+                Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+                _nullContextReported = true;
+            }
+            else
+            {
+                Log.Debug("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+            }
+
             return null;
         }
 
