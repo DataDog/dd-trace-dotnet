@@ -9,17 +9,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Iast.Propagation;
 
 internal static class DefaultInterpolatedStringHandlerModuleImpl
 {
+    private const int MaxStackSize = 4;
+
     [ThreadStatic]
-    private static readonly Stack<object> _taintedRefStructs = new(8);  // Keep alive the tainted ref structs (very unlikely to have more than 8 nested)
+    private static readonly Stack<object> _taintedRefStructs = new(MaxStackSize);  // Keep alive the tainted ref structs
 
     public static unsafe void Append(IntPtr target, string? value)
     {
@@ -56,7 +54,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             if (!targetIsTainted)
             {
                 // Safe guard to avoid memory leak
-                if (_taintedRefStructs.Count > 16)
+                if (_taintedRefStructs.Count >= MaxStackSize)
                 {
                     _taintedRefStructs.Clear();
                 }
