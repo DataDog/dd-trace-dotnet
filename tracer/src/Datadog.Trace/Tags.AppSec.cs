@@ -25,6 +25,7 @@ public static partial class Tags
             internal const string InternalLogin = $"{PropagatedPrefix}.login";
             internal const string True = "true";
             internal const string False = "false";
+            internal const string Sdk = "sdk";
 
             internal static class LoginEvent
             {

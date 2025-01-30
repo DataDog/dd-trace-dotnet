@@ -58,6 +58,9 @@ public static class EventTrackingSdk
 
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, Tags.AppSec.EventsUsers.True);
+        // cf https://datadoghq.atlassian.net/wiki/spaces/SAAL/pages/2755793809/Application+Security+Events+Tracking+API+SDK#Specification
+        // ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to root span metadata tags (appsec.events.users.login.(success|failure).usr.login), and to the WAF
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, userId);
         setTag(Tags.User.Id, userId);
 
         if (metadata is { Count: > 0 })
@@ -103,7 +106,8 @@ public static class EventTrackingSdk
         void RunWafAndCollectHeaders()
         {
             securityCoordinator.Value.Reporter.CollectHeaders();
-            var result = securityCoordinator.Value.RunWafForUser(userId: userId, fromSdk: true);
+            // confluence [ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to the WAF. The value of this field must be sourced from either the user object when available, or copied from the value of the mandatory user ID.
+            var result = securityCoordinator.Value.RunWafForUser(userId: userId, userLogin: userId, fromSdk: true);
             securityCoordinator.Value.BlockAndReport(result);
         }
     }
@@ -153,6 +157,9 @@ public static class EventTrackingSdk
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureSdkSource, Tags.AppSec.EventsUsers.True);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
+        // cf https://datadoghq.atlassian.net/wiki/spaces/SAAL/pages/2755793809/Application+Security+Events+Tracking+API+SDK#Specification
+        // ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to root span metadata tags (appsec.events.users.login.(success|failure).usr.login), and to the WAF
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, userId);
 
         if (metadata is { Count: > 0 })
         {
