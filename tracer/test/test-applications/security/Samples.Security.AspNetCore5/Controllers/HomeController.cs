@@ -9,15 +9,8 @@ using System.Net.Mime;
 #pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
 namespace Samples.Security.AspNetCore5.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(ILogger<HomeController> logger) : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
         public IActionResult Index()
         {   
             ViewBag.ProfilerAttached = SampleHelpers.IsProfilerAttached();

@@ -202,7 +202,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
-                if (exception is not BlockException)
+                if (BlockException.GetBlockException(exception) is null)
                 {
                     rootSpan.SetException(exception);
                     security.CheckAndBlock(httpContext, rootSpan);
