@@ -985,7 +985,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("tracestate"))
                    .Returns(new[] { "foo=1" });
             headers.Setup(h => h.GetValues("baggage"))
-                   .Returns(new[] { "usr=customer" });
+                   .Returns(new[] { "usr=customer,foo2=bar2" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "3541" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
@@ -1045,7 +1045,7 @@ namespace Datadog.Trace.Tests.Propagators
                   .And
                   .BeEquivalentTo(w3CHeaderFirst ? w3cSpanContextMock : ddSpanContextMock, opts => opts.ExcludingMissingMembers());
 
-            result.Baggage.Should().BeEquivalentTo(new Baggage([new KeyValuePair<string, string>("usr", "customer")]));
+            result.Baggage.Should().BeEquivalentTo(new Baggage([new KeyValuePair<string, string>("usr", "customer"), new KeyValuePair<string, string>("foo2", "bar2")]));
 
             if (extractFirst)
             {
@@ -1069,6 +1069,135 @@ namespace Datadog.Trace.Tests.Propagators
                         ],
                         opts => opts.ExcludingMissingMembers());
             }
+        }
+
+        [Fact]
+        public void Extract_MultipleConflictingTraceIds_ProducesCorrespondingSpanLinks()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000005-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "3541" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+            headers.Setup(h => h.GetValues("x-b3-traceid"))
+                   .Returns(new[] { "11111111111111110000000000000b35" });
+            headers.Setup(h => h.GetValues("x-b3-spanid"))
+                   .Returns(new[] { "000000003ade68b1" });
+            headers.Setup(h => h.GetValues("x-b3-sampled"))
+                   .Returns(new[] { "1" });
+
+            var names = new[]
+                        {
+                            ContextPropagationHeaderStyle.W3CTraceContext,
+                            ContextPropagationHeaderStyle.Datadog,
+                            ContextPropagationHeaderStyle.B3MultipleHeaders,
+                            ContextPropagationHeaderStyle.W3CBaggage,
+                        };
+
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: false);
+
+            var result = propagator.Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            var w3CtraceId = new TraceId(0x1111111111111111, 5);
+            var ddtraceId = new TraceId(0x1111111111111111, 0xdd5);
+            var b3traceId = new TraceId(0x1111111111111111, 0xb35);
+
+            var w3cSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = w3CtraceId,
+                    TraceId = 5,
+                    SpanId = 987654321,
+                    RawTraceId = w3CtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 1,
+                    PropagatedTags = new TraceTagCollection(),
+                    AdditionalW3CTraceState = "foo=1",
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = ZeroLastParentId,
+                };
+
+            var ddSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = ddtraceId,
+                    TraceId = 0xdd5,
+                    SpanId = 987654321,
+                    RawTraceId = ddtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 2,
+                    PropagatedTags = propagatedTags,
+                    AdditionalW3CTraceState = null,
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = null,
+                };
+
+            var b3MultiContextMock = new SpanContextMock
+                {
+                    TraceId128 = b3traceId,
+                    TraceId = 0xb35,
+                    SpanId = 987654321,
+                    RawTraceId = b3traceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 1,
+                    PropagatedTags = new TraceTagCollection(),
+                    AdditionalW3CTraceState = null,
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = null,
+                };
+
+            result.SpanContext
+                  .Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(w3cSpanContextMock, opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+
+            result.Links
+                    .Should()
+                    .BeEquivalentTo(
+                    [
+                        new SpanLinkMock
+                        {
+                            Context = ddSpanContextMock,
+                            Attributes =
+                            [
+                                new("reason", "terminated_context"),
+                                new("context_headers", "datadog")
+                            ]
+                        },
+                        new SpanLinkMock
+                        {
+                            Context = b3MultiContextMock,
+                            Attributes =
+                            [
+                                new("reason", "terminated_context"),
+                                new("context_headers", "b3multi")
+                            ]
+                        },
+                    ],
+                    opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]
