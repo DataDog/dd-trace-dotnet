@@ -40,5 +40,10 @@
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
-
+  <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
+    <!-- VCPKG setup -->
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+    <VcpkgTriplet>$(Platform)-windows</VcpkgTriplet>
+  </PropertyGroup>
 </Project>

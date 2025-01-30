@@ -10,6 +10,9 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
+using System.Runtime.InteropServices;
+using Serilog;
+using static PrepareRelease.SetAllVersions;
 
 partial class Build
 {
@@ -151,16 +154,38 @@ partial class Build
                                            .Executes(() =>
                                             {
                                                 const string fileName = "datadog_profiling_ffi";
+
+                                                var dllFile = $"{fileName}.dll";
+                                                var pdbFile = $"{fileName}.pdb";
+
                                                 foreach (var architecture in ArchitecturesForPlatformForProfiler)
                                                 {
-                                                    var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
-                                                    var source = sourceDir / $"{fileName}.dll";
                                                     var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                                                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                                                    
+                                                    foreach (var sourceDir in new[] { ProfilerDeployDirectory / $"win-{architecture}" , NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture })
+                                                    {
+                                                        if (!File.Exists(dest / dllFile))
+                                                        {
+                                                            var sourceFile = sourceDir / dllFile;
+                                                            TryCopyFrom(sourceFile, dest);
+                                                        }
 
-                                                    source = sourceDir / $"{fileName}.pdb";
-                                                    dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
-                                                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                                                        if (!File.Exists(dest / pdbFile))
+                                                        {
+                                                            var sourceFile = sourceDir / pdbFile;
+                                                            TryCopyFrom(sourceFile, dest);
+                                                        }
+                                                    }
+                                                }
+
+                                                bool TryCopyFrom(string sourceFile, AbsolutePath dest)
+                                                {
+                                                    if (File.Exists(sourceFile))
+                                                    {
+                                                        CopyFileToDirectory(sourceFile, dest, FileExistsPolicy.Overwrite);
+                                                        return true;
+                                                    }
+                                                    return false;
                                                 }
                                             });
 
