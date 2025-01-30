@@ -13,13 +13,13 @@ namespace Datadog.FleetInstaller;
 
 internal static class AppHostHelper
 {
-    public static bool SetAllEnvironmentVariables(ILogger log, SymlinkedTracerValues tracerValues)
+    public static bool SetAllEnvironmentVariables(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Setting app pool environment variables");
         return ModifyEnvironmentVariablesWithRetry(log, tracerValues, SetEnvVars);
     }
 
-    public static bool RemoveAllEnvironmentVariables(ILogger log, SymlinkedTracerValues tracerValues)
+    public static bool RemoveAllEnvironmentVariables(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Removing app pool environment variables");
         return ModifyEnvironmentVariablesWithRetry(log, tracerValues, RemoveEnvVars);

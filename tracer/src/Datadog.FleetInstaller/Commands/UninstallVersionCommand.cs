@@ -14,52 +14,26 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Uninstall a single version of the fleet-installed .NET tracer
 /// </summary>
-internal class UninstallVersionCommand : Command
+internal class UninstallVersionCommand : CommandBase
 {
-    private readonly Option<string> _symlinkPathOption = new("--symlink-path", () => null!) { IsRequired = true };
-    private readonly Option<string> _versionedPathOption = new("--versioned-path", () => null!) { IsRequired = true };
-
     public UninstallVersionCommand()
         : base("uninstall-version")
     {
-        AddOption(_symlinkPathOption);
-        AddOption(_versionedPathOption);
-
-        AddValidator(Validate);
-
-        this.SetHandler(ExecuteAsync);
-    }
-
-    /// <inheritdoc cref="Command"/>
-    public Task ExecuteAsync(InvocationContext context)
-    {
-        var symlinkPath = context.ParseResult.GetValueForOption(_symlinkPathOption)!;
-        var versionedPath = context.ParseResult.GetValueForOption(_versionedPathOption)!;
-        var log = Log.Instance;
-
-        var result = ExecuteAsync(
-            log,
-            new VersionedTracerValues(versionedPath),
-            Defaults.CrashTrackingRegistryKey);
-
-        context.ExitCode = (int)result;
-        return Task.CompletedTask;
     }
 
     // Internal for testing
-    internal static ReturnCodes ExecuteAsync(
+    internal static ReturnCode ExecuteAsync(
         ILogger log,
-        VersionedTracerValues versionedTracerValues,
+        TracerValues versionedTracerValues,
         string registryKeyName)
     {
         log.WriteInfo("Uninstalling .NET tracer package");
 
         // We check the prerequisites for GAC uninstall in there, so no additional checks first
-        // TODO: We _could_ check that the symlink _doesn't_ point to the versioned file?
         if (!GacInstaller.TryGacUninstall(log, versionedTracerValues))
         {
             // definitely bail out
-            return ReturnCodes.ErrorDuringGacUninstallation;
+            return ReturnCode.ErrorDuringGacUninstallation;
         }
 
         // We don't uninstall from the app host, as they should _already_ point to different values
@@ -69,18 +43,9 @@ internal class UninstallVersionCommand : Command
         }
 
         // success
-        return ReturnCodes.Success;
+        return ReturnCode.Success;
     }
 
-    private void Validate(CommandResult commandResult)
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            commandResult.ErrorMessage = $"This installer is only intended to run on Windows, it cannot be used on {RuntimeInformation.OSDescription}";
-        }
-
-        var path = commandResult.GetValueForOption(_symlinkPathOption);
-
-        // TODO: do the file exists etc validation here?
-    }
+    protected override Task<ReturnCode> ExecuteAsync(ILogger log, InvocationContext context, TracerValues versionedPath)
+        => Task.FromResult(ExecuteAsync(log, versionedPath, Defaults.CrashTrackingRegistryKey));
 }

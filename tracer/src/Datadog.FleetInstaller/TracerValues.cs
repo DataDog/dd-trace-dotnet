@@ -9,9 +9,9 @@ using System.IO;
 
 namespace Datadog.FleetInstaller;
 
-internal abstract class TracerValues
+internal class TracerValues
 {
-    protected TracerValues(string tracerHomeDirectory)
+    public TracerValues(string tracerHomeDirectory)
     {
         TracerHomeDirectory = tracerHomeDirectory;
         NativeLoaderX86Path = Path.Combine(tracerHomeDirectory, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll");
@@ -45,8 +45,3 @@ internal abstract class TracerValues
 
     public ICollection<string> FilesToAddToGac { get; }
 }
-
-#pragma warning disable SA1402 // File must contain a single type
-internal class SymlinkedTracerValues(string tracerHomeDirectory) : TracerValues(tracerHomeDirectory);
-
-internal class VersionedTracerValues(string tracerHomeDirectory) : TracerValues(tracerHomeDirectory);

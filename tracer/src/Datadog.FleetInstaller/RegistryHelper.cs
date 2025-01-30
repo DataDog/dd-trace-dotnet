@@ -10,7 +10,7 @@ namespace Datadog.FleetInstaller;
 
 internal class RegistryHelper
 {
-    public static bool AddCrashTrackingKey(ILogger log, VersionedTracerValues values, string registryKeyName)
+    public static bool AddCrashTrackingKey(ILogger log, TracerValues values, string registryKeyName)
     {
         var crashHandlerPath = values.NativeLoaderX64Path;
         log.WriteInfo($"Adding crash tracking key to registry: '{registryKeyName}'");
@@ -42,7 +42,7 @@ internal class RegistryHelper
         }
     }
 
-    public static bool RemoveCrashTrackingKey(ILogger log, VersionedTracerValues values, string registryKeyName)
+    public static bool RemoveCrashTrackingKey(ILogger log, TracerValues values, string registryKeyName)
     {
         var crashHandlerPath = values.NativeLoaderX64Path;
         log.WriteInfo($"Removing crash tracking key from registry: '{registryKeyName}'");

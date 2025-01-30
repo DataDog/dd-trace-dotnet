@@ -8,12 +8,12 @@ using System.CommandLine.Parsing;
 using Datadog.FleetInstaller.Commands;
 
 // TEMP: For easy local testing
-var extraArgs = new[] { "--symlink-path", @"C:\datadog2", "--versioned-path", @"C:\repos\dd-trace-dotnet-2\artifacts\monitoring-home" };
-string[] install = ["install", ..extraArgs];
-string[] reinstall = ["reinstall", ..extraArgs];
-string[] uninstall = ["uninstall-version", ..extraArgs];
-string[] remove = ["uninstall-all", ..extraArgs];
-args = remove;
+// var extraArgs = new[] { "--home-path", @"C:\repos\dd-trace-dotnet-2\artifacts\monitoring-home" };
+// args = ["install", ..extraArgs];
+// args = ["reinstall", ..extraArgs];
+// args = ["uninstall-version", ..extraArgs];
+// args = ["uninstall-product"];
+// args = [];
 
 var rootCommand = new CommandWithExamples(CommandWithExamples.Command);
 
@@ -23,16 +23,16 @@ var builder = new CommandLineBuilder(rootCommand)
     .CancelOnProcessTermination();
 
 rootCommand.AddExample("""
-                       install --symlink-path "C:\datadog\stable" --versioned-path "C:\datadog\versions\3.9.0"
+                       install --home-path "C:\datadog\versions\3.9.0"
                        """);
 rootCommand.AddExample("""
-                       reinstall --symlink-path "C:\datadog\stable" --versioned-path "C:\datadog\versions\3.9.0"
+                       reinstall --home-path "C:\datadog\versions\3.9.0"
                        """);
 rootCommand.AddExample("""
-                       uninstall-version --symlink-path "C:\datadog\stable" --versioned-path "C:\datadog\versions\3.9.0"
+                       uninstall-version --home-path "C:\datadog\versions\3.9.0"
                        """);
 rootCommand.AddExample("""
-                       uninstall-all --symlink-path "C:\datadog\stable" --versioned-path "C:\datadog\versions\3.9.0"
+                       uninstall-product"
                        """);
 
 rootCommand.AddCommand(new InstallCommand());
@@ -40,4 +40,4 @@ rootCommand.AddCommand(new ReinstallCommand());
 rootCommand.AddCommand(new UninstallVersionCommand());
 rootCommand.AddCommand(new UninstallAllCommand());
 
-builder.Build().Invoke(args);
+return builder.Build().Invoke(args);

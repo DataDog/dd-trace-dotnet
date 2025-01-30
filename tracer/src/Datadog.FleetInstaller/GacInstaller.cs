@@ -27,7 +27,7 @@ internal static class GacInstaller
     /// <summary>
     /// Publish the tracer files to the GAC.
     /// </summary>
-    public static bool TryGacInstall(ILogger log, VersionedTracerValues tracerValues)
+    public static bool TryGacInstall(ILogger log, TracerValues tracerValues)
     {
         // We use the versioned x64 native loader path as the file that should exist to avoid uninstalling from the GAC
         // while the file is still in use
@@ -43,7 +43,7 @@ internal static class GacInstaller
     /// <summary>
     /// Remove the tracer files from the GAC.
     /// </summary>
-    public static bool TryGacUninstall(ILogger log, VersionedTracerValues tracerValues)
+    public static bool TryGacUninstall(ILogger log, TracerValues tracerValues)
     {
         // We use the versioned x86 native loader path as the file that should exist to avoid uninstalling from the GAC
         // while the file is still in use.

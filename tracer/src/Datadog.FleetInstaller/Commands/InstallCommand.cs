@@ -14,11 +14,8 @@ namespace Datadog.FleetInstaller.Commands;
 /// <summary>
 /// Install a new version of the .NET Tracer. Could be the first version, or simply a new version
 /// </summary>
-internal class InstallCommand : Command
+internal class InstallCommand : CommandBase
 {
-    private readonly Option<string> _symlinkPathOption = new("--symlink-path", () => null!) { IsRequired = true };
-    private readonly Option<string> _versionedPathOption = new("--versioned-path", () => null!) { IsRequired = true };
-
     public InstallCommand()
         : this("install")
     {
@@ -27,83 +24,43 @@ internal class InstallCommand : Command
     protected InstallCommand(string command)
         : base(command)
     {
-        AddOption(_symlinkPathOption);
-        AddOption(_versionedPathOption);
-
-        AddValidator(Validate);
-
-        this.SetHandler(ExecuteAsync);
-    }
-
-    /// <inheritdoc cref="Command"/>
-    public Task ExecuteAsync(InvocationContext context)
-    {
-        var symlinkPath = context.ParseResult.GetValueForOption(_symlinkPathOption)!;
-        var versionedPath = context.ParseResult.GetValueForOption(_versionedPathOption)!;
-        var log = Log.Instance;
-
-        var result = ExecuteAsync(
-            log,
-            new SymlinkedTracerValues(symlinkPath),
-            new VersionedTracerValues(versionedPath),
-            Defaults.TracerLogDirectory,
-            Defaults.CrashTrackingRegistryKey);
-
-        context.ExitCode = (int)result;
-        return Task.CompletedTask;
     }
 
     // Internal for testing
-    internal static ReturnCodes ExecuteAsync(
+    internal static ReturnCode ExecuteAsync(
         ILogger log,
-        SymlinkedTracerValues symlinkTracerValues,
-        VersionedTracerValues versionedTracerValues,
+        TracerValues tracerValues,
         string tracerLogDirectory,
         string registryKeyName)
     {
         log.WriteInfo("Installing .NET tracer");
-
-        // Check prerequisites
-        if (!FileHelper.VerifyFiles(log, symlinkTracerValues, versionedTracerValues))
-        {
-            return ReturnCodes.ErrorDuringPrerequisiteVerification;
-        }
 
         if (!FileHelper.CreateLogDirectory(log, tracerLogDirectory))
         {
             // This probably isn't a reason to bail out
         }
 
-        if (!GacInstaller.TryGacInstall(log, versionedTracerValues))
+        if (!GacInstaller.TryGacInstall(log, tracerValues))
         {
             // definitely bail out
-            return ReturnCodes.ErrorDuringGacInstallation;
+            return ReturnCode.ErrorDuringGacInstallation;
         }
 
-        if (!AppHostHelper.SetAllEnvironmentVariables(log, symlinkTracerValues))
+        if (!AppHostHelper.SetAllEnvironmentVariables(log, tracerValues))
         {
             // hard to be sure exactly of the state at this point
-            return ReturnCodes.ErrorSettingAppPoolVariables;
+            return ReturnCode.ErrorSettingAppPoolVariables;
         }
 
-        if (!RegistryHelper.AddCrashTrackingKey(log, versionedTracerValues, registryKeyName))
+        if (!RegistryHelper.AddCrashTrackingKey(log, tracerValues, registryKeyName))
         {
             // Probably Don't need to bail out of installation just because we failed to add crash tracking?
         }
 
         // success
-        return ReturnCodes.Success;
+        return ReturnCode.Success;
     }
 
-    private void Validate(CommandResult commandResult)
-    {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            commandResult.ErrorMessage = $"This installer is only intended to run on Windows, it cannot be used on {RuntimeInformation.OSDescription}";
-        }
-
-        var path = commandResult.GetValueForOption(_symlinkPathOption);
-
-        // TODO: do the file exists etc validation here?
-    }
+    protected override Task<ReturnCode> ExecuteAsync(ILogger log, InvocationContext context, TracerValues versionedPath)
+        => Task.FromResult(ExecuteAsync(log, versionedPath, Defaults.TracerLogDirectory, Defaults.CrashTrackingRegistryKey));
 }

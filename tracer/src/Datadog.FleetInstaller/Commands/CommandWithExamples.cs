@@ -9,6 +9,8 @@ using System.CommandLine;
 using System.CommandLine.Help;
 using System.IO;
 
+namespace Datadog.FleetInstaller.Commands;
+
 internal class CommandWithExamples : Command
 {
     private readonly List<string> _examples = new();
@@ -20,7 +22,7 @@ internal class CommandWithExamples : Command
 
     public static string Command =>
         Environment.GetEnvironmentVariable("DD_INTERNAL_OVERRIDE_COMMAND")
-        ?? Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
+        ?? Path.GetFileName(Environment.GetCommandLineArgs()[0]);
 
     public IReadOnlyList<string> Examples => _examples;
 
@@ -44,6 +46,6 @@ internal class CommandWithExamples : Command
 
     public void AddExample(string example)
     {
-        _examples.Add($"{Command} {example}");
+        _examples.Add(example);
     }
 }
