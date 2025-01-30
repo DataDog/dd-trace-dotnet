@@ -22,6 +22,16 @@ public class AwsS3CommonTests
     private const string ObjectKey = "MyObjectKey";
 
     [Fact]
+    public void GetCorrectOperationName()
+    {
+        var tracerV0 = GetTracer("v0");
+        AwsS3Common.GetOperationName(tracerV0).Should().Be("s3.request");
+
+        var tracerV1 = GetTracer("v1");
+        AwsS3Common.GetOperationName(tracerV1).Should().Be("aws.s3.request");
+    }
+
+    [Fact]
     public void CreateScopeCorrectAttributes()
     {
         var tracer = GetTracer();

@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
         private const string DatadogAwsS3ServiceName = "aws-s3";
         private const string S3ServiceName = "S3";
         private const string S3OperationName = "aws.s3.request";
+        private const string S3OperationNameV0 = "s3.request";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsS3Common));
 
         internal const string IntegrationName = nameof(IntegrationId.AwsS3);
@@ -39,7 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
             {
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsS3Tags(spanKind);
                 var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsS3ServiceName);
-                scope = tracer.StartActiveInternal(S3OperationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var operationName = GetOperationName(tracer);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -58,6 +60,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
+        }
+
+        internal static string GetOperationName(Tracer tracer)
+        {
+            return tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0
+                   ? S3OperationNameV0
+                   : S3OperationName;
         }
 
         public static void SetTags(AwsS3Tags? tags, string? bucketName, string? objectKey)
