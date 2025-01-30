@@ -17,14 +17,19 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
     private const int MaxStackSize = 4;
 
     [ThreadStatic]
-    private static readonly Stack<object> _taintedRefStructs = new(MaxStackSize);  // Keep alive the tainted ref structs
+    private static Stack<object>? _taintedRefStructs;
 
-    public static unsafe void Append(IntPtr target, string? value)
+    private static Stack<object> TaintedRefStructs
+    {
+        get => _taintedRefStructs ??= new Stack<object>(MaxStackSize);
+    }
+
+    public static void Append(IntPtr target, string? value)
     {
         FullTaintIfAnyTainted(target, value);
     }
 
-    public static unsafe void FullTaintIfAnyTainted(IntPtr target, string? input)
+    public static void FullTaintIfAnyTainted(IntPtr target, string? input)
     {
         try
         {
@@ -54,13 +59,13 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             if (!targetIsTainted)
             {
                 // Safe guard to avoid memory leak
-                if (_taintedRefStructs.Count >= MaxStackSize)
+                if (TaintedRefStructs.Count >= MaxStackSize)
                 {
-                    _taintedRefStructs.Clear();
+                    TaintedRefStructs.Clear();
                 }
 
                 object targetObj = target;
-                _taintedRefStructs.Push(targetObj);
+                TaintedRefStructs.Push(targetObj);
 
                 taintedObjects.Taint(targetObj, rangesResult);
             }
@@ -103,9 +108,9 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
             var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
             taintedObjects.Taint(result, [range]);
             taintedSelf.Invalidate();
-            if (_taintedRefStructs.Count > 0)
+            if (TaintedRefStructs.Count > 0)
             {
-                _taintedRefStructs.Pop();
+                TaintedRefStructs.Pop();
             }
         }
         catch (Exception err)
