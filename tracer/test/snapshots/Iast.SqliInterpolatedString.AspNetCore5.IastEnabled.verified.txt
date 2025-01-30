@@ -42,11 +42,7 @@
             "source": 0
           },
           {
-            "value": "'Reims','51100','France')",
-            "source": 0
-          },
-          {
-            "value": ";\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;"
+            "value": "'Reims','51100','France');\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;"
           }
         ]
       }
