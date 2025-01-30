@@ -1,0 +1,26 @@
+﻿Iteration 0:
+     _dd.di._eh : -1282285784
+     _dd.di._er : NotEligible
+Iteration 1:
+     _dd.debug.error.0.frame_data.class_name : RethrowTest
+     _dd.debug.error.0.frame_data.function : Bar
+     _dd.debug.error.0.snapshot_id : <Redacted>
+     _dd.debug.error.1.frame_data.class_name : RethrowTest
+     _dd.debug.error.1.frame_data.function : RecursiveCaptureAndThrow
+     _dd.debug.error.1.snapshot_id : <Redacted>
+     _dd.debug.error.2.frame_data.class_name : RethrowTest
+     _dd.debug.error.2.frame_data.function : RecursiveCaptureAndThrow
+     _dd.debug.error.2.snapshot_id : <Redacted>
+     _dd.debug.error.3.frame_data.class_name : RethrowTest
+     _dd.debug.error.3.frame_data.function : RecursiveCaptureAndThrow
+     _dd.debug.error.3.snapshot_id : <Redacted>
+     _dd.debug.error.exception_hash : <Redacted>
+     _dd.debug.error.exception_id : <Redacted>
+     _dd.di._eh : -1282285784
+     _dd.di._er : Eligible
+Iteration 2:
+     _dd.di._eh : -1282285784
+     _dd.di._er : CachedDoneExceptionCase
+Iteration 3:
+     _dd.di._eh : -1282285784
+     _dd.di._er : CachedDoneExceptionCase
