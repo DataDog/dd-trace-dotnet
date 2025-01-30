@@ -19,6 +19,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private StringBuilder? _debug;
 
+        public TestExceptionNormalizer()
+        {
+        }
+
         internal int NormalizeAndHashException(string exceptionString, string outerExceptionType, string? innerExceptionType, StringBuilder debug)
         {
             _debug = debug;

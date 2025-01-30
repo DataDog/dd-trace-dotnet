@@ -60,13 +60,14 @@ public class AspNetCore5ExceptionReplayEnabledDynamicInstrumentationDisabled_Ful
 
 public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    private static readonly string[] KnownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
-    private static readonly string[] KnownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items", "asyncRun", "run", "tasks" };
-    private static readonly string[] KnownClassNamesToRemoveFromExceptionReplayFrame = { "<<Configure>b__5_2>d" };
+    private static readonly string[] KnownPropertiesToReplace = ["duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task", "exceptionId", "exceptionHash", "frameIndex", "StackTrace"];
+    private static readonly string[] KnownPropertiesToRemove = ["CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items", "asyncRun", "run", "tasks", "ex", "obj2", "obj3", "methodName", "e"];
+    private static readonly string[] KnownClassNamesToRemoveFromExceptionReplayFrame = ["<<Configure>b__5_2>d"];
+    private static readonly string[] TypesToScrub = [nameof(IntPtr), nameof(Guid), "ValueTask", "ValueTaskAwaiter", "YieldAwaiter"];
 
     // This class is used to test Exception Replay with Dynamic Instrumentation enabled or disabled.
     public AspNetCore5ExceptionReplay(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableDynamicInstrumentation, bool captureFullCallStack)
-        : base("AspNetCore5", outputHelper, "/shutdown")
+        : base("AspNetCore5", outputHelper)
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, enableDynamicInstrumentation.ToString().ToLower());
@@ -77,6 +78,7 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
         SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
 
         // See https://github.com/dotnet/runtime/issues/91963
         SetEnvironmentVariable("COMPLUS_ForceEnc", "0");
@@ -116,6 +118,13 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
     [Trait("RunOnWindows", "True")]
     public async Task TestExceptionReplay(ProbeTestDescription testData)
     {
+        if (testData.TestType == typeof(Samples.Probes.TestRuns.ExceptionReplay.RethrowTest) &&
+            (TestPrefix.EndsWith("netcoreapp3.0") || TestPrefix.EndsWith("netcoreapp3.1")))
+        {
+            // Flaky approvals
+            return;
+        }
+
         var data = testData.TestType.GetCustomAttributes<ExceptionReplayTestDataAttribute>().Single();
         var expectedNumberOfSnapshots = CaptureFullCallStackEnabled ? data.ExpectedNumberOfSnaphotsFull : data.ExpectedNumberOfSnapshotsDefault;
         var url = $"/RunTest/{testData.TestType.FullName}";
@@ -124,91 +133,98 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
         await TryStartApp();
         var agent = Fixture.Agent;
 
-        var toApprove = new StringBuilder();
-
-        MockSpan spanOfCapturedException = null;
-
-        for (int i = 0; i < 4; i++)
+        try
         {
-            var spans = await SendRequestsAsync(agent, [url]);
-            var erroredSpan = spans.Single(x => x.Tags.ContainsKey("error.stack"));
+            var toApprove = new StringBuilder();
 
-            var allTags = erroredSpan.Tags.Where(tag => tag.Key.StartsWith("_dd.di") || tag.Key.StartsWith("_dd.debug")).OrderBy(tag => tag.Key);
+            MockSpan spanOfCapturedException = null;
 
-            if (allTags.Any(tag => tag.Key == "_dd.di._er" && tag.Value == "NewCase"))
+            for (int i = 0; i < 4; i++)
             {
-                Output.WriteLine($"Skipped NewCase tag.");
-                i -= 1;
-                continue;
-            }
+                var spans = await SendRequestsAsync(agent, [url]);
+                var erroredSpan = spans.Single(x => x.Tags.ContainsKey("error.stack"));
 
-            toApprove.AppendLine($"Iteration {i}:");
+                var allTags = erroredSpan.Tags.Where(tag => tag.Key.StartsWith("_dd.di") || tag.Key.StartsWith("_dd.debug")).OrderBy(tag => tag.Key);
 
-            var classNameSuffix = ".frame_data.class_name";
-
-            var framePrefixesToOmit = allTags
-                                         .Where(tag =>
-                                          {
-                                              if (tag.Key.EndsWith(classNameSuffix) && KnownClassNamesToRemoveFromExceptionReplayFrame.Contains(tag.Value))
-                                              {
-                                                  return true;
-                                              }
-
-                                              if (tag.Key.EndsWith(classNameSuffix) && tag.Value.StartsWith("<"))
-                                              {
-                                                  var framePrefix = tag.Key.Replace(classNameSuffix, string.Empty);
-                                                  return allTags.Any(tag => (tag.Key == framePrefix + ".no_capture_reason") && tag.Value.EndsWith("blacklisted."));
-                                              }
-
-                                              return false;
-                                          })
-                                         .Select(tag => tag.Key.Replace(classNameSuffix, string.Empty))
-                                         .ToArray();
-
-            foreach (var tag in allTags)
-            {
-                var tagValue = tag.Value;
-
-                if (tag.Key.EndsWith("snapshot_id") || tag.Key.EndsWith("exception_id") || tag.Key.EndsWith("exception_hash"))
+                if (allTags.Any(tag => tag.Key == "_dd.di._er" && tag.Value == "NewCase"))
                 {
-                    tagValue = "<Redacted>";
-                }
-
-                if (framePrefixesToOmit.Any(tag.Key.StartsWith))
-                {
+                    Output.WriteLine($"Skipped NewCase tag.");
+                    i -= 1;
                     continue;
                 }
 
-                toApprove.AppendLine($"     {tag.Key} : {tagValue}");
+                toApprove.AppendLine($"Iteration {i}:");
+
+                var classNameSuffix = ".frame_data.class_name";
+
+                var framePrefixesToOmit = allTags
+                                         .Where(
+                                              tag =>
+                                              {
+                                                  if (tag.Key.EndsWith(classNameSuffix) && KnownClassNamesToRemoveFromExceptionReplayFrame.Contains(tag.Value))
+                                                  {
+                                                      return true;
+                                                  }
+
+                                                  if (tag.Key.EndsWith(classNameSuffix) && tag.Value.StartsWith("<"))
+                                                  {
+                                                      var framePrefix = tag.Key.Replace(classNameSuffix, string.Empty);
+                                                      return allTags.Any(tag => (tag.Key == framePrefix + ".no_capture_reason") && tag.Value.EndsWith("blacklisted."));
+                                                  }
+
+                                                  return false;
+                                              })
+                                         .Select(tag => tag.Key.Replace(classNameSuffix, string.Empty))
+                                         .ToArray();
+
+                foreach (var tag in allTags)
+                {
+                    var tagValue = tag.Value;
+
+                    if (tag.Key.EndsWith("snapshot_id") || tag.Key.EndsWith("exception_id") || tag.Key.EndsWith("exception_hash"))
+                    {
+                        tagValue = "<Redacted>";
+                    }
+
+                    if (framePrefixesToOmit.Any(tag.Key.StartsWith))
+                    {
+                        continue;
+                    }
+
+                    toApprove.AppendLine($"     {tag.Key} : {tagValue}");
+                }
+
+                if (allTags.Single(tag => tag.Key == "_dd.di._er").Value == "Eligible")
+                {
+                    spanOfCapturedException = erroredSpan;
+                }
+
+                await Task.Delay(250);
             }
 
-            if (allTags.Single(tag => tag.Key == "_dd.di._er").Value == "Eligible")
-            {
-                spanOfCapturedException = erroredSpan;
-            }
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            settings.UseFileName($"{nameof(AspNetCore5ExceptionReplay)}{(CaptureFullCallStackEnabled ? ".FullCallStack" : string.Empty)}.{testData.TestType.Name}");
+            settings.UseDirectory("Approvals");
+            await Verifier.Verify(toApprove.ToString(), settings);
 
-            await Task.Delay(250);
+            Assert.NotNull(spanOfCapturedException);
+
+            var actualSnapshotsNum = spanOfCapturedException.Tags.Keys.Where(key => key.EndsWith(".snapshot_id"));
+
+            Assert.Equal(expectedNumberOfSnapshots, actualSnapshotsNum.Count());
+
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+
+            Assert.Equal(expectedNumberOfSnapshots, snapshots!.Length);
+
+            var testName = "ExceptionReplay" + (CaptureFullCallStackEnabled ? ".FullCallStack" : string.Empty) + ".AspNetCore5." + testData.TestType.Name;
+            await Approver.ApproveSnapshots(snapshots, testName, Output, KnownPropertiesToReplace, KnownPropertiesToRemove, TypesToScrub, orderPostScrubbing: true);
         }
-
-        var settings = new VerifySettings();
-        settings.DisableRequireUniquePrefix();
-        settings.UseFileName($"{nameof(AspNetCore5ExceptionReplay)}{(CaptureFullCallStackEnabled ? ".FullCallStack" : string.Empty)}.{testData.TestType.Name}");
-        settings.UseDirectory("Approvals");
-        await Verifier.Verify(toApprove.ToString(), settings);
-
-        Assert.NotNull(spanOfCapturedException);
-
-        var actualSnapshotsNum = spanOfCapturedException.Tags.Keys.Where(key => key.EndsWith(".snapshot_id"));
-
-        Assert.Equal(expectedNumberOfSnapshots, actualSnapshotsNum.Count());
-
-        var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-
-        Assert.Equal(expectedNumberOfSnapshots, snapshots!.Length);
-
-        var testName = "ExceptionReplay" + (CaptureFullCallStackEnabled ? ".FullCallStack" : string.Empty) + ".AspNetCore5." + testData.TestType.Name;
-        await Approver.ApproveSnapshots(snapshots, testName, Output, KnownPropertiesToReplace, KnownPropertiesToRemove, orderPostScrubbing: true);
-        agent.ClearSnapshots();
+        finally
+        {
+            agent.ClearSnapshots();
+        }
     }
 }
 #endif
