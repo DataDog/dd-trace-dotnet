@@ -108,6 +108,16 @@
                     <td><label for="smtpPort">SMTP Port:</label></td>
                     <td><input type="text" id="smtpPort" name="smtpPort" value="587" /></td>
                 </tr>
+                <tr>
+                    <td><label for="library">Mail Library:</label></td>
+                    <td>
+                        <select id="library" name="library">
+                            <option value="System.Net.Mail" selected>System.Net.Mail</option>
+                            <option value="MailKit">MailKit</option>
+                            <option value="Awssdk.SimpleMail">Awssdk.SimpleMail</option>
+                        </select>
+                    </td>
+                </tr>
             </table>
         </form>
     </div>
