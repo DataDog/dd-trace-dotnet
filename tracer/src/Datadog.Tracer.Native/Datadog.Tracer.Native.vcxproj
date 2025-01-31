@@ -272,7 +272,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\logger_impl.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
-    <ClCompile Include="..\..\..\shared\src\native-src\library_config.h" />
+    <ClInclude Include="..\..\..\shared\src\native-src\library_config.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />

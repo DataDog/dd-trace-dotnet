@@ -27,6 +27,10 @@
     <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
     <NugetAudit>false</NugetAudit>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- VCPKG setup -->
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+    <VcpkgTriplet>$(Platform)-windows</VcpkgTriplet>
   </PropertyGroup>
 
   <ItemGroup>

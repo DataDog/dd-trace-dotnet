@@ -1,11 +1,14 @@
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
+
 #include <vector>
 #include <fstream>
 #include "library_config.h"
 #ifndef _WINDOWS
 #include <datadog/library-config.h>
+#include <unistd.h>
+extern char **environ;
 #endif
 #include <datadog/common.h>
 
@@ -15,6 +18,13 @@
 // TODO: when libdatadog is bumped over 15.0.0 there will be two config paths
 std::string shared::LibraryConfig::config_path = "/etc/datadog-agent/managed/datadog-apm-libraries/stable/libraries_config.yaml";
 
+ddog_CharSlice 
+shared::LibraryConfig::to_char_slice(std::string const& str)
+{
+    return {str.data(), str.size()};
+}
+
+#ifndef _WINDOWS
 ddog_Slice_CharSlice 
 shared::LibraryConfig::to_slice_char_slice(const std::vector<std::string>& vec) {
     ddog_CharSlice* slices = new ddog_CharSlice[vec.size()];
@@ -24,13 +34,6 @@ shared::LibraryConfig::to_slice_char_slice(const std::vector<std::string>& vec) 
     return {slices, vec.size()};
 }
 
-ddog_CharSlice 
-shared::LibraryConfig::to_char_slice(std::string const& str)
-{
-    return {str.data(), str.size()};
-}
-
-#ifndef _WINDOWS
 std::vector<shared::ConfigEntry>
 shared::LibraryConfig::get_configuration(bool debug_logs)
 {
@@ -40,8 +43,10 @@ shared::LibraryConfig::get_configuration(bool debug_logs)
         envp.push_back(*current);
     }
 
-    // Get args (by reading /proc/self/cmdline)
+    // Get args (by reading /proc/self/cmdline); linux only for now
+    // TODO: add MacOS support
     std::vector<std::string> args;
+    #ifdef __linux__
     std::ifstream cmdline("/proc/self/cmdline", std::ios::in);
     if (cmdline) {
         std::string arg;
@@ -60,6 +65,7 @@ shared::LibraryConfig::get_configuration(bool debug_logs)
             args.push_back(arg);
         }
     }
+    #endif
 
     // Get configuration
     ddog_ProcessInfo process_info{

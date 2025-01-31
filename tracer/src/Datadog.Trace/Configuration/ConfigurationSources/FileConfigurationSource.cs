@@ -119,7 +119,7 @@ namespace Datadog.Trace.Configuration
         // These methods are rewritten by the native tracer to use the correct paths
         private static partial class NonWindows
         {
-            [DllImport("Datadog.Tracer.Native")]
+            [DllImport("Datadog.Tracer.Native")] // Somehow only the absolute path works..?
             public static extern int LoadConfigurationFromDisk(string filePathOverride, int bufferSize, ref int configEntriesCount, [In, Out] NativeConfigEntry[] configEntries);
         }
     }

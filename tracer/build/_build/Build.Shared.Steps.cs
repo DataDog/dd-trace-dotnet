@@ -339,6 +339,7 @@ partial class Build
 
         return output
               .Where(x=>x.Contains("@GLIBC_"))
+              .Where(x => x.Contains("U "))
               .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
               .OrderDescending()
               .FirstOrDefault();

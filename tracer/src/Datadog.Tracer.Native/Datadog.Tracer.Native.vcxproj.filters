@@ -37,6 +37,7 @@
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\library_config.cpp">
       <Filter>shared</Filter>
+      <Filter>libdatadog</Filter>
     </ClCompile>
     <ClCompile Include="debugger_tokens.cpp">
       <Filter>Debugger</Filter>
@@ -163,6 +164,7 @@
     </ClInclude>
     <ClInclude Include="..\..\..\shared\src\native-src\library_config.h">
       <Filter>shared</Filter>
+      <Filter>libdatadog</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\shared\src\native-src\logger_impl.h">
       <Filter>shared</Filter>
@@ -296,6 +298,9 @@
     </Filter>
     <Filter Include="Tracer">
       <UniqueIdentifier>{981bc011-a78e-4f39-b0b2-429340f384cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libdatadog">
+      <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

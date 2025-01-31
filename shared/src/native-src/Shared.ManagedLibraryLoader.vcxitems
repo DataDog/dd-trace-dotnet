@@ -22,7 +22,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)library_config.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)library_config.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)logmanager.h" />

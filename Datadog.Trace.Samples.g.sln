@@ -22,6 +22,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9E5F0022-0A50-40BF-AC6A-C3078585ECAB}"
 	ProjectSection(SolutionItems) = preProject
 		tracer\src\Directory.Build.props = tracer\src\Directory.Build.props
+		tracer\src\Directory.Build.targets = tracer\src\Directory.Build.targets
 		tracer\src\GlobalSuppressions.cs = tracer\src\GlobalSuppressions.cs
 	EndProjectSection
 EndProject
