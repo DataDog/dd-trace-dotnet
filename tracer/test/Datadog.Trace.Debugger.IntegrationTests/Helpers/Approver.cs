@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -24,20 +25,21 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
         private static readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
         private static readonly string[] _knownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth" };
 
-        internal static async Task ApproveSnapshots(string[] snapshots, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
+        internal static async Task ApproveSnapshots(string[] snapshots, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, string[] typesToScrub = null, bool orderPostScrubbing = false)
         {
-            await ApproveOnDisk(snapshots, testName, "snapshots", output, knownPropertiesToReplace, knownPropertiesToRemove, orderPostScrubbing);
+            await ApproveOnDisk(snapshots, testName, "snapshots", output, knownPropertiesToReplace, knownPropertiesToRemove, typesToScrub, orderPostScrubbing);
         }
 
-        internal static async Task ApproveStatuses(string[] statuses, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
+        internal static async Task ApproveStatuses(string[] statuses, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, string[] typesToScrub = null, bool orderPostScrubbing = false)
         {
-            await ApproveOnDisk(statuses, testName, "statuses", output, knownPropertiesToReplace, knownPropertiesToRemove, orderPostScrubbing);
+            await ApproveOnDisk(statuses, testName, "statuses", output, knownPropertiesToReplace, knownPropertiesToRemove, typesToScrub, orderPostScrubbing);
         }
 
-        private static async Task ApproveOnDisk(string[] dataToApprove, string testName, string path, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
+        private static async Task ApproveOnDisk(string[] dataToApprove, string testName, string path, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, string[] typesToScrub = null, bool orderPostScrubbing = false)
         {
             knownPropertiesToRemove ??= _knownPropertiesToRemove;
             knownPropertiesToReplace ??= _knownPropertiesToReplace;
+            typesToScrub ??= _typesToScrub;
 
             if (dataToApprove.Length > 1)
             {
@@ -73,6 +75,11 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
                +
                 "]";
 
+            if (orderPostScrubbing)
+            {
+                settings.AddScrubber(FinalOrderingScrubber);
+            }
+
             await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
 
             void ScrubSnapshotJson(StringBuilder input)
@@ -104,9 +111,9 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
                             {
                                 case "type":
                                     // Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
-                                    if (_typesToScrub.Contains(item.Value.ToString()))
+                                    if (typesToScrub.Contains(item.Value.ToString()))
                                     {
-                                        item.Value.Parent.Parent["value"].Replace("ScrubbedValue");
+                                        item.Value?.Parent?.Parent?["value"]?.Replace("ScrubbedValue");
                                     }
 
                                     break;
@@ -206,9 +213,36 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
 
                 if (orderPostScrubbing)
                 {
-                    // Order the snapshots alphabetically so we'll be able to create deterministic approvals
-                    json = new JArray(json.OrderBy(obj => obj.ToString()));
+                    FinalOrderingScrubber(input);
                 }
+
+                input.Clear().Append(json);
+            }
+
+            void FinalOrderingScrubber(StringBuilder input)
+            {
+                var json = JArray.Parse(input.ToString());
+
+                foreach (var obj in json.Children<JObject>())
+                {
+                    var orderedProps = obj.Properties()
+                                          .OrderBy(p => p.Name)
+                                          .ToList();
+
+                    obj.RemoveAll();
+                    foreach (var prop in orderedProps)
+                    {
+                        obj.Add(prop);
+                    }
+                }
+
+                json = new JArray(json.OrderBy(obj => JsonConvert.SerializeObject(obj, new JsonSerializerSettings
+                {
+                    Formatting = Formatting.None,
+                    NullValueHandling = NullValueHandling.Ignore
+                })));
+
+                json = new JArray(json.OrderBy(obj => obj.ToString()));
 
                 input.Clear().Append(json);
             }

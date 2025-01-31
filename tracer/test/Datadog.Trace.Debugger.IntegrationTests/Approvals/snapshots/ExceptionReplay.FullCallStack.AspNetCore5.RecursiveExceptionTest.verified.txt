@@ -471,6 +471,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -558,6 +561,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -671,6 +677,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -758,6 +767,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -871,6 +883,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -958,6 +973,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1071,6 +1089,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1158,6 +1179,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1271,6 +1295,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1358,6 +1385,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1471,6 +1501,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1558,6 +1591,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1671,6 +1707,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1758,6 +1797,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1871,6 +1913,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -1958,6 +2003,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2071,6 +2119,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2158,6 +2209,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2271,6 +2325,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2358,6 +2415,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2471,6 +2531,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2558,6 +2621,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2645,6 +2711,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2732,6 +2801,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2819,6 +2891,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2906,6 +2981,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -2993,6 +3071,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3080,6 +3161,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3167,6 +3251,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3254,6 +3341,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3341,6 +3431,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3428,6 +3521,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3515,6 +3611,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3825,6 +3924,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {
@@ -3908,6 +4010,9 @@
           }
         },
         "duration": "ScrubbedValue",
+        "exceptionHash": "ScrubbedValue",
+        "exceptionId": "ScrubbedValue",
+        "frameIndex": "ScrubbedValue",
         "id": "ScrubbedValue",
         "language": "dotnet",
         "probe": {

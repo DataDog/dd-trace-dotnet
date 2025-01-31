@@ -32,12 +32,8 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var wafArgs = new Dictionary<string, object>
-                {
-                    { AddressesConstants.UserId, userId },
-                };
-
-                securityCoordinator.Value.BlockAndReport(wafArgs);
+                var result = securityCoordinator.Value.RunWafForUser(userId, fromSdk: true);
+                securityCoordinator.Value.BlockAndReport(result);
             }
         }
     }
