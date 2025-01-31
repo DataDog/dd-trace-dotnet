@@ -375,14 +375,17 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        httpResponse.StatusCode = blockingAction.StatusCode;
-
         if (blockingAction.IsRedirect)
         {
-            httpResponse.Redirect(blockingAction.RedirectLocation, blockingAction.IsPermanentRedirect);
+            httpResponse.Redirect(blockingAction.RedirectLocation, false);
+
+            // Redirect() set a status code (301 or 302) and ends the response,
+            // but we want to set the status code to the one we have in the blocking action
+            httpResponse.StatusCode = blockingAction.StatusCode;
         }
         else
         {
+            httpResponse.StatusCode = blockingAction.StatusCode;
             httpResponse.ContentType = blockingAction.ContentType;
             httpResponse.Write(blockingAction.ResponseContent);
         }

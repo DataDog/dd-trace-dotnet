@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
@@ -46,19 +47,18 @@ internal class BlockingMiddleware
             httpResponse.Headers.Clear();
             httpResponse.StatusCode = action.StatusCode;
 
+            endedResponse = true;
+
             if (action.IsRedirect)
             {
-                httpResponse.Redirect(action.RedirectLocation, action.IsPermanentRedirect);
-                endedResponse = true;
-            }
-            else
-            {
-                httpResponse.ContentType = action.ContentType;
-                endedResponse = true;
-                return httpResponse.WriteAsync(action.ResponseContent);
+                httpResponse.Headers[HeaderNames.Location] = action.RedirectLocation;
+
+                return Task.CompletedTask;
             }
 
-            return Task.CompletedTask;
+            httpResponse.ContentType = action.ContentType;
+
+            return httpResponse.WriteAsync(action.ResponseContent);
         }
 
         try

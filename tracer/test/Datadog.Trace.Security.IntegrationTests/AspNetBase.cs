@@ -61,12 +61,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 #pragma warning restore SA1202 // Elements should be ordered by access
 #pragma warning restore SA1401 // Fields should be private
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false, bool allowAutoRedirect = true)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
             _cookieContainer = new CookieContainer();
-            var handler = new HttpClientHandler();
+            var handler = new HttpClientHandler { AllowAutoRedirect = allowAutoRedirect };
             handler.CookieContainer = _cookieContainer;
             _httpClient = new HttpClient(handler);
             _shutdownPath = shutdownPath;
