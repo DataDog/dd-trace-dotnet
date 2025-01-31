@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '9.0.100'
+          dotnet-version: '9.0.102'
 
       - name: "Add labels"
         run: ./tracer/build.sh AssignLabelsToPullRequest

@@ -50,6 +50,7 @@ namespace Datadog.Trace
 
             // usr.id should always be set, even when PropagateId is true
             setTag(Tags.User.Id, userDetails.Id);
+            setTag(Tags.AppSec.EventsUsers.CollectionMode, Tags.AppSec.EventsUsers.Sdk);
 
             if (userDetails.PropagateId)
             {

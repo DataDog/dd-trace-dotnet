@@ -58,6 +58,8 @@ internal readonly partial struct SecurityCoordinator
         return new SecurityCoordinator(security, span, transport);
     }
 
+    internal static SecurityCoordinator? TryGetSafe(Security security, Span span) => TryGet(security, span);
+
     internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
@@ -289,6 +291,24 @@ internal readonly partial struct SecurityCoordinator
             // here we assume if we haven't blocked we'll have collected the correct status elsewhere
             reporting(null, result.ShouldBlock);
         }
+    }
+
+    internal void BlockAndReport(IResult? result)
+    {
+        if (result is null)
+        {
+            return;
+        }
+
+        var reporting = Reporter.MakeReportingFunction(result);
+
+        if (result.ShouldBlock)
+        {
+            ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
+        }
+
+        // here we assume if we haven't blocked we'll have collected the correct http status elsewhere
+        reporting(null, result.ShouldBlock);
     }
 
     internal void ReportAndBlock(IResult? result)

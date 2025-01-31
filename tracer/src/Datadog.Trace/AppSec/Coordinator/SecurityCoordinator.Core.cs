@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
@@ -49,6 +50,20 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return new SecurityCoordinator(security, span, new(context));
+    }
+
+    internal static SecurityCoordinator? TryGetSafe(Security security, Span span)
+    {
+        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
+        {
+            var secCoord = GetSecurityCoordinatorImpl(security, span);
+            return secCoord;
+        }
+
+        return null;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        SecurityCoordinator? GetSecurityCoordinatorImpl(Security securityImpl, Span spanImpl) => TryGet(securityImpl, spanImpl);
     }
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
@@ -108,7 +123,7 @@ internal readonly partial struct SecurityCoordinator
 
             if (!queryStringDic.TryGetValue(currentKey, out var list))
             {
-                queryStringDic.Add(currentKey, new List<string> { value });
+                queryStringDic.Add(currentKey, [value]);
             }
             else
             {
@@ -123,12 +138,6 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
-
-        var userId = _localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.User.Id);
-        if (!string.IsNullOrEmpty(userId))
-        {
-            addressesDictionary.Add(AddressesConstants.UserId, userId!);
-        }
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);

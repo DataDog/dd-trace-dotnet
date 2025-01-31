@@ -85,6 +85,8 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("NHibernate*"),
     WStr("Npgsql*"),
     WStr("Grpc.Net.Client"),    
+    WStr("Amazon.Runtime*"),    
+    WStr("App.Metrics.Concurrency*"),    
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {

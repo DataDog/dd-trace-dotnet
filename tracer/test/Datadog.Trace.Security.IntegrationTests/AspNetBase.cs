@@ -204,8 +204,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
             if (appsecSpans.Any())
             {
-                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
-                || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
+                appsecSpans.Should()
+                           .OnlyContain(
+                                s =>
+                                    (s.Metrics.ContainsKey("_dd.appsec.waf.duration")
+                                 && s.Metrics.ContainsKey("_dd.appsec.waf.duration_ext"))
+                                 || (s.Metrics.ContainsKey("_dd.appsec.rasp.duration")
+                                 && s.Metrics.ContainsKey("_dd.appsec.rasp.duration_ext")),
+                                "if waf has run, these metrics should be present and are not, has the waf really run?")
+                           .And.OnlyContain(
+                                s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
+                                  || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"],
+                                "duration with encodings should be longer than duration for only a waf run");
             }
 
             if (string.IsNullOrEmpty(fileNameOverride))

@@ -628,28 +628,6 @@ public:
     HRESULT TryParse();
 };
 
-struct ModuleIDMethodDef {
-    ModuleID ModuleId;
-    mdMethodDef MethodDef;
-
-    // Hash function
-    std::size_t operator()(const ModuleIDMethodDef& i) const {
-        return static_cast<std::size_t>(i.ModuleId) ^ (static_cast<std::size_t>(i.MethodDef) << 1);
-    }
-    // Comparison for equality
-    bool operator ()(const ModuleIDMethodDef& lhs, const ModuleIDMethodDef& rhs) const  {
-        return lhs.ModuleId == rhs.ModuleId && lhs.MethodDef == rhs.MethodDef;
-    }
-
-    bool operator ==(const ModuleIDMethodDef& other) const  {
-        return this->ModuleId == other.ModuleId && this->MethodDef == other.MethodDef;
-    }
-
-    bool operator !=(const ModuleIDMethodDef& other) const  {
-        return this->ModuleId != other.ModuleId || this->MethodDef != other.MethodDef;
-    }
-};
-
 RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info);
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly_id);
