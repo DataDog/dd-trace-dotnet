@@ -30,8 +30,8 @@ RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV
 
 # Install .NET 9
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="9.0.100" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/10bb041d-e705-473e-9654-27c0e038f5bd/447c0c10654c2949872fa6154b8c27b5/dotnet-sdk-9.0.100-win-x64.exe" \
+ENV DOTNET_VERSION="9.0.102" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/10bb041d-e705-473e-9654-27c0e038f5bd/447c0c10654c2949872fa6154b8c27b5/dotnet-sdk-9.0.102-win-x64.exe" \
     DOTNET_SHA512="a12ee028f7dff8f330dbe1914534d237eb6e19cc105139ce5de69df1b4b07ee3c1a3e396574ca776a452e805052e799df14a348ace50191af514c9dc4705ecf0"
 
 COPY install_dotnet.ps1 .
