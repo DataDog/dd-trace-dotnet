@@ -15,7 +15,6 @@ namespace Datadog.Profiler.IntegrationTests.Network
     {
         private const string All = "--iterations 5 --scenario 7";
 
-
         private readonly ITestOutputHelper _output;
 
         public HttpRequestMetricTest(ITestOutputHelper output)
