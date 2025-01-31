@@ -174,6 +174,11 @@ internal readonly partial struct SecurityCoordinator
         {
             get
             {
+                if (IsAdditiveContextDisposed())
+                {
+                    return null;
+                }
+
                 try
                 {
                     return Context.Response.StatusCode;
@@ -181,6 +186,7 @@ internal readonly partial struct SecurityCoordinator
                 catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
                 {
                     Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
+                    SetAdditiveContextDisposed(true);
                     return null;
                 }
             }
