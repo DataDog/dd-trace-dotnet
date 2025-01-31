@@ -55,6 +55,29 @@ internal static class FileHelper
         return error is null;
     }
 
+    /// <summary>
+    /// Delete the native loader files, as a precursor to uninstalling a version.
+    /// If the files can be deleted, they're not in use, and it's safe to remove of the files
+    /// </summary>
+    public static bool TryDeleteNativeLoaders(ILogger log, TracerValues values)
+    {
+        // Delete the native loader
+        try
+        {
+            log.WriteInfo($"Deleting native loader file at '{values.NativeLoaderX86Path}'");
+            File.Delete(values.NativeLoaderX86Path);
+
+            log.WriteInfo($"Deleting native loader file at '{values.NativeLoaderX64Path}'");
+            File.Delete(values.NativeLoaderX64Path);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            log.WriteError(ex, $"Error deleting native loaders");
+            return false;
+        }
+    }
+
     public static bool CreateLogDirectory(ILogger log, string logDirectory)
     {
         log.WriteInfo($"Ensuring log directory '{logDirectory}' exists");
