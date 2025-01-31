@@ -11,7 +11,7 @@ using System.Web;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class EmailHtmlInjectionTests : InstrumentationTestsBase
+public class EmailHtmlInjectionTests : EmailInjectionBaseTests
 { 
     private static string taintedName = "Alice<h1>Hi</h1>";
     private static string untaintedName = "Peter";
@@ -252,20 +252,5 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
         mailMessage.Body = contentHtml;
         mailMessage.IsBodyHtml = isHtml;
         return mailMessage;
-    }
-
-    private string GetContent(string name, string lastName)
-    {
-        return "Hi " + name + " " + lastName + "!";
-    }
-
-    private void TestEmailSendCall(Action expression)
-    {
-        try
-        {
-            expression.Invoke();
-        }
-        catch (SmtpException) { }
-        catch (InvalidOperationException) { }
     }
 }
