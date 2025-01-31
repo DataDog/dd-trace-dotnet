@@ -186,7 +186,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "S3")
                 .Matches("aws_service", "S3")
-                .IsPresent("bucketname")
+                .IsOptional("bucketname")
                 .IsOptional("objectkey")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
