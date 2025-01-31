@@ -7,10 +7,13 @@ namespace Datadog.FleetInstaller;
 
 internal enum ReturnCode
 {
-    Success,
+    // The order of these values is important, as they are used to determine the exit code of the process
+    // We should always add new error values to the end and not re-order them
+    Success = 0,
     ErrorDuringPrerequisiteVerification, // Not explicitly called, but equivalent
     ErrorDuringGacInstallation,
     ErrorDuringGacUninstallation,
     ErrorSettingAppPoolVariables,
     ErrorRemovingAppPoolVariables,
+    ErrorRemovingNativeLoaderFiles,
 }

@@ -3,10 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Datadog.FleetInstaller.Commands;
@@ -24,20 +21,26 @@ internal class UninstallVersionCommand : CommandBase
     // Internal for testing
     internal static ReturnCode ExecuteAsync(
         ILogger log,
-        TracerValues versionedTracerValues,
+        TracerValues tracerValues,
         string registryKeyName)
     {
         log.WriteInfo("Uninstalling .NET tracer package");
 
-        // We check the prerequisites for GAC uninstall in there, so no additional checks first
-        if (!GacInstaller.TryGacUninstall(log, versionedTracerValues))
+        if (!FileHelper.TryDeleteNativeLoaders(log, tracerValues))
+        {
+            // definitely bail - the files are in use
+            return ReturnCode.ErrorRemovingNativeLoaderFiles;
+        }
+
+        // We check the prerequisites for GAC uninstall in here again, though they should have been checked in the above step
+        if (!GacInstaller.TryGacUninstall(log, tracerValues))
         {
             // definitely bail out
             return ReturnCode.ErrorDuringGacUninstallation;
         }
 
         // We don't uninstall from the app host, as they should _already_ point to different values
-        if (!RegistryHelper.RemoveCrashTrackingKey(log, versionedTracerValues, registryKeyName))
+        if (!RegistryHelper.RemoveCrashTrackingKey(log, tracerValues, registryKeyName))
         {
             // Probably Don't need to bail out of installation just because we failed to remove the crash tracker?
         }

@@ -44,10 +44,17 @@ internal class UninstallAllCommand : CommandBase
             return ReturnCode.ErrorRemovingAppPoolVariables;
         }
 
+        if (!FileHelper.TryDeleteNativeLoaders(log, tracerValues))
+        {
+            // definitely bail - the files are in use
+            return ReturnCode.ErrorRemovingNativeLoaderFiles;
+        }
+
         if (!GacInstaller.TryGacUninstall(log, tracerValues))
         {
             // We don't actually care if this fails (and it probably _will_, if we haven't yet deleted the tracer files)
-            // as it just leaves some files around
+            // as it just leaves some files around, but we return an error so that the installer doesn't try to clean up
+            return ReturnCode.ErrorDuringGacUninstallation;
         }
 
         // Should we clean up/delete the log folder? Probably not, as it may contain useful information
