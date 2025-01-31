@@ -7,9 +7,9 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -74,18 +74,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
                     var uri = request.Endpoint;
-                    var absolutePath = uri?.AbsolutePath;
-                    var path = request.ResourcePath switch
+                    if (tags is AwsS3Tags s3Tags)
                     {
-                        null => absolutePath,
-                        string resourcePath when absolutePath == "/" => resourcePath,
-                        string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
-                    };
+                        var path = AwsS3Common.BuildS3Path(s3Tags);
+                        tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
+                    }
+                    else
+                    {
+                        // Fallback to the "generic" approach for other AWS services
+                        var absolutePath = uri?.AbsolutePath;
+                        var path = request.ResourcePath switch
+                        {
+                            null => absolutePath,
+                            string resourcePath when absolutePath == "/" => resourcePath,
+                            string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
+                        };
+                        tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
+                    }
 
                     // The request object is populated later by the Marshaller,
                     // so we wait until the method end callback to read it
                     tags.HttpMethod = request.HttpMethod?.ToUpperInvariant();
-                    tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
                 }
 
                 if (responseContext.Instance is not null && responseContext.Response is { } response)
