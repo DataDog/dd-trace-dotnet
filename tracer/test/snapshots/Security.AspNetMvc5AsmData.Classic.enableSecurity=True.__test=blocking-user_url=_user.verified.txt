@@ -45,6 +45,7 @@
       span.kind: server,
       usr.id: user3,
       _dd.appsec.event_rules.version: 1.13.3,
+      _dd.appsec.user.collection_mode: sdk,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -112,6 +113,7 @@
       _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.fp.session: ssn-5860faf0---,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"blk-001-002","name":"Block User Addresses","tags":{"category":"security_response","type":"block_user"}},"rule_matches":[{"operator":"exact_match","operator_value":"","parameters":[{"address":"usr.id","highlight":["user3"],"key_path":[],"value":"user3"}]}]}]},
+      _dd.appsec.user.collection_mode: sdk,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
