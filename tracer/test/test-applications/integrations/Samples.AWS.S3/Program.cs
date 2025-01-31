@@ -18,6 +18,10 @@ namespace Samples.AWS.S3
 
         private static AmazonS3Client GetAmazonS3Client()
         {
+            // Fixes localstack breaking change in AWSSSDK.S3 versions 3.7.412.0 and above.
+            // https://github.com/aws/aws-sdk-net/issues/3610
+            Environment.SetEnvironmentVariable("AWS_REQUEST_CHECKSUM_CALCULATION", "WHEN_REQUIRED");
+
             if (Environment.GetEnvironmentVariable("AWS_ACCESSKEY") is string accessKey &&
                 Environment.GetEnvironmentVariable("AWS_SECRETKEY") is string secretKey &&
                 Environment.GetEnvironmentVariable("AWS_REGION") is string region)

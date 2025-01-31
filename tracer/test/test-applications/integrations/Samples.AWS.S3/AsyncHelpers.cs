@@ -138,7 +138,7 @@ namespace Samples.AWS.S3
                 Key = objectKey,
                 UploadId = uploadId,
                 PartNumber = partNumber,
-                InputStream = memoryStream
+                InputStream = memoryStream,
             };
 
             var response = await s3Client.UploadPartAsync(uploadRequest);
