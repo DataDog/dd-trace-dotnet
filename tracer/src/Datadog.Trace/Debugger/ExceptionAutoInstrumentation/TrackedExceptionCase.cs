@@ -76,7 +76,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             // else - If there is a concurrent initialization or tearing down, ignore this case
             if (Initialized())
             {
-                var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier);
+                var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier, ExceptionToString);
                 BeginCollect(@case);
                 CachedDoneExceptions.Remove(NormalizedExceptionHash);
             }

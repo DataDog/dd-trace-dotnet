@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -326,7 +326,8 @@
       usr.name: Bits,
       usr.role: Mascot,
       usr.scope: test-scope,
-      usr.session_id: abc123
+      usr.session_id: abc123,
+      _dd.appsec.user.collection_mode: sdk
     },
     Metrics: {
       process_id: 0,
@@ -496,6 +497,7 @@ CustomException: Exception of type 'CustomException' was thrown.
       appsec.events.users.login.success.key-1: val-1,
       appsec.events.users.login.success.key-2: val-2,
       appsec.events.users.login.success.track: true,
+      appsec.events.users.login.success.usr.login: my-id,
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
@@ -589,6 +591,7 @@ CustomException: Exception of type 'CustomException' was thrown.
       appsec.events.users.login.failure.track: true,
       appsec.events.users.login.failure.usr.exists: true,
       appsec.events.users.login.failure.usr.id: my-id,
+      appsec.events.users.login.failure.usr.login: my-id,
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,

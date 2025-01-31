@@ -206,7 +206,8 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateTrimmingFile);
+        .DependsOn(CreateTrimmingFile)
+        .DependsOn(RegenerateSolutions);
     
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()

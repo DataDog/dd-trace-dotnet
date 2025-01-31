@@ -1038,7 +1038,7 @@ HRESULT DebuggerProbesInstrumentationRequester::NotifyReJITError(ModuleID module
         {
             Logger::Info("Marking ", probeId, " as Error.");
             ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probeId,
-                                                                   invalid_probe_failed_to_instrument_method_probe);
+                                                                   GetGenericErrorMessageWithHr(hrStatus));
         }
     }
 
