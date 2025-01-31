@@ -28,7 +28,15 @@ cd c:\mnt\
 mklink /d dd-trace-dotnet C:\mnt
 mklink /d _build C:\_build
 
-dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PackageTracerHome ZipSymbols SignDlls SignMsi --Artifacts "build-out\%CI_JOB_ID%"
+:: Check if Nuke arguments were provided, if not, fail
+set "nuke_args=%*"
+
+if "%nuke_args%"=="" (
+    echo ERROR: No nuke arguments provided!
+    exit /b 1
+)
+
+dotnet run --project tracer/build/_build/_build.csproj -- %nuke_args% --Artifacts "build-out\%CI_JOB_ID%"
 
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 

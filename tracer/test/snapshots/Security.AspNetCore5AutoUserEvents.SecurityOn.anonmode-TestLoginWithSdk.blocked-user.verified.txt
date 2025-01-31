@@ -12,7 +12,7 @@
       appsec.event: true,
       appsec.events.users.login.success.some-metadata: some-value,
       appsec.events.users.login.success.track: true,
-      appsec.events.users.login.success.usr.login: anon_eb97d409396a3e5392936dad92b909da,
+      appsec.events.users.login.success.usr.login: blocked-user,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,

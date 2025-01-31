@@ -113,7 +113,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                     foundLogin = true;
                     var login = processPii?.Invoke(userLogin!) ?? userLogin!;
                     setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
                 }
 
                 var duckCast = instance.TryDuckCast<ISignInManager>(out var value);
@@ -143,7 +143,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                 {
                     var login = processPii?.Invoke(userLogin!) ?? userLogin!;
                     setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
                 }
             }
 #endif

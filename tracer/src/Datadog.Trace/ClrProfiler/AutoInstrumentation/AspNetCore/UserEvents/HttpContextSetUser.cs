@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                             userId = processPii?.Invoke(claim.Value) ?? claim.Value;
                             tryAddTag(Tags.User.Id, userId);
                             setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
-                            setTag(Tags.AppSec.EventsUsers.CollectionMode, successAutoMode);
+                            tryAddTag(Tags.AppSec.EventsUsers.CollectionMode, successAutoMode);
 
                             secCoord.Reporter.CollectHeaders();
                             security.SetTraceSamplingPriority(span);
