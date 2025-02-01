@@ -752,6 +752,9 @@ namespace Datadog.Trace
         /// </summary>
         internal const string LastParentId = "_dd.parent_id";
 
+        // inferred proxy tags
+        internal const string ProxyStage = "stage";
+
         internal static class User
         {
             internal const string Email = "usr.email";
