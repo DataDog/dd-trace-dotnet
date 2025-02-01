@@ -1,0 +1,81 @@
+// <copyright file="AwsApiGatewayExtractor.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
+
+/// <summary>
+/// Extracts proxy metadata from AWS API Gateway headers.
+/// </summary>
+internal class AwsApiGatewayExtractor : IInferredProxyExtractor
+{
+    // This is the expected value of the x-dd-proxy header
+    private const string ProxyName = "aws-apigateway";
+
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewayExtractor>();
+
+    public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, Tracer tracer, out InferredProxyData? data)
+        where TCarrierGetter : struct, ICarrierGetter<TCarrier>
+    {
+        data = default;
+
+        if (tracer is null || !tracer.Settings.InferredProxySpansEnabled)
+        {
+            return false;
+        }
+
+        try
+        {
+            // we need to first validate whether or not we have the header and whether or not it matches aws-apigateway
+            var proxyName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Name);
+            if (proxyName is null || !string.Equals(proxyName, ProxyName, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Debug("Invalid or missing {HeaderName} header with value {Value}", InferredProxyHeaders.Name, proxyName);
+                return false;
+            }
+
+            // we also need to validate that we have the start time header otherwise we won't be able to create the span
+            var startTime = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
+
+            if (string.IsNullOrEmpty(startTime) || !long.TryParse(startTime, out var startTimeMs))
+            {
+                Log.Debug("Invalid or missing {HeaderName} header with value {Value}", InferredProxyHeaders.StartTime, startTime);
+                return false;
+            }
+
+            DateTimeOffset startTimeOffset;
+            try
+            {
+                startTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Failed to start time with value of {Value}", startTimeMs);
+                return false;
+            }
+
+            // the remaining headers are necessarily required
+            var domainName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Domain);
+            var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
+            var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
+            var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
+
+            data = new InferredProxyData(proxyName, startTimeOffset, domainName, httpMethod, path, stage);
+            Log.Debug("Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}", [startTime!, domainName!, httpMethod!, path!, stage!]);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", ProxyName);
+            return false;
+        }
+    }
+}

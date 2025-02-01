@@ -4,12 +4,15 @@
 // </copyright>
 
 #if NETFRAMEWORK
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -138,6 +141,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             // extract propagated http headers
                             headers = httpContext.Request.Headers.Wrap();
                             extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+
+                            InferredProxyScopePropagationContext proxyContext = null;
+                            if (tracer.Settings.InferredProxySpansEnabled)
+                            {
+                                proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
+                                if (proxyContext?.Scope is not null)
+                                {
+                                    SharedItems.PushScope(HttpContext.Current, HttpContextKey + ".proxy", proxyContext.Scope);
+                                    // Update the context to use the proxy span's context
+                                    extractedContext = proxyContext.Context;
+                                }
+                            }
                         }
                         catch (Exception ex)
                         {

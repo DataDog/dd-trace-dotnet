@@ -162,6 +162,69 @@ namespace Datadog.Trace.Propagators
             }
         }
 
+        public static ulong? ParseUInt64<TCarrier>(TCarrier headers, string headerName)
+            where TCarrier : IHeadersCollection
+        {
+            var headerValues = headers.GetValues(headerName);
+            var hasValue = false;
+
+            if (headerValues is string[] stringValues)
+            {
+                // Checking string[] allows to avoid the enumerator allocation.
+                foreach (string? headerValue in stringValues)
+                {
+                    if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
+
+                    hasValue = true;
+                }
+            }
+            else if (TryParse(headerValues, ref hasValue, out var result))
+            {
+                return result;
+            }
+
+            if (hasValue)
+            {
+                if (_firstWarning)
+                {
+                    Log.Warning(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                    _firstWarning = false;
+                }
+                else
+                {
+                    Log.Debug(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                }
+            }
+
+            return null;
+
+            // IEnumerable version (different method to avoid try/finally in the caller)
+            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out ulong result)
+            {
+                result = 0;
+                foreach (string? headerValue in headerValues)
+                {
+                    if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
+                    {
+                        return true;
+                    }
+
+                    hasValue = true;
+                }
+
+                return false;
+            }
+        }
+
         public static string? ParseString<TCarrier>(TCarrier headers, string headerName)
             where TCarrier : IHeadersCollection
         {
