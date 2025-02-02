@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- NuGet -->
@@ -16,6 +16,13 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <GeneratedFolder>Generated</GeneratedFolder>
     <CompilerGeneratedFilesOutputPath>$(GeneratedFolder)\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
+
+    <IncludeAllProducts Condition="'$(IncludeAllProducts)' == ''">true</IncludeAllProducts>
+    <DefineConstants Condition="'$(IncludeAllProducts)' == 'true'">$(DefineConstants);INCLUDE_ALL_PRODUCTS</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IncludeAllProducts)' != 'true'">
+    <TargetFrameworks>net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -101,6 +108,71 @@
     <Compile Include="Vendors/System.Private.CoreLib/src/System/Runtime/InteropServices/LibraryImportAttribute.cs" />
     <Compile Include="Vendors/System.Private.CoreLib/src/System/Runtime/InteropServices/StringMarshalling.cs" />
     <Compile Include="Vendors/System.Private.CoreLib/SR.cs" />
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <!-- files included in build when IncludeAllProducts == true -->
+    <NonTracingFiles>
+      AspNet/**;
+      AppSec/**;
+      Ci/**;
+      Configuration/ConfigurationKeys.Iast.cs;
+      Configuration/ConfigurationKeys.Debugger.cs;
+      Debugger/**;
+      Iast/**;
+      PDBs/**;
+      RuntimeMetrics/**;
+      ServiceFabric/**;
+
+      ClrProfiler/AutoInstrumentation/AdoNet/Npgsql/ReaderCloseNpgsqlIntegration.cs;
+      ClrProfiler/AutoInstrumentation/AdoNet/ReaderCloseIntegration.cs;
+      ClrProfiler/AutoInstrumentation/AdoNet/ReaderGetStringIntegration.cs;
+      ClrProfiler/AutoInstrumentation/AdoNet/ReaderReadAsyncIntegration.cs;
+      ClrProfiler/AutoInstrumentation/AdoNet/ReaderReadIntegration.cs;
+      ClrProfiler/AutoInstrumentation/AspNet/**;
+      ClrProfiler/AutoInstrumentation/AspNetCore/*/**;
+      ClrProfiler/AutoInstrumentation/AspNetCore/AspNetCoreBlockMiddlewareIntegrationEnd.cs;
+      ClrProfiler/AutoInstrumentation/AspNetCore/BlockingMiddleware.cs;
+      ClrProfiler/AutoInstrumentation/AspNetCore/DefaultModelBindingContext_SetResult_Integration.cs;
+      ClrProfiler/AutoInstrumentation/AspNetCore/FireOnStartCommon.cs;
+      ClrProfiler/AutoInstrumentation/CryptographyAlgorithm/**;
+      ClrProfiler/AutoInstrumentation/Grpc/GrpcDotNet/GrpcAspNetCoreServer/IAST/**;
+      ClrProfiler/AutoInstrumentation/HashAlgorithm/**;
+      ClrProfiler/AutoInstrumentation/ManualInstrumentation/AppSec/**;
+      ClrProfiler/AutoInstrumentation/ManualInstrumentation/Ci/**;
+      ClrProfiler/AutoInstrumentation/Process/**;
+      ClrProfiler/AutoInstrumentation/Protobuf/**;
+      ClrProfiler/AutoInstrumentation/Remoting/**;
+      ClrProfiler/AutoInstrumentation/RestSharp/**;
+      ClrProfiler/AutoInstrumentation/StackTraceLeak/**;
+      ClrProfiler/AutoInstrumentation/Testing/**;
+
+      Vendors/dnlib/**;
+      Vendors/Microsoft.OpenApi/**;
+      Vendors/StatsdClient/**;
+      Vendors/System.*/**;
+    </NonTracingFiles>
+
+    <!-- api stubs included in build when IncludeAllProducts != true -->
+    <NonTracingFileStubs>
+      MinimalBuildStubs/**;
+    </NonTracingFileStubs>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IncludeAllProducts)' == 'true'">
+    <!-- we're including all products, remove the stubs -->
+    <None Remove="$(NonTracingFileStubs)" />
+    <Compile Remove="$(NonTracingFileStubs)" />
+    <Content Remove="$(NonTracingFileStubs)" />
+    <EmbeddedResource Remove="$(NonTracingFileStubs)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IncludeAllProducts)' != 'true'">
+    <!-- we're not including all products, remove excluded items, keep the stubs -->
+    <None Remove="$(NonTracingFiles)" />
+    <Compile Remove="$(NonTracingFiles)" />
+    <Content Remove="$(NonTracingFiles)" />
+    <EmbeddedResource Remove="$(NonTracingFiles)" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->
