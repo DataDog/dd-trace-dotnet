@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Profiler.IntegrationTests.Xunit;
+using Datadog.Profiler.SmokeTests;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -91,11 +92,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal static void DisableDefaultProfilers(TestApplicationRunner runner)
         {
-            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
+            DisableDefaultProfilers(runner.Environment);
+        }
+
+        internal static void DisableDefaultProfilers(SmokeTestRunner runner)
+        {
+            DisableDefaultProfilers(runner.EnvironmentHelper);
         }
 
         internal void EnableTracer()
@@ -211,6 +213,15 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         internal string GetTestOutputPath()
         {
             return _testOutputPath;
+        }
+
+        private static void DisableDefaultProfilers(EnvironmentHelper env)
+        {
+            env.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            env.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            env.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+            env.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            env.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
         }
 
         private static string BuildTestOutputPath(string framework)
