@@ -12,6 +12,22 @@
         "grpc_status_code": "10",
         "type": "auto"
       }
+    },
+    {
+      "id": "redirectstatuscode_200",
+      "type": "redirect_request",
+      "parameters": {
+        "status_code": 200,
+        "location": "/you-have-been-blocked"
+      }
+    },
+    {
+      "id": "redirectstatuscode_302",
+      "type": "redirect_request",
+      "parameters": {
+        "status_code": 302,
+        "location": "/you-have-been-blocked"
+      }
     }
   ],
   "processors": [
@@ -6020,6 +6036,60 @@
       "transformers": [],
       "on_match": [
         "blockredir"
+      ]
+    },
+    {
+      "id": "canary_rule_redirect_200",
+      "name": "Canary rule redirect 200",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent"
+                ]
+              }
+            ],
+            "regex": "Canary\\/v3_200"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "on_match": [
+        "redirectstatuscode_200"
+      ]
+    },
+    {
+      "id": "canary_rule_redirect_302",
+      "name": "Canary rule redirect 302",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent"
+                ]
+              }
+            ],
+            "regex": "Canary\\/v3_302"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "on_match": [
+        "redirectstatuscode_302"
       ]
     }
   ]
