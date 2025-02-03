@@ -266,8 +266,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            name = Normalize(name);
-            return RedactKeywords.Contains(name);
+            return !TryNormalize(name, out var result) || RedactKeywords.Contains(result);
         }
 
         internal static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
@@ -278,29 +277,28 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return true;
             }
 
-            /*
             if (IsRedactedType(type))
             {
                 redactionReason = RedactionReason.Type;
                 return true;
             }
-            */
 
             redactionReason = RedactionReason.None;
             return false;
         }
 
-        private static unsafe string Normalize(string identifier)
+        private static unsafe bool TryNormalize(string identifier, out string result)
         {
+            result = identifier;
             if (string.IsNullOrEmpty(identifier))
             {
-                return identifier;
+                return true;
             }
 
             if (identifier.Length > MaxStackAlloc)
             {
-                Log.Error("Identifier is too long to normalize: {Identifier}", identifier);
-                return identifier;
+                Log.Error("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, hence we are going to redact this identifier", identifier.Length, property1: MaxStackAlloc);
+                return false;
             }
 
             bool needsNormalization = false;
@@ -313,7 +311,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (!needsNormalization)
             {
-                return identifier;
+                return true;
             }
 
             int written = 0;
@@ -331,7 +329,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
 
-            return new string(buffer, 0, written);
+            result = new string(buffer, 0, written);
+            return true;
         }
 
         private static bool IsRemovableChar(char c)
@@ -341,17 +340,31 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static void SetConfig(HashSet<string> redactedIdentifiers, HashSet<string> redactedExcludedIdentifiers, HashSet<string> redactedTypes)
         {
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
             RedactKeywords.EnsureCapacity(RedactKeywords.Count + redactedIdentifiers.Count);
 #endif
             foreach (var identifier in redactedIdentifiers)
             {
-                RedactKeywords.Add(Normalize(identifier));
+                if (TryNormalize(identifier, out var result))
+                {
+                    RedactKeywords.Add(result);
+                }
+                else
+                {
+                    Log.Error("Skipping identifier that exceeds maximum length: {Length}", property: identifier.Length);
+                }
             }
 
             foreach (var excluded in redactedExcludedIdentifiers)
             {
-                RedactKeywords.Remove(Normalize(excluded));
+                if (TryNormalize(excluded, out var result))
+                {
+                    RedactKeywords.Remove(result);
+                }
+                else
+                {
+                    Log.Error("Skipping excluded identifier that exceeds maximum length: {Length}", property: excluded.Length);
+                }
             }
 
             foreach (var type in redactedTypes)
