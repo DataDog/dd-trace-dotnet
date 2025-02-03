@@ -482,9 +482,10 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
+        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
         {
-            var span = StartSpan(operationName, tags, parent, serviceName, startTime);
+            var span = StartSpan(operationName, tags, parent, serviceName, startTime, links: links);
+
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
@@ -494,11 +495,11 @@ namespace Datadog.Trace
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 
-            var span = new Span(spanContext, startTime, tags)
+            var span = new Span(spanContext, startTime, tags, links)
             {
                 OperationName = operationName,
             };

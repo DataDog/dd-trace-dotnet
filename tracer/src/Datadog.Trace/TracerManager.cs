@@ -103,7 +103,7 @@ namespace Datadog.Trace
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
 
-            SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly);
+            SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
         }
 
         /// <summary>
@@ -556,6 +556,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("trace_propagation_style_extract_first_only");
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
+
+                    writer.WritePropertyName("trace_propagation_behavior_extract");
+                    writer.WriteValue(instanceSettings.PropagationBehaviorExtract);
 
                     writer.WritePropertyName("trace_propagation_style_inject");
                     writer.WriteStartArray();
