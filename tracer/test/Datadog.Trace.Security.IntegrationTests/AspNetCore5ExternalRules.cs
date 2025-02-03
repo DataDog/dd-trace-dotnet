@@ -54,9 +54,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             var agent = Fixture.Agent;
 
             const string url = "/";
-            var filename = "Security.AspNetCore5ExternalRules.TestBlockingRedirectInvalidStatusCode." + ruleTriggerStatusCode;
 
-            var settings = VerifyHelper.GetSpanVerifierSettings();
+            var settings = VerifyHelper.GetSpanVerifierSettings(ruleTriggerStatusCode, returnedStatusCode);
             var userAgent = "Canary/v3_" + ruleTriggerStatusCode;
 
             var minDateTime = DateTime.UtcNow;
@@ -64,9 +63,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             ((int)statusCode).Should().Be(returnedStatusCode);
 
             var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
+            await VerifySpans(spans, settings);
         }
     }
 }

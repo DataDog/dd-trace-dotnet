@@ -48,31 +48,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             await TestAppSecRequestWithVerifyAsync(fixture.Agent, url, null, 5, 1, settings);
         }
-
-        [SkippableTheory]
-        [InlineData(200, 303)]
-        [InlineData(302, 302)]
-        public async Task TestBlockingRedirectInvalidStatusCode(int ruleTriggerStatusCode, int returnedStatusCode)
-        {
-            await fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
-            SetHttpPort(fixture.HttpPort);
-            var agent = fixture.Agent;
-
-            const string url = "/";
-            var filename = "Security.AspNetCoreBare.TestBlockingRedirectInvalidStatusCode." + ruleTriggerStatusCode;
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            var userAgent = "Canary/v3_" + ruleTriggerStatusCode;
-
-            var minDateTime = DateTime.UtcNow;
-            var (statusCode, _) = await SubmitRequest(url, body: null, contentType: null, userAgent: userAgent);
-            ((int)statusCode).Should().Be(returnedStatusCode);
-
-            var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-        }
     }
 }
 #endif
