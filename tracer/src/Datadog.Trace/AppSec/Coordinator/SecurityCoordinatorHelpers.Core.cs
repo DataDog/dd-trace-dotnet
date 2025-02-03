@@ -45,12 +45,14 @@ internal static class SecurityCoordinatorHelpers
 
                     var args = new Dictionary<string, object>
                     {
-                        {
-                            AddressesConstants.ResponseHeaderNoCookies,
-                            SecurityCoordinator.ExtractHeadersFromRequest(headers)
-                        },
                         { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
                     };
+
+                    var extractedHeaders = SecurityCoordinator.ExtractHeadersFromRequest(headers);
+                    if (extractedHeaders is not null)
+                    {
+                        args.Add(AddressesConstants.ResponseHeaderNoCookies, extractedHeaders);
+                    }
 
                     var result = securityCoordinator.RunWaf(args, true);
                     securityCoordinator.BlockAndReport(result);
