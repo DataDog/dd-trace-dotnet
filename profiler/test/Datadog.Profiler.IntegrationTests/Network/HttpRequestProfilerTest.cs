@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
@@ -218,9 +219,13 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 dnsDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
                 dnsDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
 
-                var socketDurationLabel = labels.FirstOrDefault(l => l.Name == "socket.duration");
-                socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                // no socket duration on Linux
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                {
+                    var socketDurationLabel = labels.FirstOrDefault(l => l.Name == "socket.duration");
+                    socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                    socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                }
 
                 var securityDurationLabel = labels.FirstOrDefault(l => l.Name == "tls.duration");
                 securityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();

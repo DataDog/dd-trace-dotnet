@@ -6,7 +6,7 @@
 using Microsoft.Extensions.Primitives;
 
 //// uncomment to allow manual test using the process ID
-// Console.WriteLine($"pid = {Process.GetCurrentProcess().Id}");
+// Console.WriteLine($"pid = {System.Diagnostics.Process.GetCurrentProcess().Id}");
 // Console.WriteLine("------------------");
 // Console.ReadLine();
 
