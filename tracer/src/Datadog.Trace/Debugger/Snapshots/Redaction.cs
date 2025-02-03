@@ -13,8 +13,10 @@ using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Util;
+using Datadog.Trace.Logging;
 using TypeExtensions = Datadog.Trace.Debugger.Helpers.TypeExtensions;
+
+#nullable enable
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -27,8 +29,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
     internal static class Redaction
     {
+        private const int MaxStackAlloc = 512;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Redaction));
+
         private static readonly Type[] AllowedCollectionTypes =
-        {
+        [
             typeof(List<>),
             typeof(ArrayList),
             typeof(LinkedList<>),
@@ -44,21 +49,21 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SortedSet<>),
             typeof(ConcurrentBag<>),
             typeof(BlockingCollection<>),
-            typeof(ConditionalWeakTable<,>),
-        };
+            typeof(ConditionalWeakTable<,>)
+        ];
 
         private static readonly Type[] AllowedDictionaryTypes =
-        {
+        [
             typeof(Dictionary<,>),
             typeof(SortedDictionary<,>),
             typeof(ConcurrentDictionary<,>),
-            typeof(Hashtable),
-        };
+            typeof(Hashtable)
+        ];
 
-        private static readonly string[] AllowedSpecialCasedCollectionTypeNames = { }; // "RangeIterator"
+        private static readonly string[] AllowedSpecialCasedCollectionTypeNames = []; // "RangeIterator"
 
         internal static readonly Type[] AllowedTypesSafeToCallToString =
-        {
+        [
             typeof(DateTime),
             typeof(TimeSpan),
             typeof(DateTimeOffset),
@@ -67,18 +72,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(Version),
             typeof(StackTrace),
             typeof(StringBuilder)
-        };
+        ];
 
         private static readonly Type[] DeniedTypes =
-        {
-            typeof(SecureString),
-        };
+        [
+            typeof(SecureString)
+        ];
 
         private static readonly Trie TypeTrie = new();
-        private static readonly HashSet<string> RedactedTypes = new();
 
-        private static HashSet<string> _redactKeywords = new()
-        {
+        private static readonly HashSet<string> RedactedTypes = [];
+
+        private static readonly HashSet<string> RedactKeywords =
+        [
             "2fa",
             "accesstoken",
             "aiohttpsession",
@@ -164,7 +170,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             "xrealip",
             "xsrf",
             "xsrftoken"
-        };
+        ];
 
         internal static bool IsSafeToCallToString(Type type)
         {
@@ -173,7 +179,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                    IsSupportedCollection(type);
         }
 
-        internal static bool IsSupportedDictionary(object o)
+        internal static bool IsSupportedDictionary(object? o)
         {
             if (o == null)
             {
@@ -184,7 +190,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return AllowedDictionaryTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition()));
         }
 
-        internal static bool IsSupportedCollection(object o)
+        internal static bool IsSupportedCollection(object? o)
         {
             if (o == null)
             {
@@ -194,7 +200,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return IsSupportedCollection(o.GetType());
         }
 
-        internal static bool IsSupportedCollection(Type type)
+        internal static bool IsSupportedCollection(Type? type)
         {
             if (type == null)
             {
@@ -210,18 +216,26 @@ namespace Datadog.Trace.Debugger.Snapshots
                    AllowedSpecialCasedCollectionTypeNames.Any(white => white.Equals(type.Name, StringComparison.OrdinalIgnoreCase));
         }
 
-        internal static bool IsRedactedType(Type type)
+        internal static bool IsRedactedType(Type? type)
         {
             if (type == null)
             {
                 return false;
             }
 
-            var shouldRedact = DeniedTypes.Any(deniedType => deniedType == type || (type.IsGenericType && deniedType == type.GetGenericTypeDefinition()));
-
-            if (shouldRedact)
+            Type? genericDefinition = null;
+            if (type.IsGenericType)
             {
-                return true;
+                genericDefinition = type.GetGenericTypeDefinition();
+            }
+
+            foreach (var deniedType in DeniedTypes)
+            {
+                if (deniedType == type ||
+                    (genericDefinition != null && deniedType == genericDefinition))
+                {
+                    return true;
+                }
             }
 
             var typeFullName = type.FullName;
@@ -231,16 +245,21 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
+            if (RedactedTypes.Contains(typeFullName))
+            {
+                return true;
+            }
+
             if (TypeTrie.HasMatchingPrefix(typeFullName))
             {
                 var stringStartsWith = TypeTrie.GetStringStartingWith(typeFullName);
                 return string.IsNullOrEmpty(stringStartsWith) || stringStartsWith.Length == typeFullName.Length;
             }
 
-            return RedactedTypes.Contains(typeFullName);
+            return false;
         }
 
-        public static bool IsRedactedKeyword(string name)
+        internal static bool IsRedactedKeyword(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -248,10 +267,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
 
             name = Normalize(name);
-            return _redactKeywords.Contains(name);
+            return RedactKeywords.Contains(name);
         }
 
-        public static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
+        internal static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
         {
             if (IsRedactedKeyword(name))
             {
@@ -259,69 +278,92 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return true;
             }
 
+            /*
             if (IsRedactedType(type))
             {
                 redactionReason = RedactionReason.Type;
                 return true;
             }
+            */
 
             redactionReason = RedactionReason.None;
             return false;
         }
 
-        private static string Normalize(string name)
+        private static unsafe string Normalize(string identifier)
         {
-            StringBuilder sb = null;
-            for (var i = 0; i < name.Length; i++)
+            if (string.IsNullOrEmpty(identifier))
             {
-                var c = name[i];
-                var isUpper = char.IsUpper(c);
-                var isRemovable = IsRemovableChar(c);
-                if (isUpper || isRemovable || sb != null)
-                {
-                    if (sb == null)
-                    {
-                        sb = StringBuilderCache.Acquire();
-                        sb.Append(name.Substring(startIndex: 0, i));
-                    }
+                return identifier;
+            }
 
-                    if (isUpper)
-                    {
-                        sb.Append(char.ToLower(c));
-                    }
-                    else if (!isRemovable)
-                    {
-                        sb.Append(c);
-                    }
+            if (identifier.Length > MaxStackAlloc)
+            {
+                Log.Error("Identifier is too long to normalize: {Identifier}", identifier);
+                return identifier;
+            }
+
+            bool needsNormalization = false;
+            var length = identifier.Length;
+            for (int i = 0; i < length && !needsNormalization; i++)
+            {
+                char c = identifier[i];
+                needsNormalization = char.IsUpper(c) || IsRemovableChar(c);
+            }
+
+            if (!needsNormalization)
+            {
+                return identifier;
+            }
+
+            int written = 0;
+            var buffer = stackalloc char[length];
+            for (int i = 0; i < identifier.Length; i++)
+            {
+                char c = identifier[i];
+                if (char.IsUpper(c))
+                {
+                    buffer[written++] = char.ToLowerInvariant(c);
+                }
+                else if (!IsRemovableChar(c))
+                {
+                    buffer[written++] = c;
                 }
             }
 
-            return sb != null ? StringBuilderCache.GetStringAndRelease(sb) : name;
+            return new string(buffer, 0, written);
         }
 
         private static bool IsRemovableChar(char c)
         {
-            return c == '_' || c == '-' || c == '$' || c == '@';
+            return c is '_' or '-' or '$' or '@';
         }
 
-        public static void SetConfig(DebuggerSettings settings)
+        internal static void SetConfig(HashSet<string> redactedIdentifiers, HashSet<string> redactedExcludedIdentifiers, HashSet<string> redactedTypes)
         {
-            if (settings.RedactedIdentifiers.Count > 0)
+#if NETCOREAPP3_1_OR_GREATER
+            RedactKeywords.EnsureCapacity(RedactKeywords.Count + redactedIdentifiers.Count);
+#endif
+            foreach (var identifier in redactedIdentifiers)
             {
-                _redactKeywords.UnionWith(settings.RedactedIdentifiers.Select(x => Normalize(x.Trim())));
+                RedactKeywords.Add(Normalize(identifier));
             }
 
-            if (settings.RedactedExcludedIdentifiers.Count > 0)
+            foreach (var excluded in redactedExcludedIdentifiers)
             {
-                _redactKeywords.ExceptWith(settings.RedactedExcludedIdentifiers.Select(x => Normalize(x.Trim())));
+                RedactKeywords.Remove(Normalize(excluded));
             }
 
-            foreach (var type in settings.RedactedTypes)
+            foreach (var type in redactedTypes)
             {
                 if (type.EndsWith("*"))
                 {
+#if NETCOREAPP3_1_OR_GREATER
+                    TypeTrie.Insert(type[..^1]);
+#else
                     var newTypeName = type.Substring(0, type.Length - 1);
                     TypeTrie.Insert(newTypeName);
+#endif
                 }
                 else
                 {
