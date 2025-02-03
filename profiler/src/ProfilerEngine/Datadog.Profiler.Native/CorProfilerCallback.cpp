@@ -1284,8 +1284,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
         }
 
-        COR_PRF_EVENTPIPE_PROVIDER_CONFIG* providers = nullptr;
-        uint32_t providerCount = 1; // Microsoft-Windows-DotNETRuntime
+        std::array<COR_PRF_EVENTPIPE_PROVIDER_CONFIG, 6> providers;
+        uint32_t providerCount = 1; // only Microsoft-Windows-DotNETRuntime except if HTTP is enabled
 
         // for network related events, more providers are needed
         //
@@ -1293,9 +1293,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
 
             providerCount = 6;
-            providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[providerCount]
+            providers =
             {
-                {
+                COR_PRF_EVENTPIPE_PROVIDER_CONFIG {
                     WStr("Microsoft-Windows-DotNETRuntime"),
                     activatedKeywords,
                     verbosity,
@@ -1336,7 +1336,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
         else
         {
-            providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[1]
+            providers =
             {
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
@@ -1348,9 +1348,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
-                providerCount, providers, false, &_session
+                providerCount, providers.data(), false, &_session
                 );
-        delete[] providers;
 
         if (FAILED(hr))
         {
