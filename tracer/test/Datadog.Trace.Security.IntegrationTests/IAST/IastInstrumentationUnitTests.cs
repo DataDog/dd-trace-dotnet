@@ -353,7 +353,7 @@ public class IastInstrumentationUnitTests : TestHelper
         using (var agent = EnvironmentHelper.GetMockAgent())
         {
             EnableIast(true);
-            EnableDebugMode(); // debug enabl7kkfgedt
+            EnableDebugMode(); // debug enabfl7kkfgedt
             Environment.SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             var logDirectory = Path.Combine(EnvironmentHelper.LogDirectory, "InstrumentedTests");
             SetDumpInfo(logDirectory);
