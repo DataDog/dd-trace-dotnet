@@ -7,7 +7,6 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -16,7 +15,6 @@ using Datadog.Trace.Util;
 
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
-
 #else
 using System.Web;
 #endif
@@ -33,6 +31,7 @@ internal readonly partial struct SecurityCoordinator
     private readonly Security _security;
     private readonly Span _localRootSpan;
     private readonly HttpTransportBase _httpTransport;
+    private readonly AppSecRequestContext _appsecRequestContext;
 
     public bool IsBlocked => _httpTransport.IsBlocked;
 
@@ -46,8 +45,6 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public bool IsAdditiveContextDisposed() => _httpTransport.IsAdditiveContextDisposed();
-
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
@@ -55,7 +52,7 @@ internal readonly partial struct SecurityCoordinator
 
         try
         {
-            var additiveContext = GetOrCreateAdditiveContext();
+            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security);
 
             if (additiveContext is null)
             {
@@ -103,7 +100,7 @@ internal readonly partial struct SecurityCoordinator
         Dictionary<string, object>? addresses = null;
         try
         {
-            var additiveContext = GetOrCreateAdditiveContext();
+            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security);
             if (additiveContext?.ShouldRunWith(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
             {
                 if (otherTags is not null)
@@ -169,14 +166,12 @@ internal readonly partial struct SecurityCoordinator
         TelemetryFactory.Metrics.RecordCountWafRequests(metric);
     }
 
-    public void AddResponseHeadersToSpanAndCleanup()
+    public void AddResponseHeadersToSpan()
     {
         if (_localRootSpan.IsAppsecEvent())
         {
             Reporter.AddResponseHeaderTags();
         }
-
-        _httpTransport.DisposeAdditiveContext();
     }
 
     internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
@@ -247,28 +242,5 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return headersDic;
-    }
-
-    private IContext? GetOrCreateAdditiveContext()
-    {
-        var additiveContext = _httpTransport.GetAdditiveContext();
-
-        if (_httpTransport.IsAdditiveContextDisposed())
-        {
-            Log.Warning("Waf could not run as waf additive context is disposed");
-            return null;
-        }
-
-        if (additiveContext == null)
-        {
-            additiveContext = _security.CreateAdditiveContext();
-
-            if (additiveContext is not null)
-            {
-                _httpTransport.SetAdditiveContext(additiveContext);
-            }
-        }
-
-        return additiveContext;
     }
 }

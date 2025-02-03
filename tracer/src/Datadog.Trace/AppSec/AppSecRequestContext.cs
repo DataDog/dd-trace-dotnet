@@ -5,20 +5,22 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
 
-internal class AppSecRequestContext
+internal partial class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
     private const string VulnerabilityStackKey = "vulnerability";
     private const string AppsecKey = "appsec";
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecRequestContext>();
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
@@ -95,5 +97,38 @@ internal class AppSecRequestContext
 
             _raspStackTraces[stackCategory].Add(stackTrace);
         }
+    }
+}
+
+internal partial class AppSecRequestContext
+{
+    internal IContext? Context { get; private set; }
+
+    internal bool IsAdditiveContextDisposed { get; set; }
+
+    /// <summary>
+    /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
+    /// </summary>
+    internal void DisposeAdditiveContext()
+    {
+        Context?.Dispose();
+        IsAdditiveContextDisposed = true;
+    }
+
+    internal IContext? GetOrCreateAdditiveContext(Security security)
+    {
+        if (IsAdditiveContextDisposed)
+        {
+            Log.Debug("Additive context was requested when already disposed");
+            return null;
+        }
+
+        if (Context is not null)
+        {
+            return Context;
+        }
+
+        Context = security.CreateAdditiveContext();
+        return Context;
     }
 }

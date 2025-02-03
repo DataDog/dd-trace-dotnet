@@ -24,19 +24,6 @@ internal static class AttackerFingerprintHelper
             return;
         }
 
-        var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, span);
-
-        if (securityCoordinator is null)
-        {
-            return;
-        }
-
-        // We need a context
-        if (securityCoordinator.Value.IsAdditiveContextDisposed())
-        {
-            return;
-        }
-
         AddSpanTags(result.FingerprintDerivatives, span);
     }
 
