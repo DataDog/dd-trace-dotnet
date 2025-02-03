@@ -222,32 +222,38 @@ internal readonly partial struct SecurityCoordinator
         return null;
     }
 
-    private static Dictionary<string, object> ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
+    private static Dictionary<string, object>? ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
     {
-        var headersDic = new Dictionary<string, object>(keys.Count);
-        foreach (var key in keys)
+        if (keys.Count > 0)
         {
-            var currentKey = key ?? string.Empty;
-            if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
+            var headersDic = new Dictionary<string, object>(keys.Count);
+            foreach (var key in keys)
             {
-                currentKey = currentKey.ToLowerInvariant();
-                var value = getHeaderValue(currentKey);
-
-                if (value is not null)
+                var currentKey = key ?? string.Empty;
+                if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
                 {
+                    currentKey = currentKey.ToLowerInvariant();
+                    var value = getHeaderValue(currentKey);
+#if NETCOREAPP
+                    if (!headersDic.TryAdd(currentKey, value))
+                    {
+#else
                     if (!headersDic.ContainsKey(currentKey))
                     {
                         headersDic.Add(currentKey, value);
                     }
                     else
                     {
+#endif
                         Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
                     }
                 }
             }
+
+            return headersDic;
         }
 
-        return headersDic;
+        return null;
     }
 
     private IContext? GetOrCreateAdditiveContext()
