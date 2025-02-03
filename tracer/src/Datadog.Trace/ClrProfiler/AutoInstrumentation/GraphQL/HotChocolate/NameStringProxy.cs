@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     }
 
     /// <summary>
-    /// HotChocolate.NameString interface for ducktyping
+    /// nullable structs need an explicit proxy
     /// </summary>
     [DuckCopy]
     internal struct NullableNameStringProxy
