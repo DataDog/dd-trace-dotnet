@@ -338,8 +338,7 @@ partial class Build
         // We only care about the Undefined symbols that are in glibc
 
         return output
-              .Where(x=>x.Contains("@GLIBC_"))
-              .Where(x=>x.Contains("U "))
+              .Where(x => x.Contains("@GLIBC_") && x.Contains("U "))
               .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
               .OrderDescending()
               .FirstOrDefault();

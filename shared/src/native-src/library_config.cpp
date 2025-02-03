@@ -5,7 +5,6 @@
 #include <datadog/library-config.h>
 #include <datadog/common.h>
 #endif
-#include "util.h"
 
 // TODO: change path to new location & add Windows
 // TODO: when libdatadog is bumped over 15.0.0 there will be two config paths

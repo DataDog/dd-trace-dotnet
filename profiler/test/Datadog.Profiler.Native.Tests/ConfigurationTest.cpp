@@ -7,7 +7,6 @@
 #include "Configuration.h"
 #include "EnvironmentHelper.h"
 #include "EnvironmentVariables.h"
-#include "FfiHelper.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/library_config.h"
