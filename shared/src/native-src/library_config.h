@@ -24,9 +24,6 @@ typedef struct ConfigEntryFFI {
 class LibraryConfig
 {
   private:
-    #ifndef _WINDOWS
-    static ddog_Slice_CharSlice to_slice_char_slice(const std::vector<std::string>& vec);
-    #endif
     static ddog_CharSlice to_char_slice(const std::string& str);
 
   public:
