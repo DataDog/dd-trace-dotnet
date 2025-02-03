@@ -387,6 +387,17 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
+        /// Configuration key for setting the header extraction propagation behavior. Accepted values are:
+        /// <ul>
+        ///   <li>continue: Extracted span context becomes the parent and baggage is propagated</li>
+        ///   <li>restart: Extracted span context becomes a span link (a new trace is started) and baggage is propagated</li>
+        ///   <li>ignore: We disregard the incoming trace context headers and we also disregard baggage</li>
+        /// </ul>
+        /// Default value is continue.
+        /// </summary>
+        public const string PropagationBehaviorExtract = "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT";
+
+        /// <summary>
         /// Configuration key to configure if propagation should only extract the first header once a configure
         /// propagator extracts a valid trace context.
         /// </summary>

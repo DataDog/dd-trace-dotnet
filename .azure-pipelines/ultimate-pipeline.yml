@@ -177,8 +177,20 @@ variables:
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
   containers:
+  # This always does a docker pull to pull the latest agent
   - container: dd_agent
     image: public.ecr.aws/datadog/agent
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
+  # This always uses the local pulled version of the agent
+  # This avoids hitting docker pull resource limits, but means we periodically need
+  # to run a docker pull ourselves (which typically happens as part of VMSS updates)
+  - container: dd_agent_no_pull
+    image: public.ecr.aws/datadog/agent
+    localImage: true
     ports:
     - 8126:8126
     env:
@@ -3480,7 +3492,7 @@ stages:
 
     # Enable the Datadog Agent service for this job
     services:
-      dd_agent: dd_agent
+      dd_agent: dd_agent_no_pull
 
     steps:
     - template: steps/clone-repo.yml
