@@ -10,6 +10,8 @@ using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using FluentAssertions;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
@@ -20,7 +22,7 @@ using static Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    public class SecurityCoordinatorTests
+    public class SecurityCoordinatorTests : WafLibraryRequiredTest
     {
         [Fact]
         public void DefaultBehavior()
@@ -32,16 +34,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
 #if NETCOREAPP
-        [Fact]
-        public void GivenHttpTransportInstanceWithDisposedContext_WhenGetContextUninitialized_ThenResultIsTrue()
-        {
-            var contextMoq = new Mock<HttpContext>();
-            contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
-            var context = contextMoq.Object;
-            HttpTransport transport = new(context);
-            transport.GetAdditiveContext().Should().BeNull();
-            transport.IsAdditiveContextDisposed().Should().BeTrue();
-        }
 
         [Fact]
         public void GivenSecurityCoordinatorInstanceWithDisposedContext_WheRunWaf_ThenResultIsNull()
@@ -50,10 +42,36 @@ namespace Datadog.Trace.Security.Unit.Tests
             contextMoq.Setup(x => x.Features).Throws(new ObjectDisposedException("Test exception"));
             var context = contextMoq.Object;
             CoreHttpContextStore.Instance.Set(context);
-            var span = new Span(new SpanContext(1, 1), new DateTimeOffset());
-            var securityCoordinator = SecurityCoordinator.TryGet(AppSec.Security.Instance, span);
-            var result = securityCoordinator.Value.RunWaf(new(), runWithEphemeral: true, isRasp: true);
+            var traceContext = new TraceContext(new EmptyDatadogTracer());
+            traceContext.AppSecRequestContext.DisposeAdditiveContext();
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = new Span(spanContext, DateTimeOffset.Now);
+            var initResult = CreateWaf();
+            var waf = initResult.Waf;
+            waf.Should().NotBeNull();
+            var security = new AppSec.Security(waf: waf);
+            var securityCoordinator = TryGet(security, span);
+            var result = securityCoordinator.Value.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
             result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GivenSecurityCoordinatorInstanceWithNotDisposedContext_WheRunWaf_ThenResultIsNull()
+        {
+            var httpContextMock = new Mock<HttpContext>();
+            var httpTransportMock = new Mock<HttpTransport>(httpContextMock.Object);
+            httpTransportMock.Setup(x => x.StatusCode).Returns(200);
+            httpTransportMock.Setup(x => x.RouteData).Returns(new Dictionary<string, object>());
+            var traceContext = new TraceContext(new EmptyDatadogTracer());
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = new Span(spanContext, DateTimeOffset.Now);
+            var initResult = CreateWaf();
+            var waf = initResult.Waf;
+            waf.Should().NotBeNull();
+            var security = new AppSec.Security(waf: waf);
+            var securityCoordinator = Get(security, span, httpTransportMock.Object);
+            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
+            result.Should().NotBeNull();
         }
 #endif
 

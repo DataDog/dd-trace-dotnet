@@ -88,14 +88,12 @@ internal partial class SecurityReporter
 
     internal void AddRequestHeaders(IHeadersCollection headers) => AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
-    internal void AddResponseHeadersToSpanAndCleanup()
+    internal void AddResponseHeadersToSpan()
     {
         if (_span.IsAppsecEvent())
         {
             AddResponseHeaderTags();
         }
-
-        _httpTransport.DisposeAdditiveContext();
     }
 
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
