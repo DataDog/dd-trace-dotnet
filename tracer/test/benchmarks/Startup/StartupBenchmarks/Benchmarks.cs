@@ -11,17 +11,34 @@ namespace StartupBenchmarks;
 
 public class Benchmarks
 {
-    public string EntryAssemblyPath => @"D:\source\datadog\dd-trace-dotnet\tracer\test\benchmarks\Startup\EmptyConsoleApp\publish\default\EmptyConsoleApp.dll";
+    public string EntryAssemblyPath { get; set; }
 
-    public string TracerHomeDirectory => @"C:\Users\Lucas.Pimentel\Downloads\tracer-home-3.9.1";
+    public string TracerHomeDirectory { get; set; }
 
-    public string Os { get; } = GetOs();
+    public string Os { get; set; }
 
-    public string Arch { get; } = GetArch();
+    public string Arch { get; set; }
 
     [GlobalSetup]
     public void GlobalSetup()
     {
+        Os = GetOs();
+        Arch = GetArch();
+
+        switch (Os)
+        {
+            case "win":
+                EntryAssemblyPath = @"D:\source\datadog\dd-trace-dotnet\tracer\test\benchmarks\Startup\EmptyConsoleApp\publish\default\EmptyConsoleApp.dll";
+                TracerHomeDirectory = @"C:\Users\Lucas.Pimentel\Downloads\tracer-home-3.9.1";
+                break;
+            case "linux":
+                EntryAssemblyPath = "/home/lucas/source/datadog/dd-trace-dotnet/tracer/test/benchmarks/Startup/EmptyConsoleApp/publish/default/EmptyConsoleApp.dll";
+                TracerHomeDirectory = "/home/lucas/tracer-home-3.9.1";
+                break;
+            default:
+                throw new PlatformNotSupportedException($"Platform not supported: {Os}-{Arch}");
+        }
+
         if (!File.Exists(EntryAssemblyPath))
         {
             throw new FileNotFoundException($"Entry assembly file not found: {EntryAssemblyPath}", EntryAssemblyPath);
