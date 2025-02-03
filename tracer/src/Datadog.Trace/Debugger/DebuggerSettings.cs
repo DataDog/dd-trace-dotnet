@@ -109,13 +109,19 @@ namespace Datadog.Trace.Debugger
 
             RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
 
-            var redactedExcludedIdentifiers = config
-                                     .WithKeys(ConfigurationKeys.Debugger.RedactedExcludedIdentifiers)
-                                     .AsString()?
-                                     .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                      Enumerable.Empty<string>();
-
-            RedactedExcludedIdentifiers = new HashSet<string>(redactedExcludedIdentifiers, StringComparer.OrdinalIgnoreCase);
+            RedactedExcludedIdentifiers = new HashSet<string>(
+                (config
+                .WithKeys(ConfigurationKeys.Debugger.RedactedExcludedIdentifiers)
+                .AsString()?
+                .Split([','], StringSplitOptions.RemoveEmptyEntries) ??
+                 Enumerable.Empty<string>())
+               .Union(
+                    config
+                       .WithKeys(ConfigurationKeys.Debugger.RedactionExcludedIdentifiers)
+                       .AsString()?
+                       .Split([','], StringSplitOptions.RemoveEmptyEntries) ??
+                    Enumerable.Empty<string>()),
+                StringComparer.OrdinalIgnoreCase);
 
             var redactedTypes = config
                                      .WithKeys(ConfigurationKeys.Debugger.RedactedTypes)
