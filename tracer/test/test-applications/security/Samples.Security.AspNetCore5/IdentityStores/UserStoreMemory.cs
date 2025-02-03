@@ -38,6 +38,17 @@ public class UserStoreMemory : UserStoreBase<IdentityUser, string, IdentityUserC
                 SecurityStamp = "PPJ7EANBPPIM25HTJRHDSZVPOBQJMP7Q",
                 UserName = "TestUser",
                 ConcurrencyStamp = "eeb5d586-783a-4a75-93e3-df74ef4d9f73"
+            },
+            new("test2@test.com")
+            {
+                Email = "test2@test.com",
+                PasswordHash = "AQAAAAIAAYagAAAAEOpkI+Vw7e7YUro1OpY0UCr8FxtBeSV0bTdzcgf4HmwCfFgS12Yipf1E0bcs9uuUiA==",
+                Id = "7ccfa5b9-14c2-42b9-8064-834b8293aef4",
+                NormalizedEmail = "TEST2@TEST.COM",
+                NormalizedUserName = "TESTUSER2",
+                SecurityStamp = "2AFTZIXH6MBODNXN5XENLPL7QZ7TVRN3",
+                UserName = "TestUser2",
+                ConcurrencyStamp = "e520fe87-a80e-4d42-8976-51e30f066bb7"
             }
         };
     }

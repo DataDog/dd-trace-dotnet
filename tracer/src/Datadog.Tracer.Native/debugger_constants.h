@@ -48,6 +48,11 @@ inline WSTRING GetGenericErrorMessageWithErrorCode(short errorCode)
     return general_error_message + WStr(" [Error Code: ") + shared::ToWSTRING(errorCode) + WStr("]");
 }
 
+inline WSTRING GetGenericErrorMessageWithHr(HRESULT hr)
+{
+    return general_error_message + WStr(" [hr: ") + shared::ToWSTRING(Hex(hr)) + WStr("]");
+}
+
 const WSTRING invalid_probe_method_already_instrumented =
     WStr("Dynamic Instrumentation failed to install the probe because the corresponding method is already instrumented by another product.");
 const WSTRING invalid_method_probe_probe_is_not_supported =
@@ -69,7 +74,7 @@ const WSTRING non_supported_compiled_bytecode =
 const WSTRING type_contains_invalid_symbol = 
     WStr("The type is not supported.");
 const WSTRING async_method_could_not_load_this = WStr("Instrumentation of async method in a generic class is not yet supported.");
-const WSTRING invalid_probe_failed_to_instrument_method_probe = 
+const WSTRING invalid_probe_failed_to_instrument_method_probe =
     GetGenericErrorMessageWithErrorCode(1);
 const WSTRING invalid_probe_failed_to_instrument_line_probe = 
     GetGenericErrorMessageWithErrorCode(2);

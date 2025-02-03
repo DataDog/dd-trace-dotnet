@@ -103,10 +103,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 9.0.100
+  dotnetCoreSdkLatestVersion: 9.0.102
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 9.0.100
+  dotnetCoreSdkLatestVersionShort: 9.0.102
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -3595,7 +3595,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -4976,7 +4976,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -5108,7 +5108,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
 

@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Waf
             _encoder = encoder;
         }
 
-        internal bool Disposed { get; private set; }
+        public bool Disposed { get; private set; }
 
         public string Version => _wafLibraryInvoker.GetVersion();
 
