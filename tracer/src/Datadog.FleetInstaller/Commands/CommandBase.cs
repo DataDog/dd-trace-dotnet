@@ -7,6 +7,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 namespace Datadog.FleetInstaller.Commands;
@@ -48,6 +49,16 @@ internal abstract class CommandBase : Command
         {
             commandResult.ErrorMessage = $"This installer is only intended to run on Windows, it cannot be used on {RuntimeInformation.OSDescription}";
             return;
+        }
+
+        using (var identity = WindowsIdentity.GetCurrent())
+        {
+            var principal = new WindowsPrincipal(identity);
+            if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
+            {
+                commandResult.ErrorMessage = $"This installer must be run with administrator privileges. Current user {identity.Name} is not an administrator.";
+                return;
+            }
         }
 
         var path = commandResult.GetValueForOption(_versionedPathOption);
