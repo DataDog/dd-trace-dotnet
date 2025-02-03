@@ -36,7 +36,16 @@ internal readonly partial struct SecurityCoordinator
         var context = CoreHttpContextStore.Instance.Get();
         if (context is null)
         {
-            Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            if (!_nullContextReported)
+            {
+                Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+                _nullContextReported = true;
+            }
+            else
+            {
+                Log.Debug("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            }
+
             return null;
         }
 
@@ -61,7 +70,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
-    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
+    internal static Dictionary<string, object>? ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
 
     private static object GetHeaderAsArray(StringValues value) => value.Count == 1 ? value[0] : value;
 
@@ -127,11 +136,14 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestMethod, request.Method },
             { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
         };
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
-        AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
+        if (headersDic != null)
+        {
+            AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
+        }
 
         if (cookiesDic is not null)
         {

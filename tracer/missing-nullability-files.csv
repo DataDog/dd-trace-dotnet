@@ -335,9 +335,7 @@ src/Datadog.Trace/Debugger/Snapshots/SnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSummary.cs
 src/Datadog.Trace/Debugger/Snapshots/TaskSnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Headers/Ip/ExtractedHeadersAndIpInfos.cs
-src/Datadog.Trace/Headers/Ip/IpExtractor.cs
 src/Datadog.Trace/Headers/Ip/IpInfo.cs
-src/Datadog.Trace/Headers/Ip/RequestIpExtractor.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/BufferContent.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/StreamContent.cs
 src/Datadog.Trace/Iast/Analyzers/UserStringInterop.cs

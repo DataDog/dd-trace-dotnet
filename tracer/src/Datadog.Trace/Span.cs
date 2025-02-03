@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
@@ -37,11 +38,19 @@ namespace Datadog.Trace
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new CommonTags();
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
+
+            if (links is not null)
+            {
+                foreach (var link in links)
+                {
+                    AddLink(link);
+                }
+            }
 
             if (IsLogLevelDebugEnabled)
             {
