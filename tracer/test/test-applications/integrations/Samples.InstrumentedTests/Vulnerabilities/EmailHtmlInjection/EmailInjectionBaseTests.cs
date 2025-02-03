@@ -1,5 +1,6 @@
 using System;
 using System.Net.Mail;
+using Amazon.Runtime;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -36,7 +37,7 @@ public class EmailInjectionBaseTests : InstrumentationTestsBase
         }
     }
 
-
+    // This method is used to test the email send call. It catches the expected exceptions.
     protected void TestEmailSendCall(Action expression)
     {
         try
@@ -45,5 +46,6 @@ public class EmailInjectionBaseTests : InstrumentationTestsBase
         }
         catch (SmtpException) { }
         catch (InvalidOperationException) { }
+        catch (AmazonClientException) { }
     }
 }

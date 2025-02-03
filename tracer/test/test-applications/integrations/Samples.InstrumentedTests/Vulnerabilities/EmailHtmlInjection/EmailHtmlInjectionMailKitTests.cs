@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Net;
+using System.Web;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MimeKit.Text;
@@ -18,160 +20,216 @@ public class EmailHtmlInjectionMailKitTests : EmailInjectionBaseTests
 
     // Test string Send(MimeMessage message, CancellationToken cancellationToken, ITransferProgress progress)
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtml_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtml_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, untaintedLastName), default, null), true);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesText_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtml_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, taintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtml_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtml_ThenIsVulnerable2()
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, untaintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), default, null), true);
+    }
+
+
+    [Fact]
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesText_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, taintedName, taintedLastName), default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtml_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, untaintedName, untaintedLastName), default, null), false);
     }
 
     // Test Task<string> SendAsync(MimeMessage message, CancellationToken cancellationToken, ITransferProgress progress)
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlAsync_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, taintedName, untaintedLastName), default, null), true);
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, taintedName, taintedLastName), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, taintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextAsync_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, untaintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, taintedName, taintedLastName), default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlAsync_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, untaintedName, untaintedLastName), default, null), false);
     }
 
     // Test string Send (MimeMessage message, MailboxAddress sender, IEnumerable<MailboxAddress> recipients, CancellationToken cancellationToken = default, ITransferProgress progress = null)
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlWithSender_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlWithSender_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextWithSender_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlWithSender_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlWithSender_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextWithSender_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlWithSender_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
     }
 
     // Test Task<string> SendAsync (MimeMessage message, MailboxAddress sender, IEnumerable<MailboxAddress> recipients, CancellationToken cancellationToken = default, ITransferProgress progress = null)
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlWithSenderAsync_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlWithSenderAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextWithSenderAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlWithSenderAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlWithSenderAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextWithSenderAsync_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlWithSenderAsync_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
     }
 
     // Test string Send (FormatOptions options, MimeMessage message, CancellationToken cancellationToken = default, ITransferProgress progress = null);
+
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlWithOptions_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlWithOptions_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, taintedName, untaintedLastName), default, null), true);
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, taintedName, taintedLastName), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextWithOptions_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlWithOptions_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(false, taintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlWithOptions_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextWithOptions_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(false, untaintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(false, taintedName, taintedLastName), default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlWithOptions_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, untaintedName, untaintedLastName), default, null), false);
     }
 
     // Test Task<string> SendAsync (FormatOptions options, MimeMessage message, CancellationToken cancellationToken = default, ITransferProgress progress = null);
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlWithOptionsAsync_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlWithOptionsAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, taintedName, untaintedLastName), default, null), true);
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, taintedName, taintedLastName), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextWithOptionsAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlWithOptionsAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(false, taintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlWithOptionsAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextWithOptionsAsync_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(false, untaintedName, untaintedLastName), default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(false, taintedName, taintedLastName), default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlWithOptionsAsync_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, untaintedName, untaintedLastName), default, null), false);
     }
 
     // Test string Send (FormatOptions options, MimeMessage message, MailboxAddress sender, IEnumerable<MailboxAddress> recipients, CancellationToken cancellationToken = default, ITransferProgress progress = null)
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlWithOptionsWithSender_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlWithOptionsWithSender_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextWithOptionsWithSender_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlWithOptionsWithSender_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(false, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlWithOptionsWithSender_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextWithOptionsWithSender_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(false, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(false, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlWithOptionsWithSender_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().Send(FormatOptions.Default, BuildMailMessage(true, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
     }
 
     // Test Task<string> SendAsync (FormatOptions options, MimeMessage message, MailboxAddress sender, IEnumerable<MailboxAddress> recipients, CancellationToken cancellationToken = default, ITransferProgress progress = null)
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtmlWithOptionsWithSenderAsync_ThenIsVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlWithOptionsWithSenderAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendTextMailMessageTaintedVaulesTextWithOptionsWithSenderAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedSanitizedValuesHtmlWithOptionsWithSenderAsync_ThenIsVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(false, taintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), mailBoxSender, new[] { mailBoxRecipient }, default, null), true);
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedVaulesHtmlWithOptionsWithSenderAsync_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesTextWithOptionsWithSenderAsync_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(false, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(false, taintedName, taintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageUntaintedValuesHtmlWithOptionsWithSenderAsync_ThenIsNotVulnerable()
+    {
+        TestMailCall(() => new SmtpClient().SendAsync(FormatOptions.Default, BuildMailMessage(true, untaintedName, untaintedLastName), mailBoxSender, new[] { mailBoxRecipient }, default, null), false);
     }
 
     private MimeMessage BuildMailMessage(bool isHtml, string name, string lastName)
