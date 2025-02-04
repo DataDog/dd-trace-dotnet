@@ -144,17 +144,17 @@ public class Benchmarks
         startInfo["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
     }
 
-    private void EnableCiVisibility(IDictionary<string, string> startInfo, bool enable = true)
+    private static void EnableCiVisibility(IDictionary<string, string> startInfo, bool enable = true)
     {
         startInfo["DD_CIVISIBILITY_ENABLED"] = enable ? "1" : "0";
     }
 
-    private void EnableInstrumentationTelemetry(IDictionary<string, string> startInfo, bool enable = true)
+    private static void EnableInstrumentationTelemetry(IDictionary<string, string> startInfo, bool enable = true)
     {
         startInfo["DD_INSTRUMENTATION_TELEMETRY_ENABLED"] = enable ? "1" : "0";
     }
 
-    private void SetLoggingDirectory(IDictionary<string, string> startInfo, string directory)
+    private static void SetLoggingDirectory(IDictionary<string, string> startInfo, string directory)
     {
         startInfo["DD_TRACE_LOG_DIRECTORY"] = directory;
     }
