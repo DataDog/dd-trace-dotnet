@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
         with:
           fetch-depth: 0
 
@@ -38,7 +38,7 @@ jobs:
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@71a4fd9b27383962fc5df13a9c871636b43199b4 # v1.10.0
         with:
           dotnet-version: '9.0.102'
 
@@ -84,7 +84,7 @@ jobs:
           git push origin "v${{steps.versions.outputs.full_version}}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1.0.0
         with:
           draft: true
           name: "${{steps.versions.outputs.full_version}}"
