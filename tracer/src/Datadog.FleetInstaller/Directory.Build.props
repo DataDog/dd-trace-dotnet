@@ -1,0 +1,34 @@
+﻿<!--This file is based on the file in /tracer/src. We should look at replacing the props file in shared/src soon-->
+<Project>
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Control build output locations -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+
+    <!-- WebClient is obsolete -->
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
+  </PropertyGroup>
+
+  <!-- StyleCop -->
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\..\tracer\stylecop.json" Link="stylecop.json" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\tracer\GlobalSuppressions.cs" Link="GlobalSuppressions.solution.cs" />
+  </ItemGroup>
+
+  <!-- Deterministic builds -->
+  <PropertyGroup Condition="'$(TF_BUILD)' == 'true' OR '$(GITLAB_CI)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- Not set when building outside of IDE or not using sln -->
+  <PropertyGroup>
+    <SolutionDir Condition="'$(SolutionDir)'==''">$(MSBuildThisFileDirectory)..\..\..\</SolutionDir>
+  </PropertyGroup>
+</Project>
