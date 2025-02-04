@@ -743,6 +743,24 @@ partial class Build
         .DependsOn(PublishNativeTracerUnix)
         .DependsOn(PublishNativeTracerOsx);
 
+    Target BuildFleetInstaller => _ => _
+        .Unlisted()
+        .Description("Builds the fleet installer binary files from the repo")
+        .After(Clean, Restore)
+        .Before(SignDlls)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // Build the fleet installer project
+            var project = SourceDirectory / "Datadog.FleetInstaller" / "Datadog.FleetInstaller.csproj";
+            var tfms = Solution.GetProject(project).GetTargetFrameworks();
+            DotNetPublish(s => s
+                              .SetProject(project)
+                              .SetConfiguration(BuildConfiguration)
+                              .SetOutput(ArtifactsDirectory / "Datadog.FleetInstaller")
+                              .CombineWith(tfms, (p, tfm) => p.SetFramework(tfm)));
+        });
+
     Target BuildMsi => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
