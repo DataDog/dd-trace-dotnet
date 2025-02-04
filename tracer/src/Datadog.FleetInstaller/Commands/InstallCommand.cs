@@ -6,7 +6,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Datadog.FleetInstaller.Commands;
@@ -16,6 +15,12 @@ namespace Datadog.FleetInstaller.Commands;
 /// </summary>
 internal class InstallCommand : CommandBase
 {
+    private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
+    {
+        Description = "Path to the tracer-home-directory",
+        IsRequired = true,
+    };
+
     public InstallCommand()
         : this("install")
     {
@@ -24,10 +29,25 @@ internal class InstallCommand : CommandBase
     protected InstallCommand(string command)
         : base(command)
     {
+        AddOption(_versionedPathOption);
+        AddValidator(Validate);
+        this.SetHandler(ExecuteAsync);
+    }
+
+    public Task ExecuteAsync(InvocationContext context)
+    {
+        var versionedPath = context.ParseResult.GetValueForOption(_versionedPathOption)!;
+        var tracerValues = new TracerValues(versionedPath);
+        var log = Log.Instance;
+
+        var result = Execute(log, tracerValues, Defaults.TracerLogDirectory, Defaults.CrashTrackingRegistryKey);
+
+        context.ExitCode = (int)result;
+        return Task.CompletedTask;
     }
 
     // Internal for testing
-    internal static ReturnCode ExecuteAsync(
+    internal static ReturnCode Execute(
         ILogger log,
         TracerValues tracerValues,
         string tracerLogDirectory,
@@ -61,6 +81,17 @@ internal class InstallCommand : CommandBase
         return ReturnCode.Success;
     }
 
-    protected override Task<ReturnCode> ExecuteAsync(ILogger log, InvocationContext context, TracerValues versionedPath)
-        => Task.FromResult(ExecuteAsync(log, versionedPath, Defaults.TracerLogDirectory, Defaults.CrashTrackingRegistryKey));
+    private void Validate(CommandResult commandResult)
+    {
+        if (!IsValidEnvironment(commandResult))
+        {
+            return;
+        }
+
+        var path = commandResult.GetValueForOption(_versionedPathOption);
+        if (path is not null && !FileHelper.TryVerifyFilesExist(Log.Instance, new TracerValues(path), out var err))
+        {
+            commandResult.ErrorMessage = err;
+        }
+    }
 }

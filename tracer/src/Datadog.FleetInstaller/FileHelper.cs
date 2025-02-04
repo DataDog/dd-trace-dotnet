@@ -12,7 +12,7 @@ namespace Datadog.FleetInstaller;
 
 internal static class FileHelper
 {
-    public static bool TryVerifyFiles(ILogger log, TracerValues values, out string? error)
+    public static bool TryVerifyFilesExist(ILogger log, TracerValues values, out string? error)
     {
         // Verify that the critical files we expect to find in the file system _are_ there
         // Obviously there are race conditions around this we can't avoid, this is just a gut check
@@ -61,20 +61,30 @@ internal static class FileHelper
     /// </summary>
     public static bool TryDeleteNativeLoaders(ILogger log, TracerValues values)
     {
-        // Delete the native loader
-        try
-        {
-            log.WriteInfo($"Deleting native loader file at '{values.NativeLoaderX86Path}'");
-            File.Delete(values.NativeLoaderX86Path);
+        // Delete the native loaders
+        return DeleteFile(log, values.NativeLoaderX86Path)
+            && DeleteFile(log, values.NativeLoaderX64Path);
 
-            log.WriteInfo($"Deleting native loader file at '{values.NativeLoaderX64Path}'");
-            File.Delete(values.NativeLoaderX64Path);
-            return true;
-        }
-        catch (Exception ex)
+        static bool DeleteFile(ILogger log, string path)
         {
-            log.WriteError(ex, $"Error deleting native loaders");
-            return false;
+            try
+            {
+                log.WriteInfo($"Deleting native loader file at '{path}'");
+                File.Delete(path);
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // this is "ok" - if the path doesn't exist, then it's probably because all
+                // the files have been removed at some point (which is _bad_, but not _fatal_)
+                log.WriteInfo($"Directory not found when deleting native loader at '{path}'");
+            }
+            catch (Exception ex)
+            {
+                log.WriteError(ex, "Error deleting native loader file");
+                return false;
+            }
+
+            return true;
         }
     }
 

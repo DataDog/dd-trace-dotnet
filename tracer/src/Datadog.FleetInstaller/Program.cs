@@ -38,6 +38,6 @@ rootCommand.AddExample("""
 rootCommand.AddCommand(new InstallCommand());
 rootCommand.AddCommand(new ReinstallCommand());
 rootCommand.AddCommand(new UninstallVersionCommand());
-rootCommand.AddCommand(new UninstallAllCommand());
+rootCommand.AddCommand(new UninstallProductCommand());
 
 return builder.Build().Invoke(args);

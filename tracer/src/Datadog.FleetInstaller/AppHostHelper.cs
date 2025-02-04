@@ -16,18 +16,20 @@ internal static class AppHostHelper
     public static bool SetAllEnvironmentVariables(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Setting app pool environment variables");
-        return ModifyEnvironmentVariablesWithRetry(log, tracerValues, SetEnvVars);
+        return ModifyEnvironmentVariablesWithRetry(log, tracerValues.RequiredEnvVariables, SetEnvVars);
     }
 
-    public static bool RemoveAllEnvironmentVariables(ILogger log, TracerValues tracerValues)
+    public static bool RemoveAllEnvironmentVariables(ILogger log)
     {
         log.WriteInfo("Removing app pool environment variables");
-        return ModifyEnvironmentVariablesWithRetry(log, tracerValues, RemoveEnvVars);
+        // we don't need to know the exact tracer values, we just use the _keys_ in removeEnvVars
+        var envVars = new TracerValues(string.Empty).RequiredEnvVariables;
+        return ModifyEnvironmentVariablesWithRetry(log, envVars, RemoveEnvVars);
     }
 
     private static bool ModifyEnvironmentVariablesWithRetry(
         ILogger log,
-        TracerValues tracerValues,
+        ReadOnlyDictionary<string, string> envVars,
         Action<ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
     {
         // If the IIS host config is being modified, this may fail
@@ -42,7 +44,7 @@ internal static class AppHostHelper
                 log.WriteInfo($"Attempt {attempt} to update IIS failed, retrying.");
             }
 
-            if (ModifyEnvironmentVariables(log, tracerValues, updateEnvVars))
+            if (ModifyEnvironmentVariables(log, envVars, updateEnvVars))
             {
                 return true;
             }
@@ -54,10 +56,10 @@ internal static class AppHostHelper
 
     private static bool ModifyEnvironmentVariables(
         ILogger log,
-        TracerValues tracerValues,
+        ReadOnlyDictionary<string, string> envVars,
         Action<ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
     {
-        if (!SetEnvironmentVariables(log, tracerValues, updateEnvVars, out var appPoolsWeMustReenableRecycling))
+        if (!SetEnvironmentVariables(log, envVars, updateEnvVars, out var appPoolsWeMustReenableRecycling))
         {
             // If we failed to set the environment variables, we don't need to re-enable recycling
             // because by definition we can't have saved successfully
@@ -70,7 +72,7 @@ internal static class AppHostHelper
 
     private static bool SetEnvironmentVariables(
         ILogger log,
-        TracerValues tracerValues,
+        ReadOnlyDictionary<string, string> envVars,
         Action<ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars,
         out HashSet<string> appPoolsWeMustReenableRecycling)
     {
@@ -91,7 +93,7 @@ internal static class AppHostHelper
 
             // Update defaults
             log.WriteInfo($"Updating applicationPoolDefaults environment variables");
-            updateEnvVars(applicationPoolDefaults.GetCollection("environmentVariables"), tracerValues.RequiredEnvVariables);
+            updateEnvVars(applicationPoolDefaults.GetCollection("environmentVariables"), envVars);
 
             // Update app pools
             foreach (var appPoolElement in applicationPoolsCollection)
@@ -123,7 +125,7 @@ internal static class AppHostHelper
                     }
 
                     // Set the pool-specific env variables
-                    updateEnvVars(appPoolElement.GetCollection("environmentVariables"), tracerValues.RequiredEnvVariables);
+                    updateEnvVars(appPoolElement.GetCollection("environmentVariables"), envVars);
                 }
             }
 
