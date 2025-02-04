@@ -76,7 +76,7 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark(Description = "Tracer enabled, instrumentation telemetry disabled")]
+    [Benchmark(Description = "DD_INSTRUMENTATION_TELEMETRY_ENABLED=0")]
     public void TracerEnabled_InstrumentationTelemetryDisabled()
     {
         var startInfo = CreateProcessStartInfo();
@@ -88,7 +88,7 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark(Description = "Tracer enabled, CI visibility disabled")]
+    [Benchmark(Description = "DD_CIVISIBILITY_ENABLED=0")]
     public void TracerEnabled_CiVisDisabled()
     {
         var startInfo = CreateProcessStartInfo();
@@ -100,7 +100,7 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark(Description = "Tracer enabled, log to /dev/null")]
+    [Benchmark(Description = "DD_TRACE_LOG_DIRECTORY=/dev/null")]
     public void TracerEnabled_LogToDevNull()
     {
         var startInfo = CreateProcessStartInfo();
