@@ -70,6 +70,18 @@ public class Benchmarks
     }
 
     [Benchmark]
+    public void TracerEnabled_InstrumentationTelemetryDisabled()
+    {
+        var startInfo = CreateProcessStartInfo();
+
+        EnableTracer(startInfo.Environment);
+        EnableInstrumentationTelemetry(startInfo.Environment, enable: false);
+
+        var process = Process.Start(startInfo);
+        process?.WaitForExit();
+    }
+
+    [Benchmark]
     public void TracerEnabled_CiVisDisabled()
     {
         var startInfo = CreateProcessStartInfo();
@@ -114,6 +126,11 @@ public class Benchmarks
     private void EnableCiVisibility(IDictionary<string, string> startInfo, bool enable = true)
     {
         startInfo["DD_CIVISIBILITY_ENABLED"] = enable ? "1" : "0";
+    }
+
+    private void EnableInstrumentationTelemetry(IDictionary<string, string> startInfo, bool enable = true)
+    {
+        startInfo["DD_INSTRUMENTATION_TELEMETRY_ENABLED"] = enable ? "1" : "0";
     }
 
     private void SetLoggingDirectory(IDictionary<string, string> startInfo, string directory)
