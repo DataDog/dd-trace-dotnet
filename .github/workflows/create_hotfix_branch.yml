@@ -27,14 +27,14 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
 
       - name: "Configure Git Credentials"
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@71a4fd9b27383962fc5df13a9c871636b43199b4 # v1.10.0
         with:
           dotnet-version: '9.0.102'
 
