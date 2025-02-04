@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Runtime.InteropServices;
-using BenchmarkDotNet;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace StartupBenchmarks;
 
+[SimpleJob]
 public class Benchmarks
 {
     public string EntryAssemblyPath { get; set; }
@@ -50,15 +50,18 @@ public class Benchmarks
         }
     }
 
-    [Benchmark(Baseline = true)]
+    [Benchmark(Baseline = true, Description = "Tracer disabled (baseline)")]
     public void NoTracer()
     {
         var startInfo = CreateProcessStartInfo();
+
+        EnableTracer(startInfo.Environment, enable: false);
+
         var process = Process.Start(startInfo);
         process?.WaitForExit();
     }
 
-    [Benchmark]
+    [Benchmark(Description = "Tracer enabled, default settings")]
     public void TracerEnabled()
     {
         var startInfo = CreateProcessStartInfo();
@@ -69,7 +72,7 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark]
+    [Benchmark(Description = "Tracer enabled, instrumentation telemetry disabled")]
     public void TracerEnabled_InstrumentationTelemetryDisabled()
     {
         var startInfo = CreateProcessStartInfo();
@@ -81,7 +84,7 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark]
+    [Benchmark(Description = "Tracer enabled, CI visibility disabled")]
     public void TracerEnabled_CiVisDisabled()
     {
         var startInfo = CreateProcessStartInfo();
@@ -93,12 +96,26 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark]
+    [Benchmark(Description = "Tracer enabled, log to /dev/null")]
     public void TracerEnabled_LogToDevNull()
     {
         var startInfo = CreateProcessStartInfo();
 
         EnableTracer(startInfo.Environment);
+        SetLoggingDirectory(startInfo.Environment, "/dev/null");
+
+        var process = Process.Start(startInfo);
+        process?.WaitForExit();
+    }
+
+    [Benchmark(Description = "Tracer enabled, all of the above")]
+    public void TracerEnabled_All()
+    {
+        var startInfo = CreateProcessStartInfo();
+
+        EnableTracer(startInfo.Environment);
+        EnableInstrumentationTelemetry(startInfo.Environment, enable: false);
+        EnableCiVisibility(startInfo.Environment, enable: false);
         SetLoggingDirectory(startInfo.Environment, "/dev/null");
 
         var process = Process.Start(startInfo);
