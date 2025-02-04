@@ -11,9 +11,11 @@ namespace StartupBenchmarks;
 [SimpleJob]
 public class Benchmarks
 {
-    public string EntryAssemblyPath { get; set; }
-
     public string TracerHomeDirectory { get; set; }
+
+    public string TracingLibraryPath { get; set; }
+
+    public string EntryAssemblyPath { get; set; }
 
     public string Os { get; set; }
 
@@ -28,12 +30,14 @@ public class Benchmarks
         switch (Os)
         {
             case "win":
-                EntryAssemblyPath = @"D:\source\datadog\dd-trace-dotnet\tracer\test\benchmarks\Startup\EmptyConsoleApp\publish\default\EmptyConsoleApp.dll";
                 TracerHomeDirectory = @"C:\Users\Lucas.Pimentel\Downloads\tracer-home-3.9.1";
+                TracingLibraryPath = $"{TracerHomeDirectory}/win-{Arch}/Datadog.Trace.ClrProfiler.Native.dll";
+                EntryAssemblyPath = @"D:\source\datadog\dd-trace-dotnet\tracer\test\benchmarks\Startup\EmptyConsoleApp\publish\default\EmptyConsoleApp.dll";
                 break;
             case "linux":
-                EntryAssemblyPath = "/home/lucas/source/datadog/dd-trace-dotnet/tracer/test/benchmarks/Startup/EmptyConsoleApp/publish/default/EmptyConsoleApp.dll";
                 TracerHomeDirectory = "/home/lucas/tracer-home-3.9.1";
+                TracingLibraryPath = $"{TracerHomeDirectory}/linux-{Arch}/Datadog.Trace.ClrProfiler.Native.so";
+                EntryAssemblyPath = "/home/lucas/source/datadog/dd-trace-dotnet/tracer/test/benchmarks/Startup/EmptyConsoleApp/publish/default/EmptyConsoleApp.dll";
                 break;
             default:
                 throw new PlatformNotSupportedException($"Platform not supported: {Os}-{Arch}");
@@ -136,7 +140,7 @@ public class Benchmarks
     {
         startInfo["CORECLR_ENABLE_PROFILING"] = enable ? "1" : "0";
         startInfo["CORECLR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
-        startInfo["CORECLR_PROFILER_PATH"] = $"{TracerHomeDirectory}/{Os}-{Arch}/Datadog.Trace.ClrProfiler.Native.dll";
+        startInfo["CORECLR_PROFILER_PATH"] = TracingLibraryPath;
         startInfo["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
     }
 
