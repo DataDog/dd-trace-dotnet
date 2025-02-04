@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
@@ -12,8 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal interface IQueryRequest : IDuckType
     {
-        object Query { get; }
+        object? Query { get; }
 
-        public string OperationName { get; }
+        public string? OperationName { get; }
     }
 }
