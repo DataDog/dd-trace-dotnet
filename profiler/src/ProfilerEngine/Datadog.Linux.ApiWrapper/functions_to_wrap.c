@@ -547,15 +547,28 @@ struct pthread_wrapped_arg
     void* orig_arg;
 };
 
+static void dd_pthread_cleanup_routine(void* ignored)
+{
+    // Call into the profiler to do extra cleanup.
+    // This is *useful* at shutdown time to avoid crashing.
+    __dd_on_thread_routine_finished();
+}
+
 // This symbol must be public for crashtracking filtering mechanism
 void* dd_pthread_entry(void* arg)
 {
     struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
-    void* result = new_arg->func(new_arg->orig_arg);
+    void* result;
+    pthread_cleanup_push(dd_pthread_cleanup_routine, NULL);
+    result = new_arg->func(new_arg->orig_arg);
+    // This dd_pthread_cleanup_routine will be executed whenever we stop the thread
+    // either pthread_exit, either pthread_cancel.
+    // But also when `func` routine finishes.
+    // The first two cases will be executed thanks to pthread_cleanup_push
+    // The last case will be executed thanks to pthread_cleanup_pop(1)
+    // (arg '1'is to explicitly execute the __dd_on_thread_routine_finished)
+    pthread_cleanup_pop(1);
     free(new_arg);
-    // Call into the profiler to do extra cleanup.
-    // This is *useful* at shutdown time to avoid crashing.
-    __dd_on_thread_routine_finished();
     return result;
 }
 
@@ -578,18 +591,6 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]--;
 
     return result;
-}
-
-static void (*__real_pthread_exit)(void *retval) = NULL;
-void pthread_exit(void *retval)
-{
-    check_init();
-    // Call into the profiler to do extra cleanup.
-    // The CLR explicitly call pthread_exit and if the thread was about to collect a callstack,
-    // we could end up crashing the application.
-    // This will usually happen at shutdown
-    __dd_on_thread_routine_finished();
-    __real_pthread_exit(retval);
 }
 
 /* Function pointers to hold the value of the glibc functions */
@@ -678,7 +679,6 @@ static void init()
     __real_execve = __dd_dlsym(RTLD_NEXT, "execve");
 #ifdef DD_ALPINE
     __real_pthread_create = __dd_dlsym(RTLD_NEXT, "pthread_create");
-    __real_pthread_exit = __dd_dlsym(RTLD_NEXT, "pthread_exit");
     __real_pthread_attr_init = __dd_dlsym(RTLD_NEXT, "pthread_attr_init");
     __real_pthread_getattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_getattr_default_np");
     __real_pthread_setattr_default_np = __dd_dlsym(RTLD_NEXT, "pthread_setattr_default_np");
