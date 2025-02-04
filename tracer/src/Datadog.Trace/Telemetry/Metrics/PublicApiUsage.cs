@@ -156,6 +156,7 @@ internal enum PublicApiUsage
     [Description("name:customtelemeteredconfigurationsource_ctor")] CustomTelemeteredConfigurationSource_Ctor,
     [Description("name:environmentconfigurationsource_ctor")] EnvironmentConfigurationSource_Ctor,
     [Description("name:namevalueconfigurationsource_ctor")] NameValueConfigurationSource_Ctor,
+    [Description("name:fileconfigurationsource_ctor")] FileConfigurationSource_Ctor,
 
     [Description("name:tracersettings_ctor")] TracerSettings_Ctor,
     [Description("name:tracersettings_ctor_source")] TracerSettings_Ctor_Source,

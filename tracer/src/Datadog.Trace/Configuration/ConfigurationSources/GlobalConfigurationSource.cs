@@ -30,8 +30,9 @@ internal class GlobalConfigurationSource
     /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
     internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
     {
-        // env > AppSettings > datadog.json
+        // library_config yaml file > env > AppSettings > datadog.json
         var configurationSource = new CompositeConfigurationSource();
+        configurationSource.Add(new FileConfigurationSource());
         configurationSource.Add(new EnvironmentConfigurationSource());
 
 #if NETFRAMEWORK

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent;
@@ -1332,6 +1333,40 @@ namespace Datadog.Trace.Tests.Configuration
             tracerSettings.ServiceVersion.Should().NotBe("datadog_version");
             tracerSettings.ServiceName.Should().NotBe("datadog_service");
             errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
+        }
+
+        [Fact]
+        public void ValidateFileConfigurationSource()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDir);
+            var configFilePath = Path.Combine(tempDir, "library_config.yaml");
+            Console.WriteLine($"Config file path: {configFilePath}");
+            #pragma warning disable SA1118
+            File.WriteAllText(configFilePath, @"
+rules:
+  - selectors:
+    - origin: language
+      matches:
+        - dotnet
+      operator: equals
+    configuration:
+      DD_SERVICE: my-service
+config_id: abc
+");
+            #pragma warning restore SA1118
+
+            var source = new FileConfigurationSource(configFilePath);
+            var tracerSettings = new TracerSettings(source);
+
+            if (FrameworkDescription.Instance.IsWindows())
+            {
+                tracerSettings.ServiceName.Should().Be(string.Empty);
+            }
+            else
+            {
+                tracerSettings.ServiceName.Should().Be("my-service");
+            }
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)

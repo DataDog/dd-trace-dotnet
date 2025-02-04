@@ -83,6 +83,7 @@ add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/library_config.cpp
 )
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")

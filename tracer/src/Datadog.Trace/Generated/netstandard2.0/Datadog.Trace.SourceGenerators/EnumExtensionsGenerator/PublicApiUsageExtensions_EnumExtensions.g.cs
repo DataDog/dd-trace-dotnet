@@ -17,7 +17,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 168;
+    public const int Length = 169;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -124,6 +124,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor => "name:customtelemeteredconfigurationsource_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EnvironmentConfigurationSource_Ctor => "name:environmentconfigurationsource_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.NameValueConfigurationSource_Ctor => "name:namevalueconfigurationsource_ctor",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.FileConfigurationSource_Ctor => "name:fileconfigurationsource_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor => "name:tracersettings_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor_Source => "name:tracersettings_ctor_source",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor_UseDefaultSources => "name:tracersettings_ctor_usedefaultsources",
@@ -305,6 +306,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EnvironmentConfigurationSource_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.NameValueConfigurationSource_Ctor,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.FileConfigurationSource_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor_Source,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor_UseDefaultSources,
@@ -486,6 +488,7 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.CustomTelemeteredConfigurationSource_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EnvironmentConfigurationSource_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.NameValueConfigurationSource_Ctor),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.FileConfigurationSource_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor_Source),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Ctor_UseDefaultSources),
@@ -667,6 +670,7 @@ internal static partial class PublicApiUsageExtensions
             "name:customtelemeteredconfigurationsource_ctor",
             "name:environmentconfigurationsource_ctor",
             "name:namevalueconfigurationsource_ctor",
+            "name:fileconfigurationsource_ctor",
             "name:tracersettings_ctor",
             "name:tracersettings_ctor_source",
             "name:tracersettings_ctor_usedefaultsources",

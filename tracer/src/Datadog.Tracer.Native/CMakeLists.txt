@@ -163,6 +163,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         integration.cpp
         metadata_builder.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
+        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/library_config.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
         calltarget_tokens.cpp
@@ -218,6 +219,7 @@ target_compile_definitions("Datadog.Tracer.Native.static" PUBLIC "-D_GLIBCXX_USE
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Tracer.Native.static"
+        libdatadog-lib # Should we for MacOS?
         managed-loader-objs
         coreclr
         re2-lib
@@ -227,6 +229,7 @@ if (ISMACOS)
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"
+        libdatadog-lib
         managed-loader-objs
         coreclr
         re2-lib
@@ -239,7 +242,7 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Tracer.Native.static" coreclr re2-lib spdlog-headers managed-loader-objs)
+add_dependencies("Datadog.Tracer.Native.static" libdatadog-lib coreclr re2-lib spdlog-headers managed-loader-objs)
 
 # ******************************************************
 # Define shared target

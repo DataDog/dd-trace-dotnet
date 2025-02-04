@@ -11,6 +11,7 @@
 #include "CpuProfilerType.h"
 #include "IConfiguration.h"
 #include "TagsHelper.h"
+#include "shared/src/native-src/library_config.h"
 #include "shared/src/native-src/string.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
@@ -95,7 +96,7 @@ private:
     static std::chrono::seconds GetDefaultUploadInterval();
     static bool GetDefaultDebugLogEnabled();
     template <typename T>
-    static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
+    static T GetConfigValue(shared::WSTRING const& name, T const& defaultValue);
     template <typename T>
     static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
     static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);
@@ -178,4 +179,6 @@ private:
 
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
+
+    static std::vector<shared::ConfigEntry> _configFromFile;
 };

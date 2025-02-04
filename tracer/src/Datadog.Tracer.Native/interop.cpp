@@ -9,7 +9,9 @@
 #include "cor_profiler.h"
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
+#include <cstring>
 #include "Generated/generated_definitions.h"
+#include "../../../shared/src/native-src/library_config.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -267,6 +269,38 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
 
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
 }
+
+EXTERN_C int STDAPICALLTYPE LoadConfigurationFromDisk(char* filePathOverride, int maxConfigEntries, int& configEntriesCount, 
+                                                        shared::ConfigEntryFFI* configEntries)
+{
+    if (configEntries == nullptr) {
+        return E_POINTER;
+    }
+
+    auto previousPath = shared::LibraryConfig::config_path;
+    if (filePathOverride != nullptr && std::strlen(filePathOverride) > 0) {
+        shared::LibraryConfig::config_path = std::string(filePathOverride);
+    }
+
+    auto configFromFile = shared::LibraryConfig::get_configuration(false);
+    configEntriesCount = configFromFile.size();
+    if (configEntriesCount > maxConfigEntries) {
+        return E_OUTOFMEMORY;
+    }
+
+    int index = 0;
+    for (const auto& configEntry : configFromFile) {
+        configEntries[index] = {
+            .key = strdup(configEntry.key.c_str()),
+            .value = strdup(configEntry.value.c_str()),
+        };
+        index++;
+    }
+
+    shared::LibraryConfig::config_path = previousPath;
+    return S_OK;
+}
+
 
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)

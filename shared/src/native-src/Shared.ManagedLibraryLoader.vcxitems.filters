@@ -30,6 +30,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)miniutf.cpp">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)library_config.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)loader.h">
@@ -60,6 +63,9 @@
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)library_config.h">
       <Filter>ManagedLibraryLoader-Dependencies</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)logmanager.h">
