@@ -14,57 +14,27 @@ namespace Datadog.FleetInstaller.Commands;
 
 internal abstract class CommandBase : Command
 {
-    private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
+    protected CommandBase(string name, string? description = null)
+        : base(name, description)
     {
-        Description = "Path to the tracer-home-directory",
-        IsRequired = true
-    };
-
-    protected CommandBase(string command)
-        : base(command)
-    {
-        AddOption(_versionedPathOption);
-
-        AddValidator(Validate);
-
-        this.SetHandler(ExecuteAsync);
     }
 
-    public async Task ExecuteAsync(InvocationContext context)
-    {
-        var versionedPath = context.ParseResult.GetValueForOption(_versionedPathOption)!;
-        var tracerValues = new TracerValues(versionedPath);
-        var log = Log.Instance;
-
-        var result = await ExecuteAsync(log, context, tracerValues).ConfigureAwait(false);
-
-        context.ExitCode = (int)result;
-    }
-
-    protected abstract Task<ReturnCode> ExecuteAsync(ILogger log, InvocationContext context, TracerValues versionedPath);
-
-    private void Validate(CommandResult commandResult)
+    protected bool IsValidEnvironment(CommandResult commandResult)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             commandResult.ErrorMessage = $"This installer is only intended to run on Windows, it cannot be used on {RuntimeInformation.OSDescription}";
-            return;
+            return false;
         }
 
-        using (var identity = WindowsIdentity.GetCurrent())
+        using var identity = WindowsIdentity.GetCurrent();
+        var principal = new WindowsPrincipal(identity);
+        if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
         {
-            var principal = new WindowsPrincipal(identity);
-            if (!principal.IsInRole(WindowsBuiltInRole.Administrator))
-            {
-                commandResult.ErrorMessage = $"This installer must be run with administrator privileges. Current user {identity.Name} is not an administrator.";
-                return;
-            }
+            commandResult.ErrorMessage = $"This installer must be run with administrator privileges. Current user {identity.Name} is not an administrator.";
+            return false;
         }
 
-        var path = commandResult.GetValueForOption(_versionedPathOption);
-        if (path is not null && !FileHelper.TryVerifyFiles(Log.Instance, new TracerValues(path), out var err))
-        {
-            commandResult.ErrorMessage = err;
-        }
+        return true;
     }
 }

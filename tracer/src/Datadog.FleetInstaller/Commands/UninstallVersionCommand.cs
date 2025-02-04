@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Threading.Tasks;
 
 namespace Datadog.FleetInstaller.Commands;
@@ -13,13 +15,34 @@ namespace Datadog.FleetInstaller.Commands;
 /// </summary>
 internal class UninstallVersionCommand : CommandBase
 {
+    private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
+    {
+        Description = "Path to the tracer-home-directory",
+        IsRequired = true
+    };
+
     public UninstallVersionCommand()
         : base("uninstall-version")
     {
+        AddOption(_versionedPathOption);
+        AddValidator(Validate);
+        this.SetHandler(ExecuteAsync);
+    }
+
+    public Task ExecuteAsync(InvocationContext context)
+    {
+        var versionedPath = context.ParseResult.GetValueForOption(_versionedPathOption)!;
+        var tracerValues = new TracerValues(versionedPath);
+        var log = Log.Instance;
+
+        var result = Execute(log, tracerValues, Defaults.CrashTrackingRegistryKey);
+
+        context.ExitCode = (int)result;
+        return Task.CompletedTask;
     }
 
     // Internal for testing
-    internal static ReturnCode ExecuteAsync(
+    internal static ReturnCode Execute(
         ILogger log,
         TracerValues tracerValues,
         string registryKeyName)
@@ -42,13 +65,23 @@ internal class UninstallVersionCommand : CommandBase
         // We don't uninstall from the app host, as they should _already_ point to different values
         if (!RegistryHelper.RemoveCrashTrackingKey(log, tracerValues, registryKeyName))
         {
-            // Probably Don't need to bail out of installation just because we failed to remove the crash tracker?
+            // Probably don't _need_ to bail out of installation just because we failed to remove the crash tracker?
+            // but returning an error here ensures that the fleet installer tries again later
+            return ReturnCode.ErrorRemovingCrashTrackerKey;
         }
 
         // success
         return ReturnCode.Success;
     }
 
-    protected override Task<ReturnCode> ExecuteAsync(ILogger log, InvocationContext context, TracerValues versionedPath)
-        => Task.FromResult(ExecuteAsync(log, versionedPath, Defaults.CrashTrackingRegistryKey));
+    private void Validate(CommandResult commandResult)
+    {
+        if (!IsValidEnvironment(commandResult))
+        {
+            return;
+        }
+
+        // If the tracer files already don't exist then that's fine
+        // This could happen if there's an error part way through installation
+    }
 }

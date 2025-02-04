@@ -16,4 +16,5 @@ internal enum ReturnCode
     ErrorSettingAppPoolVariables,
     ErrorRemovingAppPoolVariables,
     ErrorRemovingNativeLoaderFiles,
+    ErrorRemovingCrashTrackerKey,
 }
