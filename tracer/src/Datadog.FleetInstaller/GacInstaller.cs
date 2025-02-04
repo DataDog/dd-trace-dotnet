@@ -155,13 +155,13 @@ internal static class GacInstaller
 
             foreach (var (gacAssemblyPath, associatedFilepath) in filesToRemove)
             {
-                var gacName = GetGacName(gacAssemblyPath);
+                var gacName = Path.GetFileNameWithoutExtension(gacAssemblyPath);
                 if (string.IsNullOrEmpty(gacName))
                 {
                     log.WriteError($"Error uninstalling '{gacAssemblyPath}' from GAC: could not determine GAC name.");
                 }
 
-                Fusion.UninstallDisposition pulDisposition = 0;
+                Fusion.UninstallDisposition disposition = 0;
                 fixed (char* associatedFilepathPtr = associatedFilepath)
                 {
                     var fusionInstallReference = new Fusion.FUSION_INSTALL_REFERENCE
@@ -171,17 +171,24 @@ internal static class GacInstaller
                         guidScheme = Fusion.FUSION_INSTALL_REFERENCE.FUSION_REFCOUNT_FILEPATH_GUID,
                         szIdentifier = associatedFilepathPtr
                     };
-                    retValue = ppAsmCache.UninstallAssembly(0U, gacName, &fusionInstallReference, &pulDisposition);
+                    retValue = ppAsmCache.UninstallAssembly(0U, gacName, &fusionInstallReference, &disposition);
                 }
 
-                if (retValue != HResult.Code.S_OK)
+                if (disposition is Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED
+                    or Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND)
+                {
+                    log.WriteInfo($"Assembly '{gacAssemblyPath}' was already uninstalled from the GAC.");
+                }
+                else if (retValue == HResult.Code.S_OK)
+                {
+                    log.WriteInfo($"Successfully uninstalled assembly '{gacAssemblyPath}' from the GAC.");
+                }
+                else
                 {
                     log.WriteError(
-                        $"Error uninstalling assembly '{gacAssemblyPath}' from GAC. Error code {retValue} returned from UninstallAssembly, with uninstall value {pulDisposition}.");
+                        $"Error uninstalling assembly '{gacAssemblyPath}' from GAC. Error code {retValue} returned from UninstallAssembly, with uninstall value {disposition}.");
                     return false;
                 }
-
-                log.WriteInfo($"Successfully uninstalled assembly '{gacAssemblyPath}' from the GAC.");
             }
 
             return true;
@@ -193,16 +200,6 @@ internal static class GacInstaller
         }
     }
 
-    private static string GetGacName(string fileName)
-    {
-#if NETFRAMEWORK
-        return new AssemblyManager().GetGacName(fileName);
-#else
-        var assemblyName = Path.GetFileNameWithoutExtension(fileName);
-        return $"{assemblyName},Version={version.ToString()}";
-#endif
-    }
-
 // #if NETCOREAPP
     // [LibraryImport("kernel32.dll", StringMarshalling = StringMarshalling.Utf16)]
     // private static partial IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPWStr)] string filename);
@@ -210,50 +207,4 @@ internal static class GacInstaller
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPWStr)] string filename);
 // #endif
-
-#if NETFRAMEWORK
-
-// Based on System.EnterpriseServices.Internal.AssemblyManager
-    public class AssemblyManager : MarshalByRefObject
-    {
-        public string GetGacName(string fileName)
-        {
-            var gacName = string.Empty;
-            var domain = AppDomain.CreateDomain("SoapDomain", null, new AppDomainSetup());
-            if (domain != null)
-            {
-                try
-                {
-                    ObjectHandle instance = domain.CreateInstance(typeof(AssemblyManager).Assembly.FullName, typeof(AssemblyManager).FullName);
-                    if (instance != null)
-                    {
-                        gacName = ((AssemblyManager)instance.Unwrap()).InternalGetGacName(fileName);
-                    }
-                }
-                finally
-                {
-                    AppDomain.Unload(domain);
-                }
-            }
-
-            return gacName;
-        }
-
-        internal string InternalGetGacName(string fileName)
-        {
-            var gacName = string.Empty;
-            try
-            {
-                var assemblyName = AssemblyName.GetAssemblyName(fileName);
-                gacName = $"{assemblyName.Name},Version={assemblyName.Version}";
-            }
-            catch (Exception ex) when (ex is not NullReferenceException or SEHException)
-            {
-                // only throw for above exceptions
-            }
-
-            return gacName;
-        }
-    }
-#endif
 }
