@@ -54,7 +54,7 @@ public class Benchmarks
         }
     }
 
-    [Benchmark(Baseline = true, Description = "Tracer disabled (baseline)")]
+    [Benchmark(Description = "Tracer disabled")]
     public void NoTracer()
     {
         var startInfo = CreateProcessStartInfo();
@@ -65,7 +65,7 @@ public class Benchmarks
         process?.WaitForExit();
     }
 
-    [Benchmark(Description = "Tracer enabled, default settings")]
+    [Benchmark(Baseline = true, Description = "Tracer enabled, default config (baseline)")]
     public void TracerEnabled()
     {
         var startInfo = CreateProcessStartInfo();
