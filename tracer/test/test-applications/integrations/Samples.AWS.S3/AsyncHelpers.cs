@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,10 +31,12 @@ namespace Samples.AWS.S3
 
                 // Object management
                 await PutObjectAsync(s3Client, BucketName, ObjectKey);
+                await GetObjectAsync(s3Client, BucketName, ObjectKey);
                 await CopyObjectAsync(s3Client, BucketName, ObjectKey, CopiedObjectKey);
                 await ListObjectsAsync(s3Client, BucketName);
                 Thread.Sleep(1000);
                 await DeleteObjectAsync(s3Client, BucketName, CopiedObjectKey);
+                await DeleteObjectsAsync(s3Client, BucketName, [ObjectKey]);
 
                 // Multipart uploads
                 var uploadId = await InitiateMultipartUpload(s3Client, BucketName, MultipartObjectKey);
@@ -97,6 +100,20 @@ namespace Samples.AWS.S3
             Console.WriteLine($"ListObjectsV2Async(ListObjectsV2Request) HTTP status code: {response.HttpStatusCode}");
         }
         
+        private static async Task DeleteObjectsAsync(AmazonS3Client s3Client, string bucketName, List<string> objectKeys)
+        {
+            var deleteObjects = objectKeys.Select(key => new KeyVersion { Key = key }).ToList();
+            
+            var request = new DeleteObjectsRequest
+            {
+                BucketName = bucketName,
+                Objects = deleteObjects
+            };
+        
+            var response = await s3Client.DeleteObjectsAsync(request);
+            Console.WriteLine($"DeleteObjectsAsync(DeleteObjectsRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
         private static async Task DeleteObjectAsync(AmazonS3Client s3Client, string bucketName, string objectKey)
         {
             var request = new DeleteObjectRequest
@@ -107,6 +124,18 @@ namespace Samples.AWS.S3
 
             var response = await s3Client.DeleteObjectAsync(request);
             Console.WriteLine($"DeleteObjectAsync(DeleteObjectRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
+        private static async Task GetObjectAsync(AmazonS3Client s3Client, string bucketName, string objectKey)
+        {
+            var request = new GetObjectRequest
+            {
+                BucketName = bucketName,
+                Key = objectKey
+            };
+        
+            var response = await s3Client.GetObjectAsync(request);
+            Console.WriteLine($"GetObjectAsync(GetObjectRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
         // MULTIPART UPLOADS

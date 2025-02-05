@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Amazon.S3;
@@ -31,10 +32,12 @@ namespace Samples.AWS.S3
 
                 // Object management
                 PutObject(s3Client, BucketName, ObjectKey);
+                GetObject(s3Client, BucketName, ObjectKey);
                 CopyObject(s3Client, BucketName, ObjectKey, CopiedObjectKey);
                 ListObjects(s3Client, BucketName);
                 Thread.Sleep(1000);
                 DeleteObject(s3Client, BucketName, CopiedObjectKey);
+                DeleteObjects(s3Client, BucketName, [ObjectKey]);
 
                 // Multipart uploads
                 var uploadId = InitiateMultipartUpload(s3Client, BucketName, MultipartObjectKey);
@@ -100,6 +103,20 @@ namespace Samples.AWS.S3
             Console.WriteLine($"ListObjectsV2(ListObjectsV2Request) HTTP status code: {response.HttpStatusCode}");
         }
 
+        private static void DeleteObjects(AmazonS3Client s3Client, string bucketName, List<string> objectKeys)
+        {
+            var deleteObjects = objectKeys.Select(key => new KeyVersion { Key = key }).ToList();
+            
+            var request = new DeleteObjectsRequest
+            {
+                BucketName = bucketName,
+                Objects = deleteObjects
+            };
+        
+            var response = s3Client.DeleteObjects(request);
+            Console.WriteLine($"DeleteObjects(DeleteObjectsRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
         private static void DeleteObject(AmazonS3Client s3Client, string bucketName, string objectKey)
         {
             var request = new DeleteObjectRequest
@@ -110,6 +127,18 @@ namespace Samples.AWS.S3
 
             var response = s3Client.DeleteObject(request);
             Console.WriteLine($"DeleteObject(DeleteObjectRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
+        private static void GetObject(AmazonS3Client s3Client, string bucketName, string objectKey)
+        {
+            var request = new GetObjectRequest
+            {
+                BucketName = bucketName,
+                Key = objectKey
+            };
+        
+            var response = s3Client.GetObject(request);
+            Console.WriteLine($"GetObject(GetObjectRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
         // MULTIPART UPLOADS
