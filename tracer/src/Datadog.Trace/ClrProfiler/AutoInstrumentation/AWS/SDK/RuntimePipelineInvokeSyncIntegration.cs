@@ -74,27 +74,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
                     var uri = request.Endpoint;
-                    if (tags is AwsS3Tags s3Tags)
+                    var absolutePath = uri?.AbsolutePath;
+                    var path = request.ResourcePath switch
                     {
-                        var path = AwsS3Common.BuildS3Path(s3Tags);
-                        tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
-                    }
-                    else
-                    {
-                        // Fallback to the "generic" approach for other AWS services
-                        var absolutePath = uri?.AbsolutePath;
-                        var path = request.ResourcePath switch
-                        {
-                            null => absolutePath,
-                            string resourcePath when absolutePath == "/" => resourcePath,
-                            string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
-                        };
-                        tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
-                    }
+                        null => absolutePath,
+                        string resourcePath when absolutePath == "/" => resourcePath,
+                        string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
+                    };
 
                     // The request object is populated later by the Marshaller,
                     // so we wait until the method end callback to read it
                     tags.HttpMethod = request.HttpMethod?.ToUpperInvariant();
+                    tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
                 }
 
                 if (responseContext.Instance is not null && responseContext.Response is { } response)

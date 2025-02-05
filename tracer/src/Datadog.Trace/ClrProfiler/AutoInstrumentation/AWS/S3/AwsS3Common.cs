@@ -84,37 +84,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3
                 tags.ObjectKey = objectKey;
             }
         }
-
-        /// <summary>
-        /// Older versions of the AWS SDK give inconsistent paths.
-        /// This reconstructs a stable, consistent S3 path of the form:
-        ///   /my-bucket/           (for bucket-level calls)
-        ///   /my-bucket/key.txt    (for object calls)
-        /// </summary>
-        public static string BuildS3Path(AwsS3Tags? tags)
-        {
-            if (tags is null)
-            {
-                return "/";
-            }
-
-            var bucketName = tags.BucketName;
-            var objectKey = tags.ObjectKey;
-
-            // If bucket name is missing, just return "/"
-            if (string.IsNullOrEmpty(bucketName))
-            {
-                return "/";
-            }
-
-            // If there's no object key, we treat it as a bucket-level request => trailing slash
-            if (string.IsNullOrEmpty(objectKey))
-            {
-                return $"/{bucketName}/";
-            }
-
-            // Otherwise => /bucketName/objectKey
-            return $"/{bucketName}/{objectKey}";
-        }
     }
 }
