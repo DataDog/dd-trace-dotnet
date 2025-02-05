@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
@@ -185,7 +186,11 @@ internal readonly partial struct SecurityCoordinator
                 }
                 catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
                 {
-                    Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
+                    }
+
                     SetAdditiveContextDisposed(true);
                     return null;
                 }
