@@ -47,7 +47,7 @@ internal class SchemaExtractor
             return;
         }
 
-        if (descriptor.Value.File.Name.StartsWith("google/protobuf/"))
+        if (descriptor.Value.File.Name.StartsWith("google/protobuf/", StringComparison.OrdinalIgnoreCase))
         {
             // it's a protobuf operation internal to the protobuf library, not the one we want
             Log.Debug("Skipping instrumentation for internal protobuf schema {Schema}", descriptor.Value.File.Name);
