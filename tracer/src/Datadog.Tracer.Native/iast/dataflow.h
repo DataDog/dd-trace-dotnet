@@ -72,6 +72,7 @@ namespace iast
         std::vector<WSTRING> _methodAttributeIncludeFilters;
         std::vector<WSTRING> _methodAttributeExcludeFilters;
 
+        void LoadSecurityControls();
     protected:
         bool _initialized = false;
         bool _loaded = false;

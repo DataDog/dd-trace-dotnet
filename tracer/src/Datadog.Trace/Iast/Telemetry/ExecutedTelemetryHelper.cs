@@ -32,7 +32,7 @@ internal class ExecutedTelemetryHelper
         // Initialize the tags
         for (int i = 0; i < _executedSinkTags.Length; i++)
         {
-            _executedSinkTags[i] = $"{BasicExecutedTag}.executed.sink.{GetTag((IastVulnerabilityType)i)}";
+            _executedSinkTags[i] = $"{BasicExecutedTag}.executed.sink.{GetTag((IastVulnerabilityType)i, false)}";
         }
 
         for (int i = 0; i < _executedSourceTags.Length; i++)
@@ -42,11 +42,11 @@ internal class ExecutedTelemetryHelper
 
         for (int i = 0; i < _supressedVulnerabilityTags.Length; i++)
         {
-            _supressedVulnerabilityTags[i] = $"{BasicExecutedTag}.suppressed.vulnerabilities.{GetTag((IastVulnerabilityType)i)}";
+            _supressedVulnerabilityTags[i] = $"{BasicExecutedTag}.suppressed.vulnerabilities.{GetTag((IastVulnerabilityType)i, false)}";
         }
     }
 
-    private static string GetTag(IastVulnerabilityType vulnerability)
+    private static string GetTag(IastVulnerabilityType vulnerability, bool raiseException = true)
         => vulnerability switch
         {
             IastVulnerabilityType.WeakCipher => "weak_cipher",
@@ -75,7 +75,7 @@ internal class ExecutedTelemetryHelper
             IastVulnerabilityType.DirectoryListingLeak => "directory_listing_leak",
             IastVulnerabilityType.SessionTimeout => "session_timeout",
             IastVulnerabilityType.EmailHtmlInjection => "email_html_injection",
-            IastVulnerabilityType.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
+            IastVulnerabilityType.None => raiseException ? throw new System.Exception($"Undefined vulnerability name for value {vulnerability}.") : "none",
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };
 

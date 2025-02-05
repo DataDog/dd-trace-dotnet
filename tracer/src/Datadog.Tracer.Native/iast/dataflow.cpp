@@ -278,7 +278,6 @@ bool Dataflow::IsInitialized()
 void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     // Init aspects
-    auto aspectsName = Constants::AspectsAssemblyName;
     trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
 
     DataflowAspectClass* aspectClass = nullptr;
@@ -287,10 +286,10 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
         WSTRING line = aspects[x];
         if (BeginsWith(line, WStr("[AspectClass(")))
         {
-            aspectClass = new DataflowAspectClass(this, aspectsName, line, enabledCategories);
+            aspectClass = new DataflowAspectClass(this, line, enabledCategories);
             if (!aspectClass->IsValid())
             {
-                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect class ", aspectClass->ToString());
+                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect class ", line);
                 DEL(aspectClass);
             }
             else
@@ -304,7 +303,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             auto aspect = new DataflowAspect(aspectClass, line, platform);
             if (!aspect->IsValid())
             {
-                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect ", aspect->ToString());
+                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect ", line);
                 DEL(aspect);
             }
             else
@@ -314,13 +313,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
         }
     }
 
-    // Load security controls
-    auto securityControlsConfig = shared::GetEnvironmentValue(environment::security_controls_configuration);
-    if (securityControlsConfig.size() > 0)
-    {
-        trace::Logger::Debug("Dataflow::LoadAspects -> Processing Security Controls Config... ", securityControlsConfig);
-
-    }
+    LoadSecurityControls();
 
     auto moduleAspects = _moduleAspects;
     _moduleAspects.clear();
@@ -329,6 +322,112 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
     trace::Logger::Info("Dataflow::LoadAspects -> read ", _aspects.size(), " aspects");
     _loaded = true;
 }
+
+void Dataflow::LoadSecurityControls()
+{
+    auto securityControlsConfig = shared::GetEnvironmentValue(environment::security_controls_configuration);
+    if (securityControlsConfig.size() > 0)
+    {
+        DataflowAspectClass* aspectClass = nullptr;
+
+        trace::Logger::Debug("Dataflow::LoadSecurityControls -> Processing Security Controls Config... ",
+                             securityControlsConfig);
+        auto securityControls = shared::Split(securityControlsConfig, ';');
+        for (auto securityControl : securityControls)
+        {
+            auto parts = shared::Split(securityControl, ':');
+            if (parts.size() < 5)
+            {
+                trace::Logger::Warn("Dataflow::LoadSecurityControls -> Detected invalid Security Control: ",
+                                    securityControl);
+                continue;
+            }
+
+            int part = -1;
+            SecurityControlType securityControlType = SecurityControlType::Unknown;
+            if ((int) parts.size() > ++part) // Security control kind
+            {
+                securityControlType = ParseSecurityControlType(parts[part]);
+            }
+            if (securityControlType == SecurityControlType::Unknown)
+            {
+                trace::Logger::Warn("Dataflow::LoadSecurityControls -> Detected invalid Security Control type: ",
+                                    parts[part], " in ",
+                                    securityControl);
+                continue;
+            }
+
+            UINT32 secureMarks = 0;
+            if ((int) parts.size() > ++part) // Vulnerability type
+            {
+                for (auto vulnPart : Split(shared::ToString(parts[part]), ","))
+                {
+                    auto vuln = ParseVulnerabilityType(shared::ToString(vulnPart));
+                    if (vuln == VulnerabilityType::None)
+                    {
+                        trace::Logger::Warn(
+                            "Dataflow::LoadSecurityControls -> Detected invalid Security Control vulnerability type: ",
+                            vulnPart, " in ",
+                            securityControl);
+                        continue;
+                    }
+
+                    secureMarks |= (UINT32) vuln;
+                }
+            }
+            if (secureMarks == 0)
+            {
+                trace::Logger::Warn(
+                    "Dataflow::LoadSecurityControls -> Detected invalid Security Control vulnerability types: ",
+                    securityControl);
+                continue;
+            }
+
+            auto targetAssembly = parts[++part];
+            auto targetType = parts[++part];
+            auto targetMethodPart = parts[++part];
+
+            std::vector<int> parameterIndexes;
+            if ((int) parts.size() > ++part) // Parameter indexes
+            {
+                for (auto paramPart : Split(shared::ToString(parts[part]), ","))
+                {
+                    int param = -1;
+                    if (!TryParseInt(paramPart, &param))
+                    {
+                        trace::Logger::Warn(
+                            "Dataflow::LoadSecurityControls -> Detected invalid Security Control parameter index: ",
+                            paramPart, " in ",
+                            securityControl);
+                        continue;
+                    }
+                    paramPart.push_back(param);
+                }
+            }
+
+            WSTRING targetMethod, targetParams;
+            SplitType(targetMethodPart, nullptr, nullptr, &targetMethod, &targetParams);
+
+            if (aspectClass == nullptr)
+            {
+                aspectClass = new SecurityControlAspectClass(this);
+                _aspectClasses.push_back(aspectClass);
+                trace::Logger::Debug("Dataflow::LoadSecurityControls -> Created AspectClass");
+            }
+
+            auto aspect = new SecurityControlAspect(aspectClass, secureMarks, securityControlType, targetAssembly,
+                                                    targetType, targetMethod, targetParams, parameterIndexes);
+
+            trace::Logger::Debug("Dataflow::LoadSecurityControls -> Created Aspect: ", (int)securityControlType, "  ",
+                                 targetAssembly, " | ", targetType, " :: ", targetMethod, "  ", targetParams);
+
+            _aspects.push_back(aspect);
+        }
+
+        trace::Logger::Debug("Dataflow::LoadSecurityControls -> Exit");
+    }
+}
+
 
 HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 {

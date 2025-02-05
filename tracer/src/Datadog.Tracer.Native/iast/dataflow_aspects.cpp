@@ -7,7 +7,6 @@
 #include "../cor_profiler.h"
 #include "signature_info.h"
 #include "dataflow_il_analysis.h"
-#include "signature_info.h"
 #include "signature_types.h"
 #include "aspect_filter.h"
 #include "aspect.h"
@@ -47,14 +46,32 @@ namespace iast
         return res;
     }
 
+    SecurityControlType ParseSecurityControlType(const WSTRING& type)
+    {
+        if (type == WStr("INPUT_VALIDATOR"))
+        {
+            return SecurityControlType::InputValidator;
+        }
+        if (type == WStr("SANITIZER"))
+        {
+            return SecurityControlType::Sanitizer;
+        }
+        return SecurityControlType::Unknown;
+    }
+
+
     //------------------------------------
     VersionInfo currentVersion = GetVersionInfo(GetDatadogVersion());
 
-    DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line, const UINT32 enabledCategories)
+    DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow)
     {
         this->_dataflow = dataflow;
-        this->_aspectsAssembly = aspectsAssembly;
-        this->_line = line;
+    }
+
+    DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow, const WSTRING& line,
+                                             const UINT32 enabledCategories) :
+        DataflowAspectClass(dataflow)
+    {
         size_t offset = 0;
         auto pos0 = IndexOf(line, WStr("[AspectClass("), &offset);
         if (pos0 == std::string::npos) { return; }
@@ -124,17 +141,17 @@ namespace iast
         return Contains(_assemblies, module->_name);
     }
 
-    WSTRING DataflowAspectClass::ToString()
-    {
-        return _line;
-    }
-
     //------------------------------------
 
-    DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line, const UINT32 enabledCategories)
+    DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass)
     {
         this->_aspectClass = aspectClass;
-        this->_line = line;
+    }
+
+    DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line,
+                                   const UINT32 enabledCategories) :
+        DataflowAspect(aspectClass)
+    {
         size_t offset = 0;
         auto pos0 = IndexOf(line, WStr("["), &offset);
         if (pos0 == std::string::npos) { return; }
@@ -168,8 +185,8 @@ namespace iast
         if ((int)parts.size() > ++part) // TargetMethod
         {
             WSTRING assembliesPart;
-            _targetMethod = parts[part];
-            SplitType(_targetMethod, &assembliesPart, &_targetMethodType, &_targetMethodName, &_targetMethodParams);
+            auto targetMethod = parts[part];
+            SplitType(targetMethod, &assembliesPart, &_targetMethodType, &_targetMethodName, &_targetMethodParams);
             if (assembliesPart.length() > 0)
             {
                 _targetMethodAssemblies = Split(assembliesPart, WStr(","));
@@ -346,9 +363,65 @@ namespace iast
         return nullptr;
     }
 
-    WSTRING DataflowAspect::ToString()
+    void DataflowAspect::AfterApply(ILRewriter* processor, ILInstr* instruction)
     {
-        return _line;
+    }
+
+    //------------------------------
+
+    SecurityControlAspectClass::SecurityControlAspectClass(Dataflow* dataflow) :
+        DataflowAspectClass(dataflow)
+    {
+        this->_isValid = true;
+        this->_aspectTypeName = WStr("Datadog.Trace.Iast.Aspects.SecurityControlsAspect");
+    }
+
+    //------------------------------
+
+    SecurityControlAspect::SecurityControlAspect(DataflowAspectClass* aspectClass, const UINT32 securityMarks,
+                                                 SecurityControlType type, 
+                                                 const WSTRING& targetAssembly, const WSTRING& targetType,
+                                                 const WSTRING& targetMethod, const WSTRING& targetParams,
+                                                 const std::vector<int>& params) :
+        DataflowAspect(aspectClass)
+    {
+        this->_securityMarks = securityMarks;
+
+        this->_aspectMethodName = WStr("MarkAsSecure");
+        this->_aspectMethodParams = WStr("(System.Object,System.Int32)");
+
+        if (type == SecurityControlType::InputValidator)
+        {
+            this->_behavior = AspectBehavior::InsertBefore;
+        }
+        else if (type == SecurityControlType::Sanitizer)
+        {
+            this->_behavior = AspectBehavior::InsertAfter;
+        }
+
+        this->_targetMethodAssemblies = Split(targetAssembly, WStr(","));
+        this->_targetMethodType = targetType;
+        this->_targetMethodName = targetMethod;
+        this->_targetMethodParams = targetParams;
+        // this->_paramShift = params; // TODO : invert
+        
+        if (this->_paramShift.size() == 0)
+        {
+            this->_paramShift.push_back(0);
+        }
+
+        for (int x = 0; x < this->_paramShift.size(); x++)
+        {
+            this->_boxParam.push_back(false);
+        }
+
+        this->_isValid = true;
+    }
+
+    void SecurityControlAspect::AfterApply(ILRewriter* processor, ILInstr* aspectInstruction)
+    {
+        auto newInstruction = processor->NewILInstr(CEE_LDC_I4, _securityMarks, true);
+        processor->InsertBefore(aspectInstruction, newInstruction);
     }
 
     //------------------------------
@@ -399,7 +472,7 @@ namespace iast
         if (_aspectMemberRef == 0)
         {
             // Import aspect
-            _aspectMemberRef = _module->DefineMemberRef(_aspect->_aspectClass->_aspectsAssembly,
+            _aspectMemberRef = _module->DefineMemberRef(Constants::AspectsAssemblyName,
                                                         _aspect->_aspectClass->_aspectTypeName,
                                                         _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
         }
@@ -615,9 +688,13 @@ namespace iast
                     instructionToProcess.instruction->m_opcode = CEE_CALL;
                     instructionToProcess.instruction->m_Arg32 = memberRef;
                 }
+
+                _aspect->AfterApply(processor, aspectInstruction);
             }
         }
 
         return process;
     }
+
+//------------------------------------
 }

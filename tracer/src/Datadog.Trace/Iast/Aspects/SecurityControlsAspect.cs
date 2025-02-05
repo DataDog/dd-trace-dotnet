@@ -15,7 +15,7 @@ using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
 using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
 
-namespace Datadog.Trace.Iast.Aspects.System;
+namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> SecurityControlsAspect </summary>
 [global::System.ComponentModel.Browsable(false)]
@@ -28,7 +28,7 @@ public class SecurityControlsAspect
     /// <param name="target"> string base instance </param>
     /// <param name="mark"> secure mark to add to the object, if tainted </param>
     /// <returns> String.Trim() </returns>
-    public static object? MarkAsSecure(object? target, byte mark)
+    public static object? MarkAsSecure(object? target, uint mark)
     {
         try
         {

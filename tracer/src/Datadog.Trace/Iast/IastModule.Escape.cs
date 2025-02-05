@@ -48,7 +48,7 @@ internal static partial class IastModule
             }
 
             var tracer = Tracer.Instance;
-            if (integrations != null && !integrations.Any((i) => tracer.Settings.IsIntegrationEnabled(i)))
+            if (integrations is { Length: > 0 } && !integrations.Any((i) => tracer.Settings.IsIntegrationEnabled(i)))
             {
                 return encodedObj;
             }
@@ -69,20 +69,34 @@ internal static partial class IastModule
             }
 
             // Special case. The encoded string is already tainted. We must check instance is not the same as the original text
-            if (ensureDifferentInstance && text is not null && encoded is not null && object.ReferenceEquals(text, encoded))
+            if (text is not null && encoded is not null)
             {
-                // return a new instance of the encoded string and taint it whole
+                if (ensureDifferentInstance && object.ReferenceEquals(text, encoded))
+                {
+                    // return a new instance of the encoded string with the secure marks
 #if NETCOREAPP3_0_OR_GREATER
-                var newEncoded = new string(encoded.AsSpan());
+                    var newEncoded = new string(encoded.AsSpan());
 #else
-                var newEncoded = new string(encoded.ToCharArray());
+                    var newEncoded = new string(encoded.ToCharArray());
 #endif
-                iastContext.GetTaintedObjects().Taint(newEncoded, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
-                return newEncoded;
-            }
+                    iastContext.GetTaintedObjects().Taint(newEncoded, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
+                    return newEncoded;
+                }
 
-            // Taint the escaped string with the new secure marks
-            iastContext.GetTaintedObjects().Taint(encodedObj, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
+                if (text.Length == encoded.Length)
+                {
+                    iastContext.GetTaintedObjects().Taint(encoded, Ranges.CopyWithMark(tainted.Ranges, secureMarks));
+                }
+                else
+                {
+                    iastContext.GetTaintedObjects().Taint(encoded, [new Range(0, encoded.Length, tainted.Ranges[0].Source, tainted.Ranges[0].SecureMarks | secureMarks)]);
+                }
+            }
+            else
+            {
+                // Taint the whole escaped string with the new secure marks
+                iastContext.GetTaintedObjects().Taint(encodedObj, [new Range(tainted.Ranges[0].Source, tainted.Ranges[0].SecureMarks | secureMarks)]);
+            }
         }
         catch (Exception ex)
         {

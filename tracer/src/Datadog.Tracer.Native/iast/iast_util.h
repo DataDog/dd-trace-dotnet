@@ -285,8 +285,10 @@ namespace iast
 #define CSLEAVE(x) __csGuard_##x.Leave();
 
     /////////////////////// Enum Utils /////////////////////////////
+#ifndef BEGIN_ENUM_PARSE
 #define BEGIN_ENUM_PARSE(enumName) std::unordered_map<enumName, std::string> enumName##_Values = {
 #define ENUM_VALUE(enumName, enumValue) {enumName::enumValue, STR(enumValue)},
+#define ENUM_VALUE_TEXT(enumName, enumValue, enumValueText) {enumName::enumValue, STR(enumValueText)},
 #define END_ENUM_PARSE(enumName)                                                                                       \
     };                                                                                                                 \
     enumName Parse##enumName(const std::string& txt)                                                                   \
@@ -307,3 +309,4 @@ namespace iast
         return "";                                                                                                     \
     }
 }
+#endif

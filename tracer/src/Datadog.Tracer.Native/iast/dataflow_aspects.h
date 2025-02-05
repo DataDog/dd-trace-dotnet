@@ -33,30 +33,11 @@ namespace iast
         StringLiteral_1,    //Filter if param1 is String Literal
     };
 
-    class DataflowAspectClass
+    enum class SecurityControlType
     {
-    public:
-        DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line, const UINT32 enabledCategories);
-
-    protected:
-        WSTRING _line = EmptyWStr;
-        bool _isValid = false;
-        mdTypeDef _aspectTypeDef = 0;
-    public:
-        Dataflow* _dataflow;
-        WSTRING _aspectsAssembly;
-
-        std::vector<WSTRING> _assemblies;
-        WSTRING _aspectTypeName;
-        AspectType _aspectType = AspectType::None;// "PROPAGATION"_W;
-        std::vector<VulnerabilityType> _vulnerabilityTypes;
-        std::vector<DataflowAspect> _aspects;
-        std::vector<DataflowAspectFilterValue> _filters;
-
-        bool IsValid();
-        bool IsTargetModule(ModuleInfo* module);
-
-        WSTRING ToString();
+        Unknown,
+        InputValidator,
+        Sanitizer
     };
 
     enum class AspectBehavior
@@ -69,13 +50,37 @@ namespace iast
     };
     bool IsReplace(AspectBehavior behavior);
 
+    class DataflowAspectClass
+    {
+    public:
+        DataflowAspectClass(Dataflow* dataflow, const WSTRING& line, const UINT32 enabledCategories);
+
+    protected:
+        DataflowAspectClass(Dataflow* dataflow);
+
+        bool _isValid = false;
+        mdTypeDef _aspectTypeDef = 0;
+    public:
+        Dataflow* _dataflow;
+
+        std::vector<WSTRING> _assemblies;
+        WSTRING _aspectTypeName;
+        AspectType _aspectType = AspectType::None;// "PROPAGATION"_W;
+        std::vector<VulnerabilityType> _vulnerabilityTypes;
+        std::vector<DataflowAspectFilterValue> _filters;
+
+        bool IsValid();
+        bool IsTargetModule(ModuleInfo* module);
+    };
+
     class DataflowAspect
     {
     public:
         DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line, const UINT32 enabledCategories);
 
     protected:
-        WSTRING _line = EmptyWStr;
+        DataflowAspect(DataflowAspectClass* aspectClass);
+
         bool _isValid = false;
         bool _isVirtual = false;
         bool _isGeneric = false;
@@ -94,7 +99,6 @@ namespace iast
 
         //Target method data (base virtual)
         WSTRING _targetMethodType = EmptyWStr;
-        WSTRING _targetMethod = EmptyWStr;
         WSTRING _targetMethodName = EmptyWStr;
         WSTRING _targetMethodParams = EmptyWStr;
 
@@ -116,7 +120,7 @@ namespace iast
         std::vector<VulnerabilityType> GetVulnerabilityTypes();
         DataflowAspectReference* GetAspectReference(ModuleAspects* moduleAspects);
 
-        WSTRING ToString();
+        virtual void AfterApply(ILRewriter* processor, ILInstr* aspectInstruction);
     };
 
     class DataflowAspectReference
@@ -152,4 +156,28 @@ namespace iast
         bool Apply(DataflowContext& context);
         bool ApplyFilters(DataflowContext& context);
     };
+
+    class SecurityControlAspectClass : public DataflowAspectClass
+    {
+    public:
+        SecurityControlAspectClass(Dataflow* dataflow);
+        SecurityControlType _securityControlType = SecurityControlType::Unknown;
+    };
+
+    class SecurityControlAspect : public DataflowAspect
+    {
+    private:
+        UINT32 _securityMarks;
+
+    public:
+        SecurityControlAspect(DataflowAspectClass* aspectClass, const UINT32 securityMarks, 
+                              SecurityControlType type,
+                              const WSTRING& targetAssembly, const WSTRING& targetType, 
+                              const WSTRING& targetMethod, const WSTRING& targetParams,
+                              const std::vector<int>& params);
+
+        void AfterApply(ILRewriter* processor, ILInstr* aspectInstruction) override;
+    };
+
+    SecurityControlType ParseSecurityControlType(const WSTRING& type);
 }

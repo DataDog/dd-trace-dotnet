@@ -484,7 +484,15 @@ static thread_local std::unordered_map<void *, bool> locked;
             }
             else
             {
-                type = Trim(subject.substr(typeIndex));
+                if (paramsIndex != std::string::npos)
+                {
+                    method = Trim(subject.substr(0, paramsIndex));
+                    params = Trim(subject.substr(paramsIndex));
+                }
+                else
+                {
+                    type = Trim(subject.substr(typeIndex));
+                }
             }
 
             if (assembliesW)
