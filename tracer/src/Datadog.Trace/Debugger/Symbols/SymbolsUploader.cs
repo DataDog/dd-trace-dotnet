@@ -77,6 +77,12 @@ namespace Datadog.Trace.Debugger.Symbols
             _subscription = new Subscription(Callback, RcmProducts.LiveDebuggingSymbolDb);
             _subscriptionManager = remoteConfigurationManager;
             _subscriptionManager.SubscribeToChanges(_subscription);
+            LifetimeManager.Instance.AddShutdownTask(Shutdown);
+        }
+
+        private void Shutdown(Exception? obj)
+        {
+            Dispose();
         }
 
         private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)

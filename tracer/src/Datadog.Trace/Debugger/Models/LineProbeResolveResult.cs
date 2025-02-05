@@ -5,16 +5,5 @@
 
 namespace Datadog.Trace.Debugger.Models
 {
-    internal record LineProbeResolveResult
-    {
-        public LineProbeResolveResult(LiveProbeResolveStatus status, string message = null)
-        {
-            Status = status;
-            Message = message;
-        }
-
-        public LiveProbeResolveStatus Status { get; }
-
-        public string Message { get; }
-    }
+    internal record LineProbeResolveResult(LiveProbeResolveStatus Status, string Message = null);
 }

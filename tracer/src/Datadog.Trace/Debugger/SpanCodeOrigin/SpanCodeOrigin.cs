@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using Datadog.Trace.Debugger.Caching;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -228,7 +229,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < _settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -295,10 +296,5 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
             }
         }
-    }
-
-    internal interface IDynamicDebuggerConfiguration
-    {
-        void UpdateConfiguration(DebuggerSettings settings);
     }
 }

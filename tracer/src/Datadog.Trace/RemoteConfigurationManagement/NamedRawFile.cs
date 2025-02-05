@@ -10,17 +10,11 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal readonly struct NamedRawFile
+    internal readonly struct NamedRawFile(RemoteConfigurationPath path, byte[] value)
     {
-        public NamedRawFile(RemoteConfigurationPath path, byte[] value)
-        {
-            Path = path;
-            RawFile = value;
-        }
+        public RemoteConfigurationPath Path { get; } = path;
 
-        public RemoteConfigurationPath Path { get; }
-
-        public byte[] RawFile { get; }
+        public byte[] RawFile { get; } = value;
 
         public NamedTypedFile<T?> Deserialize<T>()
         {
