@@ -15,11 +15,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
         public bool? ExceptionReplayEnabled { get; init; }
 
-        public bool? SpanOriginEntryEnabled { get; init; }
-
-        public bool? SpanOriginExitEnabled { get; init; }
-
-        public bool? TriggerProbeEnabled { get; init; }
+        public bool? CodeOriginEnabled { get; init; }
 
         public bool Equals(ImmutableDynamicDebuggerSettings? other)
         {
@@ -36,9 +32,7 @@ namespace Datadog.Trace.Debugger.Configurations
             return
                 DynamicInstrumentationEnabled == DynamicInstrumentationEnabled
              && ExceptionReplayEnabled == ExceptionReplayEnabled
-             && SpanOriginEntryEnabled == SpanOriginEntryEnabled
-             && SpanOriginExitEnabled == SpanOriginExitEnabled
-             && TriggerProbeEnabled == TriggerProbeEnabled;
+             && CodeOriginEnabled == this.CodeOriginEnabled;
         }
 
         public override bool Equals(object? obj)
@@ -66,9 +60,7 @@ namespace Datadog.Trace.Debugger.Configurations
             return HashCode.Combine(
                 DynamicInstrumentationEnabled,
                 ExceptionReplayEnabled,
-                SpanOriginEntryEnabled,
-                SpanOriginExitEnabled,
-                TriggerProbeEnabled);
+                CodeOriginEnabled);
         }
     }
 }
