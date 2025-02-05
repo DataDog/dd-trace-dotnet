@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup>
+    <LibDatadogUrl>https://github.com/DataDog/libdatadog/releases/download/v16.0.0/libdatadog-x64-windows.zip</LibDatadogUrl>
+    <TempPath>$(MSBuildThisFileDirectory)\temp</TempPath>
+  </PropertyGroup>
+
+  <Target Name="DownloadAndExtractLibdatadog" BeforeTargets="Build">
+    <!-- Create necessary directories -->
+    <MakeDir Directories="$(ExtractPath)" Condition="!Exists('$(ExtractPath)')" />
+
+    <!-- Download the ZIP file -->
+    <DownloadFile
+      SourceUrl="$(LibDatadogUrl)"
+      DestinationFolder="$(TempPath)"
+      SkipUnchangedFiles="true" />
+
+    <!-- Extract the ZIP file -->
+    <Unzip SourceFiles="$(TempPath)\libdatadog-x64-windows.zip" DestinationFolder="$(TempPath)" />
+
+    <!-- Copy extracted files to runtimes directory -->
+    <Copy SourceFiles="$(TempPath)\libdatadog-x64-windows\release\dynamic\datadog_profiling_ffi.dll" DestinationFolder="$(OutputPath)" />
+  </Target>
+</Project>
