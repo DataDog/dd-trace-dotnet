@@ -8,10 +8,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
-using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -37,11 +37,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public static bool Enabled => Settings.Enabled && !_isDisabled;
 
-        public static void Initialize()
+        public static bool Initialize()
         {
+            if (!Enabled)
+            {
+                return false;
+            }
+
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
-                return;
+                return true;
             }
 
             Log.Information("Initializing Exception Debugging");
@@ -50,15 +55,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
                 _isDisabled = true;
-            }
-            else
-            {
-                InitSnapshotsSink();
-                ExceptionTrackManager.Initialize();
-                LifetimeManager.Instance.AddShutdownTask(Dispose);
+                return false;
             }
 
-            return;
+            InitSnapshotsSink();
+            ExceptionTrackManager.Initialize();
+            LifetimeManager.Instance.AddShutdownTask(Dispose);
+            return true;
         }
 
         private static void InitSnapshotsSink()
