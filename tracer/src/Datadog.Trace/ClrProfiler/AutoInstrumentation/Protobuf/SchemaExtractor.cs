@@ -110,7 +110,7 @@ internal class SchemaExtractor
         public static Schema ExtractSchemas(MessageDescriptorProxy descriptor)
         {
             var components = new OpenApiComponents();
-            var hash = new Extractor(components.Schemas).ExtractSchema(descriptor); // fill the component's schemas
+            var hash = new Extractor(components.Schemas).FillSchemasWith(descriptor); // fill the component's schemas
             var doc = new OpenApiDocument { Components = components };
             return new Schema(doc, hash);
         }
@@ -138,7 +138,7 @@ internal class SchemaExtractor
         ///  - changing a field number
         ///  - changing the hierarchy of sub-messages
         /// </summary>
-        private ulong ExtractSchema(MessageDescriptorProxy descriptor, int depth = 0)
+        private ulong FillSchemasWith(MessageDescriptorProxy descriptor, int depth = 0)
         {
             if (depth > MaxExtractionDepth)
             {
@@ -225,7 +225,7 @@ internal class SchemaExtractor
                         description = "Group type";
                         break;
                     case 10: // message
-                        ExtractSchema(field.MessageType, depth + 1); // Recursively add nested schemas (conditions apply)
+                        FillSchemasWith(field.MessageType, depth + 1); // Recursively add nested schemas (conditions apply)
                         reference = new OpenApiReference { Id = field.MessageType.Name, Type = ReferenceType.Schema };
                         _computedHash = FnvHash64.GenerateHash(reference.Id, FnvHash64.Version.V1A, _computedHash);
                         break;
