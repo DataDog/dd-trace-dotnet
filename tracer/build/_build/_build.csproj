@@ -42,7 +42,7 @@
     <!-- Explicitly override the version of octokit used by Nuke -->
     <PackageReference Include="Octokit" Version="10.0.0" />
     <PackageReference Include="Perfolizer" Version="0.2.1" />
-    <PackageReference Include="Sep" Version="0.5.2" />
+    <PackageReference Include="Sep" Version="0.9.0" />
     <PackageReference Include="ByteSize" Version="2.1.0" />
     <!-- Enable binary serialization for .NET 9 -->
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" Condition="$(USE_NATIVE_SDK_VERSION) != 'true'" />
