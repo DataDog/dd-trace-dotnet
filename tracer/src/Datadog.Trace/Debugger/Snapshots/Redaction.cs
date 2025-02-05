@@ -28,7 +28,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         Type
     }
 
-    internal class Redaction : IDynamicDebuggerConfiguration
+    internal class Redaction
     {
         private const int MaxStackAlloc = 512;
 
@@ -413,7 +413,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
         }
-
         /// <summary>
         /// For unit tests only!
         /// </summary>
@@ -422,15 +421,5 @@ namespace Datadog.Trace.Debugger.Snapshots
            System.Threading.Interlocked.Exchange(ref _instnace, new());
         }
 		
-		public static void UpdateConfiguration(DebuggerSettings settings)
-        {
-            // ReSharper disable once RedundantJumpStatement Currently does not support dynamic config
-            return;
-        }
-
-        void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
-        {
-            UpdateConfiguration(settings);
-        }
     }
 }
