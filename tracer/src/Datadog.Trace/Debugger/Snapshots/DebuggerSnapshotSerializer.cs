@@ -19,20 +19,15 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal partial class DebuggerSnapshotSerializer : IDynamicDebuggerConfiguration
+    internal partial class DebuggerSnapshotSerializer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
 
         private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
 
-        internal static void UpdateConfiguration(DebuggerSettings debuggerSettings)
+        internal static void SetConfig(DebuggerSettings debuggerSettings)
         {
             _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
-        }
-
-        void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
-        {
-            UpdateConfiguration(settings);
         }
 
         /// <summary>
