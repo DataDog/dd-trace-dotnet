@@ -453,8 +453,9 @@ partial class Build : NukeBuild
                 // msi smoke tests
                 GenerateWindowsMsiSmokeTestsMatrix();
 
-                // tracer home smoke tests
+                // tracer home / fleet installer smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
+                GenerateWindowsFleetInstalerSmokeTestsMatrix();
 
                 // macos smoke tests
                 GenerateMacosDotnetToolNugetSmokeTestsMatrix();
@@ -1246,6 +1247,35 @@ partial class Build : NukeBuild
                     Logger.Information($"Installer smoke tests tracer-home matrix Windows");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("tracer_home_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateWindowsFleetInstalerSmokeTestsMatrix()
+                {
+                    var dockerName = "mcr.microsoft.com/windows/servercore/iis";
+
+                    var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
+                    var runtimeImages = new SmokeTestImage[]
+                    {
+                        new (publishFramework: TargetFramework.NET9_0, "windowsservercore-ltsc2022"),
+                    };
+
+                    var matrix = (
+                                     from platform in platforms
+                                     from image in runtimeImages
+                                     let dockerTag = $"{platform}_{image.RuntimeTag.Replace('.', '_')}"
+                                     select new
+                                     {
+                                         dockerTag = dockerTag,
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
+                                         targetPlatform = platform,
+                                         channel = GetInstallerChannel(image.PublishFramework),
+                                         vmImage = $"windows-{image.RuntimeTag.Substring(image.RuntimeTag.Length - 4)}",
+                                     }).ToDictionary(x=>x.dockerTag, x => x);
+
+                    Logger.Information($"Installer smoke tests fleet-installer matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("fleet_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void GenerateWindowsNuGetSmokeTestsMatrix()
