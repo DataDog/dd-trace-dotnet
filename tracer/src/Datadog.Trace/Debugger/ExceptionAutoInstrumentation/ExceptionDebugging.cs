@@ -8,7 +8,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
@@ -18,7 +17,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionDebugging : IDynamicDebuggerConfiguration
+    internal class ExceptionDebugging : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
         internal static readonly ExceptionDebugging Instance = new();
@@ -60,7 +59,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             InitSnapshotsSink();
             ExceptionTrackManager.Initialize();
-            LifetimeManager.Instance.AddShutdownTask(Dispose);
+            LifetimeManager.Instance.AddShutdownTask(Shutdown);
             return true;
         }
 
@@ -143,34 +142,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _snapshotSink.Add(probeId, snapshot);
         }
 
-        public static void Dispose(Exception? ex)
+        public static void Shutdown(Exception? ex)
         {
             ExceptionTrackManager.Dispose();
             _uploader?.Dispose();
             _firstInitialization = 1;
         }
 
-        public static void UpdateConfiguration(DebuggerSettings settings)
+        public void Dispose()
         {
-            var originalIsDisabled = _isDisabled;
-            if (settings.DynamicSettings.ExceptionReplayEnabled.HasValue)
-            {
-                _isDisabled = !settings.DynamicSettings.ExceptionReplayEnabled.HasValue;
-            }
-
-            if (!_isDisabled)
-            {
-                Initialize();
-            }
-            else if (!originalIsDisabled && _isDisabled)
-            {
-                Dispose(null);
-            }
-        }
-
-        void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
-        {
-            UpdateConfiguration(settings);
+            Shutdown(null);
         }
     }
 }

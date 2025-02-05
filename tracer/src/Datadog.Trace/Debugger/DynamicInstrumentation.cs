@@ -29,7 +29,7 @@ using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DynamicInstrumentation : IDynamicDebuggerConfiguration
+    internal class DynamicInstrumentation : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
         private static readonly object GlobalLock = new();
@@ -525,22 +525,9 @@ namespace Datadog.Trace.Debugger
         private void DiscoveryCallback(AgentConfiguration x)
             => _isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
 
-        public void UpdateConfiguration(DebuggerSettings settings)
+        public void Dispose()
         {
-            var originalIsInitialized = IsInitialized;
-            if (settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue)
-            {
-                IsInitialized = settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue;
-            }
-
-            if (!originalIsInitialized && IsInitialized)
-            {
-                _ = Task.Run(async () => { await DebuggerManager.Instance.InitializeDynamicInstrumentation().ConfigureAwait(false); });
-            }
-            else if (originalIsInitialized && !IsInitialized)
-            {
-                ShutdownTask(null);
-            }
+            ShutdownTask(null);
         }
     }
 }
