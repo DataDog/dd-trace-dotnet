@@ -51,13 +51,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 8;
+                var expectedCount = 32;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 4;
+                var expectedCount = 16;
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
+                spans.Count().Should().Be(expectedCount);
                 var s3Spans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
                 s3Spans.Should().NotBeEmpty();
