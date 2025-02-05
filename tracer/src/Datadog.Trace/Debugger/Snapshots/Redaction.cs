@@ -424,7 +424,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 		
 		public static void UpdateConfiguration(DebuggerSettings settings)
         {
-		}
+        }
 
         void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
         {
