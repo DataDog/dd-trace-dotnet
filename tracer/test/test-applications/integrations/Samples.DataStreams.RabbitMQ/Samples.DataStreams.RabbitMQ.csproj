@@ -10,7 +10,6 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-    <TargetFrameworks>net8.0</TargetFrameworks>
   </PropertyGroup>
   
   <ItemGroup>
