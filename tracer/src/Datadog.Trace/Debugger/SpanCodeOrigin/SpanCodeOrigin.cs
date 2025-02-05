@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
@@ -20,7 +21,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
-        internal static readonly SpanCodeOrigin Instance = new(DebuggerSettings.FromDefaultSource());
+        private readonly DebuggerSettings _settings = settings;
+
         private bool _isEnabled;
 
         public void UpdateConfiguration(DebuggerSettings newSettings)
@@ -43,7 +45,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private void AddExitSpanTag(Span span)
         {
-            var frames = ArrayPool<FrameInfo>.Shared.Rent(settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(_settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -114,7 +116,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < _settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -124,7 +126,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, settings.ThirdPartyDetectionExcludes, settings.ThirdPartyDetectionIncludes))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.ThirdPartyDetectionExcludes, _settings.ThirdPartyDetectionIncludes))
                 {
                     // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
@@ -137,10 +139,5 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         }
 
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
-    }
-
-    internal interface IDynamicDebuggerConfiguration
-    {
-        void UpdateConfiguration(DebuggerSettings settings);
     }
 }
