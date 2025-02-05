@@ -5,9 +5,9 @@
 
 using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
@@ -25,11 +25,11 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
 
-        private VendoredMicrosoftCode.System.Collections.Immutable.ImmutableList<IDynamicDebuggerConfiguration> _products = [];
-
         internal static readonly DebuggerManager Instance = new(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource());
 
-        internal DebuggerSettings DebuggerSettings { get; } = debuggerSettings;
+        private int _isDiInitialized;
+
+        internal DebuggerSettings DebuggerSettings { get; private set; } = debuggerSettings;
 
         internal ExceptionReplaySettings ExceptionReplaySettings { get; } = exceptionReplaySettings;
 
@@ -39,30 +39,34 @@ namespace Datadog.Trace.Debugger
 
         internal IDebuggerUploader? SymbolsUploader { get; private set; }
 
-        internal ExceptionDebugging? ExceptionReplay => ExceptionDebugging.Instance;
+        internal ExceptionDebugging? ExceptionReplay { get; private set; }
 
         internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
 
         internal async Task InitializeInstrumentationBasedProducts()
         {
+            SetGeneralConfig(DebuggerSettings);
             await InitializeSymbolUploader().ConfigureAwait(false);
-            InitializeSpanOrigin();
-            DebuggerSnapshotSerializer.UpdateConfiguration(Instance.DebuggerSettings);
-            Redaction.UpdateConfiguration(Instance.DebuggerSettings);
+            InitializeCodeOrigin();
             InitializeExceptionReplay();
             await InitializeDynamicInstrumentation().ConfigureAwait(false);
         }
 
-        private void InitializeSpanOrigin()
+        private void SetGeneralConfig(DebuggerSettings settings)
         {
-            if (!(DebuggerSettings.DynamicSettings.SpanOriginEntryEnabled ?? !DebuggerSettings.CodeOriginForSpansEnabled))
+            DebuggerSnapshotSerializer.SetConfig(settings);
+            Redaction.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+        }
+
+        private void InitializeCodeOrigin()
+        {
+            if (!(DebuggerSettings.DynamicSettings.CodeOriginEnabled ?? !DebuggerSettings.CodeOriginForSpansEnabled))
             {
                 Log.Information("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
                 return;
             }
 
-            CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(Instance.DebuggerSettings);
-            _products.Add(CodeOrigin);
+            CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
         }
 
         private async Task InitializeSymbolUploader()
@@ -85,7 +89,7 @@ namespace Datadog.Trace.Debugger
             {
                 if (ExceptionDebugging.Initialize())
                 {
-                    _products.Add(ExceptionDebugging.Instance);
+                    ExceptionReplay = ExceptionDebugging.Instance;
                 }
                 else
                 {
@@ -98,11 +102,16 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal async Task InitializeDynamicInstrumentation()
+        private async Task InitializeDynamicInstrumentation()
         {
             if (!(DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled ?? !DebuggerSettings.DynamicInstrumentationEnabled))
             {
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                return;
+            }
+
+            if (Interlocked.Exchange(ref _isDiInitialized, 1) != 0)
+            {
                 return;
             }
 
@@ -112,7 +121,6 @@ namespace Datadog.Trace.Debugger
 
             DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, tracerManager.Telemetry, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
             Log.Debug("dynamic Instrumentation has created.");
-            _products.Add(DynamicInstrumentation);
 
             try
             {
@@ -163,9 +171,45 @@ namespace Datadog.Trace.Debugger
 
         public void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
         {
-            foreach (var product in _products)
+            DebuggerSettings = newDebuggerSettings;
+
+            if (newDebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue)
             {
-                product.UpdateConfiguration(newDebuggerSettings);
+                if (newDebuggerSettings.DynamicSettings.CodeOriginEnabled.Value)
+                {
+                    InitializeCodeOrigin();
+                }
+                else
+                {
+                    CodeOrigin = null;
+                }
+            }
+
+            if (newDebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue)
+            {
+                if (newDebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value)
+                {
+                    InitializeExceptionReplay();
+                }
+                else
+                {
+                    ExceptionReplay?.Dispose();
+                    ExceptionReplay = null;
+                }
+            }
+
+            if (newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue)
+            {
+                if (newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value)
+                {
+                    _ = Task.Run(async () => { await InitializeDynamicInstrumentation().ConfigureAwait(false); });
+                }
+                else
+                {
+                    DynamicInstrumentation?.Dispose();
+                    Interlocked.Exchange(ref _isDiInitialized, 0);
+                    DynamicInstrumentation = null;
+                }
             }
         }
     }
