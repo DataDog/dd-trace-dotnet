@@ -424,6 +424,8 @@ namespace Datadog.Trace.Debugger.Snapshots
 		
 		public static void UpdateConfiguration(DebuggerSettings settings)
         {
+            // ReSharper disable once RedundantJumpStatement Currently does not support dynamic config
+            return;
         }
 
         void IDynamicDebuggerConfiguration.UpdateConfiguration(DebuggerSettings settings)
