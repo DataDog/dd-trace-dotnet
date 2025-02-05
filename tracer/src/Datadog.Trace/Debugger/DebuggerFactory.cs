@@ -28,14 +28,8 @@ internal class DebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerFactory));
 
-    public static DynamicInstrumentation Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    public static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        if (!debuggerSettings.DynamicInstrumentationEnabled)
-        {
-            Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-            return DynamicInstrumentation.Create(debuggerSettings, string.Empty, null, null, null, null, null, null, null, null, null);
-        }
-
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
 
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
