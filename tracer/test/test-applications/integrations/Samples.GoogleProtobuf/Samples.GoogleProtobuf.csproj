@@ -1,6 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.28.2</ApiVersion>
+    <ProtocPath Condition="'$(OS)' == 'Windows_NT' ">windows_x64\protoc.exe</ProtocPath>
+    <ProtocPath Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' ">linux_x64\protoc</ProtocPath>
+    <ProtocPath Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">macosx_x64\protoc</ProtocPath>
 
     <!-- 👇Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -9,6 +12,11 @@
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="$(ApiVersion)"/>
+    <PackageReference Include="Google.Protobuf.Tools" Version="$(ApiVersion)"/>
       <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
     </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="$(NugetPackageRoot)google.protobuf.tools\$(ApiVersion)\tools\$(ProtocPath) -I=$(NugetPackageRoot)google.protobuf.tools\$(ApiVersion)\tools -I=$(ProjectDir) --csharp_out=$(ProjectDir) $(ProjectDir)sample.proto"/>
+  </Target>
 </Project>
