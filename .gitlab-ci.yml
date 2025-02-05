@@ -35,7 +35,7 @@ build:
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
-        datadog/dd-trace-dotnet-docker-build:9-0-102 `
+        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PackageTracerHome ZipSymbols SignDlls SignMsi
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
