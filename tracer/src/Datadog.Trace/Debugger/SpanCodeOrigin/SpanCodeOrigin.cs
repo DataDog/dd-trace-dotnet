@@ -18,7 +18,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOrigin : IDynamicDebuggerConfiguration
+    internal class SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private readonly DebuggerSettings _settings;
         private readonly CodeOriginTags _tags;
 
-        internal SpanCodeOriginManager()
+        internal SpanCodeOrigin()
         {
             _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
             _tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
@@ -36,15 +36,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 		
 		public void UpdateConfiguration(DebuggerSettings newSettings)
         {
-            if (newSettings.DynamicSettings.SpanOriginExitEnabled.HasValue)
-            {
-                _isEnabled = newSettings.DynamicSettings.SpanOriginExitEnabled.Value;
-            }
+            _settings = newSettings;
         }
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null || !_isEnabled)
+            if (span == null)
             {
                 return;
             }
