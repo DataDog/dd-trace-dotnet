@@ -257,7 +257,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     baseSha = output.Output.Trim();
                     if (string.IsNullOrEmpty(branch))
                     {
-                        branch = $"detached-at-{baseSha}";
+                        branch = $"auto:git-detached-head";
                     }
                 }
             }

@@ -1275,7 +1275,7 @@ internal class IntelligentTestRunnerClient
         if (string.IsNullOrEmpty(res))
         {
             Log.Warning("ITR: empty branch indicates a detached head at commit {Commit}", _commitSha);
-            res = $"detached-at-{_commitSha}";
+            res = $"auto:git-detached-head";
         }
 
         return res;
