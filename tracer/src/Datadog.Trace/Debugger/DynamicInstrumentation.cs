@@ -156,7 +156,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        void ShutdownTask(Exception? ex)
+        private void ShutdownTask(Exception? ex)
         {
             _discoveryService.RemoveSubscription(DiscoveryCallback);
             _snapshotUploader.Dispose();
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Debugger
 
             if (!originalIsInitialized && IsInitialized)
             {
-                _ = Task.Run(async () => { await DebuggerManager.Instance.InitializeDynamicInstrumentation(); });
+                _ = Task.Run(async () => { await DebuggerManager.Instance.InitializeDynamicInstrumentation().ConfigureAwait(false); });
             }
             else if (originalIsInitialized && !IsInitialized)
             {
