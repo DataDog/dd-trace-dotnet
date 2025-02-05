@@ -155,16 +155,16 @@ namespace Datadog.Trace.Debugger
                 _diagnosticsUploader.StartFlushingAsync();
                 return _snapshotUploader.StartFlushingAsync();
             }
+        }
 
-            void ShutdownTask(Exception? ex)
-            {
-                _discoveryService.RemoveSubscription(DiscoveryCallback);
-                _snapshotUploader.Dispose();
-                _diagnosticsUploader.Dispose();
-                _probeStatusPoller.Dispose();
-                _subscriptionManager.Unsubscribe(_subscription);
-                _dogStats.Dispose();
-            }
+        void ShutdownTask(Exception? ex)
+        {
+            _discoveryService.RemoveSubscription(DiscoveryCallback);
+            _snapshotUploader.Dispose();
+            _diagnosticsUploader.Dispose();
+            _probeStatusPoller.Dispose();
+            _subscriptionManager.Unsubscribe(_subscription);
+            _dogStats.Dispose();
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
@@ -527,7 +527,20 @@ namespace Datadog.Trace.Debugger
 
         public void UpdateConfiguration(DebuggerSettings settings)
         {
-            throw new NotImplementedException();
+            var originalIsInitialized = IsInitialized;
+            if (settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue)
+            {
+                IsInitialized = settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue;
+            }
+
+            if (!originalIsInitialized && IsInitialized)
+            {
+                _ = Task.Run(async () => { await DebuggerManager.Instance.InitializeDynamicInstrumentation(); });
+            }
+            else if (originalIsInitialized && !IsInitialized)
+            {
+                ShutdownTask(null);
+            }
         }
     }
 }
