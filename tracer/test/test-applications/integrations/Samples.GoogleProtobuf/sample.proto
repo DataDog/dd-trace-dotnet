@@ -1,4 +1,4 @@
-// if modified, run `protoc --csharp_out=. sample.proto` in this folder
+// compile project to generate C# code, see PreBuild action in csproj.
 syntax = "proto3";
 package sample;
 

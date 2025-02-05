@@ -6,6 +6,11 @@ using static Sample.Person.Types;
 
 namespace Samples.GoogleProtobuf;
 
+/// <summary>
+/// If this is all red it's because you haven't compiled the project yet.
+/// The C# code for the protobuf object is generated as a pre-build event
+/// to ensure that it's consistent with the version of protobuf used (useful for testing older versions)
+/// </summary>
 internal class Program
 {
     private static void Main()
