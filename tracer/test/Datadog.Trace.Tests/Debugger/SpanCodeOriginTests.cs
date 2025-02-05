@@ -21,12 +21,13 @@ namespace Datadog.Trace.Tests.Debugger
     public class SpanCodeOriginTests
     {
         private const string CodeOriginTag = "_dd.code_origin";
+        private static readonly SpanCodeOrigin Instance = new SpanCodeOrigin(DebuggerSettings.FromDefaultSource());
 
         [Fact]
         public void SetCodeOrigin_WhenSpanIsNull_DoesNotThrow()
         {
             // Should not throw
-            SpanCodeOrigin.Instance.SetCodeOrigin(null);
+            Instance.SetCodeOrigin(null);
         }
 
         [Fact]
@@ -38,7 +39,7 @@ namespace Datadog.Trace.Tests.Debugger
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
             // Act
-            SpanCodeOrigin.Instance.SetCodeOrigin(span);
+            Instance.SetCodeOrigin(span);
 
             // Assert
             span.Tags.GetTag(CodeOriginTag + ".type").Should().BeNull();
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Tests.Debugger
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void TestMethod(Span span)
         {
-            SpanCodeOrigin.Instance.SetCodeOrigin(span);
+            Instance.SetCodeOrigin(span);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -116,7 +117,7 @@ namespace Datadog.Trace.Tests.Debugger
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void DeepTestMethod3(Span span)
         {
-            SpanCodeOrigin.Instance.SetCodeOrigin(span);
+            Instance.SetCodeOrigin(span);
         }
 
         internal class CodeOriginSettingsSetter : IDisposable
@@ -125,13 +126,13 @@ namespace Datadog.Trace.Tests.Debugger
 
             public void Dispose()
             {
-                var instance = SpanCodeOrigin.Instance;
+                var instance = Instance;
                 instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, _original);
             }
 
             internal void Set(bool isEnable, int numberOfFrames, string excludeFromFilter)
             {
-                var instance = SpanCodeOrigin.Instance;
+                var instance = Instance;
                 _original = (DebuggerSettings)instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instance);
 
                 var overrideSettings = DebuggerSettings.FromSource(

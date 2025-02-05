@@ -6,14 +6,13 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOrigin(DebuggerSettings settings) : IDynamicDebuggerConfiguration
+    internal class SpanCodeOrigin(DebuggerSettings settings)
     {
         private const string CodeOriginTag = "_dd.code_origin";
 
@@ -21,21 +20,16 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
-        private readonly DebuggerSettings _settings = settings;
-
-        private bool _isEnabled;
+        private DebuggerSettings _settings = settings;
 
         public void UpdateConfiguration(DebuggerSettings newSettings)
         {
-            if (newSettings.DynamicSettings.SpanOriginExitEnabled.HasValue)
-            {
-                _isEnabled = newSettings.DynamicSettings.SpanOriginExitEnabled.Value;
-            }
+            _settings = newSettings;
         }
 
         internal void SetCodeOrigin(Span? span)
         {
-            if (span == null || !_isEnabled)
+            if (span == null)
             {
                 return;
             }
