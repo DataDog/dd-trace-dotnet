@@ -11,6 +11,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 
 internal class RateLimiter
 {
+    private readonly object _syncRoot = new();
     private readonly TimeSpan _period = TimeSpan.FromSeconds(30);
     private int _count;
     private DateTime _lastSampleMs;
@@ -36,7 +37,7 @@ internal class RateLimiter
         var now = DateTime.UtcNow;
         if (now.Subtract(_lastSampleMs) > _period)
         {
-            lock (this)
+            lock (_syncRoot)
             {
                 if (now.Subtract(_lastSampleMs) > _period)
                 {

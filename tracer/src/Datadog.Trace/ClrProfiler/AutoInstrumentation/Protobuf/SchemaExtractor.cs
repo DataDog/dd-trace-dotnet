@@ -88,6 +88,8 @@ internal class SchemaExtractor
 
     private class Extractor
     {
+        // those two properties need to be consistent across tracers to ensure consistent hashes when proto messages cross language boundaries.
+        // take extra care if modifying them.
         private const int MaxExtractionDepth = 10;
         private const int MaxProperties = 1000;
 
