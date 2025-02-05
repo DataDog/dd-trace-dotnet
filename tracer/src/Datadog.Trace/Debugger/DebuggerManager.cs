@@ -98,7 +98,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private async Task InitializeDynamicInstrumentation()
+        internal async Task InitializeDynamicInstrumentation()
         {
             if (!(DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled ?? !DebuggerSettings.DynamicInstrumentationEnabled))
             {
@@ -163,7 +163,10 @@ namespace Datadog.Trace.Debugger
 
         public void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
         {
-            throw new NotImplementedException();
+            foreach (var product in _products)
+            {
+                product.UpdateConfiguration(newDebuggerSettings);
+            }
         }
     }
 }
