@@ -7,9 +7,9 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
