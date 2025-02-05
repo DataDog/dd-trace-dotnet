@@ -5,12 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
     /// HotChocolate.Execution.IOperationRequest interface for ducktyping
     /// </summary>
-    internal interface IOperationRequest
+    internal interface IOperationRequest : IDuckType
     {
         object? Document { get; }
 

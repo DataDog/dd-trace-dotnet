@@ -599,12 +599,9 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/HotChocol
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IError.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IExecutionResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IOperationContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IOperationContextV13.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/NameStringProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/OperationTypeProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/PreparedOperationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegrationV5AndV7.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/GraphQLCommon.cs
