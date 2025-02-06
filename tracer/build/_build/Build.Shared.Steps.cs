@@ -10,9 +10,6 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
-using System.Runtime.InteropServices;
-using Serilog;
-using static PrepareRelease.SetAllVersions;
 
 partial class Build
 {
@@ -140,73 +137,6 @@ partial class Build
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
-    
-    
-    Target PublishLibdatadog => _ => _
-                                    .Unlisted()
-                                    .DependsOn(PublishLibdatadogWindows)
-                                    .DependsOn(PublishLibdatadogLinux);
-
-    Target PublishLibdatadogWindows => _ => _
-                                           .Unlisted()
-                                           .OnlyWhenStatic(() => IsWin)
-                                           .After(CompileProfilerNativeSrc)
-                                           .Executes(() =>
-                                            {
-                                                const string fileName = "datadog_profiling_ffi";
-
-                                                var dllFile = $"{fileName}.dll";
-                                                var pdbFile = $"{fileName}.pdb";
-
-                                                foreach (var architecture in ArchitecturesForPlatformForProfiler)
-                                                {
-                                                    var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                                                    
-                                                    foreach (var sourceDir in new[] { ProfilerDeployDirectory / $"win-{architecture}" , NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture })
-                                                    {
-                                                        if (!File.Exists(dest / dllFile))
-                                                        {
-                                                            var sourceFile = sourceDir / dllFile;
-                                                            TryCopyFrom(sourceFile, dest);
-                                                        }
-
-                                                        if (!File.Exists(dest / pdbFile))
-                                                        {
-                                                            var sourceFile = sourceDir / pdbFile;
-                                                            TryCopyFrom(sourceFile, dest);
-                                                        }
-                                                    }
-                                                }
-
-                                                bool TryCopyFrom(string sourceFile, AbsolutePath dest)
-                                                {
-                                                    if (File.Exists(sourceFile))
-                                                    {
-                                                        CopyFileToDirectory(sourceFile, dest, FileExistsPolicy.Overwrite);
-                                                        return true;
-                                                    }
-                                                    return false;
-                                                }
-                                            });
-
-    Target PublishLibdatadogLinux => _ => _
-                                         .Unlisted()
-                                         .OnlyWhenStatic(() => IsLinux)
-                                         .After(CompileProfilerNativeSrc)
-                                         .Executes(() =>
-                                          {
-                                              var (arch, _) = GetUnixArchitectureAndExtension();
-                                              var sourceDir = ProfilerDeployDirectory / arch;
-                                              EnsureExistingDirectory(MonitoringHomeDirectory / arch);
-
-                                              var files = new[] { "libdatadog_profiling.so" };
-                                              foreach (var file in files)
-                                              {
-                                                  var source = sourceDir / file;
-                                                  var dest = MonitoringHomeDirectory / arch / file;
-                                                  CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                                              }
-                                          });
 
     Target CompileNativeLoaderOsx => _ => _
         .Unlisted()

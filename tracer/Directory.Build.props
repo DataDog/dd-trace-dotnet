@@ -51,14 +51,6 @@
     </Otherwise>
   </Choose>
 
-
-  <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
-    <!-- VCPKG setup -->
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
-    <VcpkgUseStatic>false</VcpkgUseStatic>
-    <VcpkgTriplet>$(Platform)-windows</VcpkgTriplet>
-  </PropertyGroup>
-
   <!-- Fix C5105 Warning (warning C5105: macro expansion producing 'defined' has undefined behavior) due to a bug in the Windows SDK 10.0.19041.0
        This can be removed when we upgrade the Windows SDK
   -->
