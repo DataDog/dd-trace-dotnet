@@ -1209,7 +1209,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 OrderDate = new DateTime(2021, 1, 1),
                 RequiredDate = new DateTime(2021, 1, 1),
                 ShipVia = 3,
-                Freight = 32.38M,
+                Freight = 32,
                 ShipName = "Vins et alcools Chevalier",
                 ShipAddress = name,
                 ShipCity = "Reims",

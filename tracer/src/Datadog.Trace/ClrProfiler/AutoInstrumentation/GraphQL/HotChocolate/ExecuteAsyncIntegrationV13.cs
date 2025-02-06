@@ -29,10 +29,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegrationV13
     {
-        internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, in CancellationToken token)
-            where TQueyRequest : IQueryRequest
+        internal static CallTargetState OnMethodBegin<TTarget, TQueryRequest>(TTarget instance, TQueryRequest request, in CancellationToken token)
+            where TQueryRequest : IQueryRequest
         {
-            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromQueryRequest(Tracer.Instance, request));
+            if (request.Instance is not null)
+            {
+                return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromQueryRequest(Tracer.Instance, request));
+            }
+
+            return CallTargetState.GetDefault();
         }
 
         internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception? exception, in CallTargetState state)

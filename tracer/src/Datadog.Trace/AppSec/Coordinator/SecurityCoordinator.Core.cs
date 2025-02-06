@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
@@ -36,7 +37,16 @@ internal readonly partial struct SecurityCoordinator
         var context = CoreHttpContextStore.Instance.Get();
         if (context is null)
         {
-            Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            if (!_nullContextReported)
+            {
+                Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+                _nullContextReported = true;
+            }
+            else
+            {
+                Log.Debug("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            }
+
             return null;
         }
 
@@ -61,7 +71,7 @@ internal readonly partial struct SecurityCoordinator
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
-    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
+    internal static Dictionary<string, object>? ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
 
     private static object GetHeaderAsArray(StringValues value) => value.Count == 1 ? value[0] : value;
 
@@ -127,11 +137,14 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestMethod, request.Method },
             { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
         };
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
-        AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
+        if (headersDic != null)
+        {
+            AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
+        }
 
         if (cookiesDic is not null)
         {
@@ -155,36 +168,59 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool IsBlocked
         {
-            get
-            {
-                if (Context.Items.TryGetValue(BlockingAction.BlockDefaultActionName, out var value))
-                {
-                    return value is true;
-                }
-
-                return false;
-            }
+            get => GetItems()?.TryGetValue(BlockingAction.BlockDefaultActionName, out var value) == true && value is true;
         }
 
-        internal override int StatusCode => Context.Response.StatusCode;
+        internal override int? StatusCode
+        {
+            get
+            {
+                if (IsAdditiveContextDisposed())
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return Context.Response.StatusCode;
+                }
+                catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
+                {
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
+                    }
+
+                    SetAdditiveContextDisposed(true);
+                    return null;
+                }
+            }
+        }
 
         internal override IDictionary<string, object>? RouteData => Context.GetRouteData()?.Values;
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get
-            {
-                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
-                {
-                    return value is bool boolValue && boolValue;
-                }
+            get => GetItems()?.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value) == true && value is true;
 
-                return false;
+            set
+            {
+                var items = GetItems();
+                if (items is not null)
+                {
+                    items[ReportedExternalWafsRequestHeadersStr] = value;
+                }
             }
-            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
-        internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
+        internal override void MarkBlocked()
+        {
+            var items = GetItems();
+            if (items is not null)
+            {
+                items[BlockingAction.BlockDefaultActionName] = true;
+            }
+        }
 
         internal override IContext? GetAdditiveContext() => IsAdditiveContextDisposed() ? null : GetContextFeatures()?.Get<IContext>();
 
@@ -195,9 +231,9 @@ internal readonly partial struct SecurityCoordinator
         internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
 
         // In some edge situations we can get an ObjectDisposedException when accessing the context features or other
-        // properties such as Context.Items or Context.Response.Headers that ultimatelly rely on features
-        // This means that the context has been uninitiallized and we should not try to access it anymore
-        // Unfortunatelly, there is no way to know that but catching the exception or using reflection
+        // properties such as Context.Items or Context.Response.Headers that ultimately rely on features
+        // This means that the context has been uninitialized, and we should not try to access it anymore
+        // Unfortunately, there is no way to know that but catching the exception or using reflection
         private IFeatureCollection? GetContextFeatures()
         {
             try
@@ -207,6 +243,27 @@ internal readonly partial struct SecurityCoordinator
             catch (ObjectDisposedException)
             {
                 Log.Debug("ObjectDisposedException while trying to access a Context.");
+                SetAdditiveContextDisposed(true);
+                return null;
+            }
+        }
+
+        private IDictionary<object, object>? GetItems()
+        {
+            if (IsAdditiveContextDisposed())
+            {
+                return null;
+            }
+
+            // In some situations the HttpContext could have already been Uninitialized,
+            // thus throwing an exception when trying to access the Items
+            try
+            {
+                return Context.Items;
+            }
+            catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
+            {
+                Log.Debug(e, "Exception while trying to access Items of a Context.");
                 SetAdditiveContextDisposed(true);
                 return null;
             }

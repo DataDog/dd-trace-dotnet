@@ -112,7 +112,7 @@ namespace Datadog.Trace.PlatformHelpers
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
-            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags);
+            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
 

@@ -107,6 +107,18 @@ namespace Datadog.Trace.Configuration
             public const string RedactedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS";
 
             /// <summary>
+            /// Configuration key for set of identifiers that are excluded from redaction decisions.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.RedactedExcludedIdentifiers"/>
+            public const string RedactionExcludedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS";
+
+            /// <summary>
+            /// Configuration key for set of identifiers that are excluded from redaction decisions.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.RedactedExcludedIdentifiers"/>
+            public const string RedactedExcludedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS";
+
+            /// <summary>
             /// Configuration key for set of types that are used in redaction decisions.
             /// </summary>
             /// <seealso cref="DebuggerSettings.RedactedTypes"/>

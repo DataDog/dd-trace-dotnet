@@ -18,33 +18,33 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.401.9 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.401.9" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.401.8 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.401.8" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.16 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.16" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.15 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.15" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.31 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.31" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.30 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.30" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.66 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.66" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.65 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.65" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.89 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.89" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.88 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.88" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.89 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.89" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.88 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.88" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
