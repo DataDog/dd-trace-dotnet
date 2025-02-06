@@ -66,12 +66,20 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 
     for (auto const& [label, value] : labels)
     {
-        ffiLabels.push_back({{label.data(), label.size()}, {value.data(), value.size()}});
+        auto labelz = ddog_prof_Label {
+            .key = {label.data(), label.size()},
+            .str = {value.data(), value.size()}
+        };
+        ffiLabels.push_back(std::move(labelz));
     }
 
     for (auto const& [label, value] : numericLabels)
     {
-        ffiLabels.push_back({{label.data(), label.size()}, {nullptr, 0}, value});
+        auto labelz = ddog_prof_Label {
+            .key = {label.data(), label.size()},
+            .num = value
+        };
+        ffiLabels.push_back(std::move(labelz));
     }
 
     ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
