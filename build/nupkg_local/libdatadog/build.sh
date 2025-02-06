@@ -13,26 +13,26 @@ urls=(
 )
 
 # Create the sources/runtime directory if it doesn't exist
-mkdir -p sources/runtimes
-Download release files
-for url in "${urls[@]}"; do
-    filename=$(basename "$url")
+# mkdir -p sources/runtimes
+# Download release files
+# for url in "${urls[@]}"; do
+#     filename=$(basename "$url")
 
-    echo "Downloading $url... at release/$filename"
-    curl -L -o "release/$filename" "$url"
-done
+#     echo "Downloading $url... at release/$filename"
+#     curl -L -o "release/$filename" "$url"
+# done
 
 # extract the files
-mkdir -p release/unzipped
-for file in release/*; do
-    if [[ $file == *.tar.gz ]]; then
-        echo "Extracting $file..."
-        tar -xzf "$file" -C release/unzipped
-    elif [[ $file == *.zip ]]; then
-        echo "Extracting $file..."
-        unzip -q "$file" -d release/unzipped
-    fi
-done
+# mkdir -p release/unzipped
+# for file in release/*; do
+#     if [[ $file == *.tar.gz ]]; then
+#         echo "Extracting $file..."
+#         tar -xzf "$file" -C release/unzipped
+#     elif [[ $file == *.zip ]]; then
+#         echo "Extracting $file..."
+#         unzip -q "$file" -d release/unzipped
+#     fi
+# done
 
 # copy required binaries to their rid format inside sources/runtimes
 # {os]-{distro}-{arch}
