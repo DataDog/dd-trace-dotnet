@@ -32,13 +32,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         {
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append(input);
-            if (sb[sb.Length - 1] != '}')
+            // Ensure the input is a JSON object
+            if (sb[0] != '{' || sb[sb.Length - 1] != '}')
             {
                 return;
             }
 
             sb.Remove(sb.Length - 1, 1); // Remove closing brace "}"
-            sb.AppendFormat(", \"{0}\": {{", StepFunctionsKey); // Add _datadog:" {
+            bool isEmpty = sb.Length == 1; // After removing the closing brace, check if it's an empty object
+            if (!isEmpty)
+            {
+                sb.Append(','); // Add a comma if it's not an empty object
+            }
+
+            sb.AppendFormat(" \"{0}\": {{", StepFunctionsKey); // Add _datadog:" {
             Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(sb.Length - 1, 1); // remove trailing comma
             sb.Append("}}"); // re-add both closing braces one for original JSON and one for context
