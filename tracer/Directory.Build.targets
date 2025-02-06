@@ -1,16 +1,15 @@
 <Project>
   <PropertyGroup>
-    <LibDatadogUrl>https://github.com/DataDog/libdatadog/releases/download/v16.0.0/libdatadog-x64-windows.zip</LibDatadogUrl>
-    <TempPath>$(MSBuildThisFileDirectory)\temp</TempPath>
+    <TempPath>$(IntermediateOutputPath)temp</TempPath>
   </PropertyGroup>
 
-  <Target Name="DownloadAndExtractLibdatadog" BeforeTargets="Build">
+  <Target Name="PrepareLibdatadog-win-x64" BeforeTargets="Build" Condition="$([MSBuild]::IsOSPlatform('Windows'))">
     <!-- Create necessary directories -->
     <MakeDir Directories="$(ExtractPath)" Condition="!Exists('$(ExtractPath)')" />
 
     <!-- Download the ZIP file -->
     <DownloadFile
-      SourceUrl="$(LibDatadogUrl)"
+      SourceUrl="https://github.com/DataDog/libdatadog/releases/download/v16.0.0/libdatadog-x64-windows.zip"
       DestinationFolder="$(TempPath)"
       SkipUnchangedFiles="true" />
 
@@ -19,5 +18,29 @@
 
     <!-- Copy extracted files to runtimes directory -->
     <Copy SourceFiles="$(TempPath)\libdatadog-x64-windows\release\dynamic\datadog_profiling_ffi.dll" DestinationFolder="$(OutputPath)" />
+
+    <!-- Clean up -->
+    <RemoveDir Directories="$(TempPath)" />
+  </Target>
+
+  <Target Name="PrepareLibdatadog-linux-x64" BeforeTargets="Build" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <!-- Create necessary directories -->
+    <MakeDir Directories="$(ExtractPath)" Condition="!Exists('$(ExtractPath)')" />
+
+    <!-- Download the TAR file -->
+    <DownloadFile
+      SourceUrl="https://github.com/DataDog/libdatadog/releases/download/v16.0.0/libdatadog-aarch64-unknown-linux-gnu.tar.gz"
+      DestinationFolder="$(TempPath)"
+      SkipUnchangedFiles="true" />
+
+    <!-- Extract the TAR file -->
+    <Exec Command="tar -xzf $(TempPath)/libdatadog-aarch64-unknown-linux-gnu.tar.gz -C $(TempPath)" />
+
+    <!-- Copy extracted files to runtimes directory -->
+    <!-- we are renaming here for consisteny -->
+    <Copy SourceFiles="$(TempPath)/libdatadog-aarch64-unknown-linux-gnu/lib/libdatadog_profiling.so" DestinationFiles="$(OutputPath)/datadog_profiling_ffi.so" />
+
+    <!-- Clean up -->
+    <RemoveDir Directories="$(TempPath)" />
   </Target>
 </Project>
