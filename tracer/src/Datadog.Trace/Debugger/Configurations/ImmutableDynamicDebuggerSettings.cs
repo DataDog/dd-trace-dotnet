@@ -17,6 +17,8 @@ namespace Datadog.Trace.Debugger.Configurations
 
         public bool? CodeOriginEnabled { get; init; }
 
+        public bool? DebuggerEnabled { get; init; }
+
         public bool Equals(ImmutableDynamicDebuggerSettings? other)
         {
             if (other is null)
@@ -32,7 +34,8 @@ namespace Datadog.Trace.Debugger.Configurations
             return
                 DynamicInstrumentationEnabled == DynamicInstrumentationEnabled
              && ExceptionReplayEnabled == ExceptionReplayEnabled
-             && CodeOriginEnabled == this.CodeOriginEnabled;
+             && CodeOriginEnabled == CodeOriginEnabled
+             && DebuggerEnabled == DebuggerEnabled;
         }
 
         public override bool Equals(object? obj)
@@ -60,7 +63,8 @@ namespace Datadog.Trace.Debugger.Configurations
             return HashCode.Combine(
                 DynamicInstrumentationEnabled,
                 ExceptionReplayEnabled,
-                CodeOriginEnabled);
+                CodeOriginEnabled,
+                DebuggerEnabled);
         }
     }
 }
