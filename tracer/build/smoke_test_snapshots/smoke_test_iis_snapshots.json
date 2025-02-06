@@ -1,0 +1,134 @@
+[
+  [
+    {
+      "trace_id": 4102954709290435042,
+      "span_id": 13101757532572621177,
+      "name": "aspnet_core.request",
+      "resource": "GET /",
+      "service": "AspNetCoreSmokeTest",
+      "type": "web",
+      "start": 1738860347590183400,
+      "duration": 118678500,
+      "meta": {
+        "component": "aspnet_core",
+        "span.kind": "server",
+        "http.useragent": "Mozilla/5.0 (Windows NT; Windows NT 10.0; en-US) WindowsPowerShell/5.1.20348.2849",
+        "http.method": "GET",
+        "http.request.headers.host": "localhost:5000",
+        "http.url": "http://localhost:5000/",
+        "http.status_code": "404",
+        "network.client.ip": "::1",
+        "http.client_ip": "::1",
+        "_dd.appsec.waf.version": "1.22.0",
+        "_dd.p.dm": "-5",
+        "_dd.p.tid": "67a4e73b00000000",
+        "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
+        "language": "dotnet",
+        "_dd.runtime_family": "dotnet",
+        "_dd.appsec.event_rules.version": "1.13.3"
+      },
+      "metrics": {
+        "_dd.tracer_kr": 0.0,
+        "_dd.appsec.event_rules.loaded": 159.0,
+        "_dd.appsec.event_rules.error_count": 0.0,
+        "process_id": 8928.0,
+        "_dd.appsec.enabled": 1.0,
+        "_sampling_priority_v1": 2.0,
+        "_dd.top_level": 1.0
+      }
+    }
+  ],
+  [
+    {
+      "trace_id": 2840641933888955318,
+      "span_id": 9321253310232366827,
+      "name": "http.request",
+      "resource": "GET localhost:5000/api/values",
+      "service": "AspNetCoreSmokeTest-http-client",
+      "type": "http",
+      "start": 1738860347626847600,
+      "duration": 294488300,
+      "meta": {
+        "span.kind": "client",
+        "component": "HttpMessageHandler",
+        "http.method": "GET",
+        "http.url": "http://localhost:5000/api/values",
+        "http-client-handler-type": "System.Net.Http.HttpClientHandler",
+        "http.status_code": "200",
+        "out.host": "localhost",
+        "_dd.p.dm": "-0",
+        "_dd.p.tid": "67a4e73b00000000",
+        "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
+        "language": "dotnet",
+        "_dd.base_service": "AspNetCoreSmokeTest"
+      },
+      "metrics": {
+        "_dd.tracer_kr": 0.0,
+        "process_id": 8928.0,
+        "_sampling_priority_v1": 1.0,
+        "_dd.top_level": 1.0
+      }
+    },
+    {
+      "trace_id": 2840641933888955318,
+      "span_id": 14144697471196665604,
+      "name": "aspnet_core_mvc.request",
+      "resource": "GET /api/values",
+      "service": "AspNetCoreSmokeTest",
+      "type": "web",
+      "start": 1738860347774826700,
+      "duration": 157426100,
+      "parent_id": 17774643208189235014,
+      "meta": {
+        "aspnet_core.controller": "values",
+        "aspnet_core.action": "get",
+        "component": "aspnet_core",
+        "aspnet_core.route": "api/values",
+        "span.kind": "server",
+        "_dd.p.dm": "-0",
+        "_dd.p.tid": "67a4e73b00000000",
+        "language": "dotnet"
+      },
+      "metrics": {}
+    },
+    {
+      "trace_id": 2840641933888955318,
+      "span_id": 17774643208189235014,
+      "name": "aspnet_core.request",
+      "resource": "GET /api/values",
+      "service": "AspNetCoreSmokeTest",
+      "type": "web",
+      "start": 1738860347655490300,
+      "duration": 281453300,
+      "parent_id": 9321253310232366827,
+      "meta": {
+        "aspnet_core.endpoint": "AspNetCoreSmokeTest.ValuesController.Get (AspNetCoreSmokeTest)",
+        "component": "aspnet_core",
+        "aspnet_core.route": "api/values",
+        "http.route": "api/values",
+        "span.kind": "server",
+        "http.method": "GET",
+        "http.request.headers.host": "localhost:5000",
+        "http.url": "http://localhost:5000/api/values",
+        "http.status_code": "200",
+        "network.client.ip": "::1",
+        "http.client_ip": "::1",
+        "_dd.appsec.s.req.params": "H4sIAAAAAAAACouuVkpMLsnMz1OyiraI1VFKzs8rKcrPyUktAgvUxgIAtnr++SEAAAA=",
+        "_dd.appsec.s.res.body": "H4sIAAAAAAAACou2iAUA8YntnQMAAAA=",
+        "_dd.appsec.s.req.headers": "H4sIAAAAAAAACouuVqrQTUksSUzJT9ctSCxKzSvRzUxRsoq2iNVRysgvLoEyEYpKihKTUxFqEBLFibkFOZl56boFRZn5RZkllVAVYA0QozENS0wvRlZWXJJYkgoWqI0FAJFO9EWbAAAA",
+        "_dd.appsec.s.res.headers": "H4sIAAAAAAAACouuVkrOzytJzSvRLaksSFWyiraIrY0FAE0e04cWAAAA",
+        "runtime-id": "05dff020-c9cc-4b50-9395-e1fe88603312",
+        "language": "dotnet",
+        "_dd.runtime_family": "dotnet",
+        "_dd.appsec.event_rules.version": "1.13.3"
+      },
+      "metrics": {
+        "_dd.tracer_kr": 0.0,
+        "process_id": 8928.0,
+        "_dd.appsec.enabled": 1.0,
+        "_sampling_priority_v1": 1.0,
+        "_dd.top_level": 1.0
+      }
+    }
+  ]
+]

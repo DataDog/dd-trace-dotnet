@@ -6726,7 +6726,7 @@ stages:
         - template: steps/run-snapshot-test.yml
           parameters:
             target: 'fleet-installer-smoke-tests.windows'
-            snapshotPrefix: "smoke_test"
+            snapshotPrefix: "smoke_test_iis"
             isLinux: false
             dockerComposePath: $(dockerComposePath)
 
