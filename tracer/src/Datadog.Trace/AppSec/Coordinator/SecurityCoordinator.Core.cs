@@ -14,6 +14,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
@@ -170,7 +171,31 @@ internal readonly partial struct SecurityCoordinator
             get => GetItems()?.TryGetValue(BlockingAction.BlockDefaultActionName, out var value) == true && value is true;
         }
 
-        internal override int StatusCode => Context.Response.StatusCode;
+        internal override int? StatusCode
+        {
+            get
+            {
+                if (IsAdditiveContextDisposed())
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return Context.Response.StatusCode;
+                }
+                catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
+                {
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
+                    }
+
+                    SetAdditiveContextDisposed(true);
+                    return null;
+                }
+            }
+        }
 
         internal override IDictionary<string, object>? RouteData => Context.GetRouteData()?.Values;
 
