@@ -326,6 +326,9 @@ BenchmarkDotNet.Artifacts/
 # NServiceBus files
 .learningtransport
 
+# protobuf file generate on compile
+tracer/test/test-applications/integrations/Samples.GoogleProtobuf/Sample.cs
+
 ## Tracer .gitignore settings
 # Tracer deployment artifacts
 tracer/deploy/linux/

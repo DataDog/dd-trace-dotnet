@@ -16,7 +16,6 @@
     <PackageReference Include="Google.Protobuf" Version="$(ApiVersion)"/>
     <!-- 👇 This one is only here to bring the right version of protoc (must stay in sync with 👆) -->
     <PackageReference Include="Google.Protobuf.Tools" Version="$(ApiVersion)"/>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj"/>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
