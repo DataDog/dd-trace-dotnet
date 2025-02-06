@@ -20,9 +20,9 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.StepFunctions,
+    Service: Samples.AWS.StepFunctions-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -33,17 +33,20 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       out.host: aws_stepfunctions,
-      peer.service: aws_stepfunctions,
+      runtime-id: Guid_1,
       span.kind: client,
-      _dd.peer.service.source: out.host
+      _dd.base_service: Samples.AWS.StepFunctions
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: aws.stepfunctions.send,
+    Name: stepfunctions.request,
     Resource: StepFunctions.StartExecutionAsync,
-    Service: Samples.AWS.StepFunctions,
+    Service: Samples.AWS.StepFunctions-aws-stepfunctions,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -58,18 +61,21 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      peer.service: StepFunction,
+      runtime-id: Guid_1,
       span.kind: producer,
       statemachinename: StepFunction,
-      _dd.peer.service.source: statemachinename
+      _dd.base_service: Samples.AWS.StepFunctions
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.StepFunctions,
+    Service: Samples.AWS.StepFunctions-http-client,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -80,9 +86,12 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       out.host: aws_stepfunctions,
-      peer.service: aws_stepfunctions,
+      runtime-id: Guid_1,
       span.kind: client,
-      _dd.peer.service.source: out.host
+      _dd.base_service: Samples.AWS.StepFunctions
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -106,9 +115,9 @@
   {
     TraceId: Id_6,
     SpanId: Id_8,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.StepFunctions,
+    Service: Samples.AWS.StepFunctions-http-client,
     Type: http,
     ParentId: Id_7,
     Tags: {
@@ -119,22 +128,25 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       out.host: aws_stepfunctions,
-      peer.service: aws_stepfunctions,
+      runtime-id: Guid_1,
       span.kind: client,
-      _dd.peer.service.source: out.host
+      _dd.base_service: Samples.AWS.StepFunctions
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_6,
     SpanId: Id_9,
-    Name: aws.stepfunctions.send,
-    Resource: StepFunctions.StartSyncExecution,
-    Service: Samples.AWS.StepFunctions,
+    Name: stepfunctions.request,
+    Resource: StepFunctions.StartExecution,
+    Service: Samples.AWS.StepFunctions-aws-stepfunctions,
     Type: http,
     ParentId: Id_7,
     Tags: {
       aws.agent: dotnet-aws-sdk,
-      aws.operation: StartSyncExecution,
+      aws.operation: StartExecution,
       aws.requestId: Guid_3,
       aws.service: StepFunctions,
       aws_service: StepFunctions,
@@ -144,18 +156,21 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      peer.service: StepFunction,
+      runtime-id: Guid_1,
       span.kind: producer,
       statemachinename: StepFunction,
-      _dd.peer.service.source: statemachinename
+      _dd.base_service: Samples.AWS.StepFunctions
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
     TraceId: Id_6,
     SpanId: Id_10,
-    Name: http.client.request,
+    Name: http.request,
     Resource: POST localhost:00000/,
-    Service: Samples.AWS.StepFunctions,
+    Service: Samples.AWS.StepFunctions-http-client,
     Type: http,
     ParentId: Id_7,
     Tags: {
@@ -166,9 +181,12 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       out.host: aws_stepfunctions,
-      peer.service: aws_stepfunctions,
+      runtime-id: Guid_1,
       span.kind: client,
-      _dd.peer.service.source: out.host
+      _dd.base_service: Samples.AWS.StepFunctions
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   }
 ]
