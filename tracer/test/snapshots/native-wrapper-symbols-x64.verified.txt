@@ -1,5 +1,7 @@
 __errno_location
 __tls_get_addr
+_pthread_cleanup_pop
+_pthread_cleanup_push
 access
 asprintf
 free
