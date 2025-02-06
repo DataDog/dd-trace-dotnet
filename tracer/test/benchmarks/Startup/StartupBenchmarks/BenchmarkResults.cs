@@ -1,9 +1,7 @@
-﻿using System;
-
-namespace StartupBenchmarks;
+﻿namespace StartupBenchmarks;
 
 public readonly record struct BenchmarkResults(
+    int Order,
     string Name,
     bool IsBaseline,
-    TimeSpan ElapsedToMain,
-    TimeSpan ElapsedToExit);
+    double[] ElapsedTimes);

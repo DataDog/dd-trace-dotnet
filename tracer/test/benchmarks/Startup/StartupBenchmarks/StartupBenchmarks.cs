@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace StartupBenchmarks;
 
@@ -11,7 +10,7 @@ public class StartupBenchmarks
         EnableTracer(startInfo.Environment, enable: false);
     }
 
-    [Benchmark("Tracer enabled, default configuration")]
+    [Benchmark("Tracer enabled, default configuration", IsBaseline = true)]
     public void TracerEnabled(ProcessStartInfo startInfo)
     {
         EnableTracer(startInfo.Environment);
@@ -47,22 +46,22 @@ public class StartupBenchmarks
         SetLoggingDirectory(startInfo.Environment, "/dev/null");
     }
 
-    private void EnableTracer(IDictionary<string, string> startInfo, bool enable = true)
+    private void EnableTracer(IDictionary<string, string?> startInfo, bool enable = true)
     {
         startInfo["CORECLR_ENABLE_PROFILING"] = enable ? "1" : "0";
     }
 
-    private static void EnableCiVisibility(IDictionary<string, string> startInfo, bool enable = true)
+    private static void EnableCiVisibility(IDictionary<string, string?> startInfo, bool enable = true)
     {
         startInfo["DD_CIVISIBILITY_ENABLED"] = enable ? "1" : "0";
     }
 
-    private static void EnableInstrumentationTelemetry(IDictionary<string, string> startInfo, bool enable = true)
+    private static void EnableInstrumentationTelemetry(IDictionary<string, string?> startInfo, bool enable = true)
     {
         startInfo["DD_INSTRUMENTATION_TELEMETRY_ENABLED"] = enable ? "1" : "0";
     }
 
-    private static void SetLoggingDirectory(IDictionary<string, string> startInfo, string directory)
+    private static void SetLoggingDirectory(IDictionary<string, string?> startInfo, string directory)
     {
         startInfo["DD_TRACE_LOG_DIRECTORY"] = directory;
     }
