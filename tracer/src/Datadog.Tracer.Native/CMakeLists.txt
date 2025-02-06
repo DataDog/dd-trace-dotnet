@@ -228,7 +228,6 @@ if (ISMACOS)
 elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"
         managed-loader-objs
-        libdatadog-lib
         coreclr
         re2-lib
         spdlog-headers
@@ -240,7 +239,7 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Tracer.Native.static" coreclr re2-lib spdlog-headers managed-loader-objs libdatadog-lib)
+add_dependencies("Datadog.Tracer.Native.static" coreclr re2-lib spdlog-headers managed-loader-objs)
 
 # ******************************************************
 # Define shared target
