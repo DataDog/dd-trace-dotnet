@@ -40,21 +40,21 @@ bool Succeeded(T value)
     {
         return value == DDOG_VOID_RESULT_OK;
     }
-    else if constexpr(std::is_same_v<T, ddog_crasht_Result_HandleCrashInfoBuilder_Tag>)
+    else if constexpr(std::is_same_v<T, ddog_crasht_CrashInfoBuilder_NewResult_Tag>)
     {
-        return value == DDOG_CRASHT_RESULT_HANDLE_CRASH_INFO_BUILDER_OK_HANDLE_CRASH_INFO_BUILDER;
+        return value == DDOG_CRASHT_CRASH_INFO_BUILDER_NEW_RESULT_OK;
     }
-    else if constexpr(std::is_same_v<T, ddog_crasht_Result_HandleStackFrame_Tag>)
+    else if constexpr(std::is_same_v<T, ddog_crasht_StackFrame_NewResult_Tag>)
     {
-        return value == DDOG_CRASHT_RESULT_HANDLE_STACK_FRAME_OK_HANDLE_STACK_FRAME;
+        return value == DDOG_CRASHT_STACK_FRAME_NEW_RESULT_OK;
     }
-    else if constexpr (std::is_same_v<T, ddog_crasht_Result_HandleStackTrace_Tag>)
+    else if constexpr (std::is_same_v<T, ddog_crasht_StackTrace_NewResult_Tag>)
     {
-        return value == DDOG_CRASHT_RESULT_HANDLE_STACK_TRACE_OK_HANDLE_STACK_TRACE;
+        return value == DDOG_CRASHT_STACK_TRACE_NEW_RESULT_OK;
     }
-    else if constexpr (std::is_same_v<T, ddog_crasht_Result_HandleCrashInfo_Tag>)
+    else if constexpr (std::is_same_v<T, ddog_crasht_CrashInfo_NewResult_Tag>)
     {
-        return value == DDOG_CRASHT_RESULT_HANDLE_CRASH_INFO_OK_HANDLE_CRASH_INFO;
+        return value == DDOG_CRASHT_CRASH_INFO_NEW_RESULT_OK;
     }
     else
     {
@@ -251,17 +251,13 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             }
 
             // TODO see this cannot happen inside libdatadog instead of here
-            auto ip = shared::Hex(currentFrame.ip);
-            auto sp = shared::Hex(currentFrame.sp);
-            auto moduleAddress = shared::Hex(currentFrame.moduleAddress);
-            auto relativeAddress = shared::Hex(currentFrame.ip - currentFrame.moduleAddress);
-            auto symbolAddress = shared::Hex(currentFrame.symbolAddress);
-            CHECK_RESULT(ddog_crasht_StackFrame_with_ip(&frame, libdatadog::to_char_slice(ip)));
-            CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, libdatadog::to_char_slice(sp)));
-            CHECK_RESULT(ddog_crasht_StackFrame_with_module_base_address(&frame, libdatadog::to_char_slice(moduleAddress)));
-            CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, libdatadog::to_char_slice(relativeAddress)));
+            auto relativeAddress = currentFrame.ip - currentFrame.moduleAddress;
+            CHECK_RESULT(ddog_crasht_StackFrame_with_ip(&frame, currentFrame.ip));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, currentFrame.sp));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_module_base_address(&frame, currentFrame.moduleAddress));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_relative_address(&frame, relativeAddress));
 
-            CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, libdatadog::to_char_slice(symbolAddress)));
+            CHECK_RESULT(ddog_crasht_StackFrame_with_symbol_address(&frame, currentFrame.symbolAddress));
 
             auto buildId = currentFrame.buildId;
             if (buildId.size() != 0)
