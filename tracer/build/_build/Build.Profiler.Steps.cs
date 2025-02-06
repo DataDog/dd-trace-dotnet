@@ -218,7 +218,7 @@ partial class Build
         .Unlisted()
         .Description("Test that the Native wrapper symbols haven't changed")
         .After(CompileNativeWrapper)
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux && AsUniversal)
         .Executes(() =>
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
