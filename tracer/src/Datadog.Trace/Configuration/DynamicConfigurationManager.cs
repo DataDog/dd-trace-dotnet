@@ -121,6 +121,7 @@ namespace Datadog.Trace.Configuration
                 DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
                 ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
                 CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
+                DebuggerEnabled = false,
             };
 
             var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
