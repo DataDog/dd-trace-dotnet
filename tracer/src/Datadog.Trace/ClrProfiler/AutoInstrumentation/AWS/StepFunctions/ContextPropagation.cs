@@ -37,11 +37,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 return;
             }
 
-            sb.Remove(sb.Length - 1, 1);
-            sb.AppendFormat(", \"{0}\": {{", StepFunctionsKey);
+            sb.Remove(sb.Length - 1, 1); // Remove closing brace "}"
+            sb.AppendFormat(", \"{0}\": {{", StepFunctionsKey); // Add _datadog:" {
             Tracer.Instance.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(sb.Length - 1, 1); // remove trailing comma
-            sb.Append("}}");
+            sb.Append("}}"); // re-add both closing braces one for original JSON and one for context
             input = Util.StringBuilderCache.GetStringAndRelease(sb);
         }
 

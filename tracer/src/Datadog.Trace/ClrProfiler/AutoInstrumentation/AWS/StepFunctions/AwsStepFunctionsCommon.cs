@@ -59,6 +59,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             return scope;
         }
 
+        /// <summary>
+        /// Extracts the state machine name from the state machine ARN. The ARN is expected to be in the format: `arn:aws:states:region:account:stateMachine:name`.
+        /// </summary>
         [return: NotNullIfNotNull(nameof(stateMachineArn))]
         public static string? GetStateMachineName(string? stateMachineArn)
         {
