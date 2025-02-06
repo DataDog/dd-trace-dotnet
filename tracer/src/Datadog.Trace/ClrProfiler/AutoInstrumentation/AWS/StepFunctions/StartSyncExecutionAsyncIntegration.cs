@@ -9,7 +9,6 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
@@ -42,9 +41,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TStartSyncExecutionRequest>(TTarget instance, TStartSyncExecutionRequest request, CancellationToken cancellationToken)
-            where TStartSyncExecutionRequest : IStartSyncExecutionRequest, IDuckType
+            where TStartSyncExecutionRequest : IAwsStepFunctionsRequestWithStateMachineArn, IContainsInput
         {
-            if (request.Instance is null)
+            if (request is null)
             {
                 return CallTargetState.GetDefault();
             }
