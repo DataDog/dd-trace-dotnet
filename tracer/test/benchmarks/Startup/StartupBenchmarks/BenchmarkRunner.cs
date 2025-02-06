@@ -8,32 +8,40 @@ public abstract class BenchmarkRunner<TBenchmarksContainer, TState>
     private List<Benchmark<TState>>? _benchmarks;
     private Benchmark<TState>? _baseline;
 
-    public IEnumerable<BenchmarkResults> RunAll(int iterationCount)
+    public IEnumerable<BenchmarkResults> RunAll(int warmupIterationCount, int benchmarkIterationCount)
     {
-        var benchmarks = GetBenchmarks(out _);
+        var benchmarks = GetBenchmarksInternal();
 
         // run the baseline first
         if (_baseline is not null)
         {
-            yield return RunIterations(_baseline.Value, iterations: iterationCount);
+            yield return RunIterations(
+                _baseline.Value,
+                warmupIterationCount: warmupIterationCount,
+                benchmarkIterationCount: benchmarkIterationCount);
         }
 
         // run the rest of the benchmarks
         foreach (var benchmark in benchmarks.Where(b => !b.IsBaseline))
         {
-            yield return RunIterations(benchmark, iterations: iterationCount);
+            yield return RunIterations(
+                benchmark,
+                warmupIterationCount: warmupIterationCount,
+                benchmarkIterationCount: benchmarkIterationCount);
         }
     }
 
-    public List<Benchmark<TState>> GetBenchmarks(out Benchmark<TState>? baseline)
+    public IEnumerable<IBenchmark> GetBenchmarks()
+    {
+        return GetBenchmarksInternal().Cast<IBenchmark>();
+    }
+
+    private List<Benchmark<TState>> GetBenchmarksInternal()
     {
         if (_benchmarks is not null)
         {
-            baseline = _baseline;
             return _benchmarks;
         }
-
-        baseline = null;
 
         var methods = typeof(TBenchmarksContainer).GetMethods()
                                                   .Select(method => (method, attribute: method.GetCustomAttribute<BenchmarkAttribute>()))
@@ -71,34 +79,48 @@ public abstract class BenchmarkRunner<TBenchmarksContainer, TState>
         return benchmarks;
     }
 
-    private BenchmarkResults RunIterations(Benchmark<TState> benchmark, int iterations)
+    private BenchmarkResults RunIterations(
+        Benchmark<TState> benchmark,
+        int warmupIterationCount,
+        int benchmarkIterationCount)
     {
-        var allResults = new List<BenchmarkResults>(iterations);
+        // run once to get the number of elapsed times and start the warmup
+        var warmupResults = RunOnce(benchmark);
+        var elapsedTimesCount = warmupResults.ElapsedTimes.Length;
 
-        for (var i = 0; i < iterations; i++)
+        // run the rest of the warmup iterations
+        for (var i = 0; i < warmupIterationCount - 1; i++)
+        {
+            _ = RunOnce(benchmark);
+        }
+
+        var allResults = new List<BenchmarkResults>(benchmarkIterationCount);
+
+        for (var i = 0; i < benchmarkIterationCount; i++)
         {
             allResults.Add(RunOnce(benchmark));
         }
 
-        var elapsedTimesCount = allResults[0].ElapsedTimes.Length;
-
         if (allResults.Any(r => r.ElapsedTimes.Length != elapsedTimesCount))
         {
-            throw new InvalidOperationException("All benchmarks must return the same number of elapsed times.");
+            throw new InvalidOperationException("All benchmarks must return the same number of elapsed time data points.");
         }
+
+        var (keptResults, removedOutliers) = Statistics.FindOutliersBy(allResults, r => r.ElapsedTimes.Sum());
 
         var elapsedTimeAverages = new double[elapsedTimesCount];
 
         for (var i = 0; i < elapsedTimesCount; i++)
         {
-            elapsedTimeAverages[i] = allResults.Average(r => r.ElapsedTimes[i]);
+            elapsedTimeAverages[i] = keptResults.Average(r => r.ElapsedTimes[i]);
         }
 
         return new BenchmarkResults(
             benchmark.Order,
             benchmark.Name,
             benchmark.IsBaseline,
-            elapsedTimeAverages);
+            elapsedTimeAverages,
+            removedOutliers);
     }
 
     protected abstract BenchmarkResults RunOnce(Benchmark<TState> benchmark);

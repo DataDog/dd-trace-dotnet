@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 
 namespace StartupBenchmarks;
@@ -21,8 +20,7 @@ public class StartupBenchmarkRunner
         _globalEnvVars = globalEnvVars;
     }
 
-    protected override BenchmarkResults RunOnce(
-        Benchmark<ProcessStartInfo> benchmark)
+    protected override BenchmarkResults RunOnce(Benchmark<ProcessStartInfo> benchmark)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -59,11 +57,13 @@ public class StartupBenchmarkRunner
         }
 
         process.WaitForExit();
+        var elapsedToExit = stopwatch.Elapsed.TotalMilliseconds;
 
         return new BenchmarkResults(
             benchmark.Order,
             benchmark.Name,
             benchmark.IsBaseline,
-            [elapsedToMain, stopwatch.Elapsed.TotalMilliseconds]);
+            [elapsedToMain, elapsedToExit],
+            RemovedOutliers: []);
     }
 }
