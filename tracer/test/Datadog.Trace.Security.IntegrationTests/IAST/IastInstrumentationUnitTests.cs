@@ -377,7 +377,7 @@ public class IastInstrumentationUnitTests : TestHelper
             var securityControlsConfig = """
                 INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);
                 INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;
-                SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)"
+                      SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)
                 """;
             SetEnvironmentVariable("DD_IAST_SECURITY_CONTROLS_CONFIGURATION", securityControlsConfig);
 

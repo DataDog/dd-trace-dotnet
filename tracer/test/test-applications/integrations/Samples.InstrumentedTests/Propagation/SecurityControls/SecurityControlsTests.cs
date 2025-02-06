@@ -83,7 +83,7 @@ public class SecurityControlsTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenNonSanitizing_ResultIsTaintedWithNoSafeMark()
     {
         AssertSecureMarks(
-            AssertTaintedFormat(NonSanitize(":+-tainted-+:"), _taintedValue),
+            AssertTaintedFormat(":+-tainted-+:", NonSanitize(_taintedValue)),
             SecureMarks.None);
     }
 }
