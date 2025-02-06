@@ -865,6 +865,16 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "suppressed.vulnerabilities": {
+        "tags": [
+            "vulnerability_type"
+        ],
+        "metric_type": "count",
+        "data_type": "event",
+        "description": "Number of vulnerabilities suppressed",
+        "send_to_user": false,
+        "user_tags":[]
+    },
     "metastruct.tag.size.exceeded": {
       "tags": [],
       "metric_type": "count",
