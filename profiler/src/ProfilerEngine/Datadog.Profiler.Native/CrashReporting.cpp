@@ -182,6 +182,17 @@ int32_t CrashReporting::Panic()
     return 1;
 }
 
+ddog_crasht_SignalNames GetSignal(int signal){
+    switch (signal) {
+        case 6: return DDOG_CRASHT_SIGNAL_NAMES_SIGABRT;
+        case 7: return DDOG_CRASHT_SIGNAL_NAMES_SIGBUS;
+        case 11: return DDOG_CRASHT_SIGNAL_NAMES_SIGSEGV;
+        case 31: return DDOG_CRASHT_SIGNAL_NAMES_SIGSYS;
+        default:
+            return DDOG_CRASHT_SIGNAL_NAMES_UNKNOWN;
+    }
+}
+
 int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
 {
     std::string signalInfo;
@@ -201,10 +212,14 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
     // Maybe call this from linux and windows custom reporter
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNIX_SIGNAL));
 
-    // TODO create ddog_crasht_SigInfo siginfo and call ddog_crasht_CrashInfoBuilder_with_sig_info
-    // For now we do not do it because SigInfo requires much more information we can provide
-    // If not available we might panic <= to test
-    // ddog_crasht_CrashInfoBuilder_with_sig_info(&_builder, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
+    auto siginfo = ddog_crasht_SigInfo {
+        .addr = {nullptr, 0},
+        .code = 0,
+        .code_human_readable = DDOG_CRASHT_SI_CODES_UNKNOWN,
+        .signo = signal,
+        .signo_human_readable = GetSignal(signal),
+    };
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_sig_info(&_builder, siginfo));
 
     return 0;
 }
@@ -276,26 +291,15 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         CHECK_RESULT(ddog_crasht_StackTrace_set_complete(&stackTrace));
 
         auto threadIdStr = std::to_string(threadId);
+        // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
+        auto thread = ddog_crasht_ThreadData{
+            .crashed = currentIsCrashingThread,
+            .name = {threadIdStr.data(), threadIdStr.size()},
+            .stack = stackTrace,
+            .state = {nullptr, 0}
+        };
 
-        // TODO we cannot have the crashing thread (named and stuff) in the threads field
-        // because both API consume the stack trace and we might end up in a double free situation
-        if (currentIsCrashingThread)
-        {
-            // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
-            CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_stack(&_builder, &stackTrace));
-        }
-        else
-        {
-            // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
-            auto thread = ddog_crasht_ThreadData{
-                .crashed = false,
-                .name = {threadIdStr.data(), threadIdStr.size()},
-                .stack = stackTrace,
-                .state = {nullptr, 0}
-            };
-
-            CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
-        }
+        CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
         successfulThreads++;
     }
 

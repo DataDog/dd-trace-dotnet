@@ -277,7 +277,7 @@ public class CreatedumpTests : ConsoleTestHelper
         var report = JObject.Parse(reportFile.GetContent());
         report["error"]["is_crash"].Value<bool>().Should().Be(true);
 
-        var metadataTags = (JArray)report["metadata"]!["tags"];
+        var metadataTags = (JArray)(report["metadata"]!["tags"]);
 
         var exception = metadataTags
                        .Select(t => t.Value<string>())
@@ -288,7 +288,7 @@ public class CreatedumpTests : ConsoleTestHelper
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             // TODO for now there is no siginfo. Need to wait for next libdatadog version
-            //report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
+            // report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
         }
     }
 
