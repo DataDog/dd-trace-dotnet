@@ -60,9 +60,15 @@ namespace Datadog.Trace.Debugger
 
         private void InitializeCodeOrigin()
         {
-            if (!(DebuggerSettings.DynamicSettings.CodeOriginEnabled ?? !DebuggerSettings.CodeOriginForSpansEnabled))
+            if (!DebuggerSettings.CodeOriginForSpansEnabled)
             {
                 Log.Information("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                return;
+            }
+
+            if (DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && !DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value)
+            {
+                Log.Information("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                 return;
             }
 
@@ -79,9 +85,15 @@ namespace Datadog.Trace.Debugger
 
         private void InitializeExceptionReplay()
         {
-            if (!(DebuggerSettings.DynamicSettings.ExceptionReplayEnabled ?? ExceptionReplaySettings.Enabled))
+            if (!ExceptionReplaySettings.Enabled)
             {
                 Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                return;
+            }
+
+            if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && !DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value)
+            {
+                Log.Information("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                 return;
             }
 
@@ -104,9 +116,15 @@ namespace Datadog.Trace.Debugger
 
         private async Task InitializeDynamicInstrumentation()
         {
-            if (!(DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled ?? !DebuggerSettings.DynamicInstrumentationEnabled))
+            if (!DebuggerSettings.DynamicInstrumentationEnabled)
             {
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                return;
+            }
+
+            if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value)
+            {
+                Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
                 return;
             }
 
