@@ -10,6 +10,8 @@ using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Configuration;
 using FluentAssertions;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
@@ -54,6 +56,37 @@ namespace Datadog.Trace.Security.Unit.Tests
             var securityCoordinator = SecurityCoordinator.TryGet(AppSec.Security.Instance, span);
             var result = securityCoordinator.Value.RunWaf(new(), runWithEphemeral: true, isRasp: true);
             result.Should().BeNull();
+        }
+
+        [Fact]
+        public void GivenHttpTransportInstanceWithUninitializedContext_WhenGetItems_ThenItemsIsNull()
+        {
+            var contextMoq = new Mock<HttpContext>();
+            contextMoq.Setup(x => x.Items).Throws(new NullReferenceException("Test exception"));
+            var context = contextMoq.Object;
+            HttpTransport transport = new(context);
+            transport.ReportedExternalWafsRequestHeaders.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GivenHttpTransportInstanceWithUninitializedContext_WhenRunWaf_ThenResultIsNull()
+        {
+            var settings = TracerSettings.Create(new Dictionary<string, object>());
+            var tracer = new Tracer(settings, null, null, null, null);
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+
+            var contextMoq = new Mock<HttpContext>();
+            contextMoq.Setup(x => x.Items).Throws(new NullReferenceException("Test exception"));
+            var context = contextMoq.Object;
+            CoreHttpContextStore.Instance.Set(context);
+
+            var securityCoordinator = SecurityCoordinator.TryGet(AppSec.Security.Instance, rootTestScope.Span);
+            securityCoordinator.HasValue.Should().BeTrue();
+
+            var result = new Result(new DdwafResultStruct(), WafReturnCode.Match, 0, 0);
+            securityCoordinator.Value.Reporter.TryReport(result, true);
+
+            rootTestScope.Span.Tags.GetTag(Tags.AppSecBlocked).Should().Be("true");
         }
 #endif
 
