@@ -31,7 +31,15 @@ namespace Samples.AWS.StepFunctions
             else
             {
                 var awsCredentials = new BasicAWSCredentials("x", "x");
+
+#if STEPFUNCTIONS_3_7_0
+                // DisableHostPrefixInjection = true is required to avoid the SDK from adding the service name to the host (sync-localhost) which breaks everything
+                // Note: only saw this on .NET Framework
+                var stepFunctionsConfig = new AmazonStepFunctionsConfig { ServiceURL = "http://" + Host(), DisableHostPrefixInjection = true };
+#else
                 var stepFunctionsConfig = new AmazonStepFunctionsConfig { ServiceURL = "http://" + Host() };
+#endif
+
                 return new AmazonStepFunctionsClient(awsCredentials, stepFunctionsConfig);
             }
         }

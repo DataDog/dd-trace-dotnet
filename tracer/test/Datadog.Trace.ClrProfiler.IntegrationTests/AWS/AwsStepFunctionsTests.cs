@@ -68,7 +68,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                settings.UseFileName($"{nameof(AwsStepFunctionsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                // Default version is 3.7.*
+                var snapshotSuffix = string.IsNullOrEmpty(packageVersion) ? string.Empty :
+                    new Version(packageVersion) switch
+                    {
+                        { Major: 3, Minor: >= 7 } => string.Empty, // Post 3.7.0
+                        _ => "_pre3_7_0"  // Pre 3.7.0
+
+                    };
+
+                settings.UseFileName($"{nameof(AwsStepFunctionsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_stepfunctions");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_stepfunctions");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_stepfunctions");
