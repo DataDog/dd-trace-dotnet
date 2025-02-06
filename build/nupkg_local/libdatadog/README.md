@@ -1,0 +1,1 @@
+This is temporary workaround. This project must be removed with vcpkg support.
