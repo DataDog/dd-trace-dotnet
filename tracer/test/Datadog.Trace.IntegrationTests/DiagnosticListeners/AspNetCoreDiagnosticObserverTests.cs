@@ -13,8 +13,11 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -426,7 +429,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var tracer = GetTracer(writer, configSource);
 
             var security = new AppSec.Security();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security) };
+            var iast = new Iast.Iast(new IastSettings(configSource, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))
             {
