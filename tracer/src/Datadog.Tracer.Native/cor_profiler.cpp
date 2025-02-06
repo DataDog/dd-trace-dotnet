@@ -645,7 +645,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
+    auto modules = module_ids.GetWrite();
     
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
@@ -1320,7 +1320,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
     // take this lock so we block until the
     // module metadata is not longer being used
-    auto scopedModules = module_ids.Get();
+    auto scopedModules = module_ids.GetWrite();
     auto& modules = scopedModules.Ref();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
@@ -1380,7 +1380,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
+    auto modules = module_ids.GetWrite();
 
     if (rejit_handler != nullptr)
     {
@@ -1457,7 +1457,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
+    auto modules = module_ids.GetWrite();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1487,7 +1487,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
+    auto modules = module_ids.GetRead();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1741,7 +1741,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
 {
     // take this lock so we block until the
     // module metadata is not longer being used
-    auto modules = module_ids.Get();
+    auto modules = module_ids.GetWrite();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1945,7 +1945,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             integrationDefinitions.push_back(integration);
         }
 
-        auto modules = module_ids.Get();
+        auto modules = module_ids.GetRead();
 
         if (enable)
         {
@@ -2071,7 +2071,7 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
             integrationDefinitions.push_back(integration);
         }
 
-        auto modules = module_ids.Get();
+        auto modules = module_ids.GetRead();
 
         integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
         for (const auto& integration : integrationDefinitions)
@@ -2116,7 +2116,7 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
+            auto modules = module_ids.GetRead();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
@@ -2148,7 +2148,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
+            auto modules = module_ids.GetRead();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
@@ -2258,7 +2258,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         {
             std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
                 *trace_annotation_integration_type.get(), configuration_string);
-            auto modules = module_ids.Get();
+            auto modules = module_ids.GetRead();
 
             Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
@@ -4379,16 +4379,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
-    auto modulesOpt = module_ids.TryGet();
-    if (!modulesOpt.has_value())
-    {
-        Logger::Error(
-            "JITCachedFunctionSearchStarted: Failed on exception while tried to acquire the lock for the module_ids collection for functionId ",
-            functionId);
-        return S_OK;
-    }
-
-    auto& modules = modulesOpt.value();
+    auto modulesOpt = module_ids.GetRead();
+    auto& modules = modulesOpt.Ref();
 
     // Call RequestRejitOrRevert for register inliners and current NGEN module.
     if (rejit_handler != nullptr)
@@ -4409,7 +4401,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     bool isAnInternalModule = false;
 
     // Verify that we have the metadata for this module
-    if (!shared::Contains(modules.Ref(), module_id))
+    if (!shared::Contains(modules, module_id))
     {
         isAnInternalModule = shared::Contains(managedInternalModules_, module_id);
         if (!isAnInternalModule)
