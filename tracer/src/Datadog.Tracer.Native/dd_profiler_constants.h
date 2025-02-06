@@ -120,8 +120,6 @@ const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual")
 const shared::WSTRING nonwindows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
 const shared::WSTRING windows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
 
-const shared::WSTRING traceexporter_nativemethods_type = WStr("Datadog.Trace.LibDatadog.TraceExporterNative");
-
 const shared::WSTRING appsec_nonwindows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
 const shared::WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+Windows");
 const shared::WSTRING profiler_nativemethods_type = WStr("Datadog.Trace.ContinuousProfiler.NativeInterop+NativeMethods");
@@ -149,14 +147,6 @@ const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
 const shared::WSTRING native_dll_filename = WStr("Datadog.Tracer.Native.dylib");
 #else
 const shared::WSTRING native_dll_filename = WStr("Datadog.Tracer.Native.so");
-#endif
-
-#ifdef _WIN32 //TODO steal me
-const shared::WSTRING native_libdatadog_filename = WStr("datadog_profiling_ffi.dll");
-#elif MACOS
-const shared::WSTRING native_libdatadog_filename = WStr("datadog_profiling_ffi.dylib");
-#else
-const shared::WSTRING native_libdatadog_filename = WStr("datadog_profiling.so");
 #endif
 
 const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(

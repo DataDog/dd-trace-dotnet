@@ -278,7 +278,6 @@ partial class Build
 
     Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
-        .DependsOn(SetupVcpkg)
         .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
