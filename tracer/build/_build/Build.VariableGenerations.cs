@@ -1251,12 +1251,13 @@ partial class Build : NukeBuild
 
                 void GenerateWindowsFleetInstalerSmokeTestsMatrix()
                 {
-                    var dockerName = "mcr.microsoft.com/windows/servercore/iis";
+                    var dockerName = "mcr.microsoft.com/dotnet/framework/aspnet";
 
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
-                        new (publishFramework: TargetFramework.NET9_0, "windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET9_0, "4.8-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET9_0, "4.8-windowsservercore-ltsc2019"),
                     };
 
                     var matrix = (
