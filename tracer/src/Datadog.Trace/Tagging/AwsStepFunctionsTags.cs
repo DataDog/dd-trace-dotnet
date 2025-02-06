@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.SourceGenerators;
 
@@ -23,7 +25,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.StateMachineName)]
-        public string StateMachineName { get; set; }
+        public string? StateMachineName { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
@@ -31,7 +33,7 @@ namespace Datadog.Trace.Tagging
 
     internal partial class AwsStepFunctionsV1Tags : AwsStepFunctionsTags
     {
-        private string _peerServiceOverride = null;
+        private string? _peerServiceOverride = null;
 
         [Obsolete("Use constructor that takes a SpanKind")]
         public AwsStepFunctionsV1Tags()
@@ -45,7 +47,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.PeerService)]
-        public string PeerService
+        public string? PeerService
         {
             get
             {
@@ -60,7 +62,7 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.PeerServiceSource)]
-        public string PeerServiceSource
+        public string? PeerServiceSource
         {
             get
             {
