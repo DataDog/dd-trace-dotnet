@@ -4,6 +4,7 @@ using namespace shared;
 
 namespace iast
 {
+    class MemberRefInfo;
     class MethodInfo;
     class MethodSpec;
     class ModuleAspects;
@@ -91,6 +92,8 @@ namespace iast
         std::vector<WSTRING> _targetMethodAssemblies;
         std::vector<WSTRING> _targetTypeAssemblies;
 
+        virtual void OnMethodFound(MemberRefInfo* method);
+
     public:
         DataflowAspectClass* _aspectClass = nullptr;
         AspectBehavior _behavior;
@@ -169,6 +172,7 @@ namespace iast
     private:
         UINT32 _securityMarks;
 
+
     public:
         SecurityControlAspect(DataflowAspectClass* aspectClass, const UINT32 securityMarks, 
                               SecurityControlType type,
@@ -177,6 +181,9 @@ namespace iast
                               const std::vector<int>& params);
 
         void AfterApply(ILRewriter* processor, ILInstr* aspectInstruction) override;
+
+    protected:
+        void OnMethodFound(MemberRefInfo* method) override;
     };
 
     SecurityControlType ParseSecurityControlType(const WSTRING& type);

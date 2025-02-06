@@ -333,8 +333,14 @@ void Dataflow::LoadSecurityControls()
         trace::Logger::Debug("Dataflow::LoadSecurityControls -> Processing Security Controls Config... ",
                              securityControlsConfig);
         auto securityControls = shared::Split(securityControlsConfig, ';');
-        for (auto securityControl : securityControls)
+        for (auto securityControlLine : securityControls)
         {
+            auto securityControl = shared::Trim(securityControlLine);
+            if (securityControl.size() == 0 || securityControl[0] == '#')
+            {
+                continue;
+            }
+
             auto parts = shared::Split(securityControl, ':');
             if (parts.size() < 5)
             {
@@ -401,8 +407,13 @@ void Dataflow::LoadSecurityControls()
                             securityControl);
                         continue;
                     }
-                    paramPart.push_back(param);
+                    parameterIndexes.push_back(param);
                 }
+            }
+
+            if (parameterIndexes.size() == 0)
+            {
+                parameterIndexes.push_back(0);
             }
 
             WSTRING targetMethod, targetParams;
@@ -418,8 +429,13 @@ void Dataflow::LoadSecurityControls()
             auto aspect = new SecurityControlAspect(aspectClass, secureMarks, securityControlType, targetAssembly,
                                                     targetType, targetMethod, targetParams, parameterIndexes);
 
-            trace::Logger::Debug("Dataflow::LoadSecurityControls -> Created Aspect: ", (int)securityControlType, "  ",
-                                 targetAssembly, " | ", targetType, " :: ", targetMethod, "  ", targetParams);
+            if (trace::Logger::IsDebugEnabled())
+            {
+                auto params = iast::Join(parameterIndexes, ",");
+                trace::Logger::Debug("Dataflow::LoadSecurityControls -> Created Aspect: ", (int) securityControlType,
+                                     "  ", targetAssembly, " | ", targetType, " :: ", targetMethod, "  ", targetParams,
+                                     " [", params, "]");
+            }
 
             _aspects.push_back(aspect);
         }

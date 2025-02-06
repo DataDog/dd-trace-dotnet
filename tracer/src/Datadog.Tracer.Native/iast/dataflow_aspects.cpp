@@ -280,6 +280,8 @@ namespace iast
         return _aspectClass->_vulnerabilityTypes;
     }
 
+    void DataflowAspect::OnMethodFound(MemberRefInfo* method){}
+
     DataflowAspectReference* DataflowAspect::GetAspectReference(ModuleAspects* moduleAspects)
     {
         HRESULT hr = S_OK;
@@ -320,6 +322,9 @@ namespace iast
                         auto sigRepresentation = sig->GetParamsRepresentation();
                         if (sigRepresentation == _targetMethodParams)
                         {
+                            //Found the method
+                            OnMethodFound(memberRefInfo);
+
                             targetMemberRefInfo = memberRefInfo;
                             targetMethodRef = candidate;
                             paramTypeRefs.clear();
@@ -403,7 +408,7 @@ namespace iast
         this->_targetMethodType = targetType;
         this->_targetMethodName = targetMethod;
         this->_targetMethodParams = targetParams;
-        // this->_paramShift = params; // TODO : invert
+        this->_paramShift = params; // Must be inverted to match aspect param original order
         
         if (this->_paramShift.size() == 0)
         {
@@ -422,6 +427,27 @@ namespace iast
     {
         auto newInstruction = processor->NewILInstr(CEE_LDC_I4, _securityMarks, true);
         processor->InsertBefore(aspectInstruction, newInstruction);
+    }
+
+    void SecurityControlAspect::OnMethodFound(MemberRefInfo* method)
+    {
+        // Invert param shift indexes to match aspect param original order (from last to first)
+        std::vector<int> paramShift;
+
+        auto sig = method->GetSignature();
+        int paramCount = (int) sig->_params.size() - 1;
+
+        if (paramCount <= 0)
+        {
+            return;
+        }
+
+        for (int x = 0; x < (int)_paramShift.size();x++)
+        {
+            paramShift.push_back(paramCount - _paramShift[x]);
+        }   
+
+       _paramShift = paramShift;
     }
 
     //------------------------------

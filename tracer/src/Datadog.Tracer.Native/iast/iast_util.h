@@ -168,7 +168,25 @@ namespace iast
     std::vector<int> ConvertToIntVector(const WSTRING& str);
     std::vector<bool> ConvertToBoolVector(const WSTRING& str);
 
-    std::string Join(const std::vector<std::string>& cont, const std::string& delim = ";");
+    template <typename T>
+    std::string Join(const std::vector<T>& cont, const std::string& delim = ";")
+    {
+        std::stringstream res;
+        bool first = true;
+        for (auto it = cont.begin(); it != cont.end(); it++)
+        {
+            if (!first)
+            {
+                res << delim;
+            }
+            else
+            {
+                first = false;
+            }
+            res << shared::ToString(*it);
+        }
+        return res.str();
+    }
 
     bool BeginsWith(const WSTRING& str, const WSTRING& begining);
     bool EndsWith(const WSTRING& str, const WSTRING& ending);

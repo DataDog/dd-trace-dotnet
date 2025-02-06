@@ -755,26 +755,6 @@ static thread_local std::unordered_map<void *, bool> locked;
         return res;
     }
 
-
-    std::string Join(const std::vector<std::string>& cont, const std::string& delim)
-    {
-        std::stringstream res;
-        bool first = true;
-        for (auto it = cont.begin(); it != cont.end(); it++)
-        {
-            if (!first)
-            {
-                res << delim;
-            }
-            else
-            {
-                first = false;
-            }
-            res << *it;
-        }
-        return res.str();
-    }
-
 #ifndef _WIN32
     int _wcsnicmp(const WCHAR* begining, const WCHAR* str, int beginingLen)
     {
