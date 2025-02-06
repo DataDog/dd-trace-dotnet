@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         MethodName = "StartExecutionAsync",
         ReturnTypeName = "Amazon.StepFunctions.Model.StartExecutionResponse",
         ParameterTypeNames = new[] { "Amazon.StepFunctions.Model.StartExecutionRequest", ClrNames.CancellationToken },
-        MinimumVersion = "3.0.0",
+        MinimumVersion = "3.3.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsStepFunctionsCommon.IntegrationName)]
     [Browsable(false)]

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         MethodName = "StartExecution",
         ReturnTypeName = "Amazon.StepFunctions.Model.StartExecutionResponse",
         ParameterTypeNames = new[] { "Amazon.StepFunctions.Model.StartExecutionRequest" },
-        MinimumVersion = "3.0.0",
+        MinimumVersion = "3.3.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsStepFunctionsCommon.IntegrationName)]
     [Browsable(false)]
@@ -39,9 +39,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         /// <typeparam name="TStartExecutionRequest">Type of the request object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
         /// <param name="request">The request for the Step Functions operation</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TStartExecutionRequest>(TTarget instance, TStartExecutionRequest request, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TStartExecutionRequest>(TTarget instance, TStartExecutionRequest request)
             where TStartExecutionRequest : IStartExecutionRequest, IDuckType
         {
             if (request.Instance is null)
@@ -64,10 +63,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             return new CallTargetState(scope, state: request);
         }
 
-        internal static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
-            return response;
+            return new CallTargetReturn<TReturn?>(returnValue);
         }
     }
 }
