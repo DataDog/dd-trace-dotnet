@@ -300,11 +300,12 @@ std::chrono::seconds GetMachineBootTime()
         auto pos = sv.find("btime");
         if (std::string_view::npos != pos)
         {
-            auto pos2 = strchr(sv.data() + pos, ' ') + 1;
+            auto pos2 = strchr(sv.data() + pos, ' ');
             if (pos2 == nullptr)
                 break;
 
             // skip whitespaces
+            pos2++;
             pos2 = pos2 + strspn(pos2, " ");
             machineBootTime = std::atoll(pos2);
             break;
