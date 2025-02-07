@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using FluentAssertions;
 #if NETCOREAPP
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 #endif
 using Moq;
 using Xunit;
@@ -87,6 +88,28 @@ namespace Datadog.Trace.Security.Unit.Tests
             securityCoordinator.Value.Reporter.TryReport(result, true);
 
             rootTestScope.Span.Tags.GetTag(Tags.AppSecBlocked).Should().Be("true");
+        }
+
+        [Fact]
+        public void GivenHttpTransportInstanceWithUninitializedContext_WhenAccessingStatusCode_ThenResultIsNull()
+        {
+            var settings = TracerSettings.Create(new Dictionary<string, object>());
+            var tracer = new Tracer(settings, null, null, null, null);
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+
+            var wafContext = new Mock<IContext>();
+
+            var mockedFeatures = new Mock<IFeatureCollection>();
+            mockedFeatures.Setup(x => x.Get<IContext>()).Returns(wafContext.Object);
+
+            var contextMoq = new Mock<HttpContext>();
+            contextMoq.Setup(x => x.Response.StatusCode).Throws(new NullReferenceException("Test exception"));
+            contextMoq.Setup(x => x.Features).Returns(mockedFeatures.Object);
+
+            var securityCoordinator = SecurityCoordinator.Get(AppSec.Security.Instance, rootTestScope.Span, new HttpTransport(contextMoq.Object));
+            var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, isRasp: true);
+
+            result.Should().BeNull();
         }
 #endif
 
