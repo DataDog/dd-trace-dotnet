@@ -232,14 +232,17 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ActivityHelpers.h" />
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
+    <ClInclude Include="BclEventsParser.h" />
     <ClInclude Include="Callstack.h" />
     <ClInclude Include="CallstackProvider.h" />
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="CrashReporting.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="DeploymentMode.h" />
+    <ClInclude Include="DotnetEventsProvider.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnablementStatus.h" />
     <ClInclude Include="EncodedProfile.hpp" />
@@ -247,13 +250,19 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="EventPipeEventsManager.h" />
+    <ClInclude Include="EventsParserHelper.h" />
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="INetworkListener.h" />
     <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ISsiManager.h" />
+    <ClInclude Include="NetworkActivity.h" />
+    <ClInclude Include="NetworkProvider.h" />
+    <ClInclude Include="NetworkRequestInfo.h" />
+    <ClInclude Include="RawNetworkSample.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
@@ -373,11 +382,13 @@
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ActivityHelpers.cpp" />
     <ClCompile Include="AdaptiveSampler.cpp" />
     <ClCompile Include="AllocationsProvider.cpp" />
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="BclEventsParser.cpp" />
     <ClCompile Include="Callstack.cpp" />
     <ClCompile Include="CallstackProvider.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
@@ -398,6 +409,9 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="NetworkActivity.cpp" />
+    <ClCompile Include="NetworkProvider.cpp" />
+    <ClCompile Include="NetworkRequestInfo.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="SkipProfileHeuristicType.h" />
     <ClCompile Include="SsiManager.cpp" />

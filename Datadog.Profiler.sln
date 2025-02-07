@@ -109,6 +109,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dd-prof-etw-replay", "profi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dd-prof-etw-agent", "profiler\src\Tools\ETW\dd-prof-etw\dd-prof-etw-agent\dd-prof-etw-agent.csproj", "{B9662E54-7FE8-4199-B98F-3125E0D9F225}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.HttpRequest", "profiler\src\Demos\Samples.HttpRequest\Samples.HttpRequest.csproj", "{C17EB679-C517-42FA-9D8A-902A51015951}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -483,6 +485,22 @@ Global
 		{B9662E54-7FE8-4199-B98F-3125E0D9F225}.Release|x64.Build.0 = Release|Any CPU
 		{B9662E54-7FE8-4199-B98F-3125E0D9F225}.Release|x86.ActiveCfg = Release|Any CPU
 		{B9662E54-7FE8-4199-B98F-3125E0D9F225}.Release|x86.Build.0 = Release|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|x64.ActiveCfg = Debug|x64
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|x64.Build.0 = Debug|x64
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|x86.ActiveCfg = Debug|x86
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Debug|x86.Build.0 = Debug|x86
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|ARM64.Build.0 = Release|Any CPU
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|x64.ActiveCfg = Release|x64
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|x64.Build.0 = Release|x64
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|x86.ActiveCfg = Release|x86
+		{C17EB679-C517-42FA-9D8A-902A51015951}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -523,6 +541,7 @@ Global
 		{EACEAEE9-23A6-448F-A56E-39FE4E837FA6} = {3437D742-5FB6-4457-8291-1EBBADBEE1BC}
 		{837CD3F8-08E9-4952-9834-5179B60242DD} = {C1D06C89-E4D1-4E09-9AB6-35BB5A1DEB04}
 		{B9662E54-7FE8-4199-B98F-3125E0D9F225} = {C1D06C89-E4D1-4E09-9AB6-35BB5A1DEB04}
+		{C17EB679-C517-42FA-9D8A-902A51015951} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {917C242A-028D-42FD-BA47-E7317B6A36B4}
