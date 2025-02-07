@@ -173,9 +173,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             "xsrftoken"
         ];
 
-        private static ConcurrentAdaptiveCache<Type, bool> _redactedTypesCache = new(evictionPolicyKind:EvictionPolicy.LFU);
+        private static ConcurrentAdaptiveCache<Type, bool> _redactedTypesCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
 
-        private static ConcurrentAdaptiveCache<string, bool> _redactedKeywordsCache = new(evictionPolicyKind: EvictionPolicy.LFU);
+        private static ConcurrentAdaptiveCache<string, bool> _redactedKeywordsCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
 
         internal static bool IsSafeToCallToString(Type type)
         {
