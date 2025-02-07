@@ -103,6 +103,40 @@ CrashReporting::~CrashReporting()
     }
 }
 
+ddog_crasht_OsInfo GetOsInfo()
+{
+    auto osType = libdatadog::to_char_slice(
+#ifdef _WIN32
+                "Windows"
+#elif MACOS
+                "macOS"
+#else
+                "Linux"
+#endif
+    );
+
+    auto architecture = libdatadog::to_char_slice(
+#ifdef AMD64
+                "x86_64"
+#elif X86
+                "x86"
+#elif ARM64
+                "arm64"
+#elif ARM
+                "arm"
+#endif
+    );
+
+    auto osInfo = ddog_crasht_OsInfo {
+        .architecture = architecture,
+        .bitness = {},
+        .os_type = osType,
+        .version = {}
+    };
+
+    return osInfo;
+}
+
 int32_t CrashReporting::Initialize()
 {
     bool succeeded = false;
@@ -115,6 +149,8 @@ int32_t CrashReporting::Initialize()
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_timestamp_now(&_builder));
 
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_proc_info(&_builder, {_pid}));
+
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_os_info(&_builder, GetOsInfo()));
 
     return 0;
 }
