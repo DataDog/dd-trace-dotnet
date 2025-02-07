@@ -79,7 +79,7 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
     }
     public void Panic()
     {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 5);
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, int>)*(VTable + 5);
         var result = func(_implementation);
         if (result != 0)
         {

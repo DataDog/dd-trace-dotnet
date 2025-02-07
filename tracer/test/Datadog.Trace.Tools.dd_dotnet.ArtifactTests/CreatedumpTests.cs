@@ -581,7 +581,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         void ValidateStacktrace(JToken callstack)
         {
-            callstack.Should().BeOfType<JArray>();
+            callstack["frames"].Should().BeOfType<JArray>();
 
             var frames = (JArray)callstack["frames"];
 
