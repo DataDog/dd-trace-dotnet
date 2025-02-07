@@ -572,6 +572,15 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("cmd.component", "process")
                 .Matches("span.kind", "internal"));
 
+        public static Result IsProtobufV0(this MockSpan span) => Result.FromSpan(span)
+            .Tags(s => s
+                .Matches(Tags.SchemaType, "protobuf")
+                .IsPresent(Tags.SchemaName)
+                .IsPresent(Tags.SchemaOperation)
+                .IsPresent(Tags.SchemaId)
+                .IsPresent(Tags.SchemaDefinition)
+                .IsPresent(Tags.SchemaWeight));
+
         public static Result IsRabbitMQV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "amqp.command")

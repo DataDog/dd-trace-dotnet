@@ -12332,6 +12332,102 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "Protobuf",
+    "AssemblyName": "Google.Protobuf",
+    "TargetTypeName": "Google.Protobuf.IBufferMessage",
+    "TargetMethodName": "InternalMergeFrom",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Google.Protobuf.ParseContext&"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 15,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalMergeFromIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Protobuf",
+    "AssemblyName": "Google.Protobuf",
+    "TargetTypeName": "Google.Protobuf.IBufferMessage",
+    "TargetMethodName": "InternalWriteTo",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Google.Protobuf.WriteContext&"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 15,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalWriteToIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Protobuf",
+    "AssemblyName": "Google.Protobuf",
+    "TargetTypeName": "Google.Protobuf.IMessage",
+    "TargetMethodName": "MergeFrom",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Google.Protobuf.CodedInputStream"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageMergeFromIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Protobuf",
+    "AssemblyName": "Google.Protobuf",
+    "TargetTypeName": "Google.Protobuf.IMessage",
+    "TargetMethodName": "WriteTo",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Google.Protobuf.CodedOutputStream"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration",
+    "IntegrationKind": 2,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "RabbitMQ",
     "AssemblyName": "RabbitMQ.Client",
     "TargetTypeName": "RabbitMQ.Client.AsyncDefaultBasicConsumer",
@@ -13504,7 +13600,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13529,7 +13625,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13551,7 +13647,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13575,7 +13671,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13597,7 +13693,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13621,7 +13717,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13643,7 +13739,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13667,7 +13763,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13691,7 +13787,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13716,7 +13812,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13738,7 +13834,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13762,7 +13858,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13784,7 +13880,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13808,7 +13904,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13832,7 +13928,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13854,7 +13950,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13878,7 +13974,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },

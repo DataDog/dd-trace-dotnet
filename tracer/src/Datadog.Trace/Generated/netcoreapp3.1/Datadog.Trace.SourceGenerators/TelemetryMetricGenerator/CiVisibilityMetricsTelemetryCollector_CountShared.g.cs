@@ -254,6 +254,9 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "integration_name:emailhtmlinjection", "error_type:duck_typing" }),
             new(new[] { "integration_name:emailhtmlinjection", "error_type:invoker" }),
             new(new[] { "integration_name:emailhtmlinjection", "error_type:execution" }),
+            new(new[] { "integration_name:protobuf", "error_type:duck_typing" }),
+            new(new[] { "integration_name:protobuf", "error_type:invoker" }),
+            new(new[] { "integration_name:protobuf", "error_type:execution" }),
         };
 
     /// <summary>

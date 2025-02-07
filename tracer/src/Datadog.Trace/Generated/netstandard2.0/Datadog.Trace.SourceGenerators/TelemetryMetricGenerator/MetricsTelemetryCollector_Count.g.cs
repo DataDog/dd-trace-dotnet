@@ -56,7 +56,6 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:msmq" }),
             new(new[] { "integration_name:kafka" }),
             new(new[] { "integration_name:cosmosdb" }),
-            new(new[] { "integration_name:awss3" }),
             new(new[] { "integration_name:awssdk" }),
             new(new[] { "integration_name:awssqs" }),
             new(new[] { "integration_name:awssns" }),
@@ -103,6 +102,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:sessiontimeout" }),
             new(new[] { "integration_name:datadogtracemanual" }),
             new(new[] { "integration_name:emailhtmlinjection" }),
+            new(new[] { "integration_name:protobuf" }),
             // spans_finished, index = 82
             new(null),
             // spans_enqueued_for_serialization, index = 83
@@ -478,7 +478,6 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:msmq" }),
             new(new[] { "integration_name:kafka" }),
             new(new[] { "integration_name:cosmosdb" }),
-            new(new[] { "integration_name:awss3" }),
             new(new[] { "integration_name:awssdk" }),
             new(new[] { "integration_name:awssqs" }),
             new(new[] { "integration_name:awssns" }),
@@ -525,6 +524,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:sessiontimeout" }),
             new(new[] { "integration_name:datadogtracemanual" }),
             new(new[] { "integration_name:emailhtmlinjection" }),
+            new(new[] { "integration_name:protobuf" }),
             // direct_log_api.requests, index = 478
             new(null),
             // direct_log_api.responses, index = 479
