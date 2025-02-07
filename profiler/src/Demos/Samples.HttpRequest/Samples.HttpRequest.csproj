@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net7.0;net8.0;net9.0</TargetFrameworks>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+
+    <!--This is required for smoke test assembly discovery-->
+    <AssemblyName>Samples.HttpRequest</AssemblyName>
+    <!-- This is required to avoid compilation error (duplicated). This has been done for test. See Program.cs for more info.-->
+
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
