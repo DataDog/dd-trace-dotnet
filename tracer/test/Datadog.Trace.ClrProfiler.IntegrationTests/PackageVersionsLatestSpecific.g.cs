@@ -283,11 +283,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
       public static IEnumerable<object[]> AwsS3 =>
 
-          new List<object[]>
-          {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
-              new object[] { string.Empty },
+                new object[] { string.Empty },
 #else
+#if NET462
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414" },
+#endif
 #if NETCOREAPP2_1
                 new object[] { "3.3.113.2" },
                 new object[] { "3.5.10.2" },
@@ -329,7 +334,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.7.414" },
 #endif
 #endif
-          };
+            };
 
       public static IEnumerable<object[]> MongoDB =>
 

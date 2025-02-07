@@ -230,6 +230,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NET462
+                new object[] { "3.7.414" },
+#endif
 #if NETCOREAPP2_1
                 new object[] { "3.7.414" },
 #endif

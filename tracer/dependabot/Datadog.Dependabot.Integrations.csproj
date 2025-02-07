@@ -18,22 +18,22 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.401.8 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.401.8" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.401.10 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.401.10" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.15 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.17 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.15" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.30 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.32 -->
     <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.30" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.65 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.67 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.65" />
 
     <!-- Integration: AWSSDK.S3 -->
@@ -43,12 +43,12 @@
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.88 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.90 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.88" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.88 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.90 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.400.88" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
@@ -100,7 +100,7 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.0.1 -->
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.0.3 -->
     <PackageReference Include="HotChocolate.AspNetCore" Version="14.3.0" />
 
     <!-- Integration: amqmdnetstd -->
