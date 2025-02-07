@@ -42,6 +42,8 @@ public class EmailInjectionBaseTests : InstrumentationTestsBase
     {
         try
         {
+            var r = taintedLastName + "we";
+            Console.WriteLine(r);
             expression.Invoke();
         }
         catch (SmtpException) { }
