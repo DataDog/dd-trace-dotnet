@@ -44,12 +44,17 @@ namespace Datadog.Trace.Configuration
             {
                 _subscriptionManager.SubscribeToChanges(_subscription!);
 
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);     // 15
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true); // 14
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);  // 13
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);     // 12
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true); // 19
-                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);    // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingCustomTags, true);            // 15
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingHttpHeaderTags, true);        // 14
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingLogsInjection, true);         // 13
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRate, true);            // 12
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingTracingEnabled, true);        // 19
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.ApmTracingSampleRules, true);           // 29
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableDynamicInstrumentation, true);    // 38
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableExceptionReplay, true);           // 39
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableCodeOrigin, true);                // 40
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableLiveDebugging, true);             // 41
+
             }
         }
 
