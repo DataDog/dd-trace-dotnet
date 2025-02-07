@@ -8,7 +8,7 @@ jobs:
     permissions:
       actions: read # read secrets
       contents: read
-      statuses: write # add status checks (?) 
+      statuses: write # add status checks (?)
     steps:
       - name: Checkout
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
@@ -18,8 +18,5 @@ jobs:
         with:
           dd_api_key: ${{ secrets.DD_API_KEY }}
           dd_app_key: ${{ secrets.DD_APP_KEY }}
-          dd_service: dd-trace-dotnet
           dd_site: datadoghq.com
-          dd_env: ci
           cpu_count: 2
-          
