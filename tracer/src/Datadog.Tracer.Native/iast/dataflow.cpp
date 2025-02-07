@@ -126,7 +126,7 @@ ModuleAspects::ModuleAspects(Dataflow* dataflow, ModuleInfo* module)
     this->_module = module;
 
     // Determine aspects which apply to this module
-    for (auto a : dataflow->_aspects)
+    for (auto const& a : dataflow->_aspects)
     {
         auto aspectReference = a->GetAspectReference(this);
         if (aspectReference)
@@ -326,14 +326,14 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
 void Dataflow::LoadSecurityControls()
 {
     auto securityControlsConfig = shared::GetEnvironmentValue(environment::security_controls_configuration);
-    if (securityControlsConfig.size() > 0)
+    if (!securityControlsConfig.empty())
     {
         DataflowAspectClass* aspectClass = nullptr;
 
         trace::Logger::Debug("Dataflow::LoadSecurityControls -> Processing Security Controls Config... ",
                              securityControlsConfig);
         auto securityControls = shared::Split(securityControlsConfig, ';');
-        for (auto securityControlLine : securityControls)
+        for (auto const& securityControlLine : securityControls)
         {
             auto securityControl = shared::Trim(securityControlLine);
             if (securityControl.size() == 0 || securityControl[0] == '#')
@@ -366,7 +366,7 @@ void Dataflow::LoadSecurityControls()
             UINT32 secureMarks = 0;
             if ((int) parts.size() > ++part) // Vulnerability type
             {
-                for (auto vulnPart : Split(shared::ToString(parts[part]), ","))
+                for (auto const& vulnPart : Split(shared::ToString(parts[part]), ","))
                 {
                     auto vuln = ParseVulnerabilityType(shared::ToString(vulnPart));
                     if (vuln == VulnerabilityType::None)
@@ -393,10 +393,10 @@ void Dataflow::LoadSecurityControls()
             auto targetType = parts[++part];
             auto targetMethodPart = parts[++part];
 
-            std::vector<int> parameterIndexes;
+            std::vector<int> parameterIndexes(5);
             if ((int) parts.size() > ++part) // Parameter indexes
             {
-                for (auto paramPart : Split(shared::ToString(parts[part]), ","))
+                for (auto const& paramPart : Split(shared::ToString(parts[part]), ","))
                 {
                     int param = -1;
                     if (!TryParseInt(paramPart, &param))
@@ -411,7 +411,7 @@ void Dataflow::LoadSecurityControls()
                 }
             }
 
-            if (parameterIndexes.size() == 0)
+            if (parameterIndexes.empty())
             {
                 parameterIndexes.push_back(0);
             }
@@ -835,7 +835,7 @@ std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
 
 bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects)
 {
-    for (auto aspect : aspects)
+    for (auto const& aspect : aspects)
     {
         if (aspect->Apply(context))
         {
