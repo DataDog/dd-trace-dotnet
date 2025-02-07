@@ -559,10 +559,10 @@
         "name": "Google.Protobuf",
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.0.0",
-        "minVersionTestedInclusive": null,
+        "minVersionTestedInclusive": "3.29.3",
         "maxVersionSupportedInclusive": "3.29.3",
         "maxVersionAvailableInclusive": "3.29.3",
-        "maxVersionTestedInclusive": null
+        "maxVersionTestedInclusive": "3.29.3"
       }
     ]
   },
