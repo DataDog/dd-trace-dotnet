@@ -106,7 +106,7 @@ CrashReporting::~CrashReporting()
 ddog_crasht_OsInfo GetOsInfo()
 {
     auto osType = libdatadog::to_char_slice(
-#ifdef _WIN32
+#ifdef _WINDOWS
                 "Windows"
 #elif MACOS
                 "macOS"
@@ -116,7 +116,13 @@ ddog_crasht_OsInfo GetOsInfo()
     );
 
     auto architecture = libdatadog::to_char_slice(
-#ifdef AMD64
+#ifdef _WINDOWS
+#ifdef BIT64
+                "x86_64"
+#else
+                "x86"
+#endif
+#elif AMD64
                 "x86_64"
 #elif X86
                 "x86"
