@@ -85,6 +85,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger AsmRaspCmd = Create(37);
 
+        public static readonly BigInteger EnableDynamicInstrumentation = Create(38);
+
+        public static readonly BigInteger EnableExceptionReplay = Create(39);
+
+        public static readonly BigInteger EnableCodeOrigin = Create(40);
+
+        public static readonly BigInteger EnableLiveDebugging = Create(42);
+
         private static BigInteger Create(int index) => new(1UL << index);
     }
 }
