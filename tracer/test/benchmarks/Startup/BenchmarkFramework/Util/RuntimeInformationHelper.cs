@@ -1,7 +1,6 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
-namespace StartupBenchmarks;
+namespace BenchmarkFramework.Util;
 
 public static class RuntimeInformationHelper
 {

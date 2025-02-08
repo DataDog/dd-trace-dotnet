@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace StartupBenchmarks;
+﻿namespace BenchmarkFramework;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class BenchmarkAttribute(string description) : Attribute

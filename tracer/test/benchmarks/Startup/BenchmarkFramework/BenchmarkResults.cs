@@ -1,4 +1,4 @@
-﻿namespace StartupBenchmarks;
+﻿namespace BenchmarkFramework;
 
 public readonly record struct BenchmarkResults(
     int Order,

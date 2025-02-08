@@ -1,4 +1,4 @@
-﻿namespace StartupBenchmarks;
+﻿namespace BenchmarkFramework.Util;
 
 public static class Statistics
 {

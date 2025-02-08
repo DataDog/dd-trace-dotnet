@@ -1,10 +1,11 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 
-namespace StartupBenchmarks;
+namespace BenchmarkFramework.Runners;
 
-public class StartupBenchmarkRunner
-    : BenchmarkRunner<StartupBenchmarks, ProcessStartInfo>
+public class StartupBenchmarkRunner<TBenchmarkContainer>
+    : BenchmarkRunner<TBenchmarkContainer, ProcessStartInfo>
+    where TBenchmarkContainer : new()
 {
     private readonly string _fileName;
     private readonly Collection<string> _arguments;

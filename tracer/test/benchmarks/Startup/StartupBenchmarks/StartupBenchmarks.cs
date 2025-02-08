@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using BenchmarkFramework;
 
 namespace StartupBenchmarks;
 

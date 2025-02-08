@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace StartupBenchmarks;
+﻿namespace BenchmarkFramework;
 
 public interface IBenchmark
 {
@@ -13,4 +11,5 @@ public readonly record struct Benchmark<TState>(
     int Order,
     string Name,
     bool IsBaseline,
-    Action<TState> Action) : IBenchmark;
+    Action<TState> Action)
+    : IBenchmark;

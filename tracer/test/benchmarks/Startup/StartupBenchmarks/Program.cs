@@ -1,11 +1,14 @@
-using StartupBenchmarks.Exporters;
+using BenchmarkFramework;
+using BenchmarkFramework.Exporters;
+using BenchmarkFramework.Runners;
+using BenchmarkFramework.Util;
 
 namespace StartupBenchmarks;
 
 internal static class Program
 {
     private const int WarmupIterationCount = 1;
-    private const int BenchmarkIterationCount = 2;
+    private const int BenchmarkIterationCount = 5;
 
     public static void Main(string[] args)
     {
@@ -18,7 +21,7 @@ internal static class Program
             ["DD_DOTNET_TRACER_HOME"] = tracerHomeDirectory
         };
 
-        var runner = new StartupBenchmarkRunner("dotnet", ["exec", entryAssemblyPath], globalEnvVars);
+        var runner = new StartupBenchmarkRunner<StartupBenchmarks>("dotnet", ["exec", entryAssemblyPath], globalEnvVars);
         var benchmarks = runner.GetBenchmarks();
         var results = runner.RunAll(WarmupIterationCount, BenchmarkIterationCount);
 

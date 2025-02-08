@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmptyConsoleApp", "EmptyCon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StartupBenchmarks", "StartupBenchmarks\StartupBenchmarks.csproj", "{FF42022D-E19B-4444-BCDC-5D659D9971BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BenchmarkFramework", "BenchmarkFramework\BenchmarkFramework.csproj", "{189E1EAA-AB3B-4A6B-BDBB-89181F44DF89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{FF42022D-E19B-4444-BCDC-5D659D9971BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF42022D-E19B-4444-BCDC-5D659D9971BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF42022D-E19B-4444-BCDC-5D659D9971BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{189E1EAA-AB3B-4A6B-BDBB-89181F44DF89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{189E1EAA-AB3B-4A6B-BDBB-89181F44DF89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{189E1EAA-AB3B-4A6B-BDBB-89181F44DF89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{189E1EAA-AB3B-4A6B-BDBB-89181F44DF89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

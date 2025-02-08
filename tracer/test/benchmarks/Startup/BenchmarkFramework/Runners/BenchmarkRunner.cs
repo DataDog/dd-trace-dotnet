@@ -1,9 +1,10 @@
 ﻿using System.Reflection;
+using BenchmarkFramework.Util;
 
-namespace StartupBenchmarks;
+namespace BenchmarkFramework.Runners;
 
-public abstract class BenchmarkRunner<TBenchmarksContainer, TState>
-    where TBenchmarksContainer : new()
+public abstract class BenchmarkRunner<TBenchmarkContainer, TState>
+    where TBenchmarkContainer : new()
 {
     private List<Benchmark<TState>>? _benchmarks;
     private Benchmark<TState>? _baseline;
@@ -43,22 +44,22 @@ public abstract class BenchmarkRunner<TBenchmarksContainer, TState>
             return _benchmarks;
         }
 
-        var methods = typeof(TBenchmarksContainer).GetMethods()
-                                                  .Select(method => (method, attribute: method.GetCustomAttribute<BenchmarkAttribute>()))
-                                                  .Where(t => t.attribute is not null)
-                                                  .ToList();
+        var methods = typeof(TBenchmarkContainer).GetMethods()
+                                                 .Select(method => (method, attribute: method.GetCustomAttribute<BenchmarkAttribute>()))
+                                                 .Where(t => t.attribute is not null)
+                                                 .ToList();
 
         var benchmarks = new List<Benchmark<TState>>(methods.Count);
 
         foreach (var (method, attribute) in methods)
         {
-            var container = new TBenchmarksContainer();
+            var container = new TBenchmarkContainer();
 
             var benchmark = new Benchmark<TState>(
                 benchmarks.Count,
                 attribute!.Description ?? method.Name,
                 attribute.IsBaseline,
-                (Action<TState>)method.CreateDelegate(typeof(Action<TState>), container));
+                method.CreateDelegate<Action<TState>>(container));
 
             if (benchmark.IsBaseline)
             {
