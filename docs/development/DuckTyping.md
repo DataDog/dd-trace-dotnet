@@ -315,7 +315,7 @@ DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyTarge
 if (proxyResult.Success)
 {
     // Pass in null, as there's no "instance" to duck type here
-    return proxyResult.CreateInstance(null!);
+    return proxyResult.CreateInstance(null);
 }
 else
 {
@@ -355,7 +355,7 @@ DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyType,
 if (proxyResult.Success)
 {
     // Pass in null, as there's no "instance" to duck type here, to create an instance of our proxy
-    var proxy = (IObjectFactoryProxy)proxyResult.CreateInstance(null!);
+    var proxy = (IObjectFactoryProxy)proxyResult.CreateInstance(null);
     
     // invoke methods on the proxy
     object obj = proxy.CreateObject();

@@ -21,16 +21,21 @@ namespace Datadog.Trace.Util
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbCommandCache));
 
-        private static readonly SmallCacheOrNoCache<string, TagsCacheItem> _cache = new(MaxConnectionStrings, "connection strings");
+        private static ConcurrentDictionary<string, TagsCacheItem>? _cache = new();
 
         /// <summary>
-        /// Gets the cache for unit tests
+        /// Gets or sets the underlying cache, to be used for unit tests
         /// </summary>
-        internal static SmallCacheOrNoCache<string, TagsCacheItem> Cache
+        internal static ConcurrentDictionary<string, TagsCacheItem>? Cache
         {
             get
             {
                 return _cache;
+            }
+
+            set
+            {
+                _cache = value;
             }
         }
 
@@ -60,8 +65,34 @@ namespace Datadog.Trace.Util
                 return default;
             }
 
-            // ReSharper disable once ConvertClosureToMethodGroup -- Lambdas are cached by the compiler
-            return _cache.GetOrAdd(connectionString, cs => ExtractTagsFromConnectionString(cs));
+            var cache = _cache;
+
+            if (cache != null)
+            {
+                if (cache.TryGetValue(connectionString, out var tags))
+                {
+                    // Fast path: it's expected that most calls will end up in this branch
+                    return tags;
+                }
+
+                if (cache.Count <= MaxConnectionStrings)
+                {
+                    // Populating the cache. This path should be hit only during application warmup
+                    // ReSharper disable once ConvertClosureToMethodGroup -- Lambdas are cached by the compiler
+                    return cache.GetOrAdd(connectionString, cs => ExtractTagsFromConnectionString(cs));
+                }
+
+                // The assumption "connection strings are a finite set" was wrong, disabling the cache
+                // Use atomic operation to log only once
+                if (Interlocked.Exchange(ref _cache, null) != null)
+                {
+                    Log.Information<int>("More than {MaxConnectionStrings} different connection strings were used, disabling cache", MaxConnectionStrings);
+                }
+            }
+
+            // Fallback: too many different connection string, there might be a random part in them
+            // Stop using the cache to prevent memory leaks
+            return ExtractTagsFromConnectionString(connectionString);
         }
 
         private static TagsCacheItem ExtractTagsFromConnectionString(string connectionString)

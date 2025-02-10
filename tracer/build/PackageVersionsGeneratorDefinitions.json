@@ -231,16 +231,6 @@
     }]
   },
   {
-    "IntegrationName": "Protobuf",
-    "SampleProjectName": "Samples.GoogleProtobuf",
-    "NugetPackageSearchName": "Google.Protobuf",
-    "MinVersion": "3.0.0",
-    "MaxVersionExclusive": "4.0.0",
-    "SpecificVersions": [
-      "3.*.*"
-    ]
-  },
-  {
     "IntegrationName": "RabbitMQ",
     "SampleProjectName": "Samples.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",

@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         public SpanExtensionsTests()
         {
             // Reset the cache
-            DbCommandCache.Cache.ResetForTests();
+            DbCommandCache.Cache = new();
         }
 
         [Theory]
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
                 var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
-                Assert.True(DbCommandCache.Cache.IsCaching);
+                Assert.NotNull(DbCommandCache.Cache);
                 Assert.Equal("myServerName" + i, commandTags.OutHost);
             }
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
                 var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
-                Assert.False(DbCommandCache.Cache.IsCaching);
+                Assert.Null(DbCommandCache.Cache);
                 Assert.Equal("myServerName" + "NoCache" + i, commandTags.OutHost);
             }
         }

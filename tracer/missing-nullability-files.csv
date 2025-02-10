@@ -226,6 +226,7 @@ src/Datadog.Trace/Util/ArraySlice.cs
 src/Datadog.Trace/Util/AsyncUtil.cs
 src/Datadog.Trace/Util/Clock.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
+src/Datadog.Trace/Util/FnvHash64.cs
 src/Datadog.Trace/Util/IClock.cs
 src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
