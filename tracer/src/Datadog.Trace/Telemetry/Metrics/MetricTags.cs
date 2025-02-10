@@ -218,6 +218,7 @@ internal static class MetricTags
         [Description("integration_name:msmq")]Msmq,
         [Description("integration_name:kafka")]Kafka,
         [Description("integration_name:cosmosdb")]CosmosDb,
+        [Description("integration_name:awss3")]AwsS3,
         [Description("integration_name:awssdk")]AwsSdk,
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
