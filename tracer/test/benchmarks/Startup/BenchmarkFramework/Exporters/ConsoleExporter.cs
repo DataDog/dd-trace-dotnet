@@ -75,31 +75,26 @@ public class ConsoleExporter
         }
     }
 
-    private static string FormatMilliseconds(double? milliseconds, bool isBaseline = false)
+    private static string FormatMilliseconds(double milliseconds, bool isBaseline = false)
     {
-        if (milliseconds is null)
-        {
-            return string.Empty;
-        }
-
         if (isBaseline)
         {
-            return $"[bold]{milliseconds.Value:#,##0.00} ms[/]";
+            return $"[bold]{milliseconds:#,##0.00} ms[/]";
         }
 
-        return $"{milliseconds.Value:#,##0.00} ms";
+        return $"{milliseconds:#,##0.00} ms";
     }
 
-    private static string FormatMillisecondsDiff(double? milliseconds, bool isBaseline = false)
+    private static string FormatMillisecondsDiff(double? milliseconds, bool isBaseline)
     {
-        if (isBaseline || milliseconds is null)
-        {
-            return string.Empty;
-        }
-
         if (isBaseline)
         {
-            return $"[bold]{milliseconds.Value:#,##0.00} ms[/]";
+            return "[bold](baseline)[/]";
+        }
+
+        if (milliseconds is null)
+        {
+            return "-";
         }
 
         return $"{milliseconds.Value:#,##0.00} ms";
@@ -114,7 +109,7 @@ public class ConsoleExporter
 
         if (baseline is null)
         {
-            return string.Empty;
+            return "-";
         }
 
         return $"{current / baseline:#,##0.00}";
