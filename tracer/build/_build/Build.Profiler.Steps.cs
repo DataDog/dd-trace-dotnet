@@ -20,6 +20,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using DiffMatchPatch;
 using Logger = Serilog.Log;
+using System.Runtime.CompilerServices;
 
 partial class Build
 {
@@ -390,7 +391,7 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so" };
+            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
@@ -426,16 +427,20 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatformForProfiler)
+            var files = new[] { "Datadog.Profiler.Native", "datadog_profiling_ffi" };
+            foreach (var file in files)
             {
-                var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
-                var source = sourceDir / "Datadog.Profiler.Native.dll";
-                var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                foreach (var architecture in ArchitecturesForPlatformForProfiler)
+                {
+                    var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
+                    var source = sourceDir / $"{file}.dll";
+                    var dest = MonitoringHomeDirectory / $"win-{architecture}";
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = sourceDir / "Datadog.Profiler.Native.pdb";
-                dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
-                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    source = sourceDir / $"{file}.pdb";
+                    dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                }
             }
         });
 
@@ -953,7 +958,6 @@ partial class Build
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
-            var dest = ProfilerDeployDirectory / arch / $"{FileNames.NativeProfiler}.{extension}";
 
             // If we need to increase this version on arm64 later, that is ok as long
             // as it doesn't go above 2.23. Just update the version below. We must
@@ -961,12 +965,21 @@ partial class Build
             //
             // See also the ValidateNativeTracerGlibcCompatibility Nuke task and the checks
             // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
-            var expectedGlibcVersion = IsArm64
-                ? new Version(2, 18)
-                : new Version(2, 17);
 
-            ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+            var filesAndVersion = new List<KeyValuePair<string, Version>>
+            {
+                new(FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17)),
+                new("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16))
+            };
+
+            foreach (var (file, expectedGlibcVersion) in filesAndVersion)
+            {
+                var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
+                ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+
+            }
         });
+
     enum SanitizerKind
     {
         None,
