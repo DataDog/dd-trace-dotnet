@@ -63,7 +63,7 @@ namespace Datadog.Trace.Configuration
             _origin = origin;
         }
 
-        internal string JsonConfigurationFilePath { get; set; } = "N/A";
+        internal string? JsonConfigurationFilePath { get; }
 
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
@@ -78,17 +78,6 @@ namespace Datadog.Trace.Configuration
         {
             var json = File.ReadAllText(filename);
             return new JsonConfigurationSource(json, origin, filename);
-        }
-
-        /// <summary>
-        /// Returns a string that represents the current object.
-        /// </summary>
-        /// <returns>
-        /// A string that indicates the source of the datadog.json configuration.
-        /// </returns>
-        public override string ToString()
-        {
-            return JsonConfigurationFilePath;
         }
 
         /// <summary>

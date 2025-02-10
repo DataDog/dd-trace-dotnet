@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
-        private string JsonConfigurationFilePath { get; set; } = "N/A";
+        private string? JsonConfigurationFilePath { get; set; }
 
         /// <summary>
         /// Adds a new configuration source to this instance.
@@ -46,7 +46,10 @@ namespace Datadog.Trace.Configuration
             if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
-            JsonConfigurationFilePath = source.ToString() ?? "N/A";
+            if (source is JsonConfigurationSource jsonSource)
+            {
+                JsonConfigurationFilePath = jsonSource.JsonConfigurationFilePath;
+            }
         }
 
         /// <summary>
@@ -59,11 +62,6 @@ namespace Datadog.Trace.Configuration
             if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
 
             _sources.Insert(index, item);
-        }
-
-        public override string ToString()
-        {
-            return JsonConfigurationFilePath;
         }
 
         /// <inheritdoc />
