@@ -77,11 +77,13 @@ namespace Honeypot
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });
+            NugetPackages.Add("xunit.v3.core", new [] { "xunit.v3" });
             NugetPackages.Add("MSTest", new [] { "MSTest.TestFramework" });
             NugetPackages.Add("Serilog", new [] { "Serilog" });
             NugetPackages.Add("NLog", new [] { "NLog" });
             NugetPackages.Add("log4net", new [] { "log4net" });
-            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { "Microsoft.Azure.Functions.Worker.Core" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker", new string[] { "Microsoft.Azure.Functions.Worker" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
@@ -94,6 +96,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Identity", new [] { "Microsoft.AspNetCore.Identity" });
             NugetPackages.Add("Microsoft.Extensions.Identity.Core", new [] { "Microsoft.Extensions.Identity.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Authentication.Abstractions", new [] { "Microsoft.AspNetCore.Authentication.Abstractions" });
+            NugetPackages.Add("Microsoft.AspNetCore.Http.Abstractions", new [] { "Microsoft.AspNetCore.Http.Abstractions" });
             NugetPackages.Add("OpenTelemetry.Api", new [] { "OpenTelemetry.Api" });
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });

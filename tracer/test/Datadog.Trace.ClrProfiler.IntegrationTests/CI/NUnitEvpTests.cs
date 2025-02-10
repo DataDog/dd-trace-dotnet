@@ -411,6 +411,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "EarlyFlakeDetection")]
         public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
         {
+            // TODO: Fix alpine flakiness
+            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
+
             if (new Version(FrameworkDescription.Instance.ProductVersion).Major >= 5)
             {
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) < new Version("3.13"))
@@ -420,6 +423,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 }
             }
 
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();

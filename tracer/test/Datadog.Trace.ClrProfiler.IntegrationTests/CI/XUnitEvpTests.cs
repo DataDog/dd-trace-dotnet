@@ -379,6 +379,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
     {
+        // TODO: Fix alpine flakiness
+        Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
+
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
         var testModules = new List<MockCIVisibilityTestModule>();

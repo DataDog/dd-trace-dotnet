@@ -8,11 +8,12 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Logging;
+
 #pragma warning disable SA1401
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
-    internal class WafLibraryInvoker
+    internal class WafLibraryInvoker : IWafLibraryInvoker
     {
 #if NETFRAMEWORK
         private const string DllName = "ddwaf.dll";
@@ -45,8 +46,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
         private readonly GetKnownAddressesDelegate _getKnownAddresses;
-        private string _version = null;
-        private bool _isKnownAddressesSuported = false;
+        private string _version;
+        private bool _isKnownAddressesSuported;
 
         private WafLibraryInvoker(IntPtr libraryHandle, string libVersion = null)
         {
@@ -243,37 +244,24 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal string[] GetKnownAddresses(IntPtr wafHandle)
         {
-            try
+            uint size = 0;
+            var result = _getKnownAddresses(wafHandle, ref size);
+
+            if (size == 0)
             {
-                if (!IsKnowAddressesSuported())
-                {
-                    return Array.Empty<string>();
-                }
-
-                uint size = 0;
-                var result = _getKnownAddresses(wafHandle, ref size);
-
-                if (size == 0)
-                {
-                    return Array.Empty<string>();
-                }
-
-                string[] knownAddresses = new string[size];
-
-                for (uint i = 0; i < size; i++)
-                {
-                    // Calculate the pointer to each string
-                    var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
-                    knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
-                }
-
-                return knownAddresses;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while getting known addresses");
                 return Array.Empty<string>();
             }
+
+            string[] knownAddresses = new string[size];
+
+            for (uint i = 0; i < size; i++)
+            {
+                // Calculate the pointer to each string
+                var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
+            }
+
+            return knownAddresses;
         }
 
         internal bool IsKnowAddressesSuported(string libVersion = null)
@@ -338,7 +326,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 
-        internal void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
+        public void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
 
         internal IntPtr ObjectArrayGetIndex(ref DdwafObjectStruct array, long index) => _objectArrayGetIndex(ref array, index);
 
@@ -412,7 +400,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal void ObjectFree(ref DdwafObjectStruct input) => _freeObjectField(ref input);
 
-        internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
+        public void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,

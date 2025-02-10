@@ -51,6 +51,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         Logger::EnableDebug(true);
     }
 
+    auto isRunningInAas = IsAzureAppServices();
+
+    if (profiler != nullptr)
+    {
+        if (isRunningInAas)
+        {
+            Logger::Info("The Tracer Profiler is initialized multiple times. This is expected and currently unavoidable when running in AAS.");
+        }
+        else
+        {
+            Logger::Error("The Tracer Profiler is initialized multiple times. This may cause unpredictable failures.",
+                " When running aspnetcore in IIS, make sure to disable managed code in the application pool settings.",
+                " https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/advanced?view=aspnetcore-9.0#create-the-iis-site");
+        }
+    }
+
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
     // we used to bail-out if tracing was disabled, but we now allow the tracer to be loaded
@@ -75,14 +91,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             if (isDotNetProcess &&
                 token_count > 1 &&
                 tokenized_command_line[1] != WStr("test") &&
-                // these are executed with exec, so we could check for that, but the
-                // below check is more conservative, so leaving at that
                 process_command_line.find(WStr("testhost")) == WSTRING::npos &&
+                process_command_line.find(WStr("exec")) == WSTRING::npos &&
                 process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
                 process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
-                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
+                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost' or 'datacollector' or 'vstest.console.dll' or 'exec'");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
         }
@@ -157,7 +172,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    if (IsAzureAppServices())
+    if (isRunningInAas)
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
 
@@ -327,6 +342,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
+    managedInternalModules_.reserve(10);
 
     const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
@@ -552,6 +568,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                         hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
                                                              shared::WSTRING(importName).c_str(),
                                                              profiler_ref);
+
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
@@ -777,6 +794,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                   module_info.assembly.name == system_private_corelib_assemblyName))
     {
         corlib_module_loaded = true;
+        corlib_module_id = module_id;
         corlib_app_domain_id = app_domain_id;
 
         ComPtr<IUnknown> metadata_interfaces;
@@ -915,7 +933,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
-        managedProfilerModuleId_ = module_id;
+        managedInternalModules_.push_back(module_id);
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
@@ -1017,6 +1035,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             const auto& assemblyVersion = assemblyImport.version.str();
 
             Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
+            managedInternalModules_.push_back(module_id);
 
             // Rewrite Instrumentation.IsManualInstrumentationOnly()
             RewriteIsManualInstrumentationOnly(module_metadata, module_id);
@@ -1738,7 +1757,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
     const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
     Logger::Debug("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
-
     return S_OK;
 }
 
@@ -2698,6 +2716,8 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                 module_metadata.metadata_import));
     }
 
+    Logger::Debug("MethodDef was added as an internal rewrite: ", getDistributedTraceMethodDef);
+    getDistributedTraceMethodDef_ = getDistributedTraceMethodDef;
     return hr;
 }
 
@@ -2770,6 +2790,10 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
                                 module_metadata.metadata_import));
     }
 
+    // Store this methodDef token in the internal tokens list
+    Logger::Debug("MethodDef was added as an internal rewrite: ", getNativeTracerVersionMethodDef);
+    getNativeTracerVersionMethodDef_ = getNativeTracerVersionMethodDef;
+
     return hr;
 }
 
@@ -2831,6 +2855,10 @@ HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& mo
                                 GetFunctionInfo(module_metadata.metadata_import, isAutoEnabledMethodDef),
                                 module_metadata.metadata_import));
     }
+
+    // Store this methodDef token in the internal tokens list
+    Logger::Debug("MethodDef was added as an internal rewrite: ", isAutoEnabledMethodDef);
+    isManualInstrumentationOnlyMethodDef_ = isAutoEnabledMethodDef;
 
     return hr;
 }
@@ -4323,15 +4351,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
-    if (!pbUseCachedFunction)
+    if (pbUseCachedFunction == nullptr || !*pbUseCachedFunction)
     {
+        return S_OK;
+    }
+
+    // Extract Module metadata
+    ModuleID module_id;
+    mdToken function_token = mdTokenNil;
+
+    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetFunctionInfo() failed for ",
+                        functionId);
+        return S_OK;
+    }
+
+    // Verify if is the COR module
+    if (module_id == corlib_module_id)
+    {
+        // we don't rewrite the COR module, so we accept all the images from there.
+        *pbUseCachedFunction = true;
         return S_OK;
     }
 
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     auto modulesOpt = module_ids.TryGet();
-
     if (!modulesOpt.has_value())
     {
         Logger::Error(
@@ -4341,18 +4388,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     auto& modules = modulesOpt.value();
-
-    // Extract Module metadata
-    ModuleID module_id;
-    mdToken function_token = mdTokenNil;
-
-    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
-    if (FAILED(hr))
-    {
-        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
-                        functionId);
-        return S_OK;
-    }
 
     // Call RequestRejitOrRevert for register inliners and current NGEN module.
     if (rejit_handler != nullptr)
@@ -4370,31 +4405,90 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    bool isAnInternalModule = false;
+
     // Verify that we have the metadata for this module
     if (!shared::Contains(modules.Ref(), module_id))
     {
-        // we haven't stored a ModuleMetadata for this module,
-        // so there's nothing to do here, we accept the NGEN image.
-        *pbUseCachedFunction = true;
-        return S_OK;
+        isAnInternalModule = shared::Contains(managedInternalModules_, module_id);
+        if (!isAnInternalModule)
+        {
+            // we haven't stored a ModuleMetadata for this module,
+            // so there's nothing to do here, we accept the NGEN image.
+            *pbUseCachedFunction = true;
+            return S_OK;
+        }
     }
 
-    const auto& module_info = GetModuleInfo(this->info_, module_id);
-    if (!module_info.IsValid())
+    // let's get the AssemblyID
+    DWORD module_path_len = 0;
+    AssemblyID assembly_id = 0;
+    hr = this->info_->GetModuleInfo(module_id, nullptr, 0, &module_path_len,
+                                            nullptr, &assembly_id);
+    if (FAILED(hr) || module_path_len == 0)
     {
+        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetModuleInfo() failed for ",
+                        functionId);
         return S_OK;
     }
 
-    const auto& appDomainId = module_info.assembly.app_domain_id;
+    // now the assembly info
+    DWORD assembly_name_len = 0;
+    AppDomainID app_domain_id;
+    hr = this->info_->GetAssemblyInfo(assembly_id, 0, &assembly_name_len, nullptr, &app_domain_id, nullptr);
+    if (FAILED(hr) || assembly_name_len == 0)
+    {
+        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo.GetAssemblyInfo() failed for ",
+                        functionId);
+        return S_OK;
+    }
 
     const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(appDomainId) != first_jit_compilation_app_domains.end();
+        first_jit_compilation_app_domains.find(app_domain_id) != first_jit_compilation_app_domains.end();
 
     if (!has_loader_injected_in_appdomain)
     {
-        Logger::Debug("Disabling NGEN due to missing loader.");
+        Logger::Debug("JITCachedFunctionSearchStarted: Disabling NGEN due to missing loader.");
         // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject
         // it.
+        *pbUseCachedFunction = false;
+        return S_OK;
+    }
+
+    // Let's check if the method has been rewritten internally
+    // if that's the case we don't accept the image
+    bool isKnownMethodDef =
+        function_token == getDistributedTraceMethodDef_ ||
+            function_token == getNativeTracerVersionMethodDef_ ||
+                function_token == isManualInstrumentationOnlyMethodDef_;
+    bool hasBeenRewritten = isKnownMethodDef && isAnInternalModule;
+    if (hasBeenRewritten)
+    {
+        // If we are in debug mode and the image is rejected because has been rewritten then let's write a couple of logs
+        if (Logger::IsDebugEnabled())
+        {
+            const auto& module_info = GetModuleInfo(this->info_, module_id);
+            ComPtr<IUnknown> metadata_interfaces;
+            if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf()) == S_OK)
+            {
+                const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+                Logger::Debug("JITCachedFunctionSearchStarted: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                              "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
+                              ", methodDef=", HexStr(function_token), "]");
+            }
+            else
+            {
+                Logger::Debug("JITCachedFunctionSearchStarted: Rejected (because rewritten) for Module: ", module_info.assembly.name,
+                              ", Function: ", HexStr(function_token),
+                              " previous value = ", *pbUseCachedFunction ? "true" : "false");
+            }
+        }
+
+        // We reject the image and return
         *pbUseCachedFunction = false;
         return S_OK;
     }
@@ -4416,6 +4510,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // If we are in debug mode and the image is rejected because has been rejitted then let's write a couple of logs
         if (Logger::IsDebugEnabled() && hasBeenRejitted)
         {
+            const auto& module_info = GetModuleInfo(this->info_, module_id);
             ComPtr<IUnknown> metadata_interfaces;
             if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
                                                metadata_interfaces.GetAddressOf()) == S_OK)
@@ -4423,14 +4518,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
                 const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
                 auto functionInfo = GetFunctionInfo(metadata_import, function_token);
 
-                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                Logger::Debug("JITCachedFunctionSearchStarted: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Method:", functionInfo.type.name, ".", functionInfo.name,
                               "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
                               ", methodDef=", HexStr(function_token), "]");
             }
             else
             {
-                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                Logger::Debug("JITCachedFunctionSearchStarted: Rejected (because rejitted) for Module: ", module_info.assembly.name,
                               ", Function: ", HexStr(function_token),
                               " previous value = ", *pbUseCachedFunction ? "true" : "false");
             }          

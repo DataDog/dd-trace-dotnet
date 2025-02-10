@@ -24,6 +24,7 @@ TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).WillRepeatedly(Return(false));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).WillRepeatedly(Return(false));
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(false));
 
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
@@ -34,6 +35,7 @@ TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::LockContention));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::GC));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::Heap));
+    ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::Network));
 }
 
 TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
@@ -47,6 +49,7 @@ TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(true));
 
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
@@ -57,6 +60,7 @@ TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::LockContention));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::GC));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Heap));
+    ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Network));
 }
 
 TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
@@ -70,6 +74,7 @@ TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(true));
 
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
     enabledProfilers.Disable(RuntimeProfiler::Cpu);
@@ -82,6 +87,7 @@ TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::LockContention));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::GC));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Heap));
+    ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Network));
 }
 
 TEST(EnabledProfilersTest, CheckWhenDoubleDisable)
@@ -95,6 +101,7 @@ TEST(EnabledProfilersTest, CheckWhenDoubleDisable)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(true));
 
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
     enabledProfilers.Disable(RuntimeProfiler::Cpu);
@@ -107,4 +114,5 @@ TEST(EnabledProfilersTest, CheckWhenDoubleDisable)
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::LockContention));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::GC));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Heap));
+    ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Network));
 }

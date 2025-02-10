@@ -24,6 +24,7 @@ namespace Samples
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
         private static readonly Type ProcessHelpersType = Type.GetType("Datadog.Trace.Util.ProcessHelpers, Datadog.Trace");
         private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.UserDetails, Datadog.Trace");
+        private static readonly Type EventTrackingSdk = Type.GetType("Datadog.Trace.AppSec.EventTrackingSdk, Datadog.Trace");
         private static readonly Type SpanExtensionsType = Type.GetType("Datadog.Trace.SpanExtensions, Datadog.Trace");
         public static readonly Type IpcClientType = Type.GetType("Datadog.Trace.Ci.Ipc.IpcClient, Datadog.Trace");
         private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -51,6 +52,7 @@ namespace Samples
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
+        private static readonly MethodInfo TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IDictionary<string, string>) }, null);
 #if NETCOREAPP
         private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
 #else
@@ -81,6 +83,7 @@ namespace Samples
             {
                 return;
             }
+
             var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
             SetServiceName.Invoke(tracerSettings, new object[] { serviceName });
 
@@ -285,6 +288,7 @@ namespace Samples
             var span = SpanProperty.Invoke(scope, Array.Empty<object>());
             SetServiceNameProperty.Invoke(span, new object[] { serviceName });
         }
+
         public static void TrySetTag(object scope, string key, string value)
         {
             if (SpanProperty != null && SetTagMethod != null)
@@ -300,9 +304,9 @@ namespace Samples
             {
                 var span = SpanProperty.Invoke(scope, Array.Empty<object>());
                 foreach (var property in span.GetType()
-                    .GetProperties(
-                            BindingFlags.Instance |
-                            BindingFlags.NonPublic))
+                                             .GetProperties(
+                                                  BindingFlags.Instance |
+                                                  BindingFlags.NonPublic))
                 {
                     if (property.Name == "Metrics")
                     {
@@ -310,6 +314,7 @@ namespace Samples
                     }
                 }
             }
+
             return null;
         }
 
@@ -384,8 +389,8 @@ namespace Samples
             }
 
             var discoveryService = tracerManager.GetType()
-               .GetProperty("DiscoveryService", BindingFlags.Public | BindingFlags.Instance)
-               ?.GetValue(tracerManager);
+                                                .GetProperty("DiscoveryService", BindingFlags.Public | BindingFlags.Instance)
+                                               ?.GetValue(tracerManager);
 
             if (discoveryService == null)
             {
@@ -393,9 +398,14 @@ namespace Samples
             }
 
             var result = InstrumentationType?.GetMethod("WaitForDiscoveryService", BindingFlags.NonPublic | BindingFlags.Static)
-               ?.Invoke(null, new[] { discoveryService });
+                                            ?.Invoke(null, new[] { discoveryService });
 
             return result as Task ?? Task.CompletedTask;
+        }
+
+        public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
+        {
+            TrackUserLoginSuccessEventMethod.Invoke(null, new object[] { userId, metadata });
         }
 
         public static void SetUser(string userId)
@@ -404,7 +414,7 @@ namespace Samples
             {
                 return;
             }
-            
+
             var scope = GetActiveScope();
             if (scope is null)
             {
@@ -424,7 +434,7 @@ namespace Samples
                 // handled by the aspnet middleware pipeline, so we "manuallY" unwrap it 
                 SetUserMethod.Invoke(null, new object[] { span, userDetails });
             }
-            catch(System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
+            catch (System.Reflection.TargetInvocationException ex) when (ex.InnerException != null)
             {
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
             }
@@ -438,7 +448,9 @@ namespace Samples
 
         private class NoOpDisposable : IDisposable
         {
-            public void Dispose() { }
+            public void Dispose()
+            {
+            }
         }
     }
 }

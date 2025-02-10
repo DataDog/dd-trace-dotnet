@@ -101,13 +101,6 @@ services:
     volumes:
       - "./.localstack:/tmp"
 
-  aerospike:
-    # pinning to a known good version because latest version (6.3.0.5 at time of issue)
-    # causes 'Server memory error' and flake
-    image: aerospike/aerospike-server:6.2.0.6
-    ports:
-    - "127.0.0.1:3000:3000"
-
   rabbitmq:
     image: rabbitmq:3-management
     command: rabbitmq-server
@@ -341,8 +334,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -392,11 +385,12 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -431,7 +425,6 @@ services:
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
-      - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
@@ -461,9 +454,9 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     hostname: integrationtests
     depends_on:
-      - aerospike
       - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
@@ -488,8 +481,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -532,6 +525,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     hostname: integrationtests
 
   IntegrationTests.Serverless:
@@ -539,9 +533,9 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -588,6 +582,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     hostname: integrationtests
 
   ExplorationTests:
@@ -595,8 +590,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -642,7 +637,6 @@ services:
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - aerospike
       - servicestackredis
       - stackexchangeredis
       - stackexchangeredis-replica
@@ -663,16 +657,16 @@ services:
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210 # oracle:1521
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210  # oracle:1521
 
   IntegrationTests.ARM64:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
+    command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
     cap_add:
@@ -731,6 +725,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -767,8 +762,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -809,6 +804,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
+      - RANDOM_SEED
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies

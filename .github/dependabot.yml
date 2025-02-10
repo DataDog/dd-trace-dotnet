@@ -12,6 +12,20 @@ updates:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
+
+  # Azure functions explicit testing - we can't include these with our "normal" process checks
+  # Because they aren't compatible with the dotnet msbuild approach we're using
+  - package-ecosystem: "nuget"
+    directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
+    schedule:
+      interval: "daily"
+    labels:
+      - "dependencies"
+      - "area:dependabot"
+    ignore:
+      - dependency-name: "*" # Ignore patches for all integrations
+        update-types: ["version-update:semver-patch"]
+
   # Src libraries
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace"
@@ -80,3 +94,12 @@ updates:
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      gh-actions-packages:
+        patterns:
+          - "*"

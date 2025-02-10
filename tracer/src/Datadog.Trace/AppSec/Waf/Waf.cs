@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Waf
             _encoder = encoder;
         }
 
-        internal bool Disposed { get; private set; }
+        public bool Disposed { get; private set; }
 
         public string Version => _wafLibraryInvoker.GetVersion();
 
@@ -113,7 +113,33 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string[] GetKnownAddresses()
         {
-            return _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+            bool lockAcquired = false;
+            try
+            {
+                if (_wafLocker.EnterWriteLock())
+                {
+                    lockAcquired = true;
+
+                    var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+                    return result;
+                }
+                else
+                {
+                    return Array.Empty<string>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while getting known addresses");
+                return Array.Empty<string>();
+            }
+            finally
+            {
+                if (lockAcquired)
+                {
+                    _wafLocker.ExitWriteLock();
+                }
+            }
         }
 
         private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)

@@ -54,14 +54,14 @@ namespace Datadog.Trace.PlatformHelpers
             return $"{httpMethod} {resourceUrl}";
         }
 
-        private PropagationContext ExtractPropagatedContext(HttpRequest request)
+        private PropagationContext ExtractPropagatedContext(Tracer tracer, HttpRequest request)
         {
             try
             {
                 // extract propagation details from http headers
                 if (request.Headers is { } headers)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(headers));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new HeadersCollectionAdapter(headers));
                 }
             }
             catch (Exception ex)
@@ -83,7 +83,7 @@ namespace Datadog.Trace.PlatformHelpers
                     // extract propagation details from http headers
                     if (request.Headers is { } requestHeaders)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(
+                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
                             span,
                             new HeadersCollectionAdapter(requestHeaders),
                             headerTagsInternal,
@@ -107,12 +107,12 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            var extractedContext = ExtractPropagatedContext(request).MergeBaggageInto(Baggage.Current);
+            var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
 
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
-            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags);
+            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
 
@@ -202,7 +202,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
-                if (exception is not BlockException)
+                if (BlockException.GetBlockException(exception) is null)
                 {
                     rootSpan.SetException(exception);
                     security.CheckAndBlock(httpContext, rootSpan);

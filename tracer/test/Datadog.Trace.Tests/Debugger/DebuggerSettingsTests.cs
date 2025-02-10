@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
@@ -81,7 +82,7 @@ namespace Datadog.Trace.Tests.Debugger
                 NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().BeTrue();
-            settings.SymbolDatabaseCompressionEnabled.Should().BeFalse();
+            settings.SymbolDatabaseCompressionEnabled.Should().BeTrue();
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
             settings.MaximumDepthOfMembersToCopy.Should().Be(100);
             settings.MaxSerializationTimeInMilliseconds.Should().Be(1000);
@@ -143,60 +144,161 @@ namespace Datadog.Trace.Tests.Debugger
             settings.UploadFlushIntervalMilliseconds.Should().Be(0);
         }
 
-        [Theory]
-        [InlineData("")]
-        [InlineData("False")]
-        [InlineData("false")]
-        [InlineData("0")]
-        [InlineData("2")]
-        [InlineData(null)]
-        public void CodeOriginEnabled_False(string value)
+        public class DebuggerSettingsCodeOriginTests
         {
-            var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
-                NullConfigurationTelemetry.Instance);
+            [Theory]
+            [InlineData("")]
+            [InlineData("False")]
+            [InlineData("false")]
+            [InlineData("0")]
+            [InlineData("2")]
+            [InlineData(null)]
+            public void CodeOriginEnabled_False(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                    NullConfigurationTelemetry.Instance);
 
-            settings.CodeOriginForSpansEnabled.Should().BeFalse();
+                settings.CodeOriginForSpansEnabled.Should().BeFalse();
+            }
+
+            [Theory]
+            [InlineData("True")]
+            [InlineData("true")]
+            [InlineData("1")]
+            public void CodeOriginEnabled_True(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.CodeOriginForSpansEnabled.Should().BeTrue();
+            }
+
+            [Theory]
+            [InlineData("8")]
+            [InlineData("1")]
+            [InlineData("1000")]
+            public void CodeOriginMaxUserFrames(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, value }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.CodeOriginMaxUserFrames.Should().Be(int.Parse(value));
+            }
+
+            [Theory]
+            [InlineData("-1")]
+            [InlineData("0")]
+            [InlineData("")]
+            [InlineData(null)]
+            public void InvalidCodeOriginMaxUserFrames_DefaultUsed(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, value }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.CodeOriginMaxUserFrames.Should().Be(8);
+            }
         }
 
-        [Theory]
-        [InlineData("True")]
-        [InlineData("true")]
-        [InlineData("1")]
-        public void CodeOriginEnabled_True(string value)
+        public class DebuggerSettingsRedactionTests
         {
-            var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
-                NullConfigurationTelemetry.Instance);
+            [Theory]
+            [InlineData("id,name,email", new[] { "id", "name", "email" })]
+            [InlineData("id,ID,Id", new[] { "id" })] // Tests case insensitive uniqueness
+            [InlineData("id,,name", new[] { "id", "name" })] // Tests empty entries removal
+            [InlineData(" id , name ", new[] { "id", "name" })] // Tests trimming
+            [InlineData("", new string[0])]
+            [InlineData(null, new string[0])]
+            public void RedactedIdentifiers_ParsesCorrectly(string value, string[] expected)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new()
+                    {
+                        { ConfigurationKeys.Debugger.RedactedIdentifiers, value }
+                    }),
+                    NullConfigurationTelemetry.Instance);
 
-            settings.CodeOriginForSpansEnabled.Should().BeTrue();
-        }
+                settings.RedactedIdentifiers.Should().BeEquivalentTo(
+                    expected,
+                    options => options.Using<string>(
+                                           ctx =>
+                                               string.Equals(ctx.Subject, ctx.Expectation, StringComparison.OrdinalIgnoreCase))
+                                      .WhenTypeIs<string>());
+            }
 
-        [Theory]
-        [InlineData("8")]
-        [InlineData("1")]
-        [InlineData("1000")]
-        public void CodeOriginMaxUserFrames(string value)
-        {
-            var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, value }, }),
-                NullConfigurationTelemetry.Instance);
+            [Theory]
+            [InlineData("password", "token", new[] { "password", "token" })]
+            [InlineData("password", "", new[] { "password" })]
+            [InlineData("", "token", new[] { "token" })]
+            [InlineData(null, null, new string[0])]
+            public void RedactedExcludedIdentifiers_CombinesBothSources(
+                string excludedIds,
+                string redactionExcludedIds,
+                string[] expected)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new()
+                    {
+                { ConfigurationKeys.Debugger.RedactedExcludedIdentifiers, excludedIds },
+                { ConfigurationKeys.Debugger.RedactionExcludedIdentifiers, redactionExcludedIds }
+                    }),
+                    NullConfigurationTelemetry.Instance);
 
-            settings.CodeOriginMaxUserFrames.Should().Be(int.Parse(value));
-        }
+                settings.RedactedExcludedIdentifiers.Should().BeEquivalentTo(expected);
+            }
 
-        [Theory]
-        [InlineData("-1")]
-        [InlineData("0")]
-        [InlineData("")]
-        [InlineData(null)]
-        public void InvalidCodeOriginMaxUserFrames_DefaultUsed(string value)
-        {
-            var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, value }, }),
-                NullConfigurationTelemetry.Instance);
+            [Theory]
+            [InlineData("System.String,System.Int32", new[] { "System.String", "System.Int32" })]
+            [InlineData("System.String,SYSTEM.STRING,system.string", new[] { "System.String" })] // Tests case insensitive uniqueness
+            [InlineData("System.String,,System.Int32", new[] { "System.String", "System.Int32" })] // Tests empty entries removal
+            [InlineData(" System.String , System.Int32 ", new[] { "System.String", "System.Int32" })] // Tests trimming
+            [InlineData("", new string[0])]
+            [InlineData(null, new string[0])]
+            public void RedactedTypes_ParsesCorrectly(string value, string[] expected)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new()
+                    {
+                        { ConfigurationKeys.Debugger.RedactedTypes, value }
+                    }),
+                    NullConfigurationTelemetry.Instance);
 
-            settings.CodeOriginMaxUserFrames.Should().Be(8);
+                settings.RedactedTypes.Should().BeEquivalentTo(
+                    expected,
+                    options => options.Using<string>(
+                                           ctx =>
+                                               string.Equals(ctx.Subject, ctx.Expectation, StringComparison.OrdinalIgnoreCase))
+                                      .WhenTypeIs<string>());
+            }
+
+            [Fact]
+            public void RedactedExcludedIdentifiers_RemovesDuplicates()
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new()
+                    {
+                { ConfigurationKeys.Debugger.RedactedExcludedIdentifiers, "token,TOKEN" },
+                { ConfigurationKeys.Debugger.RedactionExcludedIdentifiers, "Token,secret" }
+                    }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.RedactedExcludedIdentifiers.Should().BeEquivalentTo(new[] { "token", "secret" });
+            }
+
+            [Fact]
+            public void AllRedactionCollections_AreNotNull_WhenConfigIsNull()
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new()),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.RedactedIdentifiers.Should().NotBeNull();
+                settings.RedactedExcludedIdentifiers.Should().NotBeNull();
+                settings.RedactedTypes.Should().NotBeNull();
+            }
         }
     }
 }

@@ -164,19 +164,6 @@ bool Windows64BitStackFramesCollector::TryGetThreadStackBoundaries(HANDLE thread
     return false;
 }
 
-BOOL GetThreadInfo(ManagedThreadInfo* pThreadInfo, CONTEXT& context, HANDLE& handle)
-{
-    if (pThreadInfo == nullptr)
-    {
-        ::RtlCaptureContext(&context);
-        handle = ::GetCurrentThread();
-        return TRUE;
-    }
-
-    handle = pThreadInfo->GetOsThreadHandle();
-    return ::GetThreadContext(handle, &context);
-}
-
 StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                               uint32_t* pHR,
                                                                                               bool selfCollect)
@@ -188,7 +175,18 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
     CONTEXT context;
     context.ContextFlags = CONTEXT_FULL;
     HANDLE handle;
-    BOOL hasInfo = GetThreadInfo(selfCollect ? nullptr : pThreadInfo, context, handle);
+    BOOL hasInfo = false;
+    if (selfCollect || (pThreadInfo == nullptr)) // TODO: handle pThreadInfo == nullptr and selfCollect == false
+    {
+        ::RtlCaptureContext(&context);
+        handle = ::GetCurrentThread();
+        hasInfo = TRUE;
+    }
+    else
+    {
+        handle = pThreadInfo->GetOsThreadHandle();
+        hasInfo = ::GetThreadContext(handle, &context);
+    }
 
     if (!hasInfo)
     {

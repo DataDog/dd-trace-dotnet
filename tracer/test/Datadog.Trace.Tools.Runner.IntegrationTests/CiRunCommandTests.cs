@@ -35,7 +35,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         public CiRunCommandTests()
             : base("ci run", enableCiVisibilityMode: true)
         {
-            CIVisibility.UseLockedTracerManager = false;
         }
 
         [Fact]

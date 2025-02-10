@@ -229,7 +229,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriority,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -259,7 +260,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriority,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -288,7 +290,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriority,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -325,7 +328,8 @@ namespace Datadog.Trace.Tests.Propagators
                           RawSpanId = "0000000000000000",
                           PropagatedTags = EmptyPropagatedTags,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -397,7 +401,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriority,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -437,7 +442,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = expectedSamplingPriority,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }

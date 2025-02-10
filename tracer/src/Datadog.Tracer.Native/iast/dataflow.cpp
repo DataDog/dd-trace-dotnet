@@ -85,6 +85,8 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("NHibernate*"),
     WStr("Npgsql*"),
     WStr("Grpc.Net.Client"),    
+    WStr("Amazon.Runtime*"),    
+    WStr("App.Metrics.Concurrency*"),    
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
@@ -288,7 +290,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             aspectClass = new DataflowAspectClass(this, aspectsName, line, enabledCategories);
             if (!aspectClass->IsValid())
             {
-                trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect class ", aspectClass->ToString());
+                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect class ", aspectClass->ToString());
                 DEL(aspectClass);
             }
             else
@@ -302,7 +304,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
             auto aspect = new DataflowAspect(aspectClass, line, platform);
             if (!aspect->IsValid())
             {
-                trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect ", aspect->ToString());
+                trace::Logger::Debug("Dataflow::LoadAspects -> Detected invalid aspect ", aspect->ToString());
                 DEL(aspect);
             }
             else

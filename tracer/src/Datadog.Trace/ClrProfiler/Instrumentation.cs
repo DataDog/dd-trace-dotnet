@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -74,6 +75,8 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         /// <returns>In a managed-only context, where the profiler is not attached, <c>None</c>,
         /// otherwise the version of the Datadog native tracer library.</returns>
+        // [Instrumented] This is auto-rewritten, not instrumented with calltarget
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetNativeTracerVersion() => "None";
 
         /// <summary>
@@ -334,6 +337,19 @@ namespace Datadog.Trace.ClrProfiler
             catch (Exception ex)
             {
                 Log.Error(ex, "Error initializing activity listener");
+            }
+
+            try
+            {
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                {
+                    Log.Debug("Initializing OpenTelemetry components.");
+                    OpenTelemetry.Sdk.Initialize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing OpenTelemetry components.");
             }
 
             Log.Debug("Initialization of non native parts finished.");

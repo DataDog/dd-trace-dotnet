@@ -204,6 +204,8 @@ partial class Build : NukeBuild
                     // new {framework = TargetFramework.NETCOREAPP3_1, runtimeInstall = v3Install, runtimeUninstall = v3Uninstall },
                     new {framework = TargetFramework.NET6_0 },
                     new {framework = TargetFramework.NET7_0 },
+                    new {framework = TargetFramework.NET8_0 },
+                    new {framework = TargetFramework.NET9_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -1319,11 +1321,7 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>
                     {
-                        // macos-11 environments are no longer available in Azure Devops
-                        { "macos-12_netcoreapp3.1", new { vmImage = "macos-12", publishFramework = "netcoreapp3.1" } },
-                        { "macos-12_net6.0", new { vmImage = "macos-12", publishFramework = "net6.0" } },
-                        { "macos-12_net8.0", new { vmImage = "macos-12", publishFramework = "net8.0" } },
-                        { "macos-12_net9.0", new { vmImage = "macos-12", publishFramework = "net9.0" } },
+                        // macos-11/12 environments are no longer available in Azure Devops
                         { "macos-13_netcoreapp3.1", new { vmImage = "macos-13", publishFramework = "netcoreapp3.1" } },
                         { "macos-13_net5.0", new { vmImage = "macos-13", publishFramework = "net5.0" } },
                         { "macos-13_net6.0", new { vmImage = "macos-13", publishFramework = "net6.0" } },
@@ -1334,6 +1332,9 @@ partial class Build : NukeBuild
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
                         { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
+                        { "macos-15_net6.0", new { vmImage = "macos-15", publishFramework = "net6.0" } },
+                        { "macos-15_net8.0", new { vmImage = "macos-15", publishFramework = "net8.0" } },
+                        { "macos-15_net9.0", new { vmImage = "macos-15", publishFramework = "net9.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");

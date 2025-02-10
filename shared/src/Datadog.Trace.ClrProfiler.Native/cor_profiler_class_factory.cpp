@@ -29,11 +29,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::QueryInterface(REFIID riid, v
         this->AddRef();
 
         // We try to load the class factory of all target cor profilers.
-        if (FAILED(m_dispatcher->LoadClassFactory(riid)))
-        {
-            Log::Warn("Error loading all cor profiler class factories.");
-        }
-
+        // Errors are already logged in the dispatcher.
+        m_dispatcher->LoadClassFactory(riid);
         return S_OK;
     }
 

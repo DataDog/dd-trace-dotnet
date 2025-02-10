@@ -22,7 +22,7 @@ internal abstract class HttpTransportBase
 
     internal abstract bool IsBlocked { get; }
 
-    internal abstract int StatusCode { get; }
+    internal abstract int? StatusCode { get; }
 
     internal abstract IDictionary<string, object>? RouteData { get; }
 
@@ -42,6 +42,8 @@ internal abstract class HttpTransportBase
     }
 
     internal bool IsAdditiveContextDisposed() => _isAdditiveContextDisposed;
+
+    protected void SetAdditiveContextDisposed(bool value) => _isAdditiveContextDisposed = value;
 
     internal abstract void SetAdditiveContext(IContext additiveContext);
 

@@ -20,61 +20,22 @@ namespace Datadog.Trace.Propagators
         internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
         internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
-        private static readonly object GlobalLock = new();
-        private static SpanContextPropagator? _instance;
-
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
+        private readonly ExtractBehavior _extractBehavior;
 
         internal SpanContextPropagator(
             IEnumerable<IContextInjector>? injectors,
             IEnumerable<IContextExtractor>? extractors,
-            bool propagationExtractFirstValue)
+            bool propagationExtractFirstValue,
+            ExtractBehavior extractBehavior = default)
         {
             _propagationExtractFirstOnly = propagationExtractFirstValue;
+            _extractBehavior = extractBehavior;
             _injectors = injectors?.ToArray() ?? [];
             _extractors = extractors?.ToArray() ?? [];
-        }
-
-        public static SpanContextPropagator Instance
-        {
-            get
-            {
-                if (_instance is not null)
-                {
-                    return _instance;
-                }
-
-                lock (GlobalLock)
-                {
-                    if (_instance is not null)
-                    {
-                        return _instance;
-                    }
-
-                    _instance = new SpanContextPropagator(
-                        [DatadogContextPropagator.Instance],
-                        [DistributedContextExtractor.Instance, DatadogContextPropagator.Instance],
-                        propagationExtractFirstValue: false);
-
-                    return _instance;
-                }
-            }
-
-            internal set
-            {
-                if (value == null!)
-                {
-                    ThrowHelper.ThrowArgumentNullException(nameof(value));
-                }
-
-                lock (GlobalLock)
-                {
-                    _instance = value;
-                }
-            }
         }
 
         /// <summary>
@@ -110,7 +71,7 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
-            if (context.IsEmpty)
+            if (context.SpanContext is null && context.Baggage is null)
             {
                 // nothing to inject
                 return;
@@ -167,10 +128,17 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            if (_extractBehavior == ExtractBehavior.Ignore)
+            {
+                return new PropagationContext(spanContext: null, baggage: null);
+            }
+
             // as we extract values from the carrier using multiple extractors,
             // we will accumulate them in this context
             SpanContext? cumulativeSpanContext = null;
             Baggage? cumulativeBaggage = null;
+            List<SpanLink> spanLinks = new();
+            string? initialExtractorDisplayName = null;
 
             foreach (var extractor in _extractors)
             {
@@ -206,14 +174,28 @@ namespace Datadog.Trace.Propagators
                 if (cumulativeSpanContext == null)
                 {
                     cumulativeSpanContext = currentExtractedContext.SpanContext;
+                    initialExtractorDisplayName = extractor.DisplayName;
                 }
-                else if (extractor is W3CTraceContextPropagator && currentExtractedContext.SpanContext is { } extractedSpanContext)
+                else if (currentExtractedContext.SpanContext is { } extractedSpanContext)
                 {
-                    MergeExtractedW3CSpanContext(cumulativeSpanContext, extractedSpanContext);
+                    if (cumulativeSpanContext.RawTraceId != extractedSpanContext.RawTraceId)
+                    {
+                        spanLinks.Add(new SpanLink(extractedSpanContext, attributes: [new("reason", "terminated_context"), new("context_headers", extractor.DisplayName)]));
+                    }
+                    else if (extractor is W3CTraceContextPropagator)
+                    {
+                        MergeExtractedW3CSpanContext(cumulativeSpanContext, extractedSpanContext);
+                    }
                 }
             }
 
-            return new PropagationContext(cumulativeSpanContext, cumulativeBaggage);
+            return _extractBehavior switch
+            {
+                ExtractBehavior.Restart when cumulativeSpanContext is not null => new PropagationContext(default, cumulativeBaggage, [new SpanLink(cumulativeSpanContext, attributes: [new("reason", "propagation_behavior_extract"), new("context_headers", initialExtractorDisplayName!)])]),
+                ExtractBehavior.Restart => new PropagationContext(default, cumulativeBaggage, []),
+                _ => new PropagationContext(cumulativeSpanContext, cumulativeBaggage, spanLinks),
+
+            };
         }
 
         /// <summary>

@@ -21,6 +21,7 @@ namespace Datadog.Trace.AppSec.Rasp;
 internal static class RaspModule
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
+    private static bool _nullContextReported = false;
 
     private static RaspRuleType? TryGetAddressRuleType(string address)
     => address switch
@@ -113,7 +114,16 @@ internal static class RaspModule
         // We need a context for RASP
         if (securityCoordinator is null)
         {
-            Log.Warning("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
+            if (!_nullContextReported)
+            {
+                Log.Warning("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
+                _nullContextReported = true;
+            }
+            else
+            {
+                Log.Debug("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
+            }
+
             return;
         }
 
