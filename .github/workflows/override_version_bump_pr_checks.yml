@@ -21,7 +21,7 @@ jobs:
           set -o pipefail
 
           # These checks won't run automatically on the version bump PR, so need to force this
-          contexts=("code_freeze" "verify_source_generators" "verify_app_trimming_descriptor_generator" "verify_solution_changes_are_persisted")
+          contexts=("code_freeze" "verify_source_generators" "verify_app_trimming_descriptor_generator" "verify_solution_changes_are_persisted" "verify_files_without_nullability")
 
           sha="${{ github.sha }}"
           targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/override_version_bump_pr_checks.yml"

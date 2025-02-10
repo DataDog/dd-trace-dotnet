@@ -33,15 +33,15 @@ internal class EvidenceRedactor
         var urlTokenizer = new UrlTokenizer(_timeout);
         _tokenizers = new Dictionary<string, ITokenizer>
         {
-            { VulnerabilityTypeName.SqlInjection, new SqlInjectionTokenizer(_timeout) },
-            { VulnerabilityTypeName.LdapInjection, new LdapTokenizer(_timeout) },
-            { VulnerabilityTypeName.CommandInjection, new CommandTokenizer(_timeout) },
-            { VulnerabilityTypeName.Ssrf, urlTokenizer },
-            { VulnerabilityTypeName.UnvalidatedRedirect, urlTokenizer },
-            { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
-            { VulnerabilityTypeName.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
-            { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer() },
-            { VulnerabilityTypeName.EmailHtmlInjection, new TaintedRangeBasedTokenizer() }
+            { VulnerabilityTypeUtils.SqlInjection, new SqlInjectionTokenizer(_timeout) },
+            { VulnerabilityTypeUtils.LdapInjection, new LdapTokenizer(_timeout) },
+            { VulnerabilityTypeUtils.CommandInjection, new CommandTokenizer(_timeout) },
+            { VulnerabilityTypeUtils.Ssrf, urlTokenizer },
+            { VulnerabilityTypeUtils.UnvalidatedRedirect, urlTokenizer },
+            { VulnerabilityTypeUtils.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
+            { VulnerabilityTypeUtils.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
+            { VulnerabilityTypeUtils.Xss, new TaintedRangeBasedTokenizer() },
+            { VulnerabilityTypeUtils.EmailHtmlInjection, new TaintedRangeBasedTokenizer() }
         };
     }
 

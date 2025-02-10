@@ -16,13 +16,13 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         [Fact]
         public void CheckVulnerabilityTypeAndIastInstrumentedSinksConsistency()
         {
-            Enum.GetValues(typeof(MetricTags.IastInstrumentedSinks)).Length.Should().Be(Enum.GetValues(typeof(VulnerabilityType)).Length);
+            Enum.GetValues(typeof(MetricTags.IastVulnerabilityType)).Length.Should().Be(Enum.GetValues(typeof(VulnerabilityType)).Length);
             for (int i = 0; i < Enum.GetValues(typeof(VulnerabilityType)).Length; i++)
             {
                 var vulnerabilityType = (VulnerabilityType)i;
                 if (vulnerabilityType != VulnerabilityType.None)
                 {
-                    var tag = (MetricTags.IastInstrumentedSinks)i;
+                    var tag = (MetricTags.IastVulnerabilityType)i;
                     tag.ToString().Should().Be(vulnerabilityType.ToString());
                 }
             }
@@ -31,10 +31,10 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         [Fact]
         public void CheckSourceTypeAndIastInstrumentedSourcesConsistency()
         {
-            Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).Length.Should().Be(Enum.GetValues(typeof(SourceType)).Length);
+            Enum.GetValues(typeof(MetricTags.IastSourceType)).Length.Should().Be(Enum.GetValues(typeof(SourceType)).Length);
             for (int i = 0; i < Enum.GetValues(typeof(SourceType)).Length; i++)
             {
-                var tag = (MetricTags.IastInstrumentedSources)i;
+                var tag = (MetricTags.IastSourceType)i;
                 tag.ToString().Should().Be(((SourceType)i).ToString());
             }
         }

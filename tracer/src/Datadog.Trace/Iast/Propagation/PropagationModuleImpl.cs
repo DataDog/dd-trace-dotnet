@@ -24,7 +24,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            IastModule.OnExecutedSourceTelemetry((IastInstrumentedSources)source.Origin);
+            IastModule.OnExecutedSourceTelemetry((IastSourceType)source.Origin);
 
             if (input is null || input == string.Empty)
             {
