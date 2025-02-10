@@ -71,7 +71,7 @@ public class ConsoleExporter
         foreach (var outlier in outliers)
         {
             var outlierElapsedTimes = outlier.RemovedOutliers.Select(r => FormatMilliseconds(r));
-            AnsiConsole.MarkupLine($"Outliers detected in [yellow]\"{outlier.Benchmark.Name}\" total:[/] {string.Join(", ", outlierElapsedTimes)}");
+            AnsiConsole.MarkupLine($"Outliers detected in [yellow]\"{outlier.Benchmark.Name}\"[/]: {string.Join(", ", outlierElapsedTimes)}");
         }
     }
 
