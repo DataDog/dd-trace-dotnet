@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var client = testServer.CreateClient();
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
-			var liveDebugger = GetLiveDebugger();
+            var liveDebugger = GetLiveDebugger();
             var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
             string retValue = null;
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var tracer = GetTracer();
             var (security, iast) = GetSecurity();
-			var liveDebugger = GetLiveDebugger();
+            var liveDebugger = GetLiveDebugger();
 
             IObserver<KeyValuePair<string, object>> observer = new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null);
 
@@ -125,8 +125,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var iast = new Iast.Iast(new IastSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
             return (security, iast);
         }
-		
-		private static LiveDebugger GetLiveDebugger()
+
+        private static LiveDebugger GetLiveDebugger()
         {
             return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
         }
