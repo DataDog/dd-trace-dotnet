@@ -440,6 +440,38 @@
     ]
   },
   {
+    "IntegrationName": "XUnitV3",
+    "SampleProjectName": "Samples.XUnitTestsV3",
+    "NugetPackageSearchName": "xunit.v3",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "1.0.0",
+        "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
+    ]
+  },
+  {
+    "IntegrationName": "XUnitRetriesV3",
+    "SampleProjectName": "Samples.XUnitTestsRetriesV3",
+    "NugetPackageSearchName": "xunit.v3",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "1.0.0",
+        "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
+    ]
+  },
+  {
     "IntegrationName": "NUnit",
     "SampleProjectName": "Samples.NUnitTests",
     "NugetPackageSearchName": "NUnit",

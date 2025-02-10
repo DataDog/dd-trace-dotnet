@@ -1334,5 +1334,22 @@
         "maxVersionTestedInclusive": null
       }
     ]
+  },
+  {
+    "integrationName": "XUnit",
+    "assemblyName": "xunit.v3.core",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": [
+      {
+        "name": "xunit.v3",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.0.0",
+        "minVersionTestedInclusive": "1.0.1",
+        "maxVersionSupportedInclusive": "1.0.1",
+        "maxVersionAvailableInclusive": "1.0.1",
+        "maxVersionTestedInclusive": "1.0.1"
+      }
+    ]
   }
 ]

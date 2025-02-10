@@ -1340,6 +1340,50 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> XUnitV3 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET6_0
+                new object[] { "1.0.1" },
+#endif
+#if NET7_0
+                new object[] { "1.0.1" },
+#endif
+#if NET8_0
+                new object[] { "1.0.1" },
+#endif
+#if NET9_0
+                new object[] { "1.0.1" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> XUnitRetriesV3 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET6_0
+                new object[] { "1.0.1" },
+#endif
+#if NET7_0
+                new object[] { "1.0.1" },
+#endif
+#if NET8_0
+                new object[] { "1.0.1" },
+#endif
+#if NET9_0
+                new object[] { "1.0.1" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> NUnit =>
 
             new List<object[]>
