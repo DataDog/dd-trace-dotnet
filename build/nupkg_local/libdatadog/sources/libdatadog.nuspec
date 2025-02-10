@@ -5,9 +5,11 @@
     <description>libdatadog provides a shared library containing common code used in the mplementation of Datadog's libraries, including Datadog Continuous Profilers</description>
     <authors>Datadog</authors>
     <version>42.0.0</version>
+    <readme>docs\README.md</readme>
   </metadata>
   <files>
     <file src=".\build\**" target="build" />
     <file src=".\runtimes\**" target="runtimes" />
+    <file src=".\docs\**" target="docs" />
   </files>
 </package>
