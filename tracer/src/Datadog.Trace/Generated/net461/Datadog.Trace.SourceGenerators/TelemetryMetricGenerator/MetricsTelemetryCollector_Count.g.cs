@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 578;
+    private const int CountLength = 605;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -641,6 +641,34 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:email_html_injection" }),
             // request.tainted, index = 577
             new(null),
+            // suppressed.vulnerabilities, index = 578
+            new(new[] { "vulnerability_type:none" }),
+            new(new[] { "vulnerability_type:weak_cipher" }),
+            new(new[] { "vulnerability_type:weak_hash" }),
+            new(new[] { "vulnerability_type:sql_injection" }),
+            new(new[] { "vulnerability_type:command_injection" }),
+            new(new[] { "vulnerability_type:path_traversal" }),
+            new(new[] { "vulnerability_type:ldap_injection" }),
+            new(new[] { "vulnerability_type:ssrf" }),
+            new(new[] { "vulnerability_type:unvalidated_redirect" }),
+            new(new[] { "vulnerability_type:insecure_cookie" }),
+            new(new[] { "vulnerability_type:no_httponly_cookie" }),
+            new(new[] { "vulnerability_type:no_samesite_cookie" }),
+            new(new[] { "vulnerability_type:weak_randomness" }),
+            new(new[] { "vulnerability_type:hardcoded_secret" }),
+            new(new[] { "vulnerability_type:xcontenttype_header_missing" }),
+            new(new[] { "vulnerability_type:trust_boundary_violation" }),
+            new(new[] { "vulnerability_type:hsts_header_missing" }),
+            new(new[] { "vulnerability_type:header_injection" }),
+            new(new[] { "vulnerability_type:stacktrace_leak" }),
+            new(new[] { "vulnerability_type:nosql_mongodb_injection" }),
+            new(new[] { "vulnerability_type:xpath_injection" }),
+            new(new[] { "vulnerability_type:reflection_injection" }),
+            new(new[] { "vulnerability_type:insecure_auth_protocol" }),
+            new(new[] { "vulnerability_type:xss" }),
+            new(new[] { "vulnerability_type:directory_listing_leak" }),
+            new(new[] { "vulnerability_type:session_timeout" }),
+            new(new[] { "vulnerability_type:email_html_injection" }),
         };
 
     /// <summary>
@@ -649,7 +677,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 77, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 77, 1, 22, 3, 1, 1, 5, 3, 5, 5, 5, 4, 4, 14, 1, 27, 1, };
+        = new int[]{ 4, 77, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 77, 1, 22, 3, 1, 1, 5, 3, 5, 5, 5, 4, 4, 14, 1, 27, 1, 27, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -881,7 +909,7 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
+    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType tag, int increment = 1)
     {
         var index = 535 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
@@ -892,7 +920,7 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Count[549], increment);
     }
 
-    public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
+    public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
         var index = 550 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
@@ -901,5 +929,11 @@ internal partial class MetricsTelemetryCollector
     public void RecordCountIastRequestTainted(int increment = 1)
     {
         Interlocked.Add(ref _buffer.Count[577], increment);
+    }
+
+    public void RecordCountIastSuppressedVulnerabilities(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
+    {
+        var index = 578 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
     }
 }
