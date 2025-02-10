@@ -6650,7 +6650,7 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: fleet_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
