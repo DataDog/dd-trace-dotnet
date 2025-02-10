@@ -31,6 +31,13 @@ public class StartupBenchmarks
         EnableCiVisibility(startInfo.Environment, enable: false);
     }
 
+    [Benchmark("DD_TRACE_STARTUP_LOGS=0")]
+    public void TracerEnabled_StartupLogsDisabled(ProcessStartInfo startInfo)
+    {
+        EnableTracer(startInfo.Environment);
+        EnableStartupLogs(startInfo.Environment, enable: false);
+    }
+
     [Benchmark("DD_TRACE_LOG_DIRECTORY=/dev/null")]
     public void TracerEnabled_LogToDevNull(ProcessStartInfo startInfo)
     {
@@ -44,10 +51,11 @@ public class StartupBenchmarks
         EnableTracer(startInfo.Environment);
         EnableInstrumentationTelemetry(startInfo.Environment, enable: false);
         EnableCiVisibility(startInfo.Environment, enable: false);
+        EnableStartupLogs(startInfo.Environment, enable: false);
         SetLoggingDirectory(startInfo.Environment, "/dev/null");
     }
 
-    private void EnableTracer(IDictionary<string, string?> startInfo, bool enable = true)
+    private static void EnableTracer(IDictionary<string, string?> startInfo, bool enable = true)
     {
         startInfo["CORECLR_ENABLE_PROFILING"] = enable ? "1" : "0";
     }
@@ -60,6 +68,11 @@ public class StartupBenchmarks
     private static void EnableInstrumentationTelemetry(IDictionary<string, string?> startInfo, bool enable = true)
     {
         startInfo["DD_INSTRUMENTATION_TELEMETRY_ENABLED"] = enable ? "1" : "0";
+    }
+
+    private static void EnableStartupLogs(IDictionary<string, string?> startInfo, bool enable = true)
+    {
+        startInfo["DD_TRACE_STARTUP_LOGS"] = enable ? "1" : "0";
     }
 
     private static void SetLoggingDirectory(IDictionary<string, string?> startInfo, string directory)
