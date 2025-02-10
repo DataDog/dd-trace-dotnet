@@ -606,6 +606,10 @@ namespace Datadog.Trace.Configuration
             {
                 this.JsonConfigurationFilePath = sourceJson.JsonConfigurationFilePath;
             }
+            else
+            {
+                JsonConfigurationFilePath = "never got picked up in tracersettings.cs";
+            }
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);

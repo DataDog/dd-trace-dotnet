@@ -50,7 +50,6 @@ namespace Datadog.Trace.Configuration
             {
                 JsonConfigurationFilePath = jsonSource.JsonConfigurationFilePath;
             }
-            // for testing. 
             else
             {
                 JsonConfigurationFilePath = "never got picked up";
