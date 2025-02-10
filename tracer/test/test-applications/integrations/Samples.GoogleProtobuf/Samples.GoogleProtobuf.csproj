@@ -32,6 +32,6 @@
     and code generated for newer versions might not compile if the dependency is older
     so we generate the C# code here to make sure it matches the dependency version that is used
      -->
-    <Exec Command="$(NugetPackageRoot)google.protobuf.tools\$(ApiVersion)\tools\$(ProtocPath) -I=$(NugetPackageRoot)google.protobuf.tools\$(ApiVersion)\tools -I=$(ProjectDir) --csharp_out=$(ProjectDir) $(ProjectDir)sample.proto"/>
+    <Exec Command="$(NugetPackageRoot)\google.protobuf.tools\$(ApiVersion)\tools\$(ProtocPath) -I=$(NugetPackageRoot)\google.protobuf.tools\$(ApiVersion)\tools -I=$(ProjectDir) --csharp_out=$(ProjectDir) $(ProjectDir)sample.proto"/>
   </Target>
 </Project>
