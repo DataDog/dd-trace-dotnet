@@ -56,7 +56,7 @@ RUN Remove-WebSite -Name 'Default Web Site'; \
     $ENABLE_32_BIT='false'; \
     if($env:TARGET_PLATFORM -eq 'x86') { $ENABLE_32_BIT='true' }; \
     Write-Host "Creating website with 32 bit enabled: $env:ENABLE_32_BIT"; \
-    c:\Windows\System32\inetsrv\appcmd add apppool /startMode:"AlwaysRunning" /autoStart:"true" /name:AspNetCorePool /managedRuntimeVersion:"" /enable32bitapponwin64:$ENABLE_32_BIT; \
+    c:\Windows\System32\inetsrv\appcmd add apppool /startMode:"AlwaysRunning" /autoStart:"false" /name:AspNetCorePool /managedRuntimeVersion:"" /enable32bitapponwin64:$ENABLE_32_BIT; \
     New-Website -Name 'SmokeTest' -Port 5000 -PhysicalPath 'c:\app' -ApplicationPool 'AspNetCorePool'; \
     Set-ItemProperty "IIS:\Sites\SmokeTest" -Name applicationDefaults.preloadEnabled -Value True;
 
