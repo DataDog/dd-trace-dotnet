@@ -46,4 +46,10 @@ echo "<DD_TRACE_DEBUG>1</DD_TRACE_DEBUG>" >> $FILE
 echo "<DD_IAST_ENABLED>1</DD_IAST_ENABLED>" >> $FILE
 echo "<DD_CIVISIBILITY_ENABLED>0</DD_CIVISIBILITY_ENABLED>" >> $FILE
 echo "<DD_IAST_DEDUPLICATION_ENABLED>0</DD_IAST_DEDUPLICATION_ENABLED>" >> $FILE
+echo "<DD_IAST_SECURITY_CONTROLS_CONFIGURATION>" >> $FILE
+echo "    INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);" >> $FILE
+echo "    INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;" >> $FILE
+echo "    SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)" >> $FILE
+echo "</DD_IAST_SECURITY_CONTROLS_CONFIGURATION>" >> $FILE
 echo "</EnvironmentVariables></RunConfiguration></RunSettings>" >> $FILE
+
