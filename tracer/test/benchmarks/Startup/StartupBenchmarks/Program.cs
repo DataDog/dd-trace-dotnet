@@ -6,8 +6,8 @@ namespace StartupBenchmarks;
 
 internal static class Program
 {
-    private const int WarmupIterationCount = 1;
-    private const int BenchmarkIterationCount = 5;
+    private const int WarmupIterationCount = 2;
+    private const int BenchmarkIterationCount = 6;
 
     public static void Main(string[] args)
     {
