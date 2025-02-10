@@ -1,4 +1,4 @@
-// <copyright file="SmtpClientAspect.cs" company="Datadog">
+// <copyright file="AmazonSimpleEmailAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,10 +11,10 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> Email html injection class aspect </summary>
-[AspectClass("System,System.Net.Mail", AspectType.Sink, VulnerabilityType.EmailHtmlInjection)]
+[AspectClass("AWSSDK.SimpleEmail", AspectType.Sink, VulnerabilityType.EmailHtmlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class SmtpClientAspect
+public class AmazonSimpleEmailAspect
 {
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.
@@ -23,22 +23,17 @@ public class SmtpClientAspect
     /// </summary>
     /// <param name="message">the email message that is going to be sent</param>
     /// <returns>the MailMessage</returns>
-    [AspectMethodInsertBefore("System.Net.Mail.SmtpClient::Send(System.Net.Mail.MailMessage)")]
-    [AspectMethodInsertBefore("System.Net.Mail.SmtpClient::SendAsync(System.Net.Mail.MailMessage,System.Object)", 1)]
-    [AspectMethodInsertBefore("System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage)")]
-#if NETCOREAPP3_1_OR_GREATER
-    [AspectMethodInsertBefore("System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)", 1)]
-#endif
+    [AspectMethodInsertBefore("Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmailAsync(Amazon.SimpleEmail.Model.SendEmailRequest,System.Threading.CancellationToken", 1)]
     public static object? Send(object? message)
     {
         try
         {
-            IastModule.OnEmailHtmlInjection(message, EmailInjectionType.SystemNetMail);
+            IastModule.OnEmailHtmlInjection(message, EmailInjectionType.AmazonSimpleEmail);
             return message;
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SmtpClientAspect)}.{nameof(Send)}");
+            IastModule.LogAspectException(ex, $"{nameof(MailkitAspect)}.{nameof(Send)}");
             return message;
         }
     }

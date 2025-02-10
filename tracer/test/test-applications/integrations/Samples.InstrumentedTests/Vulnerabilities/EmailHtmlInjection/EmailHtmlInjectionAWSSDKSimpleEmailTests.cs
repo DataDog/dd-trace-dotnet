@@ -9,6 +9,7 @@ using Xunit;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using System.Web;
+using System;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -22,6 +23,13 @@ public class EmailHtmlInjectionAWSSDKSimpleEmailTests : EmailInjectionBaseTests
     [Fact]
     public void GivenAnEmail_WhenSendAsyncHtmlMailMessageAsyncTaintedVaulesHtml_ThenIsVulnerable()
     {
+        string ppp = taintedLastName + "ww";
+        Console.WriteLine(ppp);
+        new AmazonSimpleEmailServiceClient().SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default);
+
+        ppp = taintedLastName + "wwedddddd";
+        Console.WriteLine(ppp);
+
         TestMailCall(() => new AmazonSimpleEmailServiceClient().SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default), true);
     }
 

@@ -24,15 +24,7 @@ public class EmailHtmlInjectionMailKitTests : EmailInjectionBaseTests
     [Fact]
     public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlSetTextEncoding_ThenIsVulnerable()
     {
-        var message = BuildMailMessage(true, taintedName, taintedLastName, SetTextMode.SetTextEncoding);
-        try
-        {
-            new SmtpClient().Send(message, default, null);
-        }
-        catch
-        {
-        }
-        AssertVulnerable();
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName, SetTextMode.SetTextEncoding), default, null), true);
     }
 
     [Fact]
@@ -58,7 +50,6 @@ public class EmailHtmlInjectionMailKitTests : EmailInjectionBaseTests
     {
         TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), default, null), false);
     }
-
 
     [Fact]
     public void GivenAnEmail_WhenSendTextMailMessageTaintedValuesText_ThenIsNotVulnerable()
