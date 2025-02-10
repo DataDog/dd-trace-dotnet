@@ -1,4 +1,3 @@
-using BenchmarkFramework;
 using BenchmarkFramework.Exporters;
 using BenchmarkFramework.Runners;
 using BenchmarkFramework.Util;
