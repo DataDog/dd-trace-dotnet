@@ -78,6 +78,7 @@ namespace Honeypot
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });
+            NugetPackages.Add("xunit.v3.core", new [] { "xunit.v3" });
             NugetPackages.Add("MSTest", new [] { "MSTest.TestFramework" });
             NugetPackages.Add("Serilog", new [] { "Serilog" });
             NugetPackages.Add("NLog", new [] { "NLog" });
