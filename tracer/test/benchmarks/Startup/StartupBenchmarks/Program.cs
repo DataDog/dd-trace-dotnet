@@ -40,7 +40,7 @@ internal static class Program
             // Console.WriteLine("Usage: dotnet run -- entryAssemblyPath tracerHomeDirectory");
             // return 1;
             entryAssemblyPath = @"D:\source\datadog\dd-trace-dotnet\tracer\test\benchmarks\Startup\EmptyConsoleApp\publish\default\EmptyConsoleApp.dll";
-            tracerHomeDirectory = @"C:\Users\Lucas.Pimentel\Downloads\tracer-home-3.9.1";
+            tracerHomeDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "tracer-home-3.9.1");
         }
 
         if (!File.Exists(entryAssemblyPath))
