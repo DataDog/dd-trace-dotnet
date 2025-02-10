@@ -60,7 +60,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
         private readonly Tracer _tracer;
         private readonly Security _security;
-		private readonly Iast.Iast _iast;
+        private readonly Iast.Iast _iast;
         private readonly LiveDebugger _liveDebugger;
         private readonly SpanCodeOriginManager _spanOrigin;
         private string _hostingHttpRequestInStartEventKey;
@@ -80,7 +80,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             _tracer = tracer;
             _security = security;
-			_iast = iast;
+            _iast = iast;
             _liveDebugger = liveDebugger;
             _spanOrigin = spanOrigin;
         }
@@ -90,8 +90,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
-		
-		private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
+
+        private Iast.Iast CurrentIast => _iast ?? Iast.Iast.Instance;
 
         private LiveDebugger CurrentLiveDebugger => _liveDebugger ?? LiveDebugger.Instance;
 
