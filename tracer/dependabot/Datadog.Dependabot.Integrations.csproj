@@ -101,7 +101,7 @@
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
     <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.0.3 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="14.3.0" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.0.3" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->

@@ -213,12 +213,13 @@
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "11.0.0",
-    "MaxVersionExclusive": "15.0.0",
+    "MaxVersionExclusive": "16.0.0",
     "SpecificVersions": [
       "11.*.*",
       "12.*.*",
       "13.*.*",
-      "14.*.*"
+      "14.*.*",
+      "15.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "12.22.0",
@@ -226,6 +227,9 @@
     },{
       "MaxVersionExclusive": "15.0.0",
       "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0" ]
+    },{
+      "MinVersion": "15.0.0",
+      "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0" ]
     }]
   },
   {
