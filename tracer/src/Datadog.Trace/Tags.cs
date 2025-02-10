@@ -717,6 +717,15 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
+        // Data Streams Monitoring
+        internal const string SchemaDefinition = "schema.definition";
+        internal const string SchemaWeight = "schema.weight";
+        internal const string SchemaType = "schema.type";
+        internal const string SchemaId = "schema.id";
+        internal const string SchemaTopic = "schema.topic";
+        internal const string SchemaOperation = "schema.operation";
+        internal const string SchemaName = "schema.name";
+
         /// <summary>
         /// Holds the original value for Service when Service is overriden after span creation
         /// </summary>
