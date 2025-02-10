@@ -5,6 +5,8 @@
 
 using Datadog.Trace.DuckTyping;
 
+#nullable enable
+
 namespace Datadog.Trace.DiagnosticListeners;
 
 /// <summary>
