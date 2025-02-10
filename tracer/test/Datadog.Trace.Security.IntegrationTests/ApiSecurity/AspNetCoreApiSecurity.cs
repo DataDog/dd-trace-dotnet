@@ -64,7 +64,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         // .NET 8 doesn't add the content-length header, whereas previous versions do
         settings.AddSimpleScrubber(
             """_dd.appsec.s.res.headers: [{"content-length":[8]}],""",
-            """_dd.appsec.s.res.headers: [{}],""");
+            string.Empty);
 #endif
         await VerifySpans(spans, settings);
     }

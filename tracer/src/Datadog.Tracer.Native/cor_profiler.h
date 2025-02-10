@@ -60,6 +60,7 @@ private:
     bool first_jit_compilation_completed = false;
 
     bool corlib_module_loaded = false;
+    ModuleID corlib_module_id = 0;
     AppDomainID corlib_app_domain_id = 0;
     bool managed_profiler_loaded_domain_neutral = false;
     std::unordered_map<AppDomainID, Version> managed_profiler_loaded_app_domains;
@@ -98,11 +99,13 @@ private:
     std::vector<std::string> opcodes_names;
 
     //
-    // Module helper variables
+    // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
     //
     Synchronized<std::vector<ModuleID>> module_ids;
-
-    ModuleID managedProfilerModuleId_;
+    std::vector<ModuleID> managedInternalModules_;
+    mdMethodDef getDistributedTraceMethodDef_;
+    mdMethodDef getNativeTracerVersionMethodDef_;
+    mdMethodDef isManualInstrumentationOnlyMethodDef_;
 
     //
     // Dataflow members
@@ -112,9 +115,9 @@ private:
     //
     // Helper methods
     //
-    static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
-                                     const shared::WSTRING& nativemethods_type_name,
-                                     const shared::WSTRING& library_path = shared::WSTRING());
+    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
+                              const shared::WSTRING& nativemethods_type_name,
+                              const shared::WSTRING& library_path = shared::WSTRING());
     static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);

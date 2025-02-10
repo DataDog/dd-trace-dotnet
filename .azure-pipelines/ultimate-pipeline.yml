@@ -103,10 +103,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 9.0.100
+  dotnetCoreSdkLatestVersion: 9.0.102
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 9.0.100
+  dotnetCoreSdkLatestVersionShort: 9.0.102
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -177,8 +177,20 @@ variables:
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
   containers:
+  # This always does a docker pull to pull the latest agent
   - container: dd_agent
     image: public.ecr.aws/datadog/agent
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
+  # This always uses the local pulled version of the agent
+  # This avoids hitting docker pull resource limits, but means we periodically need
+  # to run a docker pull ourselves (which typically happens as part of VMSS updates)
+  - container: dd_agent_no_pull
+    image: public.ecr.aws/datadog/agent
+    localImage: true
     ports:
     - 8126:8126
     env:
@@ -3480,7 +3492,7 @@ stages:
 
     # Enable the Datadog Agent service for this job
     services:
-      dd_agent: dd_agent
+      dd_agent: dd_agent_no_pull
 
     steps:
     - template: steps/clone-repo.yml
@@ -3595,7 +3607,7 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -4976,7 +4988,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -5099,6 +5111,11 @@ stages:
           testName: garbagecollections
           poolName: ProfilerExecBenchAgent11
           framework: net7.0
+        OutgoingHttpRequests:
+          sampleName: ParallelCountSites
+          testName: outgoinghttprequests
+          poolName: ProfilerExecBenchAgent13
+          framework: net9.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
@@ -5108,7 +5125,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-latest-dotnet-sdk.yml
       parameters:
         includeX86: true
 
@@ -5193,6 +5210,11 @@ stages:
           testName: garbagecollections
           poolName: ProfilerExecBenchAgent12
           framework: net7.0
+        OutgoingHttpRequests:
+          sampleName: ParallelCountSites
+          testName: outgoinghttprequests
+          poolName: ProfilerExecBenchAgent14
+          framework: net9.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
@@ -6999,7 +7021,7 @@ stages:
     - bash: |
         mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
         dotnet build
-        dd-trace run --dd-env "apm-dotnet-pipeline-monitoring" --set-env "DD_TRACE_SAMPLE_RATE=100" --set-env "DD_TRACE_DEBUG=1" --set-env "DD_INSTRUMENTATION_TELEMETRY_ENABLED=1" --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
+        dd-trace run --dd-env "apm-dotnet-pipeline-monitoring" --set-env "DD_TRACE_SAMPLE_RATE=1" --set-env "DD_TRACE_PARTIAL_FLUSH_ENABLED=1" --set-env "DD_INSTRUMENTATION_TELEMETRY_ENABLED=1" --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
         exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"

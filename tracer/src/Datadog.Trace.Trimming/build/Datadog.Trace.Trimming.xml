@@ -46,10 +46,12 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
+      <type fullname="Microsoft.AspNetCore.Http.Features.ISessionFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IResponseCookies" />
+      <type fullname="Microsoft.AspNetCore.Http.ISession" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Identity" />
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
@@ -587,6 +589,7 @@
       <type fullname="System.Func`6" />
       <type fullname="System.Func`7" />
       <type fullname="System.GC" />
+      <type fullname="System.GCMemoryInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />

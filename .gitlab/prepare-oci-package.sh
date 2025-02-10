@@ -16,6 +16,11 @@ if [ -z "$ARCH" ]; then
   ARCH=amd64
 fi
 
+if [ "$OS" != "linux" ]; then
+  echo "Only linux packages are supported. Exiting"
+  exit 0
+fi
+
 if [ "$ARCH" == "amd64" ]; then
   SUFFIX=""
 elif [ "$ARCH" == "arm64" ]; then

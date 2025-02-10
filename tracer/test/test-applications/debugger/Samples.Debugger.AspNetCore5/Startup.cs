@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,7 @@ namespace Samples.Debugger.AspNetCore5
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddTransient<IStartupFilter, CustomStartupFilter>();
             services.AddControllers();
         }
 
@@ -60,17 +62,27 @@ namespace Samples.Debugger.AspNetCore5
                         });
                 });
 
-            app.Use(
-                async (context, next) =>
-                {
-                    await next.Invoke();
-                });
+            app.Use(async (context, next) =>
+            {
+                await next();
+            });
 
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+        }
+    }
+
+    public class CustomStartupFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+        {
+            return app =>
+            {
+                next(app);
+            };
         }
     }
 }

@@ -30,16 +30,16 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     _lohSize = 0;
     _pohSize = 0;
     _gen2SizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_gen2_size", [this]() {
-        return _gen2Size;
+        return static_cast<double>(_gen2Size);
     });
     _lohSizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_loh_size", [this]() {
-        return _lohSize;
+        return static_cast<double>(_lohSize);
     });
 
     // TODO: see if we need to "hide" this metrics for versions of .NET before POH was introduced
     //       or if we can just ignore the metric if the value is 0
     _pohSizeMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_gc_poh_size", [this]() {
-        return _pohSize;
+        return static_cast<double>(_pohSize);
     });
 }
 
