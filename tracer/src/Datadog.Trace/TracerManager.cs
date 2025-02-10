@@ -561,7 +561,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
 
                     writer.WritePropertyName("tracer_datadog_json_configuration_filepath");
-                    writer.WriteValue(instanceSettings.JsonConfigurationFilePath);
+                    writer.WriteValue(instanceSettings.JsonConfigurationFilePath ?? "N/A");
 
                     writer.WritePropertyName("trace_propagation_behavior_extract");
                     writer.WriteValue(instanceSettings.PropagationBehaviorExtract);
