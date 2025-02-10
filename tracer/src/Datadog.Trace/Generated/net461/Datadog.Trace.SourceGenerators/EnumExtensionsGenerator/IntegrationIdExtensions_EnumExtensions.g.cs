@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 72;
+    public const int Length = 73;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -102,6 +102,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.SessionTimeout => nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection => nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
+            Datadog.Trace.Configuration.IntegrationId.Protobuf => nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
             _ => value.ToString(),
         };
 
@@ -187,6 +188,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.SessionTimeout,
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
             Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection,
+            Datadog.Trace.Configuration.IntegrationId.Protobuf,
         };
 
     /// <summary>
@@ -272,5 +274,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
             nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
+            nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
         };
 }

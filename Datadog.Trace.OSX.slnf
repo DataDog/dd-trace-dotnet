@@ -101,6 +101,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.Elasticsearch.V7\\Samples.Elasticsearch.V7.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Elasticsearch\\Samples.Elasticsearch.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.FakeDbCommand\\Samples.FakeDbCommand.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.GoogleProtobuf\\Samples.GoogleProtobuf.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.GraphQL3\\Samples.GraphQL3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.GraphQL4\\Samples.GraphQL4.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.GraphQL7\\Samples.GraphQL7.csproj",

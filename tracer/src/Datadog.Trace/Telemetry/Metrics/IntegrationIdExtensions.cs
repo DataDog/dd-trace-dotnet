@@ -85,6 +85,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
             IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
             IntegrationId.EmailHtmlInjection => MetricTags.IntegrationName.EmailHtmlInjection,
+            IntegrationId.Protobuf => MetricTags.IntegrationName.Protobuf,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
