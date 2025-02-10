@@ -1,4 +1,4 @@
-// compile project to generate C# code, see PreBuild action in csproj.
+// if you modify this, the corresponding C# file should be regenerated on build.
 syntax = "proto3";
 package sample;
 

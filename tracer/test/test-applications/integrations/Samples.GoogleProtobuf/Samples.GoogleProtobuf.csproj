@@ -1,5 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+
+    <!-- If this changes, there is a chance the C# file representing the protobuf object might need to be regenerated.
+     This is normally done automatically on rebuild. -->
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.28.2</ApiVersion>
 
     <!-- This reprents the part of the path to protoc that varies by OS. It's used in the PreBuild action. -->
@@ -7,7 +10,7 @@
     <ProtocPath Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' ">linux_x64\protoc</ProtocPath>
     <ProtocPath Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">macosx_x64\protoc</ProtocPath>
 
-    <!-- 👇 Required to build multiple projects with the same Configuration|Platform -->
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
@@ -21,6 +24,10 @@
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <!-- 
     This is the step that takes the *.proto file and turns it into a C# file.
+
+    ⚠️ Looks like there is some race condition and we cannot rely on this to generate the file just before the build,
+    which is why even though it's regenerated before each build, we still commit the generated file 🤷
+
     Protoc will generate different code depending on the version used,
     and code generated for newer versions might not compile if the dependency is older
     so we generate the C# code here to make sure it matches the dependency version that is used
