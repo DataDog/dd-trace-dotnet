@@ -900,7 +900,7 @@ bool RejitPreprocessor<RejitRequestDefinition>::CheckExactSignatureMatch(ComPtr<
     // instrumentation target
     if (numOfArgs != targetMethod.signature_types.size() - 1)
     {
-        Logger::Info("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
+        Logger::Debug("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
                      ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
         return false;
     }
@@ -923,7 +923,7 @@ bool RejitPreprocessor<RejitRequestDefinition>::CheckExactSignatureMatch(ComPtr<
     }
     if (argumentsMismatch)
     {
-        Logger::Info("    * Skipping ", targetMethod.method_name,
+        Logger::Debug("    * Skipping ", targetMethod.method_name,
                      ": the methoddef doesn't have the right type of arguments.");
         return false;
     }
