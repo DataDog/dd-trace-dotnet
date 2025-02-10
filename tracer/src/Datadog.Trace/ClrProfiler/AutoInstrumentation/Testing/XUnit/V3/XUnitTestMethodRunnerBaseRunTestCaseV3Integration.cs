@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     AssemblyName = "xunit.v3.core",
     TypeName = "Xunit.v3.XunitTestMethodRunnerBase`3",
     MethodName = "RunTestCase",
-    ParameterTypeNames = ["_", "_"],
+    ParameterTypeNames = ["!0", "!2"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
     MaximumVersion = "1.*.*",
@@ -38,7 +39,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
     internal static CallTargetState OnMethodBegin<TTarget, TContext, TTestCase>(TTarget instance, TContext context, TTestCase testcaseOriginal)
         where TContext : IXunitTestMethodRunnerBaseContextV3
     {
-        if (!XUnitIntegration.IsEnabled || instance is null)
+        if (!XUnitIntegration.IsEnabled || instance is null || context.Instance is null)
         {
             return CallTargetState.GetDefault();
         }
@@ -54,7 +55,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             TestCase = new CustomTestCase
             {
                 DisplayName = testcase.TestCaseDisplayName,
-                Traits = testcase.Traits.ToDictionary(k => k.Key, v => v.Value.ToList()),
+                Traits = testcase.Traits.ToDictionary(k => k.Key, v => v.Value?.ToList()),
                 UniqueID = testcase.UniqueID,
             },
             Aggregator = context.Aggregator,
@@ -101,7 +102,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        if (state.State is not object[] { Length: 4 } stateArray)
+        if (state.State is not object[] { Length: 4 } stateArray || instance is null)
         {
             // State is not the expected array
             return returnValue;
@@ -112,12 +113,22 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[2];
         var testcase = (IXunitTestCaseV3)stateArray[3];
 
-        if (retryMessageBus is not null && retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true })
+        if (retryMessageBus is not null &&
+            retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } &&
+            context.Instance is not null &&
+            testcase.Instance is not null)
         {
             _runSummaryFieldCount ??= typeof(TReturn).GetFields().Length;
             if (_runSummaryFieldCount != 5)
             {
                 Common.Log.Warning("RunSummary type doesn't have the field count we are expecting. Flushing messages from RetryMessageBus");
+                retryMessageBus.FlushMessages(retryMetadata.UniqueID);
+                return returnValue;
+            }
+
+            if (Marshal.SizeOf(returnValue) != Marshal.SizeOf<RunSummaryUnsafeStruct>())
+            {
+                Common.Log.Warning("RunSummary type doesn't have the size we are expecting. Flushing messages from RetryMessageBus");
                 retryMessageBus.FlushMessages(retryMetadata.UniqueID);
                 return returnValue;
             }
@@ -172,12 +183,12 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
                     Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
 
-                    var mrunner = instance.DuckCast<IXunitTestMethodRunnerV3>()!;
+                    var mrunner = instance.DuckCast<IXunitTestMethodRunnerV3>();
 
                     // Decrement the execution number (the method body will do the execution)
                     retryMetadata.ExecutionNumber--;
-                    var innerReturnValue = (TReturn)await mrunner.RunTestCase(context.Instance!, testcase.Instance!);
-                    Common.Log.Debug<int, int, string>("EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, retryMetadata.ExecutionNumber, testcase.TestCaseDisplayName);
+                    var innerReturnValue = (TReturn)await mrunner.RunTestCase(context.Instance, testcase.Instance);
+                    Common.Log.Debug<int, int, string?>("EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, retryMetadata.ExecutionNumber, testcase.TestCaseDisplayName);
 
                     var innerReturnValueUnsafe = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref innerReturnValue);
                     Common.Log.Debug<int>("EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
@@ -228,9 +239,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     runSummaryUnsafe.Failed = 1;
                 }
 
-#pragma warning disable DDLOG004
-                Common.Log.Debug($"EFD/Retry: Returned summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]");
-#pragma warning restore DDLOG004
+                Common.Log.Debug("{Message}", $"EFD/Retry: Returned summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]");
             }
         }
         else

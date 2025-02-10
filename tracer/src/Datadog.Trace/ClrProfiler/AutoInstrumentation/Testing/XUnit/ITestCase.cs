@@ -22,7 +22,7 @@ internal interface ITestCase : IDuckType
     /// <summary>
     /// Gets the Traits dictionary
     /// </summary>
-    Dictionary<string, List<string>>? Traits { get; }
+    Dictionary<string, List<string>?>? Traits { get; }
 
     /// <summary>
     /// Gets a unique identifier for the test case.

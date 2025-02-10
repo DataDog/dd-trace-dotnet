@@ -5,6 +5,7 @@
 #nullable enable
 using System.Globalization;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
@@ -44,7 +45,7 @@ internal struct RunSummaryUnsafeStruct
     /// <inheritdoc/>
     public readonly override string ToString()
     {
-        var result = new StringBuilder();
+        var result = StringBuilderCache.Acquire();
 
         result.AppendFormat(CultureInfo.CurrentCulture, "{{ Total = {0}", Total);
 
@@ -69,6 +70,6 @@ internal struct RunSummaryUnsafeStruct
         }
 
         result.Append(" }");
-        return result.ToString();
+        return StringBuilderCache.GetStringAndRelease(result);
     }
 }

@@ -24,7 +24,7 @@ internal interface IXunitTestCaseV3 : IDuckType
     /// statically skipped (if both SkipUnless and SkipWhen are
     /// <c>null</c>) or dynamically skipped (if one is non-<c>null</c>).
     /// </remarks>
-    string SkipReason { get; set; }
+    string? SkipReason { get; set; }
 
     /// <summary>
     /// Gets the test class that this test case belongs to.
@@ -74,7 +74,7 @@ internal interface IXunitTestCaseV3 : IDuckType
     /// <summary>
     /// Gets the test case display name.
     /// </summary>
-    string TestCaseDisplayName { get; }
+    string? TestCaseDisplayName { get; }
 
     /// <summary>
     /// Gets the trait values associated with this test case. If

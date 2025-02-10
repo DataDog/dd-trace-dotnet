@@ -19,7 +19,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     AssemblyName = "xunit.v3.core",
     TypeName = "Xunit.v3.XunitTestMethodRunnerContext",
     MethodName = ".ctor",
-    ParameterTypeNames = ["_", "_", "_", "_", "_", "_", "_"],
+#pragma warning disable SA1118 // The parameter span multiple lines
+    ParameterTypeNames =
+    [
+        "Xunit.v3.IXunitTestMethod",
+        "System.Collections.Generic.IReadOnlyCollection`1[Xunit.v3.IXunitTestCase]",
+        "Xunit.Sdk.ExplicitOption",
+        "Xunit.v3.IMessageBus",
+        "Xunit.v3.ExceptionAggregator",
+        "System.Threading.CancellationTokenSource",
+        "System.Object[]",
+    ],
+#pragma warning restore SA1118
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "1.0.0",
     MaximumVersion = "1.*.*",

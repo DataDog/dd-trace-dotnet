@@ -95,8 +95,14 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Starting Application: {sampleAppPath} {arguments ?? string.Empty}");
             string testCli = forceVsTestParam || useDotnetExec ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
-            string appPath = useDotnetExec ?  $"exec {sampleAppPath}" :
-                             testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
+            bool usesVsTest = testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam;
+            string appPath = (useDotnetExec, usesVsTest) switch
+            {
+                (true, _) => $"exec {sampleAppPath}",
+                (_, true) => $"vstest {sampleAppPath}",
+                _ => sampleAppPath,
+            };
+
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             var process = await ProfilerHelper.StartProcessWithProfiler(

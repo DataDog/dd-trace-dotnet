@@ -22,5 +22,5 @@ internal struct AssemblyMetadataStructV3
     /// <summary>
     /// Gets the on-disk location of the assembly under test.
     /// </summary>
-    public string AssemblyPath;
+    public string? AssemblyPath;
 }

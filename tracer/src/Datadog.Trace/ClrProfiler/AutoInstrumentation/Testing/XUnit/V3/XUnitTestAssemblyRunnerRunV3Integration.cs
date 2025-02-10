@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     AssemblyName = "xunit.v3.core",
     TypeName = "Xunit.v3.TestAssemblyRunner`4",
     MethodName = "Run",
-    ParameterTypeNames = ["_"],
+    ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
     MaximumVersion = "1.*.*",
@@ -33,7 +33,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
         where TContext : ITestAssemblyRunnerContextV3
     {
-        if (!XUnitIntegration.IsEnabled || instance is null)
+        if (!XUnitIntegration.IsEnabled)
         {
             return CallTargetState.GetDefault();
         }
@@ -43,7 +43,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
             var testBundleString = new AssemblyName(assemblyName).Name ?? string.Empty;
 
             // Extract the version of the framework from the TestClassRunner base class
-            var frameworkType = instance.GetType();
+            var frameworkType = instance!.GetType();
             while (frameworkType.IsAbstract == false)
             {
                 if (frameworkType.BaseType is { } baseType)

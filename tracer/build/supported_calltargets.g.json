@@ -16132,7 +16132,7 @@
     "TargetMethodName": "Run",
     "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     "TargetParameterTypes": [
-      "_"
+      "!0"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -16156,7 +16156,7 @@
     "TargetMethodName": "Run",
     "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     "TargetParameterTypes": [
-      "_"
+      "!0"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -16228,8 +16228,8 @@
     "TargetMethodName": "RunTestCase",
     "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     "TargetParameterTypes": [
-      "_",
-      "_"
+      "!0",
+      "!2"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -16253,13 +16253,13 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "_",
-      "_",
-      "_",
-      "_",
-      "_",
-      "_",
-      "_"
+      "Xunit.v3.IXunitTestMethod",
+      "System.Collections.Generic.IReadOnlyCollection`1[Xunit.v3.IXunitTestCase]",
+      "Xunit.Sdk.ExplicitOption",
+      "Xunit.v3.IMessageBus",
+      "Xunit.v3.ExceptionAggregator",
+      "System.Threading.CancellationTokenSource",
+      "System.Object[]"
     ],
     "MinimumVersion": {
       "Item1": 1,

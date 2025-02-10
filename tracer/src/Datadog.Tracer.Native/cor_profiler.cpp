@@ -91,8 +91,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             if (isDotNetProcess &&
                 token_count > 1 &&
                 tokenized_command_line[1] != WStr("test") &&
-                // these are executed with exec, so we could check for that, but the
-                // below check is more conservative, so leaving at that
                 process_command_line.find(WStr("testhost")) == WSTRING::npos &&
                 process_command_line.find(WStr("exec")) == WSTRING::npos &&
                 process_command_line.find(WStr("datacollector")) == WSTRING::npos &&

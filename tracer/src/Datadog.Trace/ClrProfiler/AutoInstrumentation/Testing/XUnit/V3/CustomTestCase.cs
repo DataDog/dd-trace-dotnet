@@ -16,7 +16,7 @@ internal class CustomTestCase : ITestCase
 
     public string? DisplayName { get; set; }
 
-    public Dictionary<string, List<string>>? Traits { get; set; }
+    public Dictionary<string, List<string>?>? Traits { get; set; }
 
     public string UniqueID { get; set; } = string.Empty;
 

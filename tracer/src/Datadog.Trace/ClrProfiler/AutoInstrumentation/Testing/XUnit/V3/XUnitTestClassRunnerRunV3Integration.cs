@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     AssemblyName = "xunit.v3.core",
     TypeName = "Xunit.v3.TestClassRunner`4",
     MethodName = "Run",
-    ParameterTypeNames = ["_"],
+    ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
     MaximumVersion = "1.*.*",

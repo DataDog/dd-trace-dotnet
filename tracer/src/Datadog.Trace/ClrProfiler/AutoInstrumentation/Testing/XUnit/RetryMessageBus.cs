@@ -162,7 +162,7 @@ internal class RetryMessageBus : IMessageBus
         }
     }
 
-#pragma warning disable SA1201
+#pragma warning disable SA1201 // ElementsMustAppearInTheCorrectOrder
     internal interface ITestCaseMessage
     {
         ITestCase TestCase { get; }
