@@ -753,6 +753,8 @@ namespace Datadog.Trace.Configuration
             /// when an obfuscation mechanism will be implemented in the agent.
             /// </summary>
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
+
+            public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
         }
 
         internal static class Telemetry

@@ -242,9 +242,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.405.15",
-        "maxVersionAvailableInclusive": "3.7.405.15",
-        "maxVersionTestedInclusive": "3.7.405.15"
+        "maxVersionSupportedInclusive": "3.7.405.18",
+        "maxVersionAvailableInclusive": "3.7.405.18",
+        "maxVersionTestedInclusive": "3.7.405.18"
       }
     ]
   },
@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.3.100",
         "minVersionSupportedInclusive": "3.3.100",
         "minVersionTestedInclusive": "3.3.102.16",
-        "maxVersionSupportedInclusive": "3.7.402.30",
-        "maxVersionAvailableInclusive": "3.7.402.30",
-        "maxVersionTestedInclusive": "3.7.402.30"
+        "maxVersionSupportedInclusive": "3.7.402.33",
+        "maxVersionAvailableInclusive": "3.7.402.33",
+        "maxVersionTestedInclusive": "3.7.402.33"
       }
     ]
   },
@@ -276,9 +276,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.402.65",
-        "maxVersionAvailableInclusive": "3.7.402.65",
-        "maxVersionTestedInclusive": "3.7.402.65"
+        "maxVersionSupportedInclusive": "3.7.402.68",
+        "maxVersionAvailableInclusive": "3.7.402.68",
+        "maxVersionTestedInclusive": "3.7.402.68"
       }
     ]
   },
@@ -310,8 +310,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.401.8",
-        "maxVersionAvailableInclusive": "3.7.401.8",
+        "maxVersionSupportedInclusive": "3.7.401.11",
+        "maxVersionAvailableInclusive": "3.7.401.11",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.400.88",
-        "maxVersionAvailableInclusive": "3.7.400.88",
-        "maxVersionTestedInclusive": "3.7.400.88"
+        "maxVersionSupportedInclusive": "3.7.400.91",
+        "maxVersionAvailableInclusive": "3.7.400.91",
+        "maxVersionTestedInclusive": "3.7.400.91"
       }
     ]
   },
@@ -344,9 +344,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.400.88",
-        "maxVersionAvailableInclusive": "3.7.400.88",
-        "maxVersionTestedInclusive": "3.7.400.88"
+        "maxVersionSupportedInclusive": "3.7.400.91",
+        "maxVersionAvailableInclusive": "3.7.400.91",
+        "maxVersionTestedInclusive": "3.7.400.91"
       }
     ]
   },
@@ -643,7 +643,7 @@
         "minVersionSupportedInclusive": "11.0.0",
         "minVersionTestedInclusive": "11.3.8",
         "maxVersionSupportedInclusive": "14.3.0",
-        "maxVersionAvailableInclusive": "15.0.1",
+        "maxVersionAvailableInclusive": "15.0.3",
         "maxVersionTestedInclusive": "14.3.0"
       }
     ]
@@ -1121,14 +1121,14 @@
     "integrationName": "SqlClient",
     "assemblyName": "Microsoft.Data.SqlClient",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "maxAssemblyVersionInclusive": "6.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Data.SqlClient",
         "minVersionAvailableInclusive": "1.0.19239.1",
         "minVersionSupportedInclusive": "1.0.19239.1",
         "minVersionTestedInclusive": "1.1.4",
-        "maxVersionSupportedInclusive": "5.2.2",
+        "maxVersionSupportedInclusive": "6.0.1",
         "maxVersionAvailableInclusive": "6.0.1",
         "maxVersionTestedInclusive": "6.0.1"
       }
@@ -1332,6 +1332,23 @@
         "maxVersionSupportedInclusive": "2.9.3",
         "maxVersionAvailableInclusive": "2.9.3",
         "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "XUnit",
+    "assemblyName": "xunit.v3.core",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": [
+      {
+        "name": "xunit.v3",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.0.0",
+        "minVersionTestedInclusive": "1.0.1",
+        "maxVersionSupportedInclusive": "1.0.1",
+        "maxVersionAvailableInclusive": "1.0.1",
+        "maxVersionTestedInclusive": "1.0.1"
       }
     ]
   }

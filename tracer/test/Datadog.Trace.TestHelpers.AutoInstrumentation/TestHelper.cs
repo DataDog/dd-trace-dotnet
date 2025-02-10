@@ -83,7 +83,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
+        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool useDotnetExec = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -93,9 +93,16 @@ namespace Datadog.Trace.TestHelpers
             }
 
             Output.WriteLine($"Starting Application: {sampleAppPath} {arguments ?? string.Empty}");
-            string testCli = forceVsTestParam ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
+            string testCli = forceVsTestParam || useDotnetExec ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
-            string appPath = testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
+            bool usesVsTest = testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam;
+            string appPath = (useDotnetExec, usesVsTest) switch
+            {
+                (true, _) => $"exec {sampleAppPath}",
+                (_, true) => $"vstest {sampleAppPath}",
+                _ => sampleAppPath,
+            };
+
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             var process = await ProfilerHelper.StartProcessWithProfiler(
@@ -104,16 +111,16 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
-                processToProfile: exec + ";testhost.exe;testhost.x86.exe");
+                ignoreProfilerProcessesVar: true);
 
             Output.WriteLine($"ProcessId: {process.Id}");
 
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
+            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
 
             using var helper = new ProcessHelper(process);
             return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
