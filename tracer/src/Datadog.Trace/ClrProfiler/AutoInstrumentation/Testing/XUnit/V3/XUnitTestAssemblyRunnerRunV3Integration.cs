@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
@@ -31,9 +32,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 public static class XUnitTestAssemblyRunnerRunV3Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-        where TContext : ITestAssemblyRunnerContextV3
+        where TContext : ITestAssemblyRunnerContextV3, IDuckType
     {
-        if (!XUnitIntegration.IsEnabled)
+        if (!XUnitIntegration.IsEnabled || context.Instance is null)
         {
             return CallTargetState.GetDefault();
         }
