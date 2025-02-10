@@ -588,6 +588,9 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
                                        .AsBool(false);
 
+            BypassHttpRequestUrlCachingEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled)
+                                                       .AsBool(false);
+
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
             var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
 
@@ -1061,6 +1064,12 @@ namespace Datadog.Trace.Configuration
         /// the "command_execution" integration to the agent.
         /// </summary>
         internal bool CommandsCollectionEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will bypass .NET Framework's
+        /// HttpRequestUrl caching when HttpRequest.Url is accessed.
+        /// </summary>
+        internal bool BypassHttpRequestUrlCachingEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings
