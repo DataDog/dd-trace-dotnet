@@ -163,7 +163,7 @@ services:
       dockerfile: build/_build/docker/smoke.windows.fleet-installer.dockerfile
         # args:
         # Note that the following build arguments must be provided
-        # - DOTNETSDK_VERSION=
+        # - BUILD_IMAGE_TAG=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
         # - CHANNEL=
