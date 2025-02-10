@@ -228,6 +228,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
+            var redactedType = _redactedTypesCache.GetOrAdd(type, CheckForRedactedType);
+            return redactedType;
+        }
+
+        private static bool CheckForRedactedType(Type type)
+        {
             Type? genericDefinition = null;
             if (type.IsGenericType)
             {
@@ -271,20 +277,22 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            return !TryNormalize(name, out var result) || RedactKeywords.Contains(result);
+            var redactedKeyword = _redactedKeywordsCache.GetOrAdd(
+                name,
+                n => !TryNormalize(n, out var result) || RedactKeywords.Contains(result));
+
+            return redactedKeyword;
         }
 
         internal static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
         {
-            var redactedKeyword = _redactedKeywordsCache.GetOrAdd(name, IsRedactedKeyword);
-            if (redactedKeyword)
+            if (IsRedactedKeyword(name))
             {
                 redactionReason = RedactionReason.Identifier;
                 return true;
             }
 
-            var redactedType = _redactedTypesCache.GetOrAdd(type, IsRedactedType);
-            if (redactedType)
+            if (IsRedactedType(type))
             {
                 redactionReason = RedactionReason.Type;
                 return true;

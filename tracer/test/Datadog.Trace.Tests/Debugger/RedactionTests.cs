@@ -215,7 +215,8 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
-        [InlineData("password", typeof(System.Security.SecureString), RedactionReason.Type)]
+        [InlineData("", typeof(System.Security.SecureString), RedactionReason.Type)]
+        [InlineData("password", typeof(System.Security.SecureString), RedactionReason.Identifier)]
         [InlineData("api_key", typeof(string), RedactionReason.Identifier)]
         [InlineData("normal", typeof(string), RedactionReason.None)]
         internal void ShouldRedact_CombinedScenarios_Test(string name, Type type, RedactionReason expectedReason)
