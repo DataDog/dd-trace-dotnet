@@ -298,15 +298,6 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsProcessV0(),
             };
 
-        public static Result IsProtobuf(this MockSpan span, string metadataSchemaVersion)
-        {
-            return metadataSchemaVersion switch
-            {
-                "v1" => span.IsProtobufV1(),
-                _ => span.IsProtobufV0()
-            };
-        }
-
         public static Result IsRabbitMQAdmin(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

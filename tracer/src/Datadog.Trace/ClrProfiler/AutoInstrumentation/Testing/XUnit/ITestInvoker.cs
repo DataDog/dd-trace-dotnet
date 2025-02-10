@@ -1,4 +1,4 @@
-// <copyright file="TestInvokerStruct.cs" company="Datadog">
+// <copyright file="ITestInvoker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,38 +11,37 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
-/// TestInvoker`1 structure
+/// TestInvoker`1 interface
 /// </summary>
-[DuckCopy]
-internal struct TestInvokerStruct
+internal interface ITestInvoker : IDuckType
 {
     /// <summary>
-    /// Test class Type
+    /// Gets the Test class Type
     /// </summary>
-    public Type? TestClass;
+    Type? TestClass { get; }
 
     /// <summary>
-    /// Test method MethodInfo
+    /// Gets the Test method MethodInfo
     /// </summary>
-    public MethodInfo? TestMethod;
+    MethodInfo? TestMethod { get; }
 
     /// <summary>
-    /// Test method arguments
+    /// Gets the Test method arguments
     /// </summary>
-    public object[]? TestMethodArguments;
+    object[]? TestMethodArguments { get; }
 
     /// <summary>
-    /// Test case
+    /// Gets the Test case
     /// </summary>
-    public TestCaseStruct TestCase;
+    ITestCase TestCase { get; }
 
     /// <summary>
-    /// Exception aggregator
+    /// Gets the Exception aggregator
     /// </summary>
-    public IExceptionAggregator? Aggregator;
+    IExceptionAggregator? Aggregator { get; }
 
     /// <summary>
-    /// Message Bus
+    /// Gets the Message Bus
     /// </summary>
-    public object MessageBus;
+    object MessageBus { get; }
 }

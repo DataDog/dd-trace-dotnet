@@ -29,9 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-            // the sample uses protobuf, but we are only interested in testing the grpc instrumentation,
-            // so we disable the proto one which would add unexpected tags to the spans.
-            SetEnvironmentVariable("DD_TRACE_PROTOBUF_ENABLED", "false");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

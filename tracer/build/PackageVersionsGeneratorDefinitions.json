@@ -249,16 +249,6 @@
     }]
   },
   {
-    "IntegrationName": "Protobuf",
-    "SampleProjectName": "Samples.GoogleProtobuf",
-    "NugetPackageSearchName": "Google.Protobuf",
-    "MinVersion": "3.0.0",
-    "MaxVersionExclusive": "4.0.0",
-    "SpecificVersions": [
-      "3.*.*"
-    ]
-  },
-  {
     "IntegrationName": "RabbitMQ",
     "SampleProjectName": "Samples.RabbitMQ",
     "NugetPackageSearchName": "RabbitMQ.Client",
@@ -464,6 +454,38 @@
         "MinVersion": "2.4.5",
         "MaxVersionExclusive": "3.0.0",
         "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
+    ]
+  },
+  {
+    "IntegrationName": "XUnitV3",
+    "SampleProjectName": "Samples.XUnitTestsV3",
+    "NugetPackageSearchName": "xunit.v3",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "1.0.0",
+        "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
+    ]
+  },
+  {
+    "IntegrationName": "XUnitRetriesV3",
+    "SampleProjectName": "Samples.XUnitTestsRetriesV3",
+    "NugetPackageSearchName": "xunit.v3",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "1.0.0",
+        "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
       }
     ]
   },
