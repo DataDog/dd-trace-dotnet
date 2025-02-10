@@ -38,8 +38,8 @@
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.414 -->
-    <PackageReference Include="AWSSDK.S3" Version="3.7.414" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.414.1 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.414.1" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->

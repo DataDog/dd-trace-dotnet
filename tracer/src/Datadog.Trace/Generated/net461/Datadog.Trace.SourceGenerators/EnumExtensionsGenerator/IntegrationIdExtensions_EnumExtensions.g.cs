@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 72;
+    public const int Length = 73;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -55,6 +55,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Msmq => nameof(Datadog.Trace.Configuration.IntegrationId.Msmq),
             Datadog.Trace.Configuration.IntegrationId.Kafka => nameof(Datadog.Trace.Configuration.IntegrationId.Kafka),
             Datadog.Trace.Configuration.IntegrationId.CosmosDb => nameof(Datadog.Trace.Configuration.IntegrationId.CosmosDb),
+            Datadog.Trace.Configuration.IntegrationId.AwsS3 => nameof(Datadog.Trace.Configuration.IntegrationId.AwsS3),
             Datadog.Trace.Configuration.IntegrationId.AwsSdk => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSdk),
             Datadog.Trace.Configuration.IntegrationId.AwsSqs => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSqs),
             Datadog.Trace.Configuration.IntegrationId.AwsSns => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSns),
@@ -140,6 +141,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Msmq,
             Datadog.Trace.Configuration.IntegrationId.Kafka,
             Datadog.Trace.Configuration.IntegrationId.CosmosDb,
+            Datadog.Trace.Configuration.IntegrationId.AwsS3,
             Datadog.Trace.Configuration.IntegrationId.AwsSdk,
             Datadog.Trace.Configuration.IntegrationId.AwsSqs,
             Datadog.Trace.Configuration.IntegrationId.AwsSns,
@@ -225,6 +227,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Msmq),
             nameof(Datadog.Trace.Configuration.IntegrationId.Kafka),
             nameof(Datadog.Trace.Configuration.IntegrationId.CosmosDb),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AwsS3),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSdk),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSqs),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSns),
