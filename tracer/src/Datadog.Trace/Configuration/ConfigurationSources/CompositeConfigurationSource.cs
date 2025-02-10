@@ -35,7 +35,7 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
-        private string? JsonConfigurationFilePath { get; set; }
+        internal string? JsonConfigurationFilePath { get; set; }
 
         /// <summary>
         /// Adds a new configuration source to this instance.
@@ -49,10 +49,6 @@ namespace Datadog.Trace.Configuration
             if (source is JsonConfigurationSource jsonSource)
             {
                 JsonConfigurationFilePath = jsonSource.JsonConfigurationFilePath;
-            }
-            else
-            {
-                JsonConfigurationFilePath = "never got picked up";
             }
         }
 
