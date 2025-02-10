@@ -9,20 +9,16 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-#if NETFRAMEWORK
 using System.Runtime.Remoting;
 using System.Security.Permissions;
-#endif
 using PInvoke;
 
 namespace Datadog.FleetInstaller;
 
 internal static class GacInstaller
 {
-#if NETFRAMEWORK
     private static readonly string MsCorLibDirectory
         = Path.GetDirectoryName(Assembly.GetAssembly(typeof(object))!.Location.Replace('/', '\\'))!;
-#endif
 
     /// <summary>
     /// Publish the tracer files to the GAC.
@@ -81,7 +77,6 @@ internal static class GacInstaller
     {
         try
         {
-#if NETFRAMEWORK
             new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
             var fusionDllPath = Path.Combine(MsCorLibDirectory, "fusion.dll");
             if (LoadLibrary(fusionDllPath) == IntPtr.Zero)
@@ -89,7 +84,6 @@ internal static class GacInstaller
                 log.WriteError($"Error loading fusion.dll from '{fusionDllPath}': path not found");
                 return false;
             }
-#endif
 
             var retValue = Fusion.CreateAssemblyCache(out var ppAsmCache, 0);
             if (retValue != HResult.Code.S_OK)
@@ -142,9 +136,7 @@ internal static class GacInstaller
     {
         try
         {
-#if NETFRAMEWORK
             new SecurityPermission(SecurityPermissionFlag.UnmanagedCode).Demand();
-#endif
 
             var retValue = Fusion.CreateAssemblyCache(out var ppAsmCache, 0);
             if (retValue != HResult.Code.S_OK)
@@ -200,11 +192,6 @@ internal static class GacInstaller
         }
     }
 
-// #if NETCOREAPP
-    // [LibraryImport("kernel32.dll", StringMarshalling = StringMarshalling.Utf16)]
-    // private static partial IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPWStr)] string filename);
-// #else
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPWStr)] string filename);
-// #endif
 }
