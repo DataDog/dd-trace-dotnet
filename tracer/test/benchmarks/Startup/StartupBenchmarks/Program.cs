@@ -63,7 +63,7 @@ internal static class Program
             _ => throw new PlatformNotSupportedException($"Platform not supported: {os}-{arch}")
         };
 
-        tracingLibraryPath = $"{tracerHomeDirectory}/win-{arch}/Datadog.Trace.ClrProfiler.Native.{extension}";
+        tracingLibraryPath = $"{tracerHomeDirectory}/{os}-{arch}/Datadog.Trace.ClrProfiler.Native.{extension}";
 
         if (!File.Exists(tracingLibraryPath))
         {
