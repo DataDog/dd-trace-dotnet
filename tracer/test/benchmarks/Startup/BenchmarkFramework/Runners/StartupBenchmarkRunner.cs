@@ -21,7 +21,7 @@ public class StartupBenchmarkRunner<TBenchmarkContainer>
         _globalEnvVars = globalEnvVars;
     }
 
-    protected override BenchmarkResults RunOnce(Benchmark<ProcessStartInfo> benchmark)
+    protected override double RunOnce(Action<ProcessStartInfo> benchmarkAction)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -40,7 +40,7 @@ public class StartupBenchmarkRunner<TBenchmarkContainer>
             startInfo.Environment[envVar.Key] = envVar.Value;
         }
 
-        benchmark.Action(startInfo);
+        benchmarkAction(startInfo);
 
         var stopwatch = Stopwatch.StartNew();
         using var process = Process.Start(startInfo)!;
@@ -58,13 +58,7 @@ public class StartupBenchmarkRunner<TBenchmarkContainer>
         }
 
         process.WaitForExit();
-        var elapsedToExit = stopwatch.Elapsed.TotalMilliseconds;
-
-        return new BenchmarkResults(
-            benchmark.Order,
-            benchmark.Name,
-            benchmark.IsBaseline,
-            [elapsedToMain, elapsedToExit],
-            RemovedOutliers: []);
+        // var elapsedToExit = stopwatch.Elapsed.TotalMilliseconds;
+        return elapsedToMain;
     }
 }

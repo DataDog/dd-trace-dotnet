@@ -4,22 +4,16 @@ namespace BenchmarkFramework.Exporters;
 
 public class ConsoleExporter
 {
-    public void ExportBenchmarkResults(IEnumerable<IBenchmark> benchmarks, IEnumerable<BenchmarkResults> results)
+    public void ExportBenchmarkResults(IEnumerable<IBenchmark> benchmarks, IEnumerable<BenchmarkIterationResults> results)
     {
         var table = new Table();
-        List<BenchmarkResults> outliers = [];
+        List<BenchmarkIterationResults> outliers = [];
 
         AnsiConsole.Live(table)
                    .Start(ctx =>
                    {
                        table.AddColumn("Benchmark", c => c.LeftAligned());
                        table.AddColumn("Start-up time", c => c.RightAligned());
-                       table.AddColumn("Diff", c => c.RightAligned());
-                       table.AddColumn("Ratio", c => c.RightAligned());
-                       table.AddColumn("Exit time", c => c.RightAligned());
-                       table.AddColumn("Diff", c => c.RightAligned());
-                       table.AddColumn("Ratio", c => c.RightAligned());
-                       table.AddColumn("Total", c => c.RightAligned());
                        table.AddColumn("Diff", c => c.RightAligned());
                        table.AddColumn("Ratio", c => c.RightAligned());
 
@@ -33,13 +27,18 @@ public class ConsoleExporter
                        table.AddRow("[bold green]Running benchmarks...[/]");
                        ctx.Refresh();
 
-                       BenchmarkResults? baselineResults = null;
+                       BenchmarkIterationResults? baselineResults = null;
+                       double? averageBaselineElapsedTime = null;
+                       var rowCount = 0;
 
                        foreach (var result in results)
                        {
-                           if (result.IsBaseline && baselineResults is null)
+                           var benchmark = result.Benchmark;
+
+                           if (benchmark.IsBaseline && baselineResults is null)
                            {
                                baselineResults = result;
+                               averageBaselineElapsedTime = result.KeptResults.Average();
                            }
 
                            if (result.RemovedOutliers.Count > 0)
@@ -47,26 +46,19 @@ public class ConsoleExporter
                                outliers.Add(result);
                            }
 
-                           var totalElapsedTime = result.ElapsedTimes.Sum();
-                           var totalElapsedTimeBaseline = baselineResults?.ElapsedTimes.Sum();
-
                            // replace each empty row with the actual results
-                           table.RemoveRow(result.Order);
+                           table.RemoveRow(rowCount);
+
+                           var averageElapsedTime = result.KeptResults.Average();
 
                            table.InsertRow(
-                               Math.Min(result.Order, table.Rows.Count),
-                               result.IsBaseline ? $"[bold]{result.Name}[/]" : result.Name,
-                               FormatMilliseconds(result.ElapsedTimes[0], result.IsBaseline),
-                               FormatMillisecondsDiff(result.ElapsedTimes[0] - baselineResults?.ElapsedTimes[0], result.IsBaseline),
-                               FormatRatio(result.ElapsedTimes, baselineResults?.ElapsedTimes, index: 0, result.IsBaseline),
-                               FormatMilliseconds(result.ElapsedTimes[1], result.IsBaseline),
-                               FormatMillisecondsDiff(result.ElapsedTimes[1] - baselineResults?.ElapsedTimes[1], result.IsBaseline),
-                               FormatRatio(result.ElapsedTimes, baselineResults?.ElapsedTimes, index: 1, result.IsBaseline),
-                               FormatMilliseconds(totalElapsedTime, result.IsBaseline),
-                               FormatMillisecondsDiff(totalElapsedTime - totalElapsedTimeBaseline, result.IsBaseline),
-                               FormatTotalRatio(result.ElapsedTimes, baselineResults?.ElapsedTimes, result.IsBaseline)
-                           );
+                               rowCount,
+                               benchmark.IsBaseline ? $"[bold]{benchmark.Name}[/]" : benchmark.Name,
+                               FormatMilliseconds(averageElapsedTime, benchmark.IsBaseline),
+                               FormatMillisecondsDiff(averageElapsedTime - averageBaselineElapsedTime, benchmark.IsBaseline),
+                               FormatRatio(averageElapsedTime, averageBaselineElapsedTime, benchmark.IsBaseline));
 
+                           rowCount++;
                            ctx.Refresh();
                        }
 
@@ -78,8 +70,8 @@ public class ConsoleExporter
 
         foreach (var outlier in outliers)
         {
-            var outlierElapsedTimes = outlier.RemovedOutliers.Select(r => FormatMilliseconds(r.ElapsedTimes.Sum()));
-            AnsiConsole.MarkupLine($"Outliers detected in [yellow]\"{outlier.Name}\" total:[/] {string.Join(", ", outlierElapsedTimes)}");
+            var outlierElapsedTimes = outlier.RemovedOutliers.Select(r => FormatMilliseconds(r));
+            AnsiConsole.MarkupLine($"Outliers detected in [yellow]\"{outlier.Benchmark.Name}\" total:[/] {string.Join(", ", outlierElapsedTimes)}");
         }
     }
 
@@ -113,7 +105,7 @@ public class ConsoleExporter
         return $"{milliseconds.Value:#,##0.00} ms";
     }
 
-    private static string FormatRatio(double[] current, double[]? baseline, int index, bool isBaseline)
+    private static string FormatRatio(double current, double? baseline, bool isBaseline)
     {
         if (isBaseline)
         {
@@ -125,21 +117,6 @@ public class ConsoleExporter
             return string.Empty;
         }
 
-        return $"{current[index] / baseline[index]:#,##0.00}";
-    }
-
-    private static string FormatTotalRatio(double[] current, double[]? baseline, bool isBaseline)
-    {
-        if (isBaseline)
-        {
-            return "[bold]1.00[/]";
-        }
-
-        if (baseline is null)
-        {
-            return string.Empty;
-        }
-
-        return $"{current.Sum() / baseline.Sum():#,##0.00}";
+        return $"{current / baseline:#,##0.00}";
     }
 }

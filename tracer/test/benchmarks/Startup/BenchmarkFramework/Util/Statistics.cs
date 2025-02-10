@@ -2,14 +2,34 @@
 
 public static class Statistics
 {
-    public static (List<TSource> Kept, List<TSource> Removed) FindOutliersBy<TSource>(List<TSource> data, Func<TSource, double> selector)
+    // public static (List<TSource> Kept, List<TSource> Removed) FindOutliersBy<TSource>(List<TSource> data, Func<TSource, double> selector)
+    // {
+    //     var outliers = FindOutliersInternal(data.Select(selector).ToArray());
+    //     var kept = new List<TSource>();
+    //     var removed = new List<TSource>();
+    //
+    //     for (var i = 0; i < data.Count; i++)
+    //     {
+    //         if (outliers[i])
+    //         {
+    //             kept.Add(data[i]);
+    //         }
+    //         else
+    //         {
+    //             removed.Add(data[i]);
+    //         }
+    //     }
+    //
+    //     return (kept, removed);
+    // }
+
+    public static (List<double> Kept, List<double> Removed) FindOutliers(double[] data)
     {
-        var outliers = FindOutliers(data.Select(selector).ToArray());
+        var outliers = FindOutliersInternal(data);
+        var kept = new List<double>();
+        var removed = new List<double>();
 
-        var kept = new List<TSource>();
-        var removed = new List<TSource>();
-
-        for (var i = 0; i < data.Count; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             if (outliers[i])
             {
@@ -24,7 +44,7 @@ public static class Statistics
         return (kept, removed);
     }
 
-    public static bool[] FindOutliers(double[] data)
+    private static bool[] FindOutliersInternal(double[] data)
     {
         var dataLength = data.Length;
 

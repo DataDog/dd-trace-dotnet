@@ -9,21 +9,9 @@ public abstract class BenchmarkRunner<TBenchmarkContainer, TState>
     private List<Benchmark<TState>>? _benchmarks;
     private Benchmark<TState>? _baseline;
 
-    public IEnumerable<BenchmarkResults> RunAll(int warmupIterationCount, int benchmarkIterationCount)
+    public IEnumerable<BenchmarkIterationResults> RunAll(int warmupIterationCount, int benchmarkIterationCount)
     {
-        var benchmarks = GetBenchmarksInternal();
-
-        // run the baseline first
-        if (_baseline is not null)
-        {
-            yield return RunIterations(
-                _baseline.Value,
-                warmupIterationCount: warmupIterationCount,
-                benchmarkIterationCount: benchmarkIterationCount);
-        }
-
-        // run the rest of the benchmarks
-        foreach (var benchmark in benchmarks.Where(b => !b.IsBaseline))
+        foreach (var benchmark in GetBenchmarksInternal())
         {
             yield return RunIterations(
                 benchmark,
@@ -56,7 +44,6 @@ public abstract class BenchmarkRunner<TBenchmarkContainer, TState>
             var container = new TBenchmarkContainer();
 
             var benchmark = new Benchmark<TState>(
-                benchmarks.Count,
                 attribute!.Description ?? method.Name,
                 attribute.IsBaseline,
                 method.CreateDelegate<Action<TState>>(container));
@@ -80,49 +67,27 @@ public abstract class BenchmarkRunner<TBenchmarkContainer, TState>
         return benchmarks;
     }
 
-    private BenchmarkResults RunIterations(
+    private BenchmarkIterationResults RunIterations(
         Benchmark<TState> benchmark,
         int warmupIterationCount,
         int benchmarkIterationCount)
     {
-        // run once to get the number of elapsed times and start the warmup
-        var warmupResults = RunOnce(benchmark);
-        var elapsedTimesCount = warmupResults.ElapsedTimes.Length;
-
-        // run the rest of the warmup iterations
-        for (var i = 0; i < warmupIterationCount - 1; i++)
+        // run warmup iterations
+        for (var i = 0; i < warmupIterationCount; i++)
         {
-            _ = RunOnce(benchmark);
+            _ = RunOnce(benchmark.Action);
         }
 
-        var allResults = new List<BenchmarkResults>(benchmarkIterationCount);
+        var allResults = new double[benchmarkIterationCount];
 
         for (var i = 0; i < benchmarkIterationCount; i++)
         {
-            allResults.Add(RunOnce(benchmark));
+            allResults[i] = RunOnce(benchmark.Action);
         }
 
-        if (allResults.Any(r => r.ElapsedTimes.Length != elapsedTimesCount))
-        {
-            throw new InvalidOperationException("All benchmarks must return the same number of elapsed time data points.");
-        }
-
-        var (keptResults, removedOutliers) = Statistics.FindOutliersBy(allResults, r => r.ElapsedTimes.Sum());
-
-        var elapsedTimeAverages = new double[elapsedTimesCount];
-
-        for (var i = 0; i < elapsedTimesCount; i++)
-        {
-            elapsedTimeAverages[i] = keptResults.Average(r => r.ElapsedTimes[i]);
-        }
-
-        return new BenchmarkResults(
-            benchmark.Order,
-            benchmark.Name,
-            benchmark.IsBaseline,
-            elapsedTimeAverages,
-            removedOutliers);
+        var (keptResults, removedOutliers) = Statistics.FindOutliers(allResults);
+        return new BenchmarkIterationResults(benchmark, keptResults, removedOutliers);
     }
 
-    protected abstract BenchmarkResults RunOnce(Benchmark<TState> benchmark);
+    protected abstract double RunOnce(Action<TState> benchmark);
 }
