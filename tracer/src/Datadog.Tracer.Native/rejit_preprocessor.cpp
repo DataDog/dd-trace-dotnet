@@ -389,7 +389,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
-        Logger::Info("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
+        Logger::Debug("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
                   "(", caller.method_signature.NumberOfArguments(), " params).");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
