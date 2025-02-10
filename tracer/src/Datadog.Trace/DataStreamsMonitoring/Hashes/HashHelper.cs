@@ -24,12 +24,12 @@ internal static class HashHelper
         var hash = FnvHash64.GenerateHash(service, HashVersion);
         if (!string.IsNullOrEmpty(env))
         {
-            hash = FnvHash64.GenerateHash(env!, HashVersion, hash);
+            hash = FnvHash64.GenerateHash(env, HashVersion, hash);
         }
 
         if (!string.IsNullOrEmpty(primaryTag))
         {
-            hash = FnvHash64.GenerateHash(primaryTag!, HashVersion, hash);
+            hash = FnvHash64.GenerateHash(primaryTag, HashVersion, hash);
         }
 
         return new NodeHashBase(hash);
