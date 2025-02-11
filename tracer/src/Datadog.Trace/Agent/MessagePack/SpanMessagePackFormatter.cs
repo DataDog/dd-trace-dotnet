@@ -7,13 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
@@ -47,6 +47,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
         private readonly byte[] _attributesBytes = StringEncoding.UTF8.GetBytes("attributes");
+        private readonly byte[] _ddSpanLinksBytes = StringEncoding.UTF8.GetBytes("_dd.span_links");
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
@@ -579,6 +580,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
+            if (model.Span.SpanLinks is { Count: > 0 })
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ddSpanLinksBytes);
+                var json = ConvertSpanLinksToJson(span.SpanLinks);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, json);
+            }
+
             if (count > 0)
             {
                 // Back-patch the count. End of "meta" dictionary. Do not add any string tags after this line.
@@ -763,6 +772,61 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
                 _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
             }
+        }
+
+        private string ConvertSpanLinksToJson(IReadOnlyList<SpanLink> links)
+        {
+            var result = new List<Dictionary<string, object>>(links.Count);
+
+            foreach (var link in links)
+            {
+                var context = link.Context;
+
+                var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+                var traceFlags = samplingPriority switch
+                {
+                    null => 0u,              // not set, default to keep
+                    > 0 => 1u + (1u << 31),  // "keep" bits
+                    <= 0 => 1u << 31,        // "drop"
+                };
+
+                var linkDict = new Dictionary<string, object>
+                {
+                    ["trace_id"] = context.TraceId128.Lower,
+                    ["trace_id_high"] = context.TraceId128.Upper,
+                    ["span_id"] = context.SpanId,
+                    ["flags"] = traceFlags,
+                };
+
+                if (context.IsRemote)
+                {
+                    linkDict["tracestate"] = W3CTraceContextPropagator.CreateTraceStateHeader(context);
+                }
+                else
+                {
+                    linkDict["tracestate"] = string.Empty;
+                }
+
+                // convert attributes list to a dictionary
+                if (link.Attributes is { Count: > 0 })
+                {
+                    var attributes = new Dictionary<string, string>(link.Attributes.Count);
+                    foreach (var attr in link.Attributes)
+                    {
+                        attributes[attr.Key] = attr.Value;
+                    }
+
+                    linkDict["attributes"] = attributes;
+                }
+                else
+                {
+                    linkDict["attributes"] = new Dictionary<string, string>();
+                }
+
+                result.Add(linkDict);
+            }
+
+            return JsonConvert.SerializeObject(result);
         }
 
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
