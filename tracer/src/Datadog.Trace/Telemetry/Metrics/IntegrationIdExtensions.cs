@@ -38,6 +38,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.Msmq => MetricTags.IntegrationName.Msmq,
             IntegrationId.Kafka => MetricTags.IntegrationName.Kafka,
             IntegrationId.CosmosDb => MetricTags.IntegrationName.CosmosDb,
+            IntegrationId.AwsS3 => MetricTags.IntegrationName.AwsS3,
             IntegrationId.AwsSdk => MetricTags.IntegrationName.AwsSdk,
             IntegrationId.AwsSns => MetricTags.IntegrationName.AwsSns,
             IntegrationId.AwsSqs => MetricTags.IntegrationName.AwsSqs,

@@ -38,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AwsEventBridge => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsEventBridge : PackageVersionsLatestSpecific.AwsEventBridge;
 
+        public static IEnumerable<object[]> AwsS3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsS3 : PackageVersionsLatestSpecific.AwsS3;
+
         public static IEnumerable<object[]> AwsStepFunctions => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsStepFunctions : PackageVersionsLatestSpecific.AwsStepFunctions;
 
         public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MongoDB : PackageVersionsLatestSpecific.MongoDB;

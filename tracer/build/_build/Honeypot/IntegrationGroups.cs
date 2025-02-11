@@ -40,6 +40,7 @@ namespace Honeypot
             NugetPackages.Add("AWSSDK.DynamoDBv2", new [] { "AWSSDK.DynamoDBv2" });
             NugetPackages.Add("AWSSDK.Core", new [] { "AWSSDK.Core" });
             NugetPackages.Add("AWSSDK.Kinesis", new [] { "AWSSDK.Kinesis" });
+            NugetPackages.Add("AWSSDK.S3", new [] { "AWSSDK.S3" });
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("AWSSDK.EventBridge", new [] { "AWSSDK.EventBridge" });

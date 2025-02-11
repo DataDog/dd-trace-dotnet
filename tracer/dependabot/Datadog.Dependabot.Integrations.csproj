@@ -36,6 +36,11 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.68 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.68" />
 
+    <!-- Integration: AWSSDK.S3 -->
+    <!--    Assembly: AWSSDK.S3 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.414.1 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.414.1" />
+
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.91 -->
@@ -101,7 +106,7 @@
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
     <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.0.3 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="14.3.0" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.0.3" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
