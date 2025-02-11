@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -42,7 +43,7 @@ public class StringAspectsBenchmark
                 { ConfigurationKeys.Iast.IsIastDeduplicationEnabled, false },
             });
             var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
-            Datadog.Trace.Iast.Iast.Instance = new Datadog.Trace.Iast.Iast(iastSettings);
+            Datadog.Trace.Iast.Iast.Instance = new Datadog.Trace.Iast.Iast(iastSettings, NullDiscoveryService.Instance);
 
             IastModule.OnWeakRandomness("fake", false); // Add fake span
             var tracer = Tracer.Instance;

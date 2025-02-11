@@ -315,6 +315,13 @@ namespace BuggyBits.Models
             return links;
         }
 
+        public async Task<string> GetTessGithubPage()
+        {
+            // should trigger a redirect to the secured HTTPS url
+            string result = await _client.GetStringAsync("http://github.com/TessFerrandez/BuggyBits/blob/main/README.md");
+            return result;
+        }
+
         private string GetProductInfoRoot(string rootPath)
         {
             return $"{rootPath}/Products/Info";

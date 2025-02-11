@@ -384,14 +384,17 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        httpResponse.StatusCode = blockingAction.StatusCode;
-
         if (blockingAction.IsRedirect)
         {
-            httpResponse.Redirect(blockingAction.RedirectLocation, blockingAction.IsPermanentRedirect);
+            httpResponse.Redirect(blockingAction.RedirectLocation, false);
+
+            // Redirect() set a status code (301 or 302) and ends the response,
+            // but we want to set the status code to the one we have in the blocking action
+            httpResponse.StatusCode = blockingAction.StatusCode;
         }
         else
         {
+            httpResponse.StatusCode = blockingAction.StatusCode;
             httpResponse.ContentType = blockingAction.ContentType;
             httpResponse.Write(blockingAction.ResponseContent);
         }
@@ -445,7 +448,7 @@ internal readonly partial struct SecurityCoordinator
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
         };
 
         var url = RequestDataHelper.GetUrl(request);
@@ -523,7 +526,7 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool IsBlocked => Context.Items[BlockingAction.BlockDefaultActionName] is true;
 
-        internal override int StatusCode => Context.Response.StatusCode;
+        internal override int? StatusCode => Context.Response.StatusCode;
 
         public override HttpContext Context { get; } = context;
 

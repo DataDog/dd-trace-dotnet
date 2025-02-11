@@ -86,6 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public Task EnabledBySettings(string packageVersion)
         {
+            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine due to a Detached Head status. An issue has been opened to handle the situation. Meanwhile we are skipping it.");
+
             InjectGitHubActionsSession(true, null);
             return SubmitTests(packageVersion, 2, TestIsModified);
         }

@@ -31,6 +31,22 @@ const std::string Sample::ObjectLifetimeLabel = "object lifetime";
 const std::string Sample::ObjectIdLabel = "object id";
 const std::string Sample::ObjectGenerationLabel = "object generation";
 
+// network requests related labels
+const std::string Sample::RequestUrlLabel = "request url";
+const std::string Sample::RequestStatusCodeLabel = "response status code";
+const std::string Sample::RequestErrorLabel = "response error";
+const std::string Sample::RequestRedirectUrlLabel = "redirect url";
+const std::string Sample::RequestDnsWaitLabel = "dns.wait";
+const std::string Sample::RequestDnsDurationLabel = "dns.duration";
+const std::string Sample::RequestDnsSuccessLabel = "dns.success";
+const std::string Sample::RequestHandshakeWaitLabel = "tls.wait";
+const std::string Sample::RequestHandshakeDurationLabel = "tls.duration";
+const std::string Sample::RequestHandshakeErrorLabel = "tls.error";
+const std::string Sample::RequestSocketDurationLabel = "socket.duration";
+const std::string Sample::RequestDurationLabel = "request.duration";
+const std::string Sample::ResponseContentDurationLabel = "response_content.duration";
+const std::string Sample::RequestResponseThreadIdLabel = "response.thread_id";
+const std::string Sample::RequestResponseThreadNameLabel = "response.thread_name";
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created

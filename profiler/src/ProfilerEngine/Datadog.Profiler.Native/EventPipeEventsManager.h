@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "BclEventsParser.h"
 #include "ClrEventsParser.h"
 
 
@@ -17,14 +18,16 @@ class IAllocationsListener;
 class IContentionListener;
 class IGCSuspensionsListener;
 class IGarbageCollectionsListener;
-
+class INetworkListener;
 
 class EventPipeEventsManager
 {
 public:
-    EventPipeEventsManager(IAllocationsListener* pAllocationListener,
+    EventPipeEventsManager(ICorProfilerInfo12* pCorProfilerInfo,
+                           IAllocationsListener* pAllocationListener,
                            IContentionListener* pContentionListener,
-                           IGCSuspensionsListener* pGCSuspensionsListener);
+                           IGCSuspensionsListener* pGCSuspensionsListener,
+                           INetworkListener* pNetworkListener);
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,
@@ -51,5 +54,7 @@ private:
 
 
 private:
-    std::unique_ptr<ClrEventsParser> _parser;
+    ICorProfilerInfo12* _pCorProfilerInfo;
+    std::unique_ptr<ClrEventsParser> _clrParser;
+    std::unique_ptr<BclEventsParser> _bclParser;
 };

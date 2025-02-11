@@ -91,14 +91,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             if (isDotNetProcess &&
                 token_count > 1 &&
                 tokenized_command_line[1] != WStr("test") &&
-                // these are executed with exec, so we could check for that, but the
-                // below check is more conservative, so leaving at that
                 process_command_line.find(WStr("testhost")) == WSTRING::npos &&
+                process_command_line.find(WStr("exec")) == WSTRING::npos &&
                 process_command_line.find(WStr("datacollector")) == WSTRING::npos &&
                 process_command_line.find(WStr("vstest.console.dll")) == WSTRING::npos)
             {
                 Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
-                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost'");
+                    "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost' or 'datacollector' or 'vstest.console.dll' or 'exec'");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
         }

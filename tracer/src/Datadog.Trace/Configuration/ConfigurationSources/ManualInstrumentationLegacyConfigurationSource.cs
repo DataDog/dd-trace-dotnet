@@ -1,4 +1,4 @@
-﻿// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
+// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -137,6 +137,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         "DD_TRACE_MSMQ_ENABLED" => IntegrationId.Msmq,
         "DD_TRACE_KAFKA_ENABLED" => IntegrationId.Kafka,
         "DD_TRACE_COSMOSDB_ENABLED" => IntegrationId.CosmosDb,
+        "DD_TRACE_AWSS3_ENABLED" => IntegrationId.AwsS3,
         "DD_TRACE_AWSSDK_ENABLED" => IntegrationId.AwsSdk,
         "DD_TRACE_AWSSQS_ENABLED" => IntegrationId.AwsSqs,
         "DD_TRACE_AWSSNS_ENABLED" => IntegrationId.AwsSns,
@@ -220,6 +221,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         "DD_TRACE_AWSSQS_ANALYTICS_ENABLED" => IntegrationId.AwsSqs,
         "DD_TRACE_AWSSNS_ANALYTICS_ENABLED" => IntegrationId.AwsSns,
         "DD_TRACE_AWSEVENTBRIDGE_ANALYTICS_ENABLED" => IntegrationId.AwsEventBridge,
+        "DD_TRACE_AWSS3_ANALYTICS_ENABLED" => IntegrationId.AwsS3,
         "DD_TRACE_AWSLAMBDA_ANALYTICS_ENABLED" => IntegrationId.AwsLambda,
         "DD_TRACE_ILOGGER_ANALYTICS_ENABLED" => IntegrationId.ILogger,
         "DD_TRACE_AEROSPIKE_ANALYTICS_ENABLED" => IntegrationId.Aerospike,
@@ -295,6 +297,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         "DD_TRACE_MSMQ_ANALYTICS_SAMPLE_RATE" => IntegrationId.Msmq,
         "DD_TRACE_KAFKA_ANALYTICS_SAMPLE_RATE" => IntegrationId.Kafka,
         "DD_TRACE_COSMOSDB_ANALYTICS_SAMPLE_RATE" => IntegrationId.CosmosDb,
+        "DD_TRACE_AWSS3_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsS3,
         "DD_TRACE_AWSSDK_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsSdk,
         "DD_TRACE_AWSSQS_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsSqs,
         "DD_TRACE_AWSSNS_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsSns,

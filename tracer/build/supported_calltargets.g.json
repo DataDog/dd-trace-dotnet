@@ -2084,6 +2084,594 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CompleteMultipartUpload",
+    "TargetReturnType": "Amazon.S3.Model.CompleteMultipartUploadResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CompleteMultipartUploadRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.CompleteMultipartUploadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CompleteMultipartUploadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.CompleteMultipartUploadResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CompleteMultipartUploadRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.CompleteMultipartUploadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CopyObject",
+    "TargetReturnType": "Amazon.S3.Model.CopyObjectResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CopyObjectRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.CopyObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "CopyObjectAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.CopyObjectResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.CopyObjectRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.CopyObjectAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "DeleteBucket",
+    "TargetReturnType": "Amazon.S3.Model.DeleteBucketResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.DeleteBucketRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.DeleteBucketIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "DeleteBucketAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.DeleteBucketResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.DeleteBucketRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.DeleteBucketAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "DeleteObject",
+    "TargetReturnType": "Amazon.S3.Model.DeleteObjectResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.DeleteObjectRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "DeleteObjectAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.DeleteObjectResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.DeleteObjectRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "DeleteObjects",
+    "TargetReturnType": "Amazon.S3.Model.DeleteObjectsResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.DeleteObjectsRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "DeleteObjectsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.DeleteObjectsResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.DeleteObjectsRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "GetObject",
+    "TargetReturnType": "Amazon.S3.Model.GetObjectResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.GetObjectRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.GetObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "GetObjectAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.GetObjectResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.GetObjectRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.GetObjectAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "InitiateMultipartUpload",
+    "TargetReturnType": "Amazon.S3.Model.InitiateMultipartUploadResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.InitiateMultipartUploadRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.InitiateMultipartUploadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "InitiateMultipartUploadAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.InitiateMultipartUploadResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.InitiateMultipartUploadRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.InitiateMultipartUploadAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "ListBuckets",
+    "TargetReturnType": "Amazon.S3.Model.ListBucketsResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.ListBucketsRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.ListBucketsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "ListBucketsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.ListBucketsResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.ListBucketsRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.ListBucketsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "ListObjectsV2",
+    "TargetReturnType": "Amazon.S3.Model.ListObjectsV2Response",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.ListObjectsV2Request"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.ListObjectsV2Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "ListObjectsV2Async",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.ListObjectsV2Response]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.ListObjectsV2Request",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.ListObjectsV2AsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "PutBucket",
+    "TargetReturnType": "Amazon.S3.Model.PutBucketResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.PutBucketRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.PutBucketIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "PutBucketAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.PutBucketResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.PutBucketRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.PutBucketAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "PutObject",
+    "TargetReturnType": "Amazon.S3.Model.PutObjectResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.PutObjectRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.PutObjectIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "PutObjectAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.PutObjectResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.PutObjectRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.PutObjectAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "UploadPart",
+    "TargetReturnType": "Amazon.S3.Model.UploadPartResponse",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.UploadPartRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsS3",
+    "AssemblyName": "AWSSDK.S3",
+    "TargetTypeName": "Amazon.S3.AmazonS3Client",
+    "TargetMethodName": "UploadPartAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.S3.Model.UploadPartResponse]",
+    "TargetParameterTypes": [
+      "Amazon.S3.Model.UploadPartRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AwsSdk",
     "AssemblyName": "AWSSDK.Core",
     "TargetTypeName": "Amazon.Runtime.Internal.RuntimePipeline",
@@ -7270,7 +7858,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 14,
+      "Item1": 15,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -7345,7 +7933,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 14,
+      "Item1": 15,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12916,7 +13504,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12941,7 +13529,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12963,7 +13551,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12987,7 +13575,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13009,7 +13597,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13033,7 +13621,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13055,7 +13643,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13079,7 +13667,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13103,7 +13691,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13128,7 +13716,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13150,7 +13738,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13174,7 +13762,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13196,7 +13784,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13220,7 +13808,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13244,7 +13832,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13266,7 +13854,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -13290,7 +13878,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 5,
+      "Item1": 6,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -16145,6 +16733,157 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.TestAssemblyRunner`4",
+    "TargetMethodName": "Run",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
+    "TargetParameterTypes": [
+      "!0"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestAssemblyRunnerRunV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.TestClassRunner`4",
+    "TargetMethodName": "Run",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
+    "TargetParameterTypes": [
+      "!0"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestClassRunnerRunV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.TestOutputHelper",
+    "TargetMethodName": "QueueTestOutput",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestOutputHelperQueueTestOutputV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.TestRunner`2",
+    "TargetMethodName": "RunTest",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask`1[System.TimeSpan]",
+    "TargetParameterTypes": [
+      "_"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.XunitTestMethodRunnerBase`3",
+    "TargetMethodName": "RunTestCase",
+    "TargetReturnType": "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
+    "TargetParameterTypes": [
+      "!0",
+      "!2"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "XUnit",
+    "AssemblyName": "xunit.v3.core",
+    "TargetTypeName": "Xunit.v3.XunitTestMethodRunnerContext",
+    "TargetMethodName": ".ctor",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Xunit.v3.IXunitTestMethod",
+      "System.Collections.Generic.IReadOnlyCollection`1[Xunit.v3.IXunitTestCase]",
+      "Xunit.Sdk.ExplicitOption",
+      "Xunit.v3.IMessageBus",
+      "Xunit.v3.ExceptionAggregator",
+      "System.Threading.CancellationTokenSource",
+      "System.Object[]"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

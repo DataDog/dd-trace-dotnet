@@ -393,7 +393,7 @@
   "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED": "ci_visibility_flaky_retry_enabled",
   "DD_CIVISIBILITY_FLAKY_RETRY_COUNT": "ci_visibility_flaky_retry_count",
   "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT": "ci_visibility_total_flaky_retry_count",
-  "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED":  "dd_civisibility_impacted_tests_detection_enabled",
+  "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED": "dd_civisibility_impacted_tests_detection_enabled",
   "DD_TEST_SESSION_NAME": "test_session_name",
   "DD_PROXY_HTTPS": "proxy_https",
   "DD_PROXY_NO_PROXY": "proxy_no_proxy",
@@ -493,6 +493,8 @@
   "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL": "dynamic_instrumentation_diagnostics_interval",
   "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL": "dynamic_instrumentation_upload_interval",
   "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS": "dynamic_instrumentation_redacted_identifiers",
+  "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS": "dynamic_instrumentation_redaction_excluded_identifiers",
+  "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS": "dynamic_instrumentation_redacted_excluded_identifiers",
   "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES": "dynamic_instrumentation_redacted_types",
   "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES": "symbol_database_batch_size_bytes",
   "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_BATCH_SIZE_BYTES": "dynamic_instrumentation_symbol_database_batch_size_bytes",
@@ -655,5 +657,6 @@
   "crashtracking_debug_url": "crashtracking_debug_url",
   "debug_stack_enabled": "debug_stack_enabled",
   "DD_TRACE_BAGGAGE_MAX_ITEMS": "trace_baggage_max_items",
-  "DD_TRACE_BAGGAGE_MAX_BYTES": "trace_baggage_max_bytes"
+  "DD_TRACE_BAGGAGE_MAX_BYTES": "trace_baggage_max_bytes",
+  "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED": "trace_bypass_http_request_url_caching_enabled"
 }

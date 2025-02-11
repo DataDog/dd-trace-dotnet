@@ -169,7 +169,7 @@ internal partial class SecurityReporter
 
     /// <summary>
     /// This functions reports the security scan result and the schema extraction if there was one
-    /// Dont try to test if result should be reported, it's all in here
+    /// Don't try to test if result should be reported, it's all in here
     /// </summary>
     /// <param name="result">waf's result</param>
     /// <param name="blocked">if request was blocked</param>
@@ -177,7 +177,7 @@ internal partial class SecurityReporter
     internal void TryReport(IResult result, bool blocked, int? status = null)
     {
         IHeadersCollection? headers = null;
-        if (!_httpTransport.ReportedExternalWafsRequestHeaders)
+        if (!_httpTransport.ReportedExternalWafsRequestHeaders && !_httpTransport.IsAdditiveContextDisposed())
         {
             headers = _httpTransport.GetRequestHeaders();
             AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
@@ -219,8 +219,16 @@ internal partial class SecurityReporter
 
             _span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
-            headers ??= _httpTransport.GetRequestHeaders();
-            AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+
+            if (headers is null && !_httpTransport.IsAdditiveContextDisposed())
+            {
+                headers = _httpTransport.GetRequestHeaders();
+            }
+
+            if (headers is not null)
+            {
+                AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+            }
 
             if (status is not null)
             {
