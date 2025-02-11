@@ -194,10 +194,7 @@ public class SpanMessagePackFormatterTests
                         > 0 => 1u + (1u << 31), // keep
                         <= 0 => 1u << 31,       // drop
                     };
-                    if (expectedTraceFlags > 0)
-                    {
-                        actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
-                    }
+                    actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
 
                     if (expectedSpanlink.Attributes is { Count: > 0 })
                     {
