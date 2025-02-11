@@ -434,12 +434,15 @@ namespace Datadog.Trace.DiagnosticListeners
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                     var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);
+
+#if INCLUDE_ALL_PRODUCTS
                     if (shouldSecure)
                     {
                         CoreHttpContextStore.Instance.Set(httpContext);
                         var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
                         securityReporter.ReportWafInitInfoOnce(security.WafInitResult);
                     }
+#endif
                 }
             }
         }
@@ -516,6 +519,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 var isCodeOriginEnabled = CurrentLiveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
                 if (isCodeOriginEnabled)
                 {
@@ -529,6 +533,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
                     }
                 }
+#endif
 
                 if (isFirstExecution)
                 {
@@ -579,12 +584,14 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.HttpRoute = normalizedRoute;
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 CurrentSecurity.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
 
                 if (CurrentIast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
+#endif
             }
         }
 
@@ -625,6 +632,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (span is not null)
                 {
                     if (isCodeOriginEnabled && TryGetTypeAndMethod(typedArg, out var type, out var method))
@@ -639,6 +647,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
+#endif
             }
         }
 
@@ -732,7 +741,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
 
+#if INCLUDE_ALL_PRODUCTS
             CoreHttpContextStore.Instance.Remove();
+#endif
             // If we don't have a scope, no need to call Stop pipeline
         }
 

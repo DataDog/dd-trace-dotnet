@@ -105,6 +105,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(CommandExecuteScalarAttribute),
     })]
 
+#if INCLUDE_ALL_PRODUCTS
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "System.Data",
     TypeName = "System.Data.SqlClient.SqlDataReader",
@@ -155,3 +156,4 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
         typeof(IastReaderGetStringAttribute),
         typeof(IastReaderGetValueAttribute),
     })]
+#endif // INCLUDE_ALL_PRODUCTS

@@ -431,6 +431,9 @@ namespace Datadog.Trace
 
         internal static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, List<string> constantTags, string prefix = null)
         {
+#if !INCLUDE_ALL_PRODUCTS
+            return new NoOpStatsd();
+#else
             try
             {
                 var statsd = new DogStatsdService();
@@ -473,6 +476,7 @@ namespace Datadog.Trace
                 Log.Error(ex, "Unable to instantiate StatsD client.");
                 return new NoOpStatsd();
             }
+#endif
         }
 
         private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName)

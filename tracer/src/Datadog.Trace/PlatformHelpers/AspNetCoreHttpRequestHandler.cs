@@ -6,7 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
@@ -18,6 +17,10 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+
+#if INCLUDE_ALL_PRODUCTS
+using Datadog.Trace.AppSec.Coordinator;
+#endif
 
 namespace Datadog.Trace.PlatformHelpers
 {
@@ -190,11 +193,13 @@ namespace Datadog.Trace.PlatformHelpers
                     proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (security.AppsecEnabled)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
                     securityCoordinator.Reporter.AddResponseHeadersToSpan();
                 }
+#endif
 
                 CoreHttpContextStore.Instance.Remove();
                 proxyScope?.Dispose();
@@ -227,6 +232,7 @@ namespace Datadog.Trace.PlatformHelpers
                     proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.Settings);
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (BlockException.GetBlockException(exception) is null)
                 {
                     rootSpan.SetException(exception);
@@ -237,6 +243,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                     security.CheckAndBlock(httpContext, rootSpan);
                 }
+#endif
             }
         }
 

@@ -84,10 +84,12 @@ namespace Datadog.Trace
                 setTag(Tags.User.Scope, userDetails.Scope);
             }
 
+#if INCLUDE_ALL_PRODUCTS
             if (spanClass != null)
             {
                 RunBlockingCheck(spanClass, userDetails.Id, userDetails.SessionId);
             }
+#endif
         }
 
         /// <summary>

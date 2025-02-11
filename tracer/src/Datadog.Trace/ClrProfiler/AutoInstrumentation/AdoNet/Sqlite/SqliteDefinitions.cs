@@ -61,6 +61,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteNonQueryWithBehaviorAttribute),
     })]
 
+#if INCLUDE_ALL_PRODUCTS
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Microsoft.Data.Sqlite",
     TypeName = "Microsoft.Data.Sqlite.SqliteDataReader",
@@ -96,3 +97,4 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(IastReaderGetStringAttribute),
         typeof(IastReaderGetValueAttribute),
     })]
+#endif // INCLUDE_ALL_PRODUCTS

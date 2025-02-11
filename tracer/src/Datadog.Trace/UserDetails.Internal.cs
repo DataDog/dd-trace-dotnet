@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if INCLUDE_ALL_PRODUCTS
+
 #nullable enable
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
@@ -16,3 +18,5 @@ namespace Datadog.Trace
     {
     }
 }
+
+#endif

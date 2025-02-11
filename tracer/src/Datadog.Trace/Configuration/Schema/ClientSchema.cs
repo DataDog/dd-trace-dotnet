@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -77,12 +76,14 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new RemotingClientV1Tags(),
             };
 
-        public ServiceRemotingClientTags CreateServiceRemotingClientTags()
+#if INCLUDE_ALL_PRODUCTS
+        public ServiceFabric.ServiceRemotingClientTags CreateServiceRemotingClientTags()
             => _version switch
             {
-                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
-                _ => new ServiceRemotingClientV1Tags(),
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceFabric.ServiceRemotingClientTags(),
+                _ => new ServiceFabric.ServiceRemotingClientV1Tags(),
             };
+#endif
 
         public AzureServiceBusTags CreateAzureServiceBusTags()
             => _version switch

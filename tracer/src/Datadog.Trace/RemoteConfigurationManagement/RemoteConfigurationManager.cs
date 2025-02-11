@@ -11,12 +11,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
+
+#if INCLUDE_ALL_PRODUCTS
+using Datadog.Trace.Ci.Tags;
+#endif
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -180,11 +183,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 return;
             }
 
+#if INCLUDE_ALL_PRODUCTS
             if (gitMetadata != GitMetadata.Empty)
             {
                 tags.Add($"{CommonTags.GitCommit}:{gitMetadata.CommitSha}");
                 tags.Add($"{CommonTags.GitRepository}:{gitMetadata.RepositoryUrl}");
             }
+#endif
 
             _gitMetadataAddedToRequestTags = true;
         }

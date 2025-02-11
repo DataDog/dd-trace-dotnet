@@ -164,6 +164,7 @@ namespace Datadog.Trace
                 {
                     Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
+#if INCLUDE_ALL_PRODUCTS
                     var iastInstance = Iast.Iast.Instance;
                     if (iastInstance.Settings.Enabled)
                     {
@@ -183,6 +184,7 @@ namespace Datadog.Trace
                         _appSecRequestContext.CloseWebSpan(Tags, span);
                         _appSecRequestContext.DisposeAdditiveContext();
                     }
+#endif
                 }
             }
 
