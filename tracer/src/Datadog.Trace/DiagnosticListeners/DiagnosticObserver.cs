@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.DiagnosticListeners.DuckTypes;
 using Datadog.Trace.Logging;

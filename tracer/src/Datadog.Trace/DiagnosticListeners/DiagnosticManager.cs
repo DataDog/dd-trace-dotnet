@@ -12,7 +12,6 @@ using System.Reflection;
 using Datadog.Trace.DiagnosticListeners.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.DiagnosticListeners

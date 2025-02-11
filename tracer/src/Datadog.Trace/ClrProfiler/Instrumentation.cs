@@ -19,14 +19,9 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-
-#if NETSTANDARD2_0 || NETCOREAPP3_1
-using Datadog.Trace.Debugger.Helpers;
-#endif
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -212,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler
                     // lived nature of our apps. This appears to be a bug in the runtime (although
                     // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
                     // hash which calls into the native library, triggering the load.
-                    _ = string.Empty.ToUUID();
+                    _ = Debugger.Helpers.StringExtensions.ToUUID(string.Empty);
                 }
                 catch (Exception ex)
                 {
@@ -298,7 +293,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
 #if NET6_0_OR_GREATER
-            if (TrimmingDetector.DetectedTrimmingState == TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
+            if (PlatformHelpers.TrimmingDetector.DetectedTrimmingState == PlatformHelpers.TrimmingDetector.TrimState.TrimmedAppMissingTrimmingFile)
             {
                 Log.Warning(
                     "Application trimming detected: a standard .NET type could not be loaded. "
