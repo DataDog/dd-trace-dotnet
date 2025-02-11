@@ -32,7 +32,7 @@ internal abstract class LambdaCommon
             tags: null,
             parent: context.SpanContext,
             serviceName: PlaceholderServiceName,
-            addToTraceContext: false);
+            addToTraceContext: true);
 
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
