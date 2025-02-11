@@ -466,7 +466,7 @@ public class CreatedumpTests : ConsoleTestHelper
             }
 
             var report = JObject.Parse(log.Logs[0].Message);
-            return report["threads"] != null;
+            return report["error"]["threads"] != null;
         }
 
         var agent = helper.Agent;
