@@ -1,6 +1,7 @@
 
 stages:
   - build
+  - publish
   - package
   - shared-pipeline
   - publish
