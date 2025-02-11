@@ -530,6 +530,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("wcf_obfuscation_enabled");
                     writer.WriteValue(instanceSettings.WcfObfuscationEnabled);
 
+                    writer.WritePropertyName("bypass_http_request_url_caching_enabled");
+                    writer.WriteValue(instanceSettings.BypassHttpRequestUrlCachingEnabled);
+
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 

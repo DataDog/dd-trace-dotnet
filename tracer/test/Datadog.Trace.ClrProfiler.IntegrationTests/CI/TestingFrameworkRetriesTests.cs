@@ -35,6 +35,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
     protected abstract string TrueAtThirdRetry { get; }
 
+    protected virtual bool UseDotnetExec => false;
+
     public virtual async Task FlakyRetries(string packageVersion)
     {
         EnvironmentHelper.EnableDefaultTransport();
@@ -95,7 +97,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                           agent,
                                           packageVersion: packageVersion,
-                                          expectedExitCode: 1);
+                                          expectedExitCode: 1,
+                                          useDotnetExec: UseDotnetExec);
 
             // 1 Module
             testModules.Should().HaveCount(1);

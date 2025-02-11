@@ -433,6 +433,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Is
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore\Samples.AzureFunctions.V4Isolated.AspNetCore.csproj", "{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsV3", "tracer\test\test-applications\integrations\Samples.XUnitTestsV3\Samples.XUnitTestsV3.csproj", "{E5BF2436-0BE7-4096-9F25-5118916F4BE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsRetriesV3", "tracer\test\test-applications\integrations\Samples.XUnitTestsRetriesV3\Samples.XUnitTestsRetriesV3.csproj", "{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.S3", "tracer\test\test-applications\integrations\Samples.AWS.S3\Samples.AWS.S3.csproj", "{0C0578CB-3B67-4F95-8547-206CD2A560CD}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.GoogleProtobuf", "tracer\test\test-applications\integrations\Samples.GoogleProtobuf\Samples.GoogleProtobuf.csproj", "{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}"
 EndProject
 Global
@@ -1041,6 +1047,18 @@ Global
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1217,6 +1235,9 @@ Global
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{E5BF2436-0BE7-4096-9F25-5118916F4BE4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{0C0578CB-3B67-4F95-8547-206CD2A560CD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 EndGlobal

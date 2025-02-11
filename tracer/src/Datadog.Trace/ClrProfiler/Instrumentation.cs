@@ -304,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
-                Log.Information("Initializing ServiceFabric instrumentation");
+                Log.Debug("Initializing ServiceFabric instrumentation");
 
                 try
                 {

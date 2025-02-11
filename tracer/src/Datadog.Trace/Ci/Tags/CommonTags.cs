@@ -172,6 +172,11 @@ internal static class CommonTags
     public const string TestingFrameworkNameXUnit = "xUnit";
 
     /// <summary>
+    /// XUnit.v3 testing framework
+    /// </summary>
+    public const string TestingFrameworkNameXUnitV3 = "xUnit.v3";
+
+    /// <summary>
     /// NUnit testing framework
     /// </summary>
     public const string TestingFrameworkNameNUnit = "NUnit";

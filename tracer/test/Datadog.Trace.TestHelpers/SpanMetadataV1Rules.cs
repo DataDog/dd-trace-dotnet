@@ -185,6 +185,30 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));
 
+        public static Result IsAwsS3RequestV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.s3.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "S3")
+                .Matches("aws_service", "S3")
+                .IsOptional("bucketname")
+                .IsOptional("objectkey")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .IsOptional("_dd.peer.service.source", "my-bucket", "peer.service")
+                .Matches("component", "aws-sdk")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "client"));
+
         public static Result IsAwsSqsInboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aws.sqs.process")
