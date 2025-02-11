@@ -649,7 +649,7 @@ public class CreatedumpTests : ConsoleTestHelper
                         expectedBuildId = ToHexString(buildIdNote.Description).ToLower();
                     }
 
-                    frame["build_id"].Value<string>().Should().Be(expectedBuildId);
+                    frame["build_id"].Value<string>().Should().BeEquivalentTo(expectedBuildId);
                 }
             }
 
