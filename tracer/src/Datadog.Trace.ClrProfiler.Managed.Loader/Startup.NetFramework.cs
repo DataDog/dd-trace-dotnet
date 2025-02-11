@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, "Error resolving assembly: {0}", args.Name);
+                StartupLogger.Log(ex, "Error resolving assembly: {0}", [args.Name]);
             }
 
             return null;
@@ -60,23 +60,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
             var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-            StartupLogger.Debug("  Looking for: '{0}'", path);
+            StartupLogger.Debug("  Looking for: '{0}'", [path]);
 
             if (File.Exists(path))
             {
                 if (name.StartsWith("Datadog.Trace, Version=") && name != AssemblyName)
                 {
-                    StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", name, AssemblyName, path);
+                    StartupLogger.Debug("  Trying to load '{0}' which does not match the expected version ('{1}'). [Path={2}]", [name, AssemblyName, path]);
                     return null;
                 }
 
-                StartupLogger.Debug("  Resolving '{0}', loading '{1}'", name, path);
+                StartupLogger.Debug("  Resolving '{0}', loading '{1}'", [name, path]);
                 var assembly = Assembly.LoadFrom(path);
-                StartupLogger.Debug("Assembly '{0}' loaded.", assembly?.FullName ?? "(null)");
+                StartupLogger.Debug("Assembly '{0}' loaded.", [assembly?.FullName ?? "(null)"]);
                 return assembly;
             }
 
-            StartupLogger.Debug("Assembly not found in path: '{0}'", path);
+            StartupLogger.Debug("Assembly not found in path: '{0}'", [path]);
             return null;
         }
     }
