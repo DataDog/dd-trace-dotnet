@@ -40,11 +40,22 @@ public class PutObjectAsyncIntegration
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
 
-        return new CallTargetState(scope);
+        return new CallTargetState(scope, request);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+        where TReturn : IPutObjectResponse
     {
+        if (state.State is IPutObjectRequest request && returnValue is not null)
+        {
+            var bucketName = request.BucketName;
+            var key = request.ObjectKey;
+            var eTag = returnValue.ETag;
+            Console.WriteLine("[tracer] bucketName: " + bucketName);
+            Console.WriteLine("[tracer] key: " + key);
+            Console.WriteLine("[tracer] eTag:" + eTag);
+        }
+
         state.Scope.DisposeWithException(exception);
         return returnValue;
     }
