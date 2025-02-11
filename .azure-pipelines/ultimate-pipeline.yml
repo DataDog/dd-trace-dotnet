@@ -6668,7 +6668,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        vmImage: windows-$(windowsYear)
+        vmImage: $(vmImage)
 
       steps:
         - template: steps/install-docker-compose-v1.yml
@@ -6701,7 +6701,7 @@ stages:
 
         - bash: |
             $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
-              --build-arg BUILD_IMAGE_TAG="$(dotnetCoreSdkLatestVersionShort)-windowsservercore-ltsc$(windowsYear)" \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg CHANNEL="$(channel)" \
