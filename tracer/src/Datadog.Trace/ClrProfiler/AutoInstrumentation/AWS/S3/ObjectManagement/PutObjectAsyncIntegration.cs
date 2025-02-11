@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
@@ -54,6 +55,8 @@ public class PutObjectAsyncIntegration
             Console.WriteLine("[tracer] bucketName: " + bucketName);
             Console.WriteLine("[tracer] key: " + key);
             Console.WriteLine("[tracer] eTag:" + eTag);
+            var hash = SpanPointers.GeneratePointerHash(new[] { bucketName, key, eTag });
+            Console.WriteLine("[tracer] hash:" + hash);
         }
 
         state.Scope.DisposeWithException(exception);
