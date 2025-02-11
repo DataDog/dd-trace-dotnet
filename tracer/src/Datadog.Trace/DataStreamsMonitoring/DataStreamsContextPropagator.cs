@@ -4,12 +4,16 @@
 // </copyright>
 #nullable enable
 using System;
-using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+using System.Buffers.Text;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
+#endif
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 

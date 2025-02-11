@@ -6,8 +6,11 @@
 #nullable enable
 
 using System;
+
+#if !NET6_0_OR_GREATER
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
+#endif
 
 namespace Datadog.Trace.HttpOverStreams;
 
