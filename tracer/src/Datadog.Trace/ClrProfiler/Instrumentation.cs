@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -13,17 +12,24 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+
+#if NETSTANDARD2_0 || NETCOREAPP3_1
+using Datadog.Trace.Debugger.Helpers;
+#endif
+
+#if NETSTANDARD2_0 || NETCOREAPP
+using System.Collections.Generic;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.ServiceFabric;
+#endif
 
 namespace Datadog.Trace.ClrProfiler
 {

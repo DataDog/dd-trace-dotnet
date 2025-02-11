@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
-    internal class NativeInterop
+    internal static class NativeInterop
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static IntPtr GetProfilerStatusPointer()

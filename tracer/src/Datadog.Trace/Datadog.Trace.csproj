@@ -11,9 +11,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <IsTrimmable>false</IsTrimmable>
-  </PropertyGroup>
 
-  <PropertyGroup>
     <!-- Persist the source generator (and other) files to disk -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <GeneratedFolder>Generated</GeneratedFolder>
