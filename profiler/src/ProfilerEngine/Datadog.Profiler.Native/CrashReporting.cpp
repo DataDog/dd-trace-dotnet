@@ -158,6 +158,12 @@ int32_t CrashReporting::Initialize()
 
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_os_info(&_builder, GetOsInfo()));
 
+#ifdef _WINDOWS
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNHANDLED_EXCEPTION));
+#else
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNIX_SIGNAL));
+#endif
+
     return 0;
 }
 
@@ -248,11 +254,6 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
     {
         signalInfo = std::string(description);
     }
-
-    // TODO
-    // Do we can SetSignal from Windows
-    // Maybe call this from linux and windows custom reporter
-    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNIX_SIGNAL));
 
     auto siginfo = ddog_crasht_SigInfo {
         .addr = {nullptr, 0},
