@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
@@ -18,7 +19,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static readonly string StartupLogFilePath = SetStartupLogFilePath();
         private static readonly object PadLock = new();
 
-        public static void Log(string message, params object[] args)
+        public static void Log(
+            string message,
+            object[] args = null,
+            [CallerFilePath] string file = "",
+            [CallerLineNumber] int line = 0,
+            [CallerMemberName] string member = "")
         {
             if (StartupLogFilePath == null)
             {
@@ -30,16 +36,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 lock (PadLock)
                 {
                     using var fileSink = new FileSink(StartupLogFilePath);
-                    if (DebugEnabled)
-                    {
-                        var currentDomain = AppDomain.CurrentDomain;
-                        var isDefaultAppDomain = currentDomain.IsDefaultAppDomain();
-                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}|{currentDomain.Id}|{currentDomain.FriendlyName}|{isDefaultAppDomain}] {message}{Environment.NewLine}", args);
-                    }
-                    else
-                    {
-                        fileSink.Info($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}", args);
-                    }
+                    string formattedMessage = DebugEnabled
+                        ? $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}|{AppDomain.CurrentDomain.Id}|{AppDomain.CurrentDomain.FriendlyName}|{AppDomain.CurrentDomain.IsDefaultAppDomain()}] " +
+                          $"[{Path.GetFileName(file)}:{line} - {member}] {message}{Environment.NewLine}"
+                        : $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff zzz}] {message}{Environment.NewLine}";
+
+                    fileSink.Info(formattedMessage, args);
                 }
             }
             catch
@@ -48,17 +50,28 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        public static void Log(Exception ex, string message, params object[] args)
+        public static void Log(
+            Exception ex,
+            string message,
+            object[] args = null,
+            [CallerFilePath] string file = "",
+            [CallerLineNumber] int line = 0,
+            [CallerMemberName] string member = "")
         {
             message = $"{message}{Environment.NewLine}{ex}";
-            Log(message, args);
+            Log(message, args, file, line, member);
         }
 
-        public static void Debug(string message, params object[] args)
+        public static void Debug(
+            string message,
+            object[] args = null,
+            [CallerFilePath] string file = "",
+            [CallerLineNumber] int line = 0,
+            [CallerMemberName] string member = "")
         {
             if (DebugEnabled)
             {
-                Log(message, args);
+                Log(message, args, file, line, member);
             }
         }
 
