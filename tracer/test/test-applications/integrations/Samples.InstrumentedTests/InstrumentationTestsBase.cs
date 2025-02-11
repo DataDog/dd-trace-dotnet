@@ -76,6 +76,7 @@ public class InstrumentationTestsBase : IDisposable
         None = 0,
         Xss = 1,
         Ssrf = 2,
+        SqlInjection = 4,
     }
 
     public InstrumentationTestsBase()
@@ -267,6 +268,18 @@ public class InstrumentationTestsBase : IDisposable
 
         return spans;
     }
+
+    protected object AssertTaintedFormat(object expected, object instrumented)
+    {
+        AssertTainted(instrumented);
+        if (expected is not null)
+        {
+            FormatTainted(instrumented).Should().Be(expected.ToString());
+        }
+
+        return instrumented;
+    }
+
 
     protected void AssertTaintedFormatWithOriginalCallCheck(object instrumented, Expression<Func<Object>> notInstrumented)
     {

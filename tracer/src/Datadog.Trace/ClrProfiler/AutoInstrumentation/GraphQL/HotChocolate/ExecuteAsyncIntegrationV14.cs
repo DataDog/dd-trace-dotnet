@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate;
     AssemblyName = "HotChocolate.Execution",
     TypeName = "HotChocolate.Execution.RequestExecutor",
     MinimumVersion = "14",
-    MaximumVersion = "14.*.*")]
+    MaximumVersion = "15.*.*")]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ExecuteAsyncIntegrationV14

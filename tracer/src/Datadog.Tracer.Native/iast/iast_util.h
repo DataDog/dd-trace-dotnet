@@ -168,7 +168,25 @@ namespace iast
     std::vector<int> ConvertToIntVector(const WSTRING& str);
     std::vector<bool> ConvertToBoolVector(const WSTRING& str);
 
-    std::string Join(const std::vector<std::string>& cont, const std::string& delim = ";");
+    template <typename T>
+    std::string Join(const std::vector<T>& cont, const std::string& delim = ";")
+    {
+        std::stringstream res;
+        bool first = true;
+        for (auto it = cont.begin(); it != cont.end(); it++)
+        {
+            if (!first)
+            {
+                res << delim;
+            }
+            else
+            {
+                first = false;
+            }
+            res << shared::ToString(*it);
+        }
+        return res.str();
+    }
 
     bool BeginsWith(const WSTRING& str, const WSTRING& begining);
     bool EndsWith(const WSTRING& str, const WSTRING& ending);
@@ -285,8 +303,10 @@ namespace iast
 #define CSLEAVE(x) __csGuard_##x.Leave();
 
     /////////////////////// Enum Utils /////////////////////////////
+#ifndef BEGIN_ENUM_PARSE
 #define BEGIN_ENUM_PARSE(enumName) std::unordered_map<enumName, std::string> enumName##_Values = {
 #define ENUM_VALUE(enumName, enumValue) {enumName::enumValue, STR(enumValue)},
+#define ENUM_VALUE_TEXT(enumName, enumValue, enumValueText) {enumName::enumValue, STR(enumValueText)},
 #define END_ENUM_PARSE(enumName)                                                                                       \
     };                                                                                                                 \
     enumName Parse##enumName(const std::string& txt)                                                                   \
@@ -307,3 +327,4 @@ namespace iast
         return "";                                                                                                     \
     }
 }
+#endif

@@ -300,6 +300,23 @@
     ]
   },
   {
+    "integrationName": "AwsS3",
+    "assemblyName": "AWSSDK.S3",
+    "minAssemblyVersionInclusive": "3.3.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.S3",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.3.0",
+        "minVersionTestedInclusive": "3.3.113.2",
+        "maxVersionSupportedInclusive": "3.7.414.1",
+        "maxVersionAvailableInclusive": "3.7.414.1",
+        "maxVersionTestedInclusive": "3.7.414.1"
+      }
+    ]
+  },
+  {
     "integrationName": "AwsSdk",
     "assemblyName": "AWSSDK.Core",
     "minAssemblyVersionInclusive": "3.0.0",
@@ -644,7 +661,7 @@
         "minVersionTestedInclusive": "11.3.8",
         "maxVersionSupportedInclusive": "14.3.0",
         "maxVersionAvailableInclusive": "15.0.3",
-        "maxVersionTestedInclusive": "14.3.0"
+        "maxVersionTestedInclusive": "15.0.3"
       }
     ]
   },

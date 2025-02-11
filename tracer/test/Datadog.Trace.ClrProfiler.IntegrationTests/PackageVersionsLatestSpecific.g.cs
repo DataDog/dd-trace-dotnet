@@ -281,6 +281,56 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> AwsS3 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP2_1
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NET5_0
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NET6_0
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NET7_0
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NET8_0
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#if NET9_0
+                new object[] { "3.3.113.2" },
+                new object[] { "3.5.10.2" },
+                new object[] { "3.7.414.1" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> MongoDB =>
 
             new List<object[]>
@@ -610,12 +660,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "12.22.6" },
                 new object[] { "13.9.14" },
                 new object[] { "14.3.0" },
+                new object[] { "15.0.3" },
 #endif
 #if NET9_0
                 new object[] { "11.3.8" },
                 new object[] { "12.22.6" },
                 new object[] { "13.9.14" },
                 new object[] { "14.3.0" },
+                new object[] { "15.0.3" },
 #endif
 #endif
             };

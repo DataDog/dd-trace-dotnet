@@ -72,8 +72,8 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
                                     Log.Debug("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret", match);
                                     IastModule.OnHardcodedSecret(new Vulnerability(
-                                        VulnerabilityTypeName.HardcodedSecret,
-                                        (VulnerabilityTypeName.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
+                                        VulnerabilityTypeUtils.HardcodedSecret,
+                                        (VulnerabilityTypeUtils.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
                                         new Location(location!),
                                         new Evidence(match!),
                                         IntegrationId.HardcodedSecret));
