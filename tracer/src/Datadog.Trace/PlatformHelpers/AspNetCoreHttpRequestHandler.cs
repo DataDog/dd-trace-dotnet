@@ -6,7 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
@@ -17,6 +16,10 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+
+#if INCLUDE_ALL_PRODUCTS
+using Datadog.Trace.AppSec.Coordinator;
+#endif
 
 namespace Datadog.Trace.PlatformHelpers
 {
@@ -164,6 +167,8 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+
+#if INCLUDE_ALL_PRODUCTS
                 if (security.AppsecEnabled)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
@@ -174,6 +179,7 @@ namespace Datadog.Trace.PlatformHelpers
                     // remember security could have been disabled while a request is still executed
                     new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
                 }
+#endif
 
                 CoreHttpContextStore.Instance.Remove();
                 rootScope.Dispose();
@@ -198,11 +204,13 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
+#if INCLUDE_ALL_PRODUCTS
                 if (BlockException.GetBlockException(exception) is null)
                 {
                     rootSpan.SetException(exception);
                     security.CheckAndBlock(httpContext, rootSpan);
                 }
+#endif
             }
         }
 

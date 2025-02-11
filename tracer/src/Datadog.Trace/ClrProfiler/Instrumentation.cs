@@ -28,7 +28,6 @@ using Datadog.Trace.Debugger.Helpers;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.ServiceFabric;
 #endif
 
 namespace Datadog.Trace.ClrProfiler
@@ -306,6 +305,7 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 
+#if INCLUDE_ALL_PRODUCTS
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -313,7 +313,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    ServiceRemotingClient.StartTracing();
+                    ServiceFabric.ServiceRemotingClient.StartTracing();
                 }
                 catch
                 {
@@ -322,14 +322,15 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    ServiceRemotingService.StartTracing();
+                    ServiceFabric.ServiceRemotingService.StartTracing();
                 }
                 catch
                 {
                     // ignore
                 }
             }
-#endif
+#endif // INCLUDE_ALL_PRODUCTS
+#endif // !NETFRAMEWORK
 
             try
             {

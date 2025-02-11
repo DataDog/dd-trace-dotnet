@@ -82,6 +82,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
+#if INCLUDE_ALL_PRODUCTS
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
     TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
@@ -134,3 +135,4 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(IastReaderGetStringAttribute),
         typeof(IastReaderGetValueAttribute),
     })]
+#endif // INCLUDE_ALL_PRODUCTS

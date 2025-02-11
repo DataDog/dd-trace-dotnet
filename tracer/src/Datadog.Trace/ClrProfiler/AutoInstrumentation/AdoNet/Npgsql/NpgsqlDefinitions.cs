@@ -38,6 +38,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
+#if INCLUDE_ALL_PRODUCTS
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Npgsql",
     TypeName = "Npgsql.NpgsqlDataReader",
@@ -54,3 +55,4 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(IastReaderGetStringAttribute),
         typeof(IastReaderGetValueAttribute),
     })]
+#endif // INCLUDE_ALL_PRODUCTS
