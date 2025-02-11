@@ -104,6 +104,175 @@ namespace Datadog.Trace.Configuration
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, telemetry);
             }
 
+            // With SSI, beyond ContinuousProfiler.ConfigurationKeys.ProfilingEnabled (true or auto vs false),
+            // the profiler could be enabled via ContinuousProfiler.ConfigurationKeys.SsiDeployed:
+            //  - if it contains "profiler", the profiler is enabled after 30 seconds + at least 1 span
+            //  - if not, the profiler needed to be loaded by the CLR but no profiling will be done, only telemetry metrics will be sent
+            // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
+            // (even without "profiler") so that spans will be sent to the profiler.
+            ProfilingEnabledInternal = config
+                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
+                         .GetAs(
+                            converter: x => x switch
+                            {
+                                "auto" => true,
+                                _ when x.ToBoolean() is { } boolean => boolean,
+                                _ => ParsingResult<bool>.Failure(),
+                            },
+                            getDefaultValue: () =>
+                            {
+                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
+                                return (profilingSsiDeployed != null);
+                            },
+                            validator: null);
+
+            var otelTags = config
+                          .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
+                          .AsDictionaryResult(separator: '=');
+
+            Dictionary<string, string>? globalTags = default;
+            if (ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
+            {
+                // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
+                // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
+                // 2. Key-value pairs with empty values are allowed, instead of discarded
+                // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
+                Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
+                {
+                    var dictionary = new ConcurrentDictionary<string, string>();
+                    if (string.IsNullOrWhiteSpace(data))
+                    {
+                        // return empty collection
+                        return dictionary;
+                    }
+
+                    char[] separatorChars = data.Contains(',') ? [','] : [' '];
+                    var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var entry in entries)
+                    {
+                        // we need Trim() before looking forthe separator so we can skip entries with no key
+                        // (that is, entries with a leading separator, like "<empty or whitespace>:value")
+                        var trimmedEntry = entry.Trim();
+                        if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
+                        {
+                            continue;
+                        }
+
+                        var separatorIndex = trimmedEntry.IndexOf(':');
+                        if (separatorIndex < 0)
+                        {
+                            // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                            // it's a key with no value.
+                            var key = trimmedEntry;
+                            dictionary[key] = string.Empty;
+                        }
+                        else if (separatorIndex > 0)
+                        {
+                            // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                            // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                            var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                            var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
+                            dictionary[key] = value;
+                        }
+                    }
+
+                    return dictionary;
+                };
+
+                globalTags = config
+                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .AsDictionaryResult(parser: updatedTagsParser)
+                                .OverrideWith(
+                                     RemapOtelTags(in otelTags),
+                                     ErrorLog,
+                                     () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                                // Filter out tags with empty keys, and trim whitespace
+                                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+            }
+            else
+            {
+                globalTags = config
+                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .AsDictionaryResult()
+                                .OverrideWith(
+                                     RemapOtelTags(in otelTags),
+                                     ErrorLog,
+                                     () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                                // Filter out tags with empty keys or empty values, and trim whitespace
+                                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            }
+
+            Environment = config
+                         .WithKeys(ConfigurationKeys.Environment)
+                         .AsString();
+
+            // DD_ENV has precedence over DD_TAGS
+            Environment = GetExplicitSettingOrTag(Environment, globalTags!, Tags.Env, ConfigurationKeys.Environment);
+
+            var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
+            var serviceName = config
+                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                                 .AsStringResult()
+                                 .OverrideWith(in otelServiceName, ErrorLog);
+
+            // DD_SERVICE has precedence over DD_TAGS
+            serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName);
+
+#if INCLUDE_ALL_PRODUCTS
+            if (isRunningInCiVisibility)
+            {
+                // Set the service name if not set
+                var isUserProvidedTestServiceTag = true;
+                var ciVisServiceName = serviceName;
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    // Extract repository name from the git url and use it as a default service name.
+                    ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    isUserProvidedTestServiceTag = false;
+                }
+
+                globalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
+
+                // Normalize the service name
+                ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
+                if (ciVisServiceName != serviceName)
+                {
+                    serviceName = ciVisServiceName;
+                    telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
+                }
+            }
+#endif
+
+            ServiceName = serviceName;
+
+            ServiceVersion = config
+                            .WithKeys(ConfigurationKeys.ServiceVersion)
+                            .AsString();
+
+            // DD_VERSION has precedence over DD_TAGS
+            ServiceVersion = GetExplicitSettingOrTag(ServiceVersion, globalTags, Tags.Version, ConfigurationKeys.ServiceVersion);
+
+            GitCommitSha = config
+                          .WithKeys(ConfigurationKeys.GitCommitSha)
+                          .AsString();
+
+#if INCLUDE_ALL_PRODUCTS
+            // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
+            GitCommitSha = GetExplicitSettingOrTag(GitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha);
+
+            GitRepositoryUrl = config
+                              .WithKeys(ConfigurationKeys.GitRepositoryUrl)
+                              .AsString();
+
+            // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
+            GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl);
+#endif
+
             GitMetadataEnabled = config
                                 .WithKeys(ConfigurationKeys.GitMetadataEnabled)
                                 .AsBool(defaultValue: true);
@@ -122,6 +291,50 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
+
+            var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
+                                                 .AsString()
+                                                ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+            // If Activity support is enabled, we shouldn't enable the OTel listener
+            DisabledIntegrationNames = IsActivityListenerEnabled
+                                           ? new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase)
+                                           : new HashSet<string>([..disabledIntegrationNames, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
+
+            Integrations = new IntegrationSettingsCollection(source, DisabledIntegrationNames);
+            RecordDisabledIntegrationsTelemetry(Integrations, Telemetry);
+
+            Exporter = new ExporterSettings(source, _telemetry);
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
+                                                   .AsBool(defaultValue: false);
+#pragma warning restore 618
+
+#pragma warning disable 618 // this parameter has been replaced but may still be used
+            MaxTracesSubmittedPerSecond = config
+                                         .WithKeys(ConfigurationKeys.TraceRateLimit, ConfigurationKeys.MaxTracesSubmittedPerSecond)
+#pragma warning restore 618
+                                         .AsInt32(defaultValue: 100);
+
+            // mutate dictionary to remove without "env", "version", "git.commit.sha" or "git.repository.url" tags
+            // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
+            // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
+            globalTags.Remove(Tags.Service);
+            globalTags.Remove(Tags.Env);
+            globalTags.Remove(Tags.Version);
+#if INCLUDE_ALL_PRODUCTS
+            globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
+            globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+#endif
+            _globalTags = new(globalTags);
+
+            var headerTagsNormalizationFixEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                               .AsBool(defaultValue: true);
+
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            _headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -563,9 +776,15 @@ namespace Datadog.Trace.Configuration
                                                         x => x is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength)
                                                    .Value;
 
+#if INCLUDE_ALL_PRODUCTS
             IpHeader = config
                       .WithKeys(ConfigurationKeys.IpHeader)
                       .AsString();
+#else
+            IpHeader = config
+                       .WithKeys(ConfigurationKeys.IpHeader)
+                       .AsString();
+#endif
 
             IpHeaderEnabled = config
                              .WithKeys(ConfigurationKeys.IpHeaderEnabled)

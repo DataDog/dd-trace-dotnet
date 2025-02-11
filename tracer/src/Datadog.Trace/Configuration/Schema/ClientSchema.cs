@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -75,8 +74,10 @@ namespace Datadog.Trace.Configuration.Schema
         public RemotingClientTags CreateRemotingClientTags()
             => _useV0Tags ? new RemotingClientTags() : new RemotingClientV1Tags();
 
+#if INCLUDE_ALL_PRODUCTS
         public ServiceRemotingClientTags CreateServiceRemotingClientTags()
             => _useV0Tags ? new ServiceRemotingClientTags() : new ServiceRemotingClientV1Tags();
+#endif
 
         public AzureServiceBusTags CreateAzureServiceBusTags()
             => _useV0Tags ? new AzureServiceBusTags() : new AzureServiceBusV1Tags();

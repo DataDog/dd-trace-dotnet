@@ -122,6 +122,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAttribute),
     })]
 
+#if INCLUDE_ALL_PRODUCTS
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySql.Data",
     TypeName = "MySql.Data.MySqlClient.MySqlCommand",
@@ -172,3 +173,4 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(IastReaderGetStringAttribute),
         typeof(IastReaderGetValueAttribute),
     })]
+#endif // INCLUDE_ALL_PRODUCTS

@@ -12,4 +12,8 @@ internal class AppSecRequestContext
     public void CloseWebSpan(TraceTagCollection tags, Span span)
     {
     }
+
+    public void DisposeAdditiveContext()
+    {
+    }
 }

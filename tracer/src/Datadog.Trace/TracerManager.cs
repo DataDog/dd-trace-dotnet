@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -37,6 +36,10 @@ using Datadog.Trace.Util.Http;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
+
+#if INCLUDE_ALL_PRODUCTS
+using Datadog.Trace.AppSec;
+#endif
 
 namespace Datadog.Trace
 {
@@ -509,6 +512,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_error");
                     writer.WriteValue(agentError ?? string.Empty);
 
+#if INCLUDE_ALL_PRODUCTS
                     WriteAsmInfo(writer);
 
                     writer.WritePropertyName("iast_enabled");
@@ -522,6 +526,7 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("iast_weak_cipher_algorithms");
                     writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakCipherAlgorithms);
+#endif
 
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
@@ -641,6 +646,7 @@ namespace Datadog.Trace
             }
         }
 
+#if INCLUDE_ALL_PRODUCTS
         private static void WriteAsmInfo(JsonTextWriter writer)
         {
             var security = Security.Instance;
@@ -689,6 +695,7 @@ namespace Datadog.Trace
                 writer.WriteValue(security.WafExportsErrorHappened);
             }
         }
+#endif
 
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
         private static TracerManager CreateInitializedTracer(TracerSettings settings, TracerManagerFactory factory)

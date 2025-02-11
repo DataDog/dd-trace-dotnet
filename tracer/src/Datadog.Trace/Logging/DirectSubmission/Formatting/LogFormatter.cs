@@ -10,13 +10,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using System.Threading;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+
+#if INCLUDE_ALL_PRODUCTS
+using Datadog.Trace.Ci.Tags;
+#endif
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
@@ -166,6 +168,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return;
             }
 
+#if INCLUDE_ALL_PRODUCTS
             if (gitMetadata != GitMetadata.Empty)
             {
                 // we take a lock here to handle the case where we're running concurrently with a settings update
@@ -181,6 +184,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             {
                 Volatile.Write(ref _gitMetadataTags, string.Empty); // to signal that we extracted it but it was missing
             }
+#endif
         }
 
         internal static bool IsSourceProperty(string? propertyName) =>
@@ -441,6 +445,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     writer.WriteValue(spanId);
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (span.GetTag(TestTags.Suite) is { } suite)
                 {
                     writer.WritePropertyName(TestTags.Suite, escape: false);
@@ -458,6 +463,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     writer.WritePropertyName(TestTags.Bundle, escape: false);
                     writer.WriteValue(bundle);
                 }
+#endif
             }
 
             writer.WritePropertyName("service", escape: false);

@@ -353,7 +353,8 @@ namespace Datadog.Trace.ClrProfiler
             {
                 // ignore
             }
-#if !NETFRAMEWORK
+
+#if !NETFRAMEWORK && INCLUDE_ALL_PRODUCTS
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
@@ -377,7 +378,7 @@ namespace Datadog.Trace.ClrProfiler
                     // ignore
                 }
             }
-#endif // #if !NETFRAMEWORK
+#endif // !NETFRAMEWORK && INCLUDE_ALL_PRODUCTS
 
             try
             {

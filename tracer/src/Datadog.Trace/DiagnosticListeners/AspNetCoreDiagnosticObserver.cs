@@ -430,6 +430,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         var securityReporter = new SecurityReporter(scope.Span, new SecurityCoordinator.HttpTransport(httpContext));
                         securityReporter.ReportWafInitInfoOnce(_security.WafInitResult);
                     }
+#endif
                 }
             }
         }
@@ -504,6 +505,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
                 {
                     var method = routeEndpoint?.RequestDelegate?.Method;
@@ -521,6 +523,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
                     }
                 }
+#endif
 
                 if (isFirstExecution)
                 {
@@ -570,12 +573,14 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreRoute = normalizedRoute;
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
 
                 if (_iast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
                 }
+#endif
             }
         }
 
@@ -613,6 +618,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (span is not null)
                 {
                     if (isCodeOriginEnabled)
@@ -634,6 +640,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
+#endif
             }
         }
 
@@ -711,7 +718,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
 
+#if INCLUDE_ALL_PRODUCTS
             CoreHttpContextStore.Instance.Remove();
+#endif
             // If we don't have a scope, no need to call Stop pipeline
         }
 
