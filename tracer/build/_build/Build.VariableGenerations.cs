@@ -1256,8 +1256,9 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        // We can only test Windows 2022 images currently, due to VM + docker image support
                         new (publishFramework: TargetFramework.NET9_0, "4.8-windowsservercore-ltsc2022"),
-                        new (publishFramework: TargetFramework.NET9_0, "4.8-windowsservercore-ltsc2019"),
+                        new (publishFramework: TargetFramework.NET8_0, "4.8-windowsservercore-ltsc2022"),
                     };
 
                     var matrix = (
@@ -1271,7 +1272,6 @@ partial class Build : NukeBuild
                                          runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel = GetInstallerChannel(image.PublishFramework),
-                                         vmImage = $"windows-{image.RuntimeTag.Substring(image.RuntimeTag.Length - 4)}",
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
                     Logger.Information($"Installer smoke tests fleet-installer matrix Windows");
