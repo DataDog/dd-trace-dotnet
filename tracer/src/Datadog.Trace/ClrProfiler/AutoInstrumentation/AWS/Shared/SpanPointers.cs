@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,9 +18,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
     /// </summary>
     internal static class SpanPointers
     {
+        // The pointer direction will always be down. The serverless agent handles cases where the
+        // direction is up.
+        private const string DownDirection = "d";
+        private const string LinkKind = "span-pointer";
         private const int SpanPointerHashSizeBytes = 16;
+        private const string S3PtrKind = "aws.s3.object";
 
-        public static string GeneratePointerHash(string[] components)
+        // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
+        public static void AddS3SpanPointer(Span span, string bucketName, string key, string eTag)
+        {
+            var components = new[] { bucketName, key, StripQuotes(eTag) };
+            var hash = GeneratePointerHash(components);
+            var spanLinkAttributes = new List<KeyValuePair<string, string>>
+            {
+                new("ptr.kind", S3PtrKind),
+                new("ptr.dir", DownDirection),
+                new("ptr.hash", hash),
+                new("link.kind", LinkKind),
+            };
+
+            var spanLink = new SpanLink(SpanContext.ZeroContext, spanLinkAttributes);
+            span.AddLink(spanLink);
+        }
+
+        // Hashing rules: https://github.com/DataDog/dd-span-pointer-rules/tree/main?tab=readme-ov-file#general-hashing-rules
+        private static string GeneratePointerHash(string[] components)
         {
             using var stream = new MemoryStream();
 
@@ -45,6 +69,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             Array.Copy(fullHash, truncatedHash, SpanPointerHashSizeBytes);
 
             return BitConverter.ToString(truncatedHash).Replace("-", string.Empty).ToLower();
+        }
+
+        /// <summary>
+        /// Removes quotes wrapping a value, if they exist.
+        /// S3's eTag is sometimes wrapped in quotes.
+        /// </summary>
+        /// <param name="value">Value to remove quotes from</param>
+        /// <returns>Value with quotes removed</returns>
+        private static string StripQuotes(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length < 2)
+            {
+                return value;
+            }
+
+            if (value[0] == '"' && value[value.Length - 1] == '"')
+            {
+                return value.Substring(1, value.Length - 2);
+            }
+
+            return value;
         }
     }
 }

@@ -48,6 +48,11 @@ namespace Datadog.Trace
         /// </summary>
         public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: Trace.TraceId.Zero, spanId: 0, serviceName: null);
 
+        /// <summary>
+        /// A SpanContext with all fields set to zero or empty values, for span pointers.
+        /// </summary>
+        public static readonly SpanContext ZeroContext = new();
+
         private string _rawTraceId;
         private string _rawSpanId;
         private string _origin;
@@ -171,6 +176,14 @@ namespace Datadog.Trace
             {
                 Origin = Ci.Tags.TestTags.CIAppTestOriginName;
             }
+        }
+
+        // Constructor for creating an empty span context.
+        private SpanContext()
+        {
+            TraceId128 = Trace.TraceId.Zero;  // Directly set zero without the random generation
+            SpanId = 0;
+            IsRemote = true; // pass trace state
         }
 
         /// <summary>

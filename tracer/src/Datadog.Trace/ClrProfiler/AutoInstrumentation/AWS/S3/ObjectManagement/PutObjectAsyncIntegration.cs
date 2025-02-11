@@ -47,16 +47,13 @@ public class PutObjectAsyncIntegration
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
         where TReturn : IPutObjectResponse
     {
-        if (state.State is IPutObjectRequest request && returnValue is not null)
+        if (state.Scope is not null && state.State is IPutObjectRequest request && returnValue is not null)
         {
             var bucketName = request.BucketName;
             var key = request.ObjectKey;
             var eTag = returnValue.ETag;
-            Console.WriteLine("[tracer] bucketName: " + bucketName);
-            Console.WriteLine("[tracer] key: " + key);
-            Console.WriteLine("[tracer] eTag:" + eTag);
-            var hash = SpanPointers.GeneratePointerHash(new[] { bucketName, key, eTag });
-            Console.WriteLine("[tracer] hash:" + hash);
+            SpanPointers.AddS3SpanPointer(state.Scope.Span, bucketName, key, eTag);
+            Console.WriteLine("[tracer] span pointer added.");
         }
 
         state.Scope.DisposeWithException(exception);
