@@ -28,7 +28,7 @@ public class VulnerabilitiesEnumTests
         // The file "vulnerability_schema.json" must stay updated as new vulnerabilities are added
 
         var vulnerabilityType = (VulnerabilityType)vulnerability;
-        var vulnerabilityTypeName = VulnerabilityTypeName.GetName(vulnerabilityType);
+        var vulnerabilityTypeName = VulnerabilityTypeUtils.GetName(vulnerabilityType);
 
         Assert.Contains(vulnerabilityTypeName, vulnerabilitiesNames);
     }

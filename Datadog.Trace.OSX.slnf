@@ -82,6 +82,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.EventBridge\\Samples.AWS.EventBridge.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.Kinesis\\Samples.AWS.Kinesis.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.Lambda\\Samples.AWS.Lambda.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.AWS.S3\\Samples.AWS.S3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.SimpleNotificationService\\Samples.AWS.SimpleNotificationService.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.SQS\\Samples.AWS.SQS.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AzureServiceBus\\Samples.AzureServiceBus.csproj",

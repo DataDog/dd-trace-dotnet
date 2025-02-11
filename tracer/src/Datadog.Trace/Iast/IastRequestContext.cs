@@ -95,7 +95,7 @@ internal class IastRequestContext
     {
         try
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
+            _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RequestBody);
 
             if (bodyExtracted is null)
             {
@@ -178,7 +178,7 @@ internal class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastSourceType.RoutedParameterValue);
             if (routeData != null)
             {
                 foreach (var item in routeData)
@@ -217,15 +217,15 @@ internal class IastRequestContext
         {
             if (_executedTelemetryHelper is { } helper)
             {
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
+                helper.AddExecutedSource(IastSourceType.RequestParameterName);
+                helper.AddExecutedSource(IastSourceType.RequestParameterValue);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderName);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderValue);
+                helper.AddExecutedSource(IastSourceType.CookieName);
+                helper.AddExecutedSource(IastSourceType.CookieValue);
+                helper.AddExecutedSource(IastSourceType.RequestPath);
+                helper.AddExecutedSource(IastSourceType.RequestQuery);
+                helper.AddExecutedSource(IastSourceType.RequestUri);
             }
 
             var queryString = RequestDataHelper.GetQueryString(request);
@@ -306,14 +306,14 @@ internal class IastRequestContext
         {
             if (_executedTelemetryHelper is { } helper)
             {
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
-                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
-                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+                helper.AddExecutedSource(IastSourceType.RequestParameterName);
+                helper.AddExecutedSource(IastSourceType.RequestParameterValue);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderName);
+                helper.AddExecutedSource(IastSourceType.RequestHeaderValue);
+                helper.AddExecutedSource(IastSourceType.CookieName);
+                helper.AddExecutedSource(IastSourceType.CookieValue);
+                helper.AddExecutedSource(IastSourceType.RequestPath);
+                helper.AddExecutedSource(IastSourceType.RequestQuery);
             }
 
             if (request.Query != null)
@@ -378,14 +378,19 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(name, new Source(SourceType.RequestHeaderName, name, name));
     }
 
-    internal void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
+    internal void OnExecutedSinkTelemetry(IastVulnerabilityType sink)
     {
         _executedTelemetryHelper?.AddExecutedSink(sink);
     }
 
-    internal void OnExecutedSourceTelemetry(IastInstrumentedSources source)
+    internal void OnExecutedSourceTelemetry(IastSourceType source)
     {
         _executedTelemetryHelper?.AddExecutedSource(source);
+    }
+
+    internal void OnSupressedVulnerabilityTelemetry(IastVulnerabilityType sink)
+    {
+        _executedTelemetryHelper?.AddSupressedVulnerability(sink);
     }
 
     internal void OnExecutedPropagationTelemetry()

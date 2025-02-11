@@ -484,7 +484,15 @@ static thread_local std::unordered_map<void *, bool> locked;
             }
             else
             {
-                type = Trim(subject.substr(typeIndex));
+                if (paramsIndex != std::string::npos)
+                {
+                    method = Trim(subject.substr(0, paramsIndex));
+                    params = Trim(subject.substr(paramsIndex));
+                }
+                else
+                {
+                    type = Trim(subject.substr(typeIndex));
+                }
             }
 
             if (assembliesW)
@@ -745,26 +753,6 @@ static thread_local std::unordered_map<void *, bool> locked;
             }
         }
         return res;
-    }
-
-
-    std::string Join(const std::vector<std::string>& cont, const std::string& delim)
-    {
-        std::stringstream res;
-        bool first = true;
-        for (auto it = cont.begin(); it != cont.end(); it++)
-        {
-            if (!first)
-            {
-                res << delim;
-            }
-            else
-            {
-                first = false;
-            }
-            res << *it;
-        }
-        return res.str();
     }
 
 #ifndef _WIN32
