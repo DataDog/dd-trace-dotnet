@@ -1264,7 +1264,7 @@ partial class Build : NukeBuild
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform}_{image.RuntimeTag.Replace('.', '_')}"
+                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}".Replace('.', '_')
                                      select new
                                      {
                                          dockerTag = dockerTag,
