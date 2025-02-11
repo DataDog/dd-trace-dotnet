@@ -246,6 +246,7 @@ namespace Datadog.Trace.Configuration
             // DD_SERVICE has precedence over DD_TAGS
             serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName);
 
+#if INCLUDE_ALL_PRODUCTS
             if (isRunningInCiVisibility)
             {
                 // Set the service name if not set
@@ -268,6 +269,7 @@ namespace Datadog.Trace.Configuration
                     telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
                 }
             }
+#endif
 
             ServiceName = serviceName;
 
@@ -282,6 +284,7 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.GitCommitSha)
                           .AsString();
 
+#if INCLUDE_ALL_PRODUCTS
             // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
             GitCommitSha = GetExplicitSettingOrTag(GitCommitSha, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitCommitSha);
 
@@ -291,6 +294,7 @@ namespace Datadog.Trace.Configuration
 
             // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
             GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl);
+#endif
 
             GitMetadataEnabled = config
                                 .WithKeys(ConfigurationKeys.GitMetadataEnabled)
@@ -359,8 +363,10 @@ namespace Datadog.Trace.Configuration
             globalTags.Remove(Tags.Service);
             globalTags.Remove(Tags.Env);
             globalTags.Remove(Tags.Version);
+#if INCLUDE_ALL_PRODUCTS
             globalTags.Remove(Ci.Tags.CommonTags.GitCommit);
             globalTags.Remove(Ci.Tags.CommonTags.GitRepository);
+#endif
             _globalTags = new(globalTags);
 
             var headerTagsNormalizationFixEnabled = config

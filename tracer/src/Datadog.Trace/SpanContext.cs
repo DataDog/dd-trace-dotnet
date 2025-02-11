@@ -168,6 +168,7 @@ namespace Datadog.Trace
 
             ServiceName = serviceName;
 
+#if INCLUDE_ALL_PRODUCTS
             // Because we have a ctor as part of the public api without accepting the origin tag,
             // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
             // tag if the CI Visibility mode is running to ensure the correct propagation
@@ -176,6 +177,7 @@ namespace Datadog.Trace
             {
                 Origin = Ci.Tags.TestTags.CIAppTestOriginName;
             }
+#endif
         }
 
         // Constructor for creating an empty span context.

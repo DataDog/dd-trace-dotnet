@@ -124,6 +124,7 @@ public readonly struct CallTargetRefStruct
     }
 #endif
 
+#if INCLUDE_ALL_PRODUCTS
     /// <summary>
     /// Gets a read-only span from the ref struct instance
     /// </summary>
@@ -187,4 +188,5 @@ public readonly struct CallTargetRefStruct
     {
         return ref DangerousDDGetSpan<T>(out success);
     }
+#endif
 }
