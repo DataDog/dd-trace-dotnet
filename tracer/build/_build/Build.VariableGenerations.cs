@@ -1271,7 +1271,7 @@ partial class Build : NukeBuild
                                          runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                          targetPlatform = platform,
                                          channel = GetInstallerChannel(image.PublishFramework),
-                                         windowsYear = image.RuntimeTag.Substring(image.RuntimeTag.Length - 4),
+                                         vmImage = $"windows-{image.RuntimeTag.Substring(image.RuntimeTag.Length - 4)}",
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
                     Logger.Information($"Installer smoke tests fleet-installer matrix Windows");
