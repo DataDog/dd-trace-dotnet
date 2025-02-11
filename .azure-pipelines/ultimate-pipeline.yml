@@ -1090,7 +1090,7 @@ stages:
           artifact: dd-dotnet-win-x64
           path: $(monitoringHome)/win-x64
 
-      - script: tracer\build.cmd PackageTracerHome BuildFleetInstaller
+      - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller
         displayName: Build MSI and Tracer home
         retryCountOnTaskFailure: 1
 
@@ -1109,7 +1109,6 @@ stages:
       - publish: $(artifacts)/Datadog.FleetInstaller
         displayName: Publish fleet installer
         artifact: fleet-installer
-
 
 - stage: build_dd_dotnet_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))

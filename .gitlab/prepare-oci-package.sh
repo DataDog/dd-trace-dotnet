@@ -52,9 +52,9 @@ elif [ "$OS" == "windows" ]; then
   unzip ../artifacts/windows/windows-tracer-home.zip -d sources/library
   find sources/library -type f -name "*.xml" -delete
 
-  # Copy the fleet installer to the sub-directory
+  # Unzip the fleet installer to the sub-directory
   mkdir -p sources/installer
-  cp -r ../artifacts/windows/Datadog.FleetInstaller/. sources/installer/
+  unzip ../artifacts/windows/fleet-installer.zip -d sources/installer/
 
 fi
 
