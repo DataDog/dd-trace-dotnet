@@ -17,14 +17,16 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+
+#if NETSTANDARD2_0 || NETCOREAPP3_1
+using Datadog.Trace.Debugger.Helpers;
+#endif
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -364,7 +366,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    ServiceRemotingClient.StartTracing();
+                    ServiceFabric.ServiceRemotingClient.StartTracing();
                 }
                 catch
                 {
@@ -373,7 +375,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 try
                 {
-                    ServiceRemotingService.StartTracing();
+                    ServiceFabric.ServiceRemotingService.StartTracing();
                 }
                 catch
                 {

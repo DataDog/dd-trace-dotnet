@@ -90,9 +90,7 @@ public readonly struct CallTargetRefStruct
     {
         return ref DangerousGetReadOnlySpan<T>(out success);
     }
-#endif
 
-#if NETCOREAPP
     /// <summary>
     /// Gets a span from the ref struct instance
     /// </summary>

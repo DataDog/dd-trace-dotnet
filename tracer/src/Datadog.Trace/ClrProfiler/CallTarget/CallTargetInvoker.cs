@@ -6,10 +6,13 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+
+#if NETFRAMEWORK
+using System.Diagnostics;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+#endif
 
 namespace Datadog.Trace.ClrProfiler.CallTarget;
 
