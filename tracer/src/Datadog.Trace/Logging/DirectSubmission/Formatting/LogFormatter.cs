@@ -9,12 +9,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+
+#if INCLUDE_ALL_PRODUCTS
+using Datadog.Trace.Ci.Tags;
+#endif
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
@@ -111,11 +113,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return;
             }
 
+#if INCLUDE_ALL_PRODUCTS
             if (gitMetadata != GitMetadata.Empty)
             {
                 var gitMetadataTags = $"{CommonTags.GitCommit}{KeyValueTagSeparator}{gitMetadata.CommitSha},{CommonTags.GitRepository}{KeyValueTagSeparator}{RemoveScheme(gitMetadata.RepositoryUrl)}";
                 Tags = string.IsNullOrEmpty(Tags) ? gitMetadataTags : $"{Tags}{TagSeparator}{gitMetadataTags}";
             }
+#endif
 
             _gitMetadataAdded = true;
         }
@@ -386,6 +390,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     writer.WriteValue(spanId);
                 }
 
+#if INCLUDE_ALL_PRODUCTS
                 if (span.GetTag(TestTags.Suite) is { } suite)
                 {
                     writer.WritePropertyName(TestTags.Suite, escape: false);
@@ -403,6 +408,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                     writer.WritePropertyName(TestTags.Bundle, escape: false);
                     writer.WriteValue(bundle);
                 }
+#endif
             }
 
             writer.WritePropertyName("service", escape: false);
