@@ -274,6 +274,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         File.Exists(reportFile.Path).Should().BeTrue();
 
+        assertionScope.AddReportable("Report", reportFile.GetContent());
         var report = JObject.Parse(reportFile.GetContent());
         report["error"]["is_crash"].Value<bool>().Should().Be(true);
 
