@@ -1440,6 +1440,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "14.1.0" },
                 new object[] { "14.2.0" },
                 new object[] { "14.3.0" },
+                new object[] { "15.0.3" },
 #endif
 #if NET9_0
                 new object[] { "11.0.9" },
@@ -1483,6 +1484,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "14.1.0" },
                 new object[] { "14.2.0" },
                 new object[] { "14.3.0" },
+                new object[] { "15.0.3" },
 #endif
 #endif
             };
