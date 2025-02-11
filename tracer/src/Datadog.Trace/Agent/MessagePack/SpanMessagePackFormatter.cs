@@ -249,7 +249,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 var traceFlags = samplingPriority switch
                 {
-                    null => 0u,             // not set, default to keep
+                    null => 0u,             // not set
                     > 0 => 1u + (1u << 31), // keep
                     <= 0 => 1u << 31,       // drop
                 };
@@ -778,7 +778,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
                 var traceFlags = samplingPriority switch
                 {
-                    null => 0u,              // not set, default to keep
+                    null => 0u,              // not set
                     > 0 => 1u + (1u << 31),  // "keep" bits
                     <= 0 => 1u << 31,        // "drop"
                 };
