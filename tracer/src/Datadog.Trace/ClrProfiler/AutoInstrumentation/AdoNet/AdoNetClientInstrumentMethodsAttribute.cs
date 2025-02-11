@@ -291,6 +291,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         {
         }
 
+#if INCLUDE_ALL_PRODUCTS
         [AdoNetTargetSignature(
             MethodName = AdoNetConstants.MethodNames.Read,
             ReturnTypeName = ClrNames.Bool,
@@ -343,5 +344,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         internal class IastReaderGetValueAttribute : Attribute
         {
         }
+#endif
     }
 }
