@@ -8,9 +8,16 @@ internal static class Program
     {
         while (true)
         {
-            var requestBuilder = new LambdaRequestBuilder();
-            var scope = LambdaCommon.SendStartInvocation(requestBuilder, data: string.Empty, context: null);
-            await LambdaCommon.EndInvocationAsync(string.Empty, exception: null, scope, requestBuilder);
+            try
+            {
+                var requestBuilder = new LambdaRequestBuilder();
+                var scope = LambdaCommon.SendStartInvocation(requestBuilder, data: string.Empty, context: null);
+                await LambdaCommon.EndInvocationAsync(string.Empty, exception: null, scope, requestBuilder);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
     }
 }
