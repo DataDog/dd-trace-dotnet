@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
 
     <!-- Strong name signature -->
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
 
