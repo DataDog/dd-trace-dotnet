@@ -23,6 +23,7 @@ namespace Datadog.Trace.Tests.Configuration
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new() { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new() { { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsWithColonsInValue = new() { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
+        private static readonly Dictionary<string, string> TagsWithSpacesInValue = new() { { "key", "val" }, { "aKey", "aVal bKey:bVal cKey:" } };
         private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "Content-Type" }, { "header3", "Content-Type" }, { "header4", "C!!!ont_____ent----tYp!/!e" }, { "validheaderwithoutcolon", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsWithDots = new() { { "header3", "my.header.with.dot" }, { "my.new.header.with.dot", string.Empty } };
         private static readonly Dictionary<string, string> HeaderTagsSameTag = new() { { "header1", "tag1" }, { "header2", "tag1" } };
@@ -111,6 +112,12 @@ namespace Datadog.Trace.Tests.Configuration
             yield return ("DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", s => s.GlobalTags, TagsK1V1K2V2);
             yield return (ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", s => s.GlobalTags.Count, 1);
             yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", s => s.GlobalTags, TagsWithColonsInValue);
+
+            // Test edge cases that expose various discrepenacies with the Agent DD_TAGS parsing algorithm that we would like to support
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1 k2:v2", s => s.GlobalTags, new Dictionary<string, string>() { { "k1", "v1 k2:v2" } });
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2", s => s.GlobalTags.Count, 0);
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2:", s => s.GlobalTags.Count, 0);
+            yield return (ConfigurationKeys.GlobalTags, "key :val, aKey : aVal bKey:bVal cKey:", s => s.GlobalTags, TagsWithSpacesInValue);
 
 #pragma warning disable 618 // App Analytics is deprecated but still supported
             yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "true", s => s.AnalyticsEnabled, true);
