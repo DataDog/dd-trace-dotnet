@@ -43,7 +43,7 @@ internal abstract class LambdaCommon
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
-        var response = (HttpWebResponse)request.GetResponse();
+        using var response = (HttpWebResponse)request.GetResponse();
 
         var headers = response.Headers.Wrap();
         if (!ValidateOkStatus(response))
