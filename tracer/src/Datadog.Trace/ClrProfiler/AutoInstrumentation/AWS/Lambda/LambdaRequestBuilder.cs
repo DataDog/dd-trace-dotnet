@@ -16,7 +16,7 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
 {
     private const string EndInvocationPath = "/lambda/end-invocation";
     private const string StartInvocationPath = "/lambda/start-invocation";
-    private const string ExtensionUri = "http://127.0.0.1:8124";
+    private const string ExtensionUri = "http://127.0.0.1:8126";
     private const string ExtensionUriEnvName = "_DD_EXTENSION_ENDPOINT";
 
     internal LambdaRequestBuilder()
