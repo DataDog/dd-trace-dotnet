@@ -138,7 +138,7 @@ internal class SchemaExtractor
         ///  - changing a field number
         ///  - changing the hierarchy of sub-messages
         /// </summary>
-        private ulong FillSchemasWith(MessageDescriptorProxy descriptor, int depth = 0)
+        private ulong FillSchemasWith(MessageDescriptorProxy descriptor, int depth = 1 /* start at 1 to match what java is doing */)
         {
             if (depth > MaxExtractionDepth)
             {
