@@ -261,7 +261,7 @@ namespace Datadog.Trace
             // Note: the order that rules are registered is important, as they are evaluated in order.
             // The first rule that matches will be used to determine the sampling rate.
 
-            if (settings.AppsecStandaloneEnabledInternal)
+            if (settings.ApmTracingEnabledInternal == false)
             {
                 var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
@@ -344,7 +344,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, appsecStandaloneEnabled: settings.AppsecStandaloneEnabledInternal);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabledInternal);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
