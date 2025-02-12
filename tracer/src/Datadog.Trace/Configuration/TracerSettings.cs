@@ -95,6 +95,10 @@ namespace Datadog.Trace.Configuration
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, _telemetry);
 
+            BreakingChangesEnabled = config
+                    .WithKeys(ConfigurationKeys.BreakingChangesEnabled)
+                    .AsBool(defaultValue: false);
+
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
@@ -622,6 +626,8 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
+
+        internal bool BreakingChangesEnabled { get; }
 
         internal OverrideErrorLog ErrorLog { get; }
 

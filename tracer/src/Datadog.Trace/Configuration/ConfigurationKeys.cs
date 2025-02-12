@@ -15,6 +15,11 @@ namespace Datadog.Trace.Configuration
     internal static partial class ConfigurationKeys
     {
         /// <summary>
+        /// Configuration key to enable breaking changes.
+        /// </summary>
+        public const string BreakingChangesEnabled = "DD_TRACE_BREAKING_CHANGES_ENABLED";
+
+        /// <summary>
         /// Configuration key for the path to the configuration file.
         /// Can only be set with an environment variable
         /// or in the <c>app.config</c>/<c>web.config</c> file.
