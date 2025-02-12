@@ -743,6 +743,33 @@ partial class Build
         .DependsOn(PublishNativeTracerUnix)
         .DependsOn(PublishNativeTracerOsx);
 
+    Target PublishFleetInstaller => _ => _
+        .Unlisted()
+        .Description("Builds and publishes the fleet installer binary files as a zip")
+        .After(Clean, Restore, CompileManagedSrc)
+        .Before(SignDlls)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // Build the fleet installer project
+            var project = SourceDirectory / "Datadog.FleetInstaller" / "Datadog.FleetInstaller.csproj";
+            var tfms = Solution.GetProject(project).GetTargetFrameworks();
+            // we should only have a single tfm for fleet installer
+            if (tfms.Count != 1)
+            {
+                throw new ApplicationException("Fleet installer should only have a single target framework but found: " + string.Join(", ", tfms));
+            }
+
+            var publishFolder = ArtifactsDirectory / "Datadog.FleetInstaller";
+            DotNetPublish(s => s
+                              .SetProject(project)
+                              .SetConfiguration(BuildConfiguration)
+                              .SetOutput(publishFolder)
+                              .CombineWith(tfms, (p, tfm) => p.SetFramework(tfm)));
+
+            CompressZip(publishFolder, ArtifactsDirectory / "fleet-installer.zip", fileMode: FileMode.Create);
+        });
+
     Target BuildMsi => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
