@@ -16,4 +16,9 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs" Link="Util\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\Util\System.Runtime.CompilerServices.Attributes.cs" Link="Util\%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

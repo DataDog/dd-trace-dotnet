@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Win32;
 
 namespace Datadog.FleetInstaller;
@@ -58,6 +59,36 @@ internal class RegistryHelper
         catch (Exception ex)
         {
             log.WriteError(ex, $"Failed to remove crash tracking handler from registry key '{registryKeyName}'");
+            return false;
+        }
+    }
+
+    public static bool TryGetIisVersion(ILogger log, [NotNullWhen(true)] out Version? version)
+    {
+        const string registryKeyName = @"Software\Microsoft\InetStp";
+
+        log.WriteInfo($"Reading IIS information from registry key: '{registryKeyName}'");
+
+        try
+        {
+            var key = Registry.LocalMachine.OpenSubKey(registryKeyName);
+            if (key is null)
+            {
+                log.WriteInfo("IIS registry key not found");
+                version = null;
+                return false;
+            }
+
+            var major = key.GetValue("MajorVersion") as int? ?? 0;
+            var minor = key.GetValue("MinorVersion") as int? ?? 0;
+
+            version = new(major: major, minor: minor);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            log.WriteError(ex, $"Error reading the IIS Version from the registry key '{registryKeyName}'");
+            version = null;
             return false;
         }
     }

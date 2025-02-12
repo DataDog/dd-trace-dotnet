@@ -35,6 +35,18 @@ internal abstract class CommandBase : Command
             return false;
         }
 
+        if (!RegistryHelper.TryGetIisVersion(Log.Instance, out var version))
+        {
+            commandResult.ErrorMessage = "This installer requires IIS 10.0 or later. Could not determine the IIS version; is the IIS feature enabled?";
+            return false;
+        }
+
+        if (version.Major < 10)
+        {
+            commandResult.ErrorMessage = $"This installer requires IIS 10.0 or later. Detected IIS version {version.Major}.{version.Minor}";
+            return false;
+        }
+
         return true;
     }
 }
