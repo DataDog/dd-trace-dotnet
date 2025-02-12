@@ -911,7 +911,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.span_links: [{"trace_id":link_trace_id_low,"trace_id_high":link_trace_id_high,"span_id":link_span_id,"flags":2147483649,"tracestate":"","attributes":{}}]
     },
     Metrics: {
       process_id: 0,
@@ -949,7 +950,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       telemetry.sdk.language: dotnet,
       telemetry.sdk.name: opentelemetry,
       telemetry.sdk.version: sdk-version,
-      _dd.base_service: CustomServiceName
+      _dd.base_service: CustomServiceName,
+      _dd.span_links: [{"trace_id":link_trace_id_low,"trace_id_high":link_trace_id_high,"span_id":link_span_id,"flags":2147483649,"tracestate":"","attributes":{}},{"trace_id":link_trace_id_low,"trace_id_high":link_trace_id_high,"span_id":link_span_id,"flags":2147483649,"tracestate":"","attributes":{}}]
     },
     Metrics: {
       process_id: 0,
