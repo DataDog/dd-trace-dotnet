@@ -401,13 +401,13 @@ namespace Datadog.Trace
                     var propagatedTags = parentSpanContext.PropagatedTags;
                     var samplingPriority = parentSpanContext.SamplingPriority;
 
-                    // When in appsec standalone mode, only distributed traces with the `_dd.p.appsec` tag
+                    // When apm tracing is disabled, only distributed traces with the `_dd.p.ts` tag (with a trace source)
                     // are propagated downstream, however we need 1 trace per minute sent to the backend, so
                     // we unset sampling priority so the rate limiter decides.
-                    if (Settings?.AppsecStandaloneEnabledInternal == true)
+                    if (Settings?.ApmTracingEnabledInternal == false)
                     {
                         // If the trace has appsec propagation tag, the default priority is user keep
-                        samplingPriority = propagatedTags?.GetTag(Tags.Propagated.AppSec) == "1" ? SamplingPriorityValues.UserKeep : null;
+                        samplingPriority = propagatedTags?.GetTag(Tags.Propagated.TraceSource) is { Length: > 0 } ? SamplingPriorityValues.UserKeep : null;
                     }
 
                     // If parent is SpanContext but its TraceContext is null, then it was extracted from propagation headers.

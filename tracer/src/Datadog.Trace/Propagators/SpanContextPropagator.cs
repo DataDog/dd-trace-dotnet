@@ -79,9 +79,9 @@ namespace Datadog.Trace.Propagators
 
             if (context.SpanContext is { } spanContext)
             {
-                // If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
-                if (spanContext.TraceContext is { Tracer.Settings.AppsecStandaloneEnabledInternal: true } trace &&
-                    trace.Tags.GetTag(Tags.Propagated.AppSec) != "1")
+                // If apm tracing is disabled and no other product owns the trace -> stop propagation
+                if (spanContext.TraceContext is { Tracer.Settings.ApmTracingEnabledInternal: false } trace &&
+                    trace.Tags.GetTag(Tags.Propagated.TraceSource) is not { Length: > 0 })
                 {
                     return;
                 }
