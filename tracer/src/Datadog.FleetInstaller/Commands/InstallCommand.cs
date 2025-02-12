@@ -74,10 +74,10 @@ internal class InstallCommand : CommandBase
 
         if (!RegistryHelper.AddCrashTrackingKey(log, tracerValues, registryKeyName))
         {
-            // Probably Don't need to bail out of installation just because we failed to add crash tracking?
+            // Don't need to bail out of installation just because we failed to add crash tracking
+            // The tracer itself can manage this at runtime if required
         }
 
-        // success
         return ReturnCode.Success;
     }
 

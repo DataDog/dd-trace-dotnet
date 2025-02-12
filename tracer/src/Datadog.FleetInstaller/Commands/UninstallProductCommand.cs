@@ -49,7 +49,6 @@ internal class UninstallProductCommand : CommandBase
         // Should we clean up/delete the log folder? Probably not, as it may contain useful information
         // Plus if things are instrumented then we can't anyway
 
-        // success
         return ReturnCode.Success;
     }
 

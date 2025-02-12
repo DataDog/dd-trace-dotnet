@@ -160,10 +160,6 @@ internal static class AppHostHelper
                     && appPoolsWhichNeedToAllowRecycling.Contains(poolName))
                 {
                     log.WriteInfo($"Re-enabling rotation on config change for app pool '{poolName}'");
-
-                    // disable recycling of the pool, so that we don't force a restart when we update the pool
-                    // we can't distinguish between "not set" and "set to false", but we only really care about
-                    // if it was set to true, as we don't want to accidentally revert that later.
                     appPoolElement.GetChildElement("recycling")["disallowRotationOnConfigChange"] = false;
                 }
             }

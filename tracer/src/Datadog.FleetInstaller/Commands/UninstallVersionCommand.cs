@@ -70,7 +70,6 @@ internal class UninstallVersionCommand : CommandBase
             return ReturnCode.ErrorRemovingCrashTrackerKey;
         }
 
-        // success
         return ReturnCode.Success;
     }
 
