@@ -177,7 +177,7 @@ namespace Datadog.Trace.Agent.Transports
         {
             try
             {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                using var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
                 return new ApiWebResponse(httpWebResponse);
             }
             catch (WebException exception)
