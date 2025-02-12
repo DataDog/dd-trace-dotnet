@@ -33,7 +33,8 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("error.type")
             .IsOptional("error.stack")
             .IsOptional("_dd.git.repository_url")
-            .IsOptional("_dd.git.commit.sha");
+            .IsOptional("_dd.git.commit.sha")
+            .IsOptional("_dd.span_links");
 
         public static void DefaultMetricAssertions(SpanTagAssertion<T> s) => s
             .IsOptional("_dd.tracer_kr")
