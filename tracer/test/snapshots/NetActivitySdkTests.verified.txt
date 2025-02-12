@@ -16,7 +16,7 @@
       some_tag: value,
       span.kind: server,
       version: 1.0.0,
-      _dd.span_links: [{"trace_id":15438478407209366795,"trace_id_high":17216991746876858190,"span_id":3589328166953650349,"flags":2147483648,"tracestate":"","attributes":{"some_string":"five","some_string[].0":"a","some_string[].1":"b","some_string[].2":"c","some_bool":"False","some_bool[].0":"True","some_bool[].1":"False","some_int":"5","some_int[].0":"5","some_int[].1":"55","some_int[].2":"555"}},{"trace_id":15438478407209366795,"trace_id_high":17216991746876858190,"span_id":17969566649073959363,"flags":2147483649,"tracestate":"dd=s:2;p:TsParentId;t.dm:-4,foo=1,bar=baz","attributes":{}}]
+      _dd.span_links: [{"trace_id":link_trace_id_low,"trace_id_high":link_trace_id_high,"span_id":link_span_id,"flags":2147483648,"tracestate":"","attributes":{"some_string":"five","some_string[].0":"a","some_string[].1":"b","some_string[].2":"c","some_bool":"False","some_bool[].0":"True","some_bool[].1":"False","some_int":"5","some_int[].0":"5","some_int[].1":"55","some_int[].2":"555"}},{"trace_id":link_trace_id_low,"trace_id_high":link_trace_id_high,"span_id":link_span_id,"flags":2147483649,"tracestate":"dd=s:2;p:TsParentId;t.dm:-4,foo=1,bar=baz","attributes":{}}]
     },
     Metrics: {
       process_id: 0,
@@ -142,7 +142,7 @@
       otel.trace_id: Guid_4,
       span.kind: server,
       version: 1.0.0,
-      _dd.span_links: [{"trace_id":15929601038321682839,"trace_id_high":7906680399874829483,"span_id":10898628043581561393,"flags":2147483648,"tracestate":"","attributes":{}}]
+      _dd.span_links: [{"trace_id":link_trace_id_low,"trace_id_high":link_trace_id_high,"span_id":link_span_id,"flags":2147483648,"tracestate":"","attributes":{}}]
     },
     Metrics: {
       attribute-int: 1.0
