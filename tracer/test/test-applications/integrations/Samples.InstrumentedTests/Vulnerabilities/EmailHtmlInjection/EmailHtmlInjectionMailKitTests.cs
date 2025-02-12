@@ -64,7 +64,7 @@ public class EmailHtmlInjectionMailKitTests : EmailInjectionBaseTests
     }
 
     [Fact]
-    public void GivenATextPart_WhenSettingNUllValues_ThenArgumentNullExceptionIsThrown()
+    public void GivenATextPart_WhenSettingNullValues_ThenArgumentNullExceptionIsThrown()
     {
         var textPart = new TextPart(TextFormat.Html);
         Assert.Throws<ArgumentNullException>(() => textPart.SetText("utf8", null));

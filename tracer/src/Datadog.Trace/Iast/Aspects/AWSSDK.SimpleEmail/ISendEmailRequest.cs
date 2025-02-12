@@ -26,10 +26,5 @@ internal interface IBody
 
 internal interface IHtml
 {
-    IContent Content { get; }
-}
-
-internal interface IContent
-{
     string Data { get; }
 }

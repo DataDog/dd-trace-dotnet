@@ -23,7 +23,7 @@ public class AmazonSimpleEmailAspect
     /// </summary>
     /// <param name="message">the email message that is going to be sent</param>
     /// <returns>the MailMessage</returns>
-    [AspectMethodInsertBefore("Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmailAsync(Amazon.SimpleEmail.Model.SendEmailRequest,System.Threading.CancellationToken", 1)]
+    [AspectMethodInsertBefore("Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmailAsync(Amazon.SimpleEmail.Model.SendEmailRequest,System.Threading.CancellationToken)", 1)]
     public static object? Send(object? message)
     {
         try

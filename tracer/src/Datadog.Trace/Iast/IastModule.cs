@@ -895,7 +895,7 @@ internal static partial class IastModule
                 break;
             case EmailInjectionType.AmazonSimpleEmail:
                 var sendEmailRequest = mail.DuckCast<ISendEmailRequest>();
-                body = sendEmailRequest?.Message?.Body?.Html?.Content?.Data;
+                body = sendEmailRequest?.Message?.Body?.Html?.Data;
                 isHtml = !string.IsNullOrEmpty(body);
                 break;
             default:
