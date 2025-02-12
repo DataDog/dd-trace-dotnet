@@ -320,6 +320,7 @@
   "DD_TRACE_GIT_METADATA_ENABLED": "git_metadata_enabled",
   "DD_TRACE_ENABLED": "trace_enabled",
   "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED": "experimental_appsec_standalone_enabled",
+  "DD_APM_TRACING_ENABLED": "apm_tracing_enabled",
   "DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH": "internal_wait_for_debugger_attach_enabled",
   "DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH": "internal_wait_for_native_debugger_attach_enabled",
   "DD_DISABLED_INTEGRATIONS": "trace_disabled_integrations",

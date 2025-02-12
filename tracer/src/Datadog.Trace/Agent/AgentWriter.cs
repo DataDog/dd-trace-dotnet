@@ -107,7 +107,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator?.CanComputeStats == true;
 
-        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0, false);
+        public Task<bool> Ping() => _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
