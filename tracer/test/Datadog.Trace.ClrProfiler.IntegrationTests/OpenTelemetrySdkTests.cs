@@ -123,6 +123,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(traceStatePRegex, "p:TsParentId");
                 settings.AddRegexScrubber(traceIdRegexHigh, "TraceIdHigh: LinkIdHigh");
                 settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
+
+                var spanLinkTraceIdRegex = new Regex("\"trace_id\":[0-9]+");
+                var spanLinkTraceIdHighRegex = new Regex("\"trace_id_high\":[0-9]+");
+                var spanLinkSpanIdRegex = new Regex("\"span_id\":[0-9]+");
+                settings.AddRegexScrubber(spanLinkTraceIdRegex, "\"trace_id\":link_trace_id_low");
+                settings.AddRegexScrubber(spanLinkTraceIdHighRegex, "\"trace_id_high\":link_trace_id_high");
+                settings.AddRegexScrubber(spanLinkSpanIdRegex, "\"span_id\":link_span_id");
+
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
@@ -171,6 +179,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddRegexScrubber(traceIdRegexLow, "TraceIdLow: LinkIdLow");
                 settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
                 settings.AddRegexScrubber(_exceptionStacktraceRegex, @"exception.stacktrace"":""System.ArgumentException: Example argument exception"",""");
+
+                var spanLinkTraceIdRegex = new Regex("\"trace_id\":[0-9]+");
+                var spanLinkTraceIdHighRegex = new Regex("\"trace_id_high\":[0-9]+");
+                var spanLinkSpanIdRegex = new Regex("\"span_id\":[0-9]+");
+                settings.AddRegexScrubber(spanLinkTraceIdRegex, "\"trace_id\":link_trace_id_low");
+                settings.AddRegexScrubber(spanLinkTraceIdHighRegex, "\"trace_id_high\":link_trace_id_high");
+                settings.AddRegexScrubber(spanLinkSpanIdRegex, "\"span_id\":link_span_id");
+
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
