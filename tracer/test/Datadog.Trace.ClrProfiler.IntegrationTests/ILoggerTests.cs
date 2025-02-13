@@ -30,25 +30,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogs(bool enableLogShipping)
+        public async Task InjectsLogs(bool enableLogShipping, bool enable128BitInjection)
         {
-            await RunLogsInjectionTests(enableLogShipping, packageVersion: string.Empty);
+            await RunLogsInjectionTests(enableLogShipping, enable128BitInjection: enable128BitInjection, packageVersion: string.Empty);
         }
 
         [SkippableTheory]
+        [InlineData(true, true)]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        [InlineData(false, false)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task DirectlyShipsLogs(bool filterStartupLogs)
+        public async Task DirectlyShipsLogs(bool filterStartupLogs, bool enable128BitInjection)
         {
-            await RunDirectlyShipsLogs(filterStartupLogs, packageVersion: string.Empty);
+            await RunDirectlyShipsLogs(filterStartupLogs, enable128BitInjection: enable128BitInjection, packageVersion: string.Empty);
         }
     }
 
@@ -62,17 +66,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> Data
             => from enableLogShipping in new[] { true, false }
+               from enable128BitInjection in new[] { true, false }
                from packageVersion in PackageVersions.ILogger
-               select new object[] { enableLogShipping, packageVersion[0] };
+               select new object[] { enableLogShipping, enable128BitInjection, packageVersion[0] };
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogs(bool enableLogShipping, string packageVersion)
+        public async Task InjectsLogs(bool enableLogShipping, bool enable128BitInjection, string packageVersion)
         {
-            await RunLogsInjectionTests(enableLogShipping, packageVersion);
+            await RunLogsInjectionTests(enableLogShipping, enable128BitInjection, packageVersion);
         }
 
         [SkippableTheory]
@@ -80,9 +85,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DirectlyShipsLogs(bool filterStartupLogs, string packageVersion)
+        public async Task DirectlyShipsLogs(bool filterStartupLogs, bool enable128BitInjection, string packageVersion)
         {
-            await RunDirectlyShipsLogs(filterStartupLogs, packageVersion);
+            await RunDirectlyShipsLogs(filterStartupLogs, enable128BitInjection, packageVersion);
         }
     }
 #endif
@@ -110,8 +115,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
         }
 
-        protected async Task RunLogsInjectionTests(bool enableLogShipping, string packageVersion)
+        protected async Task RunLogsInjectionTests(bool enableLogShipping, bool enable128BitInjection, string packageVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
+
             // One of the traces starts by manual opening a span when the background service starts,
             // and then it sends a HTTP request to the server.
             // On .NET Framework, we do not yet automatically instrument AspNetCore so instead of
@@ -140,13 +147,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
-                ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion: packageVersion);
+                ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion: packageVersion, use128Bits: enable128BitInjection);
                 VerifyInstrumentation(processResult.Process);
             }
         }
 
-        protected async Task RunDirectlyShipsLogs(bool filterStartupLogs, string packageVersion)
+        protected async Task RunDirectlyShipsLogs(bool filterStartupLogs, bool enable128BitInjection, string packageVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", enable128BitInjection ? "true" : "false");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             SetInstrumentationVerification();
             var hostName = "integration_ilogger_tests";
             using var logsIntake = new MockLogsIntake();
