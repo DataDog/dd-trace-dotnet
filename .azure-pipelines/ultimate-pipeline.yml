@@ -115,7 +115,7 @@ variables:
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
-  ddApiKey: $(DD_API_KEY)
+  ddApiKey: $(DD_API_KEY_PROD)
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
@@ -144,7 +144,7 @@ variables:
   IntegrationTestFilter:  $(TEST_FILTER)
   DockerComposeProjectName: ddtrace-$(Build.BuildNumber)
   # Logger variables
-  DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
+  DD_LOGGER_DD_API_KEY: $(DD_API_KEY_PROD)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_TF_BUILD: True
@@ -172,7 +172,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.10.0
+  ToolVersion: 3.11.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -1090,7 +1090,7 @@ stages:
           artifact: dd-dotnet-win-x64
           path: $(monitoringHome)/win-x64
 
-      - script: tracer\build.cmd PackageTracerHome
+      - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller
         displayName: Build MSI and Tracer home
         retryCountOnTaskFailure: 1
 
@@ -1106,6 +1106,9 @@ stages:
         displayName: Publish NuGet packages
         artifact: nuget-packages
 
+      - publish: $(artifacts)/Datadog.FleetInstaller
+        displayName: Publish fleet installer
+        artifact: fleet-installer
 
 - stage: build_dd_dotnet_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -5111,11 +5114,6 @@ stages:
           testName: garbagecollections
           poolName: ProfilerExecBenchAgent11
           framework: net7.0
-        OutgoingHttpRequests:
-          sampleName: ParallelCountSites
-          testName: outgoinghttprequests
-          poolName: ProfilerExecBenchAgent13
-          framework: net9.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
@@ -5210,11 +5208,6 @@ stages:
           testName: garbagecollections
           poolName: ProfilerExecBenchAgent12
           framework: net7.0
-        OutgoingHttpRequests:
-          sampleName: ParallelCountSites
-          testName: outgoinghttprequests
-          poolName: ProfilerExecBenchAgent14
-          framework: net9.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
@@ -6655,6 +6648,85 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
     - script: tracer\build.cmd CheckSmokeTestsForErrors
       displayName: CheckSmokeTestsForErrors
+
+- stage: fleet_installer_smoke_tests
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [windows]
+
+    - job: windows
+      timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
+      strategy:
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.fleet_installer_windows_smoke_tests_matrix'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      pool:
+        vmImage: windows-2022
+
+      steps:
+        - template: steps/install-docker-compose-v1.yml
+          parameters:
+            dockerComposePath: $(dockerComposePath)
+
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download tracer home zip
+          inputs:
+            artifact: windows-tracer-home.zip
+            path: $(smokeTestAppDir)/artifacts
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download fleet installer to temp directory
+          inputs:
+            artifact: fleet-installer
+            path: $(smokeTestAppDir)/artifacts/installer
+
+        - powershell: |
+            ls $(smokeTestAppDir)/artifacts
+            ls $(smokeTestAppDir)/artifacts/installer
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
+          displayName: Create test data directories
+
+        - bash: |
+            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              --build-arg CHANNEL="$(channel)" \
+              --build-arg TARGET_PLATFORM="$(targetPlatform)" \
+              fleet-installer-smoke-tests.windows
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose build smoke-tests
+          retryCountOnTaskFailure: 3
+
+        - template: steps/run-snapshot-test.yml
+          parameters:
+            target: 'fleet-installer-smoke-tests.windows'
+            snapshotPrefix: "smoke_test_iis"
+            isLinux: false
+            dockerComposePath: $(dockerComposePath)
+
+        - publish: artifacts/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: always()
+          continueOnError: true
+
+        - template: steps/install-latest-dotnet-sdk.yml
+        - script: tracer\build.cmd CheckSmokeTestsForErrors
+          displayName: CheckSmokeTestsForErrors
 
 - stage: dotnet_tool_nuget_smoke_tests_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))

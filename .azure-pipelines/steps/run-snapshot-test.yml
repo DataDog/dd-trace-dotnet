@@ -124,7 +124,7 @@ steps:
 - ${{ else }}:
   - bash: |
       echo "Verifying snapshot session (fail on mis-match)"
-      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
     displayName: check snapshots
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}

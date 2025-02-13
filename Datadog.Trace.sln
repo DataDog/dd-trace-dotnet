@@ -595,6 +595,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.EventBridge", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoadContextResolve", "tracer\test\test-applications\regression\AssemblyLoadContextResolve\AssemblyLoadContextResolve.csproj", "{8B1AF6A7-DD41-4347-B637-90C23D69B50E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.StepFunctions", "tracer\test\test-applications\integrations\Samples.AWS.StepFunctions\Samples.AWS.StepFunctions.csproj", "{882A255B-94EC-4947-96F1-F565EBD8F8FD}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet.MultipleAppsInDomain", "tracer\test\test-applications\aspnet\Samples.AspNet.MultipleAppsInDomain\Samples.AspNet.MultipleAppsInDomain.csproj", "{A82EB6F8-D8D0-4763-B252-08CA3F39D153}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.SdkV1", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.SdkV1\Samples.AzureFunctions.V4Isolated.SdkV1.csproj", "{18767A3E-9ADC-485C-A8C7-50660D5B579D}"
@@ -602,6 +604,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1\Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1.csproj", "{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore\Samples.AzureFunctions.V4Isolated.AspNetCore.csproj", "{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.FleetInstaller", "tracer\src\Datadog.FleetInstaller\Datadog.FleetInstaller.csproj", "{47C1970A-0098-45A2-9D65-7790607D9A68}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsV3", "tracer\test\test-applications\integrations\Samples.XUnitTestsV3\Samples.XUnitTestsV3.csproj", "{E5BF2436-0BE7-4096-9F25-5118916F4BE4}"
 EndProject
@@ -1439,6 +1443,10 @@ Global
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1455,6 +1463,10 @@ Global
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47C1970A-0098-45A2-9D65-7790607D9A68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47C1970A-0098-45A2-9D65-7790607D9A68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47C1970A-0098-45A2-9D65-7790607D9A68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47C1970A-0098-45A2-9D65-7790607D9A68}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5BF2436-0BE7-4096-9F25-5118916F4BE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1702,10 +1714,12 @@ Global
 		{E1B0F72C-991A-409D-9266-DE5ED1BD940E} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{D6155F26-8245-4B66-8944-79C3DF9F9DA3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{47C1970A-0098-45A2-9D65-7790607D9A68} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{E5BF2436-0BE7-4096-9F25-5118916F4BE4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{E2EDDD17-B5E6-4240-9EF8-34F2D274AA19} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{0C0578CB-3B67-4F95-8547-206CD2A560CD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
@@ -1795,6 +1809,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{8276e670-fc3f-4ede-9d51-6dad90336c32}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{83290961-40bf-48cb-b925-fbbe48e629f3}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{87d57940-9a6e-473c-a4d6-777e3bafd5f9}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{882a255b-94ec-4947-96f1-f565ebd8f8fd}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{887ac8ba-35a6-4646-bf9a-59357155805e}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{8b1af6a7-dd41-4347-b637-90c23d69b50e}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{8b457e8f-8716-4f29-bbe2-dd6c7bc4ac37}*SharedItemsImports = 5
