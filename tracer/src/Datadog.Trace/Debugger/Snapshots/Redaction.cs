@@ -413,13 +413,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
         }
+
         /// <summary>
         /// For unit tests only!
         /// </summary>
         internal void ResetInstance()
         {
-           System.Threading.Interlocked.Exchange(ref _instnace, new());
+            System.Threading.Interlocked.Exchange(ref _instnace, new());
         }
-		
     }
 }

@@ -55,7 +55,7 @@ namespace Datadog.Trace.Debugger
         private void SetGeneralConfig(DebuggerSettings settings)
         {
             DebuggerSnapshotSerializer.SetConfig(settings);
-            Redaction.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
+            Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
         }
 
         private void InitializeCodeOrigin()
