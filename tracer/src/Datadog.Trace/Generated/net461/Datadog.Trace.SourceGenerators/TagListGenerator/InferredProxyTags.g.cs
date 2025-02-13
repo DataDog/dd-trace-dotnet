@@ -14,6 +14,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class InferredProxyTags
     {
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = MessagePack.Serialize("component");
         private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
         // HttpMethodBytes = MessagePack.Serialize("http.method");
@@ -31,6 +33,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
+                "span.kind" => SpanKind,
                 "component" => InstrumentationName,
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
@@ -63,6 +66,9 @@ namespace Datadog.Trace.Tagging
                 case "stage": 
                     Stage = value;
                     break;
+                case "span.kind": 
+                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(InferredProxyTags));
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -71,6 +77,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (SpanKind is not null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
             if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
@@ -106,6 +117,13 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (SpanKind is not null)
+            {
+                sb.Append("span.kind (tag):")
+                  .Append(SpanKind)
+                  .Append(',');
+            }
+
             if (InstrumentationName is not null)
             {
                 sb.Append("component (tag):")
