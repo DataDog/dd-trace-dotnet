@@ -505,9 +505,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/TracerProviderBu
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/EnvironmentVariablesScrubber.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Proxy/InferredProxyData.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Proxy/InferredProxyHeaders.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Proxy/InferredProxyScopePropagationContext.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RabbitMQ/RabbitMQConstants.cs
 src/Datadog.Trace/Debugger/Configurations/Models/Capture.cs
 src/Datadog.Trace/Debugger/Configurations/Models/DebuggerExpression.cs
