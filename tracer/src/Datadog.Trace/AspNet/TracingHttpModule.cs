@@ -40,6 +40,12 @@ namespace Datadog.Trace.AspNet
         private static bool _canReadHttpResponseHeaders = true;
 
         private readonly string _httpContextScopeKey;
+
+        /// <summary>
+        /// This key is only present when inferred proxy spans are enabled AND necessary proxy headers were present.
+        /// </summary>
+        /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+        private readonly string _httpContextProxyScopeKey;
         private readonly string _requestOperationName;
 
         /// <summary>
@@ -63,6 +69,7 @@ namespace Datadog.Trace.AspNet
 
             _requestOperationName = operationName;
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
+            _httpContextProxyScopeKey = string.Concat(_httpContextScopeKey, ".proxy");
         }
 
         /// <inheritdoc />
@@ -193,7 +200,7 @@ namespace Datadog.Trace.AspNet
 
                 if (inferredProxyScope is not null)
                 {
-                    httpContext.Items[_httpContextScopeKey + ".proxy"] = inferredProxyScope;
+                    httpContext.Items[_httpContextProxyScopeKey] = inferredProxyScope;
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -258,7 +265,7 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    var proxyScope = app.Context.Items[_httpContextScopeKey + ".proxy"] as Scope;
+                    var proxyScope = app.Context.Items[_httpContextProxyScopeKey] as Scope;
 
                     try
                     {
@@ -424,7 +431,7 @@ namespace Datadog.Trace.AspNet
 
                 if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
                 {
-                    var proxyScope = httpContext?.Items[_httpContextScopeKey + ".proxy"] as Scope;
+                    var proxyScope = httpContext?.Items[_httpContextProxyScopeKey] as Scope;
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
                     if (proxyScope != null)
                     {
@@ -456,7 +463,7 @@ namespace Datadog.Trace.AspNet
             try
             {
                 context.Items.Remove(_httpContextScopeKey);
-                context.Items.Remove(_httpContextScopeKey + ".proxy");
+                context.Items.Remove(_httpContextProxyScopeKey);
             }
             catch (Exception ex)
             {
