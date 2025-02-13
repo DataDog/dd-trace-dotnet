@@ -34,21 +34,7 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings(sources);
 
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
-
-            //var configuration = new TraceExporterConfiguration
-            //{
-            //    Url = settings.Exporter.AgentUri.ToString(),
-            //    TraceVersion = TracerConstants.AssemblyVersion,
-            //    Env = settings.Environment,
-            //    Version = settings.ServiceVersion,
-            //    Service = settings.ServiceName,
-            //    Hostname = settings.Exporter.AgentUri.ToString(),
-            //    Language = ".NET",
-            //    LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-            //    LanguageInterpreter = ".NET"
-            //};
-            //var api = new TraceExporter(configuration);
+            var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
 
