@@ -88,3 +88,10 @@ done
 # trim any aplha characters from the version
 version=$(echo $version | tr -d 'a-zA-Z')
 nuget pack sources/libdatadog.nuspec -OutputDirectory ../../../packages -Version $version
+
+# update the version in the csproj file
+# ../../../tracer/src/Datadog.Trace/Datadog.Trace.csproj
+# ../../../build/nupkg_local/libdatadog/test/Console/Console.csproj
+echo "Adding libdatadog package version $version to projects"
+dotnet add ../../../tracer/src/Datadog.Trace/Datadog.Trace.csproj package libdatadog --version $version
+dotnet add ../../../build/nupkg_local/libdatadog/test/Console/Console.csproj package libdatadog --version $version
