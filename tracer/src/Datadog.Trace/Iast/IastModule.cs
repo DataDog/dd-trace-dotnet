@@ -875,7 +875,7 @@ internal static partial class IastModule
 
         ExtractProperties(message, type, out var body, out var isHtml);
 
-        if (isHtml is not true || string.IsNullOrEmpty(body))
+        if (!isHtml || string.IsNullOrEmpty(body))
         {
             return;
         }
@@ -884,14 +884,14 @@ internal static partial class IastModule
         GetScope(body!, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
-    private static void ExtractProperties(object mail, EmailInjectionType type, out string? body, out bool? isHtml)
+    private static void ExtractProperties(object mail, EmailInjectionType type, out string? body, out bool isHtml)
     {
         switch (type)
         {
             case EmailInjectionType.SystemNetMail:
                 var mailMessage = mail.DuckCast<IMailMessage>();
                 body = mailMessage?.Body;
-                isHtml = mailMessage?.IsBodyHtml;
+                isHtml = mailMessage?.IsBodyHtml ?? false;
                 break;
             case EmailInjectionType.AmazonSimpleEmail:
                 var sendEmailRequest = mail.DuckCast<ISendEmailRequest>();

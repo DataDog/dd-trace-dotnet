@@ -32,7 +32,7 @@ public class AmazonSimpleEmailAspect
             IastModule.OnEmailHtmlInjection(message, EmailInjectionType.AmazonSimpleEmail);
             return message;
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex, $"{nameof(MailkitAspect)}.{nameof(Send)}");
             return message;
