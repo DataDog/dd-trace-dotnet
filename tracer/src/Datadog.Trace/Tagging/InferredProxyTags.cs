@@ -7,7 +7,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging;
 
-internal partial class InferredProxyTags : InstrumentationTags
+internal partial class InferredProxyTags : InstrumentationTags, IHasStatusCode
 {
     public override string SpanKind => SpanKinds.Internal;
 
