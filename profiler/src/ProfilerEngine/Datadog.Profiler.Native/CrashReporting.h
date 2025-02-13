@@ -4,8 +4,10 @@
 #pragma once
 
 #include <stdint.h>
+#include <iomanip>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -36,50 +38,36 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
-#ifdef LINUX
-class ElfBuildId
+struct BuildId
 {
-private:
-    struct ElfBuildIdImpl {
-        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr) {}   
-        ElfBuildIdImpl(const char* path) : _ptr{nullptr}, _size{0} {
-            if (path != nullptr)
-            {
-                _ptr = blaze_read_elf_build_id(path, &_size);
-            }
-        };
-        ~ElfBuildIdImpl()
-        {
-            auto* ptr = std::exchange(_ptr, nullptr);
-            if (ptr != nullptr && _size != 0)
-            {
-                _size = 0;
-                ::free(ptr);
-            }
-        }
-
-        ElfBuildIdImpl(ElfBuildIdImpl const&) = delete;
-        ElfBuildIdImpl(ElfBuildIdImpl&&) = delete;
-        ElfBuildIdImpl& operator=(ElfBuildIdImpl const&) = delete;
-        ElfBuildIdImpl& operator=(ElfBuildIdImpl&&) = delete;
-
-        std::uint8_t* _ptr;
-        std::size_t _size;
-    };
 public:
-    ElfBuildId() : ElfBuildId(nullptr) {}
-    ElfBuildId(const char* path)
-    : _impl{std::make_shared<ElfBuildIdImpl>(path)} {}
+#ifdef LINUX
+    static BuildId From(const char* path);
+#else
+    static BuildId From(GUID guid, DWORD age);
+#endif
 
-    shared::span<std::uint8_t> AsSpan() const
+    BuildId() :
+        _buildId{}
     {
-        return shared::span(_impl->_ptr, _impl->_size);
     }
 
+    operator std::string_view() const
+    {
+        return _buildId;
+    }
+
+    BuildId(BuildId const&) = delete;
+    BuildId& operator=(BuildId const&) = delete;
+    BuildId(BuildId&&) = default;
+    BuildId& operator=(BuildId&&) = default;
+
 private:
-    std::shared_ptr<ElfBuildIdImpl> _impl;
+    BuildId(std::string buildId) : _buildId{std::move(buildId)}
+    {}
+
+    std::string _buildId;
 };
-#endif
 
 struct StackFrame 
 {
@@ -89,13 +77,7 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
-#ifdef _WINDOWS
-    bool hasPdbInfo;
-    DWORD pdbAge;
-    GUID pdbSig;
-#else
-    ElfBuildId buildId;
-#endif
+    std::string_view buildId;
 };
 
 struct Tag
@@ -120,7 +102,8 @@ public:
     virtual ULONG STDMETHODCALLTYPE Release() = 0;
     virtual int32_t STDMETHODCALLTYPE Initialize() = 0;
     virtual int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) = 0;
-    virtual int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) = 0;
+    // only for tests
+    virtual int32_t STDMETHODCALLTYPE Panic() = 0;
     virtual int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) = 0;
     virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
@@ -142,7 +125,7 @@ public:
     ULONG STDMETHODCALLTYPE Release() override;
     int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) override;
     int32_t STDMETHODCALLTYPE Initialize() override;
-    int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) override;
+    int32_t STDMETHODCALLTYPE Panic() override;
     int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) override;
     int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) override;
     int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
@@ -154,7 +137,7 @@ protected:
     uint32_t _pid;
     int32_t _signal;
     std::optional<ddog_Error> _error;
-    ddog_crasht_CrashInfo _crashInfo;
+    ddog_crasht_Handle_CrashInfoBuilder _builder;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
@@ -163,5 +146,9 @@ protected:
     static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 private:
     int32_t ExportImpl(ddog_Endpoint* endpoint);
+    
+    template <typename T>
+    std::pair<decltype(T::ok), bool> ExtractResult(T v);
+
     int32_t _refCount;
 };
