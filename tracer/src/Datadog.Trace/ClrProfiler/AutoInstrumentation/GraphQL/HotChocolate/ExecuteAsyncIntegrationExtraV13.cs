@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.Processing.QueryExecutor",
         MinimumVersion = "14",
-        MaximumVersion = "14.*.*")]
+        MaximumVersion = "15.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegrationExtraV13
@@ -40,11 +40,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget, TOperationContext>(TTarget instance, TOperationContext operationContext)
             where TOperationContext : IOperationContextV13
         {
-            var operation = operationContext.Operation;
-            var operationType = HotChocolateCommon.GetOperation(operation.OperationType);
-            var operationName = operation.Name;
+            if (operationContext.Instance != null && operationContext.Operation.HasValue)
+            {
+                var operation = operationContext.Operation.Value;
+                var operationType = HotChocolateCommon.GetOperation(operation.OperationType);
+                var operationName = operation.Name;
 
-            HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, operationType, operationName);
+                HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, operationType, operationName);
+            }
+
             return CallTargetState.GetDefault();
         }
     }

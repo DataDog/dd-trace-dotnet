@@ -34,7 +34,7 @@ internal struct TestRunnerStruct
     /// <summary>
     /// Test case
     /// </summary>
-    public TestCaseStruct TestCase;
+    public ITestCase TestCase;
 
     /// <summary>
     /// Exception aggregator

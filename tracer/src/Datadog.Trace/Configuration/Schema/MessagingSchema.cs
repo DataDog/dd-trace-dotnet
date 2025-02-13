@@ -78,6 +78,12 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new MsmqV1Tags(spanKind),
             };
 
+        public AwsS3Tags CreateAwsS3Tags(string spanKind) => _version switch
+        {
+            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsS3Tags(),
+            _ => new AwsS3V1Tags(spanKind),
+        };
+
         public AwsSqsTags CreateAwsSqsTags(string spanKind) => _version switch
         {
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsSqsTags(),
@@ -100,6 +106,12 @@ namespace Datadog.Trace.Configuration.Schema
         {
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsKinesisTags(spanKind),
             _ => new AwsKinesisV1Tags(spanKind),
+        };
+
+        public AwsStepFunctionsTags CreateAwsStepFunctionsTags(string spanKind) => _version switch
+        {
+            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsStepFunctionsTags(spanKind),
+            _ => new AwsStepFunctionsV1Tags(spanKind)
         };
 
         public RabbitMQTags CreateRabbitMqTags(string spanKind)

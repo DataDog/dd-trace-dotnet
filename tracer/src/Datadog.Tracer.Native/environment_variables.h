@@ -133,6 +133,8 @@ namespace environment
     // IDE Edit and Continue. If enabled, profiler behavior is modified slightly
     const shared::WSTRING ide_edit_and_continue_netfx = WStr("DOTNET_ForceEnc");
 
+    // Security Controls config.
+    const shared::WSTRING security_controls_configuration = WStr("DD_IAST_SECURITY_CONTROLS_CONFIGURATION");
 } // namespace environment
 } // namespace trace
 

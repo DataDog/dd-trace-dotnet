@@ -218,10 +218,12 @@ internal static class MetricTags
         [Description("integration_name:msmq")]Msmq,
         [Description("integration_name:kafka")]Kafka,
         [Description("integration_name:cosmosdb")]CosmosDb,
+        [Description("integration_name:awss3")]AwsS3,
         [Description("integration_name:awssdk")]AwsSdk,
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
         [Description("integration_name:awseventbridge")]AwsEventBridge,
+        [Description("integration_name:awsstepfunctions")]AwsStepFunctions,
         [Description("integration_name:ilogger")]ILogger,
         [Description("integration_name:aerospike")]Aerospike,
         [Description("integration_name:azurefunctions")]AzureFunctions,
@@ -304,7 +306,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSources
+    public enum IastSourceType
     {
         [Description("source_type:http.request.body")] RequestBody = 0,
         [Description("source_type:http.request.path")] RequestPath = 1,
@@ -323,7 +325,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSinks
+    public enum IastVulnerabilityType
     {
         [Description("vulnerability_type:none")] None = 0,
         [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,

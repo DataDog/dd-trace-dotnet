@@ -55,7 +55,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return;
             }
 
-            var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
+            var rangesResult = new[] { new Range(tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
             if (!targetIsTainted)
             {
                 // Safe guard to avoid memory leak

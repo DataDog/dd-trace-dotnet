@@ -88,8 +88,9 @@ internal class IntelligentTestRunnerClient
         _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
         _repositoryUrl = GetRepositoryUrl();
-        _branchName = GetBranchName();
         _commitSha = GetCommitSha();
+        _branchName = GetBranchName();
+
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
@@ -1269,7 +1270,15 @@ internal class IntelligentTestRunnerClient
         }
 
         var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
-        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        var res = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+
+        if (string.IsNullOrEmpty(res))
+        {
+            Log.Warning("ITR: empty branch indicates a detached head at commit {Commit}", _commitSha);
+            res = $"auto:git-detached-head";
+        }
+
+        return res;
     }
 
     private string GetCommitSha()

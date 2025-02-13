@@ -3,7 +3,7 @@ services:
   localstack_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -92,7 +92,7 @@ services:
   localstack:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -1077,7 +1077,7 @@ services:
   localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
