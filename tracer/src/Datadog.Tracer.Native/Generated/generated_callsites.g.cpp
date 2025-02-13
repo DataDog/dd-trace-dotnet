@@ -12,7 +12,10 @@ int GeneratedDefinitions::InitCallSites(UINT32 enabledCategories, UINT32 platfor
 std::vector<WCHAR*> callSites =
 {
 (WCHAR*)WStr("[AspectClass(\"AWSSDK.SimpleEmail\",[None],Sink,[EmailHtmlInjection])] Datadog.Trace.Iast.Aspects.AmazonSimpleEmailAspect 4"),
-(WCHAR*)WStr("  [AspectMethodInsertBefore(\"Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmailAsync(Amazon.SimpleEmail.Model.SendEmailRequest,System.Threading.CancellationToken\",\"\",[1],[False],[None],Default,[])] Send(System.Object) 15"),
+#if _WIN32
+(WCHAR*)WStr("  [AspectMethodInsertBefore(\"Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmail(Amazon.SimpleEmail.Model.SendEmailRequest)\",\"\",[0],[False],[None],Default,[])] Send(System.Object) 1"),
+#endif
+(WCHAR*)WStr("  [AspectMethodInsertBefore(\"Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmailAsync(Amazon.SimpleEmail.Model.SendEmailRequest,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] Send(System.Object) 15"),
 (WCHAR*)WStr("[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect 12"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object) 15"),

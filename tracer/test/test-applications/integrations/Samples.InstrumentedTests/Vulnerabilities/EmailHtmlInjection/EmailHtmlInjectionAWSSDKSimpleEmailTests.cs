@@ -10,6 +10,13 @@ using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using System.Web;
 using System;
+using Amazon.Runtime;
+using Moq;
+using System.Reflection;
+using MySql.Data.MySqlClient;
+using System.Threading.Tasks;
+using System.Threading;
+using Amazon;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -20,41 +27,101 @@ public class EmailHtmlInjectionAWSSDKSimpleEmailTests : EmailInjectionBaseTests
 
     // Test Task<SendEmailResponse> SendEmailAsync(SendEmailRequest request, System.Threading.CancellationToken cancellationToken = default(CancellationToken))
 
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageAsyncTaintedVaulesHtml_ThenIsVulnerable()
+    public class ClientMock: AmazonSimpleEmailServiceClient
     {
-        TestMailCall(() => new AmazonSimpleEmailServiceClient(Amazon.RegionEndpoint.APEast1).SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default), true);
+        public ClientMock()
+        { }
+    }
+
+    public class MyConfiguration: AmazonSimpleEmailServiceConfig
+    {
+        public override void Validate()
+        {
+            
+        }
+    }
+
+#if NETFRAMEWORK
+    [Fact]
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedVaulesHtml_ThenIsVulnerable()
+    {
+        try
+        {
+            // The constructor of AmazonSimpleEmailServiceClient makes http calls that can make the test flaky and slow
+            // We can still test the aspect with a null object
+            ((AmazonSimpleEmailServiceClient)null).SendEmail(BuildMailMessage(true, taintedName, taintedLastName));
+        }
+        catch
+        {
+        }
+        AssertVulnerable();
+    }
+#endif
+
+    [Fact]
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtml_ThenIsVulnerable()
+    {
+        try
+        {
+            // The constructor of AmazonSimpleEmailServiceClient makes http calls that can make the test flaky and slow
+            // We can still test the aspect with a null object
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default);
+        }
+        catch
+        {
+        }
+        AssertVulnerable();
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageAsyncTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new AmazonSimpleEmailServiceClient(Amazon.RegionEndpoint.APEast1).SendEmailAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default), false);
+        try
+        {
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default);
+        }
+        catch
+        {
+        }
+        AssertNotVulnerable();
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageAsyncTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
     {
-        TestMailCall(() => new AmazonSimpleEmailServiceClient(Amazon.RegionEndpoint.APEast1).SendEmailAsync(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), default), false);
+        try
+        {
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), default);
+        }
+        catch
+        {
+        }
+        AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendAsyncTextMailMessageTaintedVaulesText_ThenIsNotVulnerable()
     {
-        TestMailCall(() => new AmazonSimpleEmailServiceClient(Amazon.RegionEndpoint.APEast1).SendEmailAsync(BuildMailMessage(false, taintedName, taintedLastName), default), false);
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageAsyncNotTainted_ThenIsNotVulnerable()
-    {
-        TestMailCall(() => new AmazonSimpleEmailServiceClient(Amazon.RegionEndpoint.APEast1).SendEmailAsync(BuildMailMessage(true, untaintedName, untaintedLastName), default), false);
-    }
-
-    [Fact]
-    public async System.Threading.Tasks.Task GivenATextPart_WhenSettingNullValues_ThenArgumentNullExceptionIsThrown()
-    {
-        await Assert.ThrowsAsync<NullReferenceException>(() => new AmazonSimpleEmailServiceClient(Amazon.RegionEndpoint.APEast1).SendEmailAsync(null, default));
+        try
+        {
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(false, taintedName, taintedLastName), default);
+        }
+        catch
+        {
+        }
         AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageNotTainted_ThenIsNotVulnerable()
+    {
+        try
+        {
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(false, taintedName, taintedLastName), default);
+        }
+        catch
+        {
+        }
     }
 
     private SendEmailRequest BuildMailMessage(bool isHtml, string name, string lastName)

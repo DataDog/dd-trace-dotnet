@@ -26,7 +26,7 @@ public class MailkitAspect
     /// <param name="bodyText">the email text</param>
     [AspectMethodReplace("MimeKit.TextPart::SetText(System.String,System.String)")]
     public static void SetText(object instance, string encoding, string bodyText)
-#pragma warning disable DD0005 // Aspect is in incorrect format
+#pragma warning disable DD0005
     {
         IMimeKitTextPart? textPart = ConvertToMimekit(instance);
 
@@ -36,7 +36,7 @@ public class MailkitAspect
             CheckForVulnerability(bodyText, textPart);
         }
     }
-#pragma warning restore DD0005 // Aspect is in incorrect format
+#pragma warning restore DD0005
 
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.
@@ -46,7 +46,7 @@ public class MailkitAspect
     /// <param name="bodyText">the email text</param>
     [AspectMethodReplace("MimeKit.TextPart::SetText(System.Text.Encoding,System.String)")]
     public static void SetTextSystemTextEncoding(object instance, Encoding encoding, string bodyText)
-#pragma warning disable DD0005 // Aspect is in incorrect format
+#pragma warning disable DD0005
     {
         IMimeKitTextPart? textPart = ConvertToMimekit(instance);
 
@@ -56,7 +56,7 @@ public class MailkitAspect
             CheckForVulnerability(bodyText, textPart);
         }
     }
-#pragma warning restore DD0005 // Aspect is in incorrect format
+#pragma warning restore DD0005
 
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.
@@ -65,7 +65,7 @@ public class MailkitAspect
     /// <param name="bodyText">the email text</param>
     [AspectMethodReplace("MimeKit.TextPart::set_Text(System.String)")]
     public static void SetTextProperty(object instance, string bodyText)
-#pragma warning disable DD0005 // Aspect is in incorrect format
+#pragma warning disable DD0005
     {
         IMimeKitTextPart? textPart = ConvertToMimekit(instance);
 
@@ -75,7 +75,7 @@ public class MailkitAspect
             CheckForVulnerability(bodyText, textPart);
         }
     }
-#pragma warning restore DD0005 // Aspect is in incorrect format
+#pragma warning restore DD0005
 
     private static void CheckForVulnerability(string bodyText, IMimeKitTextPart textPart)
     {
