@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     internal static class AspNetMvcIntegration
     {
         internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
+        internal const string HttpProxyContextKey = HttpContextKey + ".proxy";
 
         private const string OperationName = "aspnet-mvc.request";
         private const string ChildActionOperationName = "aspnet-mvc.request.child-action";
@@ -148,7 +149,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                                 proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
                                 if (proxyContext?.Scope is not null)
                                 {
-                                    SharedItems.PushScope(HttpContext.Current, HttpContextKey + ".proxy", proxyContext.Scope);
+                                    SharedItems.PushScope(HttpContext.Current, HttpProxyContextKey, proxyContext.Scope);
                                     // Update the context to use the proxy span's context
                                     extractedContext = proxyContext.Context;
                                 }
