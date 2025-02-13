@@ -106,12 +106,13 @@ namespace Datadog.Trace.Configuration
             if (dynamicSettings.Equals(oldSettings.DynamicSettings))
             {
                 Log.Debug("No changes detected in the new dynamic configuration");
-                return;
             }
-
-            Log.Information("Applying new dynamic configuration");
-
-            var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+            else
+            {
+                Log.Information("Applying new dynamic configuration");
+                var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+                Tracer.ConfigureInternal(newSettings);
+            }
 
             /*
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)
@@ -122,8 +123,6 @@ namespace Datadog.Trace.Configuration
                 NativeMethods.UpdateSettings(new[] { ConfigurationKeys.DebugEnabled }, new[] { debugLogsEnabled.Value ? "1" : "0" });
             }
             */
-
-            Tracer.ConfigureInternal(newSettings);
 
             var dynamicDebuggerSettings = new ImmutableDynamicDebuggerSettings
             {
@@ -138,13 +137,13 @@ namespace Datadog.Trace.Configuration
             if (dynamicDebuggerSettings.Equals(oldDebuggerSettings.DynamicSettings))
             {
                 Log.Debug("No changes detected in the new dynamic debugger configuration");
-                return;
             }
-
-            Log.Information("Applying new dynamic debugger configuration");
-            var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
-
-            DebuggerManager.Instance.UpdateDynamicConfiguration(newDebuggerSettings);
+            else
+            {
+                Log.Information("Applying new dynamic debugger configuration");
+                var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
+                DebuggerManager.Instance.UpdateDynamicConfiguration(newDebuggerSettings);
+            }
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

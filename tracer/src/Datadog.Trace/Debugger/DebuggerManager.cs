@@ -189,6 +189,12 @@ namespace Datadog.Trace.Debugger
 
         public void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
         {
+            /*
+              If the remote config says ‘true’, but env var says ‘false’, we do ‘false’
+              If the remote config says ‘false’, but env var says ‘true’, we do ‘false’.
+              If none are defined - the default value is defined by tracer
+             */
+
             DebuggerSettings = newDebuggerSettings;
 
             if (newDebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue)

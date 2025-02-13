@@ -32,10 +32,10 @@ namespace Datadog.Trace.Debugger.Configurations
             }
 
             return
-                DynamicInstrumentationEnabled == DynamicInstrumentationEnabled
-             && ExceptionReplayEnabled == ExceptionReplayEnabled
-             && CodeOriginEnabled == CodeOriginEnabled
-             && DebuggerEnabled == DebuggerEnabled;
+                DynamicInstrumentationEnabled == other.DynamicInstrumentationEnabled
+             && ExceptionReplayEnabled == other.ExceptionReplayEnabled
+             && CodeOriginEnabled == other.CodeOriginEnabled
+             && DebuggerEnabled == other.DebuggerEnabled;
         }
 
         public override bool Equals(object? obj)
