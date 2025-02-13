@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -33,6 +33,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-2-da57b738,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -81,6 +82,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-2-da57b738,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -129,6 +131,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-2-da57b738,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -177,6 +180,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-2-da57b738,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -225,6 +229,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-2-da57b738,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test-dummy-rule","name":"Dummy rule to test blocking","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dummy_rule"],"key_path":["Property"],"value":"dummy_rule"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
