@@ -228,7 +228,6 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
-                // TODO should I be doing this? we are also setting the errors on root and the proxy?
                 var requestFeature = httpContext.Features.Get<RequestTrackingFeature>();
                 var proxyScope = requestFeature?.ProxyScope;
                 if (proxyScope?.Span != null)
