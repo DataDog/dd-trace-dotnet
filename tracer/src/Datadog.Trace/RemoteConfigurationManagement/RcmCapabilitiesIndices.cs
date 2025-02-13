@@ -91,7 +91,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger EnableCodeOrigin = Create(40);
 
-        public static readonly BigInteger EnableLiveDebugging = Create(42);
+        public static readonly BigInteger EnableLiveDebugging = Create(41);
 
         private static BigInteger Create(int index) => new(1UL << index);
     }
