@@ -8,8 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Aspects.System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Any;
@@ -83,6 +85,7 @@ internal class SchemaExtractor
 
         activeSpan.SetTag(Tags.SchemaDefinition, schema.JsonDefinition);
         activeSpan.SetTag(Tags.SchemaId, schema.Hash.ToString(CultureInfo.InvariantCulture));
+        activeSpan.SetTag("schema.hash_data", schema.HashData);
         activeSpan.SetTag(Tags.SchemaWeight, weight.ToString(CultureInfo.InvariantCulture));
     }
 
@@ -107,12 +110,15 @@ internal class SchemaExtractor
             _schemas = componentsSchemas;
         }
 
+        public StringBuilder HashData { get; set; } = new();
+
         public static Schema ExtractSchemas(MessageDescriptorProxy descriptor)
         {
             var components = new OpenApiComponents();
-            var hash = new Extractor(components.Schemas).FillSchemasWith(descriptor); // fill the component's schemas
+            var ext = new Extractor(components.Schemas);
+            var hash = ext.FillSchemasWith(descriptor); // fill the component's schemas
             var doc = new OpenApiDocument { Components = components };
-            return new Schema(doc, hash);
+            return new Schema(doc, hash, ext.HashData.ToString());
         }
 
         /// <summary>
@@ -228,6 +234,8 @@ internal class SchemaExtractor
                         FillSchemasWith(field.MessageType, depth + 1); // Recursively add nested schemas (conditions apply)
                         reference = new OpenApiReference { Id = field.MessageType.Name, Type = ReferenceType.Schema };
                         _computedHash = FnvHash64.GenerateHash(reference.Id, FnvHash64.Version.V1A, _computedHash);
+                        HashData.Append("|");
+                        HashData.Append(reference.Id);
                         break;
                     case 11:
                         type = "string";
@@ -256,6 +264,8 @@ internal class SchemaExtractor
                             var enumVal = e.DuckCast<IDescriptorProxy>()!;
                             enumValues.Add(new OpenApiString(enumVal.Name));
                             _computedHash = FnvHash64.GenerateHash(enumVal.Name, FnvHash64.Version.V1A, _computedHash);
+                            HashData.Append("|");
+                            HashData.Append(enumVal.Name);
                         }
 
                         break;
@@ -270,6 +280,12 @@ internal class SchemaExtractor
                 _computedHash = FnvHash64.GenerateHash(field.FieldNumber.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
                 _computedHash = FnvHash64.GenerateHash(field.FieldType.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
                 _computedHash = FnvHash64.GenerateHash(depth.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
+                HashData.Append("|");
+                HashData.Append(field.FieldNumber.ToString(CultureInfo.InvariantCulture));
+                HashData.Append("|");
+                HashData.Append(field.FieldType.ToString(CultureInfo.InvariantCulture));
+                HashData.Append("|");
+                HashData.Append(depth.ToString(CultureInfo.InvariantCulture));
 
                 var property = new OpenApiSchema
                 {
@@ -297,7 +313,7 @@ internal class SchemaExtractor
 
     private class Schema
     {
-        public Schema(OpenApiDocument openApiDoc, ulong hash)
+        public Schema(OpenApiDocument openApiDoc, ulong hash, string hashData)
         {
             using var writer = new StringWriter();
             try
@@ -313,10 +329,13 @@ internal class SchemaExtractor
             }
 
             Hash = hash;
+            HashData = hashData;
         }
 
         internal string JsonDefinition { get; }
 
         internal ulong Hash { get; }
+
+        internal string HashData { get; }
     }
 }
