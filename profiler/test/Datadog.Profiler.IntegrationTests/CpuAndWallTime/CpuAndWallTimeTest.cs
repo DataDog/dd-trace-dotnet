@@ -33,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
 
             runner.Run(agent);
 
-            // only cpu profiler enabled so should see 1 value per sample
+            // only cpu profiler enabled so should see 2 value per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
         }
 
@@ -52,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Run(agent);
 
             // only wall time profiler enabled so should see 1 value per sample
-            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
         [TestAppFact("Samples.Computer01")]
