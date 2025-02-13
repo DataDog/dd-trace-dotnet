@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, proxyScope, now));
 
                     scope.SetFinishOnClose(false);
-                    proxyScope?.SetFinishOnClose(false); // TODO how do we sync this to finish at the same time as the above scope?
+                    proxyScope?.SetFinishOnClose(false);
 
                     scope.Dispose();
                     proxyScope?.Dispose();
