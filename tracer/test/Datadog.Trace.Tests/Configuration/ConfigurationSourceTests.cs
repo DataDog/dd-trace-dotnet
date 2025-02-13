@@ -22,6 +22,7 @@ namespace Datadog.Trace.Tests.Configuration
     {
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new() { { "k1", "v1" }, { "k2", "v2" } };
         private static readonly Dictionary<string, string> TagsK2V2 = new() { { "k2", "v2" } };
+        private static readonly Dictionary<string, string> TagsKey1Key2 = new() { { "key1", string.Empty }, { "key2", string.Empty } };
         private static readonly Dictionary<string, string> TagsWithColonsInValue = new() { { "k1", "v1" }, { "k2", "v2:with:colons" }, { "trailing", "colon:good:" } };
         private static readonly Dictionary<string, string> TagsWithSpacesInValue = new() { { "key", "val" }, { "aKey", "aVal bKey:bVal cKey:" } };
         private static readonly Dictionary<string, string> HeaderTagsWithOptionalMappings = new() { { "header1", "tag1" }, { "header2", "Content-Type" }, { "header3", "Content-Type" }, { "header4", "C!!!ont_____ent----tYp!/!e" }, { "validheaderwithoutcolon", string.Empty } };
@@ -35,6 +36,8 @@ namespace Datadog.Trace.Tests.Configuration
             _envVars = GetTestData()
                       .Select(allArgs => allArgs.Key)
                       .Concat(GetGlobalTestData().Select(allArgs => allArgs.Key))
+                      .Concat(GetBreakingChangeTestData().Select(allArgs => allArgs.Key))
+                      .Concat([ConfigurationKeys.ExperimentalFeaturesEnabled])
                       .Distinct()
                       .ToDictionary(key => key, key => Environment.GetEnvironmentVariable(key));
         }
@@ -88,6 +91,15 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
             yield return (s => s.TraceId128BitLoggingEnabled, false);
+        }
+
+        public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetBreakingChangeTestData()
+        {
+            // Test edge cases that expose various discrepenacies with the Agent DD_TAGS parsing algorithm that we would like to support
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1 k2:v2", s => s.GlobalTags, TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2", s => s.GlobalTags, TagsKey1Key2);
+            yield return (ConfigurationKeys.GlobalTags, "key1,key2:", s => s.GlobalTags, TagsKey1Key2);
+            yield return (ConfigurationKeys.GlobalTags, "key :val, aKey : aVal bKey:bVal cKey:", s => s.GlobalTags, TagsWithSpacesInValue);
         }
 
         public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetTestData()
@@ -173,73 +185,22 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void NameValueConfigurationSource()
-        {
-            foreach (var (key, value, settingGetter, expectedValue) in GetTestData())
-            {
-                var collection = new NameValueCollection { { key, value } };
-                IConfigurationSource source = new NameValueConfigurationSource(collection);
-                var settings = new TracerSettings(source);
-                object actualValue = settingGetter(settings);
-                // Assert.Equal(expectedValue, actualValue);
-                actualValue.Should().BeEquivalentTo(expectedValue);
-            }
-        }
+        public void NameValueConfigurationSource() => AssertNameValueConfigurationSource(GetTestData());
 
         [Fact]
-        public void EnvironmentConfigurationSource()
-        {
-            foreach (var (key, value, settingGetter, expectedValue) in GetTestData())
-            {
-                TracerSettings settings;
-
-                if (key == "DD_SERVICE_NAME")
-                {
-                    // We need to ensure DD_SERVICE is empty.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
-                    settings = GetTracerSettings(key, value);
-                }
-                else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
-                {
-                    // We need to ensure all the agent URLs are empty.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentHost, null, EnvironmentVariableTarget.Process);
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, null, EnvironmentVariableTarget.Process);
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
-
-                    settings = GetTracerSettings(key, value);
-                }
-                else
-                {
-                    settings = GetTracerSettings(key, value);
-                }
-
-                var actualValue = settingGetter(settings);
-                actualValue.Should().BeEquivalentTo(expectedValue, $"{key} should have correct value");
-                ResetEnvironment();
-            }
-
-            static TracerSettings GetTracerSettings(string key, string value)
-            {
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                return new TracerSettings(source);
-            }
-        }
+        public void BreakingChanges_NameValueConfigurationSource() => AssertNameValueConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "true");
 
         [Fact]
-        public void JsonConfigurationSource()
-        {
-            foreach (var (key, value, settingGetter, expectedValue) in GetTestData())
-            {
-                var config = new Dictionary<string, string> { [key] = value };
-                string json = JsonConvert.SerializeObject(config);
-                IConfigurationSource source = new JsonConfigurationSource(json);
-                var settings = new TracerSettings(source);
+        public void EnvironmentConfigurationSource() => AssertEnvironmentConfigurationSource(GetTestData());
 
-                object actualValue = settingGetter(settings);
-                Assert.Equal(expectedValue, actualValue);
-            }
-        }
+        [Fact]
+        public void BreakingChanges_EnvironmentConfigurationSource() => AssertEnvironmentConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "true");
+
+        [Fact]
+        public void JsonConfigurationSource() => AssertJsonConfigurationSource(GetTestData());
+
+        [Fact]
+        public void BreakingChanges_JsonConfigurationSource() => AssertJsonConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "true");
 
         [Fact]
         public void GlobalDefaultSetting()
@@ -340,6 +301,75 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             Assert.Equal(expectedValue, settings.HeaderTags);
+        }
+
+        private void AssertNameValueConfigurationSource(IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> testData, string setExperimentalFeaturesEnabled = "")
+        {
+            foreach (var (key, value, settingGetter, expectedValue) in testData)
+            {
+                var collection = new NameValueCollection { { key, value } };
+                collection.Add(ConfigurationKeys.ExperimentalFeaturesEnabled, setExperimentalFeaturesEnabled);
+                IConfigurationSource source = new NameValueConfigurationSource(collection);
+                var settings = new TracerSettings(source);
+                object actualValue = settingGetter(settings);
+                // Assert.Equal(expectedValue, actualValue);
+                actualValue.Should().BeEquivalentTo(expectedValue);
+            }
+        }
+
+        private void AssertEnvironmentConfigurationSource(IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> testData, string setExperimentalFeaturesEnabled = "")
+        {
+            foreach (var (key, value, settingGetter, expectedValue) in testData)
+            {
+                TracerSettings settings;
+
+                if (key == "DD_SERVICE_NAME")
+                {
+                    // We need to ensure DD_SERVICE is empty.
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
+                    settings = GetTracerSettings(key, value, setExperimentalFeaturesEnabled);
+                }
+                else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
+                {
+                    // We need to ensure all the agent URLs are empty.
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentHost, null, EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, null, EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
+
+                    settings = GetTracerSettings(key, value, setExperimentalFeaturesEnabled);
+                }
+                else
+                {
+                    settings = GetTracerSettings(key, value, setExperimentalFeaturesEnabled);
+                }
+
+                var actualValue = settingGetter(settings);
+                actualValue.Should().BeEquivalentTo(expectedValue, $"{key} should have correct value");
+                ResetEnvironment();
+            }
+
+            static TracerSettings GetTracerSettings(string key, string value, string setExperimentalFeaturesEnabled)
+            {
+                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.ExperimentalFeaturesEnabled, setExperimentalFeaturesEnabled, EnvironmentVariableTarget.Process);
+                IConfigurationSource source = new EnvironmentConfigurationSource();
+                return new TracerSettings(source);
+            }
+        }
+
+        private void AssertJsonConfigurationSource(IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> testData, string setExperimentalFeaturesEnabled = "")
+        {
+            foreach (var (key, value, settingGetter, expectedValue) in testData)
+            {
+                var config = new Dictionary<string, string> { [key] = value };
+                config.Add(ConfigurationKeys.ExperimentalFeaturesEnabled, setExperimentalFeaturesEnabled);
+                string json = JsonConvert.SerializeObject(config);
+                IConfigurationSource source = new JsonConfigurationSource(json);
+                var settings = new TracerSettings(source);
+
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
         private void ResetEnvironment()
