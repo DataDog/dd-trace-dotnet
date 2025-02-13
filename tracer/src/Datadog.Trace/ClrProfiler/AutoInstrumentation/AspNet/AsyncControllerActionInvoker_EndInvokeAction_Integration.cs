@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             try
             {
                 scope = SharedItems.TryPopScope(httpContext, AspNetMvcIntegration.HttpContextKey);
-                proxyScope = SharedItems.TryPopScope(httpContext, AspNetMvcIntegration.HttpContextKey + ".proxy");
+                proxyScope = SharedItems.TryPopScope(httpContext, AspNetMvcIntegration.HttpProxyContextKey);
             }
             catch (Exception ex)
             {
