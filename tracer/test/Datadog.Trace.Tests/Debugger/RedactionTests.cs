@@ -12,7 +12,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.Debugger
 {
     [UsesVerify]
-    public class RedactionTests
+    public class RedactionTests : IDisposable
     {
         public static IEnumerable<object[]> GetLongStringTestData()
         {
@@ -62,6 +62,11 @@ namespace Datadog.Trace.Tests.Debugger
             yield return new string('y', 256) + "-token";
         }
 
+        public void Dispose()
+        {
+            Redaction.Instance.ResetInstance();
+        }
+
         [Theory]
         [InlineData(null, false)]
         [InlineData("", false)]
@@ -83,7 +88,7 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("!Password", false)]
         public void RedactedKeywordsTest(string keyword, bool shouldYield)
         {
-            Assert.Equal(shouldYield, Redaction.IsRedactedKeyword(keyword));
+            Assert.Equal(shouldYield, Redaction.Instance.IsRedactedKeyword(keyword));
         }
 
         [Theory]
@@ -95,7 +100,7 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("x_key", false)]
         public void ShouldRedactKeywordsTest(string keyword, bool shouldRedacted)
         {
-            Assert.Equal(shouldRedacted, Redaction.ShouldRedact(keyword, typeof(string), out _));
+            Assert.Equal(shouldRedacted, Redaction.Instance.ShouldRedact(keyword, typeof(string), out _));
         }
 
         [Theory]
@@ -113,10 +118,10 @@ namespace Datadog.Trace.Tests.Debugger
         public void RedactedKeywords_WithExclusions_Test(string keyword, string[] excludedKeywords, bool shouldRedact)
         {
             // Arrange
-            Redaction.SetConfig(["password", "x-api-key"], [.. excludedKeywords], new HashSet<string>());
+            Redaction.Instance.SetConfig(["password", "x-api-key"], [.. excludedKeywords], new HashSet<string>());
 
             // Act
-            var isRedacted = Redaction.IsRedactedKeyword(keyword);
+            var isRedacted = Redaction.Instance.IsRedactedKeyword(keyword);
 
             // Assert
             Assert.Equal(shouldRedact, isRedacted);
@@ -128,10 +133,10 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Arrange
             var redactedIdentifiers = new HashSet<string>(GetLongRedactedIdentifiers());
-            Redaction.SetConfig(redactedIdentifiers, [.. excludedKeywords], new HashSet<string>());
+            Redaction.Instance.SetConfig(redactedIdentifiers, [.. excludedKeywords], new HashSet<string>());
 
             // Act
-            var isRedacted = Redaction.IsRedactedKeyword(keyword);
+            var isRedacted = Redaction.Instance.IsRedactedKeyword(keyword);
 
             // Assert
             Assert.Equal(shouldRedact, isRedacted);
@@ -143,10 +148,10 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Arrange
             var redactedIdentifiers = new HashSet<string> { "test@keyword", "$special-key", "api@token" };
-            Redaction.SetConfig(redactedIdentifiers, [.. excludedKeywords], new HashSet<string>());
+            Redaction.Instance.SetConfig(redactedIdentifiers, [.. excludedKeywords], new HashSet<string>());
 
             // Act
-            var isRedacted = Redaction.IsRedactedKeyword(keyword);
+            var isRedacted = Redaction.Instance.IsRedactedKeyword(keyword);
 
             // Assert
             Assert.Equal(shouldRedact, isRedacted);
@@ -158,33 +163,33 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(null, false)]
         public void IsRedactedType_BasicTypes_Test(Type type, bool expected)
         {
-            Assert.Equal(expected, Redaction.IsRedactedType(type));
+            Assert.Equal(expected, Redaction.Instance.IsRedactedType(type));
         }
 
         [Fact]
         public void IsRedactedType_WithConfiguredTypes_Test()
         {
             // Arrange
-            Redaction.SetConfig(
+            Redaction.Instance.SetConfig(
                 new HashSet<string>(),
                 new HashSet<string>(),
                 new HashSet<string> { "System.Security.SecureString", "Namespace.Sensitive*" });
 
             // Act & Assert
-            Assert.True(Redaction.IsRedactedType(typeof(System.Security.SecureString)));
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(System.Security.SecureString)));
         }
 
         [Fact]
         public void IsRedactedType_WithWildcardMatch_Test()
         {
             // Arrange
-            Redaction.SetConfig(
+            Redaction.Instance.SetConfig(
                 new HashSet<string>(),
                 new HashSet<string>(),
                 new HashSet<string> { "System.Security.*" });
 
             // Act & Assert
-            Assert.True(Redaction.IsRedactedType(typeof(System.Security.SecureString)));
+            Assert.True(Redaction.Instance.IsRedactedType(typeof(System.Security.SecureString)));
         }
 
         [Fact]
@@ -194,7 +199,7 @@ namespace Datadog.Trace.Tests.Debugger
             var emptySet = new HashSet<string>();
 
             // Act & Assert (should not throw)
-            Redaction.SetConfig(emptySet, emptySet, emptySet);
+            Redaction.Instance.SetConfig(emptySet, emptySet, emptySet);
         }
 
         [Fact]
@@ -205,30 +210,30 @@ namespace Datadog.Trace.Tests.Debugger
             var excludedIds = new HashSet<string> { "good-password", "GOOD-PASSWORD" };
 
             // Act (should not throw)
-            Redaction.SetConfig(redactedIds, excludedIds, new HashSet<string>());
+            Redaction.Instance.SetConfig(redactedIds, excludedIds, new HashSet<string>());
 
             // Assert (all normalized versions should be treated the same)
-            Assert.True(Redaction.IsRedactedKeyword("password"));
-            Assert.True(Redaction.IsRedactedKeyword("PASSWORD"));
-            Assert.False(Redaction.IsRedactedKeyword("good-password"));
-            Assert.False(Redaction.IsRedactedKeyword("GOOD-PASSWORD"));
+            Assert.True(Redaction.Instance.IsRedactedKeyword("password"));
+            Assert.True(Redaction.Instance.IsRedactedKeyword("PASSWORD"));
+            Assert.False(Redaction.Instance.IsRedactedKeyword("good-password"));
+            Assert.False(Redaction.Instance.IsRedactedKeyword("GOOD-PASSWORD"));
         }
 
         [Theory]
-        [InlineData("", typeof(System.Security.SecureString), RedactionReason.Type)]
         [InlineData("password", typeof(System.Security.SecureString), RedactionReason.Identifier)]
+        [InlineData("no-password", typeof(System.Security.SecureString), RedactionReason.Type)]
         [InlineData("api_key", typeof(string), RedactionReason.Identifier)]
         [InlineData("normal", typeof(string), RedactionReason.None)]
         internal void ShouldRedact_CombinedScenarios_Test(string name, Type type, RedactionReason expectedReason)
         {
             // Arrange
-            Redaction.SetConfig(
+            Redaction.Instance.SetConfig(
                 new HashSet<string> { "api_key" },
                 new HashSet<string>(),
                 new HashSet<string> { "System.Security.SecureString" });
 
             // Act
-            bool result = Redaction.ShouldRedact(name, type, out var reason);
+            bool result = Redaction.Instance.ShouldRedact(name, type, out var reason);
 
             // Assert
             Assert.Equal(expectedReason, reason);
