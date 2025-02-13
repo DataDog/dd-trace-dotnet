@@ -54,7 +54,11 @@ namespace Datadog.Trace.Configuration
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableExceptionReplay, true);           // 39
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableCodeOrigin, true);                // 40
                 _subscriptionManager.SetCapability(RcmCapabilitiesIndices.EnableLiveDebugging, true);             // 41
-
+                // TODO: delete me
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, true);           // 34
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, true);            // 35
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.AsmTruncationRules, true);              // 36
+                _subscriptionManager.SetCapability(RcmCapabilitiesIndices.AsmRaspCmd, true);                      // 37
             }
         }
 
