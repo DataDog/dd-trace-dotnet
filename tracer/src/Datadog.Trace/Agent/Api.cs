@@ -85,7 +85,7 @@ namespace Datadog.Trace.Agent
             return SendWithRetry(_statsEndpoint, _sendStats, state);
         }
 
-        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled)
+        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
         {
             _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
