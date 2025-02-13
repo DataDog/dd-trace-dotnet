@@ -49,7 +49,7 @@ internal readonly partial struct SecurityCoordinator
 
     public bool IsAdditiveContextDisposed() => _httpTransport.IsAdditiveContextDisposed();
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
@@ -61,6 +61,12 @@ internal readonly partial struct SecurityCoordinator
             if (additiveContext is null)
             {
                 return null;
+            }
+
+            var shouldAddSessionId = additiveContext.ShouldRunWithSession(_security, sessionId);
+            if (shouldAddSessionId)
+            {
+                args[AddressesConstants.UserSessionId] = sessionId!;
             }
 
             _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode?.ToString(), _httpTransport.RouteData);
