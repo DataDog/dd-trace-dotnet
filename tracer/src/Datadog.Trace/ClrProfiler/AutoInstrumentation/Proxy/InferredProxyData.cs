@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -16,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// <param name="httpMethod">HTTP method of the original request</param>
 /// <param name="path">Request path at the proxy</param>
 /// <param name="stage">Deployment stage name</param>
-internal class InferredProxyData(string proxyName, DateTimeOffset startTime, string domainName, string httpMethod, string path, string stage)
+internal class InferredProxyData(string proxyName, DateTimeOffset startTime, string? domainName, string? httpMethod, string? path, string? stage)
 {
     // x-dd-proxy
     public string ProxyName { get; init; } = proxyName;
@@ -25,14 +27,14 @@ internal class InferredProxyData(string proxyName, DateTimeOffset startTime, str
     public DateTimeOffset StartTime { get; init; } = startTime;
 
     // x-dd-proxy-domain-name
-    public string DomainName { get; init; } = domainName;
+    public string? DomainName { get; init; } = domainName;
 
     // x-dd-proxy-httpmethod
-    public string HttpMethod { get; init; } = httpMethod;
+    public string? HttpMethod { get; init; } = httpMethod;
 
     // x-dd-proxy-path
-    public string Path { get; init; } = path;
+    public string? Path { get; init; } = path;
 
     // x-dd-proxy-stage
-    public string Stage { get; init; } = stage;
+    public string? Stage { get; init; } = stage;
 }

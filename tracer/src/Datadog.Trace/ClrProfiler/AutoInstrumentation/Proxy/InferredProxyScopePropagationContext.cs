@@ -3,19 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
-internal class InferredProxyScopePropagationContext
+internal class InferredProxyScopePropagationContext(Scope scope, PropagationContext context)
 {
-    public InferredProxyScopePropagationContext(Scope scope, PropagationContext context)
-    {
-        Scope = scope;
-        Context = context;
-    }
+    public PropagationContext Context { get; } = context;
 
-    public PropagationContext Context { get; }
-
-    public Scope Scope { get; }
+    public Scope Scope { get; } = scope;
 }

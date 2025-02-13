@@ -61,7 +61,7 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
                 return false;
             }
 
-            // the remaining headers are necessarily required
+            // the remaining headers aren't necessarily required
             var domainName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Domain);
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
