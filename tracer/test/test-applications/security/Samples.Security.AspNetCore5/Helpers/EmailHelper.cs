@@ -65,7 +65,10 @@ public static class EmailHelper
 
             var mailMessage = new MailMessage();
             mailMessage.From = new MailAddress(data.SmtpUsername);
-            mailMessage.To.Add(data.Email);
+            if (!string.IsNullOrEmpty(data.Email))
+            {
+                mailMessage.To.Add(data.Email);
+            }
             mailMessage.Subject = subject;
             mailMessage.Body = contentHtml;
             mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML

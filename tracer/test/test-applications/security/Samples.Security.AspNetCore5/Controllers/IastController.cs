@@ -1282,7 +1282,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [HttpGet("SendEmailSmtpData")]
         [Route("SendEmailSmtpData")]
         public IActionResult SendEmailSmtpData(string email, string name, string lastname,
-            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = null,
             int smtpPort = 587, string library = "System.Net.Mail")
         {
             EmailData data = new()
@@ -1303,7 +1303,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("SendEmail")]
         public IActionResult SendEmail(string email, string name, string lastname)
         {
-            return SendEmailSmtpData(name, lastname, email);
+            return SendEmailSmtpData(email, name, lastname);
         }
 
 

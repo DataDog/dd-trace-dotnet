@@ -26,11 +26,11 @@
   "vulnerabilities": [
     {
       "type": "EMAIL_HTML_INJECTION",
-      "hash": -543813396,
+      "hash": 799617955,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "SendMailAux"
+        "path": "Samples.Security.AspNetCore5.Helpers.EmailHelper",
+        "method": "SendEmailSystemLib"
       },
       "evidence": {
         "valueParts": [
