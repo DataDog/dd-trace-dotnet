@@ -43,7 +43,7 @@ internal interface IFieldDescriptorProxy
 
     bool IsRepeated { get; }
 
-    int FieldType { get; } // actually an enum
+    ProtobufDotnetFieldType FieldType { get; }
 
     int FieldNumber { get; }
 
@@ -59,6 +59,7 @@ internal interface IFieldDescriptorProxy
 internal struct MessageDescriptorProxy
 {
     public string Name;
+    public string FullName;
     public IFieldCollectionProxy Fields;
 
     public IDescriptorProxy File;

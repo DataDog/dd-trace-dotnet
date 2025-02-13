@@ -185,78 +185,81 @@ internal class SchemaExtractor
                 string? type = null, format = null, description = null;
                 OpenApiReference? reference = null;
                 IList<IOpenApiAny>? enumValues = null;
-                switch (field.FieldType)
+
+                // the csharp implementation of protobuf uses an enum with different values to handle types internally.
+                // we must convert it back to the "common" value for consistency with other tracers
+                var protoType = field.FieldType.ToProtoType();
+                switch (protoType)
                 {
-                    case 0:
+                    case ProtobufDotnetProtoType.Double:
                         type = "number";
                         format = "double";
                         break;
-                    case 1:
+                    case ProtobufDotnetProtoType.Float:
                         type = "number";
                         format = "float";
                         break;
-                    case 2:
+                    case ProtobufDotnetProtoType.Int64:
                         type = "integer";
                         format = "int64";
                         break;
-                    case 3:
-                    case 16: // sint64
+                    case ProtobufDotnetProtoType.Uint64:
+                    case ProtobufDotnetProtoType.Sint64:
                         // OpenAPI does not directly support unsigned integers, treated as integers
                         type = "integer";
                         format = "uint64";
                         break;
-                    case 4:
-                    case 15: // sint32
+                    case ProtobufDotnetProtoType.Int32:
+                    case ProtobufDotnetProtoType.Sint32:
                         type = "integer";
                         format = "int32";
                         break;
-                    case 5:
+                    case ProtobufDotnetProtoType.Fixed64:
                         // Treated as an integer because OpenAPI does not have a fixed64 format.
                         type = "integer";
                         format = "fixed64";
                         break;
-                    case 6:
+                    case ProtobufDotnetProtoType.Fixed32:
                         type = "integer";
                         format = "fixed32";
                         break;
-                    case 7:
+                    case ProtobufDotnetProtoType.Bool:
                         type = "boolean";
                         break;
-                    case 8:
+                    case ProtobufDotnetProtoType.String:
                         type = "string";
                         break;
-                    case 9: // group
+                    case ProtobufDotnetProtoType.Group:
                         // Groups are deprecated and usually represented as nested messages in OpenAPI
                         type = "object";
                         description = "Group type";
                         break;
-                    case 10: // message
+                    case ProtobufDotnetProtoType.Message:
                         FillSchemasWith(field.MessageType, depth + 1); // Recursively add nested schemas (conditions apply)
                         reference = new OpenApiReference { Id = field.MessageType.Name, Type = ReferenceType.Schema };
-                        _computedHash = FnvHash64.GenerateHash(reference.Id, FnvHash64.Version.V1A, _computedHash);
+                        _computedHash = FnvHash64.GenerateHash(field.MessageType.FullName, FnvHash64.Version.V1A, _computedHash);
                         HashData.Append("|");
                         HashData.Append(reference.Id);
                         break;
-                    case 11:
+                    case ProtobufDotnetProtoType.Bytes:
                         type = "string";
                         format = "byte";
                         break;
-                    case 12:
+                    case ProtobufDotnetProtoType.Uint32:
                         // As with UINT64, treated as integers or strings because OpenAPI does not directly
                         // support unsigned integers
                         type = "integer";
                         format = "uint32";
                         break;
-                    case 13:
+                    case ProtobufDotnetProtoType.Sfixed32:
                         type = "integer";
                         format = "sfixed32";
                         break;
-                    case 14:
+                    case ProtobufDotnetProtoType.Sfixed64:
                         type = "integer";
                         format = "sfixed64";
                         break;
-                    // cases 15 and 16 are above
-                    case 17: // enum
+                    case ProtobufDotnetProtoType.Enum:
                         type = "string";
                         enumValues = new List<IOpenApiAny>(field.EnumType.Values.Count);
                         foreach (var e in field.EnumType.Values)
@@ -278,12 +281,12 @@ internal class SchemaExtractor
                 }
 
                 _computedHash = FnvHash64.GenerateHash(field.FieldNumber.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
-                _computedHash = FnvHash64.GenerateHash(field.FieldType.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
+                _computedHash = FnvHash64.GenerateHash(((int)protoType).ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
                 _computedHash = FnvHash64.GenerateHash(depth.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
                 HashData.Append("|");
                 HashData.Append(field.FieldNumber.ToString(CultureInfo.InvariantCulture));
                 HashData.Append("|");
-                HashData.Append(field.FieldType.ToString(CultureInfo.InvariantCulture));
+                HashData.Append(((int)protoType).ToString(CultureInfo.InvariantCulture));
                 HashData.Append("|");
                 HashData.Append(depth.ToString(CultureInfo.InvariantCulture));
 
