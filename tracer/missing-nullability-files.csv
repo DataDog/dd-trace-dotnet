@@ -203,7 +203,6 @@ src/Datadog.Trace/Tagging/GrpcTags.cs
 src/Datadog.Trace/Tagging/HttpTags.cs
 src/Datadog.Trace/Tagging/IHasStatusCode.cs
 src/Datadog.Trace/Tagging/IItemProcessor.cs
-src/Datadog.Trace/Tagging/InferredProxyTags.cs
 src/Datadog.Trace/Tagging/InstrumentationTags.cs
 src/Datadog.Trace/Tagging/ITags.cs
 src/Datadog.Trace/Tagging/KafkaTags.cs
