@@ -33,20 +33,22 @@ namespace Benchmarks.Trace
             var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
             var settings = new TracerSettings(sources);
 
-            var configuration = new TraceExporterConfiguration
-            {
-                Url = settings.Exporter.AgentUri.ToString(),
-                TraceVersion = TracerConstants.AssemblyVersion,
-                Env = settings.Environment,
-                Version = settings.ServiceVersion,
-                Service = settings.ServiceName,
-                Hostname = settings.Exporter.AgentUri.ToString(),
-                Language = ".NET",
-                LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                LanguageInterpreter = ".NET"
-            };
+            var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
+            var api = new Api(apiRequestFactory, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            var api = new TraceExporter(configuration);
+            //var configuration = new TraceExporterConfiguration
+            //{
+            //    Url = settings.Exporter.AgentUri.ToString(),
+            //    TraceVersion = TracerConstants.AssemblyVersion,
+            //    Env = settings.Environment,
+            //    Version = settings.ServiceVersion,
+            //    Service = settings.ServiceName,
+            //    Hostname = settings.Exporter.AgentUri.ToString(),
+            //    Language = ".NET",
+            //    LanguageVersion = FrameworkDescription.Instance.ProductVersion,
+            //    LanguageInterpreter = ".NET"
+            //};
+            //var api = new TraceExporter(configuration);
 
             AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);
 
