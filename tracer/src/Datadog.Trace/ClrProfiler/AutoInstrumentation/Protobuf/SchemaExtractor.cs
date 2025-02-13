@@ -278,12 +278,13 @@ internal class SchemaExtractor
                 }
 
                 _computedHash = FnvHash64.GenerateHash(field.FieldNumber.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
-                _computedHash = FnvHash64.GenerateHash(field.FieldType.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
+                var fieldTypeForHash = field.FieldType + 1; // the enum values are not the same in all languages. We align on the reference, which is java, which has enum values that start at 1.
+                _computedHash = FnvHash64.GenerateHash(fieldTypeForHash.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
                 _computedHash = FnvHash64.GenerateHash(depth.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
                 HashData.Append("|");
                 HashData.Append(field.FieldNumber.ToString(CultureInfo.InvariantCulture));
                 HashData.Append("|");
-                HashData.Append(field.FieldType.ToString(CultureInfo.InvariantCulture));
+                HashData.Append(fieldTypeForHash.ToString(CultureInfo.InvariantCulture));
                 HashData.Append("|");
                 HashData.Append(depth.ToString(CultureInfo.InvariantCulture));
 
