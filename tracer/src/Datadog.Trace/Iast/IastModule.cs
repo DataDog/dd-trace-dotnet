@@ -857,7 +857,7 @@ internal static partial class IastModule
             return;
         }
 
-        OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
+        OnExecutedSinkTelemetry(IastVulnerabilityType.EmailHtmlInjection);
 
         if (string.IsNullOrEmpty(text))
         {
@@ -865,7 +865,7 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS, but excluding db sources
-        GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
     internal static void OnEmailHtmlInjection(object? message, EmailInjectionType type)
@@ -890,7 +890,7 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS, but excluding db sources
-        GetScope(body!, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(body!, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
     }
 
     private static void ExtractProperties(object mail, EmailInjectionType type, out string? body, out bool isHtml)
