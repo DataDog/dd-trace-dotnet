@@ -20,9 +20,11 @@ public class MailkitAspect
 {
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.
+    /// We loose the tainted string when setting it to the email body because it's converted to a stream.
+    /// Therefore, we cannot check at the moment of sending and we need to instrument the body set text methods.
     /// </summary>
-    /// <param name="instance">the email body</param>
-    /// <param name="encoding">the email ending</param>
+    /// <param name="instance">the email body instance</param>
+    /// <param name="encoding">the email encoding</param>
     /// <param name="bodyText">the email text</param>
     [AspectMethodReplace("MimeKit.TextPart::SetText(System.String,System.String)")]
     public static void SetText(object instance, string encoding, string bodyText)
@@ -86,7 +88,7 @@ public class MailkitAspect
                 IastModule.OnEmailHtmlInjection(bodyText);
             }
         }
-        catch (Exception ex) when (ex is not BlockException)
+        catch (Exception ex)
         {
             IastModule.LogAspectException(ex, $"{nameof(MailkitAspect)}.{nameof(CheckForVulnerability)}");
         }

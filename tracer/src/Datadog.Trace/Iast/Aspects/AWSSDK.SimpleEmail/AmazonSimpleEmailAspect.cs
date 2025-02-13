@@ -18,8 +18,6 @@ public class AmazonSimpleEmailAspect
 {
     /// <summary>
     /// Launches a email html injection vulnerability if the email body is tainted, it's not escaped and the email is html compatible.
-    /// No need to instrument methods Send(string from, string recipients, string subject, string body) and similar
-    /// since those methods would send the email as plain text.
     /// </summary>
     /// <param name="message">the email message that is going to be sent</param>
     /// <returns>the MailMessage</returns>
