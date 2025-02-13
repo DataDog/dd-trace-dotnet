@@ -12,6 +12,95 @@
 
 
 
+
+## [Release 3.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.10.0)
+
+## Summary
+
+- [Tracing] Add S3 instrumentation and support for Microsoft.Data.SqlClient 6.x.x
+- [Tracing] Add `DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT` to control trace continuation from incoming headers
+- [CI Visibility] Add Xunit.v3 support
+- [CI Visibility] Initial Impacted Tests support
+- [ASM] Enable user id collection on authenticated requests
+- [ASM] Fix blocking Redirect requests with invalid status code
+- [Continuous Profiler] Implement outgoing HTTP requests profiling
+- [Dynamic Instrumentation] Various bug fixes and improvements
+
+## Changes
+
+### Tracer
+* [Tracing] Add s3 instrumentation (#6590)
+* [Tracing] Add configuration to change the trace context propagation extract behavior (APMAPI-1009) (#6320)
+* Remove Security and IAST statics in `AspNetCoreDiagnosticObserver` (#6564)
+* cleaning pass on HotChocolate instrumentation (#6580)
+* Add support for Microsoft.Data.SqlClient 6.x.x (#6638)
+* Call `HttpRequest.BuildUrl` to avoid URL caching (#6361)
+* Add Google Protobuf Instrumentation (#6166)
+* Revert "Add Google Protobuf Instrumentation (#6166)" (#6642)
+
+### CI Visibility
+* [CI Visibility] Add Xunit.v3 support (#6573)
+* [CI Visibility] Impacted Tests Reference Implementation (#6559)
+* [CI Visibility] Fix detached head situation (#6594)
+* [CI Visibility] Disable ImpactedTests flaky test (#6616)
+
+### ASM
+* [ASM][ATO] user id collection on authenticated request (#6431)
+* [ASM] Fix set status error in .Net framework (#6587)
+* Change the way we collect ip and header (#6591)
+* [ASM] Fix errors exceptions on HttpContext get_Items (#6592)
+* [ASM] [IAST] Enable email injection unit tests (#6595)
+* [ASM] Fix NullReferenceException on HttpTransport get_StatusCode (#6602)
+* [ASM][ATO] user id from sdk overwrite user login tags (#6603)
+* [ASM] Avoid null context repetitive log messages (#6607)
+* [ASM] Fix Blocking Redirect Invalid Status Code (#6619)
+* [IAST] Security Controls (#6635)
+* [IAST] Add IAST package exclusions (#6610)
+
+### Continuous Profiler
+* [Profiler] Implement outgoing HTTP requests profiling (#6280)
+* [Profiler] Fix Windows 64 bit stack walking (#6583)
+* [Profiler] Fix null check in GetMachineBootTime (#6628)
+
+### Debugger
+* [dynamic Instrumentation] DEBUG-2336 Add Concurrent Adaptive Cache (#6093)
+* [Exception Replay] Fixed capturing issue of async methods with `await` in finally block + added missing snapshot attributes + better frame matching algorithm (#6549)
+* [Dynamic Instrumentation] DEBUG-3298 Handle symbols without names (#6578)
+* [Dynamic Instrumentation] DEBUG-3364 Add redaction excluded identifiers environment variable (#6581)
+
+### Miscellaneous
+* Downgrade two common errors to warnings (#6584)
+* Track internal rewrites and discard NGEN images (#6588)
+* Refactor the NGEN tracking fix to be more performant (#6598)
+* change some log levels from `info` to `debug` (#6651)
+
+### Build / Test
+* [CI Visibility] Disable EarlyFlakeDetection test on alpine due to flakiness (#6542)
+* LLM PR reviewer (#6381)
+* Update dotnet-install scripts for impending change of .NET install domains (#6484)
+* [IAST] Fix flaky Interpolated Strings tests (#6555)
+* [Test Package Versions Bump] Updating package versions (#6558)
+* Add testing for macos-15 (#6575)
+* Debug what's going on with pipeline monitor (#6576)
+* Update to .NET SDK 9.0.102 (#6585)
+* Skip non-linux OCI package creation (#6586)
+* regenerate solutions as part of building the managed tracer (#6608)
+* Move the Nuke arguments into the gitlab file (#6611)
+* Stop intalling all the .NET SDK versions in benchmark agents (#6612)
+* Update framing of GitHub Issues for clarity (#6613)
+* Work around some docker pull limits (#6617)
+* Use the gitlab mirror to avoid pulling issues (#6618)
+* Try fix pipeline monitor (#6620)
+* Fix broken nullability checks on master (#6625)
+* ci: pin github actions by hash and update via dependabot (#6626)
+* Fix broken `DataStreamsMonitoringRabbitMQTests` (#6629)
+* Fix typo in `Override version bump PR checks` action (#6632)
+* [Test Package Versions Bump] Updating package versions (#6641)
+* Add overriding of verify_files_without_nullability (#6649)
+
+
+[Changes since 3.9.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.9.1...v3.10.0)
+
 ## [Release 3.9.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.9.0)
 
 ## Summary

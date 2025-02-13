@@ -3161,6 +3161,104 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AwsStepFunctions",
+    "AssemblyName": "AWSSDK.StepFunctions",
+    "TargetTypeName": "Amazon.StepFunctions.AmazonStepFunctionsClient",
+    "TargetMethodName": "StartExecution",
+    "TargetReturnType": "Amazon.StepFunctions.Model.StartExecutionResponse",
+    "TargetParameterTypes": [
+      "Amazon.StepFunctions.Model.StartExecutionRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsStepFunctions",
+    "AssemblyName": "AWSSDK.StepFunctions",
+    "TargetTypeName": "Amazon.StepFunctions.AmazonStepFunctionsClient",
+    "TargetMethodName": "StartExecutionAsync",
+    "TargetReturnType": "Amazon.StepFunctions.Model.StartExecutionResponse",
+    "TargetParameterTypes": [
+      "Amazon.StepFunctions.Model.StartExecutionRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsStepFunctions",
+    "AssemblyName": "AWSSDK.StepFunctions",
+    "TargetTypeName": "Amazon.StepFunctions.AmazonStepFunctionsClient",
+    "TargetMethodName": "StartSyncExecution",
+    "TargetReturnType": "Amazon.StepFunctions.Model.StartSyncExecutionResponse",
+    "TargetParameterTypes": [
+      "Amazon.StepFunctions.Model.StartSyncExecutionRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsStepFunctions",
+    "AssemblyName": "AWSSDK.StepFunctions",
+    "TargetTypeName": "Amazon.StepFunctions.AmazonStepFunctionsClient",
+    "TargetMethodName": "StartSyncExecutionAsync",
+    "TargetReturnType": "Amazon.StepFunctions.Model.StartSyncExecutionResponse",
+    "TargetParameterTypes": [
+      "Amazon.StepFunctions.Model.StartSyncExecutionRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AzureFunctions",
     "AssemblyName": "Microsoft.Azure.Functions.Worker.Core",
     "TargetTypeName": "Microsoft.Azure.Functions.Worker.Pipeline.FunctionExecutionMiddleware",
@@ -7858,7 +7956,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 14,
+      "Item1": 15,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -7933,7 +8031,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 14,
+      "Item1": 15,
       "Item2": 65535,
       "Item3": 65535
     },

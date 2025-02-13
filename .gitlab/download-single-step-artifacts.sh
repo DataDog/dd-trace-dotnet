@@ -16,6 +16,18 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
       "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz"
   done
 
+  if [ -n "$CI_COMMIT_SHA" ]; then
+    echo "Downloading Windows fleet-installer from S3"
+
+    # Put this in the same place the "build" stage does
+    win_target_dir=artifacts-out
+    mkdir -p $win_target_dir
+
+    curl --location --fail \
+        --output $win_target_dir/serverless-artifacts.zip \
+        "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/fleet-installer.zip"
+  fi
+
   echo -n $VERSION > $target_dir/version.txt
   exit 0
 fi
