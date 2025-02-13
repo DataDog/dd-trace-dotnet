@@ -409,7 +409,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
                 else
                 {
-                    redactedTypes.Add(type);
+                    _redactedTypes.Add(type);
                 }
             }
         }
