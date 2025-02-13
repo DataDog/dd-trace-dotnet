@@ -14,7 +14,7 @@ using Datadog.Trace.Util;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [BenchmarkAgent1]
+    [BenchmarkAgent9]
     [BenchmarkCategory(Constants.TracerCategory)]
 
     public class AgentWriterBenchmarkWithTraceExporter
