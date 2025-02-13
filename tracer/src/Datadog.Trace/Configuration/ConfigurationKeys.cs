@@ -821,7 +821,7 @@ namespace Datadog.Trace.Configuration
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
 
             public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
-            
+
             /// <summary>
             /// Configuration key to enable or disable the generation of an inferred span for proxy services.
             /// Enabling this will create a fake span based on provided proxy headers to allow for better
