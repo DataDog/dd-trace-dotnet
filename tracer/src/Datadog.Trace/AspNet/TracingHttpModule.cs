@@ -360,7 +360,6 @@ namespace Datadog.Trace.AspNet
                                 AddHeaderTagsFromHttpResponse(app.Context, scope);
                             }
 
-                            // TODO do we need to set status code on inferred proxy span? seems strange honestly but think that is what RFC is saying
                             if (proxyScope?.Span != null)
                             {
                                 proxyScope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
@@ -423,19 +422,25 @@ namespace Datadog.Trace.AspNet
                 var httpException = exception as HttpException;
                 var is404 = httpException?.GetHttpCode() == 404;
 
-                // TODO do I need to set the error on the inferred proxy span?
                 if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    var proxyScope = httpContext?.Items[_httpContextScopeKey + ".proxy"] as Scope;
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
+                    if (proxyScope != null)
+                    {
+                        AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                    }
 
                     if (exception != null && !is404 && exception is not AppSec.BlockException)
                     {
                         scope.Span.SetException(exception);
+                        proxyScope?.Span.SetException(exception);
                         if (!HttpRuntime.UsingIntegratedPipeline)
                         {
                             // in classic mode, the exception won't cause the correct status code to be set
                             // even though a 500 response will be sent ultimately, so set it manually
                             scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
+                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
                         }
                     }
                 }
