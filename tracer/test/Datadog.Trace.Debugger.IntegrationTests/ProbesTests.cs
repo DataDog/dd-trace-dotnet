@@ -290,7 +290,7 @@ public class ProbesTests : TestHelper
 
             await sample.RunCodeSample();
 
-            await logEntryWatcher.WaitForLogEntry($"LiveDebugger.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
+            await logEntryWatcher.WaitForLogEntry($"DynamicInstrumentation.CheckUnboundProbes: {expectedNumberOfSnapshots} unbound probes became bound.");
 
             Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
 
@@ -783,7 +783,7 @@ public class ProbesTests : TestHelper
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");

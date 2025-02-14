@@ -419,7 +419,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         /// </summary>
         internal void ResetInstance()
         {
-           System.Threading.Interlocked.Exchange(ref _instnace, new());
+            System.Threading.Interlocked.Exchange(ref _instnace, new());
         }
     }
 }
