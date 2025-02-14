@@ -46,8 +46,10 @@ namespace Datadog.Trace.Debugger
         private readonly IDogStatsd _dogStats;
         private readonly object _instanceLock = new();
         private bool _isRcmAvailable;
+        private DebuggerSettings _settings;
 
-        private DynamicInstrumentation(
+        internal DynamicInstrumentation(
+            DebuggerSettings settings,
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
@@ -57,6 +59,7 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
+            _settings = settings;
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -78,32 +81,6 @@ namespace Datadog.Trace.Debugger
         }
 
         public bool IsInitialized { get; private set; }
-
-        public static DynamicInstrumentation Create(
-            DebuggerSettings settings,
-            string serviceName,
-            IDiscoveryService discoveryService,
-            IRcmSubscriptionManager remoteConfigurationManager,
-            ILineProbeResolver lineProbeResolver,
-            ISnapshotUploader snapshotUploader,
-            IDebuggerUploader diagnosticsUploader,
-            IProbeStatusPoller probeStatusPoller,
-            ConfigurationUpdater configurationUpdater,
-            IDogStatsd dogStats)
-        {
-            lock (GlobalLock)
-            {
-                return new DynamicInstrumentation(
-                    discoveryService: discoveryService,
-                    remoteConfigurationManager: remoteConfigurationManager,
-                    lineProbeResolver: lineProbeResolver,
-                    snapshotUploader: snapshotUploader,
-                    diagnosticsUploader: diagnosticsUploader,
-                    probeStatusPoller: probeStatusPoller,
-                    configurationUpdater: configurationUpdater,
-                    dogStats: dogStats);
-            }
-        }
 
         public async Task InitializeAsync()
         {
@@ -135,6 +112,13 @@ namespace Datadog.Trace.Debugger
             {
                 if (IsInitialized)
                 {
+                    return false;
+                }
+
+                if (!_settings.DynamicInstrumentationEnabled ||
+                    (_settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !_settings.DynamicSettings.DynamicInstrumentationEnabled.Value))
+                {
+                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
                     return false;
                 }
 
