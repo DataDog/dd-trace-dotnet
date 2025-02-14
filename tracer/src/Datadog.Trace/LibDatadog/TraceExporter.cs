@@ -38,19 +38,21 @@ internal class TraceExporter : SafeHandle, IApi
     {
         _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
-        // Pin the array to get a pointer to the data
-        // This is recommended if using UnsafeAddrOfPinnedArrayElement to avoid the GC moving the array
-        var tracesHandle = GCHandle.Alloc(traces.Array, GCHandleType.Pinned);
-        var tracesSlice = new ByteSlice
+        unsafe
         {
-            Ptr = Marshal.UnsafeAddrOfPinnedArrayElement(traces.Array, traces.Offset),
-            Len = (UIntPtr)traces.Count
-        };
+            fixed (byte* ptr = traces.Array)
+            {
+                var tracesSlice = new ByteSlice
+                {
+                    Ptr = (IntPtr)ptr,
+                    Len = (UIntPtr)traces.Count
+                };
 
-        var responsePtr = IntPtr.Zero;
-        using var error = TraceExporterNative.ddog_trace_exporter_send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
-        tracesHandle.Free();
-        error.ThrowIfError();
+                var responsePtr = IntPtr.Zero;
+                using var error = TraceExporterNative.ddog_trace_exporter_send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                error.ThrowIfError();
+            }
+        }
 
         return Task.FromResult(true);
     }
