@@ -608,8 +608,15 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
 
             // these are SSI variables that would be useful for correlation purposes
-            telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
-            telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
+            var injectionEnabled = EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED");
+            if (!string.IsNullOrEmpty(injectionEnabled)) {
+                telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: injectionEnabled, recordValue: true, ConfigurationOrigins.EnvVars);
+            }
+
+            var injectionForced = EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE");
+            if (!string.IsNullOrEmpty(injectionForced)) {
+                telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: injectionForced, recordValue: true, ConfigurationOrigins.EnvVars);
+            }
 
             if (AzureAppServiceMetadata is not null)
             {
