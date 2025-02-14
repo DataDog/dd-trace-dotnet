@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -17,6 +18,7 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class W3CTraceContextPropagatorTests
     {
+        private const string DummyTraceParent = "00-000000000000000000000000075bcd15-000000003ade68b1-01";
         private const string ZeroLastParentId = "0000000000000000";
 
         private static readonly TraceTagCollection PropagatedTagsCollection = new(
@@ -45,6 +47,85 @@ namespace Datadog.Trace.Tests.Propagators
                 { "key1", "value1" },
                 { "key2", "value2" },
             };
+        }
+
+        /// <summary>
+        /// The <see cref="W3CTraceContextPropagator"/> uses <see cref="W3CTraceContextPropagator.TryGetSingle(IEnumerable{string?}, out string)"/>
+        /// and a <see cref="W3CTraceContextPropagator.TryGetSingleRare(IEnumerable{string?}, out string)"/> for extraction of the traceparent headers.
+        /// However, this was failing and always return false for non-standard array types (e.g. a queue or hashset).
+        /// This data tests those methods directly (as it is signifcantly easier to see the error).
+        /// </summary>
+        /// <returns>The test data</returns>
+        public static IEnumerable<object[]> TryGetSingleTestCases()
+        {
+            yield return new object[] { new HashSet<string> { "foo" } };                // Triggers TryGetSingleRare
+            yield return new object[] { new List<string> { "foo" } };                   // Triggers fast path
+            yield return new object[] { new string[] { "foo" } };                       // Triggers fast path
+            yield return new object[] { new Queue<string>(new[] { "foo" }) };           // Triggers TryGetSingleRare
+            yield return new object[] { Enumerable.Range(0, 1).Select(_ => "foo") };    // Triggers TryGetSingleRare
+            yield return new object[] { GetYieldValues("foo") };                        // Triggers TryGetSingleRare
+        }
+
+        /// <summary>
+        /// The <see cref="W3CTraceContextPropagator"/> uses <see cref="W3CTraceContextPropagator.TryGetSingle(IEnumerable{string?}, out string)"/>
+        /// and a <see cref="W3CTraceContextPropagator.TryGetSingleRare(IEnumerable{string?}, out string)"/> for extraction of the traceparent headers.
+        /// However, this was failing and always return false for non-standard array types (e.g. a queue or hashset).
+        /// </summary>
+        /// <returns>The test data</returns>
+        public static IEnumerable<object[]> TryExtractTestCases()
+        {
+            yield return new object[]
+            {
+                new[] { DummyTraceParent },                                         // Fast path (string[])
+                true                                                                // VALID
+            };
+
+            yield return new object[]
+            {
+                new List<string> { DummyTraceParent },                              // Fast path (List<string>)
+                true                                                                // VALID
+            };
+
+            yield return new object[]
+            {
+                new HashSet<string> { DummyTraceParent },                           // TryGetSingleRare path (HashSet<string>)
+                true                                                                // VALID
+            };
+
+            yield return new object[]
+            {
+                new Queue<string>(new[] { DummyTraceParent }),                      // TryGetSingleRare path (Queue<string>)
+                true                                                                // VALID
+            };
+
+            yield return new object[]
+            {
+                GetYieldValues(DummyTraceParent),                                   // TryGetSingleRare path (yield return)
+                true                                                                // VALID
+            };
+
+            // edge cases that are invalid, but have likely already been covered by other tests
+            yield return new object[] { Array.Empty<string>(), false };             // No headers
+            yield return new object[] { new[] { string.Empty }, false };            // Empty string header
+            yield return new object[] { new[] { "  " }, false };                    // Whitespace-only header
+            yield return new object[] { new[] { "invalid" }, false };               // Invalid traceparent format
+            yield return new object[]
+            {
+                new[]
+                {
+                    DummyTraceParent,
+                    DummyTraceParent
+                },
+                false                                                               // Multiple headers should fail
+            };
+        }
+
+        public static IEnumerable<string> GetYieldValues(params string[] values)
+        {
+            foreach (var value in values)
+            {
+                yield return value;
+            }
         }
 
         [Theory]
@@ -1007,6 +1088,66 @@ namespace Datadog.Trace.Tests.Propagators
                           LastParentId = ZeroLastParentId,
                       },
                       opts => opts.ExcludingMissingMembers());
+        }
+
+        [Fact]
+        public void TryGetSingleRare_ShouldReturnFalse_ForEmptyValues()
+        {
+            W3CTraceContextPropagator.TryGetSingleRare(Array.Empty<string>(), out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public void TryGetSingleRare_ShouldReturnTrue_ForSingleValue()
+        {
+            W3CTraceContextPropagator.TryGetSingleRare(new[] { "foo" }, out var value).Should().BeTrue();
+            value.Should().Be("foo");
+        }
+
+        [Fact]
+        public void TryGetSingleRare_ShouldReturnFalse_ForMultipleValues()
+        {
+            W3CTraceContextPropagator.TryGetSingleRare(new[] { "foo", "bar" }, out _).Should().BeFalse();
+        }
+
+        [Fact]
+        public void TryGetSingle_ShouoldReturnFalse_ForEmptyValeus()
+        {
+            W3CTraceContextPropagator.TryGetSingle(Array.Empty<string>(), out _).Should().BeFalse();
+        }
+
+        [Theory]
+        [MemberData(nameof(TryGetSingleTestCases))]
+        public void TryGetSingle_ShouldReturnTrue_ForSingleValues(IEnumerable<string> values)
+        {
+            W3CTraceContextPropagator.TryGetSingle(values, out var value).Should().BeTrue();
+            value.Should().Be("foo");
+        }
+
+        [Theory]
+        [MemberData(nameof(TryExtractTestCases))]
+        public void TryExtract_ShouldReturnExpectedResult(IEnumerable<string> traceParentHeaders, bool expectedSuccess)
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(traceParentHeaders);
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;o:rum;t.dm:-4;t.usr.id:12345" });
+
+            var carrier = headers.Object;
+            var carrierGetter = new Mock<ICarrierGetter<IHeadersCollection>>();
+            carrierGetter.Setup(c => c.Get(carrier, "traceparent"))
+                         .Returns(traceParentHeaders);
+
+            var result = W3CPropagator.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
+
+            if (expectedSuccess)
+            {
+                result.SpanContext.Should().NotBeNull();
+            }
+            else
+            {
+                result.SpanContext.Should().BeNull();
+            }
         }
     }
 }
