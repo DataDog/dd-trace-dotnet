@@ -315,7 +315,7 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
     CpuTimeProvider provider(valueTypeProvider, &threadscpuManager, &frameStore, &appDomainStore, &runtimeIdStore, &mockConfiguration, shared::pmr::get_default_resource());
-    Sample::ValuesCount = 1;
+    Sample::ValuesCount = 2;
     provider.Start();
 
     //                           V-----V-- check these values are correct
@@ -339,11 +339,9 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
         ASSERT_EQ(currentSample * 1000, sample->GetTimeStamp());
 
         auto values = sample->GetValues();
-        ASSERT_EQ(values.size(), 1);
-        for (size_t current = 0; current < values.size(); current++)
-        {
-            ASSERT_EQ(currentSample * 10, std::chrono::nanoseconds(values[current]));
-        }
+        ASSERT_EQ(values.size(), 2);
+        ASSERT_EQ(currentSample * 10, std::chrono::nanoseconds(values[0]));
+        ASSERT_GT(values[1], 0);
 
         currentSample++;
     }
