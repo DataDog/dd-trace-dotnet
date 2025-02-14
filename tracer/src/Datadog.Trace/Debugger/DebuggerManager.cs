@@ -21,17 +21,38 @@ using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
+    internal class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
 
-        internal static readonly DebuggerManager Instance = new(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource());
+        private static DebuggerManager? _instance;
 
         private int _isDiInitialized;
 
-        internal DebuggerSettings DebuggerSettings { get; private set; } = debuggerSettings;
+        private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
+        {
+            DebuggerSettings = debuggerSettings;
+            ExceptionReplaySettings = exceptionReplaySettings;
+        }
 
-        internal ExceptionReplaySettings ExceptionReplaySettings { get; } = exceptionReplaySettings;
+        internal static DebuggerManager Instance
+        {
+            get
+            {
+                var instance = Interlocked.CompareExchange(ref _instance, null, null);
+                if (instance == null)
+                {
+                    Interlocked.Exchange(ref _instance, new DebuggerManager(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource()));
+                    instance = _instance;
+                }
+
+                return instance!;
+            }
+        }
+
+        internal DebuggerSettings DebuggerSettings { get; private set; }
+
+        internal ExceptionReplaySettings ExceptionReplaySettings { get; }
 
         internal DynamicInstrumentation? DynamicInstrumentation { get; private set; }
 
@@ -42,6 +63,15 @@ namespace Datadog.Trace.Debugger
         internal ExceptionDebugging? ExceptionReplay { get; private set; }
 
         internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
+
+        /// <summary>
+        /// For testing only
+        /// </summary>
+        internal static DebuggerManager ReplaceManager(DebuggerSettings settings, ExceptionReplaySettings exceptionSettings)
+        {
+            Interlocked.Exchange(ref _instance, new DebuggerManager(settings, exceptionSettings));
+            return _instance!;
+        }
 
         internal async Task InitializeInstrumentationBasedProducts()
         {
@@ -99,9 +129,12 @@ namespace Datadog.Trace.Debugger
 
             try
             {
-                if (ExceptionDebugging.Initialize())
+                var exceptionReplay = ExceptionDebugging.Create(ExceptionReplaySettings);
+
+                if (exceptionReplay != null)
                 {
-                    ExceptionReplay = ExceptionDebugging.Instance;
+                    exceptionReplay.Initialize();
+                    ExceptionReplay = exceptionReplay;
                 }
                 else
                 {
@@ -187,7 +220,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        public void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
+        internal void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
         {
             /*
               If the remote config says ‘true’, but env var says ‘false’, we do ‘false’
