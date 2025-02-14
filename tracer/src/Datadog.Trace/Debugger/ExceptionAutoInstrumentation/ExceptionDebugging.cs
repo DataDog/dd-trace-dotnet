@@ -20,23 +20,33 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     internal class ExceptionDebugging : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
-        internal static readonly ExceptionDebugging Instance = new();
-        private static ExceptionReplaySettings? _settings;
-        private static int _firstInitialization = 1;
-        private static bool _isDisabled;
+        private int _firstInitialization = 1;
+        private bool _isDisabled;
 
-        private static SnapshotUploader? _uploader;
-        private static SnapshotSink? _snapshotSink;
+        private SnapshotUploader? _uploader;
+        private SnapshotSink? _snapshotSink;
+        private ExceptionTrackManager? _exceptionTrackManager;
 
-        public static ExceptionReplaySettings Settings
+        private ExceptionDebugging(ExceptionReplaySettings settings)
         {
-            get => LazyInitializer.EnsureInitialized(ref _settings, ExceptionReplaySettings.FromDefaultSource)!;
-            private set => _settings = value;
+            Settings = settings;
         }
 
-        public static bool Enabled => Settings.Enabled && !_isDisabled;
+        internal ExceptionReplaySettings Settings { get; }
 
-        public static bool Initialize()
+        public bool Enabled => Settings.Enabled && !_isDisabled;
+
+        internal static ExceptionDebugging? Create(ExceptionReplaySettings settings)
+        {
+            if (!settings.Enabled)
+            {
+                return null;
+            }
+
+            return new ExceptionDebugging(settings);
+        }
+
+        public bool Initialize()
         {
             if (!Enabled)
             {
@@ -58,12 +68,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             InitSnapshotsSink();
-            ExceptionTrackManager.Initialize();
+            _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
             LifetimeManager.Instance.AddShutdownTask(Shutdown);
             return true;
         }
 
-        private static void InitSnapshotsSink()
+        private void InitSnapshotsSink()
         {
             var tracer = Tracer.Instance;
             var debuggerSettings = DebuggerSettings.FromDefaultSource();
@@ -93,17 +103,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 .ContinueWith(t => Log.Error(t.Exception, "Error in flushing task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        public static void Report(Span span, Exception exception)
+        public void Report(Span span, Exception exception)
         {
             if (!Enabled)
             {
                 return;
             }
 
-            ExceptionTrackManager.Report(span, exception);
+            _exceptionTrackManager?.Report(span, exception);
         }
 
-        public static void BeginRequest()
+        public void BeginRequest()
         {
             if (!Enabled)
             {
@@ -116,7 +126,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             tree.IsInRequestContext = true;
         }
 
-        public static void EndRequest()
+        public void EndRequest()
         {
             if (!Enabled)
             {
@@ -126,7 +136,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ShadowStackHolder.ShadowStack?.Clear();
         }
 
-        public static void AddSnapshot(string probeId, string snapshot)
+        public void AddSnapshot(string probeId, string snapshot)
         {
             if (!Enabled)
             {
@@ -142,9 +152,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _snapshotSink.Add(probeId, snapshot);
         }
 
-        public static void Shutdown(Exception? ex)
+        public void Shutdown(Exception? ex)
         {
-            ExceptionTrackManager.Dispose();
+            _exceptionTrackManager?.Dispose();
             _uploader?.Dispose();
             _firstInitialization = 1;
         }
