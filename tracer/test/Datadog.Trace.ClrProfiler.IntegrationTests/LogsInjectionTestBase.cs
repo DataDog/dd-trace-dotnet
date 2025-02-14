@@ -119,12 +119,63 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 additionalInjectedLogFilter ??= (_) => true;
                 var tracedLogs = logs.Where(log => !log.Contains(ExcludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
 
+                tracedLogs.Should().NotBeNullOrEmpty();
+
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
-                    var traceIds = use128Bits
-                        ? spans.Select(x => x.GetTag(Trace.Tags.TraceId)).Distinct().ToList()   // gets the RawTraceId
-                        : spans.Select(x => x.TraceId.ToString()).Distinct().ToList();          // gets the TraceId lower (64-bits)
+                    List<string> traceIds = new List<string>();
+                    if (use128Bits)
+                    {
+                        // dumb but simple way of reassembling 128 bit trace ids
+                        // we first collect all spans that have a propagated trace id upper
+                        // we build a dictionary of {upper: lower} trace ids
+                        // then we go back through the spans and reassemble the 128 bit trace id
+                        // there isn't a clean way of getting the 128-bit id from the MockSpan
+                        // This could be converted to a LINQ query but...
+                        var lowerUpper = new Dictionary<string, string>();
+                        foreach (var span in spans)
+                        {
+                            var lower = span.TraceId.ToString("x16");
+                            var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
+                            if (string.IsNullOrEmpty(upper))
+                            {
+                                continue;
+                            }
+
+                            if (lowerUpper.ContainsKey(lower))
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                lowerUpper.Add(lower, upper);
+                            }
+                        }
+
+                        // reassemble 128 bit
+                        foreach (var span in spans)
+                        {
+                            var lower = span.TraceId.ToString("x16");
+                            var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
+
+                            if (string.IsNullOrEmpty(upper))
+                            {
+                                upper = lowerUpper[lower];
+                            }
+
+                            var combined = upper + lower;
+                            traceIds.Add(combined);
+                        }
+
+                        traceIds = traceIds.Distinct().ToList();
+                    }
+                    else
+                    {
+                        traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+                    }
+
+                    traceIds.Count.Should().BePositive();
 
                     if (traceIds.Any())
                     {
