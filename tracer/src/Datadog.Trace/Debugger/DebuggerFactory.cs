@@ -28,7 +28,7 @@ internal class DebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerFactory));
 
-    public static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
 
@@ -36,7 +36,7 @@ internal class DebuggerFactory
         var snapshotStatusSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceName, debuggerSettings);
 
-        var debuggerUploader = CreateSnaphotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
+        var debuggerUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
@@ -44,18 +44,16 @@ internal class DebuggerFactory
 
         var statsd = GetDogStatsd(tracerSettings, serviceName);
 
-        return DynamicInstrumentation
-           .Create(
-                settings: debuggerSettings,
-                serviceName: serviceName,
-                discoveryService: discoveryService,
-                remoteConfigurationManager: remoteConfigurationManager,
-                lineProbeResolver: lineProbeResolver,
-                snapshotUploader: debuggerUploader,
-                diagnosticsUploader: diagnosticsUploader,
-                probeStatusPoller: probeStatusPoller,
-                configurationUpdater: configurationUpdater,
-                dogStats: statsd);
+        return new DynamicInstrumentation(
+            settings: debuggerSettings,
+            discoveryService: discoveryService,
+            remoteConfigurationManager: remoteConfigurationManager,
+            lineProbeResolver: lineProbeResolver,
+            snapshotUploader: debuggerUploader,
+            diagnosticsUploader: diagnosticsUploader,
+            probeStatusPoller: probeStatusPoller,
+            configurationUpdater: configurationUpdater,
+            dogStats: statsd);
     }
 
     private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings, string serviceName)
@@ -75,7 +73,7 @@ internal class DebuggerFactory
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnaphotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotStatusSink)
+    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotStatusSink)
     {
         var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
