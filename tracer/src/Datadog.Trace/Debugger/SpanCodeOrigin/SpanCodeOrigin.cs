@@ -22,14 +22,11 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private DebuggerSettings _settings = settings;
 
-        public void UpdateConfiguration(DebuggerSettings newSettings)
-        {
-            _settings = newSettings;
-        }
-
         internal void SetCodeOrigin(Span? span)
         {
-            if (span == null)
+            if (span == null
+             || !_settings.CodeOriginForSpansEnabled
+             || (_settings.DynamicSettings.CodeOriginEnabled.HasValue && !_settings.DynamicSettings.CodeOriginEnabled.Value))
             {
                 return;
             }
