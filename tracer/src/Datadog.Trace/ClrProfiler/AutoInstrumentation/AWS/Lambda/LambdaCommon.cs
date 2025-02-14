@@ -18,8 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
 internal abstract class LambdaCommon
 {
-    private const string PlaceholderServiceName = "placeholder-service";
-    private const string PlaceholderOperationName = "placeholder-operation";
+    // Name of the placeholder invocation span sent to the Lambda extension
+    private const string InvocationSpanResource = "dd-tracer-serverless-span";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
@@ -28,11 +28,11 @@ internal abstract class LambdaCommon
         var context = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
         var span = tracer.StartSpan(
-            PlaceholderOperationName,
+            operationName: InvocationSpanResource,
             tags: null,
             parent: context.SpanContext,
-            serviceName: PlaceholderServiceName,
-            addToTraceContext: false);
+            serviceName: InvocationSpanResource,
+            addToTraceContext: true);
 
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
