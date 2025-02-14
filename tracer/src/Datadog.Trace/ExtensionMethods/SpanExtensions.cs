@@ -132,26 +132,6 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static string GetTraceIdStringForLogs(this ISpan span)
-        {
-            if (span is not Span s)
-            {
-                return span?.TraceId.ToString(CultureInfo.InvariantCulture);
-            }
-
-            var context = s.Context;
-            var use128Bits = context.TraceContext?.Tracer?.Settings?.TraceId128BitLoggingEnabled ?? false;
-
-            if (use128Bits && context.TraceId128.Upper > 0)
-            {
-                // encode all 128 bits of the trace id as a hex string
-                return context.RawTraceId;
-            }
-
-            // encode only the lower 64 bits of the trace ids as decimal (not hex)
-            return context.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
-        }
-
         private static string ConvertStatusCodeToString(int statusCode)
         {
             if (statusCode == 200)

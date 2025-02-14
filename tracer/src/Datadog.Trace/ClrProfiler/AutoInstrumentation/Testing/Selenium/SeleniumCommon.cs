@@ -72,7 +72,7 @@ internal static class SeleniumCommon
         {
             var span = test.GetInternalSpan();
             var tags = test.GetTags();
-            var traceId = span.Context.TraceId;
+            var traceId = span.TraceId128.Lower;
 
             // Create a cookie with the traceId to be used by the RUM library
             if (Activator.CreateInstance(_seleniumCookieType, CookieName, traceId.ToString()) is { } cookieInstance)

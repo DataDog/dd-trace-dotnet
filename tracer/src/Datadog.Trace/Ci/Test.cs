@@ -466,7 +466,7 @@ public sealed class Test
         _scope.Span.ResetStartTime();
     }
 
-    internal ISpan GetInternalSpan()
+    internal Span GetInternalSpan()
     {
         return _scope.Span;
     }

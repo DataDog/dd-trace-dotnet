@@ -39,19 +39,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> GetTestData()
             => from packageVersion in PackageVersions.Serilog.SelectMany(x => x).Select(x => (string)x)
                from enableLogShipping in new[] { true, false }
+               from enable128BitInjection in new[] { true, false }
                from loadFromConfig in new[] { true, false }
                where !loadFromConfig // only include loadFromConfig when >= 2.12.0 (early versions of the config package are buggy)
                   || (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("2.12.0"))
-               select new object[] { packageVersion, enableLogShipping, loadFromConfig };
+               select new object[] { packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection };
 
         [SkippableTheory]
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, bool loadFromConfig)
+        public async Task InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             SetSerilogConfiguration(loadFromConfig);
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
@@ -70,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: true);
-                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
+                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, use128Bits: enable128BitInjection);
                 VerifyInstrumentation(processResult.Process);
             }
         }
@@ -80,9 +82,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping, bool loadFromConfig)
+        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             SetSerilogConfiguration(loadFromConfig);
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
@@ -101,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: false);
-                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true, use128Bits: enable128BitInjection);
                 VerifyInstrumentation(processResult.Process);
             }
         }
@@ -111,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DirectlyShipsLogs(string packageVersion, bool enableLogShipping, bool loadFromConfig)
+        public async Task DirectlyShipsLogs(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
             if (!enableLogShipping)
             {
@@ -126,6 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetSerilogConfiguration(loadFromConfig);
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Serilog), hostName);
 
             using var telemetry = this.ConfigureTelemetry();

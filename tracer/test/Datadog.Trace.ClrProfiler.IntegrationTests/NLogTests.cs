@@ -81,6 +81,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Disable
         }
 
+        public enum Enable128BitInjection
+        {
+            /// <summary>
+            /// Traces will be injected as 128-bit IDs.
+            /// </summary>
+            Enable,
+
+            /// <summary>
+            /// Traces will be injected as 64-bit IDs.
+            /// </summary>
+            Disable
+        }
+
         public enum LoggingContext
         {
             /// <summary>
@@ -138,16 +151,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             continue; // pre 4.0.0 doesn't have JSON support
                         }
 
-                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType);
+                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Enable);
+                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Disable);
 
                         if (version >= minScopeContext)
                         {
-                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType);
+                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Enable);
+                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Disable);
                         }
 
                         if (version >= minMdlc)
                         {
-                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType);
+                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Enable);
+                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Disable);
                         }
                     }
                 }
@@ -189,16 +205,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             continue; // pre 4.0.0 doesn't have JSON support
                         }
 
-                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType);
+                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Enable);
+                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Disable);
 
                         if (version >= minScopeContext)
                         {
-                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType);
+                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Enable);
+                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Disable);
                         }
 
                         if (version >= minMdlc)
                         {
-                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType);
+                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Enable);
+                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Disable);
                         }
                     }
                 }
@@ -227,16 +246,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
                 {
-                    yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection);
+                    yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Enable);
+                    yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Disable);
 
                     if (version >= minScopeContext)
                     {
-                        yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection);
+                        yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Enable);
+                        yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Disable);
                     }
 
                     if (version >= minMdlc)
                     {
-                        yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection);
+                        yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Enable);
+                        yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Disable);
                     }
                 }
             }
@@ -247,9 +269,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
+        public async Task InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping == DirectLogSubmission.Enable)
@@ -267,7 +290,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var testFiles = GetTestFiles(packageVersion, true, configType);
-                ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
+                ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, use128Bits: enable128BitInjection == Enable128BitInjection.Enable);
                 VerifyInstrumentation(processResult.Process);
                 VerifyContextProperties(testFiles, packageVersion, context);
             }
@@ -278,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
+        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
         {
             if (configType != ConfigurationType.LogsInjection)
             {
@@ -286,6 +309,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping == DirectLogSubmission.Enable)
@@ -303,7 +327,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var testFiles = GetTestFiles(packageVersion, logsInjectionEnabled: false, configType);
-                ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, testFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true, use128Bits: enable128BitInjection == Enable128BitInjection.Enable);
 
                 VerifyInstrumentation(processResult.Process);
                 VerifyContextProperties(testFiles, packageVersion, context);
@@ -315,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DirectlyShipsLogs(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType)
+        public async Task DirectlyShipsLogs(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
         {
             if (enableLogShipping != DirectLogSubmission.Enable) { throw new Xunit.SkipException("Direct log submission disabled does not apply to this test"); }
 
@@ -323,6 +347,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var logsIntake = new MockLogsIntake();
 
             SetInstrumentationVerification();
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.NLog), hostName);
