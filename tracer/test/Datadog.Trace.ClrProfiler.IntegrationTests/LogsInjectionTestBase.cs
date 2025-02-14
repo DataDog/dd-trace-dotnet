@@ -175,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 string traceIdRegex;
                 if (use128Bits)
                 {
-                    traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"\""([0-9a-f]{32})\"""); // Match a string of digits or hex character - must be 32. Group 1 has ID
+                    traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"("")?([0-9a-f]{32})(?(1)\1|)"); // Match a string of 32 hex characters surrounded by double quotes.
                 }
                 else
                 {
@@ -198,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                .And.MatchRegex(traceIdRegex)
                                .And.MatchRegex(spanIdRegex);
 
-                            var logTraceId = use128Bits ? Regex.Match(log, traceIdRegex).Groups[1].Value : Regex.Match(log, traceIdRegex).Groups[2].Value;
+                            var logTraceId = Regex.Match(log, traceIdRegex).Groups[2].Value;
                             traceIdSet.Add(logTraceId);
                             var logSpanId = Regex.Match(log, spanIdRegex).Groups[2].Value;
                             spanIdSet.Add(logSpanId);
