@@ -65,6 +65,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
         }
 
+        [SkippableTheory]
+        [InlineData("windowsazureguestagent")]
+        [InlineData("WindoWsazureguestagent")]
+        [InlineData("iisexpresstray")]
+        [InlineData("WINDOWSAZUREGUESTAGENT")]
+        [Trait("RunOnWindows", "True")]
+        public async Task DoesNotInstrumentExcludedNames(string excludedProcess)
+        {
+            var workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            Directory.CreateDirectory(workingDir);
+
+            Output.WriteLine("Using workingDirectory: " + workingDir);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            var logDir = await RunDotnet($"new console -n {excludedProcess} -o . --no-restore");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("restore");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("build");
+            AssertNotInstrumented(agent, logDir);
+
+            logDir = await RunDotnet("publish");
+            AssertNotInstrumented(agent, logDir);
+
+            // this _should NOT_ be instrumented
+            logDir = await RunDotnet("run");
+            AssertNotInstrumentedIgnoredExe(agent, logDir, excludedProcess);
+
+            return;
+
+            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
+        }
+
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task InstrumentsDotNetRun()
@@ -445,6 +481,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             WaitForProcessResult(helper);
             return logDir;
+        }
+
+        private void AssertNotInstrumentedIgnoredExe(MockTracerAgent mockTracerAgent, string logDir, string exe)
+        {
+            // should have bailed out, but we still write logs to the native loader log
+            // _and_ the native tracer/profiler (because they're initialized), so important
+            // point is we don't have managed logs, and no spans or telemetry
+            using var scope = new AssertionScope();
+            var allFiles = Directory.GetFiles(logDir);
+            AddFilesAsReportable(logDir, scope, allFiles);
+
+            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith($"dotnet-tracer-managed-{exe}-"));
+            mockTracerAgent.Spans.Should().HaveCount(1); // command_execution
         }
 
         private void AssertNotInstrumented(MockTracerAgent mockTracerAgent, string logDir)
