@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
