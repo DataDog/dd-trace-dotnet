@@ -194,16 +194,40 @@ public class SpanMessagePackFormatterTests
                         > 0 => 1u + (1u << 31), // keep
                         <= 0 => 1u << 31,       // drop
                     };
-                    if (expectedTraceFlags > 0)
-                    {
-                        actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
-                    }
+                    actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
 
                     if (expectedSpanlink.Attributes is { Count: > 0 })
                     {
                         actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
                     }
                 }
+            }
+
+            // Verify links added to span[meta][_dd.span_links]
+            if (expected.SpanLinks is { Count: > 0 })
+            {
+                actual.Tags.Should().ContainKey("_dd.span_links");
+                var linksJson = actual.Tags["_dd.span_links"];
+                linksJson.Should().NotBeNullOrEmpty();
+
+                var parsedLinks = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(linksJson);
+                parsedLinks.Should().HaveCount(expected.SpanLinks.Count);
+
+                for (var j = 0; j < expected.SpanLinks.Count; j++)
+                {
+                    var expectedLink = expected.SpanLinks[j];
+                    var jsonLinkObject = parsedLinks[j];
+                    jsonLinkObject["trace_id"].Should().Be((long)expectedLink.Context.TraceId128.Lower);
+                    jsonLinkObject["trace_id_high"].Should().Be((long)expectedLink.Context.TraceId128.Upper);
+                    jsonLinkObject["span_id"].ToString().Should().Be(expectedLink.Context.SpanId.ToString());
+                    jsonLinkObject["flags"].Should().NotBeNull();
+                    jsonLinkObject["tracestate"].Should().NotBeNull();
+                    jsonLinkObject["attributes"].Should().NotBeNull();
+                }
+            }
+            else
+            {
+                actual.Tags.Should().NotContainKey("_dd.span_links");
             }
         }
     }
