@@ -7,6 +7,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
@@ -18,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private const string AssemblyName = "Datadog.Trace, Version=3.11.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
+        private const string DllName = "datadog_profiling_ffi";
 
         private static int _startupCtorInitialized;
 
@@ -62,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     return;
                 }
 
-                StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
+                StartupLogger.Debug("Resolving managed profiler directory to: {0}", [ManagedProfilerDirectory]);
 
                 try
                 {
@@ -120,11 +122,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
-                StartupLogger.Debug("Invoking: '{0}.{1}', {2}", typeName, methodName, loaderHelperTypeName);
+                StartupLogger.Debug("Invoking: '{0}.{1}', {2}", [typeName, methodName, loaderHelperTypeName]);
                 var assembly = LoadAssembly(AssemblyName);
+#if NETCOREAPP
+                NativeLibraryResolver.LoadNativeLibrary(ManagedProfilerDirectory, "datadog_profiling_ffi");
+#endif
                 if (assembly == null)
                 {
-                    StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method ({1}.{2}) cannot be invoked", AssemblyName, typeName, methodName);
+                    StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method ({1}.{2}) cannot be invoked", [AssemblyName, typeName, methodName]);
                     return;
                 }
 
@@ -134,22 +139,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     // this way we avoid the reflection invoke call.
                     if (assembly.GetType(loaderHelperTypeName, throwOnError: false) is { } loaderHelperType)
                     {
-                        StartupLogger.Debug("Creating '{0}' instance.", loaderHelperTypeName);
+                        StartupLogger.Debug("Creating '{0}' instance.", [loaderHelperTypeName]);
                         Activator.CreateInstance(loaderHelperType);
                         return;
                     }
 
-                    StartupLogger.Log("Loader Helper '{0}' cannot be found. Invoking {1}.{2}()", loaderHelperTypeName, typeName, methodName);
+                    StartupLogger.Log("Loader Helper '{0}' cannot be found. Invoking {1}.{2}()", [loaderHelperTypeName, typeName, methodName]);
                 }
 
                 var type = assembly.GetType(typeName, throwOnError: false);
                 var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
-                StartupLogger.Debug("Calling method '{0}.{1}'.", typeName, methodName);
+                StartupLogger.Debug("Calling method '{0}.{1}'.", [typeName, methodName]);
                 method?.Invoke(obj: null, parameters: null);
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, "Error when invoking managed method: {0}.{1}", typeName, methodName);
+                StartupLogger.Log(ex, "Error when invoking managed method: {0}.{1}", [typeName, methodName]);
             }
         }
 
@@ -163,12 +168,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             {
                 // In some IIS scenarios the `AssemblyResolve` event doesn't get triggered and we received this exception.
                 // We will try to resolve it manually as a last chance.
-                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", assemblyString);
+                StartupLogger.Log(ex, "Error on assembly load: {0}, Trying to solve it manually...", [assemblyString]);
 
                 var assembly = ResolveAssembly(assemblyString);
                 if (assembly is not null)
                 {
-                    StartupLogger.Log("Assembly '{0}' was resolved manually.", assemblyString);
+                    StartupLogger.Log("Assembly '{0}' was resolved manually.", [assemblyString]);
                 }
 
                 return assembly;

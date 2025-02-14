@@ -97,6 +97,14 @@ namespace Datadog.Trace.Agent
             _appsecStandaloneEnabled = appsecStandaloneEnabled;
         }
 
+        ~AgentWriter()
+        {
+            if (_api is IDisposable disposableApi)
+            {
+                disposableApi.Dispose();
+            }
+        }
+
         internal event Action Flushed;
 
         internal SpanBuffer ActiveBuffer => _activeBuffer;
