@@ -12,6 +12,7 @@ using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -39,6 +40,12 @@ namespace Datadog.Trace.AspNet
         private static bool _canReadHttpResponseHeaders = true;
 
         private readonly string _httpContextScopeKey;
+
+        /// <summary>
+        /// This key is only present when inferred proxy spans are enabled AND necessary proxy headers were present.
+        /// </summary>
+        /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+        private readonly string _httpContextProxyScopeKey;
         private readonly string _requestOperationName;
 
         /// <summary>
@@ -62,6 +69,7 @@ namespace Datadog.Trace.AspNet
 
             _requestOperationName = operationName;
             _httpContextScopeKey = string.Concat("__Datadog.Trace.AspNet.TracingHttpModule-", _requestOperationName);
+            _httpContextProxyScopeKey = string.Concat(_httpContextScopeKey, ".proxy");
         }
 
         /// <inheritdoc />
@@ -104,6 +112,7 @@ namespace Datadog.Trace.AspNet
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
+            Scope inferredProxyScope = null;
             bool shouldDisposeScope = true;
             try
             {
@@ -141,6 +150,18 @@ namespace Datadog.Trace.AspNet
                         // extract propagated http headers
                         headers = requestHeaders.Wrap();
                         extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+
+                        // if inferred proxy spans are enabled, try to extract and create the proxy span
+                        if (tracer.Settings.InferredProxySpansEnabled)
+                        {
+                            var proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
+                            if (proxyContext is not null)
+                            {
+                                inferredProxyScope = proxyContext.Scope;
+                                // updates the extracted context with the inferred proxy span context so that it has the inferred context
+                                extractedContext = proxyContext.Context;
+                            }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -175,6 +196,11 @@ namespace Datadog.Trace.AspNet
                 {
                     var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
                     tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
+                }
+
+                if (inferredProxyScope is not null)
+                {
+                    httpContext.Items[_httpContextProxyScopeKey] = inferredProxyScope;
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -218,6 +244,7 @@ namespace Datadog.Trace.AspNet
                 {
                     // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                     scope?.Dispose();
+                    inferredProxyScope?.Dispose();
                 }
 
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
@@ -240,6 +267,8 @@ namespace Datadog.Trace.AspNet
                 if (sender is HttpApplication app &&
                     app.Context.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    var proxyScope = app.Context.Items[_httpContextProxyScopeKey] as Scope;
+
                     try
                     {
                         var rootScope = scope.Root;
@@ -340,6 +369,12 @@ namespace Datadog.Trace.AspNet
                                 scope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                                 AddHeaderTagsFromHttpResponse(app.Context, scope);
                             }
+
+                            if (proxyScope?.Span != null)
+                            {
+                                proxyScope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                                AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
+                            }
                         }
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
@@ -366,6 +401,7 @@ namespace Datadog.Trace.AspNet
                     finally
                     {
                         scope.Dispose();
+                        proxyScope?.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
                     }
@@ -408,16 +444,23 @@ namespace Datadog.Trace.AspNet
 
                 if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
                 {
+                    var proxyScope = httpContext?.Items[_httpContextProxyScopeKey] as Scope;
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
+                    if (proxyScope != null)
+                    {
+                        AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                    }
 
                     if (exception != null && !is404 && exception is not AppSec.BlockException)
                     {
                         scope.Span.SetException(exception);
+                        proxyScope?.Span.SetException(exception);
                         if (!HttpRuntime.UsingIntegratedPipeline)
                         {
                             // in classic mode, the exception won't cause the correct status code to be set
                             // even though a 500 response will be sent ultimately, so set it manually
                             scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
+                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
                         }
                     }
                 }
@@ -433,6 +476,7 @@ namespace Datadog.Trace.AspNet
             try
             {
                 context.Items.Remove(_httpContextScopeKey);
+                context.Items.Remove(_httpContextProxyScopeKey);
             }
             catch (Exception ex)
             {
