@@ -122,30 +122,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
-                    List<string> traceIds = new List<string>();
-                    if (use128Bits)
-                    {
-                        // reassemble 128 bit
-                        foreach (var span in spans)
-                        {
-                            var lower = span.TraceId;
-                            var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
-
-                            if (string.IsNullOrEmpty(upper))
-                            {
-                                continue; // TODO: unsure exactly why some were empty, but I don't think it was an issue
-                            }
-
-                            var combined = upper + lower.ToString("x16");
-                            traceIds.Add(combined);
-                        }
-
-                        traceIds = traceIds.Distinct().ToList();
-                    }
-                    else
-                    {
-                        traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
-                    }
+                    var traceIds = use128Bits
+                        ? spans.Select(x => x.GetTag(Trace.Tags.TraceId)).Distinct().ToList()   // gets the RawTraceId
+                        : spans.Select(x => x.TraceId.ToString()).Distinct().ToList();          // gets the TraceId lower (64-bits)
 
                     if (traceIds.Any())
                     {
