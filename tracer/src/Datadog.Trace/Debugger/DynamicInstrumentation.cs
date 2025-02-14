@@ -118,7 +118,7 @@ namespace Datadog.Trace.Debugger
 
             try
             {
-                Log.Information("Live Debugger initialization started");
+                Log.Information("Dynamic Instrumentation initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Debugger
             }
             catch (Exception e)
             {
-                Log.Error(e, "Initializing Live Debugger failed.");
+                Log.Error(e, "Initializing Dynamic Instrumentation failed.");
             }
 
             bool CanInitialize()
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Debugger
 
                 if (!Volatile.Read(ref _isRcmAvailable))
                 {
-                    Log.Warning("Live Debugger could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
+                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
                     return false;
                 }
 
@@ -175,7 +175,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information<int>("Live Debugger.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
+                Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
 
                 var methodProbes = new List<NativeMethodProbeDefinition>();
                 var lineProbes = new List<NativeLineProbeDefinition>();
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Debugger
                 _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
 
                 // This log entry is being checked in integration test
-                Log.Information("Live Debugger.InstrumentProbes: Request to instrument added probes definitions completed.");
+                Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.");
             }
         }
 
@@ -280,7 +280,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                Log.Information<int>("Live Debugger.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
+                Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to remove {Length} probes.", removedProbesIds.Length);
 
                 RemoveUnboundProbes(removedProbesIds);
 
@@ -302,7 +302,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 // This log entry is being checked in integration test
-                Log.Information("Live Debugger.InstrumentProbes: Request to de-instrument probes definitions completed.");
+                Log.Information("Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.");
             }
         }
 
