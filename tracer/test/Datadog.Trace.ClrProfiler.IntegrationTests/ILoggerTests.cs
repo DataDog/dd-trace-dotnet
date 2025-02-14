@@ -154,7 +154,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected async Task RunDirectlyShipsLogs(bool filterStartupLogs, bool enable128BitInjection, string packageVersion)
         {
-            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", enable128BitInjection ? "true" : "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
             SetInstrumentationVerification();
             var hostName = "integration_ilogger_tests";
