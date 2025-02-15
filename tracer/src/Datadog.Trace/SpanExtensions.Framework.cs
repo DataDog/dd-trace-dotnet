@@ -20,7 +20,7 @@ namespace Datadog.Trace
     /// </summary>
     public static partial class SpanExtensions
     {
-        private static void RunBlockingCheck(Span span, string userId)
+        private static void RunBlockingCheck(Span span, string userId, string userSessionId)
         {
             var security = Security.Instance;
 
@@ -32,7 +32,7 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var result = securityCoordinator.Value.RunWafForUser(userId, fromSdk: true);
+                var result = securityCoordinator.Value.RunWafForUser(userId, userSessionId, fromSdk: true);
                 securityCoordinator.Value.BlockAndReport(result);
             }
         }

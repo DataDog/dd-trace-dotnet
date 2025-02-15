@@ -17,23 +17,23 @@ namespace Datadog.Trace
     /// </summary>
     public static partial class SpanExtensions
     {
-        private static void RunBlockingCheck(Span span, string userId)
+        private static void RunBlockingCheck(Span span, string userId, string userSession)
         {
             var security = Security.Instance;
 
             if (security.AppsecEnabled && AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
             {
-                RunBlockingCheckUnsafe(security, span, userId);
+                RunBlockingCheckUnsafe(security, span, userId, userSession);
             }
 
             // Don't inline this, so we don't load the aspnetcore types if they're not available
             [MethodImpl(MethodImplOptions.NoInlining)]
-            static void RunBlockingCheckUnsafe(Security security, Span span, string userId)
+            static void RunBlockingCheckUnsafe(Security security, Span span, string userId, string userSession)
             {
                 if (CoreHttpContextStore.Instance.Get() is { } httpContext)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext);
-                    var result = securityCoordinator.RunWafForUser(userId: userId, fromSdk: true);
+                    var result = securityCoordinator.RunWafForUser(userId: userId, userSessionId: userSession, fromSdk: true);
                     securityCoordinator.BlockAndReport(result);
                 }
             }

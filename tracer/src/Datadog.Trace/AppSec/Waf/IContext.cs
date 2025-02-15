@@ -18,5 +18,7 @@ internal interface IContext : IDisposable
 
     Dictionary<string, object> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false);
 
+    bool ShouldRunWithSession(IDatadogSecurity security, string? userSessionId = null, bool fromSdk = false);
+
     void CommitUserRuns(Dictionary<string, object> addresses, bool fromSdk);
 }

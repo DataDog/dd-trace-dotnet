@@ -75,7 +75,6 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
         EnableEvidenceRedaction(false);
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);

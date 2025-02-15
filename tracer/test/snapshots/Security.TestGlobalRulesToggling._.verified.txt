@@ -31,6 +31,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000000-e7f19e02-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-110","name":"Acunetix","tags":{"category":"attack_attempt","type":"commercial_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.headers.no_cookies","highlight":["acunetix-product"],"key_path":["user-agent"],"value":"mistake not... acunetix-product"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -80,6 +81,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000000-e7f19e02-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-110","name":"Acunetix","tags":{"category":"attack_attempt","type":"commercial_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.headers.no_cookies","highlight":["acunetix-product"],"key_path":["user-agent"],"value":"mistake not... acunetix-product"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -129,6 +131,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: hdr-0000000000-e7f19e02-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-110","name":"Acunetix","tags":{"category":"attack_attempt","type":"commercial_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.headers.no_cookies","highlight":["acunetix-product"],"key_path":["user-agent"],"value":"mistake not... acunetix-product"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
