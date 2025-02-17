@@ -37,7 +37,7 @@ namespace AspNetCoreSmokeTest
 
             await CreateHostBuilder(args).Build().RunAsync();
 
-            var completedPath = Path.Join(
+            var completedPath = Path.Combine(
                 Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY") ?? ".",
                 "completed.txt");
 
