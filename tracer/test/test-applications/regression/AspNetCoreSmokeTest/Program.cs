@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -35,6 +36,12 @@ namespace AspNetCoreSmokeTest
             Console.WriteLine($"OS description: {RuntimeInformation.OSDescription}");
 
             await CreateHostBuilder(args).Build().RunAsync();
+
+            var completedPath = Path.Combine(
+                Environment.GetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY") ?? ".",
+                "completed.txt");
+
+            File.WriteAllText(completedPath, DateTimeOffset.UtcNow.ToString());
 
             return ExitCode;
         }

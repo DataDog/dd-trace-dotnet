@@ -51,21 +51,24 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-# Create new website we control, but keep auto-start disabled
+# Create new website we control, but keep auto-start disabled, and stop IIS
 RUN Remove-WebSite -Name 'Default Web Site'; \
     $ENABLE_32_BIT='false'; \
     if($env:TARGET_PLATFORM -eq 'x86') { $ENABLE_32_BIT='true' }; \
     Write-Host "Creating website with 32 bit enabled: $env:ENABLE_32_BIT"; \
     c:\Windows\System32\inetsrv\appcmd add apppool /startMode:"AlwaysRunning" /autoStart:"false" /name:AspNetCorePool /managedRuntimeVersion:"" /enable32bitapponwin64:$ENABLE_32_BIT; \
     New-Website -Name 'SmokeTest' -Port 5000 -PhysicalPath 'c:\app' -ApplicationPool 'AspNetCorePool'; \
-    Set-ItemProperty "IIS:\Sites\SmokeTest" -Name applicationDefaults.preloadEnabled -Value True;
+    Set-ItemProperty "IIS:\Sites\SmokeTest" -Name applicationDefaults.preloadEnabled -Value True; \
+    net stop /y was
 
 # We override the normal service monitor entrypoint, because we want the container to shut down after the request is sent
-# We would really like to get the pid of the worker processes, but we can't do that easily
 # This is all way more convoluted than it feels like it should be, but it's the only way I could find to get things to work as required
-RUN echo 'Write-Host \"Running servicemonitor to copy variables\"; Start-Process -NoNewWindow -PassThru -FilePath \"c:/ServiceMonitor.exe\" -ArgumentList @(\"w3svc\", \"AspNetCorePool\");' > C:\app\entrypoint.ps1; \
+RUN echo '$completedFile=\"C:\logs\completed.txt\"; if (Test-Path $completedFile) { Remove-Item $completedFile;};'  > C:\app\entrypoint.ps1; \
+    echo 'Write-Host \"Running servicemonitor to copy variables\"; Start-Process -NoNewWindow -PassThru -FilePath \"c:/ServiceMonitor.exe\" -ArgumentList @(\"w3svc\", \"AspNetCorePool\");' >> C:\app\entrypoint.ps1; \
+    echo 'Write-Host \"Waiting 10s before starting app pool\"; Start-Sleep -Seconds 10;' >> C:\app\entrypoint.ps1; \
     echo 'Write-Host \"Starting AspNetCorePool app pool\"; Start-WebAppPool -Name \"AspNetCorePool\" -PassThru;' >> C:\app\entrypoint.ps1; \
     echo 'Write-Host \"Making 404 request\"; curl http://localhost:5000;' >> C:\app\entrypoint.ps1; \
+    echo 'while (-not (Test-Path "C:\logs\completed.txt")) { Write-Host \"Waiting for app shutdown\"; Start-Sleep -Seconds 1; }; ' >> C:\app\entrypoint.ps1; \
     echo 'Write-Host \"Stopping pool\";Stop-WebAppPool \"AspNetCorePool\" -PassThru;' >> C:\app\entrypoint.ps1;  \
     echo 'Write-Host \"Shutting down\"' >> C:\app\entrypoint.ps1;
 
