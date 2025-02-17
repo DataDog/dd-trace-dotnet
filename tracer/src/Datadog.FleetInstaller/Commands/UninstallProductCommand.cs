@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Datadog.FleetInstaller.Commands;
 
 /// <summary>
-/// Remove all version of the .NET tracer. Should be called for each version to be removed.
+/// Perform the final uninstall for the product
 /// </summary>
 internal class UninstallProductCommand : CommandBase
 {
@@ -33,17 +33,27 @@ internal class UninstallProductCommand : CommandBase
     }
 
     // Internal for testing
-    internal static ReturnCode Execute(ILogger log)
+    internal ReturnCode Execute(ILogger log)
     {
         log.WriteInfo("Uninstalling .NET tracer product");
 
-        // Remove the tracer references
-        if (!AppHostHelper.RemoveAllEnvironmentVariables(log))
+        if (!HasValidIIsVersion(log, out var errorMessage))
         {
-            // hard to be sure exactly of the state at this point,
-            // but probably don't want to do anything else if we couldn't remove the variables,
-            // as apps may fail
-            return ReturnCode.ErrorRemovingAppPoolVariables;
+            // IIS isn't available, weird because it means they removed it _after_ installing the product
+            // but whatever, there's no variables there if that's the case!
+            Log.Instance.WriteInfo(errorMessage);
+            Log.Instance.WriteInfo("Unable to uninstall from IIS, skipping IIS removal and continuing");
+        }
+        else
+        {
+            // Remove the tracer references
+            if (!AppHostHelper.RemoveAllEnvironmentVariables(log))
+            {
+                // hard to be sure exactly of the state at this point,
+                // but probably don't want to do anything else if we couldn't remove the variables,
+                // as apps may fail
+                return ReturnCode.ErrorRemovingAppPoolVariables;
+            }
         }
 
         // Should we clean up/delete the log folder? Probably not, as it may contain useful information
