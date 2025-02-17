@@ -358,19 +358,27 @@ namespace Datadog.Trace
 #else
             if (settings.DataPipelineEnabled)
             {
-                var configuration = new TraceExporterConfiguration
+                // wrap libdatadog TraceExporter instantiation in a try-catch block to make sure if it fails, we fallback to the managed exporter
+                try
                 {
-                    Url = settings.Exporter.AgentUri.ToString(),
-                    TraceVersion = TracerConstants.AssemblyVersion,
-                    Env = settings.Environment,
-                    Version = settings.ServiceVersion,
-                    Service = settings.ServiceName,
-                    Hostname = settings.Exporter.AgentUri.ToString(),
-                    Language = ".NET",
-                    LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                    LanguageInterpreter = ".NET"
-                };
-                return new TraceExporter(configuration);
+                    var configuration = new TraceExporterConfiguration
+                    {
+                        Url = settings.Exporter.AgentUri.ToString(),
+                        TraceVersion = TracerConstants.AssemblyVersion,
+                        Env = settings.Environment,
+                        Version = settings.ServiceVersion,
+                        Service = settings.ServiceName,
+                        Hostname = settings.Exporter.AgentUri.ToString(),
+                        Language = ".NET",
+                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
+                        LanguageInterpreter = ".NET"
+                    };
+                    return new TraceExporter(configuration);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Unable to instantiate libdatadog TraceExporter");
+                }
             }
 
             return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
