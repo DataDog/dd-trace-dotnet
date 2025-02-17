@@ -4573,7 +4573,7 @@ stages:
               ne(variables['push_artifacts_to_azure_storage'], 'false'),
               or(
                 eq(variables['push_artifacts_to_azure_storage'], 'true'),
-                eq(variables.isMainBranch, true)
+                eq(variables.isMainOrReleaseBranch, true)
               )
             )
           env:
