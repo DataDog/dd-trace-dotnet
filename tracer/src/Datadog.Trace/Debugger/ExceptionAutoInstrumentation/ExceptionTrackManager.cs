@@ -635,6 +635,21 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             this._cts.Cancel();
             this._reportingCircuitBreaker.Dispose();
 
+            foreach (var trackedExceptionCase in _trackedExceptionCases.Values)
+            {
+                try
+                {
+                    if (!trackedExceptionCase.Revert(0))
+                    {
+                        ExceptionCaseInstrumentationManager.Revert(trackedExceptionCase.ExceptionCase); // Force revert
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "ExceptionTrackManager: An exception was thrown while calling Revert on given exception case {ExceptionIdentifier}.", trackedExceptionCase.ExceptionIdentifier);
+                }
+            }
+
             try
             {
                 _exceptionProcessorTask?.Wait();
@@ -651,6 +666,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 this._workAvailable.Dispose();
                 this._cts.Dispose();
+                _trackedExceptionCases.Clear();
             }
         }
 
