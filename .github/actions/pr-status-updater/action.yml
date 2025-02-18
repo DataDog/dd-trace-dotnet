@@ -1,3 +1,5 @@
+# Copied / Extracted from `code-freeze/action.yml`:
+
 name: 'PR Status Updater'
 description: 'Updates PR statuses for code freeze'
 
