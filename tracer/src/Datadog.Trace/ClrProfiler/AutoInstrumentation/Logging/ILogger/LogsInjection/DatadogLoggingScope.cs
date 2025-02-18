@@ -54,6 +54,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                     1 => new KeyValuePair<string, object>("dd_env", _env),
                     2 => new KeyValuePair<string, object>("dd_version", _version),
 
+                    // We want to get trace id and span id separately here,
+                    // hence the separate TryGetTraceId() and TryGetSpanId() methods in LogContext.
                     3 => new KeyValuePair<string, object>(
                         "dd_trace_id",
                         _tracer.DistributedSpanContext is { } context && LogContext.TryGetTraceId(context, _use128Bits, out var traceId) ? traceId : "0"),
