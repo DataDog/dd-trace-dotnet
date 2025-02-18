@@ -9,12 +9,10 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(PublishTrimmed)' == 'true'">
-    <PublishTrimmed>true</PublishTrimmed>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <NoWarn>IL2007;IL2008;IL2026;IL2104</NoWarn>
     <DefineConstants>$(DefineConstants);PUBLISH_TRIMMED</DefineConstants>
-    <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp2'))">
