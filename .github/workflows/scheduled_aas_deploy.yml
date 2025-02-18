@@ -2,7 +2,7 @@ name: Scheduled AAS Deployment
 
 on:
   schedule:
-    - cron: '30 21 * * FRI'  # Every Friday at 9:30 PM UTC
+    - cron: '30 22 * * FRI'  # Every Friday at 10:30 PM UTC
   workflow_dispatch:
     inputs:
       force_deploy:
