@@ -15,6 +15,7 @@ internal readonly struct TelemetryInput
         ICollection<ConfigurationKeyValue>? configuration,
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
+        ICollection<AsmEndpointData>? asmEndpoints,
         MetricResults? metrics,
         ProductsData? products,
         bool sendAppStarted)
@@ -22,6 +23,7 @@ internal readonly struct TelemetryInput
         Configuration = configuration;
         Dependencies = dependencies;
         Integrations = integrations;
+        AsmEndpoints = asmEndpoints;
         Metrics = metrics?.Metrics;
         Distributions = metrics?.Distributions;
         Products = products;
@@ -35,6 +37,8 @@ internal readonly struct TelemetryInput
     public ICollection<DependencyTelemetryData>? Dependencies { get; }
 
     public ICollection<IntegrationTelemetryData>? Integrations { get; }
+
+    public ICollection<AsmEndpointData>? AsmEndpoints { get; }
 
     public ICollection<MetricData>? Metrics { get; }
 
