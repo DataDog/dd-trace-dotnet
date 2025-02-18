@@ -1,0 +1,22 @@
+name: Create Skip Code Freeze
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_skip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    
+    steps:
+      - uses: octokit/request-action@v2.x
+        name: 'Open Skip Milestone'
+        with:
+          route: PATCH /repos/{owner}/{repo}/milestones/2
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          state: open
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
