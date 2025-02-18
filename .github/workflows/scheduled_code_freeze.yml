@@ -2,7 +2,7 @@ name: Scheduled Code Freeze
 
 on:
   schedule:
-    - cron: '0 21 * * FRI'  # Every Friday at 9 PM UTC
+    - cron: '3 21 * * FRI'  # Every Friday at 9:03 PM UTC
   workflow_dispatch:
     inputs:
       force_run:
