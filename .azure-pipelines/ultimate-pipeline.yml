@@ -5730,6 +5730,81 @@ stages:
         baseImage: alpine
         command: "CheckSmokeTestsForErrors"
 
+- stage: trimmed_installer_smoke_tests
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [linux]
+
+    - job: linux
+      timeoutInMinutes: 45 # should take ~5 mins
+      strategy:
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.trimming_installer_linux_smoke_tests_matrix'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      pool:
+        name: azure-linux-smoke-scale-set
+
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download installer artifacts to smoke test directory
+          inputs:
+            artifact: $(linuxArtifacts)
+            path: $(smokeTestAppDir)/artifacts
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download $(packageName) package
+          inputs:
+            artifact: nuget-packages
+            itemPattern: "$(packageName).$(ToolVersion)$(packageVersionSuffix).nupkg"
+            path: $(smokeTestAppDir)/artifacts
+
+        - script: |
+            mkdir -p artifacts/build_data/snapshots
+            mkdir -p artifacts/build_data/logs
+          displayName: create test data directories
+
+        - script: |
+            docker-compose -p $(DockerComposeProjectName) build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              --build-arg INSTALL_CMD="$(installCmd)" \
+              --build-arg PACKAGE_NAME=$(packageName) \
+              --build-arg RUNTIME_IDENTIFIER=$(runtimeId) \
+              --build-arg TOOL_VERSION=$(ToolVersion)$(packageVersionSuffix) \
+              trimming-smoke-tests
+          env:
+            dockerTag: $(dockerTag)
+          displayName: docker-compose build trimming-smoke-tests
+          retryCountOnTaskFailure: 3
+
+        - template: steps/run-snapshot-test.yml
+          parameters:
+            target: 'trimming-smoke-tests'
+            snapshotPrefix: "smoke_test"
+
+        - publish: artifacts/build_data
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: always()
+          continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: alpine
+            command: "CheckSmokeTestsForErrors"
+
 - stage: dotnet_tool_nuget_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
