@@ -233,6 +233,9 @@ namespace datadog::shared::nativeloader
 
         // The profiler API is not initialized yet, so we look for clr.dll/coreclr.dll
         // to know if we're running with .NET Framework or .NET Core
+        // On single-file applications we might fail to find the module, but that's ok because
+        // .NET is registering an invalid handler (so it won't supersede ours)
+        bool unregisterDacHandler = true;
         bool isDotnetCore = true;
         HMODULE hModule = GetModuleHandle(L"coreclr.dll");
 
@@ -244,34 +247,40 @@ namespace datadog::shared::nativeloader
             if (hModule == NULL)
             {
                 Log::Warn("Crashtracking - Failed to get module handle for coreclr.dll or clr.dll");
-                return false;
+                unregisterDacHandler = false;
             }
         }
 
-        wchar_t buffer[MAX_PATH];
+        fs::path dacFilePath;
 
-        if (GetModuleFileNameW(hModule, buffer, MAX_PATH) == 0)
+        if (unregisterDacHandler)
         {
-            Log::Warn("Crashtracking - Failed to get module filename: ", GetLastError());
-            return false;
-        }
+            wchar_t buffer[MAX_PATH];
 
-        auto clrFileName = std::wstring(buffer);
+            if (GetModuleFileNameW(hModule, buffer, MAX_PATH) == 0)
+            {
+                Log::Warn("Crashtracking - Failed to get module filename: ", GetLastError());
+                return false;
+            }
 
-        fs::path clrFileNamePath(clrFileName);
-        auto clrDirectory = clrFileNamePath.parent_path();
+            auto clrFileName = std::wstring(buffer);
 
-        // Build the path to the DAC (mscordacwks.dll on .NET, mscordaccore.dll on .NET Core)
-        std::wstring dacFileName = isDotnetCore ? L"mscordaccore.dll" : L"mscordacwks.dll";
-        fs::path dacFilePath = clrDirectory / dacFileName;
+            fs::path clrFileNamePath(clrFileName);
+            auto clrDirectory = clrFileNamePath.parent_path();
 
-        // Unregister the .NET handler
-        Log::Debug("Crashtracking - Unregistering the .NET handler ", dacFilePath.c_str());
-        auto unregisterDacHr = WerUnregisterRuntimeExceptionModule(dacFilePath.c_str(), (PVOID)hModule);
+            // Build the path to the DAC (mscordacwks.dll on .NET, mscordaccore.dll on .NET Core)
+            std::wstring dacFileName = isDotnetCore ? L"mscordaccore.dll" : L"mscordacwks.dll";
+            dacFilePath = clrDirectory / dacFileName;
 
-        if (FAILED(unregisterDacHr))
-        {
-            Log::Warn("Crashtracking - Failed to unregister the DAC handler: ", unregisterDacHr);
+            // Unregister the .NET handler
+            Log::Debug("Crashtracking - Unregistering the .NET handler ", dacFilePath.c_str());
+            auto unregisterDacHr = WerUnregisterRuntimeExceptionModule(dacFilePath.c_str(), (PVOID)hModule);
+
+            if (FAILED(unregisterDacHr))
+            {
+                Log::Warn("Crashtracking - Failed to unregister the DAC handler: ", unregisterDacHr);
+                unregisterDacHandler = false;
+            }
         }
 
         // Register our handler
@@ -279,7 +288,7 @@ namespace datadog::shared::nativeloader
         auto registrationHr = WerRegisterRuntimeExceptionModule(dllPath.c_str(), &_context);
 
         // If we successfully unregistered the .NET handler, put it back in place
-        if (SUCCEEDED(unregisterDacHr))
+        if (unregisterDacHandler)
         {
             auto registrationHr2 = WerRegisterRuntimeExceptionModule(dacFilePath.c_str(), (PVOID)hModule);
 
