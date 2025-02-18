@@ -6,6 +6,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -35,18 +36,24 @@ internal abstract class CommandBase : Command
             return false;
         }
 
+        return true;
+    }
+
+    protected bool HasValidIIsVersion(ILogger commandResult, [NotNullWhen(false)] out string? errorMessage)
+    {
         if (!RegistryHelper.TryGetIisVersion(Log.Instance, out var version))
         {
-            commandResult.ErrorMessage = "This installer requires IIS 10.0 or later. Could not determine the IIS version; is the IIS feature enabled?";
+            errorMessage = "This installer requires IIS 10.0 or later. Could not determine the IIS version; is the IIS feature enabled?";
             return false;
         }
 
         if (version.Major < 10)
         {
-            commandResult.ErrorMessage = $"This installer requires IIS 10.0 or later. Detected IIS version {version.Major}.{version.Minor}";
+            errorMessage = $"This installer requires IIS 10.0 or later. Detected IIS version {version.Major}.{version.Minor}";
             return false;
         }
 
+        errorMessage = null;
         return true;
     }
 }
