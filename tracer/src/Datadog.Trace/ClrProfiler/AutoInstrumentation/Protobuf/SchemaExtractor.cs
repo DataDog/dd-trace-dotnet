@@ -155,7 +155,7 @@ internal class SchemaExtractor
             if (!_schemas.ContainsKey(descriptor.Name))
             {
                 var schema = new OpenApiSchema { Type = "object" };
-                _schemas.Add(descriptor.Name, schema);
+                _schemas.Add(descriptor.FullName, schema);
                 // It's important that we extract the fields AFTER adding the key to the dict, to make sure we don't re-extract on recursive message types
                 schema.Properties = ExtractFields(descriptor, depth);
             }
