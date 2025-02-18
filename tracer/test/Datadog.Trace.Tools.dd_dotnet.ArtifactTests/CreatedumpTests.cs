@@ -288,8 +288,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            // TODO for now there is no siginfo. Need to wait for next libdatadog version
-            // report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
+            report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
         }
     }
 
