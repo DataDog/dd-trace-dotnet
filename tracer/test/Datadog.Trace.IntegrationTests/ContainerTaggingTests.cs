@@ -55,7 +55,9 @@ namespace Datadog.Trace.IntegrationTests
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
+                    headers.AllKeys
+                        .ToDictionary(x => x.ToLower(), x => headers[x])
+                        .Should().Contain(AgentHttpHeaderNames.ContainerId.ToLower(), expectedContainedId);
                 }
 
                 var expectedEntitydId = ContainerMetadata.GetEntityId();
@@ -67,7 +69,9 @@ namespace Datadog.Trace.IntegrationTests
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId, expectedEntitydId);
+                    headers.AllKeys
+                        .ToDictionary(x => x.ToLower(), x => headers[x])
+                        .Should().Contain(AgentHttpHeaderNames.EntityId.ToLower(), expectedEntitydId);
                 }
 
                 if (expectedContainedId is not null && expectedEntitydId is not null)
