@@ -89,6 +89,17 @@ services:
     - "127.0.0.1:6391:6379"
 
 # Dependencies
+  cosmosdb-emulator:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: cosmosdb-emulator
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=2
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=false
+      - AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1
+    ports:
+      - "8081:8081"
+      - "10250-10255:10250-10255"
+
   localstack:
     image: localstack/localstack
     environment:
@@ -455,6 +466,8 @@ services:
       - DD_LOGGER_DD_TAGS
       - IS_SSI_RUN
       - RANDOM_SEED
+      - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
+      - COSMOSDB_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
     hostname: integrationtests
     depends_on:
       - servicestackredis
@@ -475,6 +488,7 @@ services:
       - kafka-zookeeper
       - localstack
       - couchbase
+      - cosmosdb-emulator
 
   IntegrationTests.Debugger:
     build:
@@ -655,9 +669,10 @@ services:
       - kafka-zookeeper
       - localstack
       - couchbase
+      - cosmosdb-emulator
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210  # oracle:1521
+    command: servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210  cosmosbd-emulator:8081 # oracle:1521
 
   IntegrationTests.ARM64:
     build:
