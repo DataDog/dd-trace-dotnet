@@ -98,12 +98,13 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal void ReportAndBlock(IResult? result)
+    internal void ReportAndBlock(IResult? result, Action telemetrySucessReport)
     {
         if (result is not null)
         {
             Reporter.TryReport(result, result.ShouldBlock);
 
+            telemetrySucessReport.Invoke();
             if (result.ShouldBlock)
             {
                 throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, true);

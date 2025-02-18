@@ -23,6 +23,13 @@ internal static class RaspModule
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RaspModule));
     private static bool _nullContextReported = false;
 
+    internal enum BlockType
+    {
+        Irrelevant = 0,
+        Success = 1,
+        Failure = 2
+    }
+
     private static RaspRuleType? TryGetAddressRuleType(string address)
     => address switch
     {
@@ -31,6 +38,47 @@ internal static class RaspModule
         AddressesConstants.DBStatement => RaspRuleType.SQlI,
         AddressesConstants.ShellInjection => RaspRuleType.CommandInjectionShell,
         AddressesConstants.CommandInjection => RaspRuleType.CommandInjectionExec,
+        _ => null,
+    };
+
+    private static RaspRuleTypeMatch? TryGetAddressRuleTypeMatch(string address, BlockType blockType)
+    => address switch
+    {
+        AddressesConstants.FileAccess => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.LfiSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.LfiFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.LfiIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.UrlAccess => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.SsrfSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.SsrfFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.SsrfIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.DBStatement => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.SQlISuccess,
+            BlockType.Failure => RaspRuleTypeMatch.SQlIFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.SQlIIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.ShellInjection => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.CommandInjectionShellSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.CommandInjectionShellFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.CommandInjectionShellIrrelevant,
+            _ => null,
+        },
+        AddressesConstants.CommandInjection => blockType switch
+        {
+            BlockType.Success => RaspRuleTypeMatch.CommandInjectionExecSuccess,
+            BlockType.Failure => RaspRuleTypeMatch.CommandInjectionExecFailure,
+            BlockType.Irrelevant => RaspRuleTypeMatch.CommandInjectionExecIrrelevant,
+            _ => null,
+        },
         _ => null,
     };
 
@@ -84,7 +132,7 @@ internal static class RaspModule
         RunWafRasp(arguments, rootSpan, address);
     }
 
-    private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut)
+    private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut, BlockType matchType)
     {
         var ruleType = TryGetAddressRuleType(address);
 
@@ -98,7 +146,15 @@ internal static class RaspModule
 
         if (isMatch)
         {
-            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleType.Value);
+            var ruleTypeMatch = TryGetAddressRuleTypeMatch(address, matchType);
+
+            if (ruleTypeMatch is null)
+            {
+                Log.Warning("RASP: Rule match type not found for address {Address} {MatchType}", address, matchType);
+                return;
+            }
+
+            TelemetryFactory.Metrics.RecordCountRaspRuleMatch(ruleTypeMatch.Value);
         }
 
         if (timeOut)
@@ -129,11 +185,6 @@ internal static class RaspModule
 
         var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
-        if (result is not null)
-        {
-            RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
-        }
-
         try
         {
             if (result?.SendStackInfo is not null && Security.Instance.Settings.StackTraceEnabled)
@@ -158,9 +209,27 @@ internal static class RaspModule
 
         AddSpanId(result);
 
-        // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
-        // the blockings, so we report first and then block
-        securityCoordinator.Value.ReportAndBlock(result);
+        if (result is not null)
+        {
+            // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
+            // the blockings, so we report first and then block
+            try
+            {
+                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match ?
+                    (result.ShouldBlock ? BlockType.Success : BlockType.Irrelevant) :
+                    BlockType.Irrelevant;
+
+                securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
+            }
+            catch (Exception ex) when (ex is not BlockException)
+            {
+                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match ?
+                    BlockType.Failure : BlockType.Irrelevant;
+
+                RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode);
+                Log.Error(ex, "RASP: Error while reporting and blocking.");
+            }
+        }
     }
 
     private static void AddSpanId(IResult? result)

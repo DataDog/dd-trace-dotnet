@@ -313,7 +313,7 @@ internal readonly partial struct SecurityCoordinator
         reporting(null, result.ShouldBlock);
     }
 
-    internal void ReportAndBlock(IResult? result)
+    internal void ReportAndBlock(IResult? result, Action telemetrySucessReport)
     {
         if (result is not null)
         {
