@@ -20,7 +20,7 @@ inputs:
   max_pages:
     description: 'Maximum number of pages to process'
     required: false
-    default: '5'
+    default: '6'
 
 runs:
   using: "composite"
