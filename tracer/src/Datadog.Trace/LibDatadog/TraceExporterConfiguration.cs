@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Runtime.InteropServices;
 
@@ -13,15 +15,15 @@ namespace Datadog.Trace.LibDatadog;
 /// </summary>
 internal class TraceExporterConfiguration : SafeHandle
 {
-    private string _url;
-    private string _traceVersion;
-    private string _language;
-    private string _languageVersion;
-    private string _languageInterpreter;
-    private string _hostname;
-    private string _env;
-    private string _version;
-    private string _service;
+    private string? _url;
+    private string? _traceVersion;
+    private string? _language;
+    private string? _languageVersion;
+    private string? _languageInterpreter;
+    private string? _hostname;
+    private string? _env;
+    private string? _version;
+    private string? _service;
 
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
@@ -32,7 +34,7 @@ internal class TraceExporterConfiguration : SafeHandle
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
-    public string Url
+    public string? Url
     {
         get => _url;
         set
@@ -43,7 +45,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string TraceVersion
+    public string? TraceVersion
     {
         get => _traceVersion;
         set
@@ -54,7 +56,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Language
+    public string? Language
     {
         get => _language;
         set
@@ -65,7 +67,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string LanguageVersion
+    public string? LanguageVersion
     {
         get => _languageVersion;
         set
@@ -76,7 +78,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string LanguageInterpreter
+    public string? LanguageInterpreter
     {
         get => _languageInterpreter;
         set
@@ -87,7 +89,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Hostname
+    public string? Hostname
     {
         get => _hostname;
         set
@@ -98,7 +100,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Env
+    public string? Env
     {
         get => _env;
         set
@@ -109,7 +111,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Version
+    public string? Version
     {
         get => _version;
         set
@@ -120,7 +122,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Service
+    public string? Service
     {
         get => _service;
         set

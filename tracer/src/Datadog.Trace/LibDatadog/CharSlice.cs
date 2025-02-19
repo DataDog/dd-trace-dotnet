@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Runtime.InteropServices;
 
@@ -34,7 +36,7 @@ internal struct CharSlice
     /// This can be further optimized if we can avoid copying the string to unmanaged memory.
     /// </summary>
     /// <param name="str">The string to copy into memory.</param>
-    internal CharSlice(string str)
+    internal CharSlice(string? str)
     {
         // copy over str to unmanaged memory
         if (str == null)
