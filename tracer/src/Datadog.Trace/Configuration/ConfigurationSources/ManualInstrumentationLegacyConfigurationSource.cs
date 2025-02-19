@@ -1,4 +1,4 @@
-// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
+﻿// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -383,6 +383,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
     private static object RemapResult(string key, object value) => key switch
     {
         TracerSettingKeyConstants.AgentUriKey => value is Uri uri ? uri.ToString() : value,
+        TracerSettingKeyConstants.DisabledIntegrationNamesKey => value is HashSet<string> set ? string.Join(";", set) : value,
         TracerSettingKeyConstants.HttpServerErrorCodesKey => value is List<int> list
                                                                  ? string.Join(",", list.Select(i => i.ToString(CultureInfo.InvariantCulture)))
                                                                  : value,
