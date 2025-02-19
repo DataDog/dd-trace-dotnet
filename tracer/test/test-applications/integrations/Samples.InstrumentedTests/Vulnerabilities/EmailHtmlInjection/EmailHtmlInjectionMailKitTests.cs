@@ -21,22 +21,13 @@ public class EmailHtmlInjectionMailKitTests : EmailInjectionBaseTests
     private MailboxAddress mailBoxRecipient = new MailboxAddress("recipient", "address");
 
     // Test string Send(MimeMessage message, CancellationToken cancellationToken, ITransferProgress progress)
-    [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlSetTextEncoding_ThenIsVulnerable()
+    [Theory]
+    [InlineData(SetTextMode.SetText)]
+    [InlineData(SetTextMode.TextProperty)]
+    [InlineData(SetTextMode.SetTextEncoding)]
+    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlEncoding_ThenIsVulnerable(SetTextMode encoding)
     {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName, SetTextMode.SetTextEncoding), default, null), true);
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlSetText_ThenIsVulnerable()
-    {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName, SetTextMode.SetText), default, null), true);
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendHtmlMailMessageTaintedValuesHtmlTextProperty_ThenIsVulnerable()
-    {
-        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName, SetTextMode.TextProperty), default, null), true);
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName, encoding), default, null), true);
     }
 
     [Fact]
@@ -77,7 +68,7 @@ public class EmailHtmlInjectionMailKitTests : EmailInjectionBaseTests
         AssertNotVulnerable();
     }
 
-    enum SetTextMode
+    public enum SetTextMode
     {
         TextProperty,
         SetTextEncoding,
