@@ -111,7 +111,7 @@ internal readonly partial struct SecurityCoordinator
         try
         {
             var additiveContext = GetOrCreateAdditiveContext();
-            if (additiveContext?.ShouldRunWith(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
+            if (additiveContext?.FilterAddresses(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
             {
                 if (otherTags is not null)
                 {

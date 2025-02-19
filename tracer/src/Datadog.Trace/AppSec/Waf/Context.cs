@@ -63,7 +63,7 @@ internal class Context : IContext
     public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
         => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
 
-    public Dictionary<string, object> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
+    public Dictionary<string, object> FilterAddresses(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
         var addresses = new Dictionary<string, object>();
         if (ShouldRunWith(security, _userEventsState.Id, userId, AddressesConstants.UserId, fromSdk))
