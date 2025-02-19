@@ -215,18 +215,17 @@ internal static class RaspModule
             // the blockings, so we report first and then block
             try
             {
-                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match ?
-                    (result.ShouldBlock ? BlockType.Success : BlockType.Irrelevant) :
-                    BlockType.Irrelevant;
+                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                    BlockType.Success : BlockType.Irrelevant;
 
                 securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
             }
             catch (Exception ex) when (ex is not BlockException)
             {
-                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match ?
+                var matchFailureCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
                     BlockType.Failure : BlockType.Irrelevant;
 
-                RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode);
+                RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchFailureCode);
                 Log.Error(ex, "RASP: Error while reporting and blocking.");
             }
         }
