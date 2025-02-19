@@ -78,7 +78,8 @@ for dir in $dirs; do
         cp -r "$dir/lib/libdatadog_profiling.so" "sources/runtimes/$rid/native/datadog_profiling_ffi.so"
     elif [[ $rid == *"win"* ]]; then
         # copy the libdatadog.dll to the correct runtime directory
-        cp -r "$dir/release/dynamic/datadog_profiling_ffi.dll" "sources/runtimes/$rid/native/datadog_profiling_ffi.dll"
+        cp -r "$dir/debug/dynamic/datadog_profiling_ffi.dll" "sources/runtimes/$rid/native/datadog_profiling_ffi.dll"
+        cp -r "$dir/debug/dynamic/datadog_profiling_ffi.pdb" "sources/runtimes/$rid/native/datadog_profiling_ffi.pdb"
     elif [[ $rid == *"osx"* ]]; then
         # copy the libdatadog.dylib to the correct runtime directory
         cp -r "$dir/lib/libdatadog_profiling.dylib" "sources/runtimes/$rid/native/datadog_profiling_ffi.dylib"
