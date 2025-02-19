@@ -1,4 +1,4 @@
-// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
+﻿// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -143,6 +143,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         "DD_TRACE_AWSSNS_ENABLED" => IntegrationId.AwsSns,
         "DD_TRACE_AWSEVENTBRIDGE_ENABLED" => IntegrationId.AwsEventBridge,
         "DD_TRACE_AWSLAMBDA_ENABLED" => IntegrationId.AwsLambda,
+        "DD_TRACE_AWSSTEPFUNCTIONS_ENABLED" => IntegrationId.AwsStepFunctions,
         "DD_TRACE_ILOGGER_ENABLED" => IntegrationId.ILogger,
         "DD_TRACE_AEROSPIKE_ENABLED" => IntegrationId.Aerospike,
         "DD_TRACE_AZUREFUNCTIONS_ENABLED" => IntegrationId.AzureFunctions,
@@ -223,6 +224,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         "DD_TRACE_AWSEVENTBRIDGE_ANALYTICS_ENABLED" => IntegrationId.AwsEventBridge,
         "DD_TRACE_AWSS3_ANALYTICS_ENABLED" => IntegrationId.AwsS3,
         "DD_TRACE_AWSLAMBDA_ANALYTICS_ENABLED" => IntegrationId.AwsLambda,
+        "DD_TRACE_AWSSTEPFUNCTIONS_ANALYTICS_ENABLED" => IntegrationId.AwsStepFunctions,
         "DD_TRACE_ILOGGER_ANALYTICS_ENABLED" => IntegrationId.ILogger,
         "DD_TRACE_AEROSPIKE_ANALYTICS_ENABLED" => IntegrationId.Aerospike,
         "DD_TRACE_AZUREFUNCTIONS_ANALYTICS_ENABLED" => IntegrationId.AzureFunctions,
@@ -303,6 +305,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         "DD_TRACE_AWSSNS_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsSns,
         "DD_TRACE_AWSEVENTBRIDGE_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsEventBridge,
         "DD_TRACE_AWSLAMBDA_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsLambda,
+        "DD_TRACE_AWSSTEPFUNCTIONS_ANALYTICS_SAMPLE_RATE" => IntegrationId.AwsStepFunctions,
         "DD_TRACE_ILOGGER_ANALYTICS_SAMPLE_RATE" => IntegrationId.ILogger,
         "DD_TRACE_AEROSPIKE_ANALYTICS_SAMPLE_RATE" => IntegrationId.Aerospike,
         "DD_TRACE_AZUREFUNCTIONS_ANALYTICS_SAMPLE_RATE" => IntegrationId.AzureFunctions,
@@ -380,6 +383,7 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
     private static object RemapResult(string key, object value) => key switch
     {
         TracerSettingKeyConstants.AgentUriKey => value is Uri uri ? uri.ToString() : value,
+        TracerSettingKeyConstants.DisabledIntegrationNamesKey => value is HashSet<string> set ? string.Join(";", set) : value,
         TracerSettingKeyConstants.HttpServerErrorCodesKey => value is List<int> list
                                                                  ? string.Join(",", list.Select(i => i.ToString(CultureInfo.InvariantCulture)))
                                                                  : value,

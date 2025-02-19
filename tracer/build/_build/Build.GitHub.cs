@@ -1441,7 +1441,7 @@ partial class Build
         Console.WriteLine($"Artifact download complete");
     }
 
-    static async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
+    async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
     {
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
         var artifactsFiles= new []
@@ -1455,13 +1455,28 @@ partial class Build
         EnsureExistingDirectory(destination);
 
         using var client = new HttpClient();
+
+        // download all the required artifacts that are included in the release
         foreach (var fileToDownload in artifactsFiles)
         {
-            var fileName = Path.GetFileName(fileToDownload);
-            var destinationFile = destination / fileName;
+            await DownloadArtifact(client, destination, fileToDownload);
+        }
 
-            Console.WriteLine($"Downloading {fileToDownload} to {destinationFile}...");
-            var response = await client.GetAsync(fileToDownload);
+        // Ensure that the fleet-installer artifact is available for download, for later in the release
+        // We don't actually need the file now, we just need to make sure it's available, so that we can
+        // use it in GitLab later to build the OCI image.
+        var tempDir = TempDirectory / Path.GetRandomFileName();
+        await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
+
+        return;
+
+        static async Task DownloadArtifact(HttpClient client, AbsolutePath outDir, string fileUrl)
+        {
+            var fileName = Path.GetFileName(fileUrl);
+            var destinationFile = outDir / fileName;
+
+            Console.WriteLine($"Downloading {fileUrl} to {destinationFile}...");
+            var response = await client.GetAsync(fileUrl);
 
             if (!response.IsSuccessStatusCode)
             {

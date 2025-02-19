@@ -109,7 +109,7 @@ internal partial class ProbeExpressionParser<T>
 
             if (indexOrKey.Type == typeof(string) &&
                 indexOrKey is ConstantExpression expr &&
-                Redaction.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
+                Redaction.Instance.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
             {
                 AddError($"{source?.ToString() ?? "N/A"}[{indexOrKey?.ToString() ?? "N/A"}]", "The property or field is redacted.");
                 return RedactedValue();

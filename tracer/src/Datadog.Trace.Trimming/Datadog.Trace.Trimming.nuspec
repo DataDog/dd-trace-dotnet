@@ -28,7 +28,6 @@
   <files>
     <file src="build\Datadog.Trace.Trimming.props" target="build\Datadog.Trace.Trimming.props" />
     <file src="build\Datadog.Trace.Trimming.xml" target="build\Datadog.Trace.Trimming.xml" />
-    <file src="Sdk\Sdk.props" target="Sdk\Sdk.props" />
     <file src="..\..\..\datadog-logo-256x256.png" target="datadog-logo-256x256.png" />
     <file src="README.md" target="README.md" />
   </files>
