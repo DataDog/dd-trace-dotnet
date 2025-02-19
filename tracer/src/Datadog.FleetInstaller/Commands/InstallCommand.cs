@@ -88,6 +88,12 @@ internal class InstallCommand : CommandBase
             return;
         }
 
+        if (!HasValidIIsVersion(Log.Instance, out var errorMessage))
+        {
+            commandResult.ErrorMessage = errorMessage;
+            return;
+        }
+
         var path = commandResult.GetValueForOption(_versionedPathOption);
         if (path is not null && !FileHelper.TryVerifyFilesExist(Log.Instance, new TracerValues(path), out var err))
         {

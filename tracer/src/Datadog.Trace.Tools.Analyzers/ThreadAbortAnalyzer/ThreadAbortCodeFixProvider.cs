@@ -45,26 +45,22 @@ namespace Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer
             var diagnosticSpan = diagnostic.Location.SourceSpan;
 
             // Find the while block catch declaration identified by the diagnostic.
-            var whileStatement = root.FindToken(diagnosticSpan.Start)
+            var catchClause = root.FindToken(diagnosticSpan.Start)
                 .Parent
                 .AncestorsAndSelf()
-                .OfType<WhileStatementSyntax>().First();
+                .OfType<CatchClauseSyntax>().First();
 
             // Register a code action that will invoke the fix.
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title: "Rethrow exception",
-                    createChangedDocument: c => AddThrowStatement(context.Document, whileStatement, c),
+                    createChangedDocument: c => AddThrowStatement(context.Document, catchClause, c),
                     equivalenceKey: nameof(ThreadAbortCodeFixProvider)),
                 diagnostic);
         }
 
-        private async Task<Document> AddThrowStatement(Document document, WhileStatementSyntax whileStatement, CancellationToken cancellationToken)
+        private static async Task<Document> AddThrowStatement(Document document, CatchClauseSyntax catchBlock, CancellationToken cancellationToken)
         {
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
-
-            var catchBlock = ThreadAbortSyntaxHelper.FindProblematicCatchClause(whileStatement, semanticModel);
-
             // This messes with the whitespace, but it's a PITA to get that right
             var throwStatement = SyntaxFactory.ThrowStatement();
             var statements = catchBlock.Block.Statements.Add(throwStatement);
