@@ -81,7 +81,7 @@ internal static class SecurityCoordinatorHelpers
                 var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
                 IResult? result;
-                // we need these tests for netcoreapp3.1 and lower, as otherwise it throws
+                // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
                 if (context.Features.Get<ISessionFeature>() is not null && (context.Session?.IsAvailable ?? false))
                 {
                     result = securityCoordinator.RunWaf(args, sessionId: context.Session.Id);
