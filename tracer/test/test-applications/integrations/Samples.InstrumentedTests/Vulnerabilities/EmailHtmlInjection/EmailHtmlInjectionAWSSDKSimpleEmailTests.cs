@@ -59,6 +59,21 @@ public class EmailHtmlInjectionAWSSDKSimpleEmailTests : EmailInjectionBaseTests
 #endif
 
     [Fact]
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtmlNull_ThenIsVulnerable()
+    {
+        try
+        {
+            // The constructor of AmazonSimpleEmailServiceClient makes http calls that can make the test flaky and slow
+            // We can still test the aspect with a null object
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default);
+        }
+        catch
+        {
+        }
+        AssertVulnerable();
+    }
+
+    [Fact]
     public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtml_ThenIsVulnerable()
     {
         try
@@ -113,18 +128,27 @@ public class EmailHtmlInjectionAWSSDKSimpleEmailTests : EmailInjectionBaseTests
     }
 
     [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageNotTainted_ThenIsNotVulnerable()
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageEmptyMessage_ThenIsNotVulnerable()
     {
         try
         {
-            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(false, taintedName, taintedLastName), default);
+            var sendRequest = new SendEmailRequest
+            {
+                Destination = new Destination
+                {
+                    ToAddresses = new()
+                },
+            };
+
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(sendRequest, default);
         }
         catch
         {
         }
+        AssertNotVulnerable();
     }
 
-    private SendEmailRequest BuildMailMessage(bool isHtml, string name, string lastName)
+    private static SendEmailRequest BuildMailMessage(bool isHtml, string name, string lastName)
     {
         var contentHtml = GetContent(name, lastName);
         var subject = "Welcome!";

@@ -11,20 +11,20 @@ namespace Datadog.Trace.Iast.Aspects;
 
 internal interface ISendEmailRequest
 {
-    IMessage Message { get; }
+    IMessage? Message { get; }
 }
 
 internal interface IMessage
 {
-    IBody Body { get; }
+    IBody? Body { get; }
 }
 
 internal interface IBody
 {
-    IHtml Html { get; }
+    IHtml? Html { get; }
 }
 
 internal interface IHtml
 {
-    string Data { get; }
+    string? Data { get; }
 }

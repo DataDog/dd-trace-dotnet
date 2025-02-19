@@ -899,12 +899,12 @@ internal static partial class IastModule
         {
             case EmailInjectionType.SystemNetMail:
                 var mailMessage = mail.DuckCast<IMailMessage>();
-                body = mailMessage?.Body;
-                isHtml = mailMessage?.IsBodyHtml ?? false;
+                body = mailMessage.Body;
+                isHtml = mailMessage.IsBodyHtml;
                 break;
             case EmailInjectionType.AmazonSimpleEmail:
                 var sendEmailRequest = mail.DuckCast<ISendEmailRequest>();
-                body = sendEmailRequest?.Message?.Body?.Html?.Data;
+                body = sendEmailRequest.Message?.Body?.Html?.Data;
                 isHtml = !string.IsNullOrEmpty(body);
                 break;
             default:

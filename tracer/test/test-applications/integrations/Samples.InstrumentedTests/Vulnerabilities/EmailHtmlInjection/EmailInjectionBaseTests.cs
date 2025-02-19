@@ -18,7 +18,7 @@ public class EmailInjectionBaseTests : InstrumentationTestsBase
         AddTainted(taintedLastName);
     }
 
-    protected string GetContent(string name, string lastName)
+    protected static string GetContent(string name, string lastName)
     {
         return "Hi " + name + " " + lastName + "!";
     }
