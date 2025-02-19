@@ -104,21 +104,20 @@ internal class Context : IContext
         }
     }
 
-    private bool ShouldRunWith(IDatadogSecurity security, UserEventsState.UserRecord? userRecord, string? value, string address, bool fromSdk)
+    private bool ShouldRunWith(IDatadogSecurity security, UserEventsState.UserRecord? previousUserRecord, string? value, string address, bool fromSdk)
     {
         if (value is null || !security.AddressEnabled(address))
         {
             return false;
         }
 
-        string? previousValue = null;
-        var previousValueFromSdk = false;
-        if (userRecord.HasValue)
+        if (!previousUserRecord.HasValue)
         {
-            previousValue = userRecord.Value.Value;
-            previousValueFromSdk = userRecord.Value.FromSdk;
+            return true;
         }
 
+        var previousValue = previousUserRecord.Value.Value;
+        var previousValueFromSdk = previousUserRecord.Value.FromSdk;
         var differentValue = string.Compare(previousValue, value, StringComparison.OrdinalIgnoreCase) is not 0;
         return differentValue && (fromSdk || !previousValueFromSdk);
     }
