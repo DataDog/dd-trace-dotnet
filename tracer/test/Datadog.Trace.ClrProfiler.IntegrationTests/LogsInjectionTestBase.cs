@@ -124,16 +124,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
-                    List<string> traceIds = new List<string>();
+                    var traceIds = new List<string>();
                     if (use128Bits)
                     {
-                        // dumb but simple way of reassembling 128 bit trace ids
-                        // we first collect all spans that have a propagated trace id upper
-                        // we build a dictionary of {upper: lower} trace ids
-                        // then we go back through the spans and reassemble the 128 bit trace id
-                        // there isn't a clean way of getting the 128-bit id from the MockSpan
-                        // This could be converted to a LINQ query but...
-                        var lowerUpper = new Dictionary<string, string>();
                         foreach (var span in spans)
                         {
                             var lower = span.TraceId.ToString("x16");
@@ -141,27 +134,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             if (string.IsNullOrEmpty(upper))
                             {
                                 continue;
-                            }
-
-                            if (lowerUpper.ContainsKey(lower))
-                            {
-                                continue;
-                            }
-                            else
-                            {
-                                lowerUpper.Add(lower, upper);
-                            }
-                        }
-
-                        // reassemble 128 bit
-                        foreach (var span in spans)
-                        {
-                            var lower = span.TraceId.ToString("x16");
-                            var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
-
-                            if (string.IsNullOrEmpty(upper))
-                            {
-                                upper = lowerUpper[lower];
                             }
 
                             var combined = upper + lower;
