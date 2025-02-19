@@ -72,7 +72,14 @@ namespace Samples.CosmosDb
                 { 
                     ApplicationName = "CosmosDBDotnetQuickstart", 
                     RequestTimeout = TimeSpan.FromMinutes(10),
-                    OpenTcpConnectionTimeout = TimeSpan.FromMinutes(1),
+                    // the docker container has a cert, we just ignore it, it isn't important
+                    // the docs say to do this!
+                    HttpClientFactory = () => new HttpClient(new HttpClientHandler()
+                    {
+                        // refer to the warning: https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-develop-emulator?tabs=docker-linux%2Ccsharp&pivots=api-nosql#connect-to-the-emulator-from-the-sdk
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    }),
+                    ConnectionMode = ConnectionMode.Gateway // necessary due to above or we don't get DB spans and just HTTP requests(?) (also in the docs)
                 };
 
             cosmosClient = new CosmosClient(EndpointUri, PrimaryKey, clientOptions);
