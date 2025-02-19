@@ -146,7 +146,7 @@ internal class SchemaExtractor
                 return _computedHash;
             }
 
-            if (!_schemas.ContainsKey(descriptor.Name))
+            if (!_schemas.ContainsKey(descriptor.FullName))
             {
                 var schema = new OpenApiSchema { Type = "object" };
                 _schemas.Add(descriptor.FullName, schema);
