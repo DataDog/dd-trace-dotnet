@@ -47,7 +47,7 @@ namespace Datadog.Trace.Configuration
         {
         }
 
-        internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string filename)
+        internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string? filename)
             : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
         {
             JsonConfigurationFilePath = filename;
