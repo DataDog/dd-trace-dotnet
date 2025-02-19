@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -20,7 +22,7 @@ internal class TraceExporter : SafeHandle, IApi
 
     public TraceExporter(
         TraceExporterConfiguration configuration,
-        IDatadogLogger log = null)
+        IDatadogLogger? log = null)
         : base(IntPtr.Zero, true)
     {
         _log = log ?? StaticLog;
