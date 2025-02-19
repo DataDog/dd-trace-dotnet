@@ -602,9 +602,16 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-            if (source is CompositeConfigurationSource sourceJson)
+            if (source is CompositeConfigurationSource compositeSource)
             {
-                this.JsonConfigurationFilePath = sourceJson.JsonConfigurationFilePath;
+                foreach (var nestedSource in compositeSource)
+                {
+                    if (nestedSource is JsonConfigurationSource { JsonConfigurationFilePath: { } jsonFilePath }
+                     && !string.IsNullOrEmpty(jsonFilePath))
+                    {
+                        JsonConfigurationFilePaths.Add(jsonFilePath);
+                    }
+                }
             }
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
