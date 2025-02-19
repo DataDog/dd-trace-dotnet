@@ -255,7 +255,6 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 }
             }
 
-            // TODO see this cannot happen inside libdatadog instead of here
             auto relativeAddress = currentFrame.ip - currentFrame.moduleAddress;
             CHECK_RESULT(ddog_crasht_StackFrame_with_ip(&frame, currentFrame.ip));
             CHECK_RESULT(ddog_crasht_StackFrame_with_sp(&frame, currentFrame.sp));

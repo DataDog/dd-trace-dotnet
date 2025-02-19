@@ -232,7 +232,10 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                         }
                         ddog_StringWrapper_drop(&demangleResult.ok);
                     }
-                    // TODO free memory for error
+                    else
+                    {
+                        SetLastError(demangleResult.err);
+                    }
                 }
             }
 
