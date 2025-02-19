@@ -1,9 +1,8 @@
-// <copyright file="TestMethodRunnerExecuteIntegration.cs" company="Datadog">
+// <copyright file="TestMethodRunnerExecuteIntegration3_8.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
-
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -20,13 +19,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
     MethodName = "Execute",
-    ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
+    ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class TestMethodRunnerExecuteIntegration
+// ReSharper disable once InconsistentNaming
+public static class TestMethodRunnerExecuteIntegration3_8
 {
     /// <summary>
     /// OnMethodEnd callback
@@ -48,23 +48,23 @@ public static class TestMethodRunnerExecuteIntegration
 
         if (returnValue is IList { Count: > 0 } lstResults)
         {
-            foreach (var unitTestResultObject in lstResults)
+            foreach (var testResultObject in lstResults)
             {
-                if (unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
+                if (testResultObject.TryDuckCast<TestResultStruct3_8>(out var testResult))
                 {
-                    if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive)
+                    if (testResult.Outcome is UnitTestOutcome.Inconclusive)
                     {
                         if (instance.TestMethodInfo is not null && !MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
                         {
                             // This instrumentation catches all tests being ignored
                             MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false)?
-                               .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                               .Close(TestStatus.Skip, TimeSpan.Zero, testResult.IgnoreReason);
                         }
                     }
                 }
                 else
                 {
-                    Common.Log.Warning("Result cannot be duck casted to UnitTestResultStruct.");
+                    Common.Log.Warning("Result cannot be duck casted to TestResultStruct.");
                 }
             }
         }

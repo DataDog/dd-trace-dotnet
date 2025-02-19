@@ -9560,6 +9560,28 @@
     "IntegrationName": "MsTestV2",
     "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
+    "TargetMethodName": "get_AssemblyCleanupMethod",
+    "TargetReturnType": "_",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoGetAssemblyCleanupMethodIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
     "TargetMethodName": "RunAssemblyCleanup",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [],
@@ -9698,6 +9720,28 @@
     "IntegrationName": "MsTestV2",
     "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration3_8",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
     "TargetMethodName": "ExecuteTest",
     "TargetReturnType": "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
     "TargetParameterTypes": [
@@ -9787,6 +9831,58 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+    "TargetMethodName": "RunSingleTest",
+    "TargetReturnType": "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"
+    ],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration3_8",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+    "TargetMethodName": "RunSingleTestAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+      "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"
+    ],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegration3_8",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

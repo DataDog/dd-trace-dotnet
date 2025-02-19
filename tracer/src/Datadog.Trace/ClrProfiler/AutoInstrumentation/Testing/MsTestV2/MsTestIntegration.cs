@@ -59,7 +59,9 @@ internal static class MsTestIntegration
         ["82f48315-774a-4e06-afb3-f1f684eca38d"] = "3.2.2",
         ["82c42f21-febe-4eb2-80ad-8e793eabd8f2"] = "3.3.0",
         ["139449f1-8ab4-46b1-bf76-1a0e70ed75c7"] = "3.3.1",
-        ["f5fedf4d-dd4d-4086-956b-a288dfe47482"] = "3.6.0"
+        ["f5fedf4d-dd4d-4086-956b-a288dfe47482"] = "3.6.0",
+        ["b754cc51-34ed-419c-8582-bff04c3db05f"] = "3.8.0",
+        ["2b3d62e3-5607-4ebd-840e-ee80475cc0bc"] = "3.8.1",
     };
 
     private static long _totalTestCases;
