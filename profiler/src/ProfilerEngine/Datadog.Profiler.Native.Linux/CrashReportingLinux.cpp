@@ -132,7 +132,7 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        auto buildId = ElfBuildId(path.data());
+        auto buildId = BuildId::From(path.data());
         modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), std::move(buildId) });
     }
 
@@ -222,15 +222,19 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
                     auto demangleResult = ddog_crasht_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_CRASHT_DEMANGLE_OPTIONS_COMPLETE);
 
-                    if (demangleResult.tag == DDOG_CRASHT_STRING_WRAPPER_RESULT_OK)
+                    if (demangleResult.tag == DDOG_STRING_WRAPPER_RESULT_OK)
                     {
-                        // TODO: There is currently no safe way to free the StringWrapper
                         auto stringWrapper = demangleResult.ok;
 
                         if (stringWrapper.message.len > 0)
                         {
                             stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
                         }
+                        ddog_StringWrapper_drop(&demangleResult.ok);
+                    }
+                    else
+                    {
+                        SetLastError(demangleResult.err);
                     }
                 }
             }
