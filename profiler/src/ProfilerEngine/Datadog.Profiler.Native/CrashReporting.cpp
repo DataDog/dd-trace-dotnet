@@ -312,21 +312,12 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 
     for (int32_t i = 0; i < tagCount; i++)
     {
-        auto tag = tags[i];
-        auto result = ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value));
-        if (result.tag != DDOG_VEC_TAG_PUSH_RESULT_OK)
-        {
-            // Let's not stop right here.
-            ddog_Error_drop(&result.err);
-        }
+        auto const& tag = tags[i];
+        CHECK_RESULT(ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value)));
     }
 
-    auto result = ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice("severity"), libdatadog::to_char_slice("crash"));
-    if (result.tag != DDOG_VEC_TAG_PUSH_RESULT_OK)
-    {
-        // Let's not stop right here.
-        ddog_Error_drop(&result.err);
-    }
+    CHECK_RESULT(ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice("severity"), libdatadog::to_char_slice("crash")));
+
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_metadata(&_builder, metadata));
 
     ddog_Vec_Tag_drop(vecTags);

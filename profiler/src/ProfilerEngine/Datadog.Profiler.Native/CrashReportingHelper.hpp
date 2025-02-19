@@ -35,6 +35,10 @@ bool Succeeded(T value)
     {
         return value == DDOG_CRASHT_CRASH_INFO_NEW_RESULT_OK;
     }
+    else if constexpr (std::is_same_v<T, ddog_Vec_Tag_PushResult_Tag>)
+    {
+        return value == DDOG_VEC_TAG_PUSH_RESULT_OK;
+    }
     else
     {
         static_assert(always_false<T>::value, "unknwn type");
