@@ -33,6 +33,17 @@ namespace Datadog.Trace.Debugger
         {
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
+
+            var tracerManager = TracerManager.Instance;
+            try
+            {
+                DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracerManager.Settings.ServiceName ?? tracerManager.DefaultServiceName);
+            }
+            catch (Exception e)
+            {
+                DynamicInstrumentationHelper.ServiceName = tracerManager.DefaultServiceName;
+                Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
+            }
         }
 
         internal static DebuggerManager Instance
