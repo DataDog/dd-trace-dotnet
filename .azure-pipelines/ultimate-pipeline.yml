@@ -306,6 +306,10 @@ stages:
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
 
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
+      displayName: Upload Datadog.Trace.Manual.dll for external CI
+      artifact: Datadog.Trace.Manual.dll
+
     - publish: artifacts/build_data/tests
       displayName: publish tracer and native loader test results
       artifact: build_windows_tracer_unit_tests_results_$(System.JobAttempt)
