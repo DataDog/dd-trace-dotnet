@@ -35,8 +35,6 @@ namespace Datadog.Trace.Configuration
             _sources = [..sources];
         }
 
-        internal string? JsonConfigurationFilePath { get; set; }
-
         /// <summary>
         /// Adds a new configuration source to this instance.
         /// </summary>
@@ -46,10 +44,6 @@ namespace Datadog.Trace.Configuration
             if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
-            if (source is JsonConfigurationSource jsonSource)
-            {
-                JsonConfigurationFilePath = jsonSource.JsonConfigurationFilePath;
-            }
         }
 
         /// <summary>

@@ -1108,7 +1108,7 @@ namespace Datadog.Trace.Configuration
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
 
-        internal string? JsonConfigurationFilePath { get; }
+        internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
