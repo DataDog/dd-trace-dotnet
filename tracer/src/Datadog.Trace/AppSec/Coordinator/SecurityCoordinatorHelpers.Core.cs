@@ -82,7 +82,7 @@ internal static class SecurityCoordinatorHelpers
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
                 IResult? result;
                 // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
-                if (context.Features.Get<ISessionFeature>() is { } feature && (feature.Session?.IsAvailable ?? false))
+                if (context.Features.Get<ISessionFeature>() is { Session.IsAvailable: true } feature)
                 {
                     result = securityCoordinator.RunWaf(args, sessionId: feature.Session.Id);
                 }
