@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.Handlers;
@@ -202,6 +203,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span context dictionary by consulting DistributedTracer.Instance
         /// </summary>
+        [MaybeNull]
         internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
 
         /// <summary>
