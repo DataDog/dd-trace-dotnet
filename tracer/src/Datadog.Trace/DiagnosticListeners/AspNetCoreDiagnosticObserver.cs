@@ -564,7 +564,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.HttpRoute = normalizedRoute;
                 }
 
-                CurrentSecurity.CheckPathParams(httpContext, rootSpan, routeValues);
+                CurrentSecurity.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
 
                 if (CurrentIast.Settings.Enabled)
                 {
