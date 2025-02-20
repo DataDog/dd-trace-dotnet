@@ -4,63 +4,25 @@
 // </copyright>
 
 #nullable enable
-
-using System;
-using System.Threading;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
-internal class Helper
+internal static class Helper
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Helper>();
-
-    private static readonly Lazy<IDescriptorReflectionProxy?> DescriptorReflectionProxy = new(
-        () =>
-        {
-            // prepare incantations to access the static property DescriptorReflection.Descriptor
-            var staticType = Type.GetType("Google.Protobuf.Reflection.DescriptorReflection,Google.Protobuf");
-            if (staticType == null)
-            {
-                return null;
-            }
-
-            var proxyType = typeof(IDescriptorReflectionProxy);
-
-            var proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
-            if (!proxyResult.Success)
-            {
-                Log.Warning("Cannot create proxy for type Google.Protobuf.Reflection.DescriptorReflection, protobuf instrumentation may malfunction.");
-                return null;
-            }
-
-            return (IDescriptorReflectionProxy)proxyResult.CreateInstance(null!);
-        });
-
-    public interface IDescriptorReflectionProxy
+    /// <typeparam name="TMessage">needs to be the raw type (not a DuckType)</typeparam>
+    public static void DisableInstrumentationIfInternalProtobufType<TMessage>()
     {
-        object? Descriptor { get; } // this is actually a static property
-    }
-
-    public static bool TryGetDescriptor(IMessageProxy messageProxy, out MessageDescriptorProxy? descriptor)
-    {
-        descriptor = null;
-        if (messageProxy.Instance is null)
+        var typeName = typeof(TMessage).FullName;
+        if (typeName != null && typeName.StartsWith("Google.Protobuf."))
         {
-            return false;
+            // Google uses protobuf internally in the protobuf library, we don't want to capture those.
+            // We disable the integrations once and for all here.
+            IntegrationOptions<MessageWriteToIntegration, TMessage>.DisableIntegration();
+            IntegrationOptions<MessageMergeFromIntegration, TMessage>.DisableIntegration();
+            IntegrationOptions<BufferMessageInternalWriteToIntegration, TMessage>.DisableIntegration();
+            IntegrationOptions<BufferMessageInternalMergeFromIntegration, TMessage>.DisableIntegration();
         }
-
-        // some public functions that we are instrumenting are also called internally by protobuf,
-        // and there is one case where trying to access the descriptor at that point results in a nullref
-        // because it relies on this property. We check it here to make sure we're not going to generate an exception by accessing it.
-        if (DescriptorReflectionProxy.Value?.Descriptor == null)
-        {
-            return false;
-        }
-
-        // now we know it's safe to access the Descriptor property on the message
-        descriptor = messageProxy.Descriptor;
-        return true;
     }
 }
