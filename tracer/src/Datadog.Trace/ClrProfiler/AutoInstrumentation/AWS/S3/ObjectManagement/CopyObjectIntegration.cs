@@ -6,6 +6,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
@@ -39,11 +40,20 @@ public class CopyObjectIntegration
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.DestinationBucketName, request.DestinationObjectKey);
 
-        return new CallTargetState(scope);
+        return new CallTargetState(scope, request);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        where TReturn : ICopyObjectResponse
     {
+        if (state.Scope is not null && state.State is ICopyObjectRequest request && returnValue is not null)
+        {
+            var bucketName = request.DestinationBucketName;
+            var key = request.DestinationObjectKey;
+            var eTag = returnValue.ETag;
+            SpanPointers.AddS3SpanPointer(state.Scope.Span, bucketName, key, eTag);
+        }
+
         state.Scope.DisposeWithException(exception);
         return new CallTargetReturn<TReturn?>(returnValue);
     }
