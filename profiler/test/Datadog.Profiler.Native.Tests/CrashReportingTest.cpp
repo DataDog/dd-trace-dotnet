@@ -5,6 +5,7 @@
 
 #include "resource.h"
 #include "gtest/gtest.h"
+#include <string_view>
 #include <windows.h>
 #include <vector>
 #include <iostream>
@@ -98,21 +99,17 @@ TEST(CrashReportingTest, ExtractPdbSignaturePE32)
     auto decoded_data = LoadEmbeddedDll(IDR_DATADOG_TRACE_MANUAL); // Datadog.Trace.Manual.dll v3.3.1
     ASSERT_GT(decoded_data.size(), 0);
 
-    const wchar_t* expectedPdbGuid = L"{C11BDBD6-7F76-4D72-849D-12DDB8E49E3F}";
-    GUID expectedPdbSignature;
-    auto hr = CLSIDFromString(expectedPdbGuid, &expectedPdbSignature);
-    ASSERT_EQ(hr, S_OK);
-
     ModuleInfo moduleInfo{};
 
     CrashReportingWindows crashReporting(0);
     crashReporting.SetMemoryReader(ReadInProcessMemory);
-    bool result = crashReporting.FillPdbInfo((uintptr_t)decoded_data.data(), moduleInfo);
+    auto buildId = crashReporting.ExtractBuildId((uintptr_t)decoded_data.data());
 
-    ASSERT_TRUE(result);
-    ASSERT_TRUE(moduleInfo.hasPdbInfo);
-    ASSERT_EQ(moduleInfo.pdbSig, expectedPdbSignature);
-    ASSERT_EQ(moduleInfo.pdbAge, 1);
+    std::string_view buildIdStr = buildId;
+    // Pdb signature C11BDBD67F764D72849D12DDB8E49E3F
+    // Age           1
+    //                                  |        Pdb signature          |Age|
+    ASSERT_STRCASEEQ(buildIdStr.data(), "C11BDBD67F764D72849D12DDB8E49E3F1");
 }
 
 TEST(CrashReportingTest, ExtractPdbSignaturePE64)
@@ -120,21 +117,18 @@ TEST(CrashReportingTest, ExtractPdbSignaturePE64)
     auto decoded_data = LoadEmbeddedDll(IDR_SFC); // sfc.dll v10.0.19041.4842
     ASSERT_GT(decoded_data.size(), 0);
 
-    const wchar_t* expectedPdbGuid = L"{C465AFCD-BDBC-58A0-1009-95839A0E4C27}";
-    GUID expectedPdbSignature;
-    auto hr = CLSIDFromString(expectedPdbGuid, &expectedPdbSignature);
-    ASSERT_EQ(hr, S_OK);
-
     ModuleInfo moduleInfo{};
 
     CrashReportingWindows crashReporting(0);
     crashReporting.SetMemoryReader(ReadInProcessMemory);
-    bool result = crashReporting.FillPdbInfo((uintptr_t)decoded_data.data(), moduleInfo);
+    auto buildId = crashReporting.ExtractBuildId((uintptr_t)decoded_data.data());
 
-    ASSERT_TRUE(result);
-    ASSERT_TRUE(moduleInfo.hasPdbInfo);
-    ASSERT_EQ(moduleInfo.pdbSig, expectedPdbSignature);
-    ASSERT_EQ(moduleInfo.pdbAge, 1);
+    std::string_view buildIdStr = buildId;
+    
+    // Pdb signature C465AFCDBDBC58A0100995839A0E4C27
+    // Age           1
+    //                                  |        Pdb signature          |Age|
+    ASSERT_STRCASEEQ(buildIdStr.data(), "C465AFCDBDBC58A0100995839A0E4C271");
 }
 
 #endif

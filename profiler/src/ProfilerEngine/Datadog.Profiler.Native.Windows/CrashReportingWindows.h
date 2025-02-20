@@ -11,9 +11,7 @@ struct ModuleInfo
     uintptr_t startAddress;
     uintptr_t endAddress;
     std::string path;
-    bool hasPdbInfo;
-    DWORD pdbAge;
-    GUID pdbSig;
+    BuildId buildId;
 };
 
 // PE32 and PE64 have different optional headers, which complexify the logic to fetch them
@@ -35,7 +33,7 @@ public:
 
     int32_t STDMETHODCALLTYPE Initialize() override;
 
-    bool FillPdbInfo(uintptr_t baseAddress, ModuleInfo& moduleInfo);
+    BuildId ExtractBuildId(uintptr_t baseAddress);
 
     void SetMemoryReader(std::function<std::vector<BYTE>(uintptr_t, SIZE_T)> readMemory);
 

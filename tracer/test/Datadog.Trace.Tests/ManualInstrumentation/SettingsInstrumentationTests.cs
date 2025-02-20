@@ -85,7 +85,7 @@ public class SettingsInstrumentationTests
             AnalyticsEnabled = true,
             CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
             DiagnosticSourceEnabled = true,
-            DisabledIntegrationNames = ["something"],
+            DisabledIntegrationNames = ["something", nameof(IntegrationId.Kafka)],
             Environment = "my-test-env",
             GlobalSamplingRate = 0.5,
             GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
@@ -170,7 +170,7 @@ public class SettingsInstrumentationTests
             AnalyticsEnabled = true,
             CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
             DiagnosticSourceEnabled = true,
-            DisabledIntegrationNames = ["something"],
+            DisabledIntegrationNames = ["something", nameof(IntegrationId.Kafka)],
             Environment = "my-test-env",
             GlobalSamplingRate = 0.5,
             GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
@@ -210,6 +210,12 @@ public class SettingsInstrumentationTests
         automatic.ServiceNameMappings.Should().Equal(mappings);
         automatic.HttpClientErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
         automatic.HttpServerErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
+
+        automatic.Integrations[IntegrationId.OpenTelemetry].Enabled.Should().BeFalse();
+        automatic.Integrations[IntegrationId.Kafka].Enabled.Should().BeFalse();
+        automatic.Integrations[IntegrationId.Aerospike].Enabled.Should().BeFalse();
+        automatic.Integrations[IntegrationId.Grpc].AnalyticsEnabled.Should().BeTrue();
+        automatic.Integrations[IntegrationId.Couchbase].AnalyticsSampleRate.Should().Be(0.5);
     }
 
     [Fact]
@@ -240,6 +246,12 @@ public class SettingsInstrumentationTests
         manual.StatsComputationEnabled.Should().Be(automatic.StatsComputationEnabled);
         manual.TraceEnabled.Should().Be(automatic.TraceEnabled);
         manual.TracerMetricsEnabled.Should().Be(automatic.TracerMetricsEnabled);
+
+        manual.Integrations[nameof(IntegrationId.OpenTelemetry)].Enabled.Should().BeFalse();
+        manual.Integrations[nameof(IntegrationId.Kafka)].Enabled.Should().BeFalse();
+        manual.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().BeFalse();
+        manual.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().BeTrue();
+        manual.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);
     }
 
     private static void AssertEquivalent(ManualSettings manual, TracerSettings automatic)
@@ -254,7 +266,11 @@ public class SettingsInstrumentationTests
         manual.Environment.Should().Be(automatic.Environment);
         manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
         manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
-        manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
+        // These _aren't_ necessarily equivalent because of DisabledIntegrations.
+        // If you add an integration to the manual.DisabledIntegrations, then the automatic.Integrations
+        // will include it, but the original manual.Integrations _won't_. All a bit of a mess, but
+        // essentially due to the legacy design of the TracerSettings object
+        // manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
         manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.KafkaCreateConsumerScopeEnabled);
         manual.LogsInjectionEnabled.Should().Be(automatic.LogsInjectionEnabled);
         manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MaxTracesSubmittedPerSecond);
@@ -305,7 +321,7 @@ public class SettingsInstrumentationTests
             { ConfigurationKeys.GlobalAnalyticsEnabled, true },
             { ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""" },
             { ConfigurationKeys.DiagnosticSourceEnabled, true },
-            { ConfigurationKeys.DisabledIntegrations, "something;OpenTelemetry" },
+            { ConfigurationKeys.DisabledIntegrations, $"something;OpenTelemetry;{nameof(IntegrationId.Kafka)}" },
             { ConfigurationKeys.Environment, "my-test-env" },
             { ConfigurationKeys.GlobalSamplingRate, 0.5 },
             { ConfigurationKeys.GlobalTags, "tag1:value" },
@@ -330,7 +346,7 @@ public class SettingsInstrumentationTests
         automatic.AnalyticsEnabled.Should().Be(true);
         automatic.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
         automatic.DiagnosticSourceEnabled.Should().Be(true);
-        automatic.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry"]);
+        automatic.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry", "Kafka"]);
         automatic.Environment.Should().Be("my-test-env");
         automatic.GlobalSamplingRate.Should().Be(0.5);
         automatic.GlobalTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "tag1", "value" } });
@@ -349,6 +365,7 @@ public class SettingsInstrumentationTests
         automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().Be(false);
         automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().Be(true);
         automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);
+        automatic.Integrations[nameof(IntegrationId.Kafka)].Enabled.Should().BeFalse();
 
         return automatic;
     }

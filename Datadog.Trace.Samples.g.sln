@@ -427,6 +427,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.EventBridge", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoadContextResolve", "tracer\test\test-applications\regression\AssemblyLoadContextResolve\AssemblyLoadContextResolve.csproj", "{8B1AF6A7-DD41-4347-B637-90C23D69B50E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.StepFunctions", "tracer\test\test-applications\integrations\Samples.AWS.StepFunctions\Samples.AWS.StepFunctions.csproj", "{882A255B-94EC-4947-96F1-F565EBD8F8FD}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.SdkV1", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.SdkV1\Samples.AzureFunctions.V4Isolated.SdkV1.csproj", "{18767A3E-9ADC-485C-A8C7-50660D5B579D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1\Samples.AzureFunctions.V4Isolated.AspNetCore.SdkV1.csproj", "{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C}"
@@ -1033,6 +1035,10 @@ Global
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1226,6 +1232,7 @@ Global
 		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{D6155F26-8245-4B66-8944-79C3DF9F9DA3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5D2C6B9C-FCE2-4E46-B4ED-BC3B11CFBB3C} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{0F8EAB52-0C5B-4F60-92C5-42FAC21F4E77} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
