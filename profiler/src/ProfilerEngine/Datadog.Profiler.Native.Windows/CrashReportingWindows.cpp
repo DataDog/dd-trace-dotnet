@@ -171,9 +171,7 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             if (module != nullptr)
             {
                 stackFrame.moduleAddress = module->startAddress;
-                stackFrame.hasPdbInfo = module->hasPdbInfo;
-                stackFrame.pdbAge = module->pdbAge;
-                stackFrame.pdbSig = module->pdbSig;
+                stackFrame.buildId = module->buildId;
 
                 std::ostringstream methodName;
                 methodName << module->path << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - module->startAddress);
@@ -233,10 +231,9 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
                     resolvedModuleName = moduleName;
                 }
 
-                ModuleInfo module{ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, std::move(resolvedModuleName), false, 0, 0 };
+                auto buildId = ExtractBuildId((uintptr_t)moduleInfo.lpBaseOfDll);
 
-                FillPdbInfo((uintptr_t)moduleInfo.lpBaseOfDll, module);
-
+                ModuleInfo module{(uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, std::move(resolvedModuleName), std::move(buildId)};
                 modules.push_back(std::move(module));
             }
         }
@@ -271,20 +268,20 @@ std::vector<BYTE> CrashReportingWindows::ReadRemoteMemory(HANDLE process, uintpt
     return {};
 }
 
-bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& moduleInfo)
+BuildId CrashReportingWindows::ExtractBuildId(uintptr_t baseAddress)
 {
     // Read the DOS header
     auto dosHeaderBuffer = _readMemory(baseAddress, sizeof(IMAGE_DOS_HEADER));
     if (dosHeaderBuffer.empty())
     {
-        return false;
+        return {};
     }
 
     auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(dosHeaderBuffer.data());
 
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
     {
-        return false;
+        return {};
     }
 
     // Read the NT headers
@@ -292,14 +289,14 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
     auto ntHeadersBuffer = _readMemory(ntHeadersAddress, sizeof(IMAGE_NT_HEADERS_GENERIC));
     if (ntHeadersBuffer.empty())
     {
-        return false;
+        return {};
     }
 
     auto ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS_GENERIC*>(ntHeadersBuffer.data());
 
     if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
     {
-        return false;
+        return {};
     }
 
     // Check the PE type
@@ -308,7 +305,7 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
 
     if (!isPE32 && !isPE64)
     {
-        return false;
+        return {};
     }
 
     // Read the debug directory according to the PE type
@@ -319,7 +316,7 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
         auto header32Buffer = _readMemory(ntHeadersAddress, sizeof(IMAGE_NT_HEADERS32));
         if (header32Buffer.empty())
         {
-            return false;
+            return {};
         }
 
         auto header32 = reinterpret_cast<IMAGE_NT_HEADERS32*>(header32Buffer.data());
@@ -330,7 +327,7 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
         auto header64Buffer = _readMemory(ntHeadersAddress, sizeof(IMAGE_NT_HEADERS64));
         if (header64Buffer.empty())
         {
-            return false;
+            return {};
         }
 
         auto header64 = reinterpret_cast<IMAGE_NT_HEADERS64*>(header64Buffer.data());
@@ -340,13 +337,13 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
     uintptr_t debugDirectoryAddress = baseAddress + debugDataDir.VirtualAddress;
     if (debugDirectoryAddress == 0)
     {
-        return false;
+        return {};
     }
 
     auto debugDirectoryBuffer = _readMemory(debugDirectoryAddress, debugDataDir.Size);
     if (debugDirectoryBuffer.empty())
     {
-        return false;
+        return {};
     }
 
     auto debugDirectory = reinterpret_cast<PIMAGE_DEBUG_DIRECTORY>(debugDirectoryBuffer.data());
@@ -367,10 +364,10 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
             // Extract the PDB info from the codeview entry
             auto pdbInfoAddress = baseAddress + debugDirectory[i].AddressOfRawData;
             auto pdbInfoBuffer = _readMemory(pdbInfoAddress, sizeof(CV_INFO_PDB70));
-            
+
             if (pdbInfoBuffer.empty())
             {
-                return false;
+                return {};
             }
 
             auto pdbInfo = reinterpret_cast<CV_INFO_PDB70*>(pdbInfoBuffer.data());
@@ -379,16 +376,12 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
 
             if (pdbInfo->Signature == PDB70_SIGNATURE)
             {
-                moduleInfo.pdbAge = pdbInfo->Age;
-                moduleInfo.pdbSig = pdbInfo->Guid;
-                moduleInfo.hasPdbInfo = true;
-
-                return true;
+                return BuildId::From(pdbInfo->Guid, pdbInfo->Age);
             }
         }
     }
 
-    return false;
+    return {};
 }
 
 void CrashReportingWindows::SetMemoryReader(std::function<std::vector<BYTE>(uintptr_t, SIZE_T)> readMemory)
