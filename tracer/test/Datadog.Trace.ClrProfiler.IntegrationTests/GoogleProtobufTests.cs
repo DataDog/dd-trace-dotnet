@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
@@ -42,6 +43,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task TagTraces(string metadataSchemaVersion)
     {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, $"{TestPrefix}"))
@@ -67,6 +69,23 @@ public class GoogleProtobufTests : TracingIntegrationTest
                                        .ThenBy(x => x.Duration))
                               .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix();
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    public async Task OnlyEnabledWithDsm()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
+        using var telemetry = this.ConfigureTelemetry();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using (await RunSampleAndWaitForExit(agent, $"{TestPrefix}"))
+        {
+            var spans = agent.WaitForSpans(2);
+            foreach (var span in spans)
+            {
+                span.Tags.Should().NotContain(t => t.Key.StartsWith("schema."));
+            }
         }
     }
 }
