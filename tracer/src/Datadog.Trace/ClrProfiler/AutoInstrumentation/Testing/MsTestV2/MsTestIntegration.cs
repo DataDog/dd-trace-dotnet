@@ -165,14 +165,14 @@ internal static class MsTestIntegration
         }
     }
 
-    private static Dictionary<string, List<string>>? GetTraits(MethodInfo? methodInfo)
+    private static Dictionary<string, List<string>?>? GetTraits(MethodInfo? methodInfo)
     {
         if (methodInfo is null)
         {
             return null;
         }
 
-        Dictionary<string, List<string>>? testProperties = null;
+        Dictionary<string, List<string>?>? testProperties = null;
         try
         {
             var testAttributes = methodInfo.GetCustomAttributes(true);
@@ -183,7 +183,7 @@ internal static class MsTestIntegration
 
                 if (tAttrName == "TestCategoryAttribute")
                 {
-                    testProperties ??= new Dictionary<string, List<string>>();
+                    testProperties ??= new Dictionary<string, List<string>?>();
                     if (!testProperties.TryGetValue("Category", out var categoryList))
                     {
                         categoryList = [];
@@ -192,13 +192,13 @@ internal static class MsTestIntegration
 
                     if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
                     {
-                        categoryList.AddRange(tattrStruct.TestCategories ?? []);
+                        categoryList?.AddRange(tattrStruct.TestCategories ?? []);
                     }
                 }
 
                 if (tAttrName == "TestPropertyAttribute")
                 {
-                    testProperties ??= new Dictionary<string, List<string>>();
+                    testProperties ??= new Dictionary<string, List<string>?>();
                     if (tattr.TryDuckCast<TestPropertyAttributeStruct>(out var tattrStruct) && tattrStruct.Name != null)
                     {
                         if (!testProperties.TryGetValue(tattrStruct.Name, out var propertyList))
@@ -207,7 +207,7 @@ internal static class MsTestIntegration
                             testProperties[tattrStruct.Name] = propertyList;
                         }
 
-                        propertyList.Add(tattrStruct.Value ?? "(empty)");
+                        propertyList?.Add(tattrStruct.Value ?? "(empty)");
                     }
                 }
             }
@@ -220,7 +220,7 @@ internal static class MsTestIntegration
                     var tAttrName = tattr.GetType().Name;
                     if (tAttrName == "TestCategoryAttribute")
                     {
-                        testProperties ??= new Dictionary<string, List<string>>();
+                        testProperties ??= new Dictionary<string, List<string>?>();
                         if (!testProperties.TryGetValue("Category", out var categoryList))
                         {
                             categoryList = [];
@@ -229,7 +229,7 @@ internal static class MsTestIntegration
 
                         if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct) && tattrStruct.TestCategories != null)
                         {
-                            categoryList.AddRange(tattrStruct.TestCategories);
+                            categoryList?.AddRange(tattrStruct.TestCategories);
                         }
                     }
                 }
@@ -243,7 +243,7 @@ internal static class MsTestIntegration
         return testProperties;
     }
 
-    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
+    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
         where TTestMethod : ITestMethod
     {
         isUnskippable = false;

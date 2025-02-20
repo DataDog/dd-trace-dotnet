@@ -42,7 +42,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// _waf locker needs to have a longer lifecycle than the Waf object as it's used to dispose it as well
         /// </summary>
-        private readonly Concurrency.ReaderWriterLock _wafLocker;
+        private readonly Concurrency.ReaderWriterLock _activeAddressesLocker;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -61,7 +61,7 @@ namespace Datadog.Trace.AppSec
         public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null, ConfigurationState? configurationState = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
-            _wafLocker = new Concurrency.ReaderWriterLock();
+            _activeAddressesLocker = new Concurrency.ReaderWriterLock();
 
             try
             {
@@ -482,7 +482,7 @@ namespace Datadog.Trace.AppSec
         {
             _waf?.Dispose();
             Encoder.Pool.Dispose();
-            _wafLocker.Dispose();
+            _activeAddressesLocker.Dispose();
         }
 
         private void SetRemoteConfigCapabilites()
@@ -630,38 +630,53 @@ namespace Datadog.Trace.AppSec
             return _spanMetaStructs;
         }
 
-        internal void UpdateActiveAddresses()
+        private void UpdateActiveAddresses()
         {
-            // So far, RASP is the only one that uses this
-            if (_settings.RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
+            if (_waf?.IsKnowAddressesSuported() is true)
             {
                 var addresses = _waf.GetKnownAddresses();
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
-                _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                try
+                {
+                    _activeAddressesLocker.EnterWriteLock();
+                    _activeAddresses = [..addresses];
+                }
+                finally
+                {
+                    _activeAddressesLocker.ExitWriteLock();
+                }
             }
             else
             {
-                _activeAddresses = null;
+                try
+                {
+                    _activeAddressesLocker.EnterWriteLock();
+                    _activeAddresses = null;
+                }
+                finally
+                {
+                    _activeAddressesLocker.ExitWriteLock();
+                }
             }
         }
 
-        internal bool AddressEnabled(string address)
+        public bool AddressEnabled(string address)
         {
-            // So far, RASP is the only one that uses this
-            if (!_settings.RaspEnabled)
-            {
-                return false;
-            }
-
             if (_waf?.IsKnowAddressesSuported() == true)
             {
-                return _activeAddresses?.Contains(address) ?? false;
+                try
+                {
+                    _activeAddressesLocker.EnterReadLock();
+                    return _activeAddresses?.Contains(address) ?? false;
+                }
+                finally
+                {
+                    _activeAddressesLocker.ExitReadLock();
+                }
             }
-            else
-            {
-                // If we don't support knowAddresses, we will have to call the WAF
-                return true;
-            }
+
+            // If we don't support knowAddresses, we will have to call the WAF
+            return true;
         }
     }
 }

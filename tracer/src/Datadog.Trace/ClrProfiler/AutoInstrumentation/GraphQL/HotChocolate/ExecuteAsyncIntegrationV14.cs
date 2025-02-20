@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate;
     AssemblyName = "HotChocolate.Execution",
     TypeName = "HotChocolate.Execution.RequestExecutor",
     MinimumVersion = "14",
-    MaximumVersion = "14.*.*")]
+    MaximumVersion = "15.*.*")]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ExecuteAsyncIntegrationV14
@@ -32,7 +32,12 @@ public class ExecuteAsyncIntegrationV14
     internal static CallTargetState OnMethodBegin<TTarget, TOperationRequest>(TTarget instance, TOperationRequest request, in CancellationToken token)
         where TOperationRequest : IOperationRequest
     {
-        return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromOperationRequest(Tracer.Instance, request));
+        if (request.Instance is not null)
+        {
+            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromOperationRequest(Tracer.Instance, request));
+        }
+
+        return CallTargetState.GetDefault();
     }
 
     internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, in CallTargetState state)

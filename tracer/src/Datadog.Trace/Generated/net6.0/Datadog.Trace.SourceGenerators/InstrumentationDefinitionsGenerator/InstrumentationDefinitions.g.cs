@@ -65,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("WebDriver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("xunit.execution.desktop,", StringComparison.Ordinal)
             || assemblyName.StartsWith("xunit.execution.dotnet,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("xunit.v3.core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Yarp.ReverseProxy,", StringComparison.Ordinal);
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
@@ -78,6 +79,7 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.AuthenticationHttpContextExtensionsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.HttpContextSetUser"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInUserIntegration"
@@ -120,6 +122,31 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda.HandlerWrapperSetHandlerIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsLambda,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.CompleteMultipartUploadIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.CompleteMultipartUploadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.CopyObjectIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.CopyObjectAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.DeleteBucketIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.DeleteBucketAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.DeleteObjectsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.GetObjectIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.GetObjectAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.InitiateMultipartUploadIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.InitiateMultipartUploadAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.ListBucketsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.ListBucketsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.ListObjectsV2Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.ListObjectsV2AsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.PutBucketIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement.PutBucketAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.PutObjectIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement.PutObjectAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AwsS3,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSdk,
@@ -457,12 +484,22 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ExchangeDeclareIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueDeclareIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicConsumeAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncCachedStringsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ExchangeDeclareAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.PopulateBasicPropertiesHeadersIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueDeclareAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicConsumeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration"
@@ -545,6 +582,12 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestAssemblyRunnerRunV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestClassRunnerRunV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestOutputHelperQueueTestOutputV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration"
                     => Datadog.Trace.Configuration.IntegrationId.XUnit,
 
                 // adonet integrations

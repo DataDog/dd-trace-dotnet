@@ -40,6 +40,7 @@ namespace Honeypot
             NugetPackages.Add("AWSSDK.DynamoDBv2", new [] { "AWSSDK.DynamoDBv2" });
             NugetPackages.Add("AWSSDK.Core", new [] { "AWSSDK.Core" });
             NugetPackages.Add("AWSSDK.Kinesis", new [] { "AWSSDK.Kinesis" });
+            NugetPackages.Add("AWSSDK.S3", new [] { "AWSSDK.S3" });
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("AWSSDK.EventBridge", new [] { "AWSSDK.EventBridge" });
@@ -77,6 +78,7 @@ namespace Honeypot
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });
+            NugetPackages.Add("xunit.v3.core", new [] { "xunit.v3" });
             NugetPackages.Add("MSTest", new [] { "MSTest.TestFramework" });
             NugetPackages.Add("Serilog", new [] { "Serilog" });
             NugetPackages.Add("NLog", new [] { "NLog" });
@@ -95,6 +97,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Identity", new [] { "Microsoft.AspNetCore.Identity" });
             NugetPackages.Add("Microsoft.Extensions.Identity.Core", new [] { "Microsoft.Extensions.Identity.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Authentication.Abstractions", new [] { "Microsoft.AspNetCore.Authentication.Abstractions" });
+            NugetPackages.Add("Microsoft.AspNetCore.Http.Abstractions", new [] { "Microsoft.AspNetCore.Http.Abstractions" });
             NugetPackages.Add("OpenTelemetry.Api", new [] { "OpenTelemetry.Api" });
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });

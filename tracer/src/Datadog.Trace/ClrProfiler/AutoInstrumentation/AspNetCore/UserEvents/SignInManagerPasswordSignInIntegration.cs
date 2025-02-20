@@ -4,17 +4,20 @@
 // </copyright>
 
 #nullable enable
+#if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Microsoft.AspNetCore.Http;
 
-#if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
@@ -81,12 +84,12 @@ public static class SignInManagerPasswordSignInIntegration
 
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
             tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, Tags.AppSec.EventsUsers.False);
-
+            var processedLogin = login;
             if (security.IsAnonUserTrackingMode)
             {
-                var loginAnon = UserEventsCommon.Anonymize(login);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, loginAnon);
-                setTag(Tags.AppSec.EventsUsers.InternalLogin, loginAnon);
+                processedLogin = UserEventsCommon.Anonymize(login);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, processedLogin);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, processedLogin);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else
@@ -96,8 +99,20 @@ public static class SignInManagerPasswordSignInIntegration
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
-            SecurityReporter.SafeCollectHeaders(span);
-            security.SetTraceSamplingPriority(span);
+            var duckCast = instance.TryDuckCast<ISignInManager>(out var value);
+            if (duckCast && value is not null)
+            {
+                var httpContext = value.Context;
+                var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext!);
+                securityCoordinator.Reporter.CollectHeaders();
+                security.SetTraceSamplingPriority(span);
+
+                if (security.AddressEnabled(AddressesConstants.UserLogin))
+                {
+                    var result = securityCoordinator.RunWafForUser(userLogin: processedLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                    securityCoordinator.BlockAndReport(result);
+                }
+            }
         }
 
         return returnValue;

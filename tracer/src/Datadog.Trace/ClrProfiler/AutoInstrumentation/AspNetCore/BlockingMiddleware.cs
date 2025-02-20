@@ -11,9 +11,13 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
+/// <summary>
+/// Note that this middleware will be shortcircuited by the DeveloperMiddleware which is inserted at aspnetcore startup in development mode in general : app.UseDeveloperExceptionPage();
+/// </summary>
 internal class BlockingMiddleware
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
@@ -43,19 +47,18 @@ internal class BlockingMiddleware
             httpResponse.Headers.Clear();
             httpResponse.StatusCode = action.StatusCode;
 
+            endedResponse = true;
+
             if (action.IsRedirect)
             {
-                httpResponse.Redirect(action.RedirectLocation, action.IsPermanentRedirect);
-                endedResponse = true;
-            }
-            else
-            {
-                httpResponse.ContentType = action.ContentType;
-                endedResponse = true;
-                return httpResponse.WriteAsync(action.ResponseContent);
+                httpResponse.Headers[HeaderNames.Location] = action.RedirectLocation;
+
+                return Task.CompletedTask;
             }
 
-            return Task.CompletedTask;
+            httpResponse.ContentType = action.ContentType;
+
+            return httpResponse.WriteAsync(action.ResponseContent);
         }
 
         try

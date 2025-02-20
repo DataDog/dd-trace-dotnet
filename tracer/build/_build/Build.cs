@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.9.0";
+    readonly string Version = "3.11.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -206,7 +206,8 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateTrimmingFile);
+        .DependsOn(CreateTrimmingFile)
+        .DependsOn(RegenerateSolutions);
     
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()

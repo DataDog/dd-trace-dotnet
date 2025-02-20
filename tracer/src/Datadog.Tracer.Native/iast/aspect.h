@@ -17,9 +17,10 @@ namespace iast
     };
     enum class VulnerabilityType
     {
-        None,
-        SqlInjection,
-        Xss,
+        None = 0,
+        Xss = 1,
+        Ssrf = 2,
+        SqlInjection = 4,
         WeakCipher,
         WeakHash
     };

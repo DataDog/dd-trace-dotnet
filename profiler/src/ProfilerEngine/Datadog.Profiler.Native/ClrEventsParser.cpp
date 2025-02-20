@@ -10,6 +10,7 @@
 
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
+#include "EventsParserHelper.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
@@ -124,40 +125,40 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
 
         AllocationTickV4Payload payload{0};
         ULONG offset = 0;
-        if (!Read(payload.AllocationAmount, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.AllocationAmount, pEventData, cbEventData, offset))
         {
             return;
         }
-        if (!Read(payload.AllocationKind, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.AllocationKind, pEventData, cbEventData, offset))
         {
             return;
         }
-        if (!Read(payload.ClrInstanceId, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.ClrInstanceId, pEventData, cbEventData, offset))
         {
             return;
         }
-        if (!Read(payload.AllocationAmount64, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.AllocationAmount64, pEventData, cbEventData, offset))
         {
             return;
         }
-        if (!Read(payload.TypeId, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.TypeId, pEventData, cbEventData, offset))
         {
             return;
         }
-        payload.TypeName = ReadWideString(pEventData, cbEventData, &offset);
+        payload.TypeName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
         if (payload.TypeName == nullptr)
         {
             return;
         }
-        if (!Read(payload.HeapIndex, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.HeapIndex, pEventData, cbEventData, offset))
         {
             return;
         }
-        if (!Read(payload.Address, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.Address, pEventData, cbEventData, offset))
         {
             return;
         }
-        if (!Read(payload.ObjectSize, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read(payload.ObjectSize, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -185,7 +186,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     {
         GCStartPayload payload{0};
         ULONG offset = 0;
-        if (!Read<GCStartPayload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<GCStartPayload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -197,7 +198,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     {
         GCEndPayload payload{0};
         ULONG offset = 0;
-        if (!Read<GCEndPayload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<GCEndPayload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -229,7 +230,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
         {
             GCHeapStatsV1Payload payload = {0};
             ULONG offset = 0;
-            if (!Read<GCHeapStatsV1Payload>(payload, pEventData, cbEventData, offset))
+            if (!EventsParserHelper::Read<GCHeapStatsV1Payload>(payload, pEventData, cbEventData, offset))
             {
                 return;
             }
@@ -242,7 +243,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
         {
             GCHeapStatsV2Payload payload = {0};
             ULONG offset = 0;
-            if (!Read<GCHeapStatsV2Payload>(payload, pEventData, cbEventData, offset))
+            if (!EventsParserHelper::Read<GCHeapStatsV2Payload>(payload, pEventData, cbEventData, offset))
             {
                 return;
             }
@@ -259,7 +260,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     {
         GCGlobalHeapPayload payload = {0};
         ULONG offset = 0;
-        if (!Read<GCGlobalHeapPayload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<GCGlobalHeapPayload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -287,7 +288,7 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
 
         ContentionStopV1Payload payload{0};
         ULONG offset = 0;
-        if (!Read<ContentionStopV1Payload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<ContentionStopV1Payload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -299,7 +300,7 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
     {
         ContentionStartV2Payload payload{0};
         ULONG offset = 0;
-        if (!Read<ContentionStartV2Payload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<ContentionStartV2Payload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -325,7 +326,7 @@ void ClrEventsParser::ParseWaitHandleEvent(std::chrono::nanoseconds timestamp, D
 
         WaitHandleWaitStartPayload payload{0};
         ULONG offset = 0;
-        if (!Read<WaitHandleWaitStartPayload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<WaitHandleWaitStartPayload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }
@@ -341,7 +342,7 @@ void ClrEventsParser::ParseWaitHandleEvent(std::chrono::nanoseconds timestamp, D
 
         WaitHandleWaitStopPayload payload{0};
         ULONG offset = 0;
-        if (!Read<WaitHandleWaitStopPayload>(payload, pEventData, cbEventData, offset))
+        if (!EventsParserHelper::Read<WaitHandleWaitStopPayload>(payload, pEventData, cbEventData, offset))
         {
             return;
         }

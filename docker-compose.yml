@@ -3,7 +3,7 @@ services:
   localstack_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -92,7 +92,7 @@ services:
   localstack:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -334,8 +334,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -385,8 +385,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -481,8 +481,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -533,8 +533,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -590,8 +590,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -664,8 +664,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
@@ -762,8 +762,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.102}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.102}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -1077,7 +1077,7 @@ services:
   localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events
+      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1

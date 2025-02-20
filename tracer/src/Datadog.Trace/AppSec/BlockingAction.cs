@@ -17,8 +17,6 @@ internal record BlockingAction
 
     public const string GenerateStackType = "generate_stack";
 
-    public bool IsPermanentRedirect => StatusCode == 301;
-
     public string ContentType { get; set; }
 
     public int StatusCode { get; set; }

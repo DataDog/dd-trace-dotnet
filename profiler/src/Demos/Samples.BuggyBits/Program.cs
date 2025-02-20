@@ -30,7 +30,8 @@ namespace BuggyBits
         ParallelLock = 32,     // using parallel code with lock
         MemoryLeak = 64, // keep a controller in memory due to instance callback passed to a cache
         EndpointsCount = 128, // Specific test with '.' in endpoint name
-        Spin = 256 // Requests that take a long time
+        Spin = 256, // Requests that take a long time
+        Redirect = 512, // triggers HTTP redirect
     }
 
     public class Program
@@ -68,6 +69,10 @@ namespace BuggyBits
 
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");
+
+                    // uncomment when needed to attach an event listener before the scenarios run
+                    Console.WriteLine($"pid = {Process.GetCurrentProcess().Id}");
+                    // Console.ReadLine();
 
                     sw.Start();
 

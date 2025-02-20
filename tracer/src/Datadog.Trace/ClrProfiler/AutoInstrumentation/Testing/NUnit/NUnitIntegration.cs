@@ -158,7 +158,7 @@ internal static class NUnitIntegration
         }
     }
 
-    internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
+    internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
     {
         isUnskippable = false;
         isForcedRun = false;
@@ -266,7 +266,7 @@ internal static class NUnitIntegration
         }
 
         // Get traits
-        Dictionary<string, List<string>>? traits = null;
+        Dictionary<string, List<string>?>? traits = null;
         if (testMethodProperties != null)
         {
             skipReason = testMethodProperties.Get(SkipReasonKey) as string;
@@ -319,7 +319,7 @@ internal static class NUnitIntegration
         return test;
     }
 
-    private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>>? traits)
+    private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>?>? traits)
     {
         if (currentTest?.Instance is null)
         {
@@ -360,7 +360,7 @@ internal static class NUnitIntegration
                                 continue;
                             }
 
-                            lstValues.Add(valObj.ToString() ?? string.Empty);
+                            lstValues?.Add(valObj.ToString() ?? string.Empty);
                         }
                     }
                 }

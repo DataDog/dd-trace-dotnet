@@ -33,6 +33,8 @@ namespace Samples.WaitHandles
 
             Console.WriteLine($"pid = {Process.GetCurrentProcess().Id}");
             Console.WriteLine("Press Enter to start the threads...");
+
+            // uncomment the following to allow attaching a tool
             // Console.ReadLine();
 
             // Create and start threads for different synchronization scenarios

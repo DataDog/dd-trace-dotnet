@@ -25,13 +25,6 @@ std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
 std::chrono::milliseconds const Configuration::DefaultCpuProfilingInterval = 9ms;
-CpuProfilerType const Configuration::DefaultCpuProfilerTypeDefaultCpuProfilerType =
-#ifdef _WINDOWS
-    CpuProfilerType::ManualCpuTime;
-#else
-    CpuProfilerType::TimerCreate;
-#endif
-
 
 Configuration::Configuration()
 {
@@ -105,7 +98,10 @@ Configuration::Configuration()
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+    _isHttpProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HttpProfilingEnabled, false);
+    _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
+    _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
+    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 
@@ -755,7 +751,33 @@ bool Configuration::IsSsiTelemetryEnabled() const
     return _isSsiTelemetryEnabled;
 }
 
+bool Configuration::IsHttpProfilingEnabled() const
+{
+    return _isHttpProfilingEnabled;
+}
+
+bool Configuration::ForceHttpSampling() const
+{
+    return _forceHttpSampling;
+}
+
 bool Configuration::IsWaitHandleProfilingEnabled() const
 {
     return _isWaitHandleProfilingEnabled;
+}
+
+
+std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() const
+{
+    auto const defaultValue = 50ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::HttpRequestDurationThreshold, defaultValue);
+    if (value < 0ms)
+        return defaultValue;
+
+    return std::chrono::milliseconds(value);
+}
+
+std::chrono::milliseconds Configuration::GetHttpRequestDurationThreshold() const
+{
+    return _httpRequestDurationThreshold;
 }

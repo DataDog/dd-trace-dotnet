@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
@@ -37,7 +38,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly SemaphoreSlim WorkAvailable = new(0, int.MaxValue);
         private static readonly CancellationTokenSource Cts = new();
         private static readonly ExceptionCaseScheduler ExceptionsScheduler = new();
-        private static readonly ExceptionNormalizer ExceptionNormalizer = new();
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
         private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
         private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
@@ -56,7 +56,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 while (ExceptionProcessQueue.TryDequeue(out var exception))
                 {
-                    ProcessException(exception, 0, ErrorOriginKind.HttpRequestFailure, rootSpan: null);
+                    try
+                    {
+                        ProcessException(exception, 0, ErrorOriginKind.HttpRequestFailure, rootSpan: null);
+                    }
+#pragma warning disable DD0001
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "An exception was thrown while processing an exception for tracking from background thread. Exception = {Exception}", exception.ToString());
+                    }
+#pragma warning restore DD0001
                 }
             }
         }
@@ -96,7 +105,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static void ReportInternal(Exception exception, ErrorOriginKind errorOrigin, Span rootSpan)
         {
             var exToString = exception.ToString();
-            var normalizedExHash = ExceptionNormalizer.NormalizeAndHashException(exToString, exception.GetType().Name, exception.InnerException?.GetType().Name);
+            var normalizedExHash = ExceptionNormalizer.Instance.NormalizeAndHashException(exToString, exception.GetType().Name, exception.InnerException?.GetType().Name);
 
             if (CachedDoneExceptions.Contains(normalizedExHash))
             {
@@ -155,7 +164,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var allParticipatingFrames = GetAllExceptionRelatedStackFrames(exception);
             var allParticipatingFramesFlattened = allParticipatingFrames.GetAllFlattenedFrames().Reverse().ToArray();
 
-            normalizedExHash = normalizedExHash != 0 ? normalizedExHash : ExceptionNormalizer.NormalizeAndHashException(exception.ToString(), exception.GetType().Name, exception.InnerException?.GetType().Name);
+            normalizedExHash = normalizedExHash != 0 ? normalizedExHash : ExceptionNormalizer.Instance.NormalizeAndHashException(exception.ToString(), exception.GetType().Name, exception.InnerException?.GetType().Name);
 
             if (allParticipatingFramesFlattened.Length == 0)
             {
@@ -224,9 +233,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                 SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.InvalidatedExceptionCase, normalizedExHash);
 
-                var allFrames = trackedExceptionCase.ExceptionCase.ExceptionId.StackTrace;
+                var allFrames = StackTraceProcessor.ParseFrames(exception.ToString());
                 var allProbes = trackedExceptionCase.ExceptionCase.Probes;
-                var frameIndex = allFrames.Length - 1;
+                var frameIndex = allFrames.Count - 1;
                 var debugErrorPrefix = "_dd.debug.error";
                 var assignIndex = 0;
 
@@ -238,11 +247,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 while (frameIndex >= 0)
                 {
                     var participatingFrame = allFrames[frameIndex--];
-                    var noCaptureReason = GetNoCaptureReason(participatingFrame, allProbes.FirstOrDefault(p => p.Method.Equals(participatingFrame.MethodIdentifier)));
+                    var noCaptureReason = GetNoCaptureReason(participatingFrame, allProbes.FirstOrDefault(p => MethodMatcher.IsMethodMatch(participatingFrame, p.Method.Method)));
 
                     if (noCaptureReason != string.Empty)
                     {
-                        TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
+                        TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame, noCaptureReason);
                     }
 
                     assignIndex += 1;
@@ -326,90 +335,142 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 {
                     if (rootSpan == null)
                     {
-                        Log.Error("The RootSpan is null in the branch of extracing snapshots. Should not happen. Exception: {Exception}", exception.ToString());
+                        Log.Error("The RootSpan is null in the branch of extracting snapshots. Should not happen. Exception: {Exception}", exception.ToString());
                         return;
                     }
+
+                    var exceptionCaptureId = Guid.NewGuid().ToString();
 
                     // Attach tags to the root span
                     var debugErrorPrefix = "_dd.debug.error";
                     rootSpan.Tags.SetTag("error.debug_info_captured", "true");
                     rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_hash", trackedExceptionCase.ErrorHash);
-                    rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_id", Guid.NewGuid().ToString());
+                    rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_id", exceptionCaptureId);
 
                     var @case = trackedExceptionCase.ExceptionCase;
                     var capturedFrames = resultCallStackTree.Frames;
-                    var allFrames = @case.ExceptionId.StackTrace;
+                    var allFrames = StackTraceProcessor.ParseFrames(exception.ToString());
+                    var frameIndex = allFrames.Count - 1;
+                    var uploadedHeadFrame = false;
 
                     // Upload head frame
-                    var frameIndex = 0;
-
-                    while (frameIndex < allFrames.Length &&
-                           !allFrames[frameIndex].Method.Equals(capturedFrames[0].MethodInfo.Method))
+                    if (capturedFrames[0].MethodInfo.Method.Equals(@case.Probes[0].Method.Method))
                     {
-                        frameIndex += 1;
+                        while (frameIndex >= 0 && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], capturedFrames[0].MethodInfo.Method))
+                        {
+                            // Just processing the frames until a match is found
+                            frameIndex -= 1;
+                        }
+
+                        TagAndUpload(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", capturedFrames[0], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
+                        uploadedHeadFrame = true;
+                    }
+                    else
+                    {
+                        // Missing head
+                        var probe = @case.Probes[0];
+                        var noCaptureReason = GetNoCaptureReason(probe.Method.Method.Name, probe);
+
+                        if (noCaptureReason != string.Empty)
+                        {
+                            while (frameIndex >= 0 && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], @case.Probes[0].Method.Method))
+                            {
+                                // Just processing the frames until a match is found
+                                frameIndex -= 1;
+                            }
+
+                            TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", probe.Method.Method.Name, noCaptureReason);
+                        }
                     }
 
-                    var frame = capturedFrames[0];
-                    TagAndUpload(rootSpan, $"{debugErrorPrefix}.{allFrames.Length - frameIndex - 1}.", frame);
-
-                    // Upload tail frames
-                    frameIndex = allFrames.Length - 1;
+                    frameIndex = 0;
                     var capturedFrameIndex = capturedFrames.Count - 1;
-                    var assignIndex = 0;
-
-                    while (capturedFrameIndex >= 1 && frameIndex >= 0)
+                    var probeIndex = @case.Probes.Length - 1;
+                    var capturedFrameIndexBound = uploadedHeadFrame ? 0 : -1;
+                    var uploadFramesBound = MaxFramesToCapture;
+                    var uploadedFrames = 0;
+                    while (frameIndex < allFrames.Count && uploadedFrames < uploadFramesBound && probeIndex >= 0)
                     {
-                        frame = capturedFrames[capturedFrameIndex];
-
-                        var participatingFrame = allFrames[frameIndex--];
-
-                        if (!participatingFrame.Method.Equals(frame.MethodInfo.Method))
+                        if (capturedFrameIndex <= capturedFrameIndexBound)
                         {
-                            var noCaptureReason = GetNoCaptureReason(participatingFrame, @case.Probes.FirstOrDefault(p => p.Method.Equals(participatingFrame.MethodIdentifier)));
+                            // No 'captured frames' left for matching
+                            while (probeIndex >= 0)
+                            {
+                                var noCaptureReason = GetNoCaptureReason(@case.Probes[probeIndex].Method.Method.Name, @case.Probes[probeIndex]);
+
+                                if (noCaptureReason != string.Empty)
+                                {
+                                    while (frameIndex < allFrames.Count && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], @case.Probes[probeIndex].Method.Method))
+                                    {
+                                        // Just processing the frames until a match is found
+                                        frameIndex += 1;
+                                    }
+
+                                    if (frameIndex >= allFrames.Count)
+                                    {
+                                        // Nothing left to match
+                                        break;
+                                    }
+
+                                    TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
+                                }
+
+                                probeIndex -= 1;
+                            }
+
+                            break;
+                        }
+
+                        while (probeIndex >= 0 && !capturedFrames[capturedFrameIndex].MethodInfo.Method.Equals(@case.Probes[probeIndex].Method.Method))
+                        {
+                            // Determine if the frame is misleading (e.g duplicated on the stack thanks for ExceptionCaptureInfo.Throw)
+                            var prevIndex = probeIndex + 1;
+                            if (prevIndex < @case.Probes.Length && capturedFrames[capturedFrameIndex].MethodInfo.Method.Equals(@case.Probes[prevIndex].Method.Method) && @case.Probes[prevIndex].Method.IsMisleadMethod())
+                            {
+                                // The current captured frame is marked as misleading. Consider the previous probe as the 'current' probe for a proper matching in this extremely rare case
+                                Log.Warning("Encountered misleading frame that is also recursive with exception: {Exception}, Method: {MethodName}", exception.ToString(), capturedFrames[capturedFrameIndex].MethodInfo.Method.GetFullName());
+                                probeIndex += 1;
+                                break;
+                            }
+
+                            var noCaptureReason = GetNoCaptureReason(@case.Probes[probeIndex].Method.Method.Name, @case.Probes[probeIndex]);
 
                             if (noCaptureReason != string.Empty)
                             {
-                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
+                                while (frameIndex < allFrames.Count && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], @case.Probes[probeIndex].Method.Method))
+                                {
+                                    // Just processing the frames until a match is found
+                                    frameIndex += 1;
+                                }
+
+                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", @case.Probes[probeIndex].Method.Method.Name, noCaptureReason);
                             }
 
-                            assignIndex += 1;
-                            continue;
+                            probeIndex -= 1;
                         }
 
+                        if (probeIndex < 0)
+                        {
+                            // We exhausted the probes array, nothing left to match
+                            break;
+                        }
+
+                        while (frameIndex < allFrames.Count && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], capturedFrames[capturedFrameIndex].MethodInfo.Method))
+                        {
+                            frameIndex += 1;
+                        }
+
+                        if (frameIndex >= allFrames.Count)
+                        {
+                            // We exhausted the whole frames array, nothing left to match
+                            break;
+                        }
+
+                        TagAndUpload(rootSpan, $"{debugErrorPrefix}.{frameIndex}.", capturedFrames[capturedFrameIndex], exceptionId: exceptionCaptureId, exceptionHash: trackedExceptionCase.ErrorHash, frameIndex: frameIndex);
                         capturedFrameIndex -= 1;
-
-                        var prefix = $"{debugErrorPrefix}.{assignIndex++}.";
-                        TagAndUpload(rootSpan, prefix, frame);
-                    }
-
-                    // Upload missing frames
-                    var maxFramesToCaptureIncludingHead = MaxFramesToCapture + 1;
-                    if (capturedFrames.Count < maxFramesToCaptureIncludingHead &&
-                        allFrames.Length > capturedFrames.Count)
-                    {
-                        frameIndex = allFrames.Length - 1;
-                        var probesIndex = @case.Probes.Length - 1;
-                        assignIndex = 0;
-
-                        while (frameIndex >= 0 && maxFramesToCaptureIncludingHead > 0)
-                        {
-                            maxFramesToCaptureIncludingHead -= 1;
-                            var participatingFrame = allFrames[frameIndex--];
-
-                            var noCaptureReason = GetNoCaptureReasonForFrame(participatingFrame);
-
-                            if (noCaptureReason == string.Empty && probesIndex >= 0)
-                            {
-                                noCaptureReason = GetNoCaptureReason(participatingFrame, @case.Probes[probesIndex--]);
-                            }
-
-                            if (noCaptureReason != string.Empty)
-                            {
-                                TagMissingFrame(rootSpan, $"{debugErrorPrefix}.{assignIndex}.", participatingFrame.Method, noCaptureReason);
-                            }
-
-                            assignIndex++;
-                        }
+                        probeIndex -= 1;
+                        frameIndex += 1;
+                        uploadedFrames += 1;
                     }
 
                     Log.Information("Reverting an exception case for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
@@ -433,31 +494,30 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
         }
 
-        private static string GetNoCaptureReason(ParticipatingFrame frame, ExceptionDebuggingProbe? probe)
+        private static string GetNoCaptureReason(string methodName, ExceptionDebuggingProbe? probe)
         {
-            var noCaptureReason = GetNoCaptureReasonForFrame(frame);
-
-            if (noCaptureReason != string.Empty)
-            {
-                return noCaptureReason;
-            }
+            var noCaptureReason = string.Empty;
 
             if (probe != null)
             {
                 if (probe.MayBeOmittedFromCallStack)
                 {
                     // The process is spawned with `COMPLUS_ForceEnc` & the module of the method is non-optimized.
-                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be captured because the process is spawned with Edit and Continue feature turned on and the module is compiled as Debug. Set the environment variable `COMPLUS_ForceEnc` to `0`. For further info, visit: https://github.com/dotnet/runtime/issues/91963.";
+                    noCaptureReason = $"The method {methodName} could not be captured because the process is spawned with Edit and Continue feature turned on and the module is compiled as Debug. Set the environment variable `COMPLUS_ForceEnc` to `0`. For further info, visit: https://github.com/dotnet/runtime/issues/91963.";
                 }
                 else if (probe.ProbeStatus == Status.ERROR)
                 {
                     // Frame is failed to instrument.
-                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} has failed in instrumentation. Failure reason: {probe.ErrorMessage}";
+                    noCaptureReason = $"The method {methodName} has failed in instrumentation. Failure reason: {probe.ErrorMessage}";
                 }
                 else if (probe.ProbeStatus == Status.RECEIVED)
                 {
                     // Frame is failed to instrument.
-                    noCaptureReason = $"The method {frame.Method.GetFullyQualifiedName()} could not be found.";
+                    noCaptureReason = $"The method {methodName} could not be found.";
+                }
+                else if (probe.Method.IsMisleadMethod())
+                {
+                    noCaptureReason = $"This frame of {methodName} is a duplication, due to `ExceptionDispatchInfo.Throw()`.";
                 }
             }
 
@@ -481,7 +541,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return noCaptureReason;
         }
 
-        private static void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record)
+        private static void TagAndUpload(Span span, string tagPrefix, ExceptionStackNodeRecord record, string exceptionId, string exceptionHash, int frameIndex)
         {
             var method = record.MethodInfo.Method;
             var snapshotId = record.SnapshotId;
@@ -492,13 +552,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
             span.Tags.SetTag(tagPrefix + "snapshot_id", snapshotId);
 
+            snapshot = snapshot
+                      .Replace(ExceptionReplaySnapshotCreator.ExceptionCaptureId, exceptionId)
+                      .Replace(ExceptionReplaySnapshotCreator.ExceptionHash, exceptionHash)
+                      .Replace(ExceptionReplaySnapshotCreator.FrameIndex, frameIndex.ToString());
             ExceptionDebugging.AddSnapshot(probeId, snapshot);
         }
 
-        private static void TagMissingFrame(Span span, string tagPrefix, MethodBase method, string reason)
+        private static void TagMissingFrame(Span span, string tagPrefix, string method, string reason)
         {
-            span.Tags.SetTag(tagPrefix + "frame_data.function", method.Name);
-            span.Tags.SetTag(tagPrefix + "frame_data.class_name", method.DeclaringType?.Name);
+            span.Tags.SetTag(tagPrefix + "frame_data.name", method);
             span.Tags.SetTag(tagPrefix + "no_capture_reason", reason);
         }
 
@@ -514,7 +577,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.All(f => !FrameFilter.IsUserCode(f)) == false;
+            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(f));
         }
 
         private static bool IsSupportedExceptionType(Exception ex) =>

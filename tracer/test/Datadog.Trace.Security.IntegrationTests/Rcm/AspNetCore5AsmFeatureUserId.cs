@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
     public abstract class AspNetCore5AsmFeatureUserId : RcmBase
     {
-        public AspNetCore5AsmFeatureUserId(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
+        protected AspNetCore5AsmFeatureUserId(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
             : base(fixture, outputHelper, enableSecurity, testName)
         {
             EnableRasp(false);
@@ -38,16 +38,15 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestChangeUserIdCollection()
         {
-            var url = "/Account/Index";
-            var bodyString = "Input.UserName=TestUser&Input.Password=test";
-
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
+            VerifyScrubber.ScrubAuthenticatedTags(settings);
 
             var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection) + "Activate");
             if (EnableSecurity is not true)
             {
+                // send enable security = true through asm features
                 var request0 = await agent.SetupRcmAndWait(Output, [active], timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
                 request0.Should().NotBeNull();
             }
@@ -55,7 +54,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
 
-            var span0Ident = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
+            const string loginUrl = "/Account/Index";
+            const string bodyString = "Input.UserName=TestUser&Input.Password=test";
+
+            var span0Ident = await SendRequestsAsync(agent, loginUrl, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
 
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
@@ -68,7 +70,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var request1 = await agent.SetupRcmAndWait(Output, request1Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request1.Should().NotBeNull();
 
-            var span1Anon = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
+            var span1Anon = await SendRequestsAsync(agent, loginUrl, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
 
             await SendRequestsAsync(agent, "/account/reset-memory-db");
             await SendRequestsAsync(agent, "/account/logout");
@@ -78,7 +80,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var request2 = await agent.SetupRcmAndWait(Output, request2Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request2.Should().NotBeNull();
 
-            var spans2Disabled = await SendRequestsAsync(agent, url, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
+            var spans2Disabled = await SendRequestsAsync(agent, loginUrl, bodyString, 1, 1, string.Empty, contentType: "application/x-www-form-urlencoded");
 
             var spans = new List<MockSpan>();
             spans.AddRange(span0Ident);

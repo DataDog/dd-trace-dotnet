@@ -112,7 +112,7 @@ namespace Datadog.Trace.PlatformHelpers
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
-            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags);
+            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
 
@@ -202,7 +202,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
-                if (exception is not BlockException)
+                if (BlockException.GetBlockException(exception) is null)
                 {
                     rootSpan.SetException(exception);
                     security.CheckAndBlock(httpContext, rootSpan);

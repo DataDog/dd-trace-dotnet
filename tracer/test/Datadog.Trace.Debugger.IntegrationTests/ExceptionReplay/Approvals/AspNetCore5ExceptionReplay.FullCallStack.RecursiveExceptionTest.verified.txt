@@ -86,12 +86,6 @@ Iteration 1:
      _dd.debug.error.33.frame_data.class_name : <RunTest>d__5
      _dd.debug.error.33.frame_data.function : MoveNext
      _dd.debug.error.33.snapshot_id : <Redacted>
-     _dd.debug.error.37.frame_data.class_name : ControllerActionInvoker
-     _dd.debug.error.37.frame_data.function : Rethrow
-     _dd.debug.error.37.no_capture_reason : The method Rethrow_Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context) is blacklisted.
-     _dd.debug.error.38.frame_data.class_name : ControllerActionInvoker
-     _dd.debug.error.38.frame_data.function : Next
-     _dd.debug.error.38.no_capture_reason : The method Next_Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted) is blacklisted.
      _dd.debug.error.4.frame_data.class_name : <<Recursive>b__1_0>d
      _dd.debug.error.4.frame_data.function : MoveNext
      _dd.debug.error.4.snapshot_id : <Redacted>

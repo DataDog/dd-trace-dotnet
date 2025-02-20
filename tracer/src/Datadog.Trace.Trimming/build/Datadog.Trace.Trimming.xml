@@ -6,6 +6,7 @@
    <assembly fullname="AWSSDK.DynamoDBv2" />
    <assembly fullname="AWSSDK.EventBridge" />
    <assembly fullname="AWSSDK.Kinesis" />
+   <assembly fullname="AWSSDK.S3" />
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
@@ -46,10 +47,12 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
+      <type fullname="Microsoft.AspNetCore.Http.Features.ISessionFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IResponseCookies" />
+      <type fullname="Microsoft.AspNetCore.Http.ISession" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Identity" />
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
@@ -587,6 +590,7 @@
       <type fullname="System.Func`6" />
       <type fullname="System.Func`7" />
       <type fullname="System.GC" />
+      <type fullname="System.GCMemoryInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />
@@ -913,6 +917,7 @@
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
+      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
@@ -1084,5 +1089,6 @@
    <assembly fullname="WebDriver" />
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
+   <assembly fullname="xunit.v3.core" />
    <assembly fullname="Yarp.ReverseProxy" />
 </linker>

@@ -199,6 +199,8 @@ public sealed class Test
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
+            ImpactedTestsModule.Analyze(this);
+
             if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
             {
                 var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
@@ -214,7 +216,7 @@ public sealed class Test
     /// Set Test traits
     /// </summary>
     /// <param name="traits">Traits dictionary</param>
-    public void SetTraits(Dictionary<string, List<string>> traits)
+    public void SetTraits(Dictionary<string, List<string>?> traits)
     {
         if (traits?.Count > 0)
         {
