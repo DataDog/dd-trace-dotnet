@@ -319,10 +319,10 @@ internal readonly partial struct SecurityCoordinator
         {
             var reporting = Reporter.MakeReportingFunction(result);
             reporting(null, result.ShouldBlock);
+            telemetrySucessReport.Invoke();
 
             if (result.ShouldBlock)
             {
-                telemetrySucessReport.Invoke();
                 ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
 
                 // chooseBlockingMethodAndBlock doesn't throw for all non webapi contexts and just ends the request flow.
