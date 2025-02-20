@@ -322,13 +322,13 @@ internal readonly partial struct SecurityCoordinator
 
             if (result.ShouldBlock)
             {
+                telemetrySucessReport.Invoke();
                 ChooseBlockingMethodAndBlock(result, reporting, result.BlockInfo, result.RedirectInfo);
 
                 // chooseBlockingMethodAndBlock doesn't throw for all non webapi contexts and just ends the request flow.
                 // For webapi we need to throw a HttpWebResponseException to block the flow. In the context of rasp instrumentations,
                 // we need to throw in any case to not only block the request but any code execution after the instrumentation points
 
-                telemetrySucessReport.Invoke();
                 if (result.BlockInfo is not null)
                 {
                     throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo);
