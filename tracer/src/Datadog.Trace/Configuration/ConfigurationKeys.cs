@@ -500,6 +500,12 @@ namespace Datadog.Trace.Configuration
         public const string DisabledAdoNetCommandTypes = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
 
         /// <summary>
+        /// Configuration key for toggling span pointers on AWS requests.
+        /// Default value is true
+        /// </summary>
+        public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility

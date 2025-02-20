@@ -46,7 +46,7 @@ public class CompleteMultipartUploadIntegration
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
         where TReturn : ICompleteMultipartUploadResponse
     {
-        if (state.Scope is not null && state.State is ICompleteMultipartUploadRequest request && returnValue is not null)
+        if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is ICompleteMultipartUploadRequest request && returnValue is not null)
         {
             var bucketName = request.BucketName;
             var key = request.ObjectKey;
