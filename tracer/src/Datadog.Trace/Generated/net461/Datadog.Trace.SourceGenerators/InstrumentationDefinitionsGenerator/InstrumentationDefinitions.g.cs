@@ -161,6 +161,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSqs,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.InstrumentMessageIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.ProcessMessageIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus.SendServiceBusMessageBatchIntegration"
@@ -453,6 +458,11 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalMergeFromIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalWriteToIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageMergeFromIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Protobuf,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"

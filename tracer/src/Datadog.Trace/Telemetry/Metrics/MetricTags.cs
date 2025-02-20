@@ -223,6 +223,7 @@ internal static class MetricTags
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
         [Description("integration_name:awseventbridge")]AwsEventBridge,
+        [Description("integration_name:awsstepfunctions")]AwsStepFunctions,
         [Description("integration_name:ilogger")]ILogger,
         [Description("integration_name:aerospike")]Aerospike,
         [Description("integration_name:azurefunctions")]AzureFunctions,
@@ -264,7 +265,8 @@ internal static class MetricTags
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
-        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection
+        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
+        [Description("integration_name:protobuf")] Protobuf
     }
 
     public enum InstrumentationError

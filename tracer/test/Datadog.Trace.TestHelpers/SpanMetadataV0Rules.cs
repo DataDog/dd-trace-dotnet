@@ -259,6 +259,26 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
+        public static Result IsAwsStepFunctionsRequestV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "stepfunctions.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "StepFunctions")
+                .Matches("aws_service", "StepFunctions")
+                .IsPresent("statemachinename")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "producer"));
+
         public static Result IsAzureServiceBusInboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .MatchesOneOf(Name, "servicebus.receive", "servicebus.process", "consumer")
@@ -571,6 +591,15 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("cmd.component", "process")
                 .Matches("span.kind", "internal"));
+
+        public static Result IsProtobufV0(this MockSpan span) => Result.FromSpan(span)
+            .Tags(s => s
+                .Matches(Tags.SchemaType, "protobuf")
+                .IsPresent(Tags.SchemaName)
+                .IsPresent(Tags.SchemaOperation)
+                .IsPresent(Tags.SchemaId)
+                .IsPresent(Tags.SchemaDefinition)
+                .IsPresent(Tags.SchemaWeight));
 
         public static Result IsRabbitMQV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

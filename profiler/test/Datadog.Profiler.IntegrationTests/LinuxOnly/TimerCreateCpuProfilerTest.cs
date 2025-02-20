@@ -70,8 +70,9 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             samples.Should().NotBeEmpty();
             foreach (var (_, _, values) in samples)
             {
-                values.Length.Should().Be(1);
-                values.Should().OnlyContain(x => x == long.Parse(samplingInterval) * 1_000_000);
+                values.Length.Should().Be(2);
+                values[0].Should().Be(long.Parse(samplingInterval) * 1_000_000);
+                values[1].Should().BeGreaterThan(0);
             }
         }
 
@@ -90,13 +91,14 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             runner.Run(agent);
 
             var expectedInterval = long.Parse(samplingInterval) * 1_000_000;
-            // only cpu  profiler enabled so should see 1 value per sample and
+            // only cpu  profiler enabled so should see 2 value per sample and
             var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
             samples.Should().NotBeEmpty();
             foreach (var (_, _, values) in samples)
             {
-                values.Length.Should().Be(1);
-                values.Should().OnlyContain(x => x == expectedInterval);
+                values.Length.Should().Be(2);
+                values[0].Should().Be(expectedInterval);
+                values[1].Should().BeGreaterThan(0);
             }
         }
 
@@ -120,8 +122,9 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             samples.Should().NotBeEmpty();
             foreach (var (_, _, values) in samples)
             {
-                values.Length.Should().Be(1);
-                values.Should().OnlyContain(x => x == expectedInterval);
+                values.Length.Should().Be(2);
+                values[0].Should().Be(expectedInterval);
+                values[1].Should().BeGreaterThan(0);
             }
         }
     }

@@ -116,6 +116,24 @@
     ]
   },
   {
+    "IntegrationName": "AwsStepFunctions",
+    "SampleProjectName": "Samples.AWS.StepFunctions",
+    "NugetPackageSearchName": "AWSSDK.StepFunctions",
+    "MinVersion": "3.3.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.3.*",
+      "3.5.*",
+      "3.7.*"
+    ],
+    "VersionConditions": [
+      {
+        "MaxVersionExclusive": "3.3.0",
+        "IncludeOnlyTargetFrameworks": ["net462"]
+      }
+    ]
+  },
+  {
     "IntegrationName": "MongoDB",
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
@@ -251,6 +269,16 @@
       "MinVersion": "6.0.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }]
+  },
+  {
+    "IntegrationName": "Protobuf",
+    "SampleProjectName": "Samples.GoogleProtobuf",
+    "NugetPackageSearchName": "Google.Protobuf",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.*.*"
+    ]
   },
   {
     "IntegrationName": "RabbitMQ",
