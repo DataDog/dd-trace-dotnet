@@ -53,7 +53,6 @@ public class PutObjectAsyncIntegration
             var key = request.ObjectKey;
             var eTag = returnValue.ETag;
             SpanPointers.AddS3SpanPointer(state.Scope.Span, bucketName, key, eTag);
-            Console.WriteLine("[tracer] span pointer added.");
         }
 
         state.Scope.DisposeWithException(exception);
