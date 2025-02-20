@@ -10,14 +10,14 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
-/// Microsoft.TestPlatform.CrossPlatEngine .TestAssemblyInfo.RunAssemblyCleanup() calltarget instrumentation
+/// Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.RunTestsWithSources.SendSessionEnd() calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Microsoft.TestPlatform.CrossPlatEngine",
     TypeName = "Microsoft.VisualStudio.TestPlatform.CrossPlatEngine.Execution.RunTestsWithSources",
     MethodName = "SendSessionEnd",
     ReturnTypeName = ClrNames.Void,
-    MinimumVersion = "15.0.0",
+    MinimumVersion = "14.0.0",
     MaximumVersion = "15.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
