@@ -60,6 +60,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableTransport(transportType);
+
+            // Due to lack of test harness, we can't test the full range of behavior for data pipeline
+            // so we disable it here, instead we are testing similar behavior in the native side
+            //  https://github.com/DataDog/libdatadog/pull/891
+            EnvironmentHelper.EnableDataPipeline(false);
+
             using var agent = EnvironmentHelper.GetMockAgent();
             var customResponse = behaviour switch
             {
