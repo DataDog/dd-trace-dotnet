@@ -38,13 +38,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (scope is not null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
+
+                    // add propagation headers to the HTTP request
+                    var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
+
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
                 }
             }
-
-            // add propagation headers to the HTTP request
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
             return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope);
         }
