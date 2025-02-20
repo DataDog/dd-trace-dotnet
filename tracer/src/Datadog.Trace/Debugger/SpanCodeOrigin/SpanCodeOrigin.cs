@@ -24,9 +24,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOrigin(Span? span)
         {
-            if (span == null
-             || !_settings.CodeOriginForSpansEnabled
-             || (_settings.DynamicSettings.CodeOriginEnabled.HasValue && !_settings.DynamicSettings.CodeOriginEnabled.Value))
+            if (span == null)
             {
                 return;
             }
