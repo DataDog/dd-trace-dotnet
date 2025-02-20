@@ -115,13 +115,6 @@ namespace Datadog.Trace.Debugger
                     return false;
                 }
 
-                if (!_settings.DynamicInstrumentationEnabled ||
-                    (_settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !_settings.DynamicSettings.DynamicInstrumentationEnabled.Value))
-                {
-                    Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
-                    return false;
-                }
-
                 if (!Volatile.Read(ref _isRcmAvailable))
                 {
                     Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
