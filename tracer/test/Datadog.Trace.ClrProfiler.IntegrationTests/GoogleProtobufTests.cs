@@ -43,6 +43,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
     [Trait("Category", "EndToEnd")]
     public async Task TagTraces(string metadataSchemaVersion)
     {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, $"{TestPrefix}"))
