@@ -45,8 +45,21 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData(null)]
         [InlineData("")]
+        [InlineData("2")]
+        public void DebuggerDisabled_Null(string enabled)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationEnabled.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("False")]
         [InlineData("false")]
-        public void DebuggerDisabled(string enabled)
+        public void DebuggerDisabled_False(string enabled)
         {
             var settings = new DebuggerSettings(
                 new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, enabled }, }),
@@ -160,12 +173,9 @@ namespace Datadog.Trace.Tests.Debugger
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]
-            [InlineData("")]
             [InlineData("False")]
             [InlineData("false")]
             [InlineData("0")]
-            [InlineData("2")]
-            [InlineData(null)]
             public void CodeOriginEnabled_False(string value)
             {
                 var settings = new DebuggerSettings(
@@ -173,6 +183,19 @@ namespace Datadog.Trace.Tests.Debugger
                     NullConfigurationTelemetry.Instance);
 
                 settings.CodeOriginForSpansEnabled.Should().BeFalse();
+            }
+
+            [Theory]
+            [InlineData("")]
+            [InlineData(null)]
+            [InlineData("2")]
+            public void CodeOriginEnabled_Null(string value)
+            {
+                var settings = new DebuggerSettings(
+                    new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                    NullConfigurationTelemetry.Instance);
+
+                settings.CodeOriginForSpansEnabled.Should().BeNull();
             }
 
             [Theory]

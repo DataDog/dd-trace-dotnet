@@ -34,21 +34,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionReplaySettings Settings { get; }
 
-        public bool Enabled => Settings.Enabled && !_isDisabled;
-
         internal static ExceptionDebugging? Create(ExceptionReplaySettings settings)
         {
-            if (!settings.Enabled)
-            {
-                return null;
-            }
-
             return new ExceptionDebugging(settings);
         }
 
         public bool Initialize()
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return false;
             }
@@ -105,7 +98,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void Report(Span span, Exception exception)
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return;
             }
@@ -115,7 +108,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void BeginRequest()
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return;
             }
@@ -128,7 +121,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void EndRequest()
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return;
             }
@@ -138,7 +131,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void AddSnapshot(string probeId, string snapshot)
         {
-            if (!Enabled)
+            if (_isDisabled)
             {
                 return;
             }
