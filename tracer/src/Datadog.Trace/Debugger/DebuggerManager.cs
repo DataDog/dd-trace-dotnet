@@ -29,8 +29,11 @@ namespace Datadog.Trace.Debugger
 
         private int _isDiInitialized;
 
+        private object _locker;
+
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
+            _locker = new object();
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
 
@@ -101,7 +104,7 @@ namespace Datadog.Trace.Debugger
 
         private void InitializeCodeOrigin()
         {
-            if (!DebuggerSettings.CodeOriginForSpansEnabled)
+            if (DebuggerSettings.CodeOriginForSpansEnabled.HasValue && !DebuggerSettings.CodeOriginForSpansEnabled.Value)
             {
                 Log.Information("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
                 return;
@@ -126,7 +129,7 @@ namespace Datadog.Trace.Debugger
 
         private void InitializeExceptionReplay()
         {
-            if (!ExceptionReplaySettings.Enabled)
+            if (ExceptionReplaySettings.Enabled.HasValue && !ExceptionReplaySettings.Enabled.Value)
             {
                 Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled);
                 return;
@@ -160,7 +163,7 @@ namespace Datadog.Trace.Debugger
 
         private async Task InitializeDynamicInstrumentation()
         {
-            if (!DebuggerSettings.DynamicInstrumentationEnabled)
+            if (DebuggerSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicInstrumentationEnabled.Value)
             {
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
                 return;
@@ -197,7 +200,7 @@ namespace Datadog.Trace.Debugger
             if (!settings.IsRemoteConfigurationAvailable)
             {
                 // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
-                if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled ?? DebuggerSettings.DynamicInstrumentationEnabled)
+                if (DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value)
                 {
                     Log.Warning("Dynamic Instrumentation is enabled but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
                 }
@@ -233,17 +236,25 @@ namespace Datadog.Trace.Debugger
 
         internal void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
         {
+            lock (_locker)
+            {
+                UpdateInternal(newDebuggerSettings);
+            }
+        }
+
+        private void UpdateInternal(DebuggerSettings newDebuggerSettings)
+        {
             /*
-              If the remote config says ‘true’, but env var says ‘false’, we do ‘false’
-              If the remote config says ‘false’, but env var says ‘true’, we do ‘false’.
-              If none are defined - the default value is defined by tracer
-             */
+            If the remote config says ‘true’, but env var says ‘false’, we do ‘false’
+            If the remote config says ‘false’, but env var says ‘true’, we do ‘false’.
+            If none are defined - the default value is defined by tracer
+            */
 
             DebuggerSettings = newDebuggerSettings;
 
-            if (newDebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue)
+            if (DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue)
             {
-                if (newDebuggerSettings.DynamicSettings.CodeOriginEnabled.Value)
+                if (DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value && DebuggerSettings.CodeOriginForSpansEnabled == null)
                 {
                     InitializeCodeOrigin();
                 }
@@ -253,9 +264,9 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            if (newDebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue)
+            if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue)
             {
-                if (newDebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value)
+                if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value && ExceptionReplaySettings.Enabled == null)
                 {
                     InitializeExceptionReplay();
                 }
@@ -266,9 +277,9 @@ namespace Datadog.Trace.Debugger
                 }
             }
 
-            if (newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue)
+            if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue)
             {
-                if (newDebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value)
+                if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value && DebuggerSettings.DynamicInstrumentationEnabled == null)
                 {
                     _ = Task.Run(async () => { await InitializeDynamicInstrumentation().ConfigureAwait(false); });
                 }

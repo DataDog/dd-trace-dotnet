@@ -132,7 +132,7 @@ namespace Datadog.Trace.Debugger
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
 
-            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
+            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool();
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Debugger
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
 
-        public bool DynamicInstrumentationEnabled { get; }
+        public bool? DynamicInstrumentationEnabled { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Debugger
 
         public HashSet<string> RedactedTypes { get; }
 
-        public bool CodeOriginForSpansEnabled { get; }
+        public bool? CodeOriginForSpansEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
 
