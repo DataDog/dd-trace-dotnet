@@ -2231,7 +2231,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [msi_tests]
+      jobs: [msi_tests, fleet_installer_tests]
 
   - job: msi_tests
     timeoutInMinutes: 60 #default value
@@ -2305,6 +2305,51 @@ stages:
 
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_msi tracer logs
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
+      condition: always()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
+  - job: fleet_installer_tests
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set-3
+    variables:
+      framework: net462
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/restore-working-directory.yml
+
+    - script: tracer\build.cmd BuildWindowsIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: BuildWindowsIntegrationTests
+
+    - script: tracer\build.cmd RunWindowsIntegrationTests -filter FleetInstaller=True -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: RunWindowsIisIntegrationTests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: artifacts/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: artifacts/build_data
+      displayName: Uploading tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
       continueOnError: true

@@ -13,7 +13,8 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.IntegrationTests.FleetInstaller;
 
 [Trait("RunOnWindows", "True")]
-[Trait("IIS", "True")]
+[Trait("IIS", "True")] // these are to stop the tests being run in other stages
+[Trait("MSI", "True")] // these are to stop the tests being run in other stages
 [Trait("FleetInstaller", "True")]
 public class FileHelperTests(ITestOutputHelper output)
 {
