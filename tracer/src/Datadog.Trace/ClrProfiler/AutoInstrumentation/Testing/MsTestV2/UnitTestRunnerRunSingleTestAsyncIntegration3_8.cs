@@ -55,9 +55,9 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
         }
 
         MethodInfoCacheItem? methodInfoCacheItem;
-        if (state.State is StrongBox<MethodInfoCacheItem?> box)
+        if (state.State is StrongBox<MethodInfoCacheItem?> { Value: { } value })
         {
-            methodInfoCacheItem = box.Value ?? MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
+            methodInfoCacheItem = value;
         }
         else
         {

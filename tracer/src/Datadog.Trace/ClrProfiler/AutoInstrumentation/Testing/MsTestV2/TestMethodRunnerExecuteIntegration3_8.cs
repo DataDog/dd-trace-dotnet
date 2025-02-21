@@ -46,7 +46,7 @@ public static class TestMethodRunnerExecuteIntegration3_8
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        if (returnValue is IList { Count: > 0 } lstResults)
+        if (returnValue is ICollection { Count: > 0 } lstResults)
         {
             foreach (var testResultObject in lstResults)
             {

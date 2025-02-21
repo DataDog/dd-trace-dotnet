@@ -54,16 +54,18 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
         }
 
-        string? assemblyName;
+        string? assemblyName = null;
         if (testContext.TryDuckCast<TestContextStruct>(out var context) && context.TestMethod is { AssemblyName: { } contextAssemblyName })
         {
             assemblyName = contextAssemblyName;
         }
-        else if (instance.Instance?.TryDuckCast<ITestAssemblyInfoWithAssembly>(out var instanceWithAssembly) == true)
+
+        if (string.IsNullOrEmpty(assemblyName) && instance.Instance?.TryDuckCast<ITestAssemblyInfoWithAssembly>(out var instanceWithAssembly) == true)
         {
             assemblyName = instanceWithAssembly.Assembly.GetName().Name;
         }
-        else
+
+        if (string.IsNullOrEmpty(assemblyName))
         {
             Common.Log.Warning("Module name cannot be extracted!");
             return CallTargetState.GetDefault();
@@ -95,7 +97,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     }
 
 #pragma warning disable SA1201
-    internal interface ITestAssemblyInfoWithAssembly : ITestAssemblyInfo
+    internal interface ITestAssemblyInfoWithAssembly
 #pragma warning restore SA1201
     {
         Assembly Assembly { get; }
