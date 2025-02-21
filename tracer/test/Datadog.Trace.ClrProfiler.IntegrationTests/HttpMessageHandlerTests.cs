@@ -110,14 +110,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
                     var spans = agent.WaitForSpans(expectedSpanCount);
-                    Assert.Equal(expectedSpanCount, spans.Count);
+                    spans.Should().HaveCount(expectedSpanCount);
                     ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                     foreach (var span in spans)
                     {
                         if (span.Tags[Tags.HttpStatusCode] == "502")
                         {
-                            Assert.Equal(1, span.Error);
+                            span.Error.Should().Be(1);
                         }
 
                         if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
@@ -134,14 +134,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
 
                     // parse http headers from stdout
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                    var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
+                    var headers = StringUtil.GetAllHeaders(processResult.StandardOutput);
 
                     var firstSpan = spans.First();
-                    Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                    Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                    headers[HttpHeaderNames.TraceId].Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
+                    headers[HttpHeaderNames.ParentId].Should().Be(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture));
 
+                    var propagatedTags = headers[HttpHeaderNames.PropagatedTags];
                     var traceTags = TagPropagation.ParseHeader(propagatedTags);
                     var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
                     var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
@@ -150,20 +149,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
                         // note this assumes Datadog propagation headers are enabled (which is the default).
-                        Assert.NotNull(traceIdUpperTagFromHeader);
+                        traceIdUpperTagFromHeader.Should().NotBeNull();
 
                         // not all spans will have this tag, but if it is present,
                         // it should match the value in the "x-datadog-tags" header
                         if (traceIdUpperTagFromSpan != null)
                         {
-                            Assert.Equal(traceIdUpperTagFromHeader, traceIdUpperTagFromSpan);
+                            traceIdUpperTagFromSpan.Should().Be(traceIdUpperTagFromHeader);
                         }
                     }
                     else
                     {
                         // assert that "_dd.p.tid" was NOT added
-                        Assert.Null(traceIdUpperTagFromHeader);
-                        Assert.Null(traceIdUpperTagFromSpan);
+                        traceIdUpperTagFromHeader.Should().BeNull();
+                        traceIdUpperTagFromSpan.Should().BeNull();
                     }
 
                     using var scope = new AssertionScope();
