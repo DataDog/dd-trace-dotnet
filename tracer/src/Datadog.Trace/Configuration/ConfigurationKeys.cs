@@ -102,8 +102,36 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key for a list of ActivitySource names (supports globbing) that will be disabled.
         /// Default is empty (all ActivitySources will be subscribed to by default).
+        /// <para><b>Disabling ActivitySources may break distributed tracing if those Activities are used to propagate trace context.</b></para>
+        /// <para>
         /// Supports multiple values separated with commas.
+        /// For example: "SomeGlob.*.PatternSource,Some.Specific.Source"
+        /// </para>
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When the tracer doesn't subscribe to an ActivitySource, we will <em>NOT</em> propagate the trace context from those Activities (we don't see them anymore).
+        /// <br/><b>This means that distributed tracing flows that rely on these Activities for context propagation
+        /// will break and cause disconnected traces.</b>
+        /// </para>
+        /// <para>
+        /// Potential impact on distributed tracing:
+        /// <list type="bullet">
+        /// <item>
+        ///   <description>
+        ///     Service A -> Ignored Activity -> Service B
+        ///     <para>Creates a single trace with Service A as root and Service B as child</para>
+        ///   </description>
+        /// </item>
+        /// <item>
+        ///   <description>
+        ///     Service A -> Disabled Activity -> Service B
+        ///     <para>Creates TWO separate traces with Service A and Service B each as root spans</para>
+        ///   </description>
+        /// </item>
+        /// </list>
+        /// </para>
+        /// </remarks>
         public const string DisabledActivitySources = "DD_TRACE_DISABLED_ACTIVITY_SOURCES";
 
         /// <summary>
