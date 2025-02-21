@@ -278,7 +278,8 @@ internal readonly partial struct SecurityCoordinator
     /// </summary>
     internal void BlockAndReport(Dictionary<string, object> args, bool lastWafCall = false, bool isInHttpTracingModule = false)
     {
-        var result = RunWaf(args, lastWafCall);
+        var sessionId = _httpTransport.Context.Session?.SessionID;
+        var result = RunWaf(args, lastWafCall, sessionId: sessionId);
         if (result is not null)
         {
             var reporting = Reporter.MakeReportingFunction(result);
