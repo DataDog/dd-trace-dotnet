@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -203,16 +204,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
                 {
-                    var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
-                    Assert.Empty(spans);
+                    agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
 
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
                     var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                    tracingEnabled.Should().Be("false");
 
-                    Assert.Null(traceId);
-                    Assert.Null(parentSpanId);
-                    Assert.Equal("false", tracingEnabled);
+                    // Datadog trace context headers
+                    StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId).Should().BeNull();
+                    StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId).Should().BeNull();
 
                     using var scope = new AssertionScope();
                     // ignore auto enabled for simplicity
