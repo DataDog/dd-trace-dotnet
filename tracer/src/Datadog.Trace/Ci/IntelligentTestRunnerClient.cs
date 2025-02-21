@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -422,24 +423,25 @@ internal class IntelligentTestRunnerClient
 
                 var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
                 var settingsResponse = deserializedResult.Data?.Attributes ?? default;
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
-                {
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrDisabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrDisabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrDisabled,
-                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrEnabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrEnabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrEnabled,
-                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
-                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_AtrDisabled,
-                });
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(
+                    settingsResponse switch
+                    {
+                        { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrDisabled,
+                        { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrDisabled,
+                        { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrDisabled,
+                        { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+                        { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+                        { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+                        { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+                        { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrEnabled,
+                        { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrEnabled,
+                        { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrEnabled,
+                        { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+                        { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+                        { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+                        { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+                        _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_AtrDisabled,
+                    });
                 return settingsResponse;
             }
             finally
@@ -662,9 +664,11 @@ internal class IntelligentTestRunnerClient
 
                 try
                 {
-                    using var response = await request.PostAsync([
+                    using var response = await request.PostAsync(
+                                                       [
                                                            new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                           new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)])
+                                                           new MultipartFormItem("packfile", "application/octet-stream", null, fileStream)
+                                                       ])
                                                       .ConfigureAwait(false);
                     var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                     if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
