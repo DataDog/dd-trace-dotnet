@@ -199,41 +199,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
                 using var telemetry = this.ConfigureTelemetry();
-                int httpPort = TcpPortProvider.GetOpenPort();
+                var httpPort = TcpPortProvider.GetOpenPort();
 
-                using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
-                {
-                    agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
+                using var agent = EnvironmentHelper.GetMockAgent();
+                using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}");
 
-                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
-                    tracingEnabled.Should().Be("false");
+                agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
 
-                    // Datadog trace context headers
-                    StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId).Should().BeNull();
-                    StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId).Should().BeNull();
+                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                tracingEnabled.Should().Be("false");
 
-                    // W3C trace context headers
-                    StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceParentHeaderName).Should().BeNull();
-                    StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceStateHeaderName).Should().BeNull();
+                // Datadog trace context headers
+                StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId).Should().BeNull();
+                StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId).Should().BeNull();
 
-                    // B3 trace context headers
-                    StringUtil.GetHeader(processResult.StandardOutput, B3SingleHeaderContextPropagator.B3).Should().BeNull();
-                    StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.TraceId).Should().BeNull();
-                    StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.SpanId).Should().BeNull();
-                    StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.Sampled).Should().BeNull();
+                // W3C trace context headers
+                StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceParentHeaderName).Should().BeNull();
+                StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceStateHeaderName).Should().BeNull();
 
-                    // Baggage header
-                    StringUtil.GetHeader(processResult.StandardOutput, W3CBaggagePropagator.BaggageHeaderName).Should().BeNull();
+                // B3 trace context headers
+                StringUtil.GetHeader(processResult.StandardOutput, B3SingleHeaderContextPropagator.B3).Should().BeNull();
+                StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.TraceId).Should().BeNull();
+                StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.SpanId).Should().BeNull();
+                StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.Sampled).Should().BeNull();
 
-                    using var scope = new AssertionScope();
-                    // ignore auto enabled for simplicity
-                    telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
-                    VerifyInstrumentation(processResult.Process);
-                }
+                // Baggage header
+                StringUtil.GetHeader(processResult.StandardOutput, W3CBaggagePropagator.BaggageHeaderName).Should().BeNull();
+
+                using var scope = new AssertionScope();
+                // ignore auto enabled for simplicity
+                telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)
             {
