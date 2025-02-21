@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
@@ -55,6 +56,37 @@ internal class InstallCommand : CommandBase
     {
         log.WriteInfo("Installing .NET tracer");
 
+        bool tryIisRollback;
+
+        try
+        {
+            log.WriteInfo("Checking IIS app pools for pre-existing instrumentation variable");
+            if (AppHostHelper.GetAppPoolEnvironmentVariable(log, Defaults.InstrumentationInstallTypeKey, out var value))
+            {
+                var expectedValue = Defaults.InstrumentationInstallTypeValue;
+                if (expectedValue.Equals(value, StringComparison.Ordinal))
+                {
+                    log.WriteInfo("Found existing instrumentation install type. Won't rollback IIS instrumentation if install fails");
+                    tryIisRollback = false;
+                }
+                else
+                {
+                    log.WriteInfo($"Found instrumentation install type, but did not have expected value {expectedValue}. Will rollback IIS instrumentation if install fails");
+                    tryIisRollback = true;
+                }
+            }
+            else
+            {
+                log.WriteInfo("No existing fleet installer instrumentation install type found. Will rollback IIS instrumentation if install fails");
+                tryIisRollback = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            log.WriteError(ex, "Error reading IIS app pools, installation failed");
+            return ReturnCode.ErrorReadingIisConfiguration;
+        }
+
         if (!FileHelper.CreateLogDirectory(log, tracerLogDirectory))
         {
             // This probably isn't a reason to bail out
@@ -69,6 +101,14 @@ internal class InstallCommand : CommandBase
         if (!AppHostHelper.SetAllEnvironmentVariables(log, tracerValues))
         {
             // hard to be sure exactly of the state at this point
+            if (tryIisRollback)
+            {
+                log.WriteInfo("Attempting IIS variable rollback");
+
+                // We ignore failures here
+                AppHostHelper.RemoveAllEnvironmentVariables(log);
+            }
+
             return ReturnCode.ErrorSettingAppPoolVariables;
         }
 
