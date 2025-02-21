@@ -71,7 +71,6 @@
     },
     SpanLinks: [
       {
-        TraceState: dd=p:0000000000000000,
         Attributes: {
           link.kind: span-pointer,
           ptr.dir: d,
@@ -136,7 +135,6 @@
     },
     SpanLinks: [
       {
-        TraceState: dd=p:0000000000000000,
         Attributes: {
           link.kind: span-pointer,
           ptr.dir: d,
@@ -334,7 +332,6 @@
     },
     SpanLinks: [
       {
-        TraceState: dd=p:0000000000000000,
         Attributes: {
           link.kind: span-pointer,
           ptr.dir: d,
