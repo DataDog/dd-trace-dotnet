@@ -213,6 +213,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId).Should().BeNull();
                     StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId).Should().BeNull();
 
+                    // W3C trace context headers
+                    StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceParentHeaderName).Should().BeNull();
+                    StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceStateHeaderName).Should().BeNull();
+
+                    // B3 trace context headers
+                    StringUtil.GetHeader(processResult.StandardOutput, B3SingleHeaderContextPropagator.B3).Should().BeNull();
+                    StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.TraceId).Should().BeNull();
+                    StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.SpanId).Should().BeNull();
+                    StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.Sampled).Should().BeNull();
+
+                    // Baggage header
+                    StringUtil.GetHeader(processResult.StandardOutput, W3CBaggagePropagator.BaggageHeaderName).Should().BeNull();
+
                     using var scope = new AssertionScope();
                     // ignore auto enabled for simplicity
                     telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
