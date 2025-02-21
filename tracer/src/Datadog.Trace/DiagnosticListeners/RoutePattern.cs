@@ -25,5 +25,12 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Gets the RoutePattern.RawText
         /// </summary>
         public string? RawText;
+
+#if NETCOREAPP3_0_OR_GREATER
+        /// <summary>
+        /// Gets the RoutePattern.RequiredValues
+        /// </summary>
+        public System.Collections.Generic.IReadOnlyDictionary<string, object?> RequiredValues;
+#endif
     }
 }
