@@ -107,9 +107,12 @@ public static class EventTrackingSdk
         void RunWafAndCollectHeaders()
         {
             securityCoordinator.Value.Reporter.CollectHeaders();
-            // confluence [ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to the WAF. The value of this field must be sourced from either the user object when available, or copied from the value of the mandatory user ID.
-            var result = securityCoordinator.Value.RunWafForUser(userId: userId, userLogin: userId, fromSdk: true, otherTags: new() { { loginSuccess ? AddressesConstants.UserBusinessLoginSuccess : AddressesConstants.UserBusinessLoginFailure, string.Empty } });
-            securityCoordinator.Value.BlockAndReport(result);
+            if (userId is not null)
+            {
+                // confluence [ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to the WAF. The value of this field must be sourced from either the user object when available, or copied from the value of the mandatory user ID.
+                var result = securityCoordinator.Value.RunWafForUser(userId: userId, userLogin: userId, fromSdk: true, otherTags: new() { { loginSuccess ? AddressesConstants.UserBusinessLoginSuccess : AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                securityCoordinator.Value.BlockAndReport(result);
+            }
         }
     }
 
