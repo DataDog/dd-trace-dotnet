@@ -114,6 +114,5 @@ updates:
       interval: "monthly"
     groups:
       gh-actions-packages:
-        update-types: ["patch"]
         patterns:
           - "*"
