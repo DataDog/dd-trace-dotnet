@@ -8,8 +8,8 @@ on:
 jobs:
   end_code_freeze:
     if: | 
-      github.event_name == 'workflow_dispatch' 
-      || (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'closed')
+      github.event_name == 'workflow_dispatch' || 
+      (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'closed')
     runs-on: ubuntu-latest
     permissions:
       contents: read
