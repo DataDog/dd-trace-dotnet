@@ -1262,7 +1262,7 @@ partial class Build : NukeBuild
                                     dockerTag = dockerTag,
                                     publishFramework = image.PublishFramework,
                                     linuxArtifacts = linuxArtifacts,
-                                    runCrashTest = "false", // this doesn't work yet
+                                    runCrashTest = image.RunCrashTest ? "true" : "false",
                                     runtimeImage = $"{dockerName}:{image.RuntimeTag}",
                                     runtimeId = runtimeId,
                                     packageName = pair.package.name,
