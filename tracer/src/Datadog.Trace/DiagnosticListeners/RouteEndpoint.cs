@@ -3,24 +3,33 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
+#endif
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.DiagnosticListeners
+namespace Datadog.Trace.DiagnosticListeners;
+
+/// <summary>
+/// Endpoint for duck typing
+/// </summary>
+[DuckCopy]
+internal struct RouteEndpoint
 {
     /// <summary>
-    /// Endpoint for duck typing
+    /// Delegates to Endpoint.RoutePattern;
     /// </summary>
-    [DuckCopy]
-    internal struct RouteEndpoint
-    {
-        /// <summary>
-        /// Delegates to Endpoint.RoutePattern;
-        /// </summary>
-        public RoutePattern RoutePattern;
+    public RoutePattern RoutePattern;
 
-        /// <summary>
-        /// Delegates to Endpoint.DisplayName;
-        /// </summary>
-        public string DisplayName;
-    }
+    /// <summary>
+    /// Delegates to Endpoint.DisplayName;
+    /// </summary>
+    public string DisplayName;
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// Delegates to Endpoint.Metadata;
+    /// </summary>
+    public object Metadata;
+#endif
 }
