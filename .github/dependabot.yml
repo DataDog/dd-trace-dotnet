@@ -112,7 +112,7 @@ updates:
       - "/.github/actions/*/*"
     schedule:
       interval: "monthly"
-    groups:
-      gh-actions-packages:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 2
+    ignore: # okay I don't think this works but maybe we can find out live
+      - dependency-name: "*" # Ignore patches for all actions
+        update-types: ["version-update:semver-patch"] # this doesn't seem to work
