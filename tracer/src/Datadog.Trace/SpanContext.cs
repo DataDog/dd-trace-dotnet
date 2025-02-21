@@ -183,7 +183,6 @@ namespace Datadog.Trace
         {
             TraceId128 = Trace.TraceId.Zero;  // Directly set zero without the random generation
             SpanId = 0;
-            IsRemote = true; // pass trace state
         }
 
         /// <summary>
