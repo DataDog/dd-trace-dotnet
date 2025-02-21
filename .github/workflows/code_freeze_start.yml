@@ -36,35 +36,12 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      - uses: ./.github/actions/code-freeze
-        name: 'Freeze 25 PRs'
+      - uses: ./.github/actions/pr-status-updater
+        name: 'Freeze PRs'
         with:
-          page_number: 1
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: ./.github/actions/code-freeze
-        name: 'Freeze 25 PRs'
-        with:
-          page_number: 2
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: ./.github/actions/code-freeze
-        name: 'Freeze 25 PRs'
-        with:
-          page_number: 3
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: ./.github/actions/code-freeze
-        name: 'Freeze 25 PRs'
-        with:
-          page_number: 4
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: ./.github/actions/code-freeze
-        name: 'Freeze 25 PRs'
-        with:
-          page_number: 5
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          state: failure
+          workflow_name: code_freeze_start.yml # this allows for a click through to go to the action
 
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'

@@ -8,8 +8,8 @@ on:
 jobs:
   end_code_freeze:
     if: | 
-      github.event_name == 'workflow_dispatch' 
-      || (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'closed')
+      github.event_name == 'workflow_dispatch' || 
+      (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'closed')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,37 +35,10 @@ jobs:
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-    - uses: ./.github/actions/code-freeze
-      name: 'Unfreeze 25 PRs'
+    # Unfreeze PRs
+    - uses: ./.github/actions/pr-status-updater
+      name: 'Unfreeze PRs'
       with:
-        page_number: 1
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        end_freeze: "true"
-
-    - uses: ./.github/actions/code-freeze
-      name: 'Unfreeze 25 PRs'
-      with:
-        page_number: 2
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        end_freeze: "true"
-
-    - uses: ./.github/actions/code-freeze
-      name: 'Unfreeze 25 PRs'
-      with:
-        page_number: 3
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        end_freeze: "true"
-
-    - uses: ./.github/actions/code-freeze
-      name: 'Unfreeze 25 PRs'
-      with:
-        page_number: 5
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        end_freeze: "true"
-
-    - uses: ./.github/actions/code-freeze
-      name: 'Unfreeze 25 PRs'
-      with:
-        page_number: 4
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        end_freeze: "true"
+        state: failure
+        workflow_name: code_freeze_end.yml # this allows for a click through to go to the action
