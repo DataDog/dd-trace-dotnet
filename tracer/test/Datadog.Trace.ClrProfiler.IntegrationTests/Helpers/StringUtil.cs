@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         internal static Dictionary<string, string> GetAllHeaders(string source)
         {
             return HeaderRegex.Matches(source)
-                              .Cast<Match>() // required in older runtimes where MatchCollection doesn't implement IEnumerable<Match>
+                              .Cast<Match>() // required in older runtimes where MatchCollection implements IEnumerable, but not IEnumerable<Match>
                               .Where(match => match.Success)
                               .ToDictionary(
                                   match => match.Groups["name"].Value,
