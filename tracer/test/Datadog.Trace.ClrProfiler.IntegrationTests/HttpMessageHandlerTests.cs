@@ -214,6 +214,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     // Datadog trace context headers
                     headers.Should().NotContainKey(HttpHeaderNames.TraceId);
                     headers.Should().NotContainKey(HttpHeaderNames.ParentId);
+                    headers.Should().NotContainKey(HttpHeaderNames.SamplingPriority);
+                    headers.Should().NotContainKey(HttpHeaderNames.Origin);
+                    headers.Should().NotContainKey(HttpHeaderNames.PropagatedTags);
 
                     // W3C trace context headers
                     headers.Should().NotContainKey(W3CTraceContextPropagator.TraceParentHeaderName);
