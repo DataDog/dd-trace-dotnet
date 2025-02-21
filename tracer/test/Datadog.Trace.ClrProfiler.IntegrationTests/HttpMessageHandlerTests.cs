@@ -105,74 +105,73 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
                 using var telemetry = this.ConfigureTelemetry();
-                using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                using var agent = EnvironmentHelper.GetMockAgent();
+                using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
+
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                var spans = agent.WaitForSpans(expectedSpanCount);
+                spans.Should().HaveCount(expectedSpanCount);
+                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                foreach (var span in spans)
                 {
-                    agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                    var spans = agent.WaitForSpans(expectedSpanCount);
-                    spans.Should().HaveCount(expectedSpanCount);
-                    ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-
-                    foreach (var span in spans)
+                    if (span.Tags[Tags.HttpStatusCode] == "502")
                     {
-                        if (span.Tags[Tags.HttpStatusCode] == "502")
-                        {
-                            span.Error.Should().Be(1);
-                        }
-
-                        if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
-                        {
-                            if (queryStringCaptureEnabled)
-                            {
-                                url.Should().EndWith(expectedQueryString);
-                            }
-                            else
-                            {
-                                new Uri(url).Query.Should().BeNullOrEmpty();
-                            }
-                        }
+                        span.Error.Should().Be(1);
                     }
 
-                    // parse http headers from stdout
-                    var headers = StringUtil.GetAllHeaders(processResult.StandardOutput);
-
-                    var firstSpan = spans.First();
-                    headers[HttpHeaderNames.TraceId].Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
-                    headers[HttpHeaderNames.ParentId].Should().Be(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture));
-
-                    var propagatedTags = headers[HttpHeaderNames.PropagatedTags];
-                    var traceTags = TagPropagation.ParseHeader(propagatedTags);
-                    var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
-                    var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
-
-                    if (traceId128Enabled)
+                    if (span.Tags.TryGetValue(Tags.HttpUrl, out var url))
                     {
-                        // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
-                        // note this assumes Datadog propagation headers are enabled (which is the default).
-                        traceIdUpperTagFromHeader.Should().NotBeNull();
-
-                        // not all spans will have this tag, but if it is present,
-                        // it should match the value in the "x-datadog-tags" header
-                        if (traceIdUpperTagFromSpan != null)
+                        if (queryStringCaptureEnabled)
                         {
-                            traceIdUpperTagFromSpan.Should().Be(traceIdUpperTagFromHeader);
+                            url.Should().EndWith(expectedQueryString);
+                        }
+                        else
+                        {
+                            new Uri(url).Query.Should().BeNullOrEmpty();
                         }
                     }
-                    else
-                    {
-                        // assert that "_dd.p.tid" was NOT added
-                        traceIdUpperTagFromHeader.Should().BeNull();
-                        traceIdUpperTagFromSpan.Should().BeNull();
-                    }
-
-                    using var scope = new AssertionScope();
-                    telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
-                    // ignore for now auto enabled for simplicity
-                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
-                    VerifyInstrumentation(processResult.Process);
                 }
+
+                // parse http headers from stdout
+                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput);
+
+                var firstSpan = spans.First();
+                headers[HttpHeaderNames.TraceId].Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
+                headers[HttpHeaderNames.ParentId].Should().Be(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture));
+
+                var propagatedTags = headers[HttpHeaderNames.PropagatedTags];
+                var traceTags = TagPropagation.ParseHeader(propagatedTags);
+                var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
+                var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
+
+                if (traceId128Enabled)
+                {
+                    // assert that "_dd.p.tid" was added to the "x-datadog-tags" header (horizontal propagation)
+                    // note this assumes Datadog propagation headers are enabled (which is the default).
+                    traceIdUpperTagFromHeader.Should().NotBeNull();
+
+                    // not all spans will have this tag, but if it is present,
+                    // it should match the value in the "x-datadog-tags" header
+                    if (traceIdUpperTagFromSpan != null)
+                    {
+                        traceIdUpperTagFromSpan.Should().Be(traceIdUpperTagFromHeader);
+                    }
+                }
+                else
+                {
+                    // assert that "_dd.p.tid" was NOT added
+                    traceIdUpperTagFromHeader.Should().BeNull();
+                    traceIdUpperTagFromSpan.Should().BeNull();
+                }
+
+                using var scope = new AssertionScope();
+                telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                // ignore for now auto enabled for simplicity
+                telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
             }
             catch (ExitCodeException)
             {
