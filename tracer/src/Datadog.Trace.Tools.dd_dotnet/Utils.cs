@@ -149,6 +149,12 @@ internal class Utils
             envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
         }
 
+        const string installTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(installTypeKey)))
+        {
+            envVars[installTypeKey] = "dd_dotnet_launcher";
+        }
+
         return envVars;
     }
 
