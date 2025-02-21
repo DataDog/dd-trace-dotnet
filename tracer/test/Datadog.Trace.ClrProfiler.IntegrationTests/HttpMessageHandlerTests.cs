@@ -206,25 +206,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
 
-                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
-                tracingEnabled.Should().Be("false");
+                // parse http headers from stdout
+                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput);
+                headers[HttpHeaderNames.TracingEnabled].Should().Be("false");
 
-                // Datadog trace context headers
-                StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId).Should().BeNull();
-                StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId).Should().BeNull();
+                // when tracing is disabled, we should not see any trace context or baggage headers
+                using (_ = new AssertionScope())
+                {
+                    // Datadog trace context headers
+                    headers.Should().NotContainKey(HttpHeaderNames.TraceId);
+                    headers.Should().NotContainKey(HttpHeaderNames.ParentId);
 
-                // W3C trace context headers
-                StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceParentHeaderName).Should().BeNull();
-                StringUtil.GetHeader(processResult.StandardOutput, W3CTraceContextPropagator.TraceStateHeaderName).Should().BeNull();
+                    // W3C trace context headers
+                    headers.Should().NotContainKey(W3CTraceContextPropagator.TraceParentHeaderName);
+                    headers.Should().NotContainKey(W3CTraceContextPropagator.TraceStateHeaderName);
 
-                // B3 trace context headers
-                StringUtil.GetHeader(processResult.StandardOutput, B3SingleHeaderContextPropagator.B3).Should().BeNull();
-                StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.TraceId).Should().BeNull();
-                StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.SpanId).Should().BeNull();
-                StringUtil.GetHeader(processResult.StandardOutput, B3MultipleHeaderContextPropagator.Sampled).Should().BeNull();
+                    // B3 trace context headers
+                    headers.Should().NotContainKey(B3SingleHeaderContextPropagator.B3);
+                    headers.Should().NotContainKey(B3MultipleHeaderContextPropagator.TraceId);
+                    headers.Should().NotContainKey(B3MultipleHeaderContextPropagator.SpanId);
+                    headers.Should().NotContainKey(B3MultipleHeaderContextPropagator.Sampled);
 
-                // Baggage header
-                StringUtil.GetHeader(processResult.StandardOutput, W3CBaggagePropagator.BaggageHeaderName).Should().BeNull();
+                    // Baggage header
+                    headers.Should().NotContainKey(W3CBaggagePropagator.BaggageHeaderName);
+                }
 
                 using var scope = new AssertionScope();
                 // ignore auto enabled for simplicity
