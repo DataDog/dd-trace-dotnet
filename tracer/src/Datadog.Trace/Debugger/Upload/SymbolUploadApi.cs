@@ -90,18 +90,13 @@ namespace Datadog.Trace.Debugger.Upload
             }
             else
             {
-                using var memoryStream = new MemoryStream();
-#if NETFRAMEWORK
-                using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
-#else
-                using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
-#endif
+                var compressedSymbols = await CompressDataAsync(symbols);
+                if (compressedSymbols == null)
                 {
-                    await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
-                    await gzipStream.FlushAsync().ConfigureAwait(false);
+                    return false;
                 }
 
-                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Gzip, "file.gz", compressedSymbols.Value);
             }
 
             var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };
@@ -129,6 +124,41 @@ namespace Datadog.Trace.Debugger.Upload
             }
 
             return false;
+        }
+
+        public static async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
+        {
+            using var memoryStream = new MemoryStream();
+
+#if NETFRAMEWORK
+            using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
+#else
+            using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+#endif
+            {
+                await gzipStream.WriteAsync(data.Array!, data.Offset, data.Count).ConfigureAwait(false);
+                await gzipStream.FlushAsync().ConfigureAwait(false);
+            }
+
+            var compressedData = memoryStream.ToArray();
+
+            // see here about the following validation: https://forensics.wiki/gzip/
+            if (compressedData.Length < 18) // minimum size for header + footer
+            {
+                Log.Error("Compression produced invalid data: size {Size} bytes is below minimum valid GZip size", property: compressedData.Length);
+                return null;
+            }
+
+            if (compressedData[0] != 0x1F || compressedData[1] != 0x8B) // header magic numbers
+            {
+                Log.Error(
+                    "Compression produced invalid data: invalid GZip header {Header}",
+                    BitConverter.ToString(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Take(compressedData, 2))));
+
+                return null;
+            }
+
+            return new ArraySegment<byte>(compressedData);
         }
     }
 }
