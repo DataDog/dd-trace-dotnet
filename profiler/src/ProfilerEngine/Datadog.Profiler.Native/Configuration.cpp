@@ -102,6 +102,7 @@ Configuration::Configuration()
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -758,6 +759,11 @@ bool Configuration::IsHttpProfilingEnabled() const
 bool Configuration::ForceHttpSampling() const
 {
     return _forceHttpSampling;
+}
+
+bool Configuration::IsWaitHandleProfilingEnabled() const
+{
+    return _isWaitHandleProfilingEnabled;
 }
 
 
