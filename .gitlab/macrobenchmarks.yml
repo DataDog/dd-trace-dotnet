@@ -1,0 +1,105 @@
+variables:
+  BASE_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-aspnetcore-5
+  # The Dockerfile to this image is located at:
+  # https://github.com/DataDog/benchmarking-platform/blob/macro/dd-trace-dotnet/container/Dockerfile
+
+.macrobenchmarks:
+  stage: macrobenchmarks
+  when: manual
+  tags: ["runner:apm-k8s-same-cpu"]
+  interruptible: true
+  timeout: 1h
+  needs: []
+
+  image: $BASE_CI_IMAGE
+
+  script:
+    - git clone --branch macro/dd-trace-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform && cd /platform
+    - echo "getting ipa key"
+    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
+    - echo "got ipa key"
+    - bp-runner bp-runner.yml --debug
+  artifacts:
+    name: "artifacts_bp"
+    when: always
+    paths:
+      - artifacts_bp/
+    expire_in: 3 months
+  
+  allow_failure: true
+
+  variables:
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+
+    ENDPOINT: randomdate
+
+    K6_OPTIONS_WARMUP_RATE: 30
+    K6_OPTIONS_WARMUP_DURATION: 3m
+    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
+    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_WARMUP_MAX_VUS: 4
+
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 400
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+
+    K6_OPTIONS_HIGH_LOAD_RATE: 600
+    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
+    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+
+baseline:
+  extends: .macrobenchmarks
+  variables:
+    DD_SERVICE: "dotnet-aspnetcore"
+    DD_TRACE_DEBUG: "false"
+    BENCHMARKS_CFG: baseline
+  rules:
+    - when: manual
+
+only-tracing-auto:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: only-tracing
+    MODE: auto
+  rules:
+    - when: manual
+
+only-tracing-manual:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: only-tracing
+    MODE: manual
+  rules:
+    - when: manual
+
+otel-auto:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: otel
+    MODE: auto
+  rules:
+    - when: manual
+
+otel-manual:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: otel
+    MODE: manual
+  rules:
+    - when: manual
