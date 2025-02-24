@@ -602,6 +602,18 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+            if (source is CompositeConfigurationSource compositeSource)
+            {
+                foreach (var nestedSource in compositeSource)
+                {
+                    if (nestedSource is JsonConfigurationSource { JsonConfigurationFilePath: { } jsonFilePath }
+                     && !string.IsNullOrEmpty(jsonFilePath))
+                    {
+                        JsonConfigurationFilePaths.Add(jsonFilePath);
+                    }
+                }
+            }
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -1112,6 +1124,8 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
+
+        internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
