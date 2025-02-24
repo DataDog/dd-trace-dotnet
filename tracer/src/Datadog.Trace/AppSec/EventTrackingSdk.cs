@@ -71,7 +71,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(internalSpan, userId: userId);
+        RunSecurityChecksAndReport(internalSpan, userId: userId, loginSuccess: true);
     }
 
     /// <summary>
@@ -79,7 +79,8 @@ public static class EventTrackingSdk
     /// </summary>
     /// <param name="span">span</param>
     /// <param name="userId">userid</param>
-    private static void FillUp(Span span, string userId = null)
+    /// <param name="loginSuccess">whether it's a login success</param>
+    private static void RunSecurityChecksAndReport(Span span, string userId = null, bool loginSuccess = false)
     {
         if (span is null)
         {
@@ -106,9 +107,12 @@ public static class EventTrackingSdk
         void RunWafAndCollectHeaders()
         {
             securityCoordinator.Value.Reporter.CollectHeaders();
-            // confluence [ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to the WAF. The value of this field must be sourced from either the user object when available, or copied from the value of the mandatory user ID.
-            var result = securityCoordinator.Value.RunWafForUser(userId: userId, userLogin: userId, fromSdk: true);
-            securityCoordinator.Value.BlockAndReport(result);
+            if (userId is not null)
+            {
+                // confluence [ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to the WAF. The value of this field must be sourced from either the user object when available, or copied from the value of the mandatory user ID.
+                var result = securityCoordinator.Value.RunWafForUser(userId: userId, userLogin: userId, fromSdk: true, otherTags: new() { { loginSuccess ? AddressesConstants.UserBusinessLoginSuccess : AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                securityCoordinator.Value.BlockAndReport(result);
+            }
         }
     }
 
@@ -169,7 +173,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(spanInternal, userId: userId);
+        RunSecurityChecksAndReport(spanInternal, userId: userId, loginSuccess: false);
     }
 
     /// <summary>
@@ -222,6 +226,6 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(internalSpan);
+        RunSecurityChecksAndReport(internalSpan);
     }
 }

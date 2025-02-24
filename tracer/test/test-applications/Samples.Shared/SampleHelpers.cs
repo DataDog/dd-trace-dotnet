@@ -53,6 +53,7 @@ namespace Samples
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IDictionary<string, string>) }, null);
+        private static readonly MethodInfo TrackUserLoginFailureEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginFailureEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(bool), typeof(IDictionary<string, string>) }, null);
 #if NETCOREAPP
         private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
 #else
@@ -406,6 +407,11 @@ namespace Samples
         public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
         {
             TrackUserLoginSuccessEventMethod.Invoke(null, new object[] { userId, metadata });
+        }
+        
+        public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
+        {
+            TrackUserLoginFailureEventMethod.Invoke(null, new object[] { userId, exists, metadata });
         }
 
         public static void SetUser(string userId)
