@@ -17,4 +17,5 @@ internal enum ReturnCode
     ErrorRemovingAppPoolVariables,
     ErrorRemovingNativeLoaderFiles,
     ErrorRemovingCrashTrackerKey,
+    ErrorReadingIisConfiguration,
 }
