@@ -7,10 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -98,7 +96,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int expectedCorrelatedSpanCount,
             string packageVersion = "",
             bool disableLogCorrelation = false,
-            Func<string, bool> additionalInjectedLogFilter = null)
+            Func<string, bool> additionalInjectedLogFilter = null,
+            bool use128Bits = false)
         {
             foreach (var test in logFileTestCases)
             {
@@ -120,10 +119,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 additionalInjectedLogFilter ??= (_) => true;
                 var tracedLogs = logs.Where(log => !log.Contains(ExcludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
 
+                tracedLogs.Should().NotBeNullOrEmpty();
+
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
-                    var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+                    var traceIds = new List<string>();
+                    if (use128Bits)
+                    {
+                        foreach (var span in spans)
+                        {
+                            var lower = span.TraceId.ToString("x16");
+                            var upper = span.GetTag(Tags.Propagated.TraceIdUpper);
+                            if (string.IsNullOrEmpty(upper))
+                            {
+                                continue;
+                            }
+
+                            var combined = upper + lower;
+                            traceIds.Add(combined);
+                        }
+
+                        traceIds = traceIds.Distinct().ToList();
+                    }
+                    else
+                    {
+                        traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+                    }
+
+                    traceIds.Count.Should().BePositive();
+
                     if (traceIds.Any())
                     {
                         switch (test.TracedLogTypes)
@@ -149,7 +174,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var versionRegex = string.Format(test.RegexFormat, versionProperty, @"""1.0.0""");
                 var envRegex = string.Format(test.RegexFormat, envProperty, @"""integration_tests""");
                 var serviceRegex = string.Format(test.RegexFormat, serviceProperty, @$"""{EnvironmentHelper.FullSampleName}""");
-                var traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
+                string traceIdRegex;
+                if (use128Bits)
+                {
+                    traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"("")?([0-9a-f]{32})(?(1)\1|)"); // Match a string of 32 hex characters surrounded by double quotes.
+                }
+                else
+                {
+                    traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
+                }
+
                 var spanIdRegex = string.Format(test.RegexFormat, spanIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
 
                 HashSet<string> traceIdSet = new();
@@ -168,7 +202,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                             var logTraceId = Regex.Match(log, traceIdRegex).Groups[2].Value;
                             traceIdSet.Add(logTraceId);
-
                             var logSpanId = Regex.Match(log, spanIdRegex).Groups[2].Value;
                             spanIdSet.Add(logSpanId);
                             break;

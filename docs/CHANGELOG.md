@@ -13,6 +13,76 @@
 
 
 
+
+## [Release 3.11.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.11.0)
+
+## Summary
+
+- [Tracer] Add support for HotChocolate v15.x.x
+- [Tracer] Add trimming support to Datadog.Trace, instead of requireing Datadog.Trace.Trimming
+- [Tracer] Add support 128-bit trace ids in logs injection 
+- [Tracer] Add ability to disable `ActivitySource`s from being listened to 
+- [Test Optimization] Add support for MSTest v3.8.x
+- [Serverless] Add support for AWS SDK Step Functions
+- [Continuous Profiler] Include CPU samples in profile
+- [ASM] Always collect session ID
+- [Data streams management] Add profobuf schema as OpenAPI json as tags
+
+## Changes
+
+### Tracer
+* [Tracer] support 128-bit trace ids in logs injection (#5363)
+* Add ability to disable `ActivitySource`s from being listened to (#5795)
+* [Dynamic Instrumentation] DEBUG-3132 Add Memoization Cache for Redaction Logic (#6292)
+* Fix W3CTraceContextPropagator for non-standard array types (#6654)
+* Remove unused method (#6659)
+* Fix `DisabledIntegrationNames` not correctly disabling the integration (#6664)
+* Pack trimming file in Datadog.Trace NuGet, and add trimming smoke tests for the NuGet packages (#6678)
+* only enable protobuf instrumentation when DSM is enabled (#6691)
+* Add support for HotChocolate v15.x.x (#6648)
+
+### CI Visibility
+* [Test Optimization] Support for MSTest v3.8.x (#6686)
+
+### ASM
+* [ASM][ATO] Collect session id at all times (#6623)
+
+### Continuous Profiler
+* [Profiler/Crashtracker] Bump libdatadog 16.0.3 (#6589)
+* [Profiler] Add number of CPU samples to the profile (#6646)
+* [Profiler] Fix Profiler execution benchmark tests (#6652)
+
+### Serverless
+* [SVLS-5559] Inject trace context into AWS Step Functions input attribute (#6171)
+* fix: dispose HttpWebResponses to avoid leaking FDs (#6661)
+
+### Build / Test
+* [CI] Sending CI Vis Data to HQ (#6621)
+* Build the FleetInstaller executable and include in Windows OCI image (#6644)
+* Add smoke tests for fleet installer (#6645)
+* Tack on apm-idm-dotnet reviewers to auto-bump PRs (#6665)
+* Make sure we upload hotfix artifacts to Azure (#6667)
+* Restrict dependabot github actions to patch version bumps (#6669)
+* [Test Package Versions Bump] Updating package versions (#6670)
+* Reduce flake in Fleet installer tests (#6671)
+* Minor refactor in `ThreadAbortCodeFixProvider` (#6673)
+* speed up external CI artifact fetching (#6674)
+* Try to catch memory dump for instrumentation telemetry tests (#6675)
+* Add workflows for scheduled code freeze and AAS deployment (#6681)
+* Add NuGet API verification check (#6690)
+* Remove `MemberNotNull` to fix build (#6699)
+
+### Miscellaneous
+* Create an "installer" executable for use with the Datadog installer   (#6643)
+* Reapply "Add Google Protobuf Instrumentation" (#6647)
+* Update `CONTRIBUTING` with external PR policies (#6650)
+* [Fleet Installer] Don't throw when deleting registry value if it's already deleted (#6672)
+* [Fleet Installer] Don't block uninstall if IIS isn't available (#6676)
+* Update Azure Functions doc (#6682)
+
+
+[Changes since 3.10.2](https://github.com/DataDog/dd-trace-dotnet/compare/v3.10.2...v3.11.0)
+
 ## [Release 3.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.10.0)
 
 ## Summary

@@ -7,8 +7,10 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 
@@ -69,7 +71,7 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static void CheckPathParams(this Security security, HttpContext context, Span span, IDictionary<string, object> pathParams)
+    internal static void CheckPathParamsAndSessionId(this Security security, HttpContext context, Span span, IDictionary<string, object> pathParams)
     {
         if (security.AppsecEnabled)
         {
@@ -78,7 +80,17 @@ internal static class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                var result = securityCoordinator.RunWaf(args);
+                IResult? result;
+                // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
+                if (context.Features.Get<ISessionFeature>() is { Session.IsAvailable: true } feature)
+                {
+                    result = securityCoordinator.RunWaf(args, sessionId: feature.Session.Id);
+                }
+                else
+                {
+                    result = securityCoordinator.RunWaf(args);
+                }
+
                 securityCoordinator.BlockAndReport(result);
             }
         }

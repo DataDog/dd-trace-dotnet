@@ -85,6 +85,7 @@ namespace Datadog.Trace.Configuration
         DirectoryListingLeak,
         SessionTimeout,
         DatadogTraceManual,
-        EmailHtmlInjection
+        EmailHtmlInjection,
+        Protobuf
     }
 }

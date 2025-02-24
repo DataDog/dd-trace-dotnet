@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task SubmitTraces(string packageVersion)
         {
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.3") : new Version(packageVersion);
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             List<MockSpan> spans = null;
             var expectedSpanCount = version.CompareTo(new Version("2.2.3")) <= 0 ? Pre224TestCount : Post224TestCount;
 
