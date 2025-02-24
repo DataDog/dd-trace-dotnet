@@ -28,8 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
         public static void AddS3SpanPointer(Span span, string bucketName, string key, string eTag)
         {
-            var components = new[] { bucketName, key, StripQuotes(eTag) };
-            var hash = GeneratePointerHash(components);
+            var hash = GeneratePointerHash(bucketName, key, StripQuotes(eTag));
             var spanLinkAttributes = new List<KeyValuePair<string, string>>
             {
                 new("ptr.kind", S3PtrKind),
@@ -43,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         }
 
         // Hashing rules: https://github.com/DataDog/dd-span-pointer-rules/tree/main?tab=readme-ov-file#general-hashing-rules
-        private static string GeneratePointerHash(string[] components)
+        private static string GeneratePointerHash(params string[] components)
         {
             using var stream = new MemoryStream();
 
