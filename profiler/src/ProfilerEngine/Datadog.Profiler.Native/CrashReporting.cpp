@@ -236,6 +236,10 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         auto currentIsCrashingThread = threadId == crashingThreadId;
         for (int i = 0; i < frames.size(); i++)
         {
+            if (successfulThreads >= 1 && i > 1)
+            {
+                break;
+            }
             auto [frame, succeeded] = ExtractResult(ddog_crasht_StackFrame_new());
 
             if (!succeeded)
@@ -290,11 +294,16 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
         CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
         successfulThreads++;
+
+        if (successfulThreads >= 2)
+        {
+            break;
+        }
     }
 
     if (successfulThreads != threads.size())
     {
-        return 1;
+        return 0;
     }
 
     return 0;
