@@ -134,14 +134,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 // parse http headers from stdout
-                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput);
+                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
 
                 var firstSpan = spans.First();
-                headers[HttpHeaderNames.TraceId].Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
-                headers[HttpHeaderNames.ParentId].Should().Be(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture));
+                headers.FirstOrDefault(h => h.Key == HttpHeaderNames.TraceId).Value.Should().Be(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture));
+                headers.FirstOrDefault(h => h.Key == HttpHeaderNames.ParentId).Value.Should().Be(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture));
 
-                var propagatedTags = headers[HttpHeaderNames.PropagatedTags];
-                var traceTags = TagPropagation.ParseHeader(propagatedTags);
+                var propagatedTags = headers.FirstOrDefault(h => h.Key == HttpHeaderNames.PropagatedTags);
+                var traceTags = TagPropagation.ParseHeader(propagatedTags.Value);
                 var traceIdUpperTagFromHeader = traceTags.GetTag(Tags.Propagated.TraceIdUpper);
                 var traceIdUpperTagFromSpan = firstSpan.GetTag(Tags.Propagated.TraceIdUpper);
 
@@ -205,8 +205,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.Spans.Should().NotContain(s => s.Type == SpanTypes.Http);
 
                 // parse http headers from stdout
-                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput);
-                headers[HttpHeaderNames.TracingEnabled].Should().Be("false");
+                var headers = StringUtil.GetAllHeaders(processResult.StandardOutput).ToList();
+                headers.Where(h => h.Key == HttpHeaderNames.TracingEnabled).Should().AllSatisfy(h => h.Value.Should().Be("false"));
 
                 // when tracing is disabled, we should not see any trace context or baggage headers
                 using (_ = new AssertionScope())

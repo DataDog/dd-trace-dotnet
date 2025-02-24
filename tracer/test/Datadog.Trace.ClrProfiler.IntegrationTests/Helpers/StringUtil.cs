@@ -36,14 +36,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         /// </summary>
         /// <param name="source">Source string to search.</param>
         /// <returns>Matched headers.</returns>
-        internal static Dictionary<string, string> GetAllHeaders(string source)
+        internal static IEnumerable<KeyValuePair<string, string>> GetAllHeaders(string source)
         {
             return HeaderRegex.Matches(source)
                               .Cast<Match>() // required in older runtimes where MatchCollection implements IEnumerable, but not IEnumerable<Match>
-                              .Where(match => match.Success)
-                              .ToDictionary(
-                                  match => match.Groups["name"].Value,
-                                  match => match.Groups["value"].Value);
+                              .Where(m => m.Success)
+                              .Select(m => new KeyValuePair<string, string>(
+                                  m.Groups["name"].Value,
+                                  m.Groups["value"].Value));
         }
     }
 }
