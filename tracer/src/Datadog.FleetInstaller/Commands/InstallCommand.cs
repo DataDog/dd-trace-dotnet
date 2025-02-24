@@ -66,12 +66,12 @@ internal class InstallCommand : CommandBase
                 var expectedValue = Defaults.InstrumentationInstallTypeValue;
                 if (expectedValue.Equals(value, StringComparison.Ordinal))
                 {
-                    log.WriteInfo("Found existing instrumentation install type. Won't rollback IIS instrumentation if install fails");
+                    log.WriteInfo($"Found existing instrumentation install type with value {expectedValue}. Won't rollback IIS instrumentation if install fails");
                     tryIisRollback = false;
                 }
                 else
                 {
-                    log.WriteInfo($"Found instrumentation install type, but did not have expected value {expectedValue}. Will rollback IIS instrumentation if install fails");
+                    log.WriteInfo($"Found instrumentation install type {value}, but did not have expected value {expectedValue}. Will rollback IIS instrumentation if install fails");
                     tryIisRollback = true;
                 }
             }
