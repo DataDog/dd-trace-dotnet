@@ -43,7 +43,7 @@ internal abstract class LambdaCommon
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
-        var response = (HttpWebResponse)request.GetResponse();
+        using var response = (HttpWebResponse)request.GetResponse();
 
         var headers = response.Headers.Wrap();
         if (!ValidateOkStatus(response))
@@ -59,7 +59,9 @@ internal abstract class LambdaCommon
     {
         var request = requestBuilder.GetEndInvocationRequest(scope, isError);
         WriteRequestPayload(request, data);
-        if (!ValidateOkStatus((HttpWebResponse)request.GetResponse()))
+        using var response = (HttpWebResponse)request.GetResponse();
+
+        if (!ValidateOkStatus(response))
         {
             Log("Extension does not send a status 200 OK", debug: false);
         }

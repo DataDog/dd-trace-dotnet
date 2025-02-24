@@ -9,6 +9,7 @@
    <assembly fullname="AWSSDK.S3" />
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
+   <assembly fullname="AWSSDK.StepFunctions" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
@@ -105,6 +106,7 @@
       <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
       <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
    </assembly>
+   <assembly fullname="Microsoft.TestPlatform.CrossPlatEngine" />
    <assembly fullname="Microsoft.TestPlatform.PlatformAbstractions" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />

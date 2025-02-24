@@ -77,3 +77,32 @@ gantt
     section Baseline
     azure-functions.invoke Timer TriggerAllTimer : 0, 100
 ```
+
+
+### Isolated Azure Functions with ASP.NET Core Integration
+
+Isolated Azure Functions also supports an [ASP.NET Core Integration](https://learn.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide?tabs=hostbuilder%2Cwindows#aspnet-core-integration) that operates differently.
+
+When operating in this mode the `func.exe` will *proxy* the HTTP Triggers with an HTTP Request instead of sending it as a gRPC message.
+This means that we basically have two separate modes of operation here as typically the context is stored in the gRPC message, but the message is empty when proxying.
+
+Our workaround to support this at the moment is to create our own gRPC type that is empty and inject the context in there.
+We could in the future udpate this to extract the context out of the HTTP headers that we do get from this as well.
+
+Whether a Functions app uses this new mode is subtle:
+
+`ConfigureFunctionsWebApplication()` is `ConfigureFunctionsWorkerDefaults()`
+
+and the project will have a reference to [Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore](https://www.nuget.org/packages/Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore/) package.
+
+## Debugging
+
+To debug Azure Functions locally ensure that you have the following:
+
+- https://github.com/Azure/azure-functions-core-tools
+- https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local?tabs=windows%2Cisolated-process%2Cnode-v4%2Cpython-v2%2Chttp-trigger%2Ccontainer-apps&pivots=programming-language-csharp
+- https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage
+- Disable `ExitApp` run on startup: ` public void ExitApp([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer)` in the sample application if you want to make requests.
+- Run `azurite` (may need to run as admin)
+- Build and run the function app sample
+- You can hit the endpoint like normal

@@ -16,32 +16,51 @@ if [ -z "$ARCH" ]; then
   ARCH=amd64
 fi
 
-if [ "$OS" != "linux" ]; then
-  echo "Only linux packages are supported. Exiting"
-  exit 0
+if [ "$OS" == "linux" ]; then
+  if [ "$ARCH" == "amd64" ]; then
+    SUFFIX=""
+  elif [ "$ARCH" == "arm64" ]; then
+    SUFFIX=".arm64"
+  else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+  fi
+
+  SRC_TAR="../artifacts/datadog-dotnet-apm-$PACKAGE_VERSION${SUFFIX}.tar.gz"
+
+  if [ ! -f $SRC_TAR ]; then
+     echo "$SRC_TAR was not found!"
+     exit 1
+  fi
+
+  mkdir -p sources
+
+  # extract the tarball, making sure to preserve the owner and permissions
+  tar --same-owner -pxvzf $SRC_TAR -C sources
+
+  cp ../artifacts/requirements.json sources/requirements.json
+
+elif [ "$OS" == "windows" ]; then
+
+  if [ "$ARCH" != "amd64" ]; then
+    echo "Unsupported architecture: win-$ARCH"
+    exit 0
+  fi
+
+  if [ -n "$CI_COMMIT_TAG" ]; then
+    echo "Creating public release, skipping Windows artifacts"
+    exit 0
+  fi
+
+  # unzip the tracer home directory, and remove the xml files
+  mkdir -p sources/library
+  unzip ../artifacts/windows/windows-tracer-home.zip -d sources/library
+  find sources/library -type f -name "*.xml" -delete
+
+  # Unzip the fleet installer to the sub-directory
+  mkdir -p sources/installer
+  unzip ../artifacts/windows/fleet-installer.zip -d sources/installer/
+
 fi
-
-if [ "$ARCH" == "amd64" ]; then
-  SUFFIX=""
-elif [ "$ARCH" == "arm64" ]; then
-  SUFFIX=".arm64"
-else
-  echo "Unsupported architecture: $ARCH"
-  exit 1
-fi
-
-SRC_TAR="../artifacts/datadog-dotnet-apm-$PACKAGE_VERSION${SUFFIX}.tar.gz"
-
-if [ ! -f $SRC_TAR ]; then
-   echo "$SRC_TAR was not found!"
-   exit 1
-fi
-
-mkdir -p sources
-
-# extract the tarball, making sure to preserve the owner and permissions
-tar --same-owner -pxvzf $SRC_TAR -C sources
 
 echo -n $VERSION > sources/version
-
-cp ../artifacts/requirements.json sources/requirements.json

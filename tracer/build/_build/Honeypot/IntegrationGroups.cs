@@ -44,6 +44,7 @@ namespace Honeypot
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("AWSSDK.EventBridge", new [] { "AWSSDK.EventBridge" });
+            NugetPackages.Add("AWSSDK.StepFunctions", new [] { "AWSSDK.StepFunctions" });
             NugetPackages.Add("Microsoft.Azure.Cosmos.Client", new [] { "Microsoft.Azure.Cosmos" });
             NugetPackages.Add("Elasticsearch.Net", new [] { "Elasticsearch.Net" });
             NugetPackages.Add("GraphQL", new [] { "GraphQL" });
@@ -116,6 +117,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
+            NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
             NugetPackages.Add("RestSharp", Array.Empty<string>());
 
             // Manual instrumentation

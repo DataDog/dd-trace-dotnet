@@ -602,6 +602,7 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -613,6 +614,10 @@ namespace Datadog.Trace.Configuration
                     }
                 }
             }
+
+            var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
+
+            DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
@@ -718,6 +723,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <summary>
+        /// Gets the names of disabled ActivitySources.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
+        internal string[] DisabledActivitySources { get; }
 
         /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.

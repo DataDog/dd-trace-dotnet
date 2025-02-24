@@ -29,16 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class UnitTestRunnerRunSingleTestIntegration
 {
-    /// <summary>
-    /// OnMethodEnd callback
-    /// </summary>
-    /// <typeparam name="TTarget">Type of the target</typeparam>
-    /// <typeparam name="TReturn">Type of the return value</typeparam>
-    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-    /// <param name="returnValue">Return value</param>
-    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-    /// <param name="state">Calltarget state value</param>
-    /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         if (instance is null || !MsTestIntegration.IsEnabled)
@@ -57,15 +47,14 @@ public static class UnitTestRunnerRunSingleTestIntegration
                     unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
                     methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethod))
                 {
-                    Common.Log.Debug("UnitTestRunner.RunSingleTest() call target interception: {Class}.{Name}", testMethod.TestClassName, testMethod.TestMethodName);
+                    Common.Log.Debug("UnitTestRunner.RunSingleTest() call target interception: {Class}.{Name} | {Outcome}", testMethod.TestClassName, testMethod.TestMethodName, unitTestResult.Outcome);
 
                     if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                     {
                         if (!MsTestIntegration.ShouldSkip(testMethod, out _, out _))
                         {
                             // This instrumentation catches all tests being ignored
-                            MsTestIntegration.OnMethodBegin(testMethod, instance.GetType(), isRetry: false)?
-                               .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                            MsTestIntegration.OnMethodBegin(testMethod, instance.GetType(), isRetry: false)?.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                         }
                     }
                     else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
@@ -122,23 +111,5 @@ public static class UnitTestRunnerRunSingleTestIntegration
         }
 
         return new CallTargetReturn<TReturn?>(returnValue);
-    }
-
-    [DuckCopy]
-    internal struct ClassInfoInitializationExceptionStruct
-    {
-        public Exception? ClassInitializationException;
-    }
-
-    [DuckCopy]
-    internal struct ClassInfoCleanupExceptionsStruct
-    {
-        public Exception? ClassCleanupException;
-    }
-
-    [DuckCopy]
-    internal struct AssemblyInfoExceptionsStruct
-    {
-        public Exception? AssemblyInitializationException;
     }
 }

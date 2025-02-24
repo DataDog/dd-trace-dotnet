@@ -40,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AwsS3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsS3 : PackageVersionsLatestSpecific.AwsS3;
 
+        public static IEnumerable<object[]> AwsStepFunctions => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsStepFunctions : PackageVersionsLatestSpecific.AwsStepFunctions;
+
         public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MongoDB : PackageVersionsLatestSpecific.MongoDB;
 
         public static IEnumerable<object[]> ElasticSearch7 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch7 : PackageVersionsLatestSpecific.ElasticSearch7;
@@ -55,6 +57,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> HotChocolate => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.HotChocolate : PackageVersionsLatestSpecific.HotChocolate;
 
         public static IEnumerable<object[]> Npgsql => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Npgsql : PackageVersionsLatestSpecific.Npgsql;
+
+        public static IEnumerable<object[]> Protobuf => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Protobuf : PackageVersionsLatestSpecific.Protobuf;
 
         public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestSpecific.RabbitMQ;
 

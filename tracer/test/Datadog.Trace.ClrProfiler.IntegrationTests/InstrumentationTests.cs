@@ -606,7 +606,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     RedirectStandardError = true,
                 };
                 using var process = new ProcessHelper(Process.Start(startInfo), x => output.WriteLine(x), x => output.WriteLine(x));
-                process.Process.WaitForExit(30_000);
+                const int timeoutMs = 30_000;
+                if (!process.Process.WaitForExit(timeoutMs))
+                {
+                    var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process.Process, includeChildProcesses: true);
+                    process.Process.Kill();
+                    throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
+                }
+
                 process.Drain(15_000);
 
                 var extension = EnvironmentTools.IsWindows() ? ".exe" : string.Empty;
