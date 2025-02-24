@@ -36,7 +36,7 @@ namespace DatadogSymbolsServer
                 _ => throw new NotImplementedException($"Unknown symbol kind {kind}")
             };
 
-            var path = Path.Combine(_rootPath, fileFolder);
+            var path = Path.Combine(_rootPath, fileFolder.ToLower());
             _logger.LogInformation($"Looking into {path}");
             if (Directory.Exists(path))
             {
@@ -109,7 +109,7 @@ namespace DatadogSymbolsServer
 
             var tmpPath = Path.Combine(Path.GetTempPath(), $"symbol_cache_windows_tmp_{version}");
             var binariesPath = Path.Combine(tmpPath, "binaries");
-            _logger.LogInformation($"Saving in {_rootPath} {version}");
+
 
             ExtractTo(binariesPath, binariesRequest.Content.ReadAsStream());
 
@@ -130,7 +130,7 @@ namespace DatadogSymbolsServer
                     {
                         if (d != null && d.CvInfoPdb70 != null)
                         {
-                            pdbFilesInfo.Add((Path.Combine(parent, Path.GetFileName(d.CvInfoPdb70.PdbFileName)), d.CvInfoPdb70.Signature, d.CvInfoPdb70.Age));
+                            pdbFilesInfo.Add((Path.Combine(parent, GetWindowsFilename(d.CvInfoPdb70.PdbFileName)), d.CvInfoPdb70.Signature, d.CvInfoPdb70.Age));
                         }
                     }
                 }
@@ -161,11 +161,22 @@ namespace DatadogSymbolsServer
 
             Directory.Delete(tmpPath, recursive: true);
 
-            static void ExtractTo(string destPath, Stream stream)
+            void ExtractTo(string destPath, Stream stream)
             {
                 using var zip = new ZipArchive(stream);
                 Directory.CreateDirectory(destPath);
                 zip.ExtractToDirectory(destPath, overwriteFiles: true);
+            }
+
+            string GetWindowsFilename(string filePath)
+            {
+                var i = filePath.LastIndexOf('\\');
+                if (i == -1)
+                {
+                    return filePath;
+                }
+
+                return filePath.Substring(i + 1);
             }
         }
 
