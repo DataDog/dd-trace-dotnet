@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -15,6 +16,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -33,6 +35,7 @@ namespace Datadog.Trace.Ci
         private static string? _skippableTestsCorrelationId;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
         private static string? _osVersion;
+        private static ITestOptimizationClient? _client;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -59,6 +62,12 @@ namespace Datadog.Trace.Ci
             private set => _settings = value;
         }
 
+        public static ITestOptimizationClient Client
+        {
+            get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(Environment.CurrentDirectory, Settings))!;
+            private set => _client = value;
+        }
+
         public static EventPlatformProxySupport EventPlatformProxySupport { get; private set; } = EventPlatformProxySupport.None;
 
         public static CITracerManager? Manager
@@ -77,11 +86,11 @@ namespace Datadog.Trace.Ci
         // Unlocked tracer manager is used in tests so tracer instance can be changed with a new configuration.
         internal static bool UseLockedTracerManager { get; set; } = true;
 
-        internal static IntelligentTestRunnerClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; private set; }
+        internal static TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; private set; }
 
-        internal static IntelligentTestRunnerClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse { get; private set; }
+        internal static TestOptimizationClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse { get; private set; }
 
-        internal static IntelligentTestRunnerClient.ImpactedTestsDetectionResponse? ImpactedTestsDetectionResponse { get; private set; }
+        internal static TestOptimizationClient.ImpactedTestsDetectionResponse? ImpactedTestsDetectionResponse { get; private set; }
 
         public static void Initialize()
         {
@@ -102,9 +111,7 @@ namespace Datadog.Trace.Ci
                 if (!string.IsNullOrWhiteSpace(settings.ForceAgentsEvpProxy))
                 {
                     // if we force the evp proxy (internal switch)
-                    EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ?
-                                                    parsedValue :
-                                                    EventPlatformProxySupport.V2;
+                    EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ? parsedValue : EventPlatformProxySupport.V2;
                 }
                 else
                 {
@@ -180,9 +187,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility from dd-trace / runner");
             Settings = settings;
-            EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ?
-                                            parsedValue :
-                                            IsEventPlatformProxySupportedByAgent(discoveryService);
+            EventPlatformProxySupport = Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue) ? parsedValue : IsEventPlatformProxySupportedByAgent(discoveryService);
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
@@ -247,8 +252,9 @@ namespace Datadog.Trace.Ci
                 if (Settings.Logs)
                 {
                     await Task.WhenAll(
-                        Tracer.Instance.FlushAsync(),
-                        Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
+                                   Tracer.Instance.FlushAsync(),
+                                   Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync())
+                              .ConfigureAwait(false);
                 }
                 else
                 {
@@ -638,8 +644,7 @@ namespace Datadog.Trace.Ci
         {
             try
             {
-                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, Settings);
-                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                await Client.UploadRepositoryChangesAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -652,7 +657,7 @@ namespace Datadog.Trace.Ci
             try
             {
                 var settings = Settings;
-                var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
+                var client = Client;
 
                 Task? uploadRepositoryChangesTask = null;
                 if (settings.GitUploadEnabled != false)
@@ -662,7 +667,7 @@ namespace Datadog.Trace.Ci
                     {
                         try
                         {
-                            await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                            await client.UploadRepositoryChangesAsync().ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -676,11 +681,11 @@ namespace Datadog.Trace.Ci
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
                 // We query the settings api for those
                 if (settings.CodeCoverageEnabled == null
-                    || settings.TestsSkippingEnabled == null
-                    || settings.EarlyFlakeDetectionEnabled != false
-                    || settings.ImpactedTestsDetectionEnabled == null)
+                 || settings.TestsSkippingEnabled == null
+                 || settings.EarlyFlakeDetectionEnabled != false
+                 || settings.ImpactedTestsDetectionEnabled == null)
                 {
-                    var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
+                    var itrSettings = await client.GetSettingsAsync().ConfigureAwait(false);
 
                     // we check if the backend require the git metadata first
                     if (itrSettings.RequireGit == true && uploadRepositoryChangesTask is not null)
@@ -689,7 +694,7 @@ namespace Datadog.Trace.Ci
                         await uploadRepositoryChangesTask.ConfigureAwait(false);
 
                         Log.Debug("ITR: calling the configuration api again.");
-                        itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                        itrSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                     }
 
                     if (settings.CodeCoverageEnabled == null && itrSettings.CodeCoverage.HasValue)
@@ -709,7 +714,7 @@ namespace Datadog.Trace.Ci
                         Log.Information("CIVisibility: Early flake detection settings has been enabled by the settings api.");
                         EarlyFlakeDetectionSettings = itrSettings.EarlyFlakeDetection;
                         settings.SetEarlyFlakeDetectionEnabled(true);
-                        EarlyFlakeDetectionResponse = await lazyItrClient.Value.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
+                        EarlyFlakeDetectionResponse = await client.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
                     }
                     else
                     {
@@ -730,7 +735,7 @@ namespace Datadog.Trace.Ci
 
                     if (settings.ImpactedTestsDetectionEnabled == true)
                     {
-                        ImpactedTestsDetectionResponse = await lazyItrClient.Value.GetImpactedTestsDetectionFilesAsync().ConfigureAwait(false);
+                        ImpactedTestsDetectionResponse = await client.GetImpactedTestsDetectionFilesAsync().ConfigureAwait(false);
                     }
                 }
 
@@ -756,8 +761,8 @@ namespace Datadog.Trace.Ci
                 // If the tests skipping feature is enabled we query the api for the tests we have to skip
                 if (settings.TestsSkippingEnabled == true)
                 {
-                    var skippeableTests = await lazyItrClient.Value.GetSkippableTestsAsync().ConfigureAwait(false);
-                    Log.Information<string?, int>("ITR: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Length);
+                    var skippeableTests = await client.GetSkippableTestsAsync().ConfigureAwait(false);
+                    Log.Information<string?, int>("ITR: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Count);
 
                     var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
                     foreach (var item in skippeableTests.Tests)

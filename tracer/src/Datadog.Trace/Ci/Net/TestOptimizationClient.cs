@@ -65,7 +65,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
     }
 
-    public TestOptimizationClient(string? workingDirectory, CIVisibilitySettings? settings = null)
+    private TestOptimizationClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
@@ -95,7 +95,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, settings));
     }
 
-    private static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
+    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (globalTags is null)

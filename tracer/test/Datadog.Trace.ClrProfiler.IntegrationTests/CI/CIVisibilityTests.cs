@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 
@@ -103,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(GetParserData))]
         public void CustomTestConfigurationParser(SerializableDictionary tags, SerializableDictionary expected)
         {
-            Assert.Equal(expected, IntelligentTestRunnerClient.GetCustomTestsConfigurations(tags?.ToDictionary()));
+            Assert.Equal(expected, TestOptimizationClient.GetCustomTestsConfigurations(tags?.ToDictionary()));
         }
     }
 }
