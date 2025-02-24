@@ -136,11 +136,11 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountWafInit(int increment = 1)
+    public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
     }
 
-    public void RecordCountWafUpdates(int increment = 1)
+    public void RecordCountWafUpdates(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
     }
 
