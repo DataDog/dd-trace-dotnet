@@ -71,7 +71,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(internalSpan, userId: userId, loginSuccess: true);
+        RunSecurityChecksAndReport(internalSpan, userId: userId, loginSuccess: true);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public static class EventTrackingSdk
     /// <param name="span">span</param>
     /// <param name="userId">userid</param>
     /// <param name="loginSuccess">whether it's a login success</param>
-    private static void FillUp(Span span, string userId = null, bool loginSuccess = false)
+    private static void RunSecurityChecksAndReport(Span span, string userId = null, bool loginSuccess = false)
     {
         if (span is null)
         {
@@ -173,7 +173,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(spanInternal, userId: userId, loginSuccess: false);
+        RunSecurityChecksAndReport(spanInternal, userId: userId, loginSuccess: false);
     }
 
     /// <summary>
@@ -226,6 +226,6 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(internalSpan);
+        RunSecurityChecksAndReport(internalSpan);
     }
 }
