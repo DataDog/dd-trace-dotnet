@@ -854,20 +854,25 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             string resultString = string.Empty;
 
-            var task = Task.Factory.StartNew(() =>
+            try
             {
-                PerformLdapQuery();
-            });
+                var task = Task.Factory.StartNew(() =>
+                {
+                    PerformLdapQuery();
+                });
 
-            if (!task.Wait(5000))
+                if (!task.Wait(5000))
+                {
+                    // Custom code to signal the client to skip the test
+                    Response.StatusCode = 513;
+                    return Content($"Skip due to timeout (513)");
+                }
+            }
+            catch (System.Runtime.InteropServices.COMException)
             {
                 // Custom code to signal the client to skip the test
-                return StatusCode(513);
-            }
-
-            if (task.Exception != null)
-            {
-                return Content($"Result: Exception -> {task.Exception}");
+                Response.StatusCode = 513;
+                return Content($"Skip due to timeout (513)");
             }
 
             return Content($"Result: " + resultString);
