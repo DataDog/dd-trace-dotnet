@@ -211,7 +211,7 @@ internal enum Count
     /// <summary>
     /// Counts the number of times a rule type has a match. Note that this can be inferred through the events sent to the backend.
     /// </summary>
-    [TelemetryMetric<RaspRuleType>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
+    [TelemetryMetric<RaspRuleTypeMatch>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
 
     /// <summary>
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.
