@@ -27,7 +27,7 @@ internal class TracerValues
             { "DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
             { "COR_ENABLE_PROFILING", "1" },
             { "CORECLR_ENABLE_PROFILING", "1" },
-            { "DD_INSTRUMENTATION_INSTALL_TYPE", "windows_fleet_installer" },
+            { Defaults.InstrumentationInstallTypeKey, Defaults.InstrumentationInstallTypeValue },
         });
         FilesToAddToGac =
         [

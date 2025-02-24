@@ -27,6 +27,53 @@ internal static class AppHostHelper
         return ModifyEnvironmentVariablesWithRetry(log, envVars, RemoveEnvVars);
     }
 
+    public static bool GetAppPoolEnvironmentVariable(ILogger log, string environmentVariable, out string? value)
+    {
+        using var serverManager = new ServerManager();
+        var appPoolsSection = GetApplicationPoolsSection(log, serverManager);
+        if (appPoolsSection is null)
+        {
+            value = null;
+            return false;
+        }
+
+        var (applicationPoolDefaults, applicationPoolsCollection) = appPoolsSection.Value;
+
+        // Check defaults
+        log.WriteInfo($"Checking applicationPoolDefaults for environment variable: {environmentVariable}");
+        if (TryGetEnvVar(applicationPoolDefaults.GetCollection("environmentVariables"), environmentVariable) is { } envValue)
+        {
+            value = envValue;
+            return true;
+        }
+
+        foreach (var appPoolElement in applicationPoolsCollection)
+        {
+            if (string.Equals(appPoolElement.ElementTagName, "add", StringComparison.OrdinalIgnoreCase))
+            {
+                // An app pool element
+                var poolName = appPoolElement.GetAttributeValue("name") as string;
+                if (poolName is null)
+                {
+                    // poolName can never be null, if it is, weirdness is afoot, so bail out
+                    log.WriteInfo("Found app pool element without a name, skipping");
+                    continue;
+                }
+
+                log.WriteInfo($"Checking app pool '{poolName}' for environment variable: {environmentVariable}");
+                if (TryGetEnvVar(appPoolElement.GetCollection("environmentVariables"), environmentVariable) is { } poolEnvValue)
+                {
+                    value = poolEnvValue;
+                    return true;
+                }
+            }
+        }
+
+        log.WriteInfo($"{environmentVariable} variable not found in any app pools");
+        value = null;
+        return false;
+    }
+
     private static bool ModifyEnvironmentVariablesWithRetry(
         ILogger log,
         ReadOnlyDictionary<string, string> envVars,
@@ -274,5 +321,24 @@ internal static class AppHostHelper
         {
             envVars.Remove(element);
         }
+    }
+
+    private static string? TryGetEnvVar(ConfigurationElementCollection envVars, string variable)
+    {
+        foreach (var envVarEle in envVars)
+        {
+            if (!string.Equals(envVarEle.ElementTagName, "add", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (envVarEle.GetAttributeValue("name") is string key
+             && key.Equals(variable, StringComparison.OrdinalIgnoreCase))
+            {
+                return envVarEle["value"] as string;
+            }
+        }
+
+        return null;
     }
 }
