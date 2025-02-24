@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                 new("ptr.kind", S3PtrKind),
                 new("ptr.dir", DownDirection),
                 new("ptr.hash", hash),
-                new("link.kind", LinkKind),
+                new("link.kind", LinkKind)
             };
 
             var spanLink = new SpanLink(SpanContext.ZeroContext, spanLinkAttributes);
@@ -44,6 +45,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         // Hashing rules: https://github.com/DataDog/dd-span-pointer-rules/tree/main?tab=readme-ov-file#general-hashing-rules
         private static string GeneratePointerHash(params string[] components)
         {
+#if NETCOREAPP3_0_OR_GREATER || NET5_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
+            // compute size of components and the '|' that separates them
+            var totalSize = components.Sum(c => Encoding.UTF8.GetByteCount(c)) + components.Length - 1;
+
+            Span<byte> buffer = stackalloc byte[totalSize];
+            var position = 0;
+
+            // Build the concatenated bytes with separators
+            for (var i = 0; i < components.Length; i++)
+            {
+                if (i > 0)
+                {
+                    buffer[position++] = (byte)'|';
+                }
+
+                var bytesWritten = Encoding.UTF8.GetBytes(components[i], buffer[position..]);
+                position += bytesWritten;
+            }
+
+            // Compute and truncate hash
+            using var sha256 = SHA256.Create();
+            var fullHash = sha256.ComputeHash(buffer[..position].ToArray());
+            var truncatedHash = new byte[SpanPointerHashSizeBytes];
+            Array.Copy(fullHash, truncatedHash, SpanPointerHashSizeBytes);
+#else
+    // Legacy implementation for .NET Framework
             using var stream = new MemoryStream();
 
             var first = true;
@@ -62,13 +89,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                 stream.Write(componentBytes, 0, componentBytes.Length);
             }
 
+            // Compute and truncate hash
             using var sha256 = SHA256.Create();
             var fullHash = sha256.ComputeHash(stream.ToArray());
             var truncatedHash = new byte[SpanPointerHashSizeBytes];
             Array.Copy(fullHash, truncatedHash, SpanPointerHashSizeBytes);
-
+#endif
             return BitConverter.ToString(truncatedHash).Replace("-", string.Empty).ToLower();
-        }
+    }
 
         /// <summary>
         /// Removes quotes wrapping a value, if they exist.
