@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
         public static void AddS3SpanPointer(Span span, string bucketName, string key, string eTag)
         {
             var hash = GeneratePointerHash(bucketName, key, StripQuotes(eTag));
-            var spanLinkAttributes = new List<KeyValuePair<string, string>>
+            var spanLinkAttributes = new List<KeyValuePair<string, string>>(4)
             {
                 new("ptr.kind", S3PtrKind),
                 new("ptr.dir", DownDirection),
