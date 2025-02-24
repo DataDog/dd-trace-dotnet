@@ -4,12 +4,10 @@
 // </copyright>
 #if NETFRAMEWORK
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.FleetInstaller;
-using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,33 +18,15 @@ namespace Datadog.Trace.IntegrationTests.FleetInstaller;
 [Trait("IIS", "True")] // these are to stop the tests being run in other stages
 [Trait("MSI", "True")] // these are to stop the tests being run in other stages
 [Trait("FleetInstaller", "True")]
-public class FileHelperTests(ITestOutputHelper output) : IDisposable
+public class FileHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase(output)
 {
-    private readonly FleetInstallerLogger _log = new(output);
-    private string _homeDirectory;
-
-    public void Dispose()
-    {
-        if (_homeDirectory is { } dir)
-        {
-            try
-            {
-                Directory.Delete(dir, recursive: true);
-            }
-            catch
-            {
-                // Ignore, something is locking it
-            }
-        }
-    }
-
     [SkippableFact]
     public void CreateLogDirectory_WhenDirectoryDoesntExist_CreatesDirectory()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.Exists(tempDirectory).Should().BeFalse();
 
-        FileHelper.CreateLogDirectory(_log, tempDirectory).Should().BeTrue();
+        FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
         Directory.Exists(tempDirectory).Should().BeTrue();
     }
 
@@ -56,7 +36,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName(), Path.GetRandomFileName(), Path.GetRandomFileName());
         Directory.Exists(tempDirectory).Should().BeFalse();
 
-        FileHelper.CreateLogDirectory(_log, tempDirectory).Should().BeTrue();
+        FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
         Directory.Exists(tempDirectory).Should().BeTrue();
     }
 
@@ -67,7 +47,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         Directory.CreateDirectory(tempDirectory);
         Directory.Exists(tempDirectory).Should().BeTrue();
 
-        FileHelper.CreateLogDirectory(_log, tempDirectory).Should().BeTrue();
+        FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeTrue();
         Directory.Exists(tempDirectory).Should().BeTrue();
     }
 
@@ -75,7 +55,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
     public void CreateLogDirectory_WhenInvalidPath_ReturnsFalse()
     {
         var tempDirectory = Path.Combine("X:", "-1");
-        FileHelper.CreateLogDirectory(_log, tempDirectory).Should().BeFalse();
+        FileHelper.CreateLogDirectory(Log, tempDirectory).Should().BeFalse();
     }
 
     [SkippableFact]
@@ -84,7 +64,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         var homeDirectory = CreateMonitoringHomeCopy();
 
         var values = new TracerValues(homeDirectory);
-        FileHelper.TryVerifyFilesExist(_log, values, out var error)
+        FileHelper.TryVerifyFilesExist(Log, values, out var error)
                   .Should().BeTrue();
         error.Should().BeNull();
     }
@@ -96,7 +76,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         Directory.Exists(homeDirectory).Should().BeFalse();
 
         var values = new TracerValues(homeDirectory);
-        FileHelper.TryVerifyFilesExist(_log, values, out var error)
+        FileHelper.TryVerifyFilesExist(Log, values, out var error)
                   .Should().BeFalse();
         error.Should().NotBeNull();
     }
@@ -109,7 +89,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         var values = new TracerValues(homeDirectory);
         File.Delete(values.NativeLoaderX64Path);
 
-        FileHelper.TryVerifyFilesExist(_log, values, out var error)
+        FileHelper.TryVerifyFilesExist(Log, values, out var error)
                   .Should().BeFalse();
         error.Should().NotBeNull();
     }
@@ -122,7 +102,7 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         var values = new TracerValues(homeDirectory);
         File.Delete(values.NativeLoaderX86Path);
 
-        FileHelper.TryVerifyFilesExist(_log, values, out var error)
+        FileHelper.TryVerifyFilesExist(Log, values, out var error)
                   .Should().BeFalse();
         error.Should().NotBeNull();
     }
@@ -136,47 +116,84 @@ public class FileHelperTests(ITestOutputHelper output) : IDisposable
         var values = new TracerValues(homeDirectory);
         File.Delete(values.FilesToAddToGac.Skip(index).First());
 
-        FileHelper.TryVerifyFilesExist(_log, values, out var error)
+        FileHelper.TryVerifyFilesExist(Log, values, out var error)
                   .Should().BeFalse();
         error.Should().NotBeNull();
     }
 
-    private string CreateMonitoringHomeCopy()
+    [SkippableFact]
+    public void TryDeleteNativeLoaders_WhenFilesDoNotExist_ReturnsTrue()
     {
-        if (_homeDirectory is not null)
-        {
-            return _homeDirectory;
-        }
-
-        // create a copy of monitoring home, so that we can mess with it
-        var original = EnvironmentHelper.GetMonitoringHomePath();
         var homeDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        output.WriteLine("Copying {original} to {homeDirectory}");
+        Directory.CreateDirectory(homeDirectory);
 
-        CopyDirectory(original, homeDirectory);
-        _homeDirectory = homeDirectory;
-        return homeDirectory;
+        var values = new TracerValues(homeDirectory);
+        FileHelper.TryDeleteNativeLoaders(Log, values)
+                  .Should()
+                  .BeTrue();
+    }
 
-        // I can't believe there's no built in API for this...
-        static void CopyDirectory(string source, string destination)
-        {
-            var dir = new DirectoryInfo(source);
-            dir.Exists.Should().BeTrue();
-            var dirs = dir.GetDirectories();
+    [SkippableFact]
+    public void TryDeleteNativeLoaders_WhenRootFolderDoesNotExist_ReturnsTrue()
+    {
+        var homeDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.Exists(homeDirectory).Should().BeFalse();
 
-            Directory.CreateDirectory(destination);
+        var values = new TracerValues(homeDirectory);
+        FileHelper.TryDeleteNativeLoaders(Log, values)
+                  .Should()
+                  .BeTrue();
+    }
 
-            foreach (var file in dir.GetFiles())
-            {
-                file.CopyTo(Path.Combine(destination, file.Name));
-            }
+    [SkippableFact]
+    public void TryDeleteNativeLoaders_WhenFilesExistAndUnused_DeletesFilesAndReturnsTrue()
+    {
+        var homeDirectory = CreateMonitoringHomeCopy();
 
-            foreach (var subDir in dirs)
-            {
-                var newDestinationDir = Path.Combine(destination, subDir.Name);
-                CopyDirectory(subDir.FullName, newDestinationDir);
-            }
-        }
+        var values = new TracerValues(homeDirectory);
+        File.Exists(values.NativeLoaderX64Path).Should().BeTrue();
+        File.Exists(values.NativeLoaderX86Path).Should().BeTrue();
+
+        FileHelper.TryDeleteNativeLoaders(Log, values)
+                  .Should()
+                  .BeTrue();
+
+        File.Exists(values.NativeLoaderX64Path).Should().BeFalse();
+        File.Exists(values.NativeLoaderX86Path).Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public void TryDeleteNativeLoaders_WhenX64NativeLoaderIsInUse_DoesNotDeleteFileAndReturnsFalse()
+    {
+        var homeDirectory = CreateMonitoringHomeCopy();
+
+        var values = new TracerValues(homeDirectory);
+        // locks the file
+        var filePath = values.NativeLoaderX64Path;
+        using var file = File.OpenRead(filePath);
+
+        FileHelper.TryDeleteNativeLoaders(Log, values)
+                  .Should()
+                  .BeFalse();
+
+        File.Exists(filePath).Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public void TryDeleteNativeLoaders_WhenX86NativeLoaderIsInUse_DoesNotDeleteFileAndReturnsFalse()
+    {
+        var homeDirectory = CreateMonitoringHomeCopy();
+
+        var values = new TracerValues(homeDirectory);
+        // locks the file
+        var filePath = values.NativeLoaderX86Path;
+        using var file = File.OpenRead(filePath);
+
+        FileHelper.TryDeleteNativeLoaders(Log, values)
+                  .Should()
+                  .BeFalse();
+
+        File.Exists(filePath).Should().BeTrue();
     }
 
     public static class Data
