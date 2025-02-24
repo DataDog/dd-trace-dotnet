@@ -46,7 +46,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, $"{TestPrefix}"))
+        using (await RunSampleAndWaitForExit(agent, "AddressBook"))
         {
             using var assertionScope = new AssertionScope();
             var spans = agent.WaitForSpans(2);
@@ -74,12 +74,29 @@ public class GoogleProtobufTests : TracingIntegrationTest
 
     [Fact]
     [Trait("Category", "EndToEnd")]
+    public async Task NoInstrumentationForGoogleTypes()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        using var telemetry = this.ConfigureTelemetry();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using (await RunSampleAndWaitForExit(agent, "TimeStamp"))
+        {
+            var spans = agent.WaitForSpans(2);
+            foreach (var span in spans)
+            {
+                span.Tags.Should().NotContain(t => t.Key.StartsWith("schema."));
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
     public async Task OnlyEnabledWithDsm()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, $"{TestPrefix}"))
+        using (await RunSampleAndWaitForExit(agent, "AddressBook"))
         {
             var spans = agent.WaitForSpans(2);
             foreach (var span in spans)

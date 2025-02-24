@@ -17,8 +17,6 @@ internal interface IMessageProxy : IDuckType
 {
     /// <summary>
     /// Gets the descriptor.
-    /// Accessing this property can generate a nullref in some cases,
-    /// use <see cref="Helper.TryGetDescriptor"/> to avoid that.
     /// </summary>
     [Duck(ExplicitInterfaceTypeName = "Google.Protobuf.IMessage")]
     MessageDescriptorProxy Descriptor { get; }
