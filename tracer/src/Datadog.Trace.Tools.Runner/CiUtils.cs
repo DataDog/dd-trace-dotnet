@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -15,6 +16,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
@@ -135,7 +137,7 @@ internal static class CiUtils
                 ciValues.GitSearchFolder = null;
             }
 
-            var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(ciValues.WorkspacePath, ciVisibilitySettings));
+            var client = TestOptimizationClient.Create(ciValues.WorkspacePath, ciVisibilitySettings);
             if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
             {
                 // If we are in git upload only then we can defer the await until the child command exits.
@@ -143,7 +145,7 @@ internal static class CiUtils
                 {
                     try
                     {
-                        await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                        await client.UploadRepositoryChangesAsync().ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -189,7 +191,7 @@ internal static class CiUtils
                     CIVisibility.Log.Debug("RunCiCommand: Calling configuration api...");
 
                     // we skip the framework info because we are interested in the target projects info not the runner one.
-                    var itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                    var itrSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
 
                     // we check if the backend require the git metadata first
                     if (itrSettings.RequireGit == true)
@@ -198,7 +200,7 @@ internal static class CiUtils
                         await uploadRepositoryChangesTask.ConfigureAwait(false);
 
                         Log.Debug("RunCiCommand: calling the configuration api again.");
-                        itrSettings = await lazyItrClient.Value.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
+                        itrSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                     }
 
                     codeCoverageEnabled = codeCoverageEnabled || itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
