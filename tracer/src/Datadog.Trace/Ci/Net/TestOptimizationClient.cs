@@ -228,22 +228,25 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         }
     }
 
-    private async Task<string> SendJsonRequestAsync(Uri url, string jsonContent, Action? onBeforeSend = null, Action<int>? onStatusCodeReceived = null, Action<Exception>? onError = null, Action<double>? onAfterSend = null)
+    private async Task<string> SendJsonRequestAsync<TCallbacks>(Uri url, string jsonContent, TCallbacks callbacks = default)
+        where TCallbacks : struct, ICallbacks
     {
         var content = Encoding.UTF8.GetBytes(jsonContent);
-        var result = await SendFileRequestAsync(url, content, onBeforeSend, onStatusCodeReceived, onError, onAfterSend).ConfigureAwait(false);
+        var result = await SendRequestAsync<TCallbacks>(url, content, callbacks).ConfigureAwait(false);
         return Encoding.UTF8.GetString(result);
     }
 
-    private async Task<byte[]> SendFileRequestAsync(Uri uri, byte[] body, Action? onBeforeSend = null, Action<int>? onStatusCodeReceived = null, Action<Exception>? onError = null, Action<double>? onAfterSend = null)
+    private async Task<byte[]> SendRequestAsync<TCallbacks>(Uri uri, byte[] body, TCallbacks callbacks = default)
+        where TCallbacks : struct, ICallbacks
     {
         return await WithRetries(
                        static async (state, finalTry) =>
                        {
+                           var callbacks = state.Callbacks;
                            var sw = Stopwatch.StartNew();
                            try
                            {
-                               state.OnBeforeSend?.Invoke();
+                               callbacks.OnBeforeSend();
                                var client = state.Client;
                                var uri = state.Uri;
                                var body = state.Body;
@@ -264,14 +267,14 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                                    using var memoryStream = new MemoryStream();
                                    await stream.CopyToAsync(memoryStream).ConfigureAwait(false);
                                    responseContent = memoryStream.ToArray();
-                                   state.OnStatusCodeReceived?.Invoke(response.StatusCode);
+                                   callbacks.OnStatusCodeReceived(response.StatusCode, responseContent.Length);
                                    client.CheckResponseStatusCode(response, responseContent, finalTry);
                                    Log.Debug<string, int>("TestOptimizationClient: Response received from: {Url} | {StatusCode}", uri.ToString(), response.StatusCode);
                                }
                                catch (Exception ex)
                                {
                                    Log.Error(ex, "TestOptimizationClient: Error getting result.");
-                                   state.OnError?.Invoke(ex);
+                                   callbacks.OnError(ex);
                                    throw;
                                }
 
@@ -279,10 +282,64 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                            }
                            finally
                            {
-                               state.OnAfterSend?.Invoke(sw.Elapsed.TotalMilliseconds);
+                               callbacks.OnAfterSend(sw.Elapsed.TotalMilliseconds);
                            }
                        },
-                       new UriAndBodyState(this, uri, body, onBeforeSend, onStatusCodeReceived, onError, onAfterSend),
+                       new UriAndBodyState<TCallbacks>(this, uri, body, callbacks),
+                       MaxRetries)
+                  .ConfigureAwait(false);
+    }
+
+    private async Task<byte[]> SendRequestAsync<TCallbacks>(Uri uri, MultipartFormItem[] items, TCallbacks callbacks = default)
+        where TCallbacks : struct, ICallbacks
+    {
+        return await WithRetries(
+                       static async (state, finalTry) =>
+                       {
+                           var callbacks = state.Callbacks;
+                           var sw = Stopwatch.StartNew();
+                           try
+                           {
+                               callbacks.OnBeforeSend();
+                               var client = state.Client;
+                               var uri = state.Uri;
+                               var multipartFormItems = state.MultipartFormItems;
+                               var request = client._apiRequestFactory.Create(uri);
+                               client.SetRequestHeader(request);
+
+                               if (Log.IsEnabled(LogEventLevel.Debug))
+                               {
+                                   Log.Debug("TestOptimizationClient: Sending request to: {Url}", uri.ToString());
+                               }
+
+                               byte[]? responseContent;
+                               try
+                               {
+                                   using var response = await request.PostAsync(multipartFormItems).ConfigureAwait(false);
+                                   // TODO: Check for compressed responses - if we received one, currently these are not handled and would throw when we attempt to deserialize
+                                   using var stream = await response.GetStreamAsync().ConfigureAwait(false);
+                                   using var memoryStream = new MemoryStream();
+                                   await stream.CopyToAsync(memoryStream).ConfigureAwait(false);
+                                   responseContent = memoryStream.ToArray();
+                                   callbacks.OnStatusCodeReceived(response.StatusCode, responseContent.Length);
+                                   client.CheckResponseStatusCode(response, responseContent, finalTry);
+                                   Log.Debug<string, int>("TestOptimizationClient: Response received from: {Url} | {StatusCode}", uri.ToString(), response.StatusCode);
+                               }
+                               catch (Exception ex)
+                               {
+                                   Log.Error(ex, "TestOptimizationClient: Error getting result.");
+                                   callbacks.OnError(ex);
+                                   throw;
+                               }
+
+                               return responseContent;
+                           }
+                           finally
+                           {
+                               callbacks.OnAfterSend(sw.Elapsed.TotalMilliseconds);
+                           }
+                       },
+                       new UriAndMultipartFormBodyState<TCallbacks>(this, uri, items, callbacks),
                        MaxRetries)
                   .ConfigureAwait(false);
     }
@@ -404,25 +461,92 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         }
     }
 
-    private readonly struct UriAndBodyState
+#pragma warning disable SA1201
+    internal interface ICallbacks
+    {
+        void OnBeforeSend();
+
+        void OnStatusCodeReceived(int statusCode, int responseLength);
+
+        void OnError(Exception ex);
+
+        void OnAfterSend(double totalMs);
+    }
+
+    internal readonly struct ActionCallbacks : ICallbacks
+    {
+        private readonly Action? _onBeforeSend;
+        private readonly Action<int, int>? _onStatusCodeReceived;
+        private readonly Action<Exception>? _onError;
+        private readonly Action<double>? _onAfterSend;
+
+        public ActionCallbacks(Action? onBeforeSend = null, Action<int, int>? onStatusCodeReceived = null, Action<Exception>? onError = null, Action<double>? onAfterSend = null)
+        {
+            _onBeforeSend = onBeforeSend;
+            _onStatusCodeReceived = onStatusCodeReceived;
+            _onError = onError;
+            _onAfterSend = onAfterSend;
+        }
+
+        public void OnBeforeSend() => _onBeforeSend?.Invoke();
+
+        public void OnStatusCodeReceived(int statusCode, int responseLength) => _onStatusCodeReceived?.Invoke(statusCode, responseLength);
+
+        public void OnError(Exception ex) => _onError?.Invoke(ex);
+
+        public void OnAfterSend(double totalMs) => _onAfterSend?.Invoke(totalMs);
+    }
+
+    internal readonly struct NoopCallbacks : ICallbacks
+    {
+        public void OnBeforeSend()
+        {
+        }
+
+        public void OnStatusCodeReceived(int statusCode, int responseLength)
+        {
+        }
+
+        public void OnError(Exception ex)
+        {
+        }
+
+        public void OnAfterSend(double totalMs)
+        {
+        }
+    }
+
+    private readonly struct UriAndBodyState<TCallbacks>
+        where TCallbacks : struct, ICallbacks
     {
         public readonly TestOptimizationClient Client;
         public readonly Uri Uri;
         public readonly byte[] Body;
-        public readonly Action? OnBeforeSend;
-        public readonly Action<int>? OnStatusCodeReceived;
-        public readonly Action<Exception>? OnError;
-        public readonly Action<double>? OnAfterSend;
+        public readonly TCallbacks Callbacks;
 
-        public UriAndBodyState(TestOptimizationClient client, Uri uri, byte[] body, Action? onBeforeSend = null, Action<int>? onStatusCodeReceived = null, Action<Exception>? onError = null, Action<double>? onAfterSend = null)
+        public UriAndBodyState(TestOptimizationClient client, Uri uri, byte[] body, TCallbacks callbacks)
         {
             Client = client;
             Uri = uri;
             Body = body;
-            OnBeforeSend = onBeforeSend;
-            OnStatusCodeReceived = onStatusCodeReceived;
-            OnError = onError;
-            OnAfterSend = onAfterSend;
+            Callbacks = callbacks;
+        }
+    }
+
+    private readonly struct UriAndMultipartFormBodyState<TCallbacks>
+        where TCallbacks : struct, ICallbacks
+    {
+        public readonly TestOptimizationClient Client;
+        public readonly Uri Uri;
+        public readonly MultipartFormItem[] MultipartFormItems;
+        public readonly TCallbacks Callbacks;
+
+        public UriAndMultipartFormBodyState(TestOptimizationClient client, Uri uri, MultipartFormItem[] multipartFormItems, TCallbacks callbacks)
+        {
+            Client = client;
+            Uri = uri;
+            MultipartFormItems = multipartFormItems;
+            Callbacks = callbacks;
         }
     }
 

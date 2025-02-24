@@ -11,4 +11,14 @@ namespace Datadog.Trace.Ci.Net;
 internal interface ITestOptimizationClient
 {
     Task<TestOptimizationClient.SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false);
+
+    Task<TestOptimizationClient.EarlyFlakeDetectionResponse> GetEarlyFlakeDetectionTestsAsync();
+
+    Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync();
+
+    Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync();
+
+    Task<TestOptimizationClient.ImpactedTestsDetectionResponse> GetImpactedTestsDetectionFilesAsync();
+
+    Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude);
 }

@@ -11,6 +11,8 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
+// ReSharper disable ConvertToPrimaryConstructor
+// ReSharper disable NotAccessedField.Local
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 namespace Datadog.Trace.Ci.Net;
@@ -43,20 +45,7 @@ internal sealed partial class TestOptimizationClient
         string? queryResponse;
         try
         {
-            queryResponse = await SendJsonRequestAsync(
-                                    _settingsUrl,
-                                    jsonQuery,
-                                    onBeforeSend: () => TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings(MetricTags.CIVisibilityRequestCompressed.Uncompressed),
-                                    onStatusCodeReceived: statusCode =>
-                                    {
-                                        if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
-                                        {
-                                            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
-                                        }
-                                    },
-                                    onError: _ => TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(MetricTags.CIVisibilityErrorType.Network),
-                                    onAfterSend: totalMs => TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSettingsMs(totalMs))
-                               .ConfigureAwait(false);
+            queryResponse = await SendJsonRequestAsync<SettingsCallbacks>(_settingsUrl, jsonQuery).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -93,6 +82,32 @@ internal sealed partial class TestOptimizationClient
                 _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_AtrDisabled,
             });
         return settingsResponse;
+    }
+
+    private readonly struct SettingsCallbacks : ICallbacks
+    {
+        public void OnBeforeSend()
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
+        }
+
+        public void OnStatusCodeReceived(int statusCode, int responseLength)
+        {
+            if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
+            }
+        }
+
+        public void OnError(Exception ex)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(MetricTags.CIVisibilityErrorType.Network);
+        }
+
+        public void OnAfterSend(double totalMs)
+        {
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSettingsMs(totalMs);
+        }
     }
 
     private readonly struct SettingsQuery
