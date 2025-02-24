@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
                         // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
                         // added by us, not the application
-                        var context = new PropagationContext(span?.Context, Baggage.Current);
+                        var context = new PropagationContext(span.Context, Baggage.Current);
                         tracer.TracerManager.SpanContextPropagator.Inject(context, request.Headers.Wrap());
                         HeadersInjectedCache.SetInjectedHeaders(request.Headers);
                         return true;
