@@ -18,7 +18,7 @@ namespace DatadogSymbolsServer.Controllers
 
         // kind can be symbol file or binary file.
         // Did not find yet how it's used by gdb. For now just use it as the download filename
-        [HttpGet("/debuginfod/{guid}/{kind}")]
+        [HttpGet("/debuginfod/buildid/{guid}/{kind}")]
         public IActionResult Get(string guid, string kind)
         {
             _logger.LogInformation($"Getting file {guid}");
@@ -45,8 +45,8 @@ namespace DatadogSymbolsServer.Controllers
                 true => (match.Groups["guid"].Value, SymbolKind.Linux),
                 _ => (guid, SymbolKind.Windows)
             };
-            var symbolsFile = _symbolsCache.Get(guidd, kind);
             _logger.LogInformation($"Getting file {file}");
+            var symbolsFile = _symbolsCache.Get(guidd, kind);
             if (symbolsFile != null)
             {
                 _logger.LogInformation($"Found {file} in cache.");
