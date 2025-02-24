@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-using Datadog.Trace.ClrProfiler.CallTarget;
+using System;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
@@ -15,7 +15,7 @@ internal static class Helper
     public static void DisableInstrumentationIfInternalProtobufType<TMessage>()
     {
         var typeName = typeof(TMessage).FullName;
-        if (typeName != null && typeName.StartsWith("Google.Protobuf."))
+        if (typeName != null && typeName.StartsWith("Google.Protobuf.", StringComparison.OrdinalIgnoreCase))
         {
             // Google uses protobuf internally in the protobuf library, we don't want to capture those.
             // We disable the integrations once and for all here.
