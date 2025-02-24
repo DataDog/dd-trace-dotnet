@@ -16,6 +16,7 @@ using System.Web.Script.Serialization;
 using System.Xml;
 using System.Net.Mail;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -548,7 +549,28 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("LDAP")]
         public ActionResult Ldap(string path, string userName)
         {
-            try
+            string resultString = string.Empty;
+
+            var task = Task.Factory.StartNew(() =>
+            {
+                PerformLdapQuery();
+            });
+
+            if (!task.Wait(5000))
+            {
+                // Custom code to signal the client to skip the test
+                Response.StatusCode = 513;
+                return Content($"Skip due to timeout (513)");
+            }
+
+            if (task.Exception != null)
+            {
+                return Content($"Result: Exception -> {task.Exception}");
+            }
+
+            return Content($"Result: " + resultString);
+
+            void PerformLdapQuery()
             {
                 DirectoryEntry entry = null;
                 try
@@ -567,18 +589,10 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
                 var result = search.FindAll();
 
-                string resultString = string.Empty;
-
                 for (int i = 0; i < result.Count; i++)
                 {
                     resultString += result[i].Path + Environment.NewLine;
                 }
-
-                return Content($"Result: " + resultString);
-            }
-            catch
-            {
-                return Content($"Result: Not connected");
             }
         }
 

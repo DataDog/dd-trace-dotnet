@@ -178,19 +178,22 @@ namespace Datadog.Trace.TestHelpers
             return depth;
         }
 
-        public static void AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)
+        public static VerifySettings AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)
         {
             settings.AddScrubber(builder => ReplaceRegex(builder, regex, replacement));
+            return settings;
         }
 
-        public static void AddRegexScrubber(this VerifySettings settings, (Regex RegexPattern, string Replacement) scrubber)
+        public static VerifySettings AddRegexScrubber(this VerifySettings settings, (Regex RegexPattern, string Replacement) scrubber)
         {
             settings.AddScrubber(builder => ReplaceRegex(builder, scrubber.RegexPattern, scrubber.Replacement));
+            return settings;
         }
 
-        public static void AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
+        public static VerifySettings AddSimpleScrubber(this VerifySettings settings, string oldValue, string newValue)
         {
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
+            return settings;
         }
 
         public static Dictionary<string, string>? ScrubStringTags(MockSpan span, Dictionary<string, string>? tags)
