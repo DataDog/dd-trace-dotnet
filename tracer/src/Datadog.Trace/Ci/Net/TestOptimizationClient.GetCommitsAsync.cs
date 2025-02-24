@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
@@ -127,7 +126,7 @@ internal sealed partial class TestOptimizationClient
         public readonly string[] RemoteCommits;
         public readonly bool IsOk;
         public readonly bool HasCommits;
-        public readonly IEnumerable<string> MissingCommits;
+        public readonly string[] MissingCommits;
 
         public SearchCommitResponse(string[]? localCommits, string[]? remoteCommits, bool isOk)
         {
@@ -135,7 +134,7 @@ internal sealed partial class TestOptimizationClient
             RemoteCommits = remoteCommits ?? [];
             IsOk = isOk;
             HasCommits = LocalCommits.Length > 0;
-            MissingCommits = LocalCommits.Except(RemoteCommits);
+            MissingCommits = LocalCommits.Except(RemoteCommits).ToArray();
         }
     }
 }

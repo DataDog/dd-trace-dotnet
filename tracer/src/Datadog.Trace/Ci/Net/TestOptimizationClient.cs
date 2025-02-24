@@ -87,6 +87,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
     {
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         if (globalTags is null)
         {
             return null;
@@ -232,7 +233,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         where TCallbacks : struct, ICallbacks
     {
         var content = Encoding.UTF8.GetBytes(jsonContent);
-        var result = await SendRequestAsync<TCallbacks>(url, content, callbacks).ConfigureAwait(false);
+        var result = await SendRequestAsync(url, content, callbacks).ConfigureAwait(false);
         return Encoding.UTF8.GetString(result);
     }
 
