@@ -55,6 +55,7 @@ public class RunCommandTests
         environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", "http://localhost:1111");
         environmentVariables.Should().Contain("VAR1", "A");
         environmentVariables.Should().Contain("VAR2", "B");
+        environmentVariables.Should().Contain("DD_INSTRUMENTATION_INSTALL_TYPE", "dd_dotnet_launcher");
         environmentVariables.Should().NotContainKey("DD_CIVISIBILITY_ENABLED");
     }
 
