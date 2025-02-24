@@ -41,7 +41,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            VerifyScrubber.ScrubAuthenticatedTags(settings);
+            // net core > 8 onwards calls HttpContext.SetUser where we collect the collection mode. we're not testing this here
+            settings.ScrubAuthenticationCollectionMode();
 
             var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection) + "Activate");
             if (EnableSecurity is not true)

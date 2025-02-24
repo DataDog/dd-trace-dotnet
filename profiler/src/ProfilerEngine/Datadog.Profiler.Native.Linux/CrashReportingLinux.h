@@ -17,7 +17,7 @@ struct ModuleInfo
     uintptr_t baseAddress;
     std::string path;
     // defined in CrashReporting.h
-    ElfBuildId build_id;
+    BuildId build_id;
 };
 
 class CrashReportingLinux : public CrashReporting
