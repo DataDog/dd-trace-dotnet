@@ -602,7 +602,6 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
