@@ -17,6 +17,7 @@ using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using System.Threading;
 using Amazon;
+using System.Text.Encodings.Web;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -58,73 +59,36 @@ public class EmailHtmlInjectionAWSSDKSimpleEmailTests : EmailInjectionBaseTests
     }
 #endif
 
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtmlNull_ThenIsVulnerable()
+    [InlineData(true, false, false, true)]
+    [InlineData(false, false, false, false)]
+    [InlineData(true, true, false, false)]
+    [InlineData(true, false, true, false)]
+    [Theory]
+    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtml_ThenIsVulnerable(bool isHtml, bool webUtilityHtmlEncode, bool httpUtilityHtmlEncode, bool isVulnerable)
     {
         try
         {
+            var name = webUtilityHtmlEncode ? WebUtility.HtmlEncode(taintedName) : taintedName;
+            name = httpUtilityHtmlEncode ? HttpUtility.HtmlEncode(name) : name;
+            var lastName = webUtilityHtmlEncode ? WebUtility.HtmlEncode(taintedLastName) : taintedLastName;
+            lastName = httpUtilityHtmlEncode ? HttpUtility.HtmlEncode(lastName) : lastName;
+
             // The constructor of AmazonSimpleEmailServiceClient makes http calls that can make the test flaky and slow
             // We can still test the aspect with a null object
-            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default);
+            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(isHtml, name, lastName), default);
         }
         catch
         {
         }
-        AssertVulnerable();
-    }
 
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtml_ThenIsVulnerable()
-    {
-        try
+        if (isVulnerable)
         {
-            // The constructor of AmazonSimpleEmailServiceClient makes http calls that can make the test flaky and slow
-            // We can still test the aspect with a null object
-            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, taintedName, taintedLastName), default);
+            AssertVulnerable();
         }
-        catch
+        else
         {
+            AssertNotVulnerable();
         }
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
-    {
-        try
-        {
-            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default);
-        }
-        catch
-        {
-        }
-        AssertNotVulnerable();
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncHtmlMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
-    {
-        try
-        {
-            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), default);
-        }
-        catch
-        {
-        }
-        AssertNotVulnerable();
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendAsyncTextMailMessageTaintedVaulesText_ThenIsNotVulnerable()
-    {
-        try
-        {
-            ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(BuildMailMessage(false, taintedName, taintedLastName), default);
-        }
-        catch
-        {
-        }
-        AssertNotVulnerable();
     }
 
     [Fact]
@@ -132,14 +96,7 @@ public class EmailHtmlInjectionAWSSDKSimpleEmailTests : EmailInjectionBaseTests
     {
         try
         {
-            var sendRequest = new SendEmailRequest
-            {
-                Destination = new Destination
-                {
-                    ToAddresses = new()
-                },
-            };
-
+            var sendRequest = new SendEmailRequest();
             ((AmazonSimpleEmailServiceClient)null).SendEmailAsync(sendRequest, default);
         }
         catch
