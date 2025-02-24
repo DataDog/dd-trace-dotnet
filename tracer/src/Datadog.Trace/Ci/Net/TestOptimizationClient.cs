@@ -85,6 +85,16 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         _branchName = GetBranchName();
     }
 
+    public static ITestOptimizationClient Create(string? workingDirectory, CIVisibilitySettings? settings = null)
+    {
+        return new TestOptimizationClient(workingDirectory, settings);
+    }
+
+    public static ITestOptimizationClient CreateCached(string? workingDirectory, CIVisibilitySettings? settings = null)
+    {
+        return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, settings));
+    }
+
     private static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
     {
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
