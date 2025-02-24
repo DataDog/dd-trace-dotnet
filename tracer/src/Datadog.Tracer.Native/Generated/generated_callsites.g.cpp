@@ -11,10 +11,19 @@ int GeneratedDefinitions::InitCallSites(UINT32 enabledCategories, UINT32 platfor
 {
 std::vector<WCHAR*> callSites =
 {
+(WCHAR*)WStr("[AspectClass(\"AWSSDK.SimpleEmail\",[None],Sink,[EmailHtmlInjection])] Datadog.Trace.Iast.Aspects.AmazonSimpleEmailAspect 4"),
+#if _WIN32
+(WCHAR*)WStr("  [AspectMethodInsertBefore(\"Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmail(Amazon.SimpleEmail.Model.SendEmailRequest)\",\"\",[0],[False],[None],Default,[])] Send(System.Object) 1"),
+#endif
+(WCHAR*)WStr("  [AspectMethodInsertBefore(\"Amazon.SimpleEmail.AmazonSimpleEmailServiceClient::SendEmailAsync(Amazon.SimpleEmail.Model.SendEmailRequest,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] Send(System.Object) 15"),
 (WCHAR*)WStr("[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect 12"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object) 15"),
+(WCHAR*)WStr("[AspectClass(\"Mailkit\",[None],Sink,[EmailHtmlInjection])] Datadog.Trace.Iast.Aspects.MailkitAspect 4"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"MimeKit.TextPart::SetText(System.String,System.String)\",\"\",[0],[False],[None],Default,[])] SetText(System.Object,System.String,System.String) 15"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"MimeKit.TextPart::SetText(System.Text.Encoding,System.String)\",\"\",[0],[False],[None],Default,[])] SetTextSystemTextEncoding(System.Object,System.Text.Encoding,System.String) 15"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"MimeKit.TextPart::set_Text(System.String)\",\"\",[0],[False],[None],Default,[])] SetTextProperty(System.Object,System.String) 15"),
 (WCHAR*)WStr("[AspectClass(\"Microsoft.AspNetCore.Http\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.AspNetCore.Http.HttpResponseAspect 4"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String,System.Boolean)\",\"\",[1],[False],[None],Default,[])] Redirect(System.String) 15"),
