@@ -17,7 +17,6 @@ check_azure_pipeline:
     when: always
     paths:
       - artifacts/
-      - platform/build-id.txt
       - build-id.txt
     expire_in: 3 months
   interruptible: true
