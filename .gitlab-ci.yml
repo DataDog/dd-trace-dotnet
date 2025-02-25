@@ -8,7 +8,7 @@ stages:
   - benchmarks
 
 include:
-  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/one-pipeline.yml
+  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include-wip/andrew/allow-publishing-windows/one-pipeline.yml
 
 variables:
   DOTNET_PACKAGE_VERSION:
