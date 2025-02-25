@@ -64,15 +64,10 @@ public:
     // IUpscaleProvider implementation
     UpscalingInfo GetInfo() override;
 
-    void OnModuleLoaded(ModuleID moduleId);
-    void OnClassLoaded(ClassID classId);
-
 private:
     static std::string GetBucket(std::chrono::nanoseconds contentionDuration);
     static std::vector<SampleValueType> SampleTypeDefinitions;
-    void AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, WaitType waitType, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack);
-    void SetClassIdIfNeeded(ClassID& field, const char* expectedTypeName, ClassID classId, std::string& typeName);
-    WaitType GetWaitType(ClassID classId);
+    void AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, ContentionType contentionType, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack);
 
 private:
     static std::vector<uintptr_t> _emptyStack;
@@ -90,13 +85,4 @@ private:
     std::mutex _contentionsLock;
     MetricsRegistry& _metricsRegistry;
     CallstackProvider _callstackProvider;
-
-    ModuleID _mscorlibModuleId;
-    ClassID _mutexClassID;
-    ClassID _semaphoreClassID;
-    ClassID _autoResetEventClassID;
-    ClassID _manualResetEventClassID;
-    ClassID _eventWaitHandleClassID;
-    ClassID _waitHandleClassID;
-    ClassID _objectClassID;
 };

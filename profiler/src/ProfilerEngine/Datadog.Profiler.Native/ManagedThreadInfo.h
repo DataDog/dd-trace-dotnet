@@ -37,15 +37,12 @@ public:
 };
 
 
-enum class WaitType {
+enum class ContentionType {
     Unknown = 0,
     Lock = 1,
-    Mutex = 2,
-    Semaphore = 3,
-    AutoResetEvent = 4,
-    ManualResetEvent = 5,
+    Wait = 2,
 
-    LastWait = 6 // This is used to know the last element in the enum
+    ContentionTypeCount = 3 // This is used to know the last element in the enum
 };
 
 struct ManagedThreadInfo : public IThreadInfo
@@ -115,8 +112,8 @@ public:
     //       --> this would reduce memory consumption
     inline void SetWaitStart(std::chrono::nanoseconds timestamp) { _waitStartTimestamp = timestamp; }
     inline std::chrono::nanoseconds GetWaitStart() { return _waitStartTimestamp; }
-    inline void SetWaitType(WaitType waitType) { _waitType = waitType; }
-    WaitType GetWaitType() { return _waitType; }
+    inline void SetContentionType(ContentionType contentionType) { _contentionType = contentionType; }
+    ContentionType GetContentionType() { return _contentionType; }
 
 private:
     inline std::string BuildProfileThreadId();
@@ -167,7 +164,7 @@ private:
 
     // for WaitHandle profiling, keep track of the wait start timestamp
     std::chrono::nanoseconds _waitStartTimestamp;
-    WaitType _waitType;
+    ContentionType _contentionType;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()

@@ -2,7 +2,7 @@
   "profiles": {
     "Samples.WaitHandles": {
       "commandName": "Project",
-      "commandLineArgs": "10",
+      "commandLineArgs": "--iterations 1",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",

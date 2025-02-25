@@ -23,13 +23,8 @@ namespace Samples.WaitHandles
 
         public static void Main(string[] args)
         {
-            if (args.Length != 1)
-            {
-                Console.WriteLine("Usage: WaitHandles <iterations>");
-                return;
-            }
-
-            int iterations = int.Parse(args[0]);
+            // to support integration test, we need to support --iterations
+            ParseCommandLine(args, out int iterations);
 
             Console.WriteLine($"pid = {Process.GetCurrentProcess().Id}");
             Console.WriteLine("Press Enter to start the threads...");
@@ -180,6 +175,30 @@ namespace Samples.WaitHandles
             rwlockSlim.EnterReadLock();
             rwlockSlim.ExitReadLock();
             Console.WriteLine("    <-- ReaderWriterLockSlim");
+        }
+
+
+        private static void ParseCommandLine(string[] args, out int iterations)
+        {
+            iterations = 1;
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+
+                if ("--iterations".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    int valueOffset = i + 1;
+                    if (valueOffset < args.Length && int.TryParse(args[valueOffset], out var number))
+                    {
+                        if (number <= 0)
+                        {
+                            throw new ArgumentOutOfRangeException($"Invalid iterations count '{number}': must be > 0");
+                        }
+
+                        iterations = number;
+                    }
+                }
+            }
         }
 
         [DllImport("kernel32.dll")]

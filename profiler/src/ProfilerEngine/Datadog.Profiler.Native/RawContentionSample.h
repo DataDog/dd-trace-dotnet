@@ -15,7 +15,7 @@ public:
     inline static const std::string RawDurationLabelName = "raw duration";
     inline static const std::string BlockingThreadIdLabelName = "blocking thread id";
     inline static const std::string BlockingThreadNameLabelName = "blocking thread name";
-    inline static const std::string WaitTypeLabelName = "wait type";
+    inline static const std::string ContentionTypeLabelName = "contention type";
 
 public:
     RawContentionSample() = default;
@@ -27,7 +27,7 @@ public:
         Bucket(std::move(other.Bucket)),
         BlockingThreadId(other.BlockingThreadId),
         BlockingThreadName(std::move(other.BlockingThreadName)),
-        WaitType(other.WaitType)
+        Type(other.Type)
     {
     }
 
@@ -40,7 +40,7 @@ public:
             Bucket = std::move(other.Bucket);
             BlockingThreadId = other.BlockingThreadId;
             BlockingThreadName = std::move(other.BlockingThreadName);
-            WaitType = other.WaitType;
+            Type = other.Type;
         }
         return *this;
     }
@@ -61,24 +61,21 @@ public:
             sample->AddNumericLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
             sample->AddLabel(Label{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
         }
-        sample->AddLabel(Label{WaitTypeLabelName, WaitTypes[static_cast<int>(WaitType)]});
+        sample->AddLabel(Label{ContentionTypeLabelName, ContentionTypes[static_cast<int>(Type)]});
     }
 
     std::chrono::nanoseconds ContentionDuration;
     std::string Bucket;
     uint64_t BlockingThreadId;
     shared::WSTRING BlockingThreadName;
-    WaitType WaitType;
+    ContentionType Type;
 
-    static std::string WaitTypes[static_cast<int>(WaitType::LastWait)];
+    static std::string ContentionTypes[static_cast<int>(ContentionType::ContentionTypeCount)];
 };
 
-inline std::string RawContentionSample::WaitTypes[static_cast<int>(WaitType::LastWait)] =
+inline std::string RawContentionSample::ContentionTypes[static_cast<int>(ContentionType::ContentionTypeCount)] =
 {
     "Unknown",
     "Lock",
-    "Mutex",
-    "Semaphore",
-    "AutoResetEvent",
-    "ManualResetEvent"
+    "Wait",
 };

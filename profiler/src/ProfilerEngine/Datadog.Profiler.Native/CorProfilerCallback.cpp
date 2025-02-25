@@ -1570,11 +1570,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
-    if (_pContentionProvider != nullptr)
-    {
-        _pContentionProvider->OnModuleLoaded(moduleId);
-    }
-
     return S_OK;
 }
 
@@ -1600,12 +1595,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ClassLoadStarted(ClassID classId)
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
 {
-    if (_pContentionProvider != nullptr)
-    {
-        // look for Mutex, Semaphore, AutoResetEvent and ManualResetEvent ClassID
-        _pContentionProvider->OnClassLoaded(classId);
-    }
-
     return S_OK;
 }
 

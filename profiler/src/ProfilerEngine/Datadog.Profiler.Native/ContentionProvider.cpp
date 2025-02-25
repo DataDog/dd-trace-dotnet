@@ -56,101 +56,7 @@ ContentionProvider::ContentionProvider(
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
     _sampledLockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_sampled_lock_contentions");
     _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
-    _mscorlibModuleId = 0;
-    _mutexClassID = 0;
 }
-
-void ContentionProvider::OnModuleLoaded(ModuleID moduleId)
-{
-    // TODO: look for Mutex, Semaphore, AutoResetEvent, and ManualResetEvent in System.Private.CoreLib
-
-    if (_mscorlibModuleId != 0)
-    {
-        return;
-    }
-
-    // Check if it's mscorlib. In that case, locate the System.Exception type
-    std::string assemblyName;
-
-    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
-    {
-        Log::Warn("Failed to retrieve assembly name for module ", moduleId);
-        return;
-    }
-
-    if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
-    {
-        return;
-    }
-
-    _mscorlibModuleId = moduleId;
-
-    IMetaDataImport2* pMetaDataImport = NULL;
-    HRESULT hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetaDataImport));
-    if (FAILED(hr))
-    {
-        Log::Warn("Failed to get metadata import for module ", moduleId);
-        return;
-    }
-
-    mdTypeDef typeDef;
-    hr = pMetaDataImport->FindTypeDefByName(WStr("System.Threading.Mutex"), mdTokenNil, &typeDef);
-    if (FAILED(hr))
-    {
-        Log::Warn("Failed to find System.Threading.Mutex type definition in module ", moduleId);
-        return;
-    }
-
-    ClassID classId;
-    hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(moduleId, typeDef, 0, nullptr, &classId);
-    if (FAILED(hr))
-    {
-        Log::Warn("Failed to find System.Threading.Mutex ClassID in module ", moduleId);
-        return;
-    }
-
-    _mutexClassID = classId;
-}
-
-void ContentionProvider::OnClassLoaded(ClassID classId)
-{
-    if (
-        (_mutexClassID == 0) ||
-        (_semaphoreClassID == 0) ||
-        (_autoResetEventClassID == 0) ||
-        (_manualResetEventClassID == 0)
-        )
-    {
-        std::string typeName;
-        if (!_pFrameStore->GetTypeName(classId, typeName))
-        {
-            return;
-        }
-        //std::cout << "   ClassLoaded: " << typeName << std::endl;
-
-        SetClassIdIfNeeded(_mutexClassID, "System.Threading.Mutex", classId, typeName);
-        SetClassIdIfNeeded(_semaphoreClassID, "System.Threading.Semaphore", classId, typeName);
-        SetClassIdIfNeeded(_autoResetEventClassID, "System.Threading.AutoResetEvent", classId, typeName);
-        SetClassIdIfNeeded(_manualResetEventClassID, "System.Threading.ManualResetEvent", classId, typeName);
-        SetClassIdIfNeeded(_eventWaitHandleClassID, "System.Threading.EventWaitHandle", classId, typeName);
-        SetClassIdIfNeeded(_waitHandleClassID, "System.Threading.WaitHandle", classId, typeName);
-        SetClassIdIfNeeded(_objectClassID, "System.Object", classId, typeName);
-    }
-}
-
-void ContentionProvider::SetClassIdIfNeeded(ClassID& field, const char* expectedTypeName, ClassID classId, std::string& typeName)
-{
-    if (field == 0)
-    {
-        if (typeName == expectedTypeName)
-        {
-            field = classId;
-
-            //std::cout << "   " << expectedTypeName << " = " << std::hex << "0x" << classId << std::endl;
-        }
-    }
-}
-
 
 std::string ContentionProvider::GetBucket(std::chrono::nanoseconds contentionDuration)
 {
@@ -180,7 +86,7 @@ std::string ContentionProvider::GetBucket(std::chrono::nanoseconds contentionDur
 // .NET Framework implementation
 void ContentionProvider::OnContention(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, const std::vector<uintptr_t>& stack)
 {
-    AddContentionSample(timestamp, threadId, WaitType::Lock, contentionDuration, 0, WStr(""), stack);
+    AddContentionSample(timestamp, threadId, ContentionType::Lock, contentionDuration, 0, WStr(""), stack);
 }
 
 void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
@@ -206,7 +112,7 @@ void ContentionProvider::OnContention(std::chrono::nanoseconds contentionDuratio
     }
 
     auto [blockingThreadId, blockingThreadName] = currentThreadInfo->SetBlockingThread(0, WStr(""));
-    AddContentionSample(0ns, -1, WaitType::Lock, contentionDuration, blockingThreadId, std::move(blockingThreadName), _emptyStack);
+    AddContentionSample(0ns, -1, ContentionType::Lock, contentionDuration, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 
 void ContentionProvider::OnWaitStart(std::chrono::nanoseconds timestamp, uintptr_t associatedObjectId)
@@ -217,7 +123,7 @@ void ContentionProvider::OnWaitStart(std::chrono::nanoseconds timestamp, uintptr
         return;
     }
 
-    // TODO: try to get the type of associatedObjectId to make the difference between Monitor/lock, AutoResetEvent, ManualResetEvent, Mutex and Semaphore
+    // TOO BAD: try to get the type of associatedObjectId to make the difference between Monitor/lock, AutoResetEvent, ManualResetEvent, Mutex and Semaphore
     // the following code does not work because GetClassFromObject returns CORPROF_E_UNSUPPORTED_CALL_SEQUENCE here
     //  ClassID classId = 0;
     //  HRESULT hr = _pCorProfilerInfo->GetClassFromObject(static_cast<ObjectID>(associatedObjectId), &classId);
@@ -232,47 +138,9 @@ void ContentionProvider::OnWaitStart(std::chrono::nanoseconds timestamp, uintptr
 
     currentThreadInfo->SetWaitStart(timestamp);
 
-    // the MethodTable/ClassID is the first field of the object pointed to by the associatedObjectId
-    if (associatedObjectId != 0)
-    {
-        ClassID classId = *reinterpret_cast<ClassID*>(associatedObjectId);
-
-        //std::cout << "   WaitStart(" << std::hex << "0x" << associatedObjectId << ") for classID = 0x" << classId << std::endl;
-
-        currentThreadInfo->SetWaitType(GetWaitType(classId));
-    }
-    else
-    {
-        currentThreadInfo->SetWaitType(WaitType::Unknown);
-        //std::cout << "   WaitStart()" << std::endl;
-    }
+    // we can't even compare the ClassID of the associatedObjectId to figure out the type of wait...
+    currentThreadInfo->SetContentionType(ContentionType::Wait);
 }
-
-WaitType ContentionProvider::GetWaitType(ClassID classId)
-{
-    if (classId == _mutexClassID)
-    {
-        return WaitType::Mutex;
-    }
-    else
-    if (classId == _semaphoreClassID)
-    {
-        return WaitType::Semaphore;
-    }
-    else
-    if (classId == _autoResetEventClassID)
-    {
-        return WaitType::AutoResetEvent;
-    }
-    else
-    if (classId == _manualResetEventClassID)
-    {
-        return WaitType::ManualResetEvent;
-    }
-
-    return WaitType::Unknown;
-}
-
 
 void ContentionProvider::OnWaitStop(std::chrono::nanoseconds timestamp)
 {
@@ -301,13 +169,13 @@ void ContentionProvider::OnWaitStop(std::chrono::nanoseconds timestamp)
         return;
     }
 
-    AddContentionSample(0ns, -1, currentThreadInfo->GetWaitType(), waitDuration, 0, WStr(""), _emptyStack);
+    AddContentionSample(0ns, -1, currentThreadInfo->GetContentionType(), waitDuration, 0, WStr(""), _emptyStack);
 }
 
 void ContentionProvider::AddContentionSample(
     std::chrono::nanoseconds timestamp,
     uint32_t threadId,
-    WaitType waitType,
+    ContentionType waitType,
     std::chrono::nanoseconds contentionDuration,
     uint64_t blockingThreadId,
     shared::WSTRING blockingThreadName,
@@ -426,7 +294,7 @@ void ContentionProvider::AddContentionSample(
     rawSample.Bucket = std::move(bucket);
     rawSample.BlockingThreadId = blockingThreadId;
     rawSample.BlockingThreadName = std::move(blockingThreadName);
-    rawSample.WaitType = waitType;
+    rawSample.Type = waitType;
 
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
