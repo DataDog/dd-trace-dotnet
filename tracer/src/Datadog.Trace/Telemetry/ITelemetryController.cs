@@ -5,11 +5,9 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Iast.Settings;
 
 namespace Datadog.Trace.Telemetry
 {

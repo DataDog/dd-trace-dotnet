@@ -5,7 +5,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Iast.Analyzers;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
