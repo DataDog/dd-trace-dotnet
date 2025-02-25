@@ -8,13 +8,13 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Ci;
 
-internal interface ICiVisibilitySkippableFeature
+internal interface ICiVisibilitySkippableFeature : ICiVisibilityFeature
 {
     void WaitForSkippableTaskToFinish();
 
-    IList<SkippableTest> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name);
+    IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name);
 
     bool HasSkippableTests();
 
-    string? GetSkippableTestsCorrelationId();
+    string? GetCorrelationId();
 }

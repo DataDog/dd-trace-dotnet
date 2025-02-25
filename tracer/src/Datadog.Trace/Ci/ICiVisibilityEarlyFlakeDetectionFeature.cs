@@ -8,7 +8,7 @@ using Datadog.Trace.Ci.Net;
 
 namespace Datadog.Trace.Ci;
 
-internal interface ICiVisibilityEarlyFlakeDetectionFeature
+internal interface ICiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityFeature
 {
     TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 
