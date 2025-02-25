@@ -81,7 +81,7 @@ namespace Datadog.Trace.Propagators
             {
                 // If apm tracing is disabled and no other product owns the trace -> stop propagation
                 if (spanContext.TraceContext is { Tracer.Settings.ApmTracingEnabledInternal: false } trace &&
-                    trace.Tags.GetTag(Tags.Propagated.TraceSource) is not { Length: > 0 })
+                    !trace.Tags.HasTraceSources())
                 {
                     return;
                 }
