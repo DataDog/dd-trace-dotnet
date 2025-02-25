@@ -1,0 +1,68 @@
+# Copied / Extracted from `code-freeze/action.yml`:
+
+name: 'PR Status Updater'
+description: 'Updates PR statuses for code freeze'
+
+inputs:
+  github_token:
+    description: 'GitHub token with PR and status management permissions'
+    required: true
+  state:
+    description: 'Status state to set (success/failure)'
+    required: true
+  workflow_name:
+    description: 'Name of the workflow file for the target URL'
+    required: true
+  page_size:
+    description: 'Number of PRs to process per page'
+    required: false
+    default: '25'
+  max_pages:
+    description: 'Maximum number of pages to process'
+    required: false
+    default: '6'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update PR statuses
+      shell: bash
+      run: |
+        set -o pipefail
+        
+        targetUrl="https://github.com/${{ github.repository }}/actions/workflows/${{ inputs.workflow_name }}"
+        state="${{ inputs.state }}"
+        description=$([ "$state" == "success" ] && echo "No code freeze is in place" || echo "A code freeze is in place")
+        
+        # Process multiple pages of PRs
+        for page in $(seq 1 ${{ inputs.max_pages }}); do
+          echo "Processing page $page..."
+          
+          # Get PRs for current page
+          response=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ inputs.github_token }}" \
+            "https://api.github.com/repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/pulls?state=open&per_page=${{ inputs.page_size }}&page=$page")
+          
+          # Get array length for this page
+          arrayLength=$(echo $response | jq -r 'length')
+          echo "Found $arrayLength PRs on page $page"
+          
+          # Exit if no more PRs
+          if [ "$arrayLength" -eq 0 ]; then
+            break
+          fi
+          
+          # Process each PR on this page
+          arrayLength=$((arrayLength-1))
+          for i in $(seq 0 $arrayLength); do
+            title=$(echo $response | jq -r ".[$i].title")
+            sha=$(echo $response | jq -r ".[$i].head.sha")
+            echo "Setting code freeze for '$title'"
+            
+            curl -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Authorization: Bearer ${{ inputs.github_token }}" \
+              "https://api.github.com/repos/${{ github.repository_owner }}/${{ github.event.repository.name }}/statuses/$sha" \
+              -d '{"state":"'"$state"'","context":"code_freeze","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
+          done
+        done

@@ -8,17 +8,15 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests
+namespace Datadog.Trace.Security.IntegrationTests.UserEvents
 {
     public abstract class AspNetCore5AutoUserEvents : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
@@ -32,9 +30,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             _enableSecurity = enableSecurity;
             _fixture.SetOutput(outputHelper);
             EnableRasp(false);
-            // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
-            EnvironmentHelper.CustomEnvironmentVariables.Add("ASPNETCORE_ENVIRONMENT", "Production");
-
             if (userTrackingMode != null)
             {
                 if (userTrackingMode is "ident" or "anon")
@@ -70,7 +65,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TryStartApp();
             var agent = _fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(eventName, bodyString);
-            VerifyScrubber.ScrubAuthenticatedTags(settings);
+            settings.ScrubAuthenticationCollectionMode();
             await TestAppSecRequestWithVerifyAsync(
                 agent,
                 "/Account/Index",
@@ -81,7 +76,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 contentType: "application/x-www-form-urlencoded",
                 methodNameOverride: nameof(TestUserLoginEvent),
                 fileNameOverride: GetTestFileName(eventName));
-
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
@@ -93,7 +87,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             await TryStartApp();
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            VerifyScrubber.ScrubSessionFingerprint(settings);
             var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser2&Input.Password=test", contentType: "application/x-www-form-urlencoded");
             request.StatusCode.Should().Be(HttpStatusCode.OK);
             // this is for testuser2 in the in memory user store and appdb
@@ -120,7 +113,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                                ]);
             request2.Should().NotBeNull();
             request2.CachedTargetFiles.Should().HaveCount(_enableSecurity ? 1 : 0);
-            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)));
+            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)), scrubCookiesFingerprint: true);
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
@@ -135,7 +128,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TryStartApp();
             var agent = _fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestLoginWithSdk), userIdSdk);
-            VerifyScrubber.ScrubAuthenticatedTags(settings);
+            settings.ScrubAuthenticationCollectionMode();
             await TestAppSecRequestWithVerifyAsync(
                 agent,
                 $"/Account/Index?userIdSdk={userIdSdk}",
@@ -145,10 +138,34 @@ namespace Datadog.Trace.Security.IntegrationTests
                 settings,
                 contentType: "application/x-www-form-urlencoded",
                 methodNameOverride: nameof(TestUserLoginEvent),
-                fileNameOverride: GetTestFileName($"{nameof(TestLoginWithSdk)}.{userIdSdk}"));
+                fileNameOverride: GetTestFileName($"{nameof(TestLoginWithSdk)}.{userIdSdk}"),
+                scrubCookiesFingerprint: true);
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
+        }
+
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData(true)]
+        [InlineData(false)]
+        protected async Task TestLoginSdkOnly(bool success)
+        {
+            await TryStartApp();
+            var agent = _fixture.Agent;
+            var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestLoginWithSdk));
+            settings.ScrubAuthenticationCollectionMode();
+            await TestAppSecRequestWithVerifyAsync(
+                agent,
+                $"/User/TrackLoginSdk?success={success}",
+                null,
+                1,
+                1,
+                settings,
+                contentType: "application/x-www-form-urlencoded",
+                methodNameOverride: nameof(TestUserLoginEvent),
+                fileNameOverride: GetTestFileName($"{nameof(TestLoginSdkOnly)}.success={success}"),
+                scrubCookiesFingerprint: true);
         }
 
         private string GetTestFileName(string testName) => $"{_testName}-{testName}";

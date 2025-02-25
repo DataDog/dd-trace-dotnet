@@ -63,34 +63,28 @@ internal class Context : IContext
     public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
         => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
 
-    public Dictionary<string, object> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
+    public Dictionary<string, object> FilterAddresses(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
         var addresses = new Dictionary<string, object>();
-        ShouldRun(_userEventsState.Id, userId, AddressesConstants.UserId);
-        ShouldRun(_userEventsState.Login, userLogin, AddressesConstants.UserLogin);
-        ShouldRun(_userEventsState.SessionId, userSessionId, AddressesConstants.UserSessionId);
-        return addresses;
-
-        void ShouldRun(UserEventsState.UserRecord? userRecord, string? value, string address)
+        if (ShouldRunWith(security, _userEventsState.Id, userId, AddressesConstants.UserId, fromSdk))
         {
-            string? previousValue = null;
-            var cameFromSdk = false;
-            if (userRecord.HasValue)
-            {
-                previousValue = userRecord.Value.Value;
-                cameFromSdk = userRecord.Value.FromSdk;
-            }
-
-            if (value is not null && security.AddressEnabled(address))
-            {
-                var differentValue = string.Compare(previousValue, value, StringComparison.OrdinalIgnoreCase) is not 0;
-                if (differentValue && (fromSdk || !cameFromSdk))
-                {
-                    addresses[address] = value;
-                }
-            }
+            addresses[AddressesConstants.UserId] = userId!;
         }
+
+        if (ShouldRunWith(security, _userEventsState.Login, userLogin, AddressesConstants.UserLogin, fromSdk))
+        {
+            addresses[AddressesConstants.UserLogin] = userLogin!;
+        }
+
+        if (ShouldRunWith(security, _userEventsState.SessionId, userSessionId, AddressesConstants.UserSessionId, fromSdk))
+        {
+            addresses[AddressesConstants.UserSessionId] = userSessionId!;
+        }
+
+        return addresses;
     }
+
+    public bool ShouldRunWithSession(IDatadogSecurity security, string? userSessionId = null, bool fromSdk = false) => ShouldRunWith(security, _userEventsState.SessionId, userSessionId, AddressesConstants.UserSessionId, fromSdk);
 
     public void CommitUserRuns(Dictionary<string, object> addresses, bool fromSdk)
     {
@@ -108,6 +102,24 @@ internal class Context : IContext
         {
             _userEventsState.SessionId = new(address.ToString(), fromSdk);
         }
+    }
+
+    private bool ShouldRunWith(IDatadogSecurity security, UserEventsState.UserRecord? previousUserRecord, string? value, string address, bool fromSdk)
+    {
+        if (value is null || !security.AddressEnabled(address))
+        {
+            return false;
+        }
+
+        if (!previousUserRecord.HasValue)
+        {
+            return true;
+        }
+
+        var previousValue = previousUserRecord.Value.Value;
+        var previousValueFromSdk = previousUserRecord.Value.FromSdk;
+        var differentValue = string.Compare(previousValue, value, StringComparison.OrdinalIgnoreCase) is not 0;
+        return differentValue && (fromSdk || !previousValueFromSdk);
     }
 
     private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)

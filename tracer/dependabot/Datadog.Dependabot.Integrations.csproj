@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.1 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.402.1" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.5 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.402.5" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.22 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.26 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.26" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.37 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.37" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.41 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.41" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.72 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.72" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.76 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.76" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.415 -->
-    <PackageReference Include="AWSSDK.S3" Version="3.7.415" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.415.4 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415.4" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.95 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.95" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.99 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.99" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.95 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.95" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.99 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.99" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.38 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.38" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.42 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.42" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -83,8 +83,8 @@
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.3.1 -->
-    <PackageReference Include="GraphQL" Version="8.3.1" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.4.0 -->
+    <PackageReference Include="GraphQL" Version="8.4.0" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!--    Assembly: GraphQL.SystemReactive -->
@@ -115,8 +115,8 @@
 
     <!-- Integration: log4net -->
     <!--    Assembly: log4net -->
-    <!-- Latest package https://www.nuget.org/packages/log4net/3.0.3 -->
-    <PackageReference Include="log4net" Version="3.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/log4net/3.0.4 -->
+    <PackageReference Include="log4net" Version="3.0.4" />
 
     <!-- Integration: System.Web.Mvc -->
     <!--    Assembly: System.Web.Mvc -->
@@ -170,8 +170,8 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.47.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.47.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.47.1 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.47.1" />
 
     <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
     <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
@@ -222,8 +222,8 @@
     <!--    Assembly: MongoDB.Driver -->
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.2.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="3.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.2.1 -->
+    <PackageReference Include="MongoDB.Driver" Version="3.2.1" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
@@ -232,8 +232,8 @@
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.8.0 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.7.3" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.8.2 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.8.2" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -277,13 +277,13 @@
 
     <!-- Integration: RabbitMQ.Client -->
     <!--    Assembly: RabbitMQ.Client -->
-    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/7.0.0 -->
-    <PackageReference Include="RabbitMQ.Client" Version="7.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/7.1.0 -->
+    <PackageReference Include="RabbitMQ.Client" Version="7.1.0" />
 
     <!-- Integration: WebDriver -->
     <!--    Assembly: WebDriver -->
-    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.28.0 -->
-    <PackageReference Include="Selenium.WebDriver" Version="4.28.0" />
+    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.29.0 -->
+    <PackageReference Include="Selenium.WebDriver" Version="4.29.0" />
 
     <!-- Integration: Serilog -->
     <!--    Assembly: Serilog -->

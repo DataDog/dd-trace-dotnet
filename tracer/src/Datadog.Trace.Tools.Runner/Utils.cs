@@ -609,6 +609,12 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
             }
 
+            const string installTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
+            if (string.IsNullOrEmpty(GetEnvironmentVariable(installTypeKey)))
+            {
+                envVars[installTypeKey] = "dd_trace_tool";
+            }
+
             if (!string.IsNullOrEmpty(devPath))
             {
                 envVars["DEVPATH"] = devPath;
