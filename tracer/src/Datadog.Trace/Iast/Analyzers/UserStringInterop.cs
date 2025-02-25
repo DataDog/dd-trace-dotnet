@@ -5,7 +5,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.Sink.Models;
 
 namespace Datadog.Trace.Iast.Analyzers;
 
