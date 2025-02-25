@@ -716,8 +716,8 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether Appsec standalone is enabled.
-        /// Default is <c>false</c>.
+        /// Gets a value indicating whether APM traces are enabled.
+        /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
         internal bool ApmTracingEnabledInternal => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;

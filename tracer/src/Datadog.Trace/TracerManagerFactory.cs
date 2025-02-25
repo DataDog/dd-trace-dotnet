@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -261,8 +262,10 @@ namespace Datadog.Trace
             // Note: the order that rules are registered is important, as they are evaluated in order.
             // The first rule that matches will be used to determine the sampling rate.
 
-            if (settings.ApmTracingEnabledInternal == false)
+            if (settings.ApmTracingEnabledInternal == false &&
+                (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
             {
+                // Custom sampler for ASM and IAST standalone billing mode
                 var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
                 samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
                 return samplerStandalone;
