@@ -18,7 +18,16 @@ internal class CiVisibilityImpactedTestsDetectionFeature : ICiVisibilityImpacted
 
     public CiVisibilityImpactedTestsDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        settings ??= CIVisibilitySettings.FromDefaultSources();
+        if (settings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
+        }
+
+        if (testOptimizationClient is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
+        }
+
         if (settings.ImpactedTestsDetectionEnabled != false && clientSettingsResponse.ImpactedTestsEnabled == true)
         {
             Log.Debug("CiVisibilityImpactedTestsDetectionFeature: Impacted tests detection is enabled.");

@@ -18,7 +18,16 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
 
     public CiVisibilityEarlyFlakeDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        settings ??= CIVisibilitySettings.FromDefaultSources();
+        if (settings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
+        }
+
+        if (testOptimizationClient is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
+        }
+
         EarlyFlakeDetectionSettings = clientSettingsResponse.EarlyFlakeDetection;
         if (settings.EarlyFlakeDetectionEnabled != false && clientSettingsResponse.EarlyFlakeDetection.Enabled == true)
         {

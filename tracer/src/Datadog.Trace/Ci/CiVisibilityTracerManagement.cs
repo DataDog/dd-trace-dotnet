@@ -21,20 +21,27 @@ namespace Datadog.Trace.Ci;
 internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilityTracerManagement));
+    private readonly CIVisibilitySettings _settings;
 
-    // Constructor allows optional initialization of the event platform proxy support.
-    public CiVisibilityTracerManagement(EventPlatformProxySupport eventPlatformProxySupport = EventPlatformProxySupport.None)
+    public CiVisibilityTracerManagement(
+        CIVisibilitySettings settings,
+        EventPlatformProxySupport eventPlatformProxySupport = EventPlatformProxySupport.None,
+        bool useLockedTracerManager = true)
     {
+        if (settings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
+        }
+
+        _settings = settings;
         EventPlatformProxySupport = eventPlatformProxySupport;
+        UseLockedTracerManager = useLockedTracerManager;
     }
 
-    // Flag indicating whether a locked tracer manager should be used.
-    public bool UseLockedTracerManager { get; set; } = true;
+    public EventPlatformProxySupport EventPlatformProxySupport { get; }
 
-    // Property representing the current event platform proxy support mode.
-    public EventPlatformProxySupport EventPlatformProxySupport { get; private set; }
+    public bool UseLockedTracerManager { get; }
 
-    // Returns the CITracerManager if available.
     public CITracerManager? Manager
     {
         get
@@ -48,7 +55,6 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
         }
     }
 
-    // Checks whether the event platform proxy is supported by the agent using the discovery service.
     public EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
     {
         if (discoveryService is NullDiscoveryService)
@@ -56,11 +62,11 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
             return EventPlatformProxySupport.None;
         }
 
-        Log.Debug("Waiting for agent configuration...");
-        var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet();
+        Log.Debug("CiVisibilityTracerManagement: Waiting for agent configuration...");
+        var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet(5_000);
         if (agentConfiguration is null)
         {
-            Log.Warning("Discovery service could not retrieve the agent configuration after 5 seconds.");
+            Log.Warning("CiVisibilityTracerManagement: Discovery service could not retrieve the agent configuration after 5 seconds.");
             return EventPlatformProxySupport.None;
         }
 
@@ -68,40 +74,37 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
         return EventPlatformProxySupportFromEndpointUrl(eventPlatformProxyEndpoint);
     }
 
-    // Determines the event platform proxy support mode based on the endpoint URL.
     public EventPlatformProxySupport EventPlatformProxySupportFromEndpointUrl(string? eventPlatformProxyEndpoint)
     {
         if (!string.IsNullOrEmpty(eventPlatformProxyEndpoint))
         {
-            if (eventPlatformProxyEndpoint!.Contains("/v2"))
+            if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
             {
-                Log.Information("Event platform proxy V2 supported by agent.");
+                Log.Information("CiVisibilityTracerManagement: Event platform proxy V2 supported by agent.");
                 return EventPlatformProxySupport.V2;
             }
 
-            if (eventPlatformProxyEndpoint!.Contains("/v4"))
+            if (eventPlatformProxyEndpoint?.Contains("/v4") == true)
             {
-                Log.Information("Event platform proxy V4 supported by agent.");
+                Log.Information("CiVisibilityTracerManagement: Event platform proxy V4 supported by agent.");
                 return EventPlatformProxySupport.V4;
             }
 
-            Log.Information("EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
+            Log.Information("CiVisibilityTracerManagement: EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
         }
         else
         {
-            Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
+            Log.Information("CiVisibilityTracerManagement: Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
         }
 
         return EventPlatformProxySupport.None;
     }
 
-    // Returns an API request factory with a default timeout of 15 seconds.
     public IApiRequestFactory GetRequestFactory(TracerSettings settings)
     {
         return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
     }
 
-    // Returns an API request factory using the specified tracer settings and timeout.
     public IApiRequestFactory GetRequestFactory(TracerSettings tracerSettings, TimeSpan timeout)
     {
         IApiRequestFactory? factory;
@@ -119,37 +122,30 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
         else
         {
 #if NETCOREAPP
-            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+            Log.Information("CiVisibilityTracerManagement: Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
             factory = new HttpClientRequestFactory(
                 exporterSettings.AgentUri,
                 AgentHttpHeaderNames.DefaultHeaders,
-                handler: new System.Net.Http.HttpClientHandler
-                {
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
-                },
+                handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
                 timeout: timeout);
 #else
-            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+            Log.Information("CiVisibilityTracerManagement: Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
             factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
-            // Use CIVisibilitySettings for proxy configuration.
-            var ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
-            if (!string.IsNullOrWhiteSpace(ciVisibilitySettings.ProxyHttps))
+            if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
             {
-                var proxyHttpsUriBuilder = new UriBuilder(ciVisibilitySettings.ProxyHttps);
+                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps!);
 
-                // Extract username and password from the proxy URI.
                 var userName = proxyHttpsUriBuilder.UserName;
                 var password = proxyHttpsUriBuilder.Password;
 
-                // Clear the username and password from the URI builder.
                 proxyHttpsUriBuilder.UserName = string.Empty;
                 proxyHttpsUriBuilder.Password = string.Empty;
 
                 if (proxyHttpsUriBuilder.Scheme == "https")
                 {
-                    // HTTPS proxy is not supported by the .NET BCL.
-                    Log.Error("HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
+                    // HTTPS proxy is not supported by .NET BCL
+                    Log.Error("CiVisibilityTracerManagement: HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
                     return factory;
                 }
 
@@ -159,45 +155,38 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
                     credential = new NetworkCredential(userName, password);
                 }
 
-                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, ciVisibilitySettings.ProxyNoProxy, credential), credential);
+                Log.Information("CiVisibilityTracerManagement: Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
             }
         }
 
         return factory;
     }
 
-    // Extracts the service name from the provided repository URL.
     public string GetServiceNameFromRepository(string? repository)
     {
-        if (!string.IsNullOrEmpty(repository))
+        if (string.IsNullOrEmpty(repository))
         {
-            // Remove trailing slash or backslash.
-            if (repository!.EndsWith("/") || repository.EndsWith("\\"))
-            {
-                repository = repository.Substring(0, repository.Length - 1);
-            }
+            return string.Empty;
+        }
 
-            // Use regex to extract the repository name.
-            var regex = new Regex(@"[/\\]?([a-zA-Z0-9\-_.]*)$");
-            var match = regex.Match(repository);
-            if (match is { Success: true, Groups.Count: > 1 })
-            {
-                const string gitSuffix = ".git";
-                var repoName = match.Groups[1].Value;
-                if (repoName.EndsWith(gitSuffix))
-                {
-                    return repoName.Substring(0, repoName.Length - gitSuffix.Length);
-                }
+        if (repository!.EndsWith("/") || repository.EndsWith("\\"))
+        {
+            repository = repository.Substring(0, repository.Length - 1);
+        }
 
-                return repoName;
-            }
+        const string gitSuffix = ".git";
+        var regex = new Regex(@"[/\\]?([a-zA-Z0-9\-_.]*)$");
+        var match = regex.Match(repository);
+        if (match is { Success: true, Groups.Count: > 1 })
+        {
+            var repoName = match.Groups[1].Value;
+            return repoName.EndsWith(gitSuffix) ? repoName.Substring(0, repoName.Length - gitSuffix.Length) : repoName;
         }
 
         return string.Empty;
     }
 
-    // Nested class to handle the discovery service configuration callback.
     private class DiscoveryAgentConfigurationCallback
     {
         private readonly ManualResetEventSlim _manualResetEventSlim;
@@ -228,7 +217,7 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
             _agentConfiguration = agentConfiguration;
             _manualResetEventSlim.Set();
             _discoveryService.RemoveSubscription(_callback);
-            Log.Debug("Agent configuration received.");
+            Log.Debug("CiVisibilityTracerManagement: Agent configuration received.");
         }
     }
 }

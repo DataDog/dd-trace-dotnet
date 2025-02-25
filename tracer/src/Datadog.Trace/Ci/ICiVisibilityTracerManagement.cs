@@ -17,7 +17,7 @@ internal interface ICiVisibilityTracerManagement
 
     CITracerManager? Manager { get; }
 
-    bool UseLockedTracerManager { get; set; }
+    bool UseLockedTracerManager { get; }
 
     EventPlatformProxySupport IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService);
 

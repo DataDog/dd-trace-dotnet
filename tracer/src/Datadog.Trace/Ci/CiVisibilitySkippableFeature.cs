@@ -21,7 +21,16 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
 
     public CiVisibilitySkippableFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        settings ??= CIVisibilitySettings.FromDefaultSources();
+        if (settings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
+        }
+
+        if (testOptimizationClient is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
+        }
+
         if (settings.TestsSkippingEnabled != false && clientSettingsResponse.TestsSkipping == true)
         {
             Log.Debug("CiVisibilitySkippableFeature: Test skipping is enabled.");
