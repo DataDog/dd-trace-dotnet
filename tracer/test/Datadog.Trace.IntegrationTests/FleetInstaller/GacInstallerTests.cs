@@ -6,9 +6,8 @@
 #if NETFRAMEWORK
 
 using System.IO;
-using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.FleetInstaller;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -87,8 +86,6 @@ public class GacInstallerTests(ITestOutputHelper output) : FleetInstallerTestsBa
         // This scenario should _only_ happen in testing, but it's a "safe" one to handle
         Skip.IfNot(IsRunningAsAdministrator);
 
-        // download the old version
-
         var homeDirectory1 = CreateMonitoringHomeCopy();
         var homeDirectory2 = CreateMonitoringHomeCopy();
         var values1 = new TracerValues(homeDirectory1);
@@ -121,43 +118,182 @@ public class GacInstallerTests(ITestOutputHelper output) : FleetInstallerTestsBa
         AssertFilesAreInGac(values1, isInGac: false);
     }
 
-    // [SkippableFact]
-    // public void FullInstallUninstall_WhenExistingVersionIsInGac_CanAddAndUninstallNewVersion()
-    // {
-    //     Skip.IfNot(IsRunningAsAdministrator);
-    //
-    //     // download the old version
-    //
-    //     var homeDirectory = CreateMonitoringHomeCopy();
-    //     var values = new TracerValues(homeDirectory);
-    //     // Verify prerequistes
-    //     AssertFilesAreInGac(values, isInGac: false);
-    //
-    //     GacInstaller.TryGacInstall(Log, values).Should().BeTrue();
-    //     AssertFilesAreInGac(values, isInGac: true);
-    //
-    //     File.Delete(values.NativeLoaderX64Path);
-    //
-    //     // Should fail and not be removed
-    //     GacInstaller.TryGacUninstall(Log, values).Should().BeFalse();
-    //     AssertFilesAreInGac(values, isInGac: false);
-    // }
+    [SkippableFact(Skip = "This does not pass, which is a problem, but requires finding the full name of the assembly to remove")]
+    public async Task FullInstallUninstall_WhenPreviousVersionIsInGac_CanAddAndUninstallNewVersion()
+    {
+        // This scenario should _only_ happen in testing, but it's a "safe" one to handle
+        Skip.IfNot(IsRunningAsAdministrator);
+
+        var homeDirectory1 = await DownloadPreviousVersion();
+        var homeDirectory2 = CreateMonitoringHomeCopy();
+        var previousValues = new TracerValues(homeDirectory1);
+        var currentValues = new TracerValues(homeDirectory2);
+
+        // Verify prerequistes
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: false);
+
+        GacInstaller.TryGacInstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: true, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: false);
+
+        GacInstaller.TryGacInstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: true);
+
+        // delete the native loader files from previous so we can un-gac
+        File.Delete(currentValues.NativeLoaderX64Path);
+        File.Delete(currentValues.NativeLoaderX86Path);
+
+        // Should succeed, and not touch the new version
+        GacInstaller.TryGacUninstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: false);
+        AssertFilesAreInGac(previousValues, isInGac: true, version: PreviousTracerVersion);
+
+        // delete the native loader files from current
+        File.Delete(previousValues.NativeLoaderX64Path);
+        File.Delete(previousValues.NativeLoaderX86Path);
+
+        // Should succeed, and now all the values are gone
+        GacInstaller.TryGacUninstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: false);
+    }
+
+    [SkippableFact(Skip = "This does not pass, which is a problem, but requires finding the full name of the assembly to remove")]
+    public async Task FullInstallUninstall_WhenPreviousVersionIsInGac_CanInterleaveAddAndUninstallNewVersion()
+    {
+        // This scenario should _only_ happen in testing, but it's a "safe" one to handle
+        Skip.IfNot(IsRunningAsAdministrator);
+
+        var homeDirectory1 = await DownloadPreviousVersion();
+        var homeDirectory2 = CreateMonitoringHomeCopy();
+        var previousValues = new TracerValues(homeDirectory1);
+        var currentValues = new TracerValues(homeDirectory2);
+
+        // Verify prerequistes
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: false);
+
+        GacInstaller.TryGacInstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: true, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: false);
+
+        GacInstaller.TryGacInstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: true);
+
+        // delete the native loader files from previous so we can un-gac
+        File.Delete(previousValues.NativeLoaderX64Path);
+        File.Delete(previousValues.NativeLoaderX86Path);
+
+        // Should succeed, and not touch the new version
+        GacInstaller.TryGacUninstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: true);
+
+        // delete the native loader files from current
+        File.Delete(currentValues.NativeLoaderX64Path);
+        File.Delete(currentValues.NativeLoaderX86Path);
+
+        // Should succeed, and now all the values are gone
+        GacInstaller.TryGacUninstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: false);
+    }
+
+    [SkippableFact(Skip = "This does not pass, which is a problem, but requires finding the full name of the assembly to remove")]
+    public async Task FullInstallUninstall_WhenCurrentVersionIsInGac_CanAddAndUninstallPreviousVersion()
+    {
+        // This scenario should _only_ happen in testing, but it's a "safe" one to handle
+        Skip.IfNot(IsRunningAsAdministrator);
+
+        var homeDirectory1 = await DownloadPreviousVersion();
+        var homeDirectory2 = CreateMonitoringHomeCopy();
+        var previousValues = new TracerValues(homeDirectory1);
+        var currentValues = new TracerValues(homeDirectory2);
+
+        // Verify prerequistes
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: false);
+
+        // Install current version
+        GacInstaller.TryGacInstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: true);
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+
+        GacInstaller.TryGacInstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: true, version: PreviousTracerVersion);
+
+        // delete the native loader files from current so we can un-gac
+        File.Delete(previousValues.NativeLoaderX64Path);
+        File.Delete(previousValues.NativeLoaderX86Path);
+
+        // Should succeed, and not touch the new version
+        GacInstaller.TryGacUninstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: true);
+
+        // delete the native loader files from current
+        File.Delete(currentValues.NativeLoaderX64Path);
+        File.Delete(currentValues.NativeLoaderX86Path);
+
+        // Should succeed, and now all the values are gone
+        GacInstaller.TryGacUninstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: false);
+    }
+
+    [SkippableFact(Skip = "This does not pass, which is a problem, but requires finding the full name of the assembly to remove")]
+    public async Task FullInstallUninstall_WhenCurrentVersionIsInGac_CanInterleaveAddAndUninstallPreviousVersion()
+    {
+        // This scenario should _only_ happen in testing, but it's a "safe" one to handle
+        Skip.IfNot(IsRunningAsAdministrator);
+
+        var homeDirectory1 = await DownloadPreviousVersion();
+        var homeDirectory2 = CreateMonitoringHomeCopy();
+        var previousValues = new TracerValues(homeDirectory1);
+        var currentValues = new TracerValues(homeDirectory2);
+
+        // Verify prerequistes
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+        AssertFilesAreInGac(currentValues, isInGac: false);
+
+        // Install current version
+        GacInstaller.TryGacInstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: true);
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+
+        GacInstaller.TryGacInstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: true, version: PreviousTracerVersion);
+
+        // delete the native loader files from current so we can un-gac
+        File.Delete(currentValues.NativeLoaderX64Path);
+        File.Delete(currentValues.NativeLoaderX86Path);
+
+        // Should succeed, and not touch the new version
+        GacInstaller.TryGacUninstall(Log, currentValues).Should().BeTrue();
+        AssertFilesAreInGac(currentValues, isInGac: false);
+        AssertFilesAreInGac(previousValues, isInGac: true, version: PreviousTracerVersion);
+
+        // delete the native loader files from current
+        File.Delete(previousValues.NativeLoaderX64Path);
+        File.Delete(previousValues.NativeLoaderX86Path);
+
+        // Should succeed, and now all the values are gone
+        GacInstaller.TryGacUninstall(Log, previousValues).Should().BeTrue();
+        AssertFilesAreInGac(previousValues, isInGac: false, version: PreviousTracerVersion);
+    }
 
     private void AssertFilesAreInGac(TracerValues values, bool isInGac, string version = TracerConstants.AssemblyVersion)
     {
         foreach (var gacFile in values.FilesToAddToGac)
         {
-            var assemblyName = $"{Path.GetFileNameWithoutExtension(gacFile)}, Version={version}";
-            IsAssemblyInGac(assemblyName).Should().Be(isInGac);
+            IsAssemblyInGac(Path.GetFileNameWithoutExtension(gacFile), version).Should().Be(isInGac);
         }
 
         return;
 
-        bool IsAssemblyInGac(string assemblyName)
+        bool IsAssemblyInGac(string assembly, string version)
         {
-            _output.WriteLine("Checking if assembly is in GAC: {0}", assemblyName);
+            _output.WriteLine($"Checking if assembly '{assembly}' with version {version} is in GAC");
             var gacUtilPath = @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe";
-            var result = ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacUtilPath, "/l Datadog.Trace"));
+            var result = ProcessHelpers.RunCommand(new ProcessHelpers.Command(gacUtilPath, $"/l {assembly}"));
 
             _output.WriteLine($"ExitCode: {result?.ExitCode}, Error: {result?.Error}");
             _output.WriteLine(result?.Output);
@@ -166,22 +302,17 @@ public class GacInstallerTests(ITestOutputHelper output) : FleetInstallerTestsBa
                 return false;
             }
 
-            if (result.Output.Contains("Number of items = "))
+            var expected = $"{assembly}, Version={version}";
+            if (result.Output.Contains(expected))
             {
+                _output.WriteLine("Found expected output: " + expected);
                 return true;
             }
 
-            _output.WriteLine("Unexpected output");
+            _output.WriteLine("Expected output not found: " + expected);
             return false;
         }
     }
-
-    // private string DownloadPreviousVersion()
-    // {
-    //     var previousVersionUrl =
-    //     var homeDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-    //     _output.WriteLine($"Copying {original} to {homeDirectory}");
-    // }
 }
 
 #endif

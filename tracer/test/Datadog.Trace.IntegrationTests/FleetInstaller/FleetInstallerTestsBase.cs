@@ -8,7 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Net.Http;
 using System.Security.Principal;
+using System.Threading.Tasks;
 using Datadog.FleetInstaller;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -18,6 +21,7 @@ namespace Datadog.Trace.IntegrationTests.FleetInstaller;
 
 public abstract class FleetInstallerTestsBase : IDisposable
 {
+    protected const string PreviousTracerVersion = "3.11.0";
     private static bool? _isElevated;
     private readonly ITestOutputHelper _output;
     private List<string> _homeDirectory;
@@ -90,6 +94,28 @@ public abstract class FleetInstallerTestsBase : IDisposable
                 CopyDirectory(subDir.FullName, newDestinationDir);
             }
         }
+    }
+
+    protected async Task<string> DownloadPreviousVersion()
+    {
+        var zipPath = Path.Combine(Path.GetTempPath(), $"{nameof(GacInstallerTests)}-{PreviousTracerVersion}-windows-tracer-home.zip");
+        if (!File.Exists(zipPath))
+        {
+            var previousVersionUrl = $"https://github.com/DataDog/dd-trace-dotnet/releases/download/v{PreviousTracerVersion}/windows-tracer-home.zip";
+            _output.WriteLine($"Downloading from {previousVersionUrl} to {zipPath}");
+            using var httpClient = new HttpClient();
+            using var stream = await httpClient.GetStreamAsync(previousVersionUrl);
+            using var fileStream = File.Create(zipPath);
+            await stream.CopyToAsync(fileStream);
+            _output.WriteLine("File download complete");
+        }
+
+        var homeDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        _output.WriteLine($"Extracting {zipPath} to {homeDirectory}");
+        ZipFile.ExtractToDirectory(zipPath, homeDirectory);
+        _homeDirectory ??= new();
+        _homeDirectory.Add(homeDirectory);
+        return homeDirectory;
     }
 }
 #endif
