@@ -171,6 +171,10 @@ internal static class GacInstaller
                 {
                     log.WriteInfo($"Assembly '{gacAssemblyPath}' was already uninstalled from the GAC.");
                 }
+                else if (disposition is Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_HAS_INSTALL_REFERENCES)
+                {
+                    log.WriteInfo($"Assembly '{gacAssemblyPath}' has additional install references. It was not removed from the GAC, but will be removed when all references are removed.");
+                }
                 else if (retValue == HResult.Code.S_OK)
                 {
                     log.WriteInfo($"Successfully uninstalled assembly '{gacAssemblyPath}' from the GAC.");
