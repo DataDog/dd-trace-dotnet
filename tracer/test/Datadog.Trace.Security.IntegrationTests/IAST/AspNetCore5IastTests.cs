@@ -932,7 +932,8 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing()
             .AddRegexScrubber((new Regex("\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController\\+.*"), "\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController+\""))
-            .AddRegexScrubber((new Regex("\"hash\": -468618995"), "\"hash\": -1908542958"));
+            .AddRegexScrubber((new Regex("\"hash\": .*"), "\"hash\": 9515978"))
+            .AddRegexScrubber((new Regex("\"method\": \"<Ldap>g__PerformLdapQuery\\|.\""), "\"method\": \"<Ldap>g__PerformLdapQuery|0\""));
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();

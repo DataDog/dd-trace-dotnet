@@ -26,11 +26,11 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-      "hash": -1908542958,
+      "hash": 9515978
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController+"
-        "method": "<Ldap>g__PerformLdapQuery|1"
+        "method": "<Ldap>g__PerformLdapQuery|0"
       },
       "evidence": {
         "valueParts": [

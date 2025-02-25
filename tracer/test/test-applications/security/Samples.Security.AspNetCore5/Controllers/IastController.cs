@@ -868,7 +868,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return Content($"Skip due to timeout (513)");
                 }
             }
-            catch (System.Runtime.InteropServices.COMException)
+            catch (System.AggregateException err) when (err.InnerExceptions[0] is System.Runtime.InteropServices.COMException)
             {
                 // Custom code to signal the client to skip the test
                 Response.StatusCode = 513;
