@@ -45,9 +45,6 @@ jobs:
           base: master
           title: "[Test Package Versions Bump] Updating package versions "
           milestone: "${{steps.rename.outputs.milestone}}"
-          team-reviewers: |
-            DataDog/apm-dotnet
-            Datadog/apm-idm-dotnet
           body: |
             Updates the package versions for integration tests.
             
