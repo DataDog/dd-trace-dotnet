@@ -57,7 +57,7 @@ public class SpanPointersTests
         span.SpanLinks.Should().ContainSingle("Should have exactly one span link");
         var link = span.SpanLinks[0];
 
-        link.Context.Should().Equal(SpanContext.ZeroContext);
+        link.Context.Should().Equal(SpanContext.None);
 
         // we can use Contain(key, value) because Attributes is "dictionary-like"
         link.Attributes.Should().Contain("ptr.kind", "aws.s3.object");
