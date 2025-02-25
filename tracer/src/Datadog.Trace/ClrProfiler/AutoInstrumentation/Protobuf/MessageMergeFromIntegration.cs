@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
@@ -28,14 +29,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MessageMergeFromIntegration
 {
+    // For performance reasons, we want to do the actual instrumentation work with a Duck constraint,
+    // but to be able to disable the instrumentation we need the raw type
+    // so we use 2 different methods to have access to both when we need it.
+    // Note: Disabling OnMethodBegin means the OnMethodEnd will not be called afterward.
+
     internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
+    {
+        Helper.DisableInstrumentationIfInternalProtobufType<TTarget>();
+        return CallTargetState.GetDefault();
+    }
+
+    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         where TTarget : IMessageProxy
     {
-        if (Helper.TryGetDescriptor(instance, out var descriptor))
+        if (instance.Instance != null)
         {
-            SchemaExtractor.EnrichActiveSpanWith(descriptor, "deserialization");
+            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
         }
 
-        return CallTargetState.GetDefault();
+        return CallTargetReturn.GetDefault();
     }
 }
