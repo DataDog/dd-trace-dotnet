@@ -14,17 +14,12 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DogStatsd;
-using Datadog.Trace.FeatureFlags;
-using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {

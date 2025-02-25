@@ -4,7 +4,6 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
