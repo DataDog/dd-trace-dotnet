@@ -29,6 +29,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.402.28" />
+    <PackageReference Include="MailKit" Version="4.10.0" />
     <PackageReference Include="Azure.Data.Tables" Version="12.8.3" />
     <PackageReference Include="DelegateDecompiler" Version="0.32.0" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
