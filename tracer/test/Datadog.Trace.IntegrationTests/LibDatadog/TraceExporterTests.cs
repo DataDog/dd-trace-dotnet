@@ -4,7 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -14,11 +17,22 @@ namespace Datadog.Trace.IntegrationTests.LibDatadog;
 
 public class TraceExporterTests
 {
-    [Fact]
-    public async Task SendsTracesUsingDataPipeline()
+    [Theory]
+    [InlineData(TestTransports.Tcp)]
+    [InlineData(TestTransports.Uds)]
+    [InlineData(TestTransports.WindowsNamedPipe)]
+    public async Task SendsTracesUsingDataPipeline(TestTransports transport)
     {
-        using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        if (transport == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+        }
 
+        var settings = GetSettings(transport);
+        var tracerSettings = TracerSettings.Create(settings);
+
+        using var agent = GetAgent(transport, settings);
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
         {
             StatusCode = 200,
@@ -33,18 +47,8 @@ public class TraceExporterTests
                        """
         };
 
-        var settings = TracerSettings.Create(new()
-        {
-            { ConfigurationKeys.StatsComputationEnabled, true },
-            { ConfigurationKeys.ServiceName, "default-service" },
-            { ConfigurationKeys.ServiceVersion, "v1" },
-            { ConfigurationKeys.Environment, "test" },
-            { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
-            { ConfigurationKeys.DataPipelineEnabled, "true" },
-        });
-
-        var discovery = DiscoveryService.Create(settings.Exporter);
-        var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+        var discovery = DiscoveryService.Create(tracerSettings.Exporter);
+        var tracer = new Tracer(tracerSettings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
         using var span = tracer.StartSpan("operationName");
         span.ResourceName = "resourceName";
@@ -59,5 +63,46 @@ public class TraceExporterTests
         Assert.Equal("operationName", recordedSpan.Name);
         Assert.Equal("resourceName", recordedSpan.Resource);
         Assert.Equal("default-service", recordedSpan.Service);
+
+        Dictionary<string, object> GetSettings(TestTransports type)
+        {
+            var settings = new Dictionary<string, object>
+            {
+                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.ServiceName, "default-service" },
+                { ConfigurationKeys.ServiceVersion, "v1" },
+                { ConfigurationKeys.Environment, "test" },
+                { ConfigurationKeys.DataPipelineEnabled, "true" },
+            };
+
+            switch (type)
+            {
+                case TestTransports.Tcp:
+                    settings[ConfigurationKeys.AgentPort] = TcpPortProvider.GetOpenPort();
+                    break;
+                case TestTransports.WindowsNamedPipe:
+                    settings[ConfigurationKeys.TracesPipeName] = $"trace-{Guid.NewGuid()}";
+                    break;
+                case TestTransports.Uds:
+                    settings[ConfigurationKeys.TracesUnixDomainSocketPath] = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                    break;
+                default:
+                    throw new InvalidOperationException("Unsupported transport type " + type);
+            }
+
+            return settings;
+        }
+
+        MockTracerAgent GetAgent(TestTransports type, Dictionary<string, object> settings)
+            => type switch
+            {
+                TestTransports.Tcp => MockTracerAgent.Create(null, int.Parse(settings[ConfigurationKeys.AgentPort].ToString())),
+                TestTransports.WindowsNamedPipe => MockTracerAgent.Create(null, new WindowsPipesConfig(settings[ConfigurationKeys.TracesPipeName].ToString(), null)),
+#if NETCOREAPP3_1_OR_GREATER
+                TestTransports.Uds
+                    => MockTracerAgent.Create(null, new UnixDomainSocketConfig(settings[ConfigurationKeys.TracesUnixDomainSocketPath].ToString(), null)),
+#endif
+                _ => throw new InvalidOperationException("Unsupported transport type " + type),
+            };
     }
 }
