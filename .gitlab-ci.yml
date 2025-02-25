@@ -13,6 +13,7 @@ include:
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
+  REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-error-bots"
 
 build:
   except:
