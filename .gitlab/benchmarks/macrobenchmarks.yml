@@ -496,7 +496,7 @@ profiler_cpu_timer_create-arm64:
 
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.benchmarking-platform.ephemeral-infra-ci.benchmarking-platform-profile"
+    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
     AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
     AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
