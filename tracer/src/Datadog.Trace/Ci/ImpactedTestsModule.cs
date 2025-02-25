@@ -163,7 +163,7 @@ internal static class ImpactedTestsModule
     {
         Log.Debug("Retrieving diff files from backend...");
 
-        if (CiVisibility.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { } response && response.Files is { Length: > 0 } files)
+        if (CiVisibility.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { Files: { Length: > 0 } files })
         {
             var res = new FileCoverageInfo[files.Length];
             for (int x = 0; x < files.Length; x++)
@@ -179,7 +179,7 @@ internal static class ImpactedTestsModule
 
     private static string? GetBaseCommitFromBackend()
     {
-        if (CiVisibility.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { } response && response.BaseSha is { Length: > 0 } baseSha)
+        if (CiVisibility.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { BaseSha: { Length: > 0 } baseSha })
         {
             return baseSha;
         }

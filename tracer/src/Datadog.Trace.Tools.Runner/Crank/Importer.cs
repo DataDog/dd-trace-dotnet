@@ -77,11 +77,12 @@ namespace Datadog.Trace.Tools.Runner.Crank
                 string jsonContent = File.ReadAllText(jsonFilePath);
                 var result = JsonConvert.DeserializeObject<Models.ExecutionResult>(jsonContent);
 
+                var ciVisibility = CiVisibility.Instance;
                 if (result?.JobResults?.Jobs?.Count > 0)
                 {
                     var fileName = Path.GetFileName(jsonFilePath);
 
-                    CiVisibility.Instance.Initialize();
+                    ciVisibility.Initialize();
                     Tracer tracer = Tracer.Instance;
 
                     foreach (var jobItem in result.JobResults.Jobs)
@@ -247,7 +248,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                     // Ensure all the spans gets flushed before we report the success.
                     // In some cases the process finishes without sending the traces in the buffer.
-                    CiVisibility.Instance.Flush();
+                    ciVisibility.Flush();
                 }
             }
             catch (Exception ex)

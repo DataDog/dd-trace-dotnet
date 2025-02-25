@@ -156,9 +156,10 @@ internal static class Common
     internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
     {
         // Early flake detection flags
-        if (CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled == true)
+        var ciVisibility = CiVisibility.Instance;
+        if (ciVisibility.Settings.EarlyFlakeDetectionEnabled == true)
         {
-            var isTestNew = !CiVisibility.Instance.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
+            var isTestNew = !ciVisibility.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
             if (isTestNew)
             {
                 test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");

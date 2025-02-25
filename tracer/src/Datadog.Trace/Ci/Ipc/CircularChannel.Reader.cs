@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Ci.Ipc;
@@ -16,6 +17,7 @@ internal partial class CircularChannel
 {
     private class Reader : IChannelReader
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Reader>();
         private readonly ManualResetEventSlim _pollingThreadFinishEvent;
         private readonly Thread _pollingThread;
         private readonly CircularChannel _channel;
@@ -42,7 +44,7 @@ internal partial class CircularChannel
                 }
                 catch (Exception ex)
                 {
-                    CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error while polling for messages (InternalPollForMessage)");
+                    Log.Error(ex, "CircularChannel.Reader: Error while polling for messages (InternalPollForMessage)");
                 }
 
                 if (!_pollingThreadFinishEvent.IsSet)
@@ -70,19 +72,19 @@ internal partial class CircularChannel
                 var hasHandle = _channel._mutex.WaitOne(_channel._settings.MutexTimeout);
                 if (!hasHandle)
                 {
-                    CiVisibility.Instance.Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
+                    Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
                     return;
                 }
             }
             catch (AbandonedMutexException ex)
             {
-                CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
+                Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
                 return;
             }
             catch (ObjectDisposedException ex)
             {
                 // The mutex was disposed, nothing to do
-                CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
+                Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
                 return;
             }
 
@@ -119,7 +121,7 @@ internal partial class CircularChannel
                     if (length + 2 > _channel.BufferBodySize)
                     {
                         // Handle error, reset pointers, or skip
-                        CiVisibility.Instance.Log.Error("CircularChannel.Reader: Message size exceeds maximum allowed size.");
+                        Log.Error("CircularChannel.Reader: Message size exceeds maximum allowed size.");
                         break;
                     }
 
@@ -162,7 +164,7 @@ internal partial class CircularChannel
             }
             catch (Exception ex)
             {
-                CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error while polling for messages");
+                Log.Error(ex, "CircularChannel.Reader: Error while polling for messages");
             }
             finally
             {
@@ -173,7 +175,7 @@ internal partial class CircularChannel
                 catch (ObjectDisposedException ex)
                 {
                     // The mutex was disposed, nothing to do
-                    CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
+                    Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
                 }
             }
 
@@ -188,7 +190,7 @@ internal partial class CircularChannel
                     }
                     catch (Exception ex)
                     {
-                        CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
+                        Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
                     }
                     finally
                     {
@@ -204,7 +206,7 @@ internal partial class CircularChannel
                 }
                 catch (Exception ex)
                 {
-                    CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
+                    Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
                 }
                 finally
                 {

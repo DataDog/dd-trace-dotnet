@@ -29,6 +29,7 @@ public sealed class Test
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private static readonly HashSet<Test> OpenedTests = new();
 
+    private readonly ICiVisibility _ciVisibility;
     private readonly Scope _scope;
     private int _finished;
     private List<Action<Test>>? _onCloseActions;
@@ -60,8 +61,9 @@ public sealed class Test
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         _scope = scope;
+        _ciVisibility = CiVisibility.Instance;
 
-        if (CiVisibility.Instance.Settings.CodeCoverageEnabled == true)
+        if (_ciVisibility.Settings.CodeCoverageEnabled == true)
         {
             Coverage.CoverageReporter.Handler.StartSession(module.Framework);
         }
@@ -72,7 +74,7 @@ public sealed class Test
             OpenedTests.Add(this);
         }
 
-        CiVisibility.Instance.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
+        _ciVisibility.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
         {
@@ -360,7 +362,7 @@ public sealed class Test
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
-            CiVisibility.Instance.Log.Warning("Test.Close() was already called before.");
+            _ciVisibility.Log.Warning("Test.Close() was already called before.");
             return;
         }
 
@@ -371,7 +373,7 @@ public sealed class Test
         duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
-        if (CiVisibility.Instance.Settings.CodeCoverageEnabled == true)
+        if (_ciVisibility.Settings.CodeCoverageEnabled == true)
         {
             if (Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
             {
@@ -379,13 +381,13 @@ public sealed class Test
                 testCoverage.SuiteId = tags.SuiteId;
                 testCoverage.SpanId = _scope.Span.SpanId;
 
-                CiVisibility.Instance.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
-                CiVisibility.Instance.TracerManagement?.Manager?.WriteEvent(testCoverage);
+                _ciVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+                _ciVisibility.TracerManagement?.Manager?.WriteEvent(testCoverage);
             }
             else if (status != TestStatus.Skip)
             {
                 var testName = scope.Span.ResourceName;
-                CiVisibility.Instance.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
+                _ciVisibility.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
             }
         }
 
@@ -459,7 +461,7 @@ public sealed class Test
             OpenedTests.Remove(this);
         }
 
-        CiVisibility.Instance.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
+        _ciVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()

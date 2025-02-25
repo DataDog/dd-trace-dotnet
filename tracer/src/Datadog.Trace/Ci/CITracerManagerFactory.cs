@@ -88,7 +88,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CiVisibility.Instance.TracerManagement?.GetRequestFactory(settings) ?? throw new InvalidOperationException("TracerManagement is not initialized.")));
+                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_ciVisibilityTracerManagement.GetRequestFactory(settings)));
                 }
 
                 Environment.FailFast("An API key is required in Agentless mode.");
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Ci
             // With agent scenario:
             if (_enabledEventPlatformProxy)
             {
-                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CiVisibility.Instance.TracerManagement?.GetRequestFactory(settings) ?? throw new InvalidOperationException("TracerManagement is not initialized.")));
+                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_ciVisibilityTracerManagement.GetRequestFactory(settings)));
             }
 
             // Event platform proxy not found

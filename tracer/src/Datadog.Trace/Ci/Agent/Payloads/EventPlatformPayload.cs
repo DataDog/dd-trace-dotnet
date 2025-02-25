@@ -163,12 +163,13 @@ internal abstract class EventPlatformPayload
                     break;
             }
 
-            if (CiVisibility.Instance.TracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V4)
+            var tracerManagement = CiVisibility.Instance?.TracerManagement;
+            if (tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V4)
             {
                 builder.Path = $"/evp_proxy/v4/{EventPlatformPath}";
                 _useGzip = true;
             }
-            else if (CiVisibility.Instance.TracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V2)
+            else if (tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V2)
             {
                 builder.Path = $"/evp_proxy/v2/{EventPlatformPath}";
                 _useGzip = false;

@@ -68,7 +68,8 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     private TestOptimizationClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
-        _settings = settings ?? CiVisibility.Instance.Settings;
+        var ciVisibility = CiVisibility.Instance;
+        _settings = settings ?? ciVisibility.Settings;
 
         _workingDirectory = workingDirectory;
         _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
@@ -77,8 +78,8 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         // Extract custom tests configurations from DD_TAGS
         _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
-        _apiRequestFactory = CiVisibility.Instance.TracerManagement!.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
-        _eventPlatformProxySupport = _settings.Agentless ? EventPlatformProxySupport.None : CiVisibility.Instance.TracerManagement.EventPlatformProxySupport;
+        _apiRequestFactory = ciVisibility.TracerManagement!.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
+        _eventPlatformProxySupport = _settings.Agentless ? EventPlatformProxySupport.None : ciVisibility.TracerManagement.EventPlatformProxySupport;
 
         _repositoryUrl = GetRepositoryUrl();
         _commitSha = GetCommitSha();

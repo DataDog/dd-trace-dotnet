@@ -34,6 +34,7 @@ public sealed class TestSession
     private static readonly AsyncLocal<TestSession?> CurrentSession = new();
     private static readonly HashSet<TestSession> OpenedTestSessions = new();
 
+    private readonly ICiVisibility _ciVisibility;
     private readonly Span _span;
     private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
     private IpcServer? _ipcServer = null;
@@ -42,7 +43,8 @@ public sealed class TestSession
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
     {
         // First we make sure that CI Visibility is initialized.
-        CiVisibility.Instance.InitializeFromManualInstrumentation();
+        _ciVisibility = CiVisibility.Instance;
+        _ciVisibility.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
 
@@ -94,7 +96,7 @@ public sealed class TestSession
             OpenedTestSessions.Add(this);
         }
 
-        CiVisibility.Instance.Log.Debug("### Test Session Created: {Command}", command);
+        _ciVisibility.Log.Debug("### Test Session Created: {Command}", command);
 
         if (startDate is null)
         {
@@ -310,8 +312,8 @@ public sealed class TestSession
     {
         if (InternalClose(status, duration))
         {
-            CiVisibility.Instance.Log.Debug("### Test Session Flushing after close: {Command}", Command);
-            CiVisibility.Instance.Flush();
+            _ciVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
+            _ciVisibility.Flush();
         }
     }
 
@@ -335,8 +337,8 @@ public sealed class TestSession
     {
         if (InternalClose(status, duration))
         {
-            CiVisibility.Instance.Log.Debug("### Test Session Flushing after close: {Command}", Command);
-            return CiVisibility.Instance.FlushAsync();
+            _ciVisibility.Log.Debug("### Test Session Flushing after close: {Command}", Command);
+            return _ciVisibility.FlushAsync();
         }
 
         return Task.CompletedTask;
@@ -403,7 +405,7 @@ public sealed class TestSession
             OpenedTestSessions.Remove(this);
         }
 
-        CiVisibility.Instance.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
+        _ciVisibility.Log.Debug("### Test Session Closed: {Command} | {Status}", Command, Tags.Status);
         return true;
     }
 
@@ -493,21 +495,21 @@ public sealed class TestSession
         try
         {
             var name = $"session_{Tags.SessionId}";
-            CiVisibility.Instance.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
+            _ciVisibility.Log.Debug("TestSession.Enabling IPC server: {Name}", name);
             _ipcServer = new IpcServer(name);
             _ipcServer.SetMessageReceivedCallback(OnIpcMessageReceived);
             return true;
         }
         catch (Exception ex)
         {
-            CiVisibility.Instance.Log.Error(ex, "Error enabling IPC server");
+            _ciVisibility.Log.Error(ex, "Error enabling IPC server");
             return false;
         }
     }
 
     private void OnIpcMessageReceived(object message)
     {
-        CiVisibility.Instance.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
+        _ciVisibility.Log.Debug("TestSession.OnIpcMessageReceived: {Message}", message);
 
         // If the session is already finished, we ignore the message
         if (Interlocked.CompareExchange(ref _finished, 1, 1) == 1)
@@ -520,18 +522,18 @@ public sealed class TestSession
         {
             if (tagMessage.Value is not null)
             {
-                CiVisibility.Instance.Log.Information("TestSession.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
+                _ciVisibility.Log.Information("TestSession.ReceiveMessage (meta): {Name}={Value}", tagMessage.Name, tagMessage.Value);
                 SetTag(tagMessage.Name, tagMessage.Value);
             }
             else if (tagMessage.NumberValue is not null)
             {
-                CiVisibility.Instance.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
+                _ciVisibility.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
                 SetTag(tagMessage.Name, tagMessage.NumberValue);
             }
         }
         else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)
         {
-            CiVisibility.Instance.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
+            _ciVisibility.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
 
             // Adds the global code coverage percentage to the session
             SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoverageMessage.Value);

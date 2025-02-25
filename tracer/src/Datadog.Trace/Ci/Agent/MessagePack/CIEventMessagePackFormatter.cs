@@ -45,9 +45,10 @@ internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibil
             _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
         }
 
-        if (!string.IsNullOrWhiteSpace(Ci.CiVisibility.Instance.Settings.TestSessionName))
+        var ciVisibility = CiVisibility.Instance;
+        if (!string.IsNullOrWhiteSpace(ciVisibility.Settings.TestSessionName))
         {
-            _testSessionNameValueBytes = StringEncoding.UTF8.GetBytes(Ci.CiVisibility.Instance.Settings.TestSessionName);
+            _testSessionNameValueBytes = StringEncoding.UTF8.GetBytes(ciVisibility.Settings.TestSessionName);
         }
 
         _envelopBytes = GetEnvelopeArraySegment();

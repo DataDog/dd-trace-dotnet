@@ -254,9 +254,10 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                if (CiVisibility.Instance.Enabled)
+                var ciVisibility = CiVisibility.Instance;
+                if (ciVisibility.Enabled)
                 {
-                    CiVisibility.Instance.Initialize();
+                    ciVisibility.Initialize();
                 }
                 else
                 {
