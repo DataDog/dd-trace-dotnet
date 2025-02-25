@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessTestEventTest()
         {
-            var settings = CIVisibility.Settings;
+            var settings = CiVisibility.Instance.Settings;
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
@@ -49,11 +49,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             byte[] finalPayload = null;
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
-                .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(payload =>
-                {
-                    finalPayload = payload.ToArray();
-                    return Task.CompletedTask;
-                });
+                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(
+                       payload =>
+                       {
+                           finalPayload = payload.ToArray();
+                           return Task.CompletedTask;
+                       });
 
             var trace = new[] { span };
             agentlessWriter.WriteTrace(new ArraySegment<Span>(trace));
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessStreamTestEventTest()
         {
-            var settings = CIVisibility.Settings;
+            var settings = CiVisibility.Instance.Settings;
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
@@ -81,11 +82,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             byte[] finalPayload = null;
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
-                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(payload =>
-                   {
-                       finalPayload = payload.ToArray();
-                       return Task.CompletedTask;
-                   });
+                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(
+                       payload =>
+                       {
+                           finalPayload = payload.ToArray();
+                           return Task.CompletedTask;
+                       });
 
             var trace = new[] { span };
             agentlessWriter.WriteTrace(new ArraySegment<Span>(trace));
@@ -97,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessCodeCoverageEvent()
         {
-            var settings = CIVisibility.Settings;
+            var settings = CiVisibility.Instance.Settings;
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
             var coveragePayload = new TestCoverage
@@ -121,11 +123,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             MultipartFormItem[] finalFormItems = null;
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CICodeCoveragePayload>()))
-                  .Returns<Ci.Agent.Payloads.CICodeCoveragePayload>(payload =>
-                   {
-                       finalFormItems = payload.ToArray();
-                       return Task.CompletedTask;
-                   });
+                  .Returns<Ci.Agent.Payloads.CICodeCoveragePayload>(
+                       payload =>
+                       {
+                           finalFormItems = payload.ToArray();
+                           return Task.CompletedTask;
+                       });
 
             agentlessWriter.WriteEvent(coveragePayload);
             await agentlessWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
@@ -170,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task SlowSenderTest()
         {
-            var settings = CIVisibility.Settings;
+            var settings = CiVisibility.Instance.Settings;
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
@@ -178,11 +181,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
-                .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(payload =>
-                {
-                    lstPayloads.Add(payload.ToArray());
-                    return flushTcs.Task;
-                });
+                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(
+                       payload =>
+                       {
+                           lstPayloads.Add(payload.ToArray());
+                           return flushTcs.Task;
+                       });
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
@@ -224,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task ConcurrencyFlushTest()
         {
-            var settings = CIVisibility.Settings;
+            var settings = CiVisibility.Instance.Settings;
             var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             // We set 8 threads of concurrency and a batch interval of 10 seconds to avoid the autoflush.
             var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
@@ -233,15 +237,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             const int numSpans = 2_000;
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
-                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(async payload =>
-                   {
-                       lock (lstPayloads)
+                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(
+                       async payload =>
                        {
-                           lstPayloads.Add(payload.ToArray());
-                       }
+                           lock (lstPayloads)
+                           {
+                               lstPayloads.Add(payload.ToArray());
+                           }
 
-                       await Task.Delay(150).ConfigureAwait(false);
-                   });
+                           await Task.Delay(150).ConfigureAwait(false);
+                       });
 
             for (ulong i = 0; i < numSpans; i++)
             {
@@ -312,7 +317,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize + Ci.Agent.Payloads.MultipartPayload.HeaderSize;
 
-            var settings = CIVisibility.Settings;
+            var settings = CiVisibility.Instance.Settings;
 
             int bufferSize = headerSize + 1024;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);

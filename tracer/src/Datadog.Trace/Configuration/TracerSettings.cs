@@ -39,9 +39,11 @@ namespace Datadog.Trace.Configuration
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
 
         private readonly IConfigurationTelemetry _telemetry;
+
         // we cached the static instance here, because is being used in the hotpath
         // by IsIntegrationEnabled method (called from all integrations)
         private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
+
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
         private readonly bool _appsecStandaloneEnabled;
@@ -75,7 +77,7 @@ namespace Datadog.Trace.Configuration
         /// </remarks>
         [PublicApi]
         public TracerSettings(IConfigurationSource? source)
-        : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
+            : this(source, new ConfigurationTelemetry(), new OverrideErrorLog())
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
@@ -120,36 +122,36 @@ namespace Datadog.Trace.Configuration
             // So, for the Tracer, the profiler should be seen as enabled if ContinuousProfiler.ConfigurationKeys.SsiDeployed has a value
             // (even without "profiler") so that spans will be sent to the profiler.
             ProfilingEnabledInternal = config
-                         .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
-                         .GetAs(
-                            converter: x => x switch
-                            {
-                                "auto" => true,
-                                _ when x.ToBoolean() is { } boolean => boolean,
-                                _ => ParsingResult<bool>.Failure(),
-                            },
-                            getDefaultValue: () =>
-                            {
-                                var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                                return (profilingSsiDeployed != null);
-                            },
-                            validator: null);
+                                      .WithKeys(ContinuousProfiler.ConfigurationKeys.ProfilingEnabled)
+                                      .GetAs(
+                                           converter: x => x switch
+                                           {
+                                               "auto" => true,
+                                               _ when x.ToBoolean() is { } boolean => boolean,
+                                               _ => ParsingResult<bool>.Failure(),
+                                           },
+                                           getDefaultValue: () =>
+                                           {
+                                               var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
+                                               return (profilingSsiDeployed != null);
+                                           },
+                                           validator: null);
 
             var otelTags = config
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
                           .AsDictionaryResult(separator: '=');
 
             var globalTags = config
-                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                                .AsDictionaryResult()
-                                .OverrideWith(
-                                     RemapOtelTags(in otelTags),
-                                     ErrorLog,
-                                     () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+                            .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                            .AsDictionaryResult()
+                            .OverrideWith(
+                                 RemapOtelTags(in otelTags),
+                                 ErrorLog,
+                                 () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
 
-                                 // Filter out tags with empty keys or empty values, and trim whitespace
-                                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+                             // Filter out tags with empty keys or empty values, and trim whitespace
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             Environment = config
                          .WithKeys(ConfigurationKeys.Environment)
@@ -160,9 +162,9 @@ namespace Datadog.Trace.Configuration
 
             var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
             var serviceName = config
-                                 .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
-                                 .AsStringResult()
-                                 .OverrideWith(in otelServiceName, ErrorLog);
+                             .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
+                             .AsStringResult()
+                             .OverrideWith(in otelServiceName, ErrorLog);
 
             // DD_SERVICE has precedence over DD_TAGS
             serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service, ConfigurationKeys.ServiceName);
@@ -175,7 +177,7 @@ namespace Datadog.Trace.Configuration
                 if (string.IsNullOrEmpty(serviceName))
                 {
                     // Extract repository name from the git url and use it as a default service name.
-                    ciVisServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    ciVisServiceName = CiVisibility.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
                     isUserProvidedTestServiceTag = false;
                 }
 
@@ -224,9 +226,9 @@ namespace Datadog.Trace.Configuration
                                                     ? ParsingResult<bool>.Success(result: false)
                                                     : ParsingResult<bool>.Failure());
             _traceEnabled = config
-                                  .WithKeys(ConfigurationKeys.TraceEnabled)
-                                  .AsBoolResult()
-                                  .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
+                           .WithKeys(ConfigurationKeys.TraceEnabled)
+                           .AsBoolResult()
+                           .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
 
             _appsecStandaloneEnabled = config
                                       .WithKeys(ConfigurationKeys.AppsecStandaloneEnabled)
@@ -265,7 +267,7 @@ namespace Datadog.Trace.Configuration
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config.WithKeys(ConfigurationKeys.GlobalAnalyticsEnabled)
-                                                   .AsBool(defaultValue: false);
+                                     .AsBool(defaultValue: false);
 #pragma warning restore 618
 
 #pragma warning disable 618 // this parameter has been replaced but may still be used
@@ -285,18 +287,18 @@ namespace Datadog.Trace.Configuration
             _globalTags = new(globalTags);
 
             var headerTagsNormalizationFixEnabled = config
-                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
-                                               .AsBool(defaultValue: true);
+                                                   .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                                   .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             _headerTags = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled) ?? ReadOnlyDictionary.Empty;
 
             PeerServiceTagsEnabled = config
-               .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
-               .AsBool(defaultValue: false);
+                                    .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
+                                    .AsBool(defaultValue: false);
             RemoveClientServiceNamesEnabled = config
-               .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
-               .AsBool(defaultValue: false);
+                                             .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
+                                             .AsBool(defaultValue: false);
 
             PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
 
@@ -321,15 +323,15 @@ namespace Datadog.Trace.Configuration
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
             var otelRuntimeMetricsEnabled = config
-                                          .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
-                                          .AsBoolResult(
-                                               value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
-                                                            ? ParsingResult<bool>.Success(result: false)
-                                                            : ParsingResult<bool>.Failure());
+                                           .WithKeys(ConfigurationKeys.OpenTelemetry.MetricsExporter)
+                                           .AsBoolResult(
+                                                value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
+                                                             ? ParsingResult<bool>.Success(result: false)
+                                                             : ParsingResult<bool>.Failure());
             _runtimeMetricsEnabled = config
-                                   .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
-                                   .AsBoolResult()
-                                   .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+                                    .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
+                                    .AsBoolResult()
+                                    .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -358,10 +360,10 @@ namespace Datadog.Trace.Configuration
 
             // record final value of CustomSamplingRulesFormat in telemetry
             _telemetry.Record(
-                    key: ConfigurationKeys.CustomSamplingRulesFormat,
-                    value: CustomSamplingRulesFormat,
-                    recordValue: true,
-                    origin: ConfigurationOrigins.Calculated);
+                key: ConfigurationKeys.CustomSamplingRulesFormat,
+                value: CustomSamplingRulesFormat,
+                recordValue: true,
+                origin: ConfigurationOrigins.Calculated);
 
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
@@ -443,7 +445,8 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegexTimeout = config
                                                 .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegexTimeout)
-                                                .AsDouble(200, val1 => val1 is > 0).Value;
+                                                .AsDouble(200, val1 => val1 is > 0)
+                                                .Value;
 
             Func<string[], bool> injectionValidator = styles => styles is { Length: > 0 };
             Func<string, ParsingResult<string[]>> otelConverter =
@@ -460,10 +463,10 @@ namespace Datadog.Trace.Configuration
 
             // Same otel config is used for both injection and extraction
             var otelPropagation = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
-                            .GetAsClassResult(
-                                 validator: injectionValidator, // invalid individual values are rejected later
-                                 converter: otelConverter);
+                                 .WithKeys(ConfigurationKeys.OpenTelemetry.Propagators)
+                                 .GetAsClassResult(
+                                      validator: injectionValidator, // invalid individual values are rejected later
+                                      converter: otelConverter);
 
             PropagationStyleInject = config
                                     .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
@@ -484,8 +487,8 @@ namespace Datadog.Trace.Configuration
                                          .AsBool(false);
 
             PropagationBehaviorExtract = config
-                                         .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
-                                         .GetAs(
+                                        .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
+                                        .GetAs(
                                              () => new DefaultResult<ExtractBehavior>(ExtractBehavior.Continue, "continue"),
                                              converter: x => x.ToLowerInvariant() switch
                                              {
@@ -512,7 +515,7 @@ namespace Datadog.Trace.Configuration
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true)
-                     ?? ReadOnlyDictionary.Empty;
+                    ?? ReadOnlyDictionary.Empty;
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
@@ -530,8 +533,8 @@ namespace Datadog.Trace.Configuration
                              .AsBool(false);
 
             _isDataStreamsMonitoringEnabled = config
-                                            .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
-                                            .AsBool(false);
+                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
+                                             .AsBool(false);
 
             IsDataStreamsLegacyHeadersEnabled = config
                                                .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
@@ -550,11 +553,13 @@ namespace Datadog.Trace.Configuration
                 StatsComputationEnabled = false;
             }
 
+#pragma warning disable SA1025 // Code should not contain multiple whitespace in a row
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(
-                                        IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
+                                        IsRunningInAzureAppService                      ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                         LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
+#pragma warning restore SA1025 // Code should not contain multiple whitespace in a row
 
             if (isRunningInCiVisibility)
             {
@@ -1119,18 +1124,18 @@ namespace Datadog.Trace.Configuration
         internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
         {
             var mappings = config
-               .WithKeys(key)
-               .AsDictionary()
-              ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+                          .WithKeys(key)
+                          .AsDictionary()
+                         ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                          .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
             return mappings is not null ? new(mappings) : null;
         }
 
         internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
         {
             var configurationDictionary = config
-                   .WithKeys(key)
-                   .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
+                                         .WithKeys(key)
+                                         .AsDictionary(allowOptionalMappings: true, () => new Dictionary<string, string>());
 
             if (configurationDictionary == null)
             {

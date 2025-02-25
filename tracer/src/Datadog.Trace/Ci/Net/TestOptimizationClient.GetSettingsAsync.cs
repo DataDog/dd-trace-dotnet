@@ -160,6 +160,20 @@ internal sealed partial class TestOptimizationClient
 
         [JsonProperty("early_flake_detection")]
         public readonly EarlyFlakeDetectionSettingsResponse EarlyFlakeDetection;
+
+        public SettingsResponse()
+        {
+        }
+
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection)
+        {
+            CodeCoverage = codeCoverage;
+            TestsSkipping = testsSkipping;
+            RequireGit = requireGit;
+            ImpactedTestsEnabled = impactedTestsEnabled;
+            FlakyTestRetries = flakyTestRetries;
+            EarlyFlakeDetection = earlyFlakeDetection;
+        }
     }
 
     public readonly struct EarlyFlakeDetectionSettingsResponse
@@ -172,6 +186,17 @@ internal sealed partial class TestOptimizationClient
 
         [JsonProperty("faulty_session_threshold")]
         public readonly int? FaultySessionThreshold;
+
+        public EarlyFlakeDetectionSettingsResponse()
+        {
+        }
+
+        public EarlyFlakeDetectionSettingsResponse(bool? enabled, SlowTestRetriesSettingsResponse slowTestRetries, int? faultySessionThreshold)
+        {
+            Enabled = enabled;
+            SlowTestRetries = slowTestRetries;
+            FaultySessionThreshold = faultySessionThreshold;
+        }
     }
 
     public readonly struct SlowTestRetriesSettingsResponse
@@ -187,5 +212,17 @@ internal sealed partial class TestOptimizationClient
 
         [JsonProperty("5m")]
         public readonly int? FiveMinutes;
+
+        public SlowTestRetriesSettingsResponse()
+        {
+        }
+
+        public SlowTestRetriesSettingsResponse(int? fiveSeconds, int? tenSeconds, int? thirtySeconds, int? fiveMinutes)
+        {
+            FiveSeconds = fiveSeconds;
+            TenSeconds = tenSeconds;
+            ThirtySeconds = thirtySeconds;
+            FiveMinutes = fiveMinutes;
+        }
     }
 }

@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("%^&*", "")]
         public void GetServiceNameFromRepository(string repository, string serviceName)
         {
-            Assert.Equal(serviceName, Ci.CIVisibility.GetServiceNameFromRepository(repository));
+            Assert.Equal(serviceName, Ci.CiVisibility.Instance.TracerManagement?.GetServiceNameFromRepository(repository));
         }
 
         [SkippableTheory]

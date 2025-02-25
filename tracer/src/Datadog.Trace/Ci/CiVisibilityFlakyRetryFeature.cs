@@ -14,7 +14,7 @@ internal class CiVisibilityFlakyRetryFeature : ICiVisibilityFlakyRetryFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilityFlakyRetryFeature));
 
-    public CiVisibilityFlakyRetryFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private CiVisibilityFlakyRetryFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -40,5 +40,15 @@ internal class CiVisibilityFlakyRetryFeature : ICiVisibilityFlakyRetryFeature
         }
     }
 
+    private CiVisibilityFlakyRetryFeature()
+    {
+        Enabled = false;
+    }
+
     public bool Enabled { get; }
+
+    public static ICiVisibilityFlakyRetryFeature CreateDisabledFeature() => new CiVisibilityFlakyRetryFeature();
+
+    public static ICiVisibilityFlakyRetryFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new CiVisibilityFlakyRetryFeature(settings, clientSettingsResponse, testOptimizationClient);
 }

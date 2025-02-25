@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -16,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 
 internal static class Common
 {
-    internal static readonly IDatadogLogger Log = CIVisibility.Log;
+    internal static readonly IDatadogLogger Log = CiVisibility.Instance.Log;
 
     internal static string GetParametersValueData(object? paramValue)
     {
@@ -58,7 +59,7 @@ internal static class Common
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            var skippableTests = AsyncUtil.RunSync(() => CIVisibility.GetSkippableTestsFromSuiteAndNameAsync(testSuite, testName));
+            var skippableTests = CiVisibility.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName) ?? [];
             if (skippableTests.Count > 0)
             {
                 foreach (var skippableTest in skippableTests)
@@ -122,7 +123,7 @@ internal static class Common
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
     {
         int numberOfExecutions;
-        var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
+        var slowRetriesSettings = CiVisibility.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
         if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
         {
             numberOfExecutions = slowRetriesSettings.FiveSeconds.Value;
@@ -155,9 +156,9 @@ internal static class Common
     internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
     {
         // Early flake detection flags
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+        if (CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled == true)
         {
-            var isTestNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            var isTestNew = !CiVisibility.Instance.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
             if (isTestNew)
             {
                 test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
@@ -175,7 +176,7 @@ internal static class Common
 
     internal static void SetFlakyRetryTags(Test test, bool isRetry)
     {
-        if (CIVisibility.Settings.FlakyRetryEnabled == true && isRetry)
+        if (CiVisibility.Instance.Settings.FlakyRetryEnabled == true && isRetry)
         {
             test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
         }
@@ -183,7 +184,7 @@ internal static class Common
 
     internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)
     {
-        if (tTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
+        if (tTestCases > 0 && CiVisibility.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
         {
             if (((double)nTestCases * 100 / (double)tTestCases) > faultySessionThreshold)
             {

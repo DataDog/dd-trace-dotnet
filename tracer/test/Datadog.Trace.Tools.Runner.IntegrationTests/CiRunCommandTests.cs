@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private void RunExternalCoverageTest(string filePath)
         {
-            CIVisibility.Reset();
+            CiVisibility.Instance.Reset();
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
             string command = null;
             string arguments = null;

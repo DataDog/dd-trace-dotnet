@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -54,7 +55,7 @@ public sealed class TestSuite
             OpenedTestSuites.Add(this);
         }
 
-        CIVisibility.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
+        CiVisibility.Instance.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
 
         if (startDate is null)
         {
@@ -207,7 +208,7 @@ public sealed class TestSuite
         }
 
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
+        CiVisibility.Instance.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
     }
 
     /// <summary>

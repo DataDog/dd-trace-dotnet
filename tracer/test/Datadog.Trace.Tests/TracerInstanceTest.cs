@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tests
             Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
-            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings, NullDiscoveryService.Instance, false)));
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CiVisibility.Instance.Settings, CiVisibility.Instance.TracerManagement!, false)));
         }
 
         [Fact]
@@ -75,25 +75,27 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var oldSettings = TracerSettings.Create(new()
-                {
-                    { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
-                    { ConfigurationKeys.TracerMetricsEnabled, false },
-                    { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                    { ConfigurationKeys.GlobalTags, "test-tag:original-value" },
-                });
+                var oldSettings = TracerSettings.Create(
+                    new()
+                    {
+                        { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
+                        { ConfigurationKeys.TracerMetricsEnabled, false },
+                        { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                        { ConfigurationKeys.GlobalTags, "test-tag:original-value" },
+                    });
                 Tracer.Configure(oldSettings);
 
                 var scope = Tracer.Instance.StartActive("Test span");
                 (scope.Span as Span).IsRootSpan.Should().BeTrue();
 
-                var newSettings = TracerSettings.Create(new()
-                {
-                    { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
-                    { ConfigurationKeys.TracerMetricsEnabled, false },
-                    { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                    { ConfigurationKeys.GlobalTags, "test-tag:new-value" },
-                });
+                var newSettings = TracerSettings.Create(
+                    new()
+                    {
+                        { ConfigurationKeys.AgentUri, new Uri($"http://127.0.0.1:{agent.Port}") },
+                        { ConfigurationKeys.TracerMetricsEnabled, false },
+                        { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                        { ConfigurationKeys.GlobalTags, "test-tag:new-value" },
+                    });
 
                 Tracer.Configure(newSettings);
 

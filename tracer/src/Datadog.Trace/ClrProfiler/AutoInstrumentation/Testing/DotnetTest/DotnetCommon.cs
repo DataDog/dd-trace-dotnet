@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -27,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const string DotnetTestIntegrationName = nameof(IntegrationId.DotnetTest);
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
-        internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
+        internal static readonly IDatadogLogger Log = Ci.CiVisibility.Instance.Log;
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 
-        internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
+        internal static bool DotnetTestIntegrationEnabled => CiVisibility.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
         internal static bool IsDataCollectorDomain
         {
@@ -103,9 +104,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return null;
             }
 
-            var ciVisibilitySettings = CIVisibility.Settings;
+            var ciVisibilitySettings = CiVisibility.Instance.Settings;
             var agentless = ciVisibilitySettings.Agentless;
-            var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
+            var isEvpProxy = (CiVisibility.Instance.TracerManagement?.EventPlatformProxySupport ?? EventPlatformProxySupport.None) != EventPlatformProxySupport.None;
 
             Log.Information("CreateSession: Agentless: {Agentless} | IsEvpProxy: {IsEvpProxy}", agentless, isEvpProxy);
 
@@ -517,7 +518,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     {
                         isCollectIndex = i;
                         var argValue = arg.Replace(collectProperty, string.Empty)
-                                                .Replace("\"", string.Empty);
+                                          .Replace("\"", string.Empty);
                         disableCollectInjection = disableCollectInjection || argValue == datadogCoverageCollector;
                         continue;
                     }
@@ -526,7 +527,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     {
                         isTestAdapterPathIndex = i;
                         var argValue = arg.Replace(testAdapterPathProperty, string.Empty)
-                                                .Replace("\"", string.Empty);
+                                          .Replace("\"", string.Empty);
                         disableTestAdapterInjection = disableTestAdapterInjection || argValue == codeCoverageCollectorPath;
                     }
                 }

@@ -301,7 +301,7 @@ public class DatadogDiagnoser : IDiagnoser
             environment[profilerHeapEnabled] = "1";
         }
 
-        environment["DD_PROFILING_AGENTLESS"] = CIVisibility.Settings.Agentless ? "1" : "0";
+        environment["DD_PROFILING_AGENTLESS"] = CiVisibility.Instance.Settings.Agentless ? "1" : "0";
         environment["DD_PROFILING_UPLOAD_PERIOD"] = "90";
         environment["DD_INTERNAL_PROFILING_SAMPLING_RATE"] = "1";
         environment["DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD"] = "64";

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -162,12 +163,12 @@ internal abstract class EventPlatformPayload
                     break;
             }
 
-            if (CIVisibility.EventPlatformProxySupport == EventPlatformProxySupport.V4)
+            if (CiVisibility.Instance.TracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V4)
             {
                 builder.Path = $"/evp_proxy/v4/{EventPlatformPath}";
                 _useGzip = true;
             }
-            else if (CIVisibility.EventPlatformProxySupport == EventPlatformProxySupport.V2)
+            else if (CiVisibility.Instance.TracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V2)
             {
                 builder.Path = $"/evp_proxy/v2/{EventPlatformPath}";
                 _useGzip = false;

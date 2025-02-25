@@ -16,7 +16,7 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilityEarlyFlakeDetectionFeature));
     private readonly Task<TestOptimizationClient.EarlyFlakeDetectionResponse> _earlyFlakeDetectionSettingsTask;
 
-    public CiVisibilityEarlyFlakeDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private CiVisibilityEarlyFlakeDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -55,12 +55,24 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
         }
     }
 
+    private CiVisibilityEarlyFlakeDetectionFeature()
+    {
+        Enabled = false;
+        EarlyFlakeDetectionSettings = default;
+        _earlyFlakeDetectionSettingsTask = Task.FromResult(new TestOptimizationClient.EarlyFlakeDetectionResponse());
+    }
+
     public bool Enabled { get; }
 
     public TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 
     public TestOptimizationClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse
         => _earlyFlakeDetectionSettingsTask.SafeGetResult();
+
+    public static ICiVisibilityEarlyFlakeDetectionFeature CreateDisabledFeature() => new CiVisibilityEarlyFlakeDetectionFeature();
+
+    public static ICiVisibilityEarlyFlakeDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new CiVisibilityEarlyFlakeDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public bool IsAnEarlyFlakeDetectionTest(string moduleName, string testSuite, string testName)
     {

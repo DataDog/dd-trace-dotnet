@@ -25,6 +25,51 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
 
     public CiVisibilityTracerManagement(
         CIVisibilitySettings settings,
+        Func<CIVisibilitySettings, IDiscoveryService>? getDiscoveryServiceFunc,
+        bool? useLockedTracerManager)
+    {
+        if (settings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
+        }
+
+        _settings = settings;
+        DiscoveryService = NullDiscoveryService.Instance;
+        if (!settings.Agentless)
+        {
+            if (!string.IsNullOrWhiteSpace(settings.ForceAgentsEvpProxy))
+            {
+                // if we force the evp proxy (internal switch)
+                if (Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue))
+                {
+                    EventPlatformProxySupport = parsedValue;
+                }
+                else if (getDiscoveryServiceFunc != null)
+                {
+                    DiscoveryService = getDiscoveryServiceFunc(settings);
+                    EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(DiscoveryService);
+                }
+                else
+                {
+                    EventPlatformProxySupport = EventPlatformProxySupport.V2;
+                }
+            }
+            else
+            {
+                DiscoveryService = getDiscoveryServiceFunc?.Invoke(settings) ?? NullDiscoveryService.Instance;
+                EventPlatformProxySupport = IsEventPlatformProxySupportedByAgent(DiscoveryService);
+            }
+        }
+        else
+        {
+            EventPlatformProxySupport = EventPlatformProxySupport.None;
+        }
+
+        UseLockedTracerManager = useLockedTracerManager ?? CiVisibility.DefaultUseLockedTracerManager;
+    }
+
+    public CiVisibilityTracerManagement(
+        CIVisibilitySettings settings,
         EventPlatformProxySupport eventPlatformProxySupport = EventPlatformProxySupport.None,
         bool useLockedTracerManager = true)
     {
@@ -34,13 +79,20 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
         }
 
         _settings = settings;
-        EventPlatformProxySupport = eventPlatformProxySupport;
+        DiscoveryService = NullDiscoveryService.Instance;
+        EventPlatformProxySupport =
+            eventPlatformProxySupport != EventPlatformProxySupport.None &&
+            Enum.TryParse<EventPlatformProxySupport>(settings.ForceAgentsEvpProxy, out var parsedValue)
+                ? parsedValue
+                : eventPlatformProxySupport;
         UseLockedTracerManager = useLockedTracerManager;
     }
 
     public EventPlatformProxySupport EventPlatformProxySupport { get; }
 
     public bool UseLockedTracerManager { get; }
+
+    public IDiscoveryService DiscoveryService { get; }
 
     public CITracerManager? Manager
     {

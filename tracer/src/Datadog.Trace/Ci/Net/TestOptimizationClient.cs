@@ -68,7 +68,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     private TestOptimizationClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
-        _settings = settings ?? CIVisibility.Settings;
+        _settings = settings ?? CiVisibility.Instance.Settings;
 
         _workingDirectory = workingDirectory;
         _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
@@ -77,8 +77,8 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         // Extract custom tests configurations from DD_TAGS
         _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
-        _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
-        _eventPlatformProxySupport = _settings.Agentless ? EventPlatformProxySupport.None : CIVisibility.EventPlatformProxySupport;
+        _apiRequestFactory = CiVisibility.Instance.TracerManagement!.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
+        _eventPlatformProxySupport = _settings.Agentless ? EventPlatformProxySupport.None : CiVisibility.Instance.TracerManagement.EventPlatformProxySupport;
 
         _repositoryUrl = GetRepositoryUrl();
         _commitSha = GetCommitSha();
@@ -203,7 +203,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var framework = FrameworkDescription.Instance;
         return new TestsConfigurations(
             framework.OSPlatform,
-            CIVisibility.GetOperatingSystemVersion(),
+            CiVisibility.Instance.HostInfo?.GetOperatingSystemVersion() ?? string.Empty,
             framework.OSArchitecture,
             skipFrameworkInfo ? null : framework.Name,
             skipFrameworkInfo ? null : framework.ProductVersion,

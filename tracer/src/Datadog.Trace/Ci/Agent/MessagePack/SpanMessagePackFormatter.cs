@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -119,7 +120,7 @@ internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             isSpan = true;
         }
 
-        var correlationId = value.Type is SpanTypes.Test or SpanTypes.Browser ? CIVisibility.GetSkippableTestsCorrelationId() : null;
+        var correlationId = value.Type is SpanTypes.Test or SpanTypes.Browser ? CiVisibility.Instance.SkippableFeature?.GetCorrelationId() : null;
         if (correlationId is not null)
         {
             len++;

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -52,7 +53,7 @@ public static class NUnitWorkItemPerformWorkIntegration
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                 var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                CIVisibility.WaitForSkippableTaskToFinish();
+                CiVisibility.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
                 var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
                 NUnitIntegration.SetTestModuleTo(item, newModule);

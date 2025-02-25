@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -18,7 +19,7 @@ internal static class BenchmarkMetadata
     static BenchmarkMetadata()
     {
         MetadataByBenchmark = new();
-        CIVisibility.InitializeFromManualInstrumentation();
+        CiVisibility.Instance.InitializeFromManualInstrumentation();
     }
 
     public static void GetIds(object key, out TraceId traceId, out ulong spanId)
@@ -26,7 +27,7 @@ internal static class BenchmarkMetadata
         var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         if (value.TraceId is null)
         {
-            var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? true;
+            var useAllBits = CiVisibility.Instance.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? true;
             value.TraceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             value.SpanId = RandomIdGenerator.Shared.NextSpanId(useAllBits);
         }

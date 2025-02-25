@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using System;
 using System.ComponentModel;
@@ -52,8 +53,8 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         object?[] constructorArguments)
         where TIXunitTestMethod : IXunitTestMethodV3
     {
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
-            CIVisibility.Settings.FlakyRetryEnabled != true)
+        if (CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled != true &&
+            CiVisibility.Instance.Settings.FlakyRetryEnabled != true)
         {
             return CallTargetState.GetDefault();
         }

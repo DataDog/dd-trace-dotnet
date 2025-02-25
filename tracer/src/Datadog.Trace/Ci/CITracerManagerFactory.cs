@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -26,16 +27,14 @@ namespace Datadog.Trace.Ci
     internal class CITracerManagerFactory : TracerManagerFactory
     {
         private readonly CIVisibilitySettings _settings;
-        private readonly IDiscoveryService _discoveryService;
         private readonly bool _enabledEventPlatformProxy;
-        private readonly bool _useLockedManager;
+        private readonly ICiVisibilityTracerManagement _ciVisibilityTracerManagement;
 
-        public CITracerManagerFactory(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
+        public CITracerManagerFactory(CIVisibilitySettings settings, ICiVisibilityTracerManagement ciVisibilityTracerManagement, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
         {
             _settings = settings;
-            _discoveryService = discoveryService;
             _enabledEventPlatformProxy = enabledEventPlatformProxy;
-            _useLockedManager = useLockedManager;
+            _ciVisibilityTracerManagement = ciVisibilityTracerManagement;
         }
 
         protected override TracerManager CreateTracerManagerFrom(
@@ -57,7 +56,7 @@ namespace Datadog.Trace.Ci
             ITracerFlareManager tracerFlareManager)
         {
             telemetry.RecordCiVisibilitySettings(_settings);
-            if (_useLockedManager)
+            if (_ciVisibilityTracerManagement.UseLockedTracerManager)
             {
                 return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
             }
@@ -89,7 +88,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CiVisibility.Instance.TracerManagement?.GetRequestFactory(settings) ?? throw new InvalidOperationException("TracerManagement is not initialized.")));
                 }
 
                 Environment.FailFast("An API key is required in Agentless mode.");
@@ -99,7 +98,7 @@ namespace Datadog.Trace.Ci
             // With agent scenario:
             if (_enabledEventPlatformProxy)
             {
-                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CiVisibility.Instance.TracerManagement?.GetRequestFactory(settings) ?? throw new InvalidOperationException("TracerManagement is not initialized.")));
             }
 
             // Event platform proxy not found
@@ -109,6 +108,6 @@ namespace Datadog.Trace.Ci
         }
 
         protected override IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => _discoveryService;
+            => _ciVisibilityTracerManagement.DiscoveryService;
     }
 }

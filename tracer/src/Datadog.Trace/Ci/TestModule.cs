@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -52,7 +53,7 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        CIVisibility.InitializeFromManualInstrumentation();
+        CiVisibility.Instance.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -100,7 +101,7 @@ public sealed class TestModule
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = CIVisibility.GetOperatingSystemVersion(),
+                OSVersion = CiVisibility.Instance.HostInfo?.GetOperatingSystemVersion(),
                 CiEnvVars = sessionSpanTags.CiEnvVars,
                 SessionId = sessionSpanTags.SessionId,
                 Command = sessionSpanTags.Command,
@@ -122,7 +123,7 @@ public sealed class TestModule
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = CIVisibility.GetOperatingSystemVersion(),
+                OSVersion = CiVisibility.Instance.HostInfo?.GetOperatingSystemVersion(),
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
             };
 
@@ -131,7 +132,8 @@ public sealed class TestModule
             // Extract session variables (from out of process sessions)
             var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
             var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-                environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+                environmentVariables,
+                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
             if (context.SpanContext is { } sessionContext)
             {
@@ -148,7 +150,7 @@ public sealed class TestModule
             }
             else
             {
-                CIVisibility.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
+                CiVisibility.Instance.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
                 _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
@@ -156,7 +158,7 @@ public sealed class TestModule
                     tags.Command = fakeSessionTags.Command;
                     tags.WorkingDirectory = fakeSessionTags.WorkingDirectory;
 
-                    if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+                    if (CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled == true)
                     {
                         fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
                     }
@@ -165,7 +167,7 @@ public sealed class TestModule
         }
 
         // Check if Intelligent Test Runner has skippable tests and set the flag according to that
-        tags.TestsSkipped = CIVisibility.HasSkippableTests() ? "true" : "false";
+        tags.TestsSkipped = CiVisibility.Instance.SkippableFeature?.HasSkippableTests() == true ? "true" : "false";
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
@@ -187,7 +189,7 @@ public sealed class TestModule
             OpenedTestModules.Add(this);
         }
 
-        CIVisibility.Log.Debug("### Test Module Created: {Name}", name);
+        CiVisibility.Instance.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
         {
@@ -368,8 +370,8 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
-            CIVisibility.Flush();
+            CiVisibility.Instance.Log.Debug("### Test Module Flushing after close: {Name}", Name);
+            CiVisibility.Instance.Flush();
         }
     }
 
@@ -391,8 +393,8 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            CIVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
-            return CIVisibility.FlushAsync();
+            CiVisibility.Instance.Log.Debug("### Test Module Flushing after close: {Name}", Name);
+            return CiVisibility.Instance.FlushAsync();
         }
 
         return Task.CompletedTask;
@@ -431,13 +433,13 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
-        if (CIVisibility.Settings.CodeCoverageEnabled == true &&
+        if (CiVisibility.Instance.Settings.CodeCoverageEnabled == true &&
             CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
             coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
         {
             // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
             // For a normal customer session we never report the percentage of total lines on modules
-            if (!CIVisibility.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
+            if (!CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
             {
                 // Adds the global code coverage percentage to the module
                 var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
@@ -446,9 +448,9 @@ public sealed class TestModule
             }
 
             // If the code coverage path environment variable is set, we store the json file
-            if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.CodeCoveragePath))
+            if (!string.IsNullOrWhiteSpace(CiVisibility.Instance.Settings.CodeCoveragePath))
             {
-                var codeCoveragePath = Path.Combine(CIVisibility.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
+                var codeCoveragePath = Path.Combine(CiVisibility.Instance.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
                 try
                 {
                     using var fStream = File.OpenWrite(codeCoveragePath);
@@ -457,15 +459,15 @@ public sealed class TestModule
                 }
                 catch (Exception ex)
                 {
-                    CIVisibility.Log.Error(ex, "Error writing global code coverage.");
+                    CiVisibility.Instance.Log.Error(ex, "Error writing global code coverage.");
                 }
             }
         }
 
-        if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
+        if (CiVisibility.Instance.Settings.TestsSkippingEnabled.HasValue)
         {
-            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
-            if (CIVisibility.Settings.TestsSkippingEnabled.Value)
+            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, CiVisibility.Instance.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            if (CiVisibility.Instance.Settings.TestsSkippingEnabled.Value)
             {
                 // If we detect a module with tests skipping enabled, we ensure we also have the session tag set
                 TrySetSessionTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
@@ -481,8 +483,8 @@ public sealed class TestModule
         }
         else
         {
-            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
-            if (CIVisibility.HasSkippableTests())
+            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, CiVisibility.Instance.SkippableFeature?.HasSkippableTests() == true ? "true" : "false");
+            if (CiVisibility.Instance.SkippableFeature?.HasSkippableTests() == true)
             {
                 // If we detect a module with tests being skipped, we ensure we also have the session tag set
                 // if not we don't affect the session tag (other modules could have skipped tests)
@@ -490,11 +492,11 @@ public sealed class TestModule
             }
         }
 
-        if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
+        if (CiVisibility.Instance.Settings.CodeCoverageEnabled.HasValue)
         {
-            var value = CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false";
+            var value = CiVisibility.Instance.Settings.CodeCoverageEnabled.Value ? "true" : "false";
             span.SetTag(CodeCoverageTags.Enabled, value);
-            if (CIVisibility.Settings.CodeCoverageEnabled.Value)
+            if (CiVisibility.Instance.Settings.CodeCoverageEnabled.Value)
             {
                 // If we confirm that a module has code coverage enabled, we ensure we also have the session tag set
                 // if not we leave the tag as is (other modules could have code coverage enabled)
@@ -523,7 +525,7 @@ public sealed class TestModule
             OpenedTestModules.Remove(this);
         }
 
-        CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
+        CiVisibility.Instance.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)
         {
@@ -642,13 +644,13 @@ public sealed class TestModule
             try
             {
                 var name = $"session_{Tags.SessionId}";
-                CIVisibility.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
+                CiVisibility.Instance.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
                 _ipcClient = new IpcClient(name);
                 return true;
             }
             catch (Exception ex)
             {
-                CIVisibility.Log.Error(ex, "Error enabling IPC client");
+                CiVisibility.Instance.Log.Error(ex, "Error enabling IPC client");
                 return false;
             }
         }
@@ -666,12 +668,12 @@ public sealed class TestModule
         {
             try
             {
-                CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                CiVisibility.Instance.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
                 return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
             }
             catch (Exception ex)
             {
-                CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+                CiVisibility.Instance.Log.Error(ex, "Error sending SetSessionTagMessage");
             }
         }
 
@@ -690,12 +692,12 @@ public sealed class TestModule
         {
             try
             {
-                CIVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                CiVisibility.Instance.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
                 return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
             }
             catch (Exception ex)
             {
-                CIVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+                CiVisibility.Instance.Log.Error(ex, "Error sending SetSessionTagMessage");
             }
         }
 

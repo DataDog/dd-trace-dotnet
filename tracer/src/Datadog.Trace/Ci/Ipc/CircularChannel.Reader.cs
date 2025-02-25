@@ -42,7 +42,7 @@ internal partial class CircularChannel
                 }
                 catch (Exception ex)
                 {
-                    CIVisibility.Log.Error(ex, "CircularChannel.Reader: Error while polling for messages (InternalPollForMessage)");
+                    CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error while polling for messages (InternalPollForMessage)");
                 }
 
                 if (!_pollingThreadFinishEvent.IsSet)
@@ -70,19 +70,19 @@ internal partial class CircularChannel
                 var hasHandle = _channel._mutex.WaitOne(_channel._settings.MutexTimeout);
                 if (!hasHandle)
                 {
-                    CIVisibility.Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
+                    CiVisibility.Instance.Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
                     return;
                 }
             }
             catch (AbandonedMutexException ex)
             {
-                CIVisibility.Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
+                CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
                 return;
             }
             catch (ObjectDisposedException ex)
             {
                 // The mutex was disposed, nothing to do
-                CIVisibility.Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
+                CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
                 return;
             }
 
@@ -119,7 +119,7 @@ internal partial class CircularChannel
                     if (length + 2 > _channel.BufferBodySize)
                     {
                         // Handle error, reset pointers, or skip
-                        CIVisibility.Log.Error("CircularChannel.Reader: Message size exceeds maximum allowed size.");
+                        CiVisibility.Instance.Log.Error("CircularChannel.Reader: Message size exceeds maximum allowed size.");
                         break;
                     }
 
@@ -162,7 +162,7 @@ internal partial class CircularChannel
             }
             catch (Exception ex)
             {
-                CIVisibility.Log.Error(ex, "CircularChannel.Reader: Error while polling for messages");
+                CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error while polling for messages");
             }
             finally
             {
@@ -173,7 +173,7 @@ internal partial class CircularChannel
                 catch (ObjectDisposedException ex)
                 {
                     // The mutex was disposed, nothing to do
-                    CIVisibility.Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
+                    CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
                 }
             }
 
@@ -188,7 +188,7 @@ internal partial class CircularChannel
                     }
                     catch (Exception ex)
                     {
-                        CIVisibility.Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
+                        CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
                     }
                     finally
                     {
@@ -204,7 +204,7 @@ internal partial class CircularChannel
                 }
                 catch (Exception ex)
                 {
-                    CIVisibility.Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
+                    CiVisibility.Instance.Log.Error(ex, "CircularChannel.Reader: Error during message event handling.");
                 }
                 finally
                 {

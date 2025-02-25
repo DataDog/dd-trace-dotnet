@@ -10,5 +10,5 @@ namespace Datadog.Trace.Ci;
 
 internal interface ICiVisibilityImpactedTestsDetectionFeature : ICiVisibilityFeature
 {
-    TestOptimizationClient.ImpactedTestsDetectionResponse? ImpactedTestsDetectionResponse { get; }
+    TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse { get; }
 }

@@ -40,7 +40,7 @@ internal static class CiUtils
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
 
         // CI Visibility mode is enabled.
-        var ciVisibilitySettings = CIVisibility.Settings;
+        var ciVisibilitySettings = CiVisibility.Instance.Settings;
 
         // Get profiler environment variables
         if (!RunHelper.TryGetEnvironmentVariables(
@@ -123,7 +123,7 @@ internal static class CiUtils
         {
             // Initialize CI Visibility with the current settings
             Log.Debug("RunCiCommand: Initialize CI Visibility for the runner.");
-            CIVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
+            CiVisibility.Instance.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
 
             // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
             Log.Debug("RunCiCommand: Uploading repository changes.");
@@ -166,7 +166,7 @@ internal static class CiUtils
                 // EVP proxy is enabled.
                 // By setting the environment variables we avoid the usage of the DiscoveryService in each child process
                 // to ask for EVP proxy support.
-                var evpProxyMode = CIVisibility.EventPlatformProxySupportFromEndpointUrl(agentConfiguration?.EventPlatformProxyEndpoint).ToString();
+                var evpProxyMode = CiVisibility.Instance.TracerManagement?.EventPlatformProxySupportFromEndpointUrl(agentConfiguration?.EventPlatformProxyEndpoint).ToString();
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = evpProxyMode;
                 EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, evpProxyMode);
                 Log.Debug("RunCiCommand: EVP proxy was detected: {Mode}", evpProxyMode);
@@ -188,7 +188,7 @@ internal static class CiUtils
             {
                 try
                 {
-                    CIVisibility.Log.Debug("RunCiCommand: Calling configuration api...");
+                    CiVisibility.Instance.Log.Debug("RunCiCommand: Calling configuration api...");
 
                     // we skip the framework info because we are interested in the target projects info not the runner one.
                     var itrSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
@@ -210,7 +210,7 @@ internal static class CiUtils
                 }
                 catch (Exception ex)
                 {
-                    CIVisibility.Log.Warning(ex, "Error getting ITR settings from configuration api");
+                    CiVisibility.Instance.Log.Warning(ex, "Error getting ITR settings from configuration api");
                 }
             }
         }

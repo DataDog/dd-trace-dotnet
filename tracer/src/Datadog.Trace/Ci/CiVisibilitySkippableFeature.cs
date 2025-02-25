@@ -19,7 +19,7 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilitySkippableFeature));
     private readonly Task<SkippableTestsDictionary> _skippableTestsTask;
 
-    public CiVisibilitySkippableFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private CiVisibilitySkippableFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -82,7 +82,18 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
         }
     }
 
+    private CiVisibilitySkippableFeature()
+    {
+        Enabled = false;
+        _skippableTestsTask = Task.FromResult(new SkippableTestsDictionary());
+    }
+
     public bool Enabled { get; }
+
+    public static ICiVisibilitySkippableFeature CreateDisabledFeature() => new CiVisibilitySkippableFeature();
+
+    public static ICiVisibilitySkippableFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new CiVisibilitySkippableFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public void WaitForSkippableTaskToFinish()
     {

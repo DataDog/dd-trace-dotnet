@@ -29,7 +29,7 @@ public class TestCommandctorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref IEnumerable<string>? msbuildArgs, ref bool noRestore, ref string? msbuildPath)
     {
-        if (!DotnetCommon.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || msbuildArgs is null)
+        if (!DotnetCommon.DotnetTestIntegrationEnabled || CiVisibility.Instance.Settings.CodeCoverageEnabled != true || msbuildArgs is null)
         {
             return CallTargetState.GetDefault();
         }

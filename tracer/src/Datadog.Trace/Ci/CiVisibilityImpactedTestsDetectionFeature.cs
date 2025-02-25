@@ -16,7 +16,7 @@ internal class CiVisibilityImpactedTestsDetectionFeature : ICiVisibilityImpacted
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilityImpactedTestsDetectionFeature));
     private readonly Task<TestOptimizationClient.ImpactedTestsDetectionResponse> _impactedTestsDetectionFilesTask;
 
-    public CiVisibilityImpactedTestsDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private CiVisibilityImpactedTestsDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -54,8 +54,19 @@ internal class CiVisibilityImpactedTestsDetectionFeature : ICiVisibilityImpacted
         }
     }
 
+    private CiVisibilityImpactedTestsDetectionFeature()
+    {
+        Enabled = false;
+        _impactedTestsDetectionFilesTask = Task.FromResult(new TestOptimizationClient.ImpactedTestsDetectionResponse());
+    }
+
     public bool Enabled { get; }
 
-    public TestOptimizationClient.ImpactedTestsDetectionResponse? ImpactedTestsDetectionResponse
+    public TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse
         => _impactedTestsDetectionFilesTask.SafeGetResult();
+
+    public static ICiVisibilityImpactedTestsDetectionFeature CreateDisabledFeature() => new CiVisibilityImpactedTestsDetectionFeature();
+
+    public static ICiVisibilityImpactedTestsDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new CiVisibilityImpactedTestsDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
 }
