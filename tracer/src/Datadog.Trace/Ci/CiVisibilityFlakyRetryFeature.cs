@@ -26,7 +26,7 @@ internal class CiVisibilityFlakyRetryFeature : ICiVisibilityFlakyRetryFeature
             ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
         }
 
-        if (settings.ImpactedTestsDetectionEnabled != false && clientSettingsResponse.ImpactedTestsEnabled == true)
+        if (settings.FlakyRetryEnabled != false && clientSettingsResponse.FlakyTestRetries == true)
         {
             Log.Debug("CiVisibilityFlakyRetryFeature: Flaky retries is enabled.");
             settings.SetImpactedTestsEnabled(true);
