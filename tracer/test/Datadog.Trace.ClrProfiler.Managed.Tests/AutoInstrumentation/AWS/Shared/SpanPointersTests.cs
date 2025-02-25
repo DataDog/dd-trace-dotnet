@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Collections.Specialized;
-using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
@@ -21,15 +20,27 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.Shared
 public class SpanPointersTests
 {
     [Theory]
+    [InlineData("some-bucket-a", "some-key.data", "ab12ef34", "some-bucket-a|some-key.data|ab12ef34")]
+    [InlineData("some-bucket-b", "some-key.data", "\"ab12ef34\"", "some-bucket-b|some-key.data|ab12ef34")] // eTag should be trimmed
+    [InlineData("some-bucket-c", "some-key.你好", "é🐶", "some-bucket-c|some-key.你好|é🐶")] // Unicode
+    public void ConcatenateComponents(string bucket, string key, string eTag, string expectedHash)
+    {
+        var components = SpanPointers.ConcatenateComponents(bucket, key, eTag);
+
+        components.Should().Be(expectedHash);
+    }
+
+    [Theory]
     [InlineData("some-bucket", "some-key.data", "ab12ef34", "e721375466d4116ab551213fdea08413")]
     [InlineData("some-bucket", "some-key.data", "\"ab12ef34\"", "e721375466d4116ab551213fdea08413")] // eTag should be trimmed
-    [InlineData("some-bucket", "some-key.你好", "ab12ef34", "d1333a04b9928ab462b5c6cadfa401f4")]
+    [InlineData("some-bucket", "some-key.你好", "ab12ef34", "d1333a04b9928ab462b5c6cadfa401f4")] // Unicode
     [InlineData("some-bucket", "some-key.data", "ab12ef34-5", "2b90dffc37ebc7bc610152c3dc72af9f")]
     public void GeneratePointerHash_ShouldGenerateValidHash(string bucket, string key, string eTag, string expectedHash)
     {
-        var result = SpanPointers.GeneratePointerHash(bucket, key, eTag);
+        var components = SpanPointers.ConcatenateComponents(bucket, key, eTag);
+        var hash = SpanPointers.GeneratePointerHash(components);
 
-        result.Should().Be(expectedHash, "Hash should match expected value");
+        hash.Should().Be(expectedHash);
     }
 
     [Fact]

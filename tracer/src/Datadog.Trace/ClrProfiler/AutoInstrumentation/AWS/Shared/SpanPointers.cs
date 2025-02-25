@@ -34,7 +34,8 @@ internal static class SpanPointers
     // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
     public static void AddS3SpanPointer(Span span, string bucketName, string key, string eTag)
     {
-        var hash = GeneratePointerHash(bucketName, key, eTag);
+        var components = ConcatenateComponents(bucketName, key, eTag);
+        var hash = GeneratePointerHash(components);
 
         var spanLinkAttributes = new List<KeyValuePair<string, string>>(4)
         {
@@ -48,19 +49,37 @@ internal static class SpanPointers
         span.AddLink(spanLink);
     }
 
+    internal static string ConcatenateComponents(string bucketName, string key, string eTag)
+    {
+        var builder = StringBuilderCache.Acquire();
+        builder.Append(bucketName);
+        builder.Append('|');
+        builder.Append(key);
+        builder.Append('|');
+
+        // ReSharper disable once MergeIntoPattern
+        // ReSharper disable once UseIndexFromEndExpression
+        if (eTag.Length >= 2 && eTag[0] == '"' && eTag[eTag.Length - 1] == '"')
+        {
+            // trim double-quotes around eTag if both leading and trailing quotes are present
+            // and there is at least one more character between them
+            // (avoid allocating a new string with String.Substring())
+            builder.Append(eTag, 1, eTag.Length - 2);
+        }
+        else
+        {
+            builder.Append(eTag);
+        }
+
+        return StringBuilderCache.GetStringAndRelease(builder);
+    }
+
     // Hashing rules: https://github.com/DataDog/dd-span-pointer-rules/tree/main?tab=readme-ov-file#general-hashing-rules
-    internal static string GeneratePointerHash(
-        string bucketName,
-        string key,
-        string eTag)
+    internal static string GeneratePointerHash(string components)
     {
         // compute max buffer size for UTF-8 bytes
         // (faster than computing the actual byte count and good enough for the buffer size)
-        var maxByteCount =
-            Encoding.UTF8.GetMaxByteCount(bucketName.Length) +
-            Encoding.UTF8.GetMaxByteCount(key.Length) +
-            Encoding.UTF8.GetMaxByteCount(eTag.Length) + // if eTag is trimmed later, it won't make the max size larger so it's fine
-            2; // '|' separator x 2
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(components.Length);
 
 #if NETCOREAPP3_1_OR_GREATER
         // in .NET Core 3.1 and above, we can allocate the buffer
@@ -68,16 +87,15 @@ internal static class SpanPointers
         if (maxByteCount < 256)
         {
             Span<byte> stackBuffer = stackalloc byte[maxByteCount];
-            return ComputeHash(stackBuffer, bucketName, key, eTag);
+            return ComputeHash(components, stackBuffer);
         }
 #endif
-
         // rent a buffer for the UTF-8 bytes
         var buffer = ArrayPool<byte>.Shared.Rent(minimumLength: maxByteCount);
 
         try
         {
-            return ComputeHash(buffer, bucketName, key, eTag);
+            return ComputeHash(components, buffer);
         }
         finally
         {
@@ -87,31 +105,17 @@ internal static class SpanPointers
 
 #if NETCOREAPP3_1_OR_GREATER
     // .NET Core 3.1 and above have Encoding.UTF8.GetBytes() overload that writes to a Span<byte> buffer
-    internal static string ComputeHash(
-        Span<byte> buffer,
-        string bucketName,
-        string key,
-        string eTag)
+    internal static string ComputeHash(string components, Span<byte> buffer)
     {
-        // trims double-quotes if both leading and trailing quotes are present
-        // and there is at least one more character between them
-        var trimmedETag = eTag is ['"', _, .., '"'] ? eTag.AsSpan(1, eTag.Length - 2) : eTag;
-        var offset = 0;
-
-        offset += Encoding.UTF8.GetBytes(bucketName, buffer[offset..]);
-        buffer[offset++] = (byte)'|';
-        offset += Encoding.UTF8.GetBytes(key, buffer[offset..]);
-        buffer[offset++] = (byte)'|';
-        offset += Encoding.UTF8.GetBytes(trimmedETag, buffer[offset..]);
-
+        var byteCount = Encoding.UTF8.GetBytes(components, buffer);
         Span<byte> fullHash = stackalloc byte[32]; // SHA256 produces 32 bytes
 
 #if NET6_0_OR_GREATER
         // .NET 6 has a static TryHashData() method that avoids the allocation of a SHA256 instance
-        SHA256.TryHashData(buffer[..offset], fullHash, out _);
+        SHA256.TryHashData(buffer[..byteCount], fullHash, out _);
 #else
         using var sha256 = SHA256.Create();
-        sha256.TryComputeHash(buffer[..offset], fullHash, out _);
+        sha256.TryComputeHash(buffer[..byteCount], fullHash, out _);
 #endif
 
         var truncatedHash = fullHash[..SpanPointerHashSizeBytes];
@@ -120,33 +124,17 @@ internal static class SpanPointers
 #else
     // .NET Framework and .NET Standard 2.0 do not have Encoding.UTF8.GetBytes() overload
     // that writes to a Span<byte>, so we fall back to a rented byte[]
-    private static string ComputeHash(
-        byte[] buffer,
-        string bucketName,
-        string key,
-        string eTag)
+    internal static string ComputeHash(string components, byte[] buffer)
     {
-        var offset = 0;
-
-        offset += Encoding.UTF8.GetBytes(bucketName, 0, bucketName.Length, buffer, offset);
-        buffer[offset++] = (byte)'|';
-        offset += Encoding.UTF8.GetBytes(key, 0, key.Length, buffer, offset);
-        buffer[offset++] = (byte)'|';
-
-        if (eTag.Length >= 2 && eTag[0] == '"' && eTag[eTag.Length - 1] == '"')
-        {
-            // trim double-quotes if both leading and trailing quotes are present
-            // and there is at least one more character between them
-            // (doing it here avoids allocating a new string with String.Substring())
-            offset += Encoding.UTF8.GetBytes(eTag, 1, eTag.Length - 2, buffer, offset);
-        }
-        else
-        {
-            offset += Encoding.UTF8.GetBytes(eTag, 0, eTag.Length, buffer, offset);
-        }
+        var byteCount = Encoding.UTF8.GetBytes(
+            components,
+            charIndex: 0,
+            charCount: components.Length,
+            bytes: buffer,
+            byteIndex: 0);
 
         using var sha256 = SHA256.Create();
-        var fullHash = sha256.ComputeHash(buffer, offset: 0, count: offset);
+        var fullHash = sha256.ComputeHash(buffer, offset: 0, count: byteCount);
         var truncatedHash = fullHash.AsSpan(0, SpanPointerHashSizeBytes);
         return HexString.ToHexString(truncatedHash);
     }
