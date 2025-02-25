@@ -78,20 +78,6 @@ internal class CiVisibility : ICiVisibility
         private set => _client = value;
     }
 
-    public ICiVisibilityTracerManagement? TracerManagement
-    {
-        get
-        {
-            if (_tracerManagement is null)
-            {
-                _additionalFeaturesTask?.SafeWait();
-            }
-
-            return _tracerManagement;
-        }
-        private set => _tracerManagement = value;
-    }
-
     public ICiVisibilityHostInfo HostInfo
     {
         get
@@ -104,6 +90,20 @@ internal class CiVisibility : ICiVisibility
             return _hostInfo ??= new CiVisibilityHostInfo();
         }
         private set => _hostInfo = value;
+    }
+
+    public ICiVisibilityTracerManagement? TracerManagement
+    {
+        get
+        {
+            if (_tracerManagement is null)
+            {
+                _additionalFeaturesTask?.SafeWait();
+            }
+
+            return _tracerManagement;
+        }
+        private set => _tracerManagement = value;
     }
 
     public ICiVisibilityEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature
