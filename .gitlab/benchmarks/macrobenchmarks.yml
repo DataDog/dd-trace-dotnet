@@ -24,78 +24,6 @@ check_azure_pipeline:
   timeout: 1h
   when: on_success
 
-.macrobenchmarks:
-  stage: test
-  needs: []
-  tags: ["runner:apm-k8s-same-cpu"]
-  timeout: 1h
-  retry:
-    max: 2
-    when:
-      - unknown_failure
-      - data_integrity_failure
-      - runner_system_failure
-      - scheduler_failure
-      - api_failure
-  when: on_success
-  image: $MACROBENCHMARKS_CI_IMAGE
-  script: |
-    git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    if [ "$BP_PYTHON_SCENARIO_DIR" == "flask-realworld" ]; then
-      bp-runner bp-runner.flask-realworld.yml --debug
-    else
-      bp-runner bp-runner.simple.yml --debug
-    fi
-  artifacts:
-    name: "artifacts"
-    when: always
-    paths:
-      - platform/artifacts/
-    expire_in: 3 months
-  variables:
-    # Benchmark's env variables. Modify to tweak benchmark parameters.
-    DD_TRACE_DEBUG: "false"
-    DD_RUNTIME_METRICS_ENABLED: "true"
-    DD_REMOTE_CONFIGURATION_ENABLED: "false"
-    DD_INSTRUMENTATION_TELEMETRY_ENABLED: "false"
-    DD_CRASHTRACKING_ENABLED: "false"
-
-    K6_OPTIONS_WARMUP_RATE: 40
-    K6_OPTIONS_WARMUP_DURATION: 1m
-    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 0s
-    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_WARMUP_MAX_VUS: 4
-
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 40
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 5m
-    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 1m
-    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
-
-    K6_OPTIONS_HIGH_LOAD_RATE: 500
-    K6_OPTIONS_HIGH_LOAD_DURATION: 1m
-    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 30s
-    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
-
-    # Gitlab and BP specific env vars. Do not modify.
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-
-  # Workaround: Currently we're not running the benchmarks on every PR, but GitHub still shows them as pending.
-  # By marking the benchmarks as allow_failure, this should go away. (This workaround should be removed once the
-  # benchmarks get changed to run on every PR)
-  allow_failure: true
-
-baseline:
-  extends: .macrobenchmarks
-  variables:
-    DD_BENCHMARKS_CONFIGURATION: baseline
-    BP_PYTHON_SCENARIO_DIR: flask-realworld
-    BP_ENDPOINT: http://0.0.0.0:8000/api/articles
-    DDTRACE_INSTALL_VERSION: "git+https://github.com/Datadog/dd-trace-py@${CI_COMMIT_SHA}"
-    DD_SERVICE: "ddtrace-mb-baseline"
-
-
 .benchmarks:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
@@ -119,6 +47,7 @@ baseline:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - bp-runner bp-runner.yml --debug
   artifacts:
     name: "artifacts"
@@ -549,12 +478,13 @@ profiler_cpu_timer_create-arm64:
       /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER \
         >> ~/.aws/config || exit $?
     - export AWS_PROFILE=$AWS_EPHEMERAL_INFRA_PROFILE_NAME
+    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./pass-artifatcs-to-windows.sh
     - cd /app/infra
     - |
       ./launch.sh apm-ecosystems-perf-qa windows ephemeral-instance \
         --region "$AWS_EPHEMERAL_INFRA_REGION" \
-        --benchmarking-platform-branch "fayssal/test-s3" \
+        --benchmarking-platform-branch "fayssal/migrate-macros-dotnet" \
         --no-cleanup
     
   artifacts:
@@ -588,7 +518,7 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
-    
+
   allow_failure: true
 
 baseline-win:
