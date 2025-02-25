@@ -8,15 +8,8 @@
 		<IsLegacyNetVersion>TRUE</IsLegacyNetVersion>
 	</PropertyGroup>
 
-    <PropertyGroup Condition="('$(Platform)'=='x64') AND ('$(IsLegacyNetVersion)'=='TRUE')">
-		<DDPlatform>x64</DDPlatform>
-	</PropertyGroup>
-	<PropertyGroup Condition="(('$(Platform)'=='x86') Or ('$(Platform)'=='AnyCPU')) AND ('$(IsLegacyNetVersion)'=='TRUE')">
-		<DDPlatform>x86</DDPlatform>
-	</PropertyGroup>
-
     <ItemGroup Condition=" '$(IsLegacyNetVersion)' == 'TRUE' ">
-        <NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\win-$(DDPlatform)\**" />
+        <NativeLibs Include="$(MSBuildThisFileDirectory)..\runtimes\win-x64\**" />
         <None Include="@(NativeLibs)">
             <Link>%(FileName)%(Extension)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
