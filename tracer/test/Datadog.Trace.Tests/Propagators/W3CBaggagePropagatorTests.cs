@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CBaggagePropagatorTests.cs" company="Datadog">
+// <copyright file="W3CBaggagePropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -50,16 +50,21 @@ public class W3CBaggagePropagatorTests
             { string.Empty, null },
             { " ", null },
             { "invalid", null },
+            { "invalid;", null },
             { "invalid=", null },
             { "invalid= ", null },
+            { "invalid= ;", null },
             { " =invalid", null },
+            { " ;=invalid", null },
             { "=", null },
             { " = ", null },
+            { ";", null },
             { "valid=%20", [("valid", " ")] },
             { "%20=valid", [(" ", "valid")] },
             { "%20=%20", [(" ", " ")] },
             { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
             { "key1=value1,invalid", [("key1", "value1")] },
+            { "key1=value1, key2 = value2;property1;property2, key3=value3; propertyKey=propertyValue", [("key1", "value1"), ("key2", "value2"), ("key3", "value3")] }, // W3C metadata/property not currently supported so the values are discarded
             { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
             { "key1=value1=valid", [("key1", "value1=valid")] },
             { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },                          // encoded whitespace
