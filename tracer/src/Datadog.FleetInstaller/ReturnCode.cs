@@ -10,12 +10,12 @@ internal enum ReturnCode
     // The order of these values is important, as they are used to determine the exit code of the process
     // We should always add new error values to the end and not re-order them
     Success = 0,
-    ErrorDuringPrerequisiteVerification, // Not explicitly called, but equivalent
+    ErrorDuringPrerequisiteVerification = 1, // Not explicitly called, but equivalent
+    ErrorRemovingNativeLoaderFiles = 2, // Must not change, special-case handled by fleet installer as it means "don't remove the files"
     ErrorDuringGacInstallation,
     ErrorDuringGacUninstallation,
     ErrorSettingAppPoolVariables,
     ErrorRemovingAppPoolVariables,
-    ErrorRemovingNativeLoaderFiles,
     ErrorRemovingCrashTrackerKey,
     ErrorReadingIisConfiguration,
 }
