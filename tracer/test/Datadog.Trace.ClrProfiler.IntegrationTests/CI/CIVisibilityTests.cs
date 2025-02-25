@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -13,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class CIVisibilityTests
     {
+        private static readonly ICiVisibilityTracerManagement TracerManagement = new CiVisibilityTracerManagement(CIVisibilitySettings.FromDefaultSources());
+
         public static IEnumerable<object[]> GetParserData()
         {
             yield return
@@ -97,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("%^&*", "")]
         public void GetServiceNameFromRepository(string repository, string serviceName)
         {
-            Assert.Equal(serviceName, Ci.CiVisibility.Instance.TracerManagement?.GetServiceNameFromRepository(repository));
+            Assert.Equal(serviceName, TracerManagement.GetServiceNameFromRepository(repository));
         }
 
         [SkippableTheory]

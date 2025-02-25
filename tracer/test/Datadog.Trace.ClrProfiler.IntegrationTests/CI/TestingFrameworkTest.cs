@@ -129,7 +129,7 @@ public abstract class TestingFrameworkTest : TestHelper
         AssertTargetSpanExists(targetSpan, CommonTags.RuntimeArchitecture);
         AssertTargetSpanExists(targetSpan, CommonTags.OSArchitecture);
         AssertTargetSpanExists(targetSpan, CommonTags.OSPlatform);
-        AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CiVisibility.Instance.HostInfo?.GetOperatingSystemVersion() ?? string.Empty);
+        AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CiVisibility.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty);
     }
 
     protected virtual void CheckOriginTag(MockSpan targetSpan)

@@ -92,7 +92,7 @@ internal class CiVisibility : ICiVisibility
         private set => _tracerManagement = value;
     }
 
-    public ICiVisibilityHostInfo? HostInfo
+    public ICiVisibilityHostInfo HostInfo
     {
         get
         {
@@ -101,7 +101,7 @@ internal class CiVisibility : ICiVisibility
                 _additionalFeaturesTask?.SafeWait();
             }
 
-            return _hostInfo;
+            return _hostInfo ??= new CiVisibilityHostInfo();
         }
         private set => _hostInfo = value;
     }
@@ -173,8 +173,6 @@ internal class CiVisibility : ICiVisibility
         Log.Information("CiVisibility: Initializing CI Visibility");
         var settings = Settings;
 
-        HostInfo = new CiVisibilityHostInfo();
-
         // In case we are running using the agent, check if the event platform proxy is supported.
         TracerManagement = new CiVisibilityTracerManagement(
             Settings,
@@ -237,8 +235,6 @@ internal class CiVisibility : ICiVisibility
 
         Log.Information("CiVisibility: Initializing CI Visibility from dd-trace / runner");
         Settings = settings;
-
-        HostInfo = new CiVisibilityHostInfo();
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
         var tracerSettings = settings.TracerSettings;

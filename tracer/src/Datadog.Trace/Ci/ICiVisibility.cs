@@ -24,9 +24,9 @@ internal interface ICiVisibility
 
     ITestOptimizationClient Client { get; }
 
-    ICiVisibilityTracerManagement? TracerManagement { get; }
+    ICiVisibilityHostInfo HostInfo { get; }
 
-    ICiVisibilityHostInfo? HostInfo { get; }
+    ICiVisibilityTracerManagement? TracerManagement { get; }
 
     ICiVisibilityEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature { get; }
 

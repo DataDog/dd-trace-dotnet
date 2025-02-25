@@ -103,7 +103,7 @@ public sealed class TestModule
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = _ciVisibility.HostInfo?.GetOperatingSystemVersion(),
+                OSVersion = _ciVisibility.HostInfo.GetOperatingSystemVersion(),
                 CiEnvVars = sessionSpanTags.CiEnvVars,
                 SessionId = sessionSpanTags.SessionId,
                 Command = sessionSpanTags.Command,
@@ -125,7 +125,7 @@ public sealed class TestModule
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = _ciVisibility.HostInfo?.GetOperatingSystemVersion(),
+                OSVersion = _ciVisibility.HostInfo.GetOperatingSystemVersion(),
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
             };
 

@@ -204,7 +204,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var framework = FrameworkDescription.Instance;
         return new TestsConfigurations(
             framework.OSPlatform,
-            CiVisibility.Instance.HostInfo?.GetOperatingSystemVersion() ?? string.Empty,
+            CiVisibility.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty,
             framework.OSArchitecture,
             skipFrameworkInfo ? null : framework.Name,
             skipFrameworkInfo ? null : framework.ProductVersion,
