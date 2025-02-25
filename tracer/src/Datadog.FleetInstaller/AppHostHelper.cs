@@ -77,7 +77,7 @@ internal static class AppHostHelper
     private static bool ModifyEnvironmentVariablesWithRetry(
         ILogger log,
         ReadOnlyDictionary<string, string> envVars,
-        Action<ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
+        Action<ILogger, ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
     {
         // If the IIS host config is being modified, this may fail
         // We retry multiple times, as the final update is atomic
@@ -104,7 +104,7 @@ internal static class AppHostHelper
     private static bool ModifyEnvironmentVariables(
         ILogger log,
         ReadOnlyDictionary<string, string> envVars,
-        Action<ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
+        Action<ILogger, ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars)
     {
         if (!SetEnvironmentVariables(log, envVars, updateEnvVars, out var appPoolsWeMustReenableRecycling))
         {
@@ -120,7 +120,7 @@ internal static class AppHostHelper
     private static bool SetEnvironmentVariables(
         ILogger log,
         ReadOnlyDictionary<string, string> envVars,
-        Action<ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars,
+        Action<ILogger, ConfigurationElementCollection, ReadOnlyDictionary<string, string>> updateEnvVars,
         out HashSet<string> appPoolsWeMustReenableRecycling)
     {
         appPoolsWeMustReenableRecycling = [];
@@ -139,8 +139,8 @@ internal static class AppHostHelper
             var (applicationPoolDefaults, applicationPoolsCollection) = appPoolsSection.Value;
 
             // Update defaults
-            log.WriteInfo($"Updating applicationPoolDefaults environment variables");
-            updateEnvVars(applicationPoolDefaults.GetCollection("environmentVariables"), envVars);
+            log.WriteInfo("Updating applicationPoolDefaults environment variables");
+            updateEnvVars(log, applicationPoolDefaults.GetCollection("environmentVariables"), envVars);
 
             // Update app pools
             foreach (var appPoolElement in applicationPoolsCollection)
@@ -163,16 +163,17 @@ internal static class AppHostHelper
                     // if it was set to "true", as we don't want to accidentally revert that later.
                     if (appPoolElement.GetChildElement("recycling")["disallowRotationOnConfigChange"] as bool? ?? false)
                     {
-                        // already disallowed, which is what we want, so don't need to modify it now _or_ later
+                        log.WriteInfo($"App pool '{poolName}' recycling.disallowRotationOnConfigChange already set to true, skipping");
                     }
                     else
                     {
+                        log.WriteInfo($"Setting app pool '{poolName}' recycling.disallowRotationOnConfigChange=true");
                         appPoolsWeMustReenableRecycling.Add(poolName);
                         appPoolElement.GetChildElement("recycling")["disallowRotationOnConfigChange"] = true;
                     }
 
                     // Set the pool-specific env variables
-                    updateEnvVars(appPoolElement.GetCollection("environmentVariables"), envVars);
+                    updateEnvVars(log, appPoolElement.GetCollection("environmentVariables"), envVars);
                 }
             }
 
@@ -203,11 +204,17 @@ internal static class AppHostHelper
             foreach (var appPoolElement in appPoolsSection.Value.AppPools)
             {
                 if (string.Equals(appPoolElement.ElementTagName, "add", StringComparison.OrdinalIgnoreCase)
-                    && appPoolElement.GetAttributeValue("name") is string poolName
-                    && appPoolsWhichNeedToAllowRecycling.Contains(poolName))
+                    && appPoolElement.GetAttributeValue("name") is string poolName)
                 {
-                    log.WriteInfo($"Re-enabling rotation on config change for app pool '{poolName}'");
-                    appPoolElement.GetChildElement("recycling")["disallowRotationOnConfigChange"] = false;
+                    if (appPoolsWhichNeedToAllowRecycling.Contains(poolName))
+                    {
+                        log.WriteInfo($"Re-enabling rotation on config change for app pool '{poolName}'");
+                        appPoolElement.GetChildElement("recycling")["disallowRotationOnConfigChange"] = false;
+                    }
+                    else
+                    {
+                        log.WriteInfo($"Skipping re-enabling rotation for app pool '{poolName}'");
+                    }
                 }
             }
 
@@ -217,7 +224,7 @@ internal static class AppHostHelper
         }
         catch (Exception ex)
         {
-            log.WriteError(ex, $"Error re-enabling application pool recycling");
+            log.WriteError(ex, "Error re-enabling application pool recycling");
             return false;
         }
     }
@@ -256,7 +263,7 @@ internal static class AppHostHelper
         return (applicationPoolDefaults, applicationPoolsCollection);
     }
 
-    private static void SetEnvVars(ConfigurationElementCollection envVars, ReadOnlyDictionary<string, string> requiredVariables)
+    private static void SetEnvVars(ILogger log, ConfigurationElementCollection envVars, ReadOnlyDictionary<string, string> requiredVariables)
     {
         // Try to find the value we need
         // Update all the values we need
@@ -275,13 +282,20 @@ internal static class AppHostHelper
                 continue;
             }
 
+            // Should we record the previous value (so it's available in the logs later if necessary?)
+            // I opted not to, to avoid the risk of leaking anything sensitive. Currently there _shouldn't_
+            // be anything sensitive in there, but there _could_ be theoretically.
+            log.WriteInfo($"Found existing value for '{key}' - replacing value");
             envVarEle["value"] = envVarValue;
-            // log.WriteInfo($"Updated environment variable {key} to {envVarValue}");
             remainingValues.Remove(key);
         }
 
         foreach (var kvp in remainingValues)
         {
+            // Similarly, not showing the value we're setting here. It isn't a sensitive value now, but
+            // that won't always be the case, so this avoids the risk. Obviously that's less useful
+            // for troubleshooting unfortunately.
+            log.WriteInfo($"Adding new variable '{kvp.Key}'");
             var addEle = envVars.CreateElement("add");
             addEle["name"] = kvp.Key;
             addEle["value"] = kvp.Value;
@@ -289,7 +303,7 @@ internal static class AppHostHelper
         }
     }
 
-    private static void RemoveEnvVars(ConfigurationElementCollection envVars, ReadOnlyDictionary<string, string> requiredVariables)
+    private static void RemoveEnvVars(ILogger log, ConfigurationElementCollection envVars, ReadOnlyDictionary<string, string> requiredVariables)
     {
         // Try to find the value we need
         // Update all the values we need
@@ -309,6 +323,7 @@ internal static class AppHostHelper
             }
 
             envVarsToRemove ??= new();
+            log.WriteInfo($"Adding variable '{key}' to removal list");
             envVarsToRemove.Add(envVarEle);
         }
 
@@ -317,6 +332,7 @@ internal static class AppHostHelper
             return;
         }
 
+        log.WriteInfo($"Removing {envVarsToRemove.Count} variables");
         foreach (var element in envVarsToRemove)
         {
             envVars.Remove(element);
