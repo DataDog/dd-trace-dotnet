@@ -1,26 +1,32 @@
+#nullable enable
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Samples.Security.AspNetCore5.Models;
-using System;
-using System.Diagnostics;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
-    public class UserController : Controller
+    public class UserController(ILogger<HomeController> logger) : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-
-        public UserController(ILogger<HomeController> logger)
+        public IActionResult Index(string? userId = null)
         {
-            _logger = logger;
+            SampleHelpers.SetUser(userId ?? "user3");
+            return View();
         }
 
-        public IActionResult Index(string userId = null)
+        public IActionResult TrackLoginSdk(bool success, string? userId = null)
         {
-            Samples.SampleHelpers.SetUser(userId ?? "user3");
+            var metadata = new Dictionary<string, string> { { "some-key", "some-value" } };
+            var defaultUserId = "user-dog";
+            if (success)
+            {
+                SampleHelpers.TrackUserLoginSuccessEvent(userId ?? defaultUserId, metadata);
+            }
+            else
+            {
+                SampleHelpers.TrackUserLoginFailureEvent(userId ?? defaultUserId, true, metadata);
+            }
 
-            return View();
+            return View("Index");
         }
     }
 }

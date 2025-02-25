@@ -16,7 +16,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests
+namespace Datadog.Trace.Security.IntegrationTests.UserEvents
 {
     public abstract class AspNetCore5AutoUserEvents : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
@@ -30,7 +30,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             _enableSecurity = enableSecurity;
             _fixture.SetOutput(outputHelper);
             EnableRasp(false);
-
             if (userTrackingMode != null)
             {
                 if (userTrackingMode is "ident" or "anon")
@@ -129,7 +128,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TryStartApp();
             var agent = _fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestLoginWithSdk), userIdSdk);
-            VerifyScrubber.ScrubAuthenticationCollectionMode(settings);
+            settings.ScrubAuthenticationCollectionMode();
             await TestAppSecRequestWithVerifyAsync(
                 agent,
                 $"/Account/Index?userIdSdk={userIdSdk}",
@@ -144,6 +143,29 @@ namespace Datadog.Trace.Security.IntegrationTests
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
+        }
+
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData(true)]
+        [InlineData(false)]
+        protected async Task TestLoginSdkOnly(bool success)
+        {
+            await TryStartApp();
+            var agent = _fixture.Agent;
+            var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestLoginWithSdk));
+            settings.ScrubAuthenticationCollectionMode();
+            await TestAppSecRequestWithVerifyAsync(
+                agent,
+                $"/User/TrackLoginSdk?success={success}",
+                null,
+                1,
+                1,
+                settings,
+                contentType: "application/x-www-form-urlencoded",
+                methodNameOverride: nameof(TestUserLoginEvent),
+                fileNameOverride: GetTestFileName($"{nameof(TestLoginSdkOnly)}.success={success}"),
+                scrubCookiesFingerprint: true);
         }
 
         private string GetTestFileName(string testName) => $"{_testName}-{testName}";

@@ -552,6 +552,7 @@
   "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH": "iast_truncation_max_value_length",
   "DD_IAST_DB_ROWS_TO_TAINT": "iast_db_rows_to_taint",
   "DD_IAST_COOKIE_FILTER_PATTERN": "iast_cookie_filter_pattern",
+  "DD_TRACE_DISABLED_ACTIVITY_SOURCES": "trace_disabled_activity_sources",
   "DD_TRACE_STARTUP_LOGS": "trace_startup_logs_enabled",
   "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES": "trace_disabled_adonet_command_types",
   "DD_MAX_LOGFILE_SIZE": "trace_log_file_max_size",

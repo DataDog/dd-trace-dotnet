@@ -7,6 +7,7 @@
     <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
+        <Environment Id="DD_INSTRUMENTATION_INSTALL_TYPE" Name="DD_INSTRUMENTATION_INSTALL_TYPE" Action="set" Permanent="no" System="yes" Value="dotnet_msi" Part="all" />
         <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="set" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)" Part="all" />
         <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="set" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)" Part="all" />
   
