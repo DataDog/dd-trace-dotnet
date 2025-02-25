@@ -10,7 +10,7 @@ check_azure_pipeline:
   stage: check-azure-pipeline
   image: $MACROBENCHMARKS_CI_IMAGE
   script:
-    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch fayssal/dotnet-integration-test https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./wait-for-pipeline.sh
   artifacts:
     name: "artifacts"
@@ -47,7 +47,7 @@ check_azure_pipeline:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch fayssal/dotnet-integration-test https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - bp-runner bp-runner.yml --debug
   artifacts:
     name: "artifacts"
@@ -478,13 +478,13 @@ profiler_cpu_timer_create-arm64:
       /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER \
         >> ~/.aws/config || exit $?
     - export AWS_PROFILE=$AWS_EPHEMERAL_INFRA_PROFILE_NAME
-    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - git clone --branch fayssal/dotnet-integration-test https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./pass-artifatcs-to-windows.sh
     - cd /app/infra
     - |
       ./launch.sh apm-ecosystems-perf-qa windows ephemeral-instance \
         --region "$AWS_EPHEMERAL_INFRA_REGION" \
-        --benchmarking-platform-branch "fayssal/migrate-macros-dotnet" \
+        --benchmarking-platform-branch "fayssal/dotnet-integration-test" \
         --no-cleanup
     
   artifacts:
@@ -525,7 +525,7 @@ baseline-win:
   extends: .benchmarks-win
 
 calltarget_ngen-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -538,7 +538,7 @@ calltarget_ngen-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 trace_stats-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -552,7 +552,7 @@ trace_stats-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_only-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
@@ -564,7 +564,7 @@ manual_only-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_and_automatic-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -576,7 +576,7 @@ manual_and_automatic-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 ddtraceenabled_false-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -588,7 +588,7 @@ ddtraceenabled_false-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions_baseline-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
@@ -599,7 +599,7 @@ profiler_exceptions_baseline-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -612,7 +612,7 @@ profiler-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_walltime-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -627,7 +627,7 @@ profiler_walltime-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -641,7 +641,7 @@ profiler_exceptions-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
@@ -656,7 +656,7 @@ profiler_cpu-win:
   - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu_timer_create-win:
-  extends: .benchmarks
+  extends: .benchmarks-win
   variables:
     COR_ENABLE_PROFILING: 1
     CORECLR_ENABLE_PROFILING: 1
