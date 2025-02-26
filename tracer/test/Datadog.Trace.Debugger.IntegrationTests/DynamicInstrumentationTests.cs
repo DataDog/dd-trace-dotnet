@@ -27,7 +27,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 public class DynamicInstrumentationTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
-    private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
+    private const string DynamicInstrumentationDisabledLogEntry = "Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
 
     public DynamicInstrumentationTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -78,7 +78,7 @@ public class DynamicInstrumentationTests : TestHelper
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath, Output);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
-        await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
+        await logEntryWatcher.WaitForLogEntry(DynamicInstrumentationDisabledLogEntry);
 
         try
         {
