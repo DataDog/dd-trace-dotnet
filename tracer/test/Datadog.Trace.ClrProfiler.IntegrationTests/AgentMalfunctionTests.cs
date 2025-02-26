@@ -45,13 +45,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
                from transportType in Transports
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new object[] { behaviour, transportType, metadataSchemaVersion };
+               from dataPipelineEnabled in new bool[] { true, false }
+               select new object[] { behaviour, transportType, metadataSchemaVersion, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion)
+        public async Task SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType, string metadataSchemaVersion, bool dataPipelineEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
@@ -59,12 +60,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
             }
 
+            if (transportType == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
+            {
+                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+            }
+
             EnvironmentHelper.EnableTransport(transportType);
 
             // Due to lack of test harness, we can't test the full range of behavior for data pipeline
             // so we disable it here, instead we are testing similar behavior in the native side
             //  https://github.com/DataDog/libdatadog/pull/891
-            EnvironmentHelper.EnableDataPipeline(false);
+            EnvironmentHelper.EnableDataPipeline(dataPipelineEnabled);
 
             using var agent = EnvironmentHelper.GetMockAgent();
             var customResponse = behaviour switch
