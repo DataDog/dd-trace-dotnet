@@ -22,9 +22,14 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private DebuggerSettings _settings = settings;
 
+        private bool Disabled =>
+            _settings.CodeOriginForSpansEnabled == null
+          || (_settings.CodeOriginForSpansEnabled.HasValue && !_settings.CodeOriginForSpansEnabled.Value)
+          || (_settings.DynamicSettings.CodeOriginEnabled.HasValue && !_settings.DynamicSettings.CodeOriginEnabled.Value);
+
         internal void SetCodeOrigin(Span? span)
         {
-            if (span == null)
+            if (span == null || Disabled)
             {
                 return;
             }
@@ -87,7 +92,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
-                if (frames != null!)
+                if (frames != null)
                 {
                     ArrayPool<FrameInfo>.Shared.Return(frames);
                 }
@@ -99,7 +104,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             var stackTrace = new StackTrace(fNeedFileInfo: true);
             var stackFrames = stackTrace.GetFrames();
 
-            if (stackFrames == null!)
+            if (stackFrames == null)
             {
                 return 0;
             }
