@@ -17,7 +17,7 @@ namespace Datadog.Trace.IntegrationTests.LibDatadog;
 
 public class TraceExporterTests
 {
-    [Theory]
+    [SkippableTheory]
     [InlineData(TestTransports.Tcp)]
     [InlineData(TestTransports.Uds)]
     [InlineData(TestTransports.WindowsNamedPipe)]
