@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -37,21 +38,21 @@ internal static class GitCommandHelper
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var gitOutput = ProcessHelpers.RunCommand(
-                                new ProcessHelpers.Command(
-                                    "git",
-                                    arguments,
-                                    workingDirectory,
-                                    outputEncoding: Encoding.Default,
-                                    errorEncoding: Encoding.Default,
-                                    inputEncoding: Encoding.Default,
-                                    useWhereIsIfFileNotFound: true,
-                                    timeout: TimeSpan.FromMinutes(5)),
-                                input);
+                new ProcessHelpers.Command(
+                    "git",
+                    arguments,
+                    workingDirectory,
+                    outputEncoding: Encoding.Default,
+                    errorEncoding: Encoding.Default,
+                    inputEncoding: Encoding.Default,
+                    useWhereIsIfFileNotFound: true,
+                    timeout: TimeSpan.FromMinutes(5)),
+                input);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
             if (gitOutput is null)
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
-                Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
+                Log.Warning("GitCommandHelper: 'git {Arguments}' command is null", arguments);
             }
             else if (gitOutput.ExitCode != 0)
             {
@@ -71,14 +72,14 @@ internal static class GitCommandHelper
                 }
 
                 var txt = StringBuilderCache.GetStringAndRelease(sb);
-                Log.Debug("Git command {Command}", txt);
+                Log.Debug("GitCommandHelper: Git command {Command}", txt);
             }
 
             return gitOutput;
         }
         catch (System.ComponentModel.Win32Exception ex)
         {
-            Log.Warning(ex, "TestVis: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
+            Log.Warning(ex, "GitCommandHelper: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
             TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
             return null;
         }
@@ -101,7 +102,7 @@ internal static class GitCommandHelper
         }
         catch (Exception ex)
         {
-            Log.Information(ex, "Error calling git diff");
+            Log.Information(ex, "GitCommandHelper: Error calling git diff");
             throw;
         }
 
@@ -130,7 +131,7 @@ internal static class GitCommandHelper
                     }
 
                     currentFile = new FileCoverageInfo(headerMatch.Groups["file"].Value);
-                    Log.Debug("  Processing {File} ...", currentFile.Path);
+                    Log.Debug("GitCommandHelper:  Processing {File} ...", currentFile.Path);
 
                     continue;
                 }
@@ -148,7 +149,7 @@ internal static class GitCommandHelper
 
                     modifiedLines.Add(new Tuple<int, int>(startLine, startLine + lineCount));
                     var range = modifiedLines[modifiedLines.Count - 1];
-                    Log.Debug<int, int>("    {From}..{To} ...", range.Item1, range.Item2);
+                    Log.Debug<int, int>("GitCommandHelper:    {From}..{To} ...", range.Item1, range.Item2);
                     continue;
                 }
             }

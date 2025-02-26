@@ -26,7 +26,7 @@ public static class RunTestsWithSourcesSendSessionEndIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
-        CIVisibility.Close();
+        TestOptimization.Instance.Close();
         return CallTargetState.GetDefault();
     }
 }

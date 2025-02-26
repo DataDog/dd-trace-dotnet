@@ -112,7 +112,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 }
                 else
                 {
-                    request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
+                    request.AddHeader(ApiKeyHeader, TestOptimization.Instance.Settings.ApiKey);
                 }
             }
             catch (Exception ex)

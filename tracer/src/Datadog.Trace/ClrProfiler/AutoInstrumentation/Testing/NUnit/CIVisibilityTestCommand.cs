@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -24,10 +25,8 @@ internal class CIVisibilityTestCommand
     [DuckReverseMethod]
     public object? Execute(object contextObject)
     {
-        Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
-        var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ?
-                          contextWithRepeatCount :
-                          contextObject.DuckCast<ITestExecutionContext>();
+        Interlocked.CompareExchange(ref _totalRetries, TestOptimization.Instance.Settings.TotalFlakyRetryCount, -1);
+        var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ? contextWithRepeatCount : contextObject.DuckCast<ITestExecutionContext>();
         var executionNumber = 0;
         var result = ExecuteTest(context, executionNumber++, out var isTestNew, out var duration);
         var resultStatus = result.ResultState.Status;
@@ -65,14 +64,14 @@ internal class CIVisibilityTestCommand
                 Common.Log.Debug("EFD: All retries were executed.");
             }
         }
-        else if (resultStatus == TestStatus.Failed && CIVisibility.Settings.FlakyRetryEnabled == true)
+        else if (resultStatus == TestStatus.Failed && TestOptimization.Instance.Settings.FlakyRetryEnabled == true)
         {
             // **************************************************************
             // Flaky retry mode
             // **************************************************************
 
             // Get retries number
-            var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
+            var remainingRetries = TestOptimization.Instance.Settings.FlakyRetryCount;
 
             // Retries
             var retryNumber = 0;
@@ -80,7 +79,7 @@ internal class CIVisibilityTestCommand
             {
                 if (Interlocked.Decrement(ref _totalRetries) <= 0)
                 {
-                    Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                    Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", TestOptimization.Instance.Settings.TotalFlakyRetryCount);
                     break;
                 }
 
