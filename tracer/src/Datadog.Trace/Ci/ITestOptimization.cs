@@ -20,7 +20,7 @@ internal interface ITestOptimization
 
     bool IsRunning { get; }
 
-    CIVisibilitySettings Settings { get; }
+    TestOptimizationSettings Settings { get; }
 
     ITestOptimizationClient Client { get; }
 
@@ -38,7 +38,7 @@ internal interface ITestOptimization
 
     void Initialize();
 
-    void InitializeFromRunner(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null);
+    void InitializeFromRunner(TestOptimizationSettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null);
 
     void InitializeFromManualInstrumentation();
 

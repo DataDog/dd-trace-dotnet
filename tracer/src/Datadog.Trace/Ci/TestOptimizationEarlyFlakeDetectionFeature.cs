@@ -16,7 +16,7 @@ internal class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimizationEar
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationEarlyFlakeDetectionFeature));
     private readonly Task<TestOptimizationClient.EarlyFlakeDetectionResponse> _earlyFlakeDetectionSettingsTask;
 
-    private TestOptimizationEarlyFlakeDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationEarlyFlakeDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -63,7 +63,7 @@ internal class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimizationEar
     public TestOptimizationClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse
         => _earlyFlakeDetectionSettingsTask.SafeGetResult();
 
-    public static ITestOptimizationEarlyFlakeDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    public static ITestOptimizationEarlyFlakeDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationEarlyFlakeDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public bool IsAnEarlyFlakeDetectionTest(string moduleName, string testSuite, string testName)

@@ -24,7 +24,7 @@ internal class CICodeCoveragePayload : MultipartPayload
     private readonly IFormatterResolver _formatterResolver;
     private readonly Stopwatch _serializationWatch;
 
-    public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
+    public CICodeCoveragePayload(TestOptimizationSettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
         : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
     {
         _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;

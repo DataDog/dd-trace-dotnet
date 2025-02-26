@@ -47,7 +47,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     private static readonly JsonSerializerSettings SerializerSettings;
 
     private readonly string _id;
-    private readonly CIVisibilitySettings _settings;
+    private readonly TestOptimizationSettings _settings;
     private readonly string? _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
@@ -65,7 +65,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
     }
 
-    private TestOptimizationClient(string? workingDirectory, CIVisibilitySettings? settings = null)
+    private TestOptimizationClient(string? workingDirectory, TestOptimizationSettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
         var ciVisibility = TestOptimization.Instance;
@@ -86,12 +86,12 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         _branchName = GetBranchName();
     }
 
-    public static ITestOptimizationClient Create(string? workingDirectory, CIVisibilitySettings? settings = null)
+    public static ITestOptimizationClient Create(string? workingDirectory, TestOptimizationSettings? settings = null)
     {
         return new TestOptimizationClient(workingDirectory, settings);
     }
 
-    public static ITestOptimizationClient CreateCached(string? workingDirectory, CIVisibilitySettings? settings = null)
+    public static ITestOptimizationClient CreateCached(string? workingDirectory, TestOptimizationSettings? settings = null)
     {
         return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, settings));
     }

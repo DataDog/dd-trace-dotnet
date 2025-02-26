@@ -25,7 +25,7 @@ internal class TestOptimization : ITestOptimization
 
     private Lazy<bool> _enabledLazy;
     private int _firstInitialization = 1;
-    private CIVisibilitySettings? _settings;
+    private TestOptimizationSettings? _settings;
     private ITestOptimizationClient? _client;
     private Task? _additionalFeaturesTask;
     private ITestOptimizationTracerManagement? _tracerManagement;
@@ -69,9 +69,9 @@ internal class TestOptimization : ITestOptimization
 
     public bool Enabled => _enabledLazy.Value;
 
-    public CIVisibilitySettings Settings
+    public TestOptimizationSettings Settings
     {
-        get => LazyInitializer.EnsureInitialized(ref _settings, () => CIVisibilitySettings.FromDefaultSources())!;
+        get => LazyInitializer.EnsureInitialized(ref _settings, () => TestOptimizationSettings.FromDefaultSources())!;
         private set => _settings = value;
     }
 
@@ -233,7 +233,7 @@ internal class TestOptimization : ITestOptimization
         }
     }
 
-    public void InitializeFromRunner(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null)
+    public void InitializeFromRunner(TestOptimizationSettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null)
     {
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
         {

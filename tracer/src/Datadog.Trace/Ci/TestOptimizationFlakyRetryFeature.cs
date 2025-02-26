@@ -14,7 +14,7 @@ internal class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFe
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationFlakyRetryFeature));
 
-    private TestOptimizationFlakyRetryFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -46,6 +46,6 @@ internal class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFe
 
     public bool Enabled { get; }
 
-    public static ITestOptimizationFlakyRetryFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    public static ITestOptimizationFlakyRetryFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationFlakyRetryFeature(settings, clientSettingsResponse, testOptimizationClient);
 }

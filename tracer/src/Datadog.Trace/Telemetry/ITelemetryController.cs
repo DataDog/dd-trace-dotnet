@@ -44,7 +44,7 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Called to record ci-vis-related telemetry
         /// </summary>
-        public void RecordCiVisibilitySettings(CIVisibilitySettings settings);
+        public void RecordCiVisibilitySettings(TestOptimizationSettings settings);
 
         /// <summary>
         /// Dispose resources for sending telemetry

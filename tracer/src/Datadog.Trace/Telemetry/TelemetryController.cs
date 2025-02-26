@@ -126,7 +126,7 @@ internal class TelemetryController : ITelemetryController
         _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
     }
 
-    public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
+    public void RecordCiVisibilitySettings(TestOptimizationSettings settings)
     {
         // CI Vis records the settings _directly_ in the global config so don't need to record them again here
         _logTagBuilder.Update(settings, TestOptimization.Instance.Enabled);
@@ -386,7 +386,7 @@ internal class TelemetryController : ITelemetryController
             _isUpdateRequired = true;
         }
 
-        public void Update(CIVisibilitySettings settings, bool enabled)
+        public void Update(TestOptimizationSettings settings, bool enabled)
         {
             // We don't actually need to record these, because they're added to the global config
             // This isn't nice, as it calls the static property,

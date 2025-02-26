@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner
                     // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
                     if (enableCIVisibilityMode)
                     {
-                        var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
+                        var ciVisibilitySettings = Ci.Configuration.TestOptimizationSettings.FromDefaultSources();
                         if (ciVisibilitySettings.Agentless)
                         {
                             if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))

@@ -26,11 +26,11 @@ namespace Datadog.Trace.Ci
 {
     internal class TestOptimizationTracerManagerFactory : TracerManagerFactory
     {
-        private readonly CIVisibilitySettings _settings;
+        private readonly TestOptimizationSettings _settings;
         private readonly bool _enabledEventPlatformProxy;
         private readonly ITestOptimizationTracerManagement _testOptimizationTracerManagement;
 
-        public TestOptimizationTracerManagerFactory(CIVisibilitySettings settings, ITestOptimizationTracerManagement testOptimizationTracerManagement, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
+        public TestOptimizationTracerManagerFactory(TestOptimizationSettings settings, ITestOptimizationTracerManagement testOptimizationTracerManagement, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
         {
             _settings = settings;
             _enabledEventPlatformProxy = enabledEventPlatformProxy;

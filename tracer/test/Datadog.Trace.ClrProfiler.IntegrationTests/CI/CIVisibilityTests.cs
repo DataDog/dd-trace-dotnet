@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class CIVisibilityTests
     {
-        private static readonly ITestOptimizationTracerManagement TracerManagement = new TestOptimizationTracerManagement(CIVisibilitySettings.FromDefaultSources());
+        private static readonly ITestOptimizationTracerManagement TracerManagement = new TestOptimizationTracerManagement(TestOptimizationSettings.FromDefaultSources());
 
         public static IEnumerable<object[]> GetParserData()
         {

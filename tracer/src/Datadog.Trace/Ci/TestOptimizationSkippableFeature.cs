@@ -19,7 +19,7 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
     private readonly Task<SkippableTestsDictionary> _skippableTestsTask;
 
-    private TestOptimizationSkippableFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationSkippableFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -88,7 +88,7 @@ internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeat
 
     public bool Enabled { get; }
 
-    public static ITestOptimizationSkippableFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    public static ITestOptimizationSkippableFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationSkippableFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public void WaitForSkippableTaskToFinish()

@@ -24,7 +24,7 @@ internal sealed partial class TestOptimizationClient
     private const string SettingsType = "ci_app_test_service_libraries_settings";
     private Uri? _settingsUrl;
 
-    public static SettingsResponse CreateSettingsResponseFromCiVisibilitySettings(CIVisibilitySettings settings)
+    public static SettingsResponse CreateSettingsResponseFromCiVisibilitySettings(TestOptimizationSettings settings)
     {
         return new SettingsResponse(
             codeCoverage: settings.CodeCoverageEnabled,

@@ -16,7 +16,7 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationImpactedTestsDetectionFeature));
     private readonly Task<TestOptimizationClient.ImpactedTestsDetectionResponse> _impactedTestsDetectionFilesTask;
 
-    private TestOptimizationImpactedTestsDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -63,6 +63,6 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
     public TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse
         => _impactedTestsDetectionFilesTask.SafeGetResult();
 
-    public static ITestOptimizationImpactedTestsDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    public static ITestOptimizationImpactedTestsDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationImpactedTestsDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
 }

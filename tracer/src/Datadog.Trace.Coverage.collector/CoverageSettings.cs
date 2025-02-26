@@ -15,10 +15,10 @@ namespace Datadog.Trace.Coverage.Collector;
 /// </summary>
 internal class CoverageSettings
 {
-    public CoverageSettings(XmlElement? configurationElement, string? tracerHome, CIVisibilitySettings? ciVisibilitySettings = null)
+    public CoverageSettings(XmlElement? configurationElement, string? tracerHome, TestOptimizationSettings? ciVisibilitySettings = null)
     {
         TracerHome = tracerHome;
-        CIVisibility = ciVisibilitySettings ?? CIVisibilitySettings.FromDefaultSources();
+        TestOptimization = ciVisibilitySettings ?? TestOptimizationSettings.FromDefaultSources();
 
         if (configurationElement is not null)
         {
@@ -43,7 +43,7 @@ internal class CoverageSettings
     }
 
     public CoverageSettings(XmlElement? configurationElement)
-        : this(configurationElement, Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME"), CIVisibilitySettings.FromDefaultSources())
+        : this(configurationElement, Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME"), TestOptimizationSettings.FromDefaultSources())
     {
     }
 
@@ -70,7 +70,7 @@ internal class CoverageSettings
     /// <summary>
     /// Gets the CI Visibility settings
     /// </summary>
-    public CIVisibilitySettings CIVisibility { get; }
+    public TestOptimizationSettings TestOptimization { get; }
 
     private static void GetStringArrayFromXmlElement(XmlElement? xmlElement, ref IReadOnlyList<string> elements, Func<string?, bool>? validator = null)
     {

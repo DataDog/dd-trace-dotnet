@@ -34,7 +34,7 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
+        public void RecordCiVisibilitySettings(TestOptimizationSettings settings)
         {
         }
 

@@ -18,11 +18,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads;
 /// </summary>
 internal abstract class EventPlatformPayload
 {
-    private readonly CIVisibilitySettings _settings;
+    private readonly TestOptimizationSettings _settings;
     private bool? _useGzip;
     private Uri? _url;
 
-    protected EventPlatformPayload(CIVisibilitySettings settings)
+    protected EventPlatformPayload(TestOptimizationSettings settings)
     {
         if (settings is null)
         {
@@ -163,7 +163,7 @@ internal abstract class EventPlatformPayload
                     break;
             }
 
-            var tracerManagement = TestOptimization.Instance?.TracerManagement;
+            var tracerManagement = TestOptimization.Instance.TracerManagement;
             if (tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V4)
             {
                 builder.Path = $"/evp_proxy/v4/{EventPlatformPath}";

@@ -21,11 +21,11 @@ namespace Datadog.Trace.Ci;
 internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagement
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationTracerManagement));
-    private readonly CIVisibilitySettings _settings;
+    private readonly TestOptimizationSettings _settings;
 
     public TestOptimizationTracerManagement(
-        CIVisibilitySettings settings,
-        Func<CIVisibilitySettings, IDiscoveryService>? getDiscoveryServiceFunc,
+        TestOptimizationSettings settings,
+        Func<TestOptimizationSettings, IDiscoveryService>? getDiscoveryServiceFunc,
         bool? useLockedTracerManager)
     {
         if (settings is null)
@@ -69,7 +69,7 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
     }
 
     public TestOptimizationTracerManagement(
-        CIVisibilitySettings settings,
+        TestOptimizationSettings settings,
         EventPlatformProxySupport eventPlatformProxySupport = EventPlatformProxySupport.None,
         bool useLockedTracerManager = true)
     {
