@@ -1,4 +1,4 @@
-// <copyright file="CiVisibilityTracerManagement.cs" company="Datadog">
+// <copyright file="TestOptimizationTracerManagement.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,12 +18,12 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
+internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagement
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilityTracerManagement));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationTracerManagement));
     private readonly CIVisibilitySettings _settings;
 
-    public CiVisibilityTracerManagement(
+    public TestOptimizationTracerManagement(
         CIVisibilitySettings settings,
         Func<CIVisibilitySettings, IDiscoveryService>? getDiscoveryServiceFunc,
         bool? useLockedTracerManager)
@@ -65,10 +65,10 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
             EventPlatformProxySupport = EventPlatformProxySupport.None;
         }
 
-        UseLockedTracerManager = useLockedTracerManager ?? CiVisibility.DefaultUseLockedTracerManager;
+        UseLockedTracerManager = useLockedTracerManager ?? TestOptimization.DefaultUseLockedTracerManager;
     }
 
-    public CiVisibilityTracerManagement(
+    public TestOptimizationTracerManagement(
         CIVisibilitySettings settings,
         EventPlatformProxySupport eventPlatformProxySupport = EventPlatformProxySupport.None,
         bool useLockedTracerManager = true)
@@ -94,11 +94,11 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
 
     public IDiscoveryService DiscoveryService { get; }
 
-    public CITracerManager? Manager
+    public TestOptimizationTracerManager? Manager
     {
         get
         {
-            if (Tracer.Instance.TracerManager is CITracerManager ciTracerManager)
+            if (Tracer.Instance.TracerManager is TestOptimizationTracerManager ciTracerManager)
             {
                 return ciTracerManager;
             }
@@ -114,11 +114,11 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
             return EventPlatformProxySupport.None;
         }
 
-        Log.Debug("CiVisibilityTracerManagement: Waiting for agent configuration...");
+        Log.Debug("TestOptimizationTracerManagement: Waiting for agent configuration...");
         var agentConfiguration = new DiscoveryAgentConfigurationCallback(discoveryService).WaitAndGet(5_000);
         if (agentConfiguration is null)
         {
-            Log.Warning("CiVisibilityTracerManagement: Discovery service could not retrieve the agent configuration after 5 seconds.");
+            Log.Warning("TestOptimizationTracerManagement: Discovery service could not retrieve the agent configuration after 5 seconds.");
             return EventPlatformProxySupport.None;
         }
 
@@ -132,21 +132,21 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
         {
             if (eventPlatformProxyEndpoint?.Contains("/v2") == true)
             {
-                Log.Information("CiVisibilityTracerManagement: Event platform proxy V2 supported by agent.");
+                Log.Information("TestOptimizationTracerManagement: Event platform proxy V2 supported by agent.");
                 return EventPlatformProxySupport.V2;
             }
 
             if (eventPlatformProxyEndpoint?.Contains("/v4") == true)
             {
-                Log.Information("CiVisibilityTracerManagement: Event platform proxy V4 supported by agent.");
+                Log.Information("TestOptimizationTracerManagement: Event platform proxy V4 supported by agent.");
                 return EventPlatformProxySupport.V4;
             }
 
-            Log.Information("CiVisibilityTracerManagement: EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
+            Log.Information("TestOptimizationTracerManagement: EventPlatformProxyEndpoint: '{EVPEndpoint}' not supported.", eventPlatformProxyEndpoint);
         }
         else
         {
-            Log.Information("CiVisibilityTracerManagement: Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
+            Log.Information("TestOptimizationTracerManagement: Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
         }
 
         return EventPlatformProxySupport.None;
@@ -174,14 +174,14 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
         else
         {
 #if NETCOREAPP
-            Log.Information("CiVisibilityTracerManagement: Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+            Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
             factory = new HttpClientRequestFactory(
                 exporterSettings.AgentUri,
                 AgentHttpHeaderNames.DefaultHeaders,
                 handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
                 timeout: timeout);
 #else
-            Log.Information("CiVisibilityTracerManagement: Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+            Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
             factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
@@ -197,7 +197,7 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
                 if (proxyHttpsUriBuilder.Scheme == "https")
                 {
                     // HTTPS proxy is not supported by .NET BCL
-                    Log.Error("CiVisibilityTracerManagement: HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
+                    Log.Error("TestOptimizationTracerManagement: HTTPS proxy is not supported. ({ProxyHttpsUriBuilder})", proxyHttpsUriBuilder);
                     return factory;
                 }
 
@@ -207,7 +207,7 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
                     credential = new NetworkCredential(userName, password);
                 }
 
-                Log.Information("CiVisibilityTracerManagement: Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                Log.Information("TestOptimizationTracerManagement: Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
                 factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
             }
         }
@@ -269,7 +269,7 @@ internal class CiVisibilityTracerManagement : ICiVisibilityTracerManagement
             _agentConfiguration = agentConfiguration;
             _manualResetEventSlim.Set();
             _discoveryService.RemoveSubscription(_callback);
-            Log.Debug("CiVisibilityTracerManagement: Agent configuration received.");
+            Log.Debug("TestOptimizationTracerManagement: Agent configuration received.");
         }
     }
 }

@@ -120,7 +120,7 @@ internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             isSpan = true;
         }
 
-        var correlationId = value.Type is SpanTypes.Test or SpanTypes.Browser ? CiVisibility.Instance.SkippableFeature?.GetCorrelationId() : null;
+        var correlationId = value.Type is SpanTypes.Test or SpanTypes.Browser ? TestOptimization.Instance.SkippableFeature?.GetCorrelationId() : null;
         if (correlationId is not null)
         {
             len++;

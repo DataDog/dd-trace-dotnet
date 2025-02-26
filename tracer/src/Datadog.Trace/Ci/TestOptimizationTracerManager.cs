@@ -1,4 +1,4 @@
-// <copyright file="CITracerManager.cs" company="Datadog">
+// <copyright file="TestOptimizationTracerManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,11 +24,11 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Ci
 {
-    internal class CITracerManager : TracerManager
+    internal class TestOptimizationTracerManager : TracerManager
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestOptimizationTracerManager>();
 
-        public CITracerManager(
+        public TestOptimizationTracerManager(
             TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Ci
             ((IEventWriter)AgentWriter).WriteEvent(@event);
         }
 
-        internal class LockedManager : CITracerManager, ILockedTracer
+        internal class LockedManager : TestOptimizationTracerManager, ILockedTracer
         {
             public LockedManager(
                 TracerSettings settings,

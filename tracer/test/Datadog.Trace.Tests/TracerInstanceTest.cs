@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tests
             Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
-            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CiVisibility.Instance.Settings, CiVisibility.Instance.TracerManagement!, false)));
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new TestOptimizationTracerManagerFactory(TestOptimization.Instance.Settings, TestOptimization.Instance.TracerManagement!, false)));
         }
 
         [Fact]

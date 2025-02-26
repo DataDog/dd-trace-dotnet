@@ -124,7 +124,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
         }
         catch (Exception ex)
         {
-            CiVisibility.Instance.Log.Warning(ex, "Error loading the github-event.json");
+            TestOptimization.Instance.Log.Warning(ex, "Error loading the github-event.json");
         }
     }
 }

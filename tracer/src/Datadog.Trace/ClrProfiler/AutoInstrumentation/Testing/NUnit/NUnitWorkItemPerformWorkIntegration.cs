@@ -53,7 +53,7 @@ public static class NUnitWorkItemPerformWorkIntegration
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                 var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                CiVisibility.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
+                TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
                 var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
                 NUnitIntegration.SetTestModuleTo(item, newModule);

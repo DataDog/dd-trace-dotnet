@@ -35,7 +35,7 @@ internal static class NUnitIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CiVisibility.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
     {
@@ -164,7 +164,7 @@ internal static class NUnitIntegration
         isUnskippable = false;
         isForcedRun = false;
 
-        if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled != true)
+        if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
         }
@@ -277,7 +277,7 @@ internal static class NUnitIntegration
         if (traits?.Count > 0)
         {
             // Unskippable test
-            if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
                 test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
@@ -290,7 +290,7 @@ internal static class NUnitIntegration
         else
         {
             // Unskippable test
-            if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
                 test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");

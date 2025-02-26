@@ -16,7 +16,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 internal static class CoverageUtils
 {
-    internal static readonly IDatadogLogger Log = CiVisibility.Instance.Log;
+    internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
 
     public static bool TryCombineAndGetTotalCoverage(string inputFolder, string outputFile)
     {

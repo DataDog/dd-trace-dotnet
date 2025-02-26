@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 
 internal static class Common
 {
-    internal static readonly IDatadogLogger Log = CiVisibility.Instance.Log;
+    internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
 
     internal static string GetParametersValueData(object? paramValue)
     {
@@ -59,7 +59,7 @@ internal static class Common
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            var skippableTests = CiVisibility.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName) ?? [];
+            var skippableTests = TestOptimization.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName) ?? [];
             if (skippableTests.Count > 0)
             {
                 foreach (var skippableTest in skippableTests)
@@ -123,7 +123,7 @@ internal static class Common
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
     {
         int numberOfExecutions;
-        var slowRetriesSettings = CiVisibility.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
+        var slowRetriesSettings = TestOptimization.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
         if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
         {
             numberOfExecutions = slowRetriesSettings.FiveSeconds.Value;
@@ -156,7 +156,7 @@ internal static class Common
     internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
     {
         // Early flake detection flags
-        var ciVisibility = CiVisibility.Instance;
+        var ciVisibility = TestOptimization.Instance;
         if (ciVisibility.Settings.EarlyFlakeDetectionEnabled == true)
         {
             var isTestNew = !ciVisibility.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
@@ -177,7 +177,7 @@ internal static class Common
 
     internal static void SetFlakyRetryTags(Test test, bool isRetry)
     {
-        if (CiVisibility.Instance.Settings.FlakyRetryEnabled == true && isRetry)
+        if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true && isRetry)
         {
             test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
         }
@@ -185,7 +185,7 @@ internal static class Common
 
     internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)
     {
-        if (tTestCases > 0 && CiVisibility.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
+        if (tTestCases > 0 && TestOptimization.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
         {
             if (((double)nTestCases * 100 / (double)tTestCases) > faultySessionThreshold)
             {

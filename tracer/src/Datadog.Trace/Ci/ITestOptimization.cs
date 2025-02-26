@@ -1,4 +1,4 @@
-// <copyright file="ICiVisibility.cs" company="Datadog">
+// <copyright file="ITestOptimization.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal interface ICiVisibility
+internal interface ITestOptimization
 {
     IDatadogLogger Log { get; }
 
@@ -24,17 +24,17 @@ internal interface ICiVisibility
 
     ITestOptimizationClient Client { get; }
 
-    ICiVisibilityHostInfo HostInfo { get; }
+    ITestOptimizationHostInfo HostInfo { get; }
 
-    ICiVisibilityTracerManagement? TracerManagement { get; }
+    ITestOptimizationTracerManagement? TracerManagement { get; }
 
-    ICiVisibilityEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature { get; }
+    ITestOptimizationEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature { get; }
 
-    ICiVisibilitySkippableFeature? SkippableFeature { get; }
+    ITestOptimizationSkippableFeature? SkippableFeature { get; }
 
-    ICiVisibilityImpactedTestsDetectionFeature? ImpactedTestsDetectionFeature { get; }
+    ITestOptimizationImpactedTestsDetectionFeature? ImpactedTestsDetectionFeature { get; }
 
-    ICiVisibilityFlakyRetryFeature? FlakyRetryFeature { get; }
+    ITestOptimizationFlakyRetryFeature? FlakyRetryFeature { get; }
 
     void Initialize();
 

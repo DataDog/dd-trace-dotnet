@@ -1,4 +1,4 @@
-// <copyright file="CiVisibilitySkippableFeature.cs" company="Datadog">
+// <copyright file="TestOptimizationSkippableFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,12 +14,12 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
+internal class TestOptimizationSkippableFeature : ITestOptimizationSkippableFeature
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilitySkippableFeature));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationSkippableFeature));
     private readonly Task<SkippableTestsDictionary> _skippableTestsTask;
 
-    private CiVisibilitySkippableFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationSkippableFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -33,19 +33,19 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
 
         if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
         {
-            Log.Information("CiVisibilitySkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
+            Log.Information("TestOptimizationSkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
             settings.SetTestsSkippingEnabled(clientSettingsResponse.TestsSkipping.Value);
         }
 
         if (settings.TestsSkippingEnabled == true)
         {
-            Log.Information("CiVisibilitySkippableFeature: Test skipping is enabled.");
+            Log.Information("TestOptimizationSkippableFeature: Test skipping is enabled.");
             _skippableTestsTask = Task.Run(() => InternalGetSkippableTestsAsync(testOptimizationClient));
             Enabled = true;
         }
         else
         {
-            Log.Information("CiVisibilitySkippableFeature: Test skipping is disabled.");
+            Log.Information("TestOptimizationSkippableFeature: Test skipping is disabled.");
             _skippableTestsTask = Task.FromResult(new SkippableTestsDictionary());
             Enabled = false;
         }
@@ -58,9 +58,9 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
             // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
             await testOptimizationClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
 
-            Log.Debug("CiVisibilitySkippableFeature: Getting skippable tests...");
+            Log.Debug("TestOptimizationSkippableFeature: Getting skippable tests...");
             var skippeableTests = await testOptimizationClient.GetSkippableTestsAsync().ConfigureAwait(false);
-            Log.Information<string?, int>("CiVisibilitySkippableFeature: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Count);
+            Log.Information<string?, int>("TestOptimizationSkippableFeature: CorrelationId = {CorrelationId}, SkippableTests = {Length}.", skippeableTests.CorrelationId, skippeableTests.Tests.Count);
 
             var skippableTestsBySuiteAndName = new SkippableTestsDictionary();
             foreach (var item in skippeableTests.Tests)
@@ -81,15 +81,15 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
             }
 
             skippableTestsBySuiteAndName.CorrelationId = skippeableTests.CorrelationId;
-            Log.Debug("CiVisibilitySkippableFeature: SkippableTests dictionary has been built.");
+            Log.Debug("TestOptimizationSkippableFeature: SkippableTests dictionary has been built.");
             return skippableTestsBySuiteAndName;
         }
     }
 
     public bool Enabled { get; }
 
-    public static ICiVisibilitySkippableFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
-        => new CiVisibilitySkippableFeature(settings, clientSettingsResponse, testOptimizationClient);
+    public static ITestOptimizationSkippableFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new TestOptimizationSkippableFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public void WaitForSkippableTaskToFinish()
     {
@@ -99,7 +99,7 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "CiVisibilitySkippableFeature: Error waiting for skippable tests task to finish.");
+            Log.Error(ex, "TestOptimizationSkippableFeature: Error waiting for skippable tests task to finish.");
         }
     }
 

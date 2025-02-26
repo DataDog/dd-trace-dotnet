@@ -254,7 +254,7 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                var ciVisibility = CiVisibility.Instance;
+                var ciVisibility = TestOptimization.Instance;
                 if (ciVisibility.Enabled)
                 {
                     ciVisibility.Initialize();

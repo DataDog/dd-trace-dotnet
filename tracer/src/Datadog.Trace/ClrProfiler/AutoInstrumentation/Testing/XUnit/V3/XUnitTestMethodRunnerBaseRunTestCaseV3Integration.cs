@@ -45,7 +45,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        Interlocked.CompareExchange(ref _totalRetries, CiVisibility.Instance.Settings.TotalFlakyRetryCount, -1);
+        Interlocked.CompareExchange(ref _totalRetries, TestOptimization.Instance.Settings.TotalFlakyRetryCount, -1);
 
         var testcase = testcaseOriginal.DuckCast<IXunitTestCaseV3>()!;
         var testRunnerData = new TestRunnerStruct
@@ -81,7 +81,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        if (CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled != true && CiVisibility.Instance.Settings.FlakyRetryEnabled != true)
+        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true && TestOptimization.Instance.Settings.FlakyRetryEnabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -94,7 +94,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             retryMetadata = retryMessageBus.GetMetadata(testcase.UniqueID);
             if (retryMetadata.ExecutionIndex == 0)
             {
-                retryMetadata.FlakyRetryEnabled = CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled != true && CiVisibility.Instance.Settings.FlakyRetryEnabled == true;
+                retryMetadata.FlakyRetryEnabled = TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true && TestOptimization.Instance.Settings.FlakyRetryEnabled == true;
             }
         }
 
@@ -144,7 +144,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                 if (isFlakyRetryEnabled)
                 {
-                    retryMetadata.TotalExecutions = CiVisibility.Instance.Settings.FlakyRetryCount + 1;
+                    retryMetadata.TotalExecutions = TestOptimization.Instance.Settings.FlakyRetryCount + 1;
                 }
                 else
                 {
@@ -173,7 +173,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     }
                     else if (remainingTotalRetries < 1)
                     {
-                        Common.Log.Debug<int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", CiVisibility.Instance.Settings.TotalFlakyRetryCount);
+                        Common.Log.Debug<int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", TestOptimization.Instance.Settings.TotalFlakyRetryCount);
                         doRetry = false;
                     }
                 }

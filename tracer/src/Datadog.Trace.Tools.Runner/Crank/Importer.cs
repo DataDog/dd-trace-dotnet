@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                 string jsonContent = File.ReadAllText(jsonFilePath);
                 var result = JsonConvert.DeserializeObject<Models.ExecutionResult>(jsonContent);
 
-                var ciVisibility = CiVisibility.Instance;
+                var ciVisibility = TestOptimization.Instance;
                 if (result?.JobResults?.Jobs?.Count > 0)
                 {
                     var fileName = Path.GetFileName(jsonFilePath);

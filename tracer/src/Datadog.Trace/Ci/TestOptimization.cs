@@ -1,4 +1,4 @@
-// <copyright file="CiVisibility.cs" company="Datadog">
+// <copyright file="TestOptimization.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,32 +19,32 @@ using TaskExtensions = Datadog.Trace.ExtensionMethods.TaskExtensions;
 
 namespace Datadog.Trace.Ci;
 
-internal class CiVisibility : ICiVisibility
+internal class TestOptimization : ITestOptimization
 {
-    private static ICiVisibility? _instance;
+    private static ITestOptimization? _instance;
 
     private Lazy<bool> _enabledLazy;
     private int _firstInitialization = 1;
     private CIVisibilitySettings? _settings;
     private ITestOptimizationClient? _client;
     private Task? _additionalFeaturesTask;
-    private ICiVisibilityTracerManagement? _tracerManagement;
-    private ICiVisibilityHostInfo? _hostInfo;
-    private ICiVisibilityEarlyFlakeDetectionFeature? _earlyFlakeDetectionFeature;
-    private ICiVisibilitySkippableFeature? _skippableFeature;
-    private ICiVisibilityImpactedTestsDetectionFeature? _impactedTestsDetectionFeature;
-    private ICiVisibilityFlakyRetryFeature? _flakyRetryFeature;
+    private ITestOptimizationTracerManagement? _tracerManagement;
+    private ITestOptimizationHostInfo? _hostInfo;
+    private ITestOptimizationEarlyFlakeDetectionFeature? _earlyFlakeDetectionFeature;
+    private ITestOptimizationSkippableFeature? _skippableFeature;
+    private ITestOptimizationImpactedTestsDetectionFeature? _impactedTestsDetectionFeature;
+    private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
 
-    public CiVisibility()
+    public TestOptimization()
     {
         _enabledLazy = new Lazy<bool>(InternalEnabled, true);
-        Log = DatadogLogging.GetLoggerFor<CiVisibility>();
+        Log = DatadogLogging.GetLoggerFor<TestOptimization>();
         DefaultUseLockedTracerManager = true;
     }
 
-    public static ICiVisibility Instance
+    public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new CiVisibility())!;
+        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization())!;
         internal set => _instance = value;
     }
 
@@ -81,7 +81,7 @@ internal class CiVisibility : ICiVisibility
         private set => _client = value;
     }
 
-    public ICiVisibilityHostInfo HostInfo
+    public ITestOptimizationHostInfo HostInfo
     {
         get
         {
@@ -90,12 +90,12 @@ internal class CiVisibility : ICiVisibility
                 _additionalFeaturesTask?.SafeWait();
             }
 
-            return _hostInfo ??= new CiVisibilityHostInfo();
+            return _hostInfo ??= new TestOptimizationHostInfo();
         }
         private set => _hostInfo = value;
     }
 
-    public ICiVisibilityTracerManagement? TracerManagement
+    public ITestOptimizationTracerManagement? TracerManagement
     {
         get
         {
@@ -109,7 +109,7 @@ internal class CiVisibility : ICiVisibility
         private set => _tracerManagement = value;
     }
 
-    public ICiVisibilityEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature
+    public ITestOptimizationEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature
     {
         get
         {
@@ -123,7 +123,7 @@ internal class CiVisibility : ICiVisibility
         private set => _earlyFlakeDetectionFeature = value;
     }
 
-    public ICiVisibilitySkippableFeature? SkippableFeature
+    public ITestOptimizationSkippableFeature? SkippableFeature
     {
         get
         {
@@ -137,7 +137,7 @@ internal class CiVisibility : ICiVisibility
         private set => _skippableFeature = value;
     }
 
-    public ICiVisibilityImpactedTestsDetectionFeature? ImpactedTestsDetectionFeature
+    public ITestOptimizationImpactedTestsDetectionFeature? ImpactedTestsDetectionFeature
     {
         get
         {
@@ -151,7 +151,7 @@ internal class CiVisibility : ICiVisibility
         private set => _impactedTestsDetectionFeature = value;
     }
 
-    public ICiVisibilityFlakyRetryFeature? FlakyRetryFeature
+    public ITestOptimizationFlakyRetryFeature? FlakyRetryFeature
     {
         get
         {
@@ -173,11 +173,11 @@ internal class CiVisibility : ICiVisibility
             return;
         }
 
-        Log.Information("CiVisibility: Initializing CI Visibility");
+        Log.Information("TestOptimization: Initializing CI Visibility");
         var settings = Settings;
 
         // In case we are running using the agent, check if the event platform proxy is supported.
-        TracerManagement = new CiVisibilityTracerManagement(
+        TracerManagement = new TestOptimizationTracerManagement(
             settings: Settings,
             getDiscoveryServiceFunc: static s => DiscoveryService.Create(
                 s.TracerSettings.Exporter,
@@ -190,22 +190,22 @@ internal class CiVisibility : ICiVisibility
         var eventPlatformProxyEnabled = TracerManagement.EventPlatformProxySupport != EventPlatformProxySupport.None;
         if (eventPlatformProxyEnabled)
         {
-            Log.Information("CiVisibility: EVP Proxy was enabled with mode: {Mode}", TracerManagement.EventPlatformProxySupport);
+            Log.Information("TestOptimization: EVP Proxy was enabled with mode: {Mode}", TracerManagement.EventPlatformProxySupport);
         }
 
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
         var tracerSettings = settings.TracerSettings;
-        Log.Debug("CiVisibility: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-        Log.Debug("CiVisibility: Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
+        Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
+        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
         // Initialize Tracer
-        Log.Information("CiVisibility: Initialize Test Tracer instance");
+        Log.Information("TestOptimization: Initialize Test Tracer instance");
         TracerManager.ReplaceGlobalManager(
             tracerSettings,
-            new CITracerManagerFactory(
+            new TestOptimizationTracerManagerFactory(
                 settings: settings,
-                ciVisibilityTracerManagement: TracerManagement,
+                testOptimizationTracerManagement: TracerManagement,
                 enabledEventPlatformProxy: eventPlatformProxyEnabled));
         _ = Tracer.Instance;
 
@@ -225,11 +225,11 @@ internal class CiVisibility : ICiVisibility
         }
         else if (settings.IntelligentTestRunnerEnabled)
         {
-            Log.Warning("CiVisibility: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            Log.Warning("TestOptimization: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
         }
         else if (settings.GitUploadEnabled != false)
         {
-            Log.Warning("CiVisibility: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            Log.Warning("TestOptimization: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
         }
     }
 
@@ -241,25 +241,25 @@ internal class CiVisibility : ICiVisibility
             return;
         }
 
-        Log.Information("CiVisibility: Initializing CI Visibility from dd-trace / runner");
+        Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner");
         Settings = settings;
         LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
         var tracerSettings = settings.TracerSettings;
-        Log.Debug("CiVisibility: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-        Log.Debug("CiVisibility: Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
+        Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
+        Log.Debug("TestOptimization: Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
         // Initialize Tracer
-        Log.Information("CiVisibility: Initialize Test Tracer instance");
-        TracerManagement = new CiVisibilityTracerManagement(
+        Log.Information("TestOptimization: Initialize Test Tracer instance");
+        TracerManagement = new TestOptimizationTracerManagement(
             settings: Settings,
             getDiscoveryServiceFunc: _ => discoveryService,
             useLockedTracerManager: useLockedTracerManager ?? DefaultUseLockedTracerManager);
         TracerManager.ReplaceGlobalManager(
             tracerSettings,
-            new CITracerManagerFactory(
+            new TestOptimizationTracerManagerFactory(
                 settings: settings,
-                ciVisibilityTracerManagement: TracerManagement,
+                testOptimizationTracerManagement: TracerManagement,
                 enabledEventPlatformProxy: eventPlatformProxyEnabled));
         _ = Tracer.Instance;
 
@@ -272,10 +272,10 @@ internal class CiVisibility : ICiVisibility
         // Initialize features
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromCiVisibilitySettings(settings);
         var client = new NoopTestOptimizationClient();
-        FlakyRetryFeature = CiVisibilityFlakyRetryFeature.Create(settings, remoteSettings, client);
-        EarlyFlakeDetectionFeature = CiVisibilityEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
-        ImpactedTestsDetectionFeature = CiVisibilityImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
-        SkippableFeature = CiVisibilitySkippableFeature.Create(settings, remoteSettings, client);
+        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+        ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
+        SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
     }
 
     public void InitializeFromManualInstrumentation()
@@ -301,7 +301,7 @@ internal class CiVisibility : ICiVisibility
             // We have to ensure the flush of the buffer after we finish the tests of an assembly.
             // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
             // So the last spans in buffer aren't send to the agent.
-            Log.Debug("CiVisibility: Integration flushing spans.");
+            Log.Debug("TestOptimization: Integration flushing spans.");
 
             if (Settings.Logs)
             {
@@ -315,11 +315,11 @@ internal class CiVisibility : ICiVisibility
                 await Tracer.Instance.FlushAsync().ConfigureAwait(false);
             }
 
-            Log.Debug("CiVisibility: Integration flushed.");
+            Log.Debug("TestOptimization: Integration flushed.");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "CiVisibility: Exception occurred when flushing spans.");
+            Log.Error(ex, "TestOptimization: Exception occurred when flushing spans.");
         }
     }
 
@@ -338,7 +338,7 @@ internal class CiVisibility : ICiVisibility
             return;
         }
 
-        Log.Information("CiVisibility: CI Visibility is exiting.");
+        Log.Information("TestOptimization: CI Visibility is exiting.");
         LifetimeManager.Instance.RunShutdownTasks();
 
         // If the continuous profiler is attached we ensure to flush the remaining profiles before closing.
@@ -351,7 +351,7 @@ internal class CiVisibility : ICiVisibility
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "CiVisibility: Error flushing the profiler.");
+            Log.Error(ex, "TestOptimization: Error flushing the profiler.");
         }
 
         Interlocked.Exchange(ref _firstInitialization, 1);
@@ -379,12 +379,12 @@ internal class CiVisibility : ICiVisibility
         {
             if (enabled)
             {
-                Log.Information("CiVisibility: CI Visibility Enabled by Configuration");
+                Log.Information("TestOptimization: CI Visibility Enabled by Configuration");
                 return true;
             }
 
             // explicitly disabled
-            Log.Information("CiVisibility: CI Visibility Disabled by Configuration");
+            Log.Information("TestOptimization: CI Visibility Disabled by Configuration");
             return false;
         }
 
@@ -395,7 +395,7 @@ internal class CiVisibility : ICiVisibility
             domainName.StartsWith("nunit", StringComparison.Ordinal) ||
             domainName.StartsWith("MSBuild", StringComparison.Ordinal))
         {
-            Log.Information("CiVisibility: CI Visibility Enabled by Domain name whitelist");
+            Log.Information("TestOptimization: CI Visibility Enabled by Domain name whitelist");
             PropagateCiVisibilityEnvironmentVariable();
             return true;
         }
@@ -404,7 +404,7 @@ internal class CiVisibility : ICiVisibility
         var processName = GetProcessName();
         if (processName.StartsWith("testhost.", StringComparison.Ordinal))
         {
-            Log.Information("CiVisibility: CI Visibility Enabled by Process name whitelist");
+            Log.Information("TestOptimization: CI Visibility Enabled by Process name whitelist");
             PropagateCiVisibilityEnvironmentVariable();
             return true;
         }
@@ -432,7 +432,7 @@ internal class CiVisibility : ICiVisibility
             }
             catch (Exception exception)
             {
-                Log.Warning(exception, "CiVisibility: Error getting current process name when checking CI Visibility status");
+                Log.Warning(exception, "TestOptimization: Error getting current process name when checking CI Visibility status");
             }
 
             return string.Empty;
@@ -492,7 +492,7 @@ internal class CiVisibility : ICiVisibility
     {
         try
         {
-            Log.Information("CiVisibility: Initializing additional features.");
+            Log.Information("TestOptimization: Initializing additional features.");
             var settings = Settings;
             var client = Client;
 
@@ -514,21 +514,21 @@ internal class CiVisibility : ICiVisibility
                 // we check if the backend require the git metadata first
                 if (remoteSettings.RequireGit == true && uploadRepositoryChangesTask is not null)
                 {
-                    Log.Debug("CiVisibility: Require git received, awaiting for the git repository upload.");
+                    Log.Debug("TestOptimization: Require git received, awaiting for the git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
 
-                    Log.Debug("CiVisibility: Calling the configuration api again.");
+                    Log.Debug("TestOptimization: Calling the configuration api again.");
                     remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                 }
 
-                FlakyRetryFeature = CiVisibilityFlakyRetryFeature.Create(settings, remoteSettings, client);
-                EarlyFlakeDetectionFeature = CiVisibilityEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
-                ImpactedTestsDetectionFeature = CiVisibilityImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
-                SkippableFeature = CiVisibilitySkippableFeature.Create(settings, remoteSettings, client);
+                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+                ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
+                SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
 
                 if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
                 {
-                    Log.Information("CiVisibility: Code Coverage has been changed to {Value} by settings api.", remoteSettings.CodeCoverage.Value);
+                    Log.Information("TestOptimization: Code Coverage has been changed to {Value} by settings api.", remoteSettings.CodeCoverage.Value);
                     settings.SetCodeCoverageEnabled(remoteSettings.CodeCoverage.Value);
                 }
             }
@@ -542,17 +542,17 @@ internal class CiVisibility : ICiVisibility
                 }
 
                 var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromCiVisibilitySettings(settings);
-                FlakyRetryFeature = CiVisibilityFlakyRetryFeature.Create(settings, remoteSettings, client);
-                EarlyFlakeDetectionFeature = CiVisibilityEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
-                ImpactedTestsDetectionFeature = CiVisibilityImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
-                SkippableFeature = CiVisibilitySkippableFeature.Create(settings, remoteSettings, client);
+                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+                ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
+                SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
             }
 
-            Log.Information("CiVisibility: Additional features intialized.");
+            Log.Information("TestOptimization: Additional features intialized.");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "CiVisibility: Error initializing additional features.");
+            Log.Error(ex, "TestOptimization: Error initializing additional features.");
         }
     }
 
@@ -564,7 +564,7 @@ internal class CiVisibility : ICiVisibility
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "CiVisibility: Error uploading repository git metadata.");
+            Log.Error(ex, "TestOptimization: Error uploading repository git metadata.");
         }
     }
 }

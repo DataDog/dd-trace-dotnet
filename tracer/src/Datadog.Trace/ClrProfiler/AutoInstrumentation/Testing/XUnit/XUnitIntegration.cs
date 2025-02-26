@@ -23,7 +23,7 @@ internal static class XUnitIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CiVisibility.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, TestCaseMetadata? testCaseMetadata = null)
     {
@@ -76,7 +76,7 @@ internal static class XUnitIntegration
         if (runnerInstance.TestCase.Traits is { } traits)
         {
             // Unskippable tests support
-            if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
                 test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
@@ -86,7 +86,7 @@ internal static class XUnitIntegration
 
             test.SetTraits(traits);
         }
-        else if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled)
+        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests support
             test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
@@ -94,9 +94,9 @@ internal static class XUnitIntegration
         }
 
         // Early flake detection flags
-        if (CiVisibility.Instance.Settings.EarlyFlakeDetectionEnabled == true)
+        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled == true)
         {
-            var testIsNew = !CiVisibility.Instance.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
+            var testIsNew = !TestOptimization.Instance.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
             if (testIsNew)
             {
                 test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
@@ -127,7 +127,7 @@ internal static class XUnitIntegration
         }
 
         // Flaky retries
-        if (CiVisibility.Instance.Settings.FlakyRetryEnabled == true)
+        if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true)
         {
             if (testCaseMetadata is { ExecutionIndex: > 0 })
             {
@@ -190,7 +190,7 @@ internal static class XUnitIntegration
         }
         catch (Exception ex)
         {
-            CiVisibility.Instance.Log.Warning(ex, "Error finishing test scope");
+            TestOptimization.Instance.Log.Warning(ex, "Error finishing test scope");
             test.Close(TestStatus.Pass);
         }
     }
@@ -200,7 +200,7 @@ internal static class XUnitIntegration
         isUnskippable = false;
         isForcedRun = false;
 
-        if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled != true)
+        if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
         }

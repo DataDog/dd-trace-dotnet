@@ -39,7 +39,7 @@ public sealed class TestModule
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private static readonly HashSet<TestModule> OpenedTestModules = new();
 
-    private readonly ICiVisibility _ciVisibility;
+    private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly TestSession? _fakeSession;
@@ -54,8 +54,8 @@ public sealed class TestModule
     internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
-        _ciVisibility = CiVisibility.Instance;
-        _ciVisibility.InitializeFromManualInstrumentation();
+        _testOptimization = TestOptimization.Instance;
+        _testOptimization.InitializeFromManualInstrumentation();
 
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -103,7 +103,7 @@ public sealed class TestModule
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = _ciVisibility.HostInfo.GetOperatingSystemVersion(),
+                OSVersion = _testOptimization.HostInfo.GetOperatingSystemVersion(),
                 CiEnvVars = sessionSpanTags.CiEnvVars,
                 SessionId = sessionSpanTags.SessionId,
                 Command = sessionSpanTags.Command,
@@ -125,7 +125,7 @@ public sealed class TestModule
                 RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
-                OSVersion = _ciVisibility.HostInfo.GetOperatingSystemVersion(),
+                OSVersion = _testOptimization.HostInfo.GetOperatingSystemVersion(),
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
             };
 
@@ -152,7 +152,7 @@ public sealed class TestModule
             }
             else
             {
-                _ciVisibility.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
+                _testOptimization.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
                 _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
@@ -160,7 +160,7 @@ public sealed class TestModule
                     tags.Command = fakeSessionTags.Command;
                     tags.WorkingDirectory = fakeSessionTags.WorkingDirectory;
 
-                    if (_ciVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+                    if (_testOptimization.Settings.EarlyFlakeDetectionEnabled == true)
                     {
                         fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
                     }
@@ -169,7 +169,7 @@ public sealed class TestModule
         }
 
         // Check if Intelligent Test Runner has skippable tests and set the flag according to that
-        tags.TestsSkipped = _ciVisibility.SkippableFeature?.HasSkippableTests() == true ? "true" : "false";
+        tags.TestsSkipped = _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false";
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
@@ -191,7 +191,7 @@ public sealed class TestModule
             OpenedTestModules.Add(this);
         }
 
-        _ciVisibility.Log.Debug("### Test Module Created: {Name}", name);
+        _testOptimization.Log.Debug("### Test Module Created: {Name}", name);
 
         if (startDate is null)
         {
@@ -372,8 +372,8 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            _ciVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
-            _ciVisibility.Flush();
+            _testOptimization.Log.Debug("### Test Module Flushing after close: {Name}", Name);
+            _testOptimization.Flush();
         }
     }
 
@@ -395,8 +395,8 @@ public sealed class TestModule
     {
         if (InternalClose(duration))
         {
-            _ciVisibility.Log.Debug("### Test Module Flushing after close: {Name}", Name);
-            return _ciVisibility.FlushAsync();
+            _testOptimization.Log.Debug("### Test Module Flushing after close: {Name}", Name);
+            return _testOptimization.FlushAsync();
         }
 
         return Task.CompletedTask;
@@ -435,13 +435,13 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
-        if (_ciVisibility.Settings.CodeCoverageEnabled == true &&
+        if (_testOptimization.Settings.CodeCoverageEnabled == true &&
             CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
             coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
         {
             // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
             // For a normal customer session we never report the percentage of total lines on modules
-            if (!_ciVisibility.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
+            if (!_testOptimization.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
             {
                 // Adds the global code coverage percentage to the module
                 var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
@@ -450,9 +450,9 @@ public sealed class TestModule
             }
 
             // If the code coverage path environment variable is set, we store the json file
-            if (!string.IsNullOrWhiteSpace(_ciVisibility.Settings.CodeCoveragePath))
+            if (!string.IsNullOrWhiteSpace(_testOptimization.Settings.CodeCoveragePath))
             {
-                var codeCoveragePath = Path.Combine(_ciVisibility.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
+                var codeCoveragePath = Path.Combine(_testOptimization.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
                 try
                 {
                     using var fStream = File.OpenWrite(codeCoveragePath);
@@ -461,15 +461,15 @@ public sealed class TestModule
                 }
                 catch (Exception ex)
                 {
-                    _ciVisibility.Log.Error(ex, "Error writing global code coverage.");
+                    _testOptimization.Log.Error(ex, "Error writing global code coverage.");
                 }
             }
         }
 
-        if (_ciVisibility.Settings.TestsSkippingEnabled.HasValue)
+        if (_testOptimization.Settings.TestsSkippingEnabled.HasValue)
         {
-            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, _ciVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
-            if (_ciVisibility.Settings.TestsSkippingEnabled.Value)
+            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, _testOptimization.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+            if (_testOptimization.Settings.TestsSkippingEnabled.Value)
             {
                 // If we detect a module with tests skipping enabled, we ensure we also have the session tag set
                 TrySetSessionTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
@@ -485,8 +485,8 @@ public sealed class TestModule
         }
         else
         {
-            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, _ciVisibility.SkippableFeature?.HasSkippableTests() == true ? "true" : "false");
-            if (_ciVisibility.SkippableFeature?.HasSkippableTests() == true)
+            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false");
+            if (_testOptimization.SkippableFeature?.HasSkippableTests() == true)
             {
                 // If we detect a module with tests being skipped, we ensure we also have the session tag set
                 // if not we don't affect the session tag (other modules could have skipped tests)
@@ -494,11 +494,11 @@ public sealed class TestModule
             }
         }
 
-        if (_ciVisibility.Settings.CodeCoverageEnabled.HasValue)
+        if (_testOptimization.Settings.CodeCoverageEnabled.HasValue)
         {
-            var value = _ciVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false";
+            var value = _testOptimization.Settings.CodeCoverageEnabled.Value ? "true" : "false";
             span.SetTag(CodeCoverageTags.Enabled, value);
-            if (_ciVisibility.Settings.CodeCoverageEnabled.Value)
+            if (_testOptimization.Settings.CodeCoverageEnabled.Value)
             {
                 // If we confirm that a module has code coverage enabled, we ensure we also have the session tag set
                 // if not we leave the tag as is (other modules could have code coverage enabled)
@@ -527,7 +527,7 @@ public sealed class TestModule
             OpenedTestModules.Remove(this);
         }
 
-        _ciVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
+        _testOptimization.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);
 
         if (_fakeSession is { } fakeSession)
         {
@@ -646,13 +646,13 @@ public sealed class TestModule
             try
             {
                 var name = $"session_{Tags.SessionId}";
-                _ciVisibility.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
+                _testOptimization.Log.Debug("TestModule.Enabling IPC client: {Name}", name);
                 _ipcClient = new IpcClient(name);
                 return true;
             }
             catch (Exception ex)
             {
-                _ciVisibility.Log.Error(ex, "Error enabling IPC client");
+                _testOptimization.Log.Error(ex, "Error enabling IPC client");
                 return false;
             }
         }
@@ -670,12 +670,12 @@ public sealed class TestModule
         {
             try
             {
-                _ciVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                _testOptimization.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
                 return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
             }
             catch (Exception ex)
             {
-                _ciVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+                _testOptimization.Log.Error(ex, "Error sending SetSessionTagMessage");
             }
         }
 
@@ -694,12 +694,12 @@ public sealed class TestModule
         {
             try
             {
-                _ciVisibility.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
+                _testOptimization.Log.Debug("TestModule.Sending SetSessionTagMessage: {Name}={Value}", name, value);
                 return ipcClient.TrySendMessage(new SetSessionTagMessage(name, value));
             }
             catch (Exception ex)
             {
-                _ciVisibility.Log.Error(ex, "Error sending SetSessionTagMessage");
+                _testOptimization.Log.Error(ex, "Error sending SetSessionTagMessage");
             }
         }
 

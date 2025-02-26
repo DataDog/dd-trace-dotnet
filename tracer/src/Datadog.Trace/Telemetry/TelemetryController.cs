@@ -129,7 +129,7 @@ internal class TelemetryController : ITelemetryController
     public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
     {
         // CI Vis records the settings _directly_ in the global config so don't need to record them again here
-        _logTagBuilder.Update(settings, CiVisibility.Instance.Enabled);
+        _logTagBuilder.Update(settings, TestOptimization.Instance.Enabled);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)

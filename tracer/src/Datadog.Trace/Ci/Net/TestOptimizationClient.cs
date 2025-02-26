@@ -68,7 +68,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     private TestOptimizationClient(string? workingDirectory, CIVisibilitySettings? settings = null)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
-        var ciVisibility = CiVisibility.Instance;
+        var ciVisibility = TestOptimization.Instance;
         _settings = settings ?? ciVisibility.Settings;
 
         _workingDirectory = workingDirectory;
@@ -204,7 +204,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var framework = FrameworkDescription.Instance;
         return new TestsConfigurations(
             framework.OSPlatform,
-            CiVisibility.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty,
+            TestOptimization.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty,
             framework.OSArchitecture,
             skipFrameworkInfo ? null : framework.Name,
             skipFrameworkInfo ? null : framework.ProductVersion,

@@ -49,7 +49,7 @@ namespace Datadog.Trace.DuckTyping.Tests
              * WARNING: This number is expected to change if you add
              * a another test to the ducktype assembly.
              */
-            if (!CiVisibility.Instance.IsRunning)
+            if (!TestOptimization.Instance.IsRunning)
             {
 #if NETFRAMEWORK
                 asmDuckTypes.Should().Be(1131);

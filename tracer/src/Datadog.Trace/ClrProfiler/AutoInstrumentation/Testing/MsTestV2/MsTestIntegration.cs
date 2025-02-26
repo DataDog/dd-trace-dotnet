@@ -84,7 +84,7 @@ internal static class MsTestIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CiVisibility.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
@@ -113,7 +113,7 @@ internal static class MsTestIntegration
         if (GetTraits(testMethod) is { } testTraits)
         {
             // Unskippable tests
-            if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(testMethodInstance, out var isUnskippable, out var isForcedRun, testTraits);
                 test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
@@ -123,7 +123,7 @@ internal static class MsTestIntegration
 
             test.SetTraits(testTraits);
         }
-        else if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled)
+        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests
             test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
@@ -268,7 +268,7 @@ internal static class MsTestIntegration
         isUnskippable = false;
         isForcedRun = false;
 
-        if (CiVisibility.Instance.Settings.IntelligentTestRunnerEnabled != true)
+        if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
         }
@@ -290,7 +290,7 @@ internal static class MsTestIntegration
             return default;
         }
 
-        CiVisibility.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
+        TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
 
         return TestModuleByTestAssemblyInfos.GetValue(
             objTestAssemblyInfo,

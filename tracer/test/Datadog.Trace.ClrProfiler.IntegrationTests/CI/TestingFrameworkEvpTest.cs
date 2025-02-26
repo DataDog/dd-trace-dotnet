@@ -166,7 +166,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         AssertTargetSpanExists(targetTest, CommonTags.RuntimeArchitecture);
         AssertTargetSpanExists(targetTest, CommonTags.OSArchitecture);
         AssertTargetSpanExists(targetTest, CommonTags.OSPlatform);
-        AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CiVisibility.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty);
+        AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, TestOptimization.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty);
         targetTest.Metrics[CommonTags.LogicalCpuCount].Should().Be(Environment.ProcessorCount);
         targetTest.Metrics.Remove(CommonTags.LogicalCpuCount);
     }

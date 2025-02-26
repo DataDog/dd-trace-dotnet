@@ -1,4 +1,4 @@
-// <copyright file="ICiVisibilityEarlyFlakeDetectionFeature.cs" company="Datadog">
+// <copyright file="ITestOptimizationEarlyFlakeDetectionFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using Datadog.Trace.Ci.Net;
 
 namespace Datadog.Trace.Ci;
 
-internal interface ICiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityFeature
+internal interface ITestOptimizationEarlyFlakeDetectionFeature : ITestOptimizationFeature
 {
     TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 

@@ -28,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const string DotnetTestIntegrationName = nameof(IntegrationId.DotnetTest);
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
-        internal static readonly IDatadogLogger Log = Ci.CiVisibility.Instance.Log;
+        internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 
-        internal static bool DotnetTestIntegrationEnabled => CiVisibility.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
+        internal static bool DotnetTestIntegrationEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
         internal static bool IsDataCollectorDomain
         {
@@ -104,9 +104,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return null;
             }
 
-            var ciVisibilitySettings = CiVisibility.Instance.Settings;
+            var ciVisibilitySettings = TestOptimization.Instance.Settings;
             var agentless = ciVisibilitySettings.Agentless;
-            var isEvpProxy = (CiVisibility.Instance.TracerManagement?.EventPlatformProxySupport ?? EventPlatformProxySupport.None) != EventPlatformProxySupport.None;
+            var isEvpProxy = (TestOptimization.Instance.TracerManagement?.EventPlatformProxySupport ?? EventPlatformProxySupport.None) != EventPlatformProxySupport.None;
 
             Log.Information("CreateSession: Agentless: {Agentless} | IsEvpProxy: {IsEvpProxy}", agentless, isEvpProxy);
 

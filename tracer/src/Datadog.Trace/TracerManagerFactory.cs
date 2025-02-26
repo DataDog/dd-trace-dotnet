@@ -9,6 +9,7 @@ using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
@@ -225,7 +226,7 @@ namespace Datadog.Trace
             => settings.IsRemoteConfigurationAvailable;
 
         /// <summary>
-        ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.CITracerManager"/>
+        ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="TestOptimizationTracerManager"/>
         /// </summary>
         protected virtual TracerManager CreateTracerManagerFrom(
             TracerSettings settings,

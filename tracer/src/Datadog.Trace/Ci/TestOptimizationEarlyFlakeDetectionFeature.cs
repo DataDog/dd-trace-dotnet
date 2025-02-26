@@ -1,4 +1,4 @@
-// <copyright file="CiVisibilityEarlyFlakeDetectionFeature.cs" company="Datadog">
+// <copyright file="TestOptimizationEarlyFlakeDetectionFeature.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,12 +11,12 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci;
 
-internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeDetectionFeature
+internal class TestOptimizationEarlyFlakeDetectionFeature : ITestOptimizationEarlyFlakeDetectionFeature
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CiVisibilityEarlyFlakeDetectionFeature));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationEarlyFlakeDetectionFeature));
     private readonly Task<TestOptimizationClient.EarlyFlakeDetectionResponse> _earlyFlakeDetectionSettingsTask;
 
-    private CiVisibilityEarlyFlakeDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationEarlyFlakeDetectionFeature(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
         if (settings is null)
         {
@@ -32,14 +32,14 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
 
         if (settings.EarlyFlakeDetectionEnabled == true || clientSettingsResponse.EarlyFlakeDetection.Enabled == true)
         {
-            Log.Information("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection is enabled.");
+            Log.Information("TestOptimizationEarlyFlakeDetectionFeature: Early flake detection is enabled.");
             settings.SetEarlyFlakeDetectionEnabled(true);
             _earlyFlakeDetectionSettingsTask = Task.Run(() => InternalGetEarlyFlakeDetectionSettingsAsync(testOptimizationClient));
             Enabled = true;
         }
         else
         {
-            Log.Information("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection is disabled.");
+            Log.Information("TestOptimizationEarlyFlakeDetectionFeature: Early flake detection is disabled.");
             settings.SetEarlyFlakeDetectionEnabled(false);
             _earlyFlakeDetectionSettingsTask = Task.FromResult(new TestOptimizationClient.EarlyFlakeDetectionResponse());
             Enabled = false;
@@ -49,9 +49,9 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
 
         static async Task<TestOptimizationClient.EarlyFlakeDetectionResponse> InternalGetEarlyFlakeDetectionSettingsAsync(ITestOptimizationClient testOptimizationClient)
         {
-            Log.Debug("CiVisibilityEarlyFlakeDetectionFeature: Getting early flake detection data...");
+            Log.Debug("TestOptimizationEarlyFlakeDetectionFeature: Getting early flake detection data...");
             var response = await testOptimizationClient.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
-            Log.Debug("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection data received.");
+            Log.Debug("TestOptimizationEarlyFlakeDetectionFeature: Early flake detection data received.");
             return response;
         }
     }
@@ -63,8 +63,8 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
     public TestOptimizationClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse
         => _earlyFlakeDetectionSettingsTask.SafeGetResult();
 
-    public static ICiVisibilityEarlyFlakeDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
-        => new CiVisibilityEarlyFlakeDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
+    public static ITestOptimizationEarlyFlakeDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new TestOptimizationEarlyFlakeDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
 
     public bool IsAnEarlyFlakeDetectionTest(string moduleName, string testSuite, string testName)
     {
@@ -77,13 +77,13 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
             {
                 if (test == testName)
                 {
-                    Log.Debug("CiVisibilityEarlyFlakeDetectionFeature: Test is included in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
+                    Log.Debug("TestOptimizationEarlyFlakeDetectionFeature: Test is included in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
                     return true;
                 }
             }
         }
 
-        Log.Debug("CiVisibilityEarlyFlakeDetectionFeature: Test is not in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
+        Log.Debug("TestOptimizationEarlyFlakeDetectionFeature: Test is not in the early flake detection response. [ModuleName: {ModuleName}, TestSuite: {TestSuite}, TestName: {TestName}]", moduleName, testSuite, testName);
         return false;
     }
 }

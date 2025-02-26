@@ -177,7 +177,7 @@ namespace Datadog.Trace.Configuration
                 if (string.IsNullOrEmpty(serviceName))
                 {
                     // Extract repository name from the git url and use it as a default service name.
-                    ciVisServiceName = CiVisibility.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
                     isUserProvidedTestServiceTag = false;
                 }
 

@@ -58,7 +58,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
                 }
             }
 
-            CiVisibility.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
+            TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
             var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnitV3, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             module.EnableIpcClient();
             return new CallTargetState(null, module);
@@ -88,7 +88,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
             await testModule.CloseAsync().ConfigureAwait(false);
 
             // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
-            CiVisibility.Instance.Close();
+            TestOptimization.Instance.Close();
         }
 
         return returnValue;

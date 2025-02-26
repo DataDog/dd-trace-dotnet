@@ -36,11 +36,11 @@ internal static class SeleniumCommon
                                                 }
                                                 """;
 
-    internal static readonly IDatadogLogger Log = CiVisibility.Instance.Log;
+    internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
     private static Type? _seleniumCookieType;
     private static long _openPageCount;
 
-    internal static bool IsEnabled => CiVisibility.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static void OnBeforePageLoad<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
         where TTarget : IWebDriverProxy => PreClose(instance);
@@ -157,8 +157,8 @@ internal static class SeleniumCommon
             if (instance.ExecuteScript(RumStopSessionScript, null) is true)
             {
                 test.GetTags().IsRumActive = "true";
-                Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", CiVisibility.Instance.Settings.RumFlushWaitMillis);
-                Thread.Sleep(CiVisibility.Instance.Settings.RumFlushWaitMillis);
+                Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", TestOptimization.Instance.Settings.RumFlushWaitMillis);
+                Thread.Sleep(TestOptimization.Instance.Settings.RumFlushWaitMillis);
             }
 
             // Delete injected RUM session cookie

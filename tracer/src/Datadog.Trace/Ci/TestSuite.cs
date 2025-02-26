@@ -26,13 +26,13 @@ public sealed class TestSuite
     private static readonly AsyncLocal<TestSuite?> CurrentSuite = new();
     private static readonly HashSet<TestSuite> OpenedTestSuites = new();
 
-    private readonly ICiVisibility _ciVisibility;
+    private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
     private int _finished;
 
     internal TestSuite(TestModule module, string name, DateTimeOffset? startDate)
     {
-        _ciVisibility = CiVisibility.Instance;
+        _testOptimization = TestOptimization.Instance;
         Module = module;
         Name = name;
 
@@ -57,7 +57,7 @@ public sealed class TestSuite
             OpenedTestSuites.Add(this);
         }
 
-        _ciVisibility.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
+        _testOptimization.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
 
         if (startDate is null)
         {
@@ -210,7 +210,7 @@ public sealed class TestSuite
         }
 
         Module.RemoveSuite(Name);
-        _ciVisibility.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
+        _testOptimization.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
     }
 
     /// <summary>

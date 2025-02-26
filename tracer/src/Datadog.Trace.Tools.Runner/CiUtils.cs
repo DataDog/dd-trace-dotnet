@@ -40,7 +40,7 @@ internal static class CiUtils
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
 
         // CI Visibility instance.
-        var ciVisibility = CiVisibility.Instance;
+        var ciVisibility = TestOptimization.Instance;
 
         // CI Visibility mode is enabled.
         var ciVisibilitySettings = ciVisibility.Settings;

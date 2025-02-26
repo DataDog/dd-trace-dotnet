@@ -33,7 +33,7 @@ internal static class ImpactedTestsModule
 
     private static FileCoverageInfo[]? modifiedFiles = null;
 
-    public static bool IsEnabled => CiVisibility.Instance.Settings.ImpactedTestsDetectionEnabled ?? false;
+    public static bool IsEnabled => TestOptimization.Instance.Settings.ImpactedTestsDetectionEnabled ?? false;
 
     private static string? CurrentCommit => CIEnvironmentValues.Instance.HeadCommit ?? CIEnvironmentValues.Instance.Commit;
 
@@ -163,7 +163,7 @@ internal static class ImpactedTestsModule
     {
         Log.Debug("Retrieving diff files from backend...");
 
-        if (CiVisibility.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { Files: { Length: > 0 } files })
+        if (TestOptimization.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { Files: { Length: > 0 } files })
         {
             var res = new FileCoverageInfo[files.Length];
             for (int x = 0; x < files.Length; x++)
@@ -179,7 +179,7 @@ internal static class ImpactedTestsModule
 
     private static string? GetBaseCommitFromBackend()
     {
-        if (CiVisibility.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { BaseSha: { Length: > 0 } baseSha })
+        if (TestOptimization.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { BaseSha: { Length: > 0 } baseSha })
         {
             return baseSha;
         }

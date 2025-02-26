@@ -147,8 +147,8 @@ public class DuckTypingTests
         }
         finally
         {
-            CiVisibility.Instance.Close();
-            CiVisibility.Instance.Reset();
+            TestOptimization.Instance.Close();
+            TestOptimization.Instance.Reset();
         }
     }
 

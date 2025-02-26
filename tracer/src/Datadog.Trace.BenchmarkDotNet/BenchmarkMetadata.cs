@@ -19,7 +19,7 @@ internal static class BenchmarkMetadata
     static BenchmarkMetadata()
     {
         MetadataByBenchmark = new();
-        CiVisibility.Instance.InitializeFromManualInstrumentation();
+        TestOptimization.Instance.InitializeFromManualInstrumentation();
     }
 
     public static void GetIds(object key, out TraceId traceId, out ulong spanId)
@@ -27,7 +27,7 @@ internal static class BenchmarkMetadata
         var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         if (value.TraceId is null)
         {
-            var useAllBits = CiVisibility.Instance.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? true;
+            var useAllBits = TestOptimization.Instance.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? true;
             value.TraceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             value.SpanId = RandomIdGenerator.Shared.NextSpanId(useAllBits);
         }

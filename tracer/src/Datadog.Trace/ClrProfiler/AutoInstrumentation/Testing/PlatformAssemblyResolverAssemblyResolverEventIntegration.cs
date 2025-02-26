@@ -33,7 +33,7 @@ public class PlatformAssemblyResolverAssemblyResolverEventIntegration
 {
     private const string IntegrationName = "TestPlatformAssemblyResolver";
 
-    private static readonly Assembly CiVisibilityAssembly = typeof(Ci.CiVisibility).Assembly;
+    private static readonly Assembly CiVisibilityAssembly = typeof(Ci.TestOptimization).Assembly;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {

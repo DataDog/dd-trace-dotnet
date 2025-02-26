@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
-            CiVisibility.DefaultUseLockedTracerManager = false;
+            TestOptimization.DefaultUseLockedTracerManager = false;
         }
     }
 }

@@ -163,7 +163,7 @@ internal abstract class EventPlatformPayload
                     break;
             }
 
-            var tracerManagement = CiVisibility.Instance?.TracerManagement;
+            var tracerManagement = TestOptimization.Instance?.TracerManagement;
             if (tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V4)
             {
                 builder.Path = $"/evp_proxy/v4/{EventPlatformPath}";
