@@ -379,7 +379,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    InitDebugger();
+                    InitializeDebugger();
                 }
                 catch (Exception e)
                 {
@@ -426,31 +426,9 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitDebugger()
+        private static void InitializeDebugger()
         {
-            Task.Run(
-                async () =>
-                {
-                    await DebuggerManager.Instance.InitializeInstrumentationBasedProducts().ConfigureAwait(false);
-                });
-        }
-
-        // /!\ This method is called by reflection in the SampleHelpers
-        // If you remove it then you need to provide an alternative way to wait for the discovery service
-        internal static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
-        {
-            var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            // Stop waiting if we're shutting down
-            LifetimeManager.Instance.AddShutdownTask(_ => tc.TrySetResult(false));
-
-            discoveryService.SubscribeToChanges(Callback);
-            return await tc.Task.ConfigureAwait(false);
-
-            void Callback(AgentConfiguration x)
-            {
-                tc.TrySetResult(true);
-                discoveryService.RemoveSubscription(Callback);
-            }
+            DebuggerManager.Instance.InitializeProducts();
         }
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
