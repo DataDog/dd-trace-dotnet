@@ -137,11 +137,11 @@ public static class TestMethodAttributeExecuteIntegration
                     returnValue = (TReturn?)GetFinalResults(results);
                 }
             }
-            else if (CIVisibility.Settings.FlakyRetryEnabled == true && resultStatus == TestStatus.Fail)
+            else if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true && resultStatus == TestStatus.Fail)
             {
                 // Flaky retry is enabled and the test failed
-                Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
-                var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
+                Interlocked.CompareExchange(ref _totalRetries, TestOptimization.Instance.Settings.TotalFlakyRetryCount, -1);
+                var remainingRetries = TestOptimization.Instance.Settings.FlakyRetryCount;
                 if (remainingRetries > 0)
                 {
                     // Handle retries
@@ -151,7 +151,7 @@ public static class TestMethodAttributeExecuteIntegration
                     {
                         if (Interlocked.Decrement(ref _totalRetries) <= 0)
                         {
-                            Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", TestOptimization.Instance.Settings.TotalFlakyRetryCount);
                             break;
                         }
 

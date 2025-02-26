@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -25,11 +26,13 @@ public sealed class TestSuite
     private static readonly AsyncLocal<TestSuite?> CurrentSuite = new();
     private static readonly HashSet<TestSuite> OpenedTestSuites = new();
 
+    private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
     private int _finished;
 
     internal TestSuite(TestModule module, string name, DateTimeOffset? startDate)
     {
+        _testOptimization = TestOptimization.Instance;
         Module = module;
         Name = name;
 
@@ -54,7 +57,7 @@ public sealed class TestSuite
             OpenedTestSuites.Add(this);
         }
 
-        CIVisibility.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
+        _testOptimization.Log.Debug("###### New Test Suite Created: {Name} ({Module})", Name, Module.Name);
 
         if (startDate is null)
         {
@@ -207,7 +210,7 @@ public sealed class TestSuite
         }
 
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
+        _testOptimization.Log.Debug("###### Test Suite Closed: {Name} ({Module}) | {Status}", Name, Module.Name, Tags.Status);
     }
 
     /// <summary>

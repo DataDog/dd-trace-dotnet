@@ -1,4 +1,4 @@
-// <copyright file="CIVisibilitySettings.cs" company="Datadog">
+// <copyright file="TestOptimizationSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
@@ -18,11 +17,11 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Configuration
 {
-    internal class CIVisibilitySettings
+    internal class TestOptimizationSettings
     {
         private TracerSettings? _tracerSettings;
 
-        public CIVisibilitySettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
             Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
@@ -256,9 +255,9 @@ namespace Datadog.Trace.Ci.Configuration
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
 
-        public static CIVisibilitySettings FromDefaultSources()
+        public static TestOptimizationSettings FromDefaultSources()
         {
-            return new CIVisibilitySettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+            return new TestOptimizationSettings(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
 
         internal void SetCodeCoverageEnabled(bool value)

@@ -47,7 +47,7 @@ namespace Datadog.Trace.MSBuild
                 // .
             }
 
-            CIVisibility.Initialize();
+            TestOptimization.Instance.Initialize();
         }
 
         /// <summary>

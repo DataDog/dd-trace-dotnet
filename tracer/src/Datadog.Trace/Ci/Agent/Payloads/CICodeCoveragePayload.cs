@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -23,7 +24,7 @@ internal class CICodeCoveragePayload : MultipartPayload
     private readonly IFormatterResolver _formatterResolver;
     private readonly Stopwatch _serializationWatch;
 
-    public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
+    public CICodeCoveragePayload(TestOptimizationSettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
         : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
     {
         _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
@@ -53,7 +54,7 @@ internal class CICodeCoveragePayload : MultipartPayload
     {
         var index = Count;
         var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
-        CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);
+        TestOptimization.Instance.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);
         return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
     }
 
