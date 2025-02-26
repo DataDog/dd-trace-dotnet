@@ -794,7 +794,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.Core/src/Controllers/ControllerActionDescriptor.cs
+        /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.Core/src/Controllers/ControllerActionDescriptor.cs
         /// </summary>
         [DuckCopy]
         internal struct ControllerActionDescriptorStruct
@@ -807,7 +807,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/CompiledPageActionDescriptor.cs
+        /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/CompiledPageActionDescriptor.cs
         /// </summary>
         [DuckCopy]
         internal struct CompiledPageActionDescriptorStruct
@@ -820,7 +820,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/Infrastructure/HandlerMethodDescriptor.cs
+        /// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Mvc/Mvc.RazorPages/src/Infrastructure/HandlerMethodDescriptor.cs
         /// </summary>
         [DuckCopy]
         internal struct HandlerMethodDescriptorStruct
