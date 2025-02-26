@@ -126,9 +126,9 @@ internal class TelemetryController : ITelemetryController
         _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
     }
 
-    public void RecordCiVisibilitySettings(TestOptimizationSettings settings)
+    public void RecordTestOptimizationSettings(TestOptimizationSettings settings)
     {
-        // CI Vis records the settings _directly_ in the global config so don't need to record them again here
+        // Test optimization records the settings _directly_ in the global config so don't need to record them again here
         _logTagBuilder.Update(settings, TestOptimization.Instance.Enabled);
     }
 
