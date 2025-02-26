@@ -15,10 +15,10 @@ namespace Datadog.Trace.Coverage.Collector;
 /// </summary>
 internal class CoverageSettings
 {
-    public CoverageSettings(XmlElement? configurationElement, string? tracerHome, TestOptimizationSettings? ciVisibilitySettings = null)
+    public CoverageSettings(XmlElement? configurationElement, string? tracerHome, TestOptimizationSettings? testOptimizationSettings = null)
     {
         TracerHome = tracerHome;
-        TestOptimization = ciVisibilitySettings ?? TestOptimizationSettings.FromDefaultSources();
+        TestOptimization = testOptimizationSettings ?? TestOptimizationSettings.FromDefaultSources();
 
         if (configurationElement is not null)
         {

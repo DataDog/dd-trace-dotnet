@@ -269,7 +269,7 @@ internal class TestOptimization : ITestOptimization
         _ = CIEnvironmentValues.Instance;
 
         // Initialize features
-        var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromCiVisibilitySettings(settings);
+        var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings);
         var client = new NoopTestOptimizationClient();
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
@@ -540,7 +540,7 @@ internal class TestOptimization : ITestOptimization
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
 
-                var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromCiVisibilitySettings(settings);
+                var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings);
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
