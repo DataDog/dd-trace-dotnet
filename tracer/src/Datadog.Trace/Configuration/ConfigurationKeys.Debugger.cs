@@ -14,7 +14,7 @@ namespace Datadog.Trace.Configuration
         internal static class Debugger
         {
             /// <summary>
-            /// Configuration key for enabling or disabling Live Debugger.
+            /// Configuration key for enabling or disabling Dynamic Instrumentation.
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.DynamicInstrumentationEnabled"/>
