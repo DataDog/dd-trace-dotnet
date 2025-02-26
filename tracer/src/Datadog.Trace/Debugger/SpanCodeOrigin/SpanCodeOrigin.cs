@@ -41,8 +41,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null ||
-                _settings.CodeOriginForSpansEnabled == null || !_settings.CodeOriginForSpansEnabled.Value)
+            if (span == null)
             {
                 return;
             }

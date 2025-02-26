@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Sink;
@@ -26,8 +27,6 @@ namespace Datadog.Trace.Debugger
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
 
         private static DebuggerManager? _instance;
-
-        private int _isDiInitialized;
 
         private object _locker;
 
@@ -78,6 +77,24 @@ namespace Datadog.Trace.Debugger
 
         internal string ServiceName => DynamicInstrumentationHelper.ServiceName;
 
+        // /!\ This method is called by reflection in the Samples.SampleHelpers
+        // If you remove it then you need to provide an alternative way to wait for the discovery service
+        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
+        {
+            var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            // Stop waiting if we're shutting down
+            LifetimeManager.Instance.AddShutdownTask(_ => tc.TrySetResult(false));
+
+            discoveryService.SubscribeToChanges(Callback);
+            return await tc.Task.ConfigureAwait(false);
+
+            void Callback(AgentConfiguration x)
+            {
+                tc.TrySetResult(true);
+                discoveryService.RemoveSubscription(Callback);
+            }
+        }
+
         /// <summary>
         /// For testing only
         /// </summary>
@@ -87,13 +104,9 @@ namespace Datadog.Trace.Debugger
             return _instance!;
         }
 
-        internal async Task InitializeInstrumentationBasedProducts()
+        internal void InitializeProducts()
         {
-            SetGeneralConfig(DebuggerSettings);
-            await InitializeSymbolUploader().ConfigureAwait(false);
-            InitializeCodeOrigin();
-            InitializeExceptionReplay();
-            await InitializeDynamicInstrumentation().ConfigureAwait(false);
+            UpdateProductsState(DebuggerSettings);
         }
 
         private void SetGeneralConfig(DebuggerSettings settings)
@@ -102,194 +115,194 @@ namespace Datadog.Trace.Debugger
             Redaction.Instance.SetConfig(settings.RedactedIdentifiers, settings.RedactedExcludedIdentifiers, settings.RedactedTypes);
         }
 
-        private void InitializeCodeOrigin()
-        {
-            if (DebuggerSettings.CodeOriginForSpansEnabled.HasValue && !DebuggerSettings.CodeOriginForSpansEnabled.Value)
-            {
-                Log.Information("Code Origin for Spans is disabled. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
-                return;
-            }
-
-            if (DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && !DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value)
-            {
-                Log.Information("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
-                return;
-            }
-
-            CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
-        }
-
         private async Task InitializeSymbolUploader()
         {
-            var tracerManager = TracerManager.Instance;
-            SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, tracerManager.Settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-            // it will do nothing if it is an instance of NoOpSymbolUploader
-            await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
-        }
-
-        private void InitializeExceptionReplay()
-        {
-            if (ExceptionReplaySettings.Enabled.HasValue && !ExceptionReplaySettings.Enabled.Value)
-            {
-                Log.Information("Exception Replay is disabled. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled);
-                return;
-            }
-
-            if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && !DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value)
-            {
-                Log.Information("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
-                return;
-            }
-
             try
             {
-                var exceptionReplay = ExceptionDebugging.Create(ExceptionReplaySettings);
+                var tracerManager = TracerManager.Instance;
+                SymbolsUploader = DebuggerFactory.CreateSymbolsUploader(tracerManager.DiscoveryService, RcmSubscriptionManager.Instance, tracerManager.Settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                // it will do nothing if it is an instance of NoOpSymbolUploader
+                await SymbolsUploader.StartFlushingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing Symbol Database.");
+            }
+        }
 
-                if (exceptionReplay != null)
+        private void SetCodeOriginState()
+        {
+            try
+            {
+                var enabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && DebuggerSettings.CodeOriginForSpansEnabled.Value;
+                var disabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && !DebuggerSettings.CodeOriginForSpansEnabled.Value;
+                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value;
+                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && !DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value;
+
+                if (disabled)
                 {
-                    exceptionReplay.Initialize();
-                    ExceptionReplay = exceptionReplay;
+                    Log.Information("Code Origin for Spans is disabled by environment variable. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
+                    return;
                 }
-                else
+
+                if (dynamicallyDisabled)
                 {
-                    Log.Information("Exception Replay is disabled.");
+                    Log.Information("Code Origin for Spans is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                    CodeOrigin = null;
+                    return;
+                }
+
+                if ((enabled || dynamicallyEnabled) && CodeOrigin == null)
+                {
+                    CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error initializing Exception Debugging");
+                Log.Error(ex, "Error initializing Code Origin for spans.");
             }
         }
 
-        private async Task InitializeDynamicInstrumentation()
+        private void SetExceptionReplayState()
         {
-            if (DebuggerSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicInstrumentationEnabled.Value)
-            {
-                Log.Information("Dynamic Instrumentation is disabled. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
-                return;
-            }
-
-            if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value)
-            {
-                Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
-                return;
-            }
-
-            if (Interlocked.Exchange(ref _isDiInitialized, 1) != 0)
-            {
-                return;
-            }
-
-            var tracerManager = TracerManager.Instance;
-            var settings = tracerManager.Settings;
-            var discoveryService = tracerManager.DiscoveryService;
-
-            DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, tracerManager.Telemetry, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
-            Log.Debug("Dynamic Instrumentation has created.");
-
             try
             {
-                DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(settings.ServiceName ?? tracerManager.DefaultServiceName);
-            }
-            catch (Exception e)
-            {
-                DynamicInstrumentationHelper.ServiceName = tracerManager.DefaultServiceName;
-                Log.Error(e, "Could not set `DynamicInstrumentationHelper.ServiceName`.");
-            }
+                var enabled = ExceptionReplaySettings.Enabled.HasValue && ExceptionReplaySettings.Enabled.Value;
+                var disabled = ExceptionReplaySettings.Enabled.HasValue && !ExceptionReplaySettings.Enabled.Value;
+                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value;
+                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && !DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value;
 
-            if (!settings.IsRemoteConfigurationAvailable)
-            {
-                // live debugger requires RCM, so there's no point trying to initialize it if RCM is not available
-                if (DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value)
+                if (disabled)
                 {
-                    Log.Warning("Dynamic Instrumentation is enabled but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
+                    Log.Information("Exception Replay is disabled by environment variable. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled);
+                    return;
                 }
 
-                tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                return;
-            }
-
-            try
-            {
-                var sw = Stopwatch.StartNew();
-                var isDiscoverySuccessful = await Datadog.Trace.ClrProfiler.Instrumentation.WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                if (isDiscoverySuccessful)
+                if (dynamicallyDisabled)
                 {
-                    sw.Restart();
-                    await DynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
+                    Log.Information("Exception Replay is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                    ExceptionReplay?.Dispose();
+                    ExceptionReplay = null;
+
+                    return;
                 }
-                else
+
+                if ((enabled || dynamicallyEnabled) && ExceptionReplay == null)
                 {
-                    tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                    Log.Debug("Could not initialize Dynamic Instrumentation because waiting for discovery service has failed");
+                    var exceptionReplay = ExceptionDebugging.Create(ExceptionReplaySettings);
+
+                    if (exceptionReplay != null)
+                    {
+                        exceptionReplay.Initialize();
+                        ExceptionReplay = exceptionReplay;
+                    }
+                    else
+                    {
+                        Log.Information("Exception Replay is disabled.");
+                    }
                 }
             }
             catch (Exception ex)
             {
-                tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                Log.Error(ex, "Error creating Dynamic Instrumentation.");
+                Log.Error(ex, "Error initializing Exception Replay.");
+            }
+        }
+
+        private async Task SetDynamicInstrumentationState()
+        {
+            try
+            {
+                var enabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value;
+                var disabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicInstrumentationEnabled.Value;
+                var dynamicallyEnabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value;
+                var dynamicallyDisabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value;
+
+                if (disabled)
+                {
+                    Log.Information("Dynamic Instrumentation is disabled by environment variable. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
+                    return;
+                }
+
+                if (dynamicallyDisabled)
+                {
+                    Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                    DynamicInstrumentation?.Dispose();
+                    DynamicInstrumentation = null;
+                    return;
+                }
+
+                if ((enabled || dynamicallyEnabled) && DynamicInstrumentation == null)
+                {
+                    var tracerManager = TracerManager.Instance;
+                    var settings = tracerManager.Settings;
+
+                    if (!settings.IsRemoteConfigurationAvailable)
+                    {
+                        if (DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value)
+                        {
+                            Log.Warning("Dynamic Instrumentation is enabled by environment variable but remote configuration is not available in this environment, so Dynamic Instrumentation cannot be enabled.");
+                        }
+
+                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                        return;
+                    }
+
+                    var discoveryService = tracerManager.DiscoveryService;
+                    DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, tracerManager.Telemetry, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                    Log.Debug("Dynamic Instrumentation has created.");
+
+                    var sw = Stopwatch.StartNew();
+                    var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+
+                    if (isDiscoverySuccessful)
+                    {
+                        sw.Restart();
+                        await DynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
+                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
+                    }
+                    else
+                    {
+                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                        Log.Debug("Could not initialize Dynamic Instrumentation because waiting for discovery service has failed");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+                Log.Error(ex, "Error initializing Dynamic Instrumentation.");
             }
         }
 
         internal void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
         {
+            UpdateProductsState(newDebuggerSettings);
+        }
+
+        private void UpdateProductsState(DebuggerSettings newDebuggerSettings)
+        {
             lock (_locker)
             {
-                UpdateInternal(newDebuggerSettings);
+                DebuggerSettings = newDebuggerSettings;
+                OneTimeSetup();
+                SetExceptionReplayState();
+                SetCodeOriginState();
+                _ = Task.Run(async () => { await SetDynamicInstrumentationState().ConfigureAwait(false); });
             }
         }
 
-        private void UpdateInternal(DebuggerSettings newDebuggerSettings)
+        private void OneTimeSetup()
         {
-            /*
-            If the remote config says ‘true’, but env var says ‘false’, we do ‘false’
-            If the remote config says ‘false’, but env var says ‘true’, we do ‘false’.
-            If none are defined - the default value is defined by tracer
-            */
+            LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
+            SetGeneralConfig(DebuggerSettings);
+            _ = Task.Run(async () => { await InitializeSymbolUploader().ConfigureAwait(false); });
+        }
 
-            DebuggerSettings = newDebuggerSettings;
-
-            if (DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue)
-            {
-                if (DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value && DebuggerSettings.CodeOriginForSpansEnabled == null)
-                {
-                    InitializeCodeOrigin();
-                }
-                else
-                {
-                    CodeOrigin = null;
-                }
-            }
-
-            if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue)
-            {
-                if (DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value && ExceptionReplaySettings.Enabled == null)
-                {
-                    InitializeExceptionReplay();
-                }
-                else
-                {
-                    ExceptionReplay?.Dispose();
-                    ExceptionReplay = null;
-                }
-            }
-
-            if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue)
-            {
-                if (DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value && DebuggerSettings.DynamicInstrumentationEnabled == null)
-                {
-                    _ = Task.Run(async () => { await InitializeDynamicInstrumentation().ConfigureAwait(false); });
-                }
-                else
-                {
-                    DynamicInstrumentation?.Dispose();
-                    Interlocked.Exchange(ref _isDiInitialized, 0);
-                    DynamicInstrumentation = null;
-                }
-            }
+        private void ShutdownTasks(Exception? arg)
+        {
+            DynamicInstrumentation?.Dispose();
+            ExceptionReplay?.Dispose();
         }
     }
 }

@@ -11,6 +11,7 @@ namespace Samples
     public class SampleHelpers
     {
         private static readonly Type InstrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
+        private static readonly Type DebuggerManagerType = Type.GetType("Datadog.Trace.Debugger.DebuggerManager, Datadog.Trace");
         private static readonly Type NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
         private static readonly Type TracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace");
         private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
@@ -402,7 +403,7 @@ namespace Samples
                 return Task.CompletedTask;
             }
 
-            var result = InstrumentationType?.GetMethod("WaitForDiscoveryService", BindingFlags.NonPublic | BindingFlags.Static)
+            var result = DebuggerManagerType?.GetMethod("WaitForDiscoveryService", BindingFlags.NonPublic | BindingFlags.Static)
                                             ?.Invoke(null, new[] { discoveryService });
 
             return result as Task ?? Task.CompletedTask;
