@@ -39,33 +39,33 @@ internal static class CiUtils
         // Define the arguments
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
 
-        // CI Visibility instance.
-        var ciVisibility = TestOptimization.Instance;
+        // Test optimization instance.
+        var testOptimization = TestOptimization.Instance;
 
-        // CI Visibility mode is enabled.
-        var ciVisibilitySettings = ciVisibility.Settings;
+        // Test optimization mode is enabled.
+        var testOptimizationSettings = testOptimization.Settings;
 
         // Get profiler environment variables
         if (!RunHelper.TryGetEnvironmentVariables(
                 applicationContext,
                 context,
                 commonTracerSettings,
-                new Utils.CIVisibilityOptions(ciVisibilitySettings.InstallDatadogTraceInGac, true, reducePathLength),
+                new Utils.CIVisibilityOptions(testOptimizationSettings.InstallDatadogTraceInGac, true, reducePathLength),
                 out var profilerEnvironmentVariables))
         {
             context.ExitCode = 1;
             return new InitResults(false, lstArguments, null, false, false, Task.CompletedTask);
         }
 
-        // Reload the CI Visibility settings (in case they were changed by the environment variables using the `--set-env` option)
-        ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
+        // Reload the Test optimization settings (in case they were changed by the environment variables using the `--set-env` option)
+        testOptimizationSettings = CIVisibilitySettings.FromDefaultSources();
 
-        // We force CIVisibility mode on child process
+        // We force Test optimization mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
 
         // We check the settings and merge with the command settings options
-        var agentless = ciVisibilitySettings.Agentless;
-        var apiKey = ciVisibilitySettings.ApiKey;
+        var agentless = testOptimizationSettings.Agentless;
+        var apiKey = testOptimizationSettings.ApiKey;
 
         var customApiKey = apiKeyOption?.GetValue(context);
         if (!string.IsNullOrEmpty(customApiKey))
@@ -108,7 +108,7 @@ internal static class CiUtils
         var uploadRepositoryChangesTask = Task.CompletedTask;
 
         // Set Agentless configuration from the command line options
-        ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, ciVisibilitySettings.AgentlessUrl);
+        testOptimizationSettings.SetAgentlessConfiguration(agentless, apiKey, testOptimizationSettings.AgentlessUrl);
 
         if (!string.IsNullOrEmpty(agentUrl))
         {
@@ -116,17 +116,17 @@ internal static class CiUtils
         }
 
         // Initialize flags to enable code coverage and test skipping
-        var codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
-        var testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
-        var earlyFlakeDetectionEnabled = ciVisibilitySettings.EarlyFlakeDetectionEnabled == true;
-        var flakyRetryEnabled = ciVisibilitySettings.FlakyRetryEnabled == true;
+        var codeCoverageEnabled = testOptimizationSettings.CodeCoverageEnabled == true || testOptimizationSettings.TestsSkippingEnabled == true;
+        var testSkippingEnabled = testOptimizationSettings.TestsSkippingEnabled == true;
+        var earlyFlakeDetectionEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled == true;
+        var flakyRetryEnabled = testOptimizationSettings.FlakyRetryEnabled == true;
 
         var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
         if (agentless || hasEvpProxy)
         {
             // Initialize CI Visibility with the current settings
             Log.Debug("RunCiCommand: Initialize CI Visibility for the runner.");
-            ciVisibility.InitializeFromRunner(ciVisibilitySettings, discoveryService, hasEvpProxy);
+            testOptimization.InitializeFromRunner(testOptimizationSettings, discoveryService, hasEvpProxy);
 
             // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
             Log.Debug("RunCiCommand: Uploading repository changes.");
@@ -140,8 +140,8 @@ internal static class CiUtils
                 ciValues.GitSearchFolder = null;
             }
 
-            var client = TestOptimizationClient.Create(ciValues.WorkspacePath, ciVisibilitySettings);
-            if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
+            var client = TestOptimizationClient.Create(ciValues.WorkspacePath, testOptimizationSettings);
+            if (testOptimizationSettings.GitUploadEnabled != false || testOptimizationSettings.IntelligentTestRunnerEnabled)
             {
                 // If we are in git upload only then we can defer the await until the child command exits.
                 async Task UploadRepositoryChangesAsync()
@@ -169,7 +169,7 @@ internal static class CiUtils
                 // EVP proxy is enabled.
                 // By setting the environment variables we avoid the usage of the DiscoveryService in each child process
                 // to ask for EVP proxy support.
-                var evpProxyMode = ciVisibility.TracerManagement?.EventPlatformProxySupportFromEndpointUrl(agentConfiguration?.EventPlatformProxyEndpoint).ToString();
+                var evpProxyMode = testOptimization.TracerManagement?.EventPlatformProxySupportFromEndpointUrl(agentConfiguration?.EventPlatformProxyEndpoint).ToString();
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy] = evpProxyMode;
                 EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, evpProxyMode);
                 Log.Debug("RunCiCommand: EVP proxy was detected: {Mode}", evpProxyMode);
@@ -177,21 +177,21 @@ internal static class CiUtils
 
             // If we have an api key, and the code coverage or the tests skippable environment variables
             // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
-            if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+            if (!testOptimizationSettings.IntelligentTestRunnerEnabled)
             {
                 Log.Debug("RunCiCommand: Intelligent test runner is disabled, call to configuration api skipped.");
             }
 
             // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
-            if (ciVisibilitySettings.IntelligentTestRunnerEnabled
-             && (ciVisibilitySettings.CodeCoverageEnabled == null ||
-                 ciVisibilitySettings.TestsSkippingEnabled == null ||
-                 ciVisibilitySettings.EarlyFlakeDetectionEnabled == null ||
-                 ciVisibilitySettings.FlakyRetryEnabled == null))
+            if (testOptimizationSettings.IntelligentTestRunnerEnabled
+             && (testOptimizationSettings.CodeCoverageEnabled == null ||
+                 testOptimizationSettings.TestsSkippingEnabled == null ||
+                 testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
+                 testOptimizationSettings.FlakyRetryEnabled == null))
             {
                 try
                 {
-                    ciVisibility.Log.Debug("RunCiCommand: Calling configuration api...");
+                    testOptimization.Log.Debug("RunCiCommand: Calling configuration api...");
 
                     // we skip the framework info because we are interested in the target projects info not the runner one.
                     var itrSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
@@ -213,7 +213,7 @@ internal static class CiUtils
                 }
                 catch (Exception ex)
                 {
-                    ciVisibility.Log.Warning(ex, "Error getting ITR settings from configuration api");
+                    testOptimization.Log.Warning(ex, "Error getting ITR settings from configuration api");
                 }
             }
         }
@@ -222,9 +222,9 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
-        ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
-        ciVisibilitySettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
-        ciVisibilitySettings.SetFlakyRetryEnabled(flakyRetryEnabled);
+        testOptimizationSettings.SetCodeCoverageEnabled(codeCoverageEnabled);
+        testOptimizationSettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
+        testOptimizationSettings.SetFlakyRetryEnabled(flakyRetryEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
@@ -233,7 +233,7 @@ internal static class CiUtils
         {
             // If test skipping is disabled we set this to the child process so we avoid to query the settings api again.
             // If is not disabled we need to query the backend again in the child process with more runtime info.
-            ciVisibilitySettings.SetTestsSkippingEnabled(testSkippingEnabled);
+            testOptimizationSettings.SetTestsSkippingEnabled(testSkippingEnabled);
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestsSkippingEnabled] = "0";
         }
 

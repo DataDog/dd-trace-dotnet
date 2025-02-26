@@ -387,8 +387,8 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "runtime-id" tag to service-entry (aka top-level) spans
-            var ciVisibility = Ci.TestOptimization.Instance;
-            if (span.IsTopLevel && (!ciVisibility.IsRunning || !ciVisibility.Settings.Agentless))
+            var testOptimization = Ci.TestOptimization.Instance;
+            if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdNameBytes);
@@ -681,8 +681,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
-            var ciVisibility = Ci.TestOptimization.Instance;
-            if (span.IsTopLevel && (!ciVisibility.IsRunning || !ciVisibility.Settings.Agentless))
+            var testOptimization = Ci.TestOptimization.Instance;
+            if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
                 count++;
                 WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0, tagProcessors);
