@@ -25,6 +25,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
         private readonly DebuggerSettings _settings;
         private readonly CodeOriginTags _tags;
+		
+		private bool Disabled =>
+            _settings.CodeOriginForSpansEnabled == null
+          || (_settings.CodeOriginForSpansEnabled.HasValue && !_settings.CodeOriginForSpansEnabled.Value)
+          || (_settings.DynamicSettings.CodeOriginEnabled.HasValue && !_settings.DynamicSettings.CodeOriginEnabled.Value);
+
 
         internal SpanCodeOrigin()
         {
@@ -41,7 +47,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         internal void SetCodeOriginForExitSpan(Span? span)
         {
-            if (span == null)
+            if (span == null || Disabled)
             {
                 return;
             }
@@ -211,8 +217,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
-                ArrayPool<FrameInfo>.Shared.Return(frames);
-            }
+                if (frames != null)
+                {
+                    ArrayPool<FrameInfo>.Shared.Return(frames);
+                }            }
         }
 
         private int PopulateUserFrames(FrameInfo[] frames)

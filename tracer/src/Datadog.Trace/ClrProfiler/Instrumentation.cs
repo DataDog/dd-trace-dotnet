@@ -15,7 +15,6 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
@@ -428,7 +427,18 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeDebugger()
         {
-            DebuggerManager.Instance.InitializeProducts();
+            _ = Task.Run(
+                async () =>
+                {
+                    try
+                    {
+                        await DebuggerManager.Instance.UpdateDynamicConfiguration().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error initializing debugger");
+                    }
+                }).ConfigureAwait(false);
         }
 
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
