@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
+#if NETCOREAPP2_2_OR_GREATER
+
+#nullable enable
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
 internal interface IEndpointDataSource
 {
