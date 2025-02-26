@@ -4,10 +4,15 @@
 // </copyright>
 #nullable enable
 
-using System.Text;
 using Datadog.Trace.Util;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+using System.Reflection.Metadata;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+#endif
 
 namespace Datadog.Trace.Debugger.Symbols
 {

@@ -8,8 +8,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty
