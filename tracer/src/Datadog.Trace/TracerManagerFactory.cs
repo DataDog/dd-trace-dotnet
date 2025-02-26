@@ -234,7 +234,7 @@ namespace Datadog.Trace
             => settings.IsRemoteConfigurationAvailable;
 
         /// <summary>
-        ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.TestOptimizationTracerManager"/>
+        ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <c>Ci.TestOptimizationTracerManager</c>
         /// </summary>
         protected virtual TracerManager CreateTracerManagerFrom(
             TracerSettings settings,
