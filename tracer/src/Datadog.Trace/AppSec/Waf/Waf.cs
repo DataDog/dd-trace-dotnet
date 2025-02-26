@@ -254,8 +254,7 @@ namespace Datadog.Trace.AppSec.Waf
                 var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
                 updated = UpdateWafAndDispose(encodedArgs);
 
-                // only if rules are provided will the waf give metrics
-                if (arguments is Dictionary<string, object> dic && dic.ContainsKey("rules") && updated.Success)
+                if (updated.Success)
                 {
                     TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Success);
                 }
