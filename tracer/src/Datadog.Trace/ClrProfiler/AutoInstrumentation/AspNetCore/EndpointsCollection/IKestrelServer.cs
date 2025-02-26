@@ -5,7 +5,9 @@
 
 #if !NETFRAMEWORK
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
+#nullable enable
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
 internal interface IKestrelServer
 {
