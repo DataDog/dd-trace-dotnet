@@ -17,6 +17,8 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Vendors.dnlib.Threading;
+using OperationCanceledException = System.OperationCanceledException;
 
 #nullable enable
 
@@ -25,16 +27,24 @@ namespace Datadog.Trace.Debugger
     internal class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
+        private static readonly Lazy<DebuggerManager> _lazyInstance =
+            new(
+                () => new DebuggerManager(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource()),
+                LazyThreadSafetyMode.ExecutionAndPublication);
 
-        private static DebuggerManager? _instance;
-
-        private object _locker;
+        private readonly SemaphoreSlim _semaphore;
+        private readonly CancellationTokenSource _cancellationToken;
+        private volatile bool _isShuttingDown;
+        private int _initialized;
 
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
-            _locker = new object();
+            _initialized = 0;
+            _isShuttingDown = false;
+            _semaphore = new SemaphoreSlim(1, 1);
             DebuggerSettings = debuggerSettings;
             ExceptionReplaySettings = exceptionReplaySettings;
+            _cancellationToken = new CancellationTokenSource();
 
             var tracerManager = TracerManager.Instance;
             try
@@ -48,20 +58,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal static DebuggerManager Instance
-        {
-            get
-            {
-                var instance = Interlocked.CompareExchange(ref _instance, null, null);
-                if (instance == null)
-                {
-                    Interlocked.Exchange(ref _instance, new DebuggerManager(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource()));
-                    instance = _instance;
-                }
-
-                return instance!;
-            }
-        }
+        internal static DebuggerManager Instance => _lazyInstance.Value;
 
         internal DebuggerSettings DebuggerSettings { get; private set; }
 
@@ -93,20 +90,6 @@ namespace Datadog.Trace.Debugger
                 tc.TrySetResult(true);
                 discoveryService.RemoveSubscription(Callback);
             }
-        }
-
-        /// <summary>
-        /// For testing only
-        /// </summary>
-        internal static DebuggerManager ReplaceManager(DebuggerSettings settings, ExceptionReplaySettings exceptionSettings)
-        {
-            Interlocked.Exchange(ref _instance, new DebuggerManager(settings, exceptionSettings));
-            return _instance!;
-        }
-
-        internal void InitializeProducts()
-        {
-            UpdateProductsState(DebuggerSettings);
         }
 
         private void SetGeneralConfig(DebuggerSettings settings)
@@ -275,34 +258,85 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void UpdateDynamicConfiguration(DebuggerSettings newDebuggerSettings)
+        internal async Task UpdateDynamicConfiguration(DebuggerSettings? newDebuggerSettings = null)
         {
-            UpdateProductsState(newDebuggerSettings);
+            await UpdateProductsState(newDebuggerSettings ?? DebuggerSettings).ConfigureAwait(false);
         }
 
-        private void UpdateProductsState(DebuggerSettings newDebuggerSettings)
+        private async Task UpdateProductsState(DebuggerSettings newDebuggerSettings)
         {
-            lock (_locker)
+            if (newDebuggerSettings == null)
             {
+                Log.Warning("DebuggerSettings is null");
+                return;
+            }
+
+            if (_isShuttingDown)
+            {
+                return;
+            }
+
+            bool semaphoreAcquired = false;
+            try
+            {
+                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(10), _cancellationToken.Token).ConfigureAwait(false);
+                if (!semaphoreAcquired || _isShuttingDown)
+                {
+                    Log.Debug("Skipping update debugger state due to semaphore timed out");
+                    return;
+                }
+
                 DebuggerSettings = newDebuggerSettings;
                 OneTimeSetup();
                 SetExceptionReplayState();
                 SetCodeOriginState();
-                _ = Task.Run(async () => { await SetDynamicInstrumentationState().ConfigureAwait(false); });
+                await SetDynamicInstrumentationState().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation gracefully
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error updating debugger state");
+            }
+            finally
+            {
+                if (semaphoreAcquired)
+                {
+                    try
+                    {
+                        _semaphore.Release();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // ignore
+                    }
+                }
             }
         }
 
         private void OneTimeSetup()
         {
+            if (Interlocked.CompareExchange(ref _initialized, 1, 0) != 0)
+            {
+                return;
+            }
+
             LifetimeManager.Instance.AddShutdownTask(ShutdownTasks);
             SetGeneralConfig(DebuggerSettings);
-            _ = Task.Run(async () => { await InitializeSymbolUploader().ConfigureAwait(false); });
+            _ = InitializeSymbolUploader();
         }
 
         private void ShutdownTasks(Exception? arg)
         {
+            _isShuttingDown = true;
+            _cancellationToken.Cancel();
+            _cancellationToken.Dispose();
             DynamicInstrumentation?.Dispose();
             ExceptionReplay?.Dispose();
+            SymbolsUploader?.Dispose();
+            _semaphore.Dispose();
         }
     }
 }
