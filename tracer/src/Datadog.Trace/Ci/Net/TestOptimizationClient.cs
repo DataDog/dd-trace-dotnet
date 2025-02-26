@@ -147,7 +147,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
         if (string.IsNullOrEmpty(res))
         {
-            Log.Warning("ITR: empty branch indicates a detached head at commit {Commit}", _commitSha);
+            Log.Warning("TestOptimizationClient: empty branch indicates a detached head at commit {Commit}", _commitSha);
             res = $"auto:git-detached-head";
         }
 
@@ -170,7 +170,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     {
         if (string.IsNullOrEmpty(_repositoryUrl))
         {
-            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            Log.Warning("TestOptimizationClient: 'git config --get remote.origin.url' command returned null or empty");
             return false;
         }
 
@@ -181,7 +181,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     {
         if (string.IsNullOrEmpty(_branchName))
         {
-            Log.Warning("ITR: 'git branch --show-current' command returned null or empty");
+            Log.Warning("TestOptimizationClient: 'git branch --show-current' command returned null or empty");
             return false;
         }
 
@@ -192,7 +192,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     {
         if (string.IsNullOrEmpty(_commitSha))
         {
-            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            Log.Warning("TestOptimizationClient: 'git rev-parse HEAD' command returned null or empty");
             return false;
         }
 
@@ -391,7 +391,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             var stringContent = responseContent != null ? Encoding.UTF8.GetString(responseContent) : string.Empty;
             if (finalTry)
             {
-                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, stringContent);
+                Log.Error<int, string>("TestOptimizationClient: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, stringContent);
             }
 
             throw new WebException($"Status: {response.StatusCode}, Content: {stringContent}");
@@ -429,7 +429,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                     sourceException is FileNotFoundException)
                 {
                     // stop retrying
-                    Log.Error<int>(sourceException, "ITR: An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
+                    Log.Error<int>(sourceException, "TestOptimizationClient: An error occurred while sending data after {Retries} retries.", retryCount);
                     exceptionDispatchInfo.Throw();
                 }
 
@@ -449,7 +449,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
                 if (isSocketException)
                 {
-                    Log.Debug(sourceException, "ITR: Unable to communicate with the server");
+                    Log.Debug(sourceException, "TestOptimizationClient: Unable to communicate with the server");
                 }
 
                 if (sourceException is RateLimitException { DelayTimeInSeconds: { } delayTimeInSeconds })
@@ -468,7 +468,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                 continue;
             }
 
-            Log.Debug("ITR: Request was completed successfully.");
+            Log.Debug("TestOptimizationClient: Request was completed successfully.");
             return response;
         }
     }

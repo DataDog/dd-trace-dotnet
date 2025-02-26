@@ -65,7 +65,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                 if (NUnitIntegration.ShouldSkip(item, out _, out _))
                 {
                     var testMethod = item.Method?.MethodInfo;
-                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
+                    Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
                 }

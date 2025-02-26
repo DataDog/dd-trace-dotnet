@@ -41,8 +41,6 @@
     <Compile Update="AppSec\Coordinator\SecurityReporter.Framework.cs">
       <DependentUpon>SecurityReporter.cs</DependentUpon>
     </Compile>
-    <Compile Remove="Ci\CIVisibilityOld.cs"/>
-    <None Include="Ci\CIVisibilityOld.cs"/>
   </ItemGroup>
 
   <ItemGroup>

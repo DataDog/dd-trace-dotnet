@@ -30,7 +30,7 @@ internal class CiVisibilityImpactedTestsDetectionFeature : ICiVisibilityImpacted
 
         if (settings.ImpactedTestsDetectionEnabled == null && clientSettingsResponse.ImpactedTestsEnabled.HasValue)
         {
-            Log.Information("CiVisibility: Impacted Tests Detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);
+            Log.Information("CiVisibility: Impacted tests detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);
             settings.SetImpactedTestsEnabled(clientSettingsResponse.ImpactedTestsEnabled.Value);
         }
 

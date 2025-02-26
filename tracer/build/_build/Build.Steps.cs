@@ -2254,7 +2254,8 @@ partial class Build
                new (@".*The Git commit sha couldn't be automatically extracted.*", RegexOptions.Compiled),
                new (@".*DD_GIT_COMMIT_SHA must be a full-length git SHA.*", RegexOptions.Compiled),
                new (@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
-               new (@".*ITR: .*", RegexOptions.Compiled),
+               new (@".*CiVisibility: .*", RegexOptions.Compiled),
+               new (@".*TestOptimizationClient: .*", RegexOptions.Compiled),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
@@ -2312,7 +2313,8 @@ partial class Build
            knownPatterns.Add(new(@".*The Git commit sha couldn't be automatically extracted.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DD_GIT_COMMIT_SHA must be a full-length git SHA.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled));
-           knownPatterns.Add(new(@".*ITR: .*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*CiVisibility: .*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*TestOptimizationClient: .*", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });

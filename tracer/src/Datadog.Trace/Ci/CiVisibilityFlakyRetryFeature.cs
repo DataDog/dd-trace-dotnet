@@ -28,7 +28,7 @@ internal class CiVisibilityFlakyRetryFeature : ICiVisibilityFlakyRetryFeature
 
         if (settings.FlakyRetryEnabled == null && clientSettingsResponse.FlakyTestRetries.HasValue)
         {
-            Log.Information("CiVisibilityFlakyRetryFeature: Flaky Retries has been changed to {Value} by the settings api.", clientSettingsResponse.FlakyTestRetries.Value);
+            Log.Information("CiVisibilityFlakyRetryFeature: Flaky retries has been changed to {Value} by the settings api.", clientSettingsResponse.FlakyTestRetries.Value);
             settings.SetFlakyRetryEnabled(clientSettingsResponse.FlakyTestRetries.Value);
         }
 
