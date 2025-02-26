@@ -487,8 +487,32 @@ profiler_cpu_timer_create-arm64:
       ./launch.sh apm-ecosystems-perf-qa windows ephemeral-instance \
         --region "$AWS_EPHEMERAL_INFRA_REGION" \
         --benchmarking-platform-branch "fayssal/migrate-macros-dotnet" \
+        --s3-bucket "$AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI" \
         --no-cleanup
-    
+    - |
+      # Check for ephemeral instance errors
+      ERROR_FOUND=false
+      ERROR_FILE="ErrorEphemeralInstance.json"
+      echo "Checking ${ERROR_FILE}..."
+
+      aws s3 cp "${AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI}/${ERROR_FILE}" "${ERROR_FILE}" || true
+
+      if [ -f "${ERROR_FILE}" ]; then
+        echo "ERROR: Found ${ERROR_FILE}"
+        cat "${ERROR_FILE}"
+        ERROR_FOUND=true
+        rm -f "${ERROR_FILE}"
+      else
+        echo "No error file found (expected behavior)"
+      fi
+
+      # Exit with error if any issues found
+      if [ "$ERROR_FOUND" = true ]; then
+        echo "Ephemeral instance build failed"
+        exit 1
+      else
+        echo "Ephemeral instance build completed successfully."
+      fi
   artifacts:
     name: "artifacts"
     when: always
