@@ -20,7 +20,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     internal class ExceptionDebugging : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
-        private int _firstInitialization = 1;
         private bool _isDisabled;
 
         private SnapshotUploader? _uploader;
@@ -44,11 +43,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             if (_isDisabled)
             {
                 return false;
-            }
-
-            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
-            {
-                return true;
             }
 
             Log.Information("Initializing Exception Debugging");
@@ -149,7 +143,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             _exceptionTrackManager?.Dispose();
             _uploader?.Dispose();
-            _firstInitialization = 1;
         }
 
         public void Dispose()
