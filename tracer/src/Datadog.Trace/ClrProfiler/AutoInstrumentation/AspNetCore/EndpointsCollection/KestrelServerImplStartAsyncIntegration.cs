@@ -5,21 +5,17 @@
 
 #nullable enable
 
-#if !NETFRAMEWORK
+#if NETCOREAPP2_2_OR_GREATER
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Threading;
-using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Microsoft_AspNetCore_Server_Kestrel_Core;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
 /// <summary>
 /// System.Threading.Tasks.Task Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl::StartAsync[TContext](Microsoft.AspNetCore.Hosting.Server.IHttpApplication`1[TContext],System.Threading.CancellationToken) calltarget instrumentation
@@ -30,8 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Microsoft_AspNetCore_Ser
     MethodName = "StartAsync",
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = ["Microsoft.AspNetCore.Hosting.Server.IHttpApplication`1[!!0]", ClrNames.CancellationToken],
-    MinimumVersion = "9.0.0",
-    MaximumVersion = "9.*.*",
+    MinimumVersion = "2.2.0",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -81,7 +77,7 @@ public class KestrelServerImplStartAsyncIntegration
             return;
         }
 
-        EndpointsCollection.CollectEndpoints(endpointDataSource.Endpoints);
+        AppSec.EndpointsCollection.CollectEndpoints(endpointDataSource.Endpoints);
     }
 }
 

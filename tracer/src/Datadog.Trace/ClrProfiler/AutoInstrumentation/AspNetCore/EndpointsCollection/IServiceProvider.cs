@@ -5,15 +5,11 @@
 
 #nullable enable
 
-#if !NETFRAMEWORK
-
 using System;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection;
 
 internal interface IServiceProvider
 {
     object? GetService(Type serviceType);
 }
-
-#endif

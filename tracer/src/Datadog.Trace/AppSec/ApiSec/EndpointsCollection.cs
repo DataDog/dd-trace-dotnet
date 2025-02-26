@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
+#if NETCOREAPP2_2_OR_GREATER
 
 #nullable enable
 
@@ -11,7 +11,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text.RegularExpressions;
+using Datadog.Trace.AppSec.ApiSec.DuckType;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -22,25 +25,12 @@ namespace Datadog.Trace.AppSec;
 
 internal class EndpointsCollection
 {
-    private static readonly Type? HttpMethodMetadataType = Type.GetType("Microsoft.AspNetCore.Routing.HttpMethodMetadata, Microsoft.AspNetCore.Routing");
-    private static readonly PropertyInfo? HttpMethodsProperty = HttpMethodMetadataType?.GetProperty("HttpMethods", BindingFlags.Public | BindingFlags.Instance);
-    private static readonly Type? EndpointMetadataCollectionType = Type.GetType("Microsoft.AspNetCore.Http.EndpointMetadataCollection, Microsoft.AspNetCore.Routing.Abstractions");
-    private static readonly MethodInfo? GetMetadataMethod = EndpointMetadataCollectionType?.GetMethod("GetMetadata", BindingFlags.Public | BindingFlags.Instance);
-    private static readonly MethodInfo? GenericGetMetadataMethod = HttpMethodMetadataType != null ? GetMetadataMethod?.MakeGenericMethod(HttpMethodMetadataType) : null;
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<EndpointsCollection>();
 
     public static void CollectEndpoints(IReadOnlyList<object> endpoints)
     {
         var maxEndpoints = 300;
 
-        if (!EnsureTypesExists())
-        {
-            Log.Warning("Api Sec: Types not found for gathering endpoints.");
-            return;
-        }
-
-        // todo: payload: add
         List<AsmEndpointData> discoveredEndpoints = [];
         for (var i = 0; i < endpoints.Count && i < maxEndpoints; i++)
         {
@@ -51,40 +41,46 @@ internal class EndpointsCollection
         ReportEndpoints(discoveredEndpoints);
     }
 
-    private static bool EnsureTypesExists()
-    {
-        return HttpMethodMetadataType != null && EndpointMetadataCollectionType != null && GetMetadataMethod != null;
-    }
-
     private static void CollectEndpoint(object endpoint, List<AsmEndpointData> discoveredEndpoints)
     {
-        if (endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpoint))
+        if (!endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpoint))
         {
-            var routePattern = routeEndpoint.RoutePattern;
-            var path = routePattern.RawText;
-            if (path is null)
-            {
-                return;
-            }
+            return;
+        }
+
+        var routePattern = routeEndpoint.RoutePattern;
+        var endpointMetadataCollection = routeEndpoint.Metadata.DuckCast<IEndpointMetadataCollection>();
+        string path;
 
 #if NETCOREAPP3_0_OR_GREATER
-            var areaName = routePattern.RequiredValues.TryGetValue("area", out var area) ? area as string : null;
-            var controllerName = routePattern.RequiredValues.TryGetValue("controller", out var controller) ? controller as string : null;
-            var actionName = routePattern.RequiredValues.TryGetValue("action", out var action) ? action as string : null;
-            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePattern.RequiredValues, areaName, controllerName, actionName, false);
+        // >= 3.0
+        var areaName = routePattern.RequiredValues.TryGetValue("area", out var area) ? area as string : null;
+        var controllerName = routePattern.RequiredValues.TryGetValue("controller", out var controller) ? controller as string : null;
+        var actionName = routePattern.RequiredValues.TryGetValue("action", out var action) ? action as string : null;
+        path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePattern.RequiredValues, areaName, controllerName, actionName, false);
+#elif NETCOREAPP2_2_OR_GREATER
+        // Only 2.2
+        if (endpointMetadataCollection.GetRouteValuesAddressMetadata() is { RequiredValues: { } address })
+        {
+            var areaName = address.TryGetValue("area", out var area) ? area as string : null;
+            var controllerName = address.TryGetValue("controller", out var controller) ? controller as string : null;
+            var actionName = address.TryGetValue("action", out var action) ? action as string : null;
+            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, address, areaName, controllerName, actionName, false);
+        }
+        else
+        {
+            path = routePattern.RawText;
+        }
 #endif
 
-            // Check if the endpoint have constrained HTTP methods
-            var metadata = GenericGetMetadataMethod?.Invoke(routeEndpoint.Metadata, null);
-
-            if (metadata != null && HttpMethodsProperty?.GetValue(metadata) is IEnumerable<string> httpMethods)
-            {
-                discoveredEndpoints.AddRange(httpMethods.Select(method => new AsmEndpointData(method, path)));
-            }
-            else
-            {
-                discoveredEndpoints.Add(new AsmEndpointData("*", path));
-            }
+        // Check if the endpoint have constrained HTTP methods inside the metadata
+        if (endpointMetadataCollection.GetHttpMethodMetadata() is { HttpMethods: { } httpMethods })
+        {
+            discoveredEndpoints.AddRange(httpMethods.Select(method => new AsmEndpointData(method, path)));
+        }
+        else
+        {
+            discoveredEndpoints.Add(new AsmEndpointData("*", path));
         }
     }
 
