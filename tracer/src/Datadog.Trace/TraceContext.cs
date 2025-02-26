@@ -119,9 +119,7 @@ namespace Datadog.Trace
         internal bool WafExecuted { get; set; }
 
         internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
-            spans.Count > 0 ?
-                spans.Array![spans.Offset].Context.TraceContext :
-                null;
+            spans.Count > 0 ? spans.Array![spans.Offset].Context.TraceContext : null;
 
         internal void EnableIastInRequest()
         {
@@ -172,10 +170,12 @@ namespace Datadog.Trace
                         }
                     }
 
-                    _appSecRequestContext?.CloseWebSpan(Tags, span);
+                    if (_appSecRequestContext is not null)
+                    {
+                        _appSecRequestContext.CloseWebSpan(Tags, span);
+                        _appSecRequestContext.DisposeAdditiveContext();
+                    }
                 }
-
-                _appSecRequestContext?.DisposeAdditiveContext();
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
