@@ -23,6 +23,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using OperationCanceledException = System.OperationCanceledException;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -165,21 +166,34 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             await Task.Yield();
-            await _assemblySemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
 
-            if (!_isSymDbEnabled || _cancellationToken.IsCancellationRequested)
-            {
-                _assemblySemaphore.Release();
-                return;
-            }
-
+            bool semaphoreAcquired = false;
             try
             {
+                await _assemblySemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
+                semaphoreAcquired = true;
+
+                if (!_isSymDbEnabled || _cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 await ProcessItem(assembly).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation gracefully
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error processing assembly {Assembly}", assembly);
             }
             finally
             {
-                _assemblySemaphore.Release();
+                if (semaphoreAcquired)
+                {
+                    _assemblySemaphore.Release();
+                }
             }
         }
 
