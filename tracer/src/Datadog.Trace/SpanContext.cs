@@ -430,7 +430,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision"/>.
+        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision()"/>.
         /// Otherwise, returns <see cref="SamplingPriority"/>.
         /// </summary>
         internal int? GetOrMakeSamplingDecision() =>
