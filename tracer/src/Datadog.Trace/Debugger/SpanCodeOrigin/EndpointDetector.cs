@@ -39,6 +39,7 @@ internal static class EndpointDetector
         "Microsoft.AspNetCore.Mvc.HttpPatchAttribute",
         "Microsoft.AspNetCore.Mvc.HttpHeadAttribute",
         "Microsoft.AspNetCore.Mvc.HttpOptionsAttribute",
+        "Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute"
     ];
 
     private static readonly HashSet<string> SignalRHubBaseNames =
@@ -64,7 +65,9 @@ internal static class EndpointDetector
                 continue;
             }
 
-            bool isPageModel = false, isSignalRHub = false, isCompilerGeneratedType = false;
+            bool isPageModel = false;
+            bool isSignalRHub = false;
+            bool isCompilerGeneratedType = false;
             var isController = IsInheritFromTypesOrHasAttribute(typeDef, metadataReader, ControllerAttributes, ControllerBaseNames);
             if (!isController)
             {

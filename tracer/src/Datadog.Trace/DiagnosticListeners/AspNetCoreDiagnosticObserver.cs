@@ -62,7 +62,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private readonly Security _security;
         private readonly Iast.Iast _iast;
         private readonly LiveDebugger _liveDebugger;
-        private readonly SpanCodeOriginManager _spanOrigin;
+        private readonly SpanCodeOriginManager _spanOriginManager;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -76,13 +76,13 @@ namespace Datadog.Trace.DiagnosticListeners
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, LiveDebugger liveDebugger, SpanCodeOriginManager spanOrigin)
+        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security, Iast.Iast iast, LiveDebugger liveDebugger, SpanCodeOriginManager spanOriginManager)
         {
             _tracer = tracer;
             _security = security;
             _iast = iast;
             _liveDebugger = liveDebugger;
-            _spanOrigin = spanOrigin;
+            _spanOriginManager = spanOriginManager;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -95,7 +95,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private LiveDebugger CurrentLiveDebugger => _liveDebugger ?? LiveDebugger.Instance;
 
-        private SpanCodeOriginManager CurrentCodeOriginManager => this._spanOrigin ?? SpanCodeOriginManager.Instance;
+        private SpanCodeOriginManager CurrentCodeOriginManager => _spanOriginManager ?? SpanCodeOriginManager.Instance;
 
 #if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
