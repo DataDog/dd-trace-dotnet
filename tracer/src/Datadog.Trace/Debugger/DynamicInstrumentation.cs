@@ -47,6 +47,7 @@ namespace Datadog.Trace.Debugger
         private readonly object _instanceLock = new();
         private bool _isRcmAvailable;
         private DebuggerSettings _settings;
+        private int _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -84,49 +85,53 @@ namespace Datadog.Trace.Debugger
 
         public async Task InitializeAsync()
         {
-            lock (GlobalLock)
-            {
-                if (!CanInitialize())
-                {
-                    return;
-                }
+            int originalState = Interlocked.CompareExchange(ref _initState, 1, 0);
 
-                IsInitialized = true;
+            // If we weren't in "not initialized" state, return early
+            if (originalState != 0)
+            {
+                return;
             }
 
             try
             {
+                var disabled =
+                    _settings.DynamicInstrumentationEnabled == null
+                 || (_settings.DynamicInstrumentationEnabled.HasValue && !_settings.DynamicInstrumentationEnabled.Value)
+                 || (_settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !_settings.DynamicSettings.DynamicInstrumentationEnabled.Value);
+
+                if (disabled)
+                {
+                    Log.Warning("Dynamic Instrumentation is disabled.");
+                    // Reset to "not initialized"
+                    Interlocked.Exchange(ref _initState, 0);
+                    return;
+                }
+
+                if (!Volatile.Read(ref _isRcmAvailable))
+                {
+                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
+                    // Reset to "not initialized"
+                    Interlocked.Exchange(ref _initState, 0);
+                    return;
+                }
+
                 Log.Information("Dynamic Instrumentation initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);
+
+                // Transition to "initialized" after successful initialization
+                Interlocked.Exchange(ref _initState, 2);
+                IsInitialized = true;
             }
             catch (Exception e)
             {
                 Log.Error(e, "Initializing Dynamic Instrumentation failed.");
-            }
-
-            bool CanInitialize()
-            {
-                if (IsInitialized)
-                {
-                    return false;
-                }
-
-                if (_settings.DynamicInstrumentationEnabled == null || !_settings.DynamicInstrumentationEnabled.Value)
-                {
-                    return false;
-                }
-
-                if (!Volatile.Read(ref _isRcmAvailable))
-                {
-                    Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
-                    return false;
-                }
-
-                return true;
+                // Reset to "not initialized"
+                Interlocked.Exchange(ref _initState, 0);
             }
 
             Task StartAsync()
