@@ -31,17 +31,21 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
             ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
         }
 
-        if (settings.TestsSkippingEnabled != false && clientSettingsResponse.TestsSkipping == true)
+        if (settings.TestsSkippingEnabled == null && clientSettingsResponse.TestsSkipping.HasValue)
         {
-            Log.Debug("CiVisibilitySkippableFeature: Test skipping is enabled.");
-            settings.SetTestsSkippingEnabled(true);
-            _skippableTestsTask = InternalGetSkippableTestsAsync(testOptimizationClient);
+            Log.Information("CiVisibilitySkippableFeature: Tests Skipping has been changed to {Value} by settings api.", clientSettingsResponse.TestsSkipping.Value);
+            settings.SetTestsSkippingEnabled(clientSettingsResponse.TestsSkipping.Value);
+        }
+
+        if (settings.TestsSkippingEnabled == true)
+        {
+            Log.Information("CiVisibilitySkippableFeature: Test skipping is enabled.");
+            _skippableTestsTask = Task.Run(() => InternalGetSkippableTestsAsync(testOptimizationClient));
             Enabled = true;
         }
         else
         {
-            Log.Debug("CiVisibilitySkippableFeature: Test skipping is disabled.");
-            settings.SetTestsSkippingEnabled(false);
+            Log.Information("CiVisibilitySkippableFeature: Test skipping is disabled.");
             _skippableTestsTask = Task.FromResult(new SkippableTestsDictionary());
             Enabled = false;
         }
@@ -82,15 +86,7 @@ internal class CiVisibilitySkippableFeature : ICiVisibilitySkippableFeature
         }
     }
 
-    private CiVisibilitySkippableFeature()
-    {
-        Enabled = false;
-        _skippableTestsTask = Task.FromResult(new SkippableTestsDictionary());
-    }
-
     public bool Enabled { get; }
-
-    public static ICiVisibilitySkippableFeature CreateDisabledFeature() => new CiVisibilitySkippableFeature();
 
     public static ICiVisibilitySkippableFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new CiVisibilitySkippableFeature(settings, clientSettingsResponse, testOptimizationClient);

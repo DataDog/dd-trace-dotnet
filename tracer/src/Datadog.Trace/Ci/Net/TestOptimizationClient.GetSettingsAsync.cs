@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -22,6 +23,20 @@ internal sealed partial class TestOptimizationClient
     private const string SettingsUrlPath = "api/v2/libraries/tests/services/setting";
     private const string SettingsType = "ci_app_test_service_libraries_settings";
     private Uri? _settingsUrl;
+
+    public static SettingsResponse CreateSettingsResponseFromCiVisibilitySettings(CIVisibilitySettings settings)
+    {
+        return new SettingsResponse(
+            codeCoverage: settings.CodeCoverageEnabled,
+            testsSkipping: settings.TestsSkippingEnabled,
+            requireGit: false,
+            impactedTestsEnabled: settings.ImpactedTestsDetectionEnabled,
+            flakyTestRetries: settings.FlakyRetryEnabled,
+            earlyFlakeDetection: new EarlyFlakeDetectionSettingsResponse(
+                enabled: settings.EarlyFlakeDetectionEnabled,
+                slowTestRetries: new SlowTestRetriesSettingsResponse(),
+                faultySessionThreshold: 0));
+    }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
     {

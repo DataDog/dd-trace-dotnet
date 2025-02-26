@@ -4,8 +4,10 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods;
 
@@ -55,5 +57,34 @@ internal static class TaskExtensions
             // Restore the original synchronization context.
             SynchronizationContext.SetSynchronizationContext(originalContext);
         }
+    }
+
+    public static bool SafeWait(this Func<Task> funcTask, int millisecondsTimeout)
+    {
+        var originalContext = SynchronizationContext.Current;
+        using var cts = new CancellationTokenSource(millisecondsTimeout);
+        try
+        {
+            // Set the synchronization context to null to avoid deadlocks.
+            SynchronizationContext.SetSynchronizationContext(null);
+
+            // Wait synchronously for the task to complete.
+            AsyncUtil.RunSync(funcTask, cts.Token);
+            if (cts.IsCancellationRequested)
+            {
+                return false;
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            return false;
+        }
+        finally
+        {
+            // Restore the original synchronization context.
+            SynchronizationContext.SetSynchronizationContext(originalContext);
+        }
+
+        return true;
     }
 }

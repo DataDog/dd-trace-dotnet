@@ -28,18 +28,22 @@ internal class CiVisibilityImpactedTestsDetectionFeature : ICiVisibilityImpacted
             ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
         }
 
-        if (settings.ImpactedTestsDetectionEnabled != false && clientSettingsResponse.ImpactedTestsEnabled == true)
+        if (settings.ImpactedTestsDetectionEnabled == null && clientSettingsResponse.ImpactedTestsEnabled.HasValue)
         {
-            Log.Debug("CiVisibilityImpactedTestsDetectionFeature: Impacted tests detection is enabled.");
-            settings.SetImpactedTestsEnabled(true);
-            _impactedTestsDetectionFilesTask = InternalGetImpactedTestsDetectionFilesAsync(testOptimizationClient);
+            Log.Information("CiVisibility: Impacted Tests Detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);
+            settings.SetImpactedTestsEnabled(clientSettingsResponse.ImpactedTestsEnabled.Value);
+        }
+
+        if (settings.ImpactedTestsDetectionEnabled == true)
+        {
+            Log.Information("CiVisibilityImpactedTestsDetectionFeature: Impacted tests detection is enabled.");
+            _impactedTestsDetectionFilesTask = Task.Run(() => InternalGetImpactedTestsDetectionFilesAsync(testOptimizationClient));
             Enabled = true;
         }
         else
         {
-            Log.Debug("CiVisibilityImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
-            settings.SetImpactedTestsEnabled(false);
-            _impactedTestsDetectionFilesTask = Task.FromResult(new TestOptimizationClient.ImpactedTestsDetectionResponse());
+            Log.Information("CiVisibilityImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
+            _impactedTestsDetectionFilesTask = Task.FromResult(default(TestOptimizationClient.ImpactedTestsDetectionResponse));
             Enabled = false;
         }
 
@@ -54,18 +58,10 @@ internal class CiVisibilityImpactedTestsDetectionFeature : ICiVisibilityImpacted
         }
     }
 
-    private CiVisibilityImpactedTestsDetectionFeature()
-    {
-        Enabled = false;
-        _impactedTestsDetectionFilesTask = Task.FromResult(new TestOptimizationClient.ImpactedTestsDetectionResponse());
-    }
-
     public bool Enabled { get; }
 
     public TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse
         => _impactedTestsDetectionFilesTask.SafeGetResult();
-
-    public static ICiVisibilityImpactedTestsDetectionFeature CreateDisabledFeature() => new CiVisibilityImpactedTestsDetectionFeature();
 
     public static ICiVisibilityImpactedTestsDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new CiVisibilityImpactedTestsDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);

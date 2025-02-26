@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Util;
+using TaskExtensions = Datadog.Trace.ExtensionMethods.TaskExtensions;
 
 namespace Datadog.Trace.Ci;
 
@@ -37,6 +38,8 @@ internal class CiVisibility : ICiVisibility
     public CiVisibility()
     {
         _enabledLazy = new Lazy<bool>(InternalEnabled, true);
+        Log = DatadogLogging.GetLoggerFor<CiVisibility>();
+        DefaultUseLockedTracerManager = true;
     }
 
     public static ICiVisibility Instance
@@ -45,9 +48,9 @@ internal class CiVisibility : ICiVisibility
         internal set => _instance = value;
     }
 
-    public static bool DefaultUseLockedTracerManager { get; set; } = true;
+    public static bool DefaultUseLockedTracerManager { get; set; }
 
-    public IDatadogLogger Log { get; } = DatadogLogging.GetLoggerFor(typeof(CiVisibility));
+    public IDatadogLogger Log { get; }
 
     public bool IsRunning
     {
@@ -175,14 +178,14 @@ internal class CiVisibility : ICiVisibility
 
         // In case we are running using the agent, check if the event platform proxy is supported.
         TracerManagement = new CiVisibilityTracerManagement(
-            Settings,
-            static s => DiscoveryService.Create(
+            settings: Settings,
+            getDiscoveryServiceFunc: static s => DiscoveryService.Create(
                 s.TracerSettings.Exporter,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 10,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue),
-            true);
+            useLockedTracerManager: true);
 
         var eventPlatformProxyEnabled = TracerManagement.EventPlatformProxySupport != EventPlatformProxySupport.None;
         if (eventPlatformProxyEnabled)
@@ -198,7 +201,12 @@ internal class CiVisibility : ICiVisibility
 
         // Initialize Tracer
         Log.Information("CiVisibility: Initialize Test Tracer instance");
-        TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, TracerManagement, eventPlatformProxyEnabled));
+        TracerManager.ReplaceGlobalManager(
+            tracerSettings,
+            new CITracerManagerFactory(
+                settings: settings,
+                ciVisibilityTracerManagement: TracerManagement,
+                enabledEventPlatformProxy: eventPlatformProxyEnabled));
         _ = Tracer.Instance;
 
         // Initialize FrameworkDescription
@@ -243,8 +251,16 @@ internal class CiVisibility : ICiVisibility
 
         // Initialize Tracer
         Log.Information("CiVisibility: Initialize Test Tracer instance");
-        TracerManagement = new CiVisibilityTracerManagement(Settings, _ => discoveryService, useLockedTracerManager ?? DefaultUseLockedTracerManager);
-        TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, TracerManagement, eventPlatformProxyEnabled));
+        TracerManagement = new CiVisibilityTracerManagement(
+            settings: Settings,
+            getDiscoveryServiceFunc: _ => discoveryService,
+            useLockedTracerManager: useLockedTracerManager ?? DefaultUseLockedTracerManager);
+        TracerManager.ReplaceGlobalManager(
+            tracerSettings,
+            new CITracerManagerFactory(
+                settings: settings,
+                ciVisibilityTracerManagement: TracerManagement,
+                enabledEventPlatformProxy: eventPlatformProxyEnabled));
         _ = Tracer.Instance;
 
         // Initialize FrameworkDescription
@@ -254,10 +270,12 @@ internal class CiVisibility : ICiVisibility
         _ = CIEnvironmentValues.Instance;
 
         // Initialize features
-        EarlyFlakeDetectionFeature = CiVisibilityEarlyFlakeDetectionFeature.CreateDisabledFeature();
-        SkippableFeature = CiVisibilitySkippableFeature.CreateDisabledFeature();
-        ImpactedTestsDetectionFeature = CiVisibilityImpactedTestsDetectionFeature.CreateDisabledFeature();
-        FlakyRetryFeature = CiVisibilityFlakyRetryFeature.CreateDisabledFeature();
+        var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromCiVisibilitySettings(settings);
+        var client = new NoopTestOptimizationClient();
+        FlakyRetryFeature = CiVisibilityFlakyRetryFeature.Create(settings, remoteSettings, client);
+        EarlyFlakeDetectionFeature = CiVisibilityEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
+        ImpactedTestsDetectionFeature = CiVisibilityImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
+        SkippableFeature = CiVisibilitySkippableFeature.Create(settings, remoteSettings, client);
     }
 
     public void InitializeFromManualInstrumentation()
@@ -273,25 +291,7 @@ internal class CiVisibility : ICiVisibility
 
     public void Flush()
     {
-        var sContext = SynchronizationContext.Current;
-        using var cts = new CancellationTokenSource(30_000);
-        try
-        {
-            SynchronizationContext.SetSynchronizationContext(null);
-            AsyncUtil.RunSync(() => FlushAsync(), cts.Token);
-            if (cts.IsCancellationRequested)
-            {
-                Log.Error("CiVisibility: Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-            Log.Error("CiVisibility: Timeout occurred when flushing spans.{NewLine}{StackTrace}", Environment.NewLine, Environment.StackTrace);
-        }
-        finally
-        {
-            SynchronizationContext.SetSynchronizationContext(sContext);
-        }
+        TaskExtensions.SafeWait(funcTask: FlushAsync, millisecondsTimeout: 30_000);
     }
 
     public async Task FlushAsync()
@@ -333,26 +333,28 @@ internal class CiVisibility : ICiVisibility
     /// </summary>
     public void Close()
     {
-        if (IsRunning)
+        if (!IsRunning)
         {
-            Log.Information("CiVisibility: CI Visibility is exiting.");
-            LifetimeManager.Instance.RunShutdownTasks();
-
-            // If the continuous profiler is attached we ensure to flush the remaining profiles before closing.
-            try
-            {
-                if (ContinuousProfiler.Profiler.Instance.Status.IsProfilerReady)
-                {
-                    ContinuousProfiler.NativeInterop.FlushProfile();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "CiVisibility: Error flushing the profiler.");
-            }
-
-            Interlocked.Exchange(ref _firstInitialization, 1);
+            return;
         }
+
+        Log.Information("CiVisibility: CI Visibility is exiting.");
+        LifetimeManager.Instance.RunShutdownTasks();
+
+        // If the continuous profiler is attached we ensure to flush the remaining profiles before closing.
+        try
+        {
+            if (ContinuousProfiler.Profiler.Instance.Status.IsProfilerReady)
+            {
+                ContinuousProfiler.NativeInterop.FlushProfile();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "CiVisibility: Error flushing the profiler.");
+        }
+
+        Interlocked.Exchange(ref _firstInitialization, 1);
     }
 
     public void Reset()
@@ -372,8 +374,6 @@ internal class CiVisibility : ICiVisibility
 
     private bool InternalEnabled()
     {
-        string? processName = null;
-
         // By configuration
         if (Settings.Enabled is { } enabled)
         {
@@ -401,7 +401,7 @@ internal class CiVisibility : ICiVisibility
         }
 
         // Try to autodetect based in the process name.
-        processName ??= GetProcessName();
+        var processName = GetProcessName();
         if (processName.StartsWith("testhost.", StringComparison.Ordinal))
         {
             Log.Information("CiVisibility: CI Visibility Enabled by Process name whitelist");
@@ -541,17 +541,7 @@ internal class CiVisibility : ICiVisibility
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
 
-                var remoteSettings = new TestOptimizationClient.SettingsResponse(
-                    settings.CodeCoverageEnabled,
-                    settings.TestsSkippingEnabled,
-                    false,
-                    settings.ImpactedTestsDetectionEnabled,
-                    settings.FlakyRetryEnabled,
-                    new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(
-                        settings.EarlyFlakeDetectionEnabled,
-                        new TestOptimizationClient.SlowTestRetriesSettingsResponse(),
-                        0));
-
+                var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromCiVisibilitySettings(settings);
                 FlakyRetryFeature = CiVisibilityFlakyRetryFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = CiVisibilityEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
                 ImpactedTestsDetectionFeature = CiVisibilityImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);

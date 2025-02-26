@@ -29,16 +29,17 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
         }
 
         EarlyFlakeDetectionSettings = clientSettingsResponse.EarlyFlakeDetection;
-        if (settings.EarlyFlakeDetectionEnabled != false && clientSettingsResponse.EarlyFlakeDetection.Enabled == true)
+
+        if (settings.EarlyFlakeDetectionEnabled == true || clientSettingsResponse.EarlyFlakeDetection.Enabled == true)
         {
-            Log.Debug("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection is enabled.");
+            Log.Information("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection is enabled.");
             settings.SetEarlyFlakeDetectionEnabled(true);
-            _earlyFlakeDetectionSettingsTask = InternalGetEarlyFlakeDetectionSettingsAsync(testOptimizationClient);
+            _earlyFlakeDetectionSettingsTask = Task.Run(() => InternalGetEarlyFlakeDetectionSettingsAsync(testOptimizationClient));
             Enabled = true;
         }
         else
         {
-            Log.Debug("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection is disabled.");
+            Log.Information("CiVisibilityEarlyFlakeDetectionFeature: Early flake detection is disabled.");
             settings.SetEarlyFlakeDetectionEnabled(false);
             _earlyFlakeDetectionSettingsTask = Task.FromResult(new TestOptimizationClient.EarlyFlakeDetectionResponse());
             Enabled = false;
@@ -55,21 +56,12 @@ internal class CiVisibilityEarlyFlakeDetectionFeature : ICiVisibilityEarlyFlakeD
         }
     }
 
-    private CiVisibilityEarlyFlakeDetectionFeature()
-    {
-        Enabled = false;
-        EarlyFlakeDetectionSettings = default;
-        _earlyFlakeDetectionSettingsTask = Task.FromResult(new TestOptimizationClient.EarlyFlakeDetectionResponse());
-    }
-
     public bool Enabled { get; }
 
     public TestOptimizationClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; }
 
     public TestOptimizationClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse
         => _earlyFlakeDetectionSettingsTask.SafeGetResult();
-
-    public static ICiVisibilityEarlyFlakeDetectionFeature CreateDisabledFeature() => new CiVisibilityEarlyFlakeDetectionFeature();
 
     public static ICiVisibilityEarlyFlakeDetectionFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new CiVisibilityEarlyFlakeDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);

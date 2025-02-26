@@ -26,28 +26,25 @@ internal class CiVisibilityFlakyRetryFeature : ICiVisibilityFlakyRetryFeature
             ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
         }
 
-        if (settings.FlakyRetryEnabled != false && clientSettingsResponse.FlakyTestRetries == true)
+        if (settings.FlakyRetryEnabled == null && clientSettingsResponse.FlakyTestRetries.HasValue)
         {
-            Log.Debug("CiVisibilityFlakyRetryFeature: Flaky retries is enabled.");
-            settings.SetImpactedTestsEnabled(true);
+            Log.Information("CiVisibilityFlakyRetryFeature: Flaky Retries has been changed to {Value} by the settings api.", clientSettingsResponse.FlakyTestRetries.Value);
+            settings.SetFlakyRetryEnabled(clientSettingsResponse.FlakyTestRetries.Value);
+        }
+
+        if (settings.FlakyRetryEnabled == true)
+        {
+            Log.Information("CiVisibilityFlakyRetryFeature: Flaky retries is enabled.");
             Enabled = true;
         }
         else
         {
-            Log.Debug("CiVisibilityFlakyRetryFeature: Flaky retries is disabled.");
-            settings.SetImpactedTestsEnabled(false);
+            Log.Information("CiVisibilityFlakyRetryFeature: Flaky retries is disabled.");
             Enabled = false;
         }
     }
 
-    private CiVisibilityFlakyRetryFeature()
-    {
-        Enabled = false;
-    }
-
     public bool Enabled { get; }
-
-    public static ICiVisibilityFlakyRetryFeature CreateDisabledFeature() => new CiVisibilityFlakyRetryFeature();
 
     public static ICiVisibilityFlakyRetryFeature Create(CIVisibilitySettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new CiVisibilityFlakyRetryFeature(settings, clientSettingsResponse, testOptimizationClient);
