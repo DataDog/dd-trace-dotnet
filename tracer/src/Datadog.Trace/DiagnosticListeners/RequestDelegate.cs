@@ -11,7 +11,7 @@ namespace Datadog.Trace.DiagnosticListeners;
 
 /// <summary>
 /// RequestDelegate for duck typing
-/// https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Http.Abstractions/src/RequestDelegate.cs
+/// https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Http.Abstractions/src/RequestDelegate.cs
 /// </summary>
 [DuckCopy]
 internal struct RequestDelegate
