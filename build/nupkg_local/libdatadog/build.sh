@@ -61,8 +61,7 @@ for dir in $dirs; do
     elif [ $base_dir == "x86_64-alpine-linux-musl" ]; then
         rid="linux-musl-x64"
     elif [ $base_dir == "x86_64-apple-darwin" ]; then
-        echo "Skipping $base_dir"
-        continue
+        rid="osx-x64"
     elif [ $base_dir == "x86_64-unknown-linux-gnu" ]; then
         rid="linux-x64"
     else
