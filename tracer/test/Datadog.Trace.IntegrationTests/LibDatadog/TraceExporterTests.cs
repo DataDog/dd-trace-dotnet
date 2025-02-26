@@ -29,6 +29,11 @@ public class TraceExporterTests
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
         }
 
+        if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux())
+        {
+            throw new SkipException("Can't use Unix Domain Sockets on non-Linux with data pipeline enabled");
+        }
+
         var settings = GetSettings(transport);
         var tracerSettings = TracerSettings.Create(settings);
 
