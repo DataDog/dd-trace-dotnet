@@ -477,6 +477,7 @@ profiler_cpu_timer_create-arm64:
     - | 
       /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER \
         >> ~/.aws/config || exit $?
+    - cat ~/.aws/config
     - export AWS_PROFILE=$AWS_EPHEMERAL_INFRA_PROFILE_NAME
     - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - cp ../build-id.txt .
