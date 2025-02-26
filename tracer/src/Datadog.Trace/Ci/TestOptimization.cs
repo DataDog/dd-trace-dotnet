@@ -39,7 +39,6 @@ internal class TestOptimization : ITestOptimization
     {
         _enabledLazy = new Lazy<bool>(InternalEnabled, true);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
-        DefaultUseLockedTracerManager = true;
     }
 
     public static ITestOptimization Instance
@@ -48,7 +47,7 @@ internal class TestOptimization : ITestOptimization
         internal set => _instance = value;
     }
 
-    public static bool DefaultUseLockedTracerManager { get; set; }
+    public static bool DefaultUseLockedTracerManager { get; set; } = true;
 
     public IDatadogLogger Log { get; }
 
@@ -185,7 +184,7 @@ internal class TestOptimization : ITestOptimization
                 initialRetryDelayMs: 10,
                 maxRetryDelayMs: 1000,
                 recheckIntervalMs: int.MaxValue),
-            useLockedTracerManager: true);
+            useLockedTracerManager: DefaultUseLockedTracerManager);
 
         var eventPlatformProxyEnabled = TracerManagement.EventPlatformProxySupport != EventPlatformProxySupport.None;
         if (eventPlatformProxyEnabled)

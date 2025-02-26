@@ -104,9 +104,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return null;
             }
 
-            var ciVisibilitySettings = TestOptimization.Instance.Settings;
-            var agentless = ciVisibilitySettings.Agentless;
-            var isEvpProxy = (TestOptimization.Instance.TracerManagement?.EventPlatformProxySupport ?? EventPlatformProxySupport.None) != EventPlatformProxySupport.None;
+            var testOptimization = TestOptimization.Instance;
+            var testOptimizationSettings = testOptimization.Settings;
+            var agentless = testOptimizationSettings.Agentless;
+            var isEvpProxy = (testOptimization.TracerManagement?.EventPlatformProxySupport ?? EventPlatformProxySupport.None) != EventPlatformProxySupport.None;
 
             Log.Information("CreateSession: Agentless: {Agentless} | IsEvpProxy: {IsEvpProxy}", agentless, isEvpProxy);
 
@@ -126,16 +127,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
-                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
-                session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
-                if (ciVisibilitySettings.EarlyFlakeDetectionEnabled == true)
+                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimizationSettings.TestsSkippingEnabled == true ? "true" : "false");
+                session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
+                if (testOptimizationSettings.EarlyFlakeDetectionEnabled == true)
                 {
                     session.SetTag(EarlyFlakeDetectionTags.Enabled, "true");
                 }
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
-                if (ciVisibilitySettings.TestsSkippingEnabled == false)
+                if (testOptimizationSettings.TestsSkippingEnabled == false)
                 {
                     session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }
