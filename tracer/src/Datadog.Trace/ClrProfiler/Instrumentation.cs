@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Logging;
