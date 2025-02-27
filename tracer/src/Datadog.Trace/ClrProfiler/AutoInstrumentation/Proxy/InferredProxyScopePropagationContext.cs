@@ -9,9 +9,9 @@ using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
-internal class InferredProxyScopePropagationContext(Scope scope, PropagationContext context)
+internal readonly struct InferredProxyScopePropagationContext(Scope scope, PropagationContext context)
 {
-    public PropagationContext Context { get; } = context;
+    public readonly PropagationContext Context = context;
 
-    public Scope Scope { get; } = scope;
+    public readonly Scope Scope = scope;
 }

@@ -38,7 +38,7 @@ public class InferredProxyCoordinatorTests
             It.IsAny<NameValueHeadersCollection>(),
             It.IsAny<TestCarrierGetter>(),
             It.IsAny<Tracer>(),
-            out It.Ref<InferredProxyData?>.IsAny))
+            out It.Ref<InferredProxyData>.IsAny))
             .Returns(false);
 
         var result = _coordinator.ExtractAndCreateScope(_tracer, headers, new TestCarrierGetter(), new PropagationContext());
@@ -84,9 +84,9 @@ public class InferredProxyCoordinatorTests
             It.IsAny<NameValueHeadersCollection>(),
             It.IsAny<TestCarrierGetter>(),
             It.IsAny<Tracer>(),
-            out It.Ref<InferredProxyData?>.IsAny))
+            out It.Ref<InferredProxyData>.IsAny))
             .Returns(true)
-            .Callback((NameValueHeadersCollection carrier, TestCarrierGetter getter, Tracer tracer, out InferredProxyData? data) =>
+            .Callback((NameValueHeadersCollection carrier, TestCarrierGetter getter, Tracer tracer, out InferredProxyData data) =>
             {
                 data = proxyData;
             });
@@ -105,10 +105,10 @@ public class InferredProxyCoordinatorTests
             _tracer,
             headers,
             new TestCarrierGetter(),
-            new PropagationContext());
+            new PropagationContext())!;
 
         result.Should().NotBeNull();
-        result!.Scope.Should().Be(realScope);
-        result.Context.SpanContext.Should().BeEquivalentTo(realScope.Span.Context);
+        result.Value.Scope.Should().Be(realScope);
+        result.Value.Context.SpanContext.Should().BeEquivalentTo(realScope.Span.Context);
     }
 }

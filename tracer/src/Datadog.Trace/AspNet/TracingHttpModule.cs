@@ -139,8 +139,8 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
-                var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? new System.Collections.Specialized.NameValueCollection();
-                NameValueHeadersCollection? headers = null;
+                var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? [];
+                var headers = requestHeaders.Wrap();
                 PropagationContext extractedContext = default;
 
                 if (tracer.InternalActiveScope == null)
@@ -148,14 +148,12 @@ namespace Datadog.Trace.AspNet
                     try
                     {
                         // extract propagated http headers
-                        headers = requestHeaders.Wrap();
-                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers).MergeBaggageInto(Baggage.Current);
 
                         // if inferred proxy spans are enabled, try to extract and create the proxy span
                         if (tracer.Settings.InferredProxySpansEnabled)
                         {
-                            var proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers.Value, extractedContext);
-                            if (proxyContext is not null)
+                            if (InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, headers, extractedContext) is { } proxyContext)
                             {
                                 inferredProxyScope = proxyContext.Scope;
                                 // updates the extracted context with the inferred proxy span context so that it has the inferred context
@@ -177,10 +175,7 @@ namespace Datadog.Trace.AspNet
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
-                if (headers is not null)
-                {
-                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                }
+                tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                 {

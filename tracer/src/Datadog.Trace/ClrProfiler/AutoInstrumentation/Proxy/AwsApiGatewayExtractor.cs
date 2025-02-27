@@ -21,10 +21,10 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewayExtractor>();
 
-    public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, Tracer tracer, out InferredProxyData? data)
+    public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, Tracer tracer, out InferredProxyData data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>
     {
-        data = null;
+        data = default;
 
         if (tracer == null! || !tracer.Settings.InferredProxySpansEnabled)
         {

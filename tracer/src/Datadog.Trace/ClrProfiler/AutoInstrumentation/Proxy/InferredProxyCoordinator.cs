@@ -57,7 +57,7 @@ internal class InferredProxyCoordinator
     {
         try
         {
-            if (!_extractor.TryExtract(carrier, carrierGetter, tracer, out var proxyData) || proxyData == null)
+            if (!_extractor.TryExtract(carrier, carrierGetter, tracer, out var proxyData))
             {
                 return null;
             }
