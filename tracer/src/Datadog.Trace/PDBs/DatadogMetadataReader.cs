@@ -668,6 +668,13 @@ namespace Datadog.Trace.Pdb
             return IsCompilerGeneratedAttributeDefine(attributes);
         }
 
+        internal bool IsCompilerGeneratedAttributeDefinedOnType(TypeDefinitionHandle typeHandle)
+        {
+            var nestedType = MetadataReader.GetTypeDefinition(typeHandle);
+            var attributes = nestedType.GetCustomAttributes();
+            return IsCompilerGeneratedAttributeDefine(attributes);
+        }
+
         private bool IsCompilerGeneratedAttributeDefine(CustomAttributeHandleCollection attributes)
         {
             foreach (var attributeHandle in attributes)

@@ -15,7 +15,6 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {

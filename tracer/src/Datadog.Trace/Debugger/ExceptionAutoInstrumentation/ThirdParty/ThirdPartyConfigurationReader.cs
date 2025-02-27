@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
