@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 611;
+    private const int CountLength = 613;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -559,48 +559,50 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
             // waf.init, index = 508
-            new(null),
-            // waf.updates, index = 509
-            new(null),
-            // waf.requests, index = 510
+            new(new[] { "waf_version", "event_rules_version", "success:true" }),
+            new(new[] { "waf_version", "event_rules_version", "success:false" }),
+            // waf.updates, index = 510
+            new(new[] { "waf_version", "event_rules_version", "success:true" }),
+            new(new[] { "waf_version", "event_rules_version", "success:false" }),
+            // waf.requests, index = 512
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
             new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
-            // waf.input_truncated, index = 515
+            // waf.input_truncated, index = 517
             new(new[] { "truncation_reason:string_too_long" }),
             new(new[] { "truncation_reason:list_or_map_too_large" }),
             new(new[] { "truncation_reason:object_too_deep" }),
-            // rasp.rule.eval, index = 518
+            // rasp.rule.eval, index = 520
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "rule_type:command_injection", "rule_variant:exec" }),
-            // rasp.rule.match, index = 523
+            // rasp.rule.match, index = 525
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "rule_type:command_injection", "rule_variant:exec" }),
-            // rasp.timeout, index = 528
+            // rasp.timeout, index = 530
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "rule_type:command_injection", "rule_variant:shell" }),
             new(new[] { "waf_version", "rule_type:command_injection", "rule_variant:exec" }),
-            // instrum.user_auth.missing_user_id, index = 533
+            // instrum.user_auth.missing_user_id, index = 535
             new(new[] { "framework:aspnetcore_identity", "event_type:login_success" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:login_failure" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:signup" }),
             new(new[] { "framework:unknown", "event_type:signup" }),
-            // instrum.user_auth.missing_user_login, index = 537
+            // instrum.user_auth.missing_user_login, index = 539
             new(new[] { "framework:aspnetcore_identity", "event_type:login_success" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:login_failure" }),
             new(new[] { "framework:aspnetcore_identity", "event_type:signup" }),
             new(new[] { "framework:unknown", "event_type:signup" }),
-            // executed.source, index = 541
+            // executed.source, index = 543
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -615,9 +617,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.uri" }),
             new(new[] { "source_type:grpc.request.body" }),
             new(new[] { "source_type:sql.row.value" }),
-            // executed.propagation, index = 555
+            // executed.propagation, index = 557
             new(null),
-            // executed.sink, index = 556
+            // executed.sink, index = 558
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -645,9 +647,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
             new(new[] { "vulnerability_type:email_html_injection" }),
-            // request.tainted, index = 583
+            // request.tainted, index = 585
             new(null),
-            // suppressed.vulnerabilities, index = 584
+            // suppressed.vulnerabilities, index = 586
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -683,7 +685,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 80, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 80, 1, 22, 3, 1, 1, 5, 3, 5, 5, 5, 4, 4, 14, 1, 27, 1, 27, };
+        = new int[]{ 4, 80, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 80, 1, 22, 3, 2, 2, 5, 3, 5, 5, 5, 4, 4, 14, 1, 27, 1, 27, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -863,83 +865,85 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountWafInit(int increment = 1)
+    public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[508], increment);
+        var index = 508 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountWafUpdates(int increment = 1)
-    {
-        Interlocked.Add(ref _buffer.Count[509], increment);
-    }
-
-    public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
+    public void RecordCountWafUpdates(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
         var index = 510 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
+    public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
+    {
+        var index = 512 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
     public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
     {
-        var index = 515 + (int)tag;
+        var index = 517 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 518 + (int)tag;
+        var index = 520 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 523 + (int)tag;
+        var index = 525 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 528 + (int)tag;
+        var index = 530 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1)
     {
-        var index = 533 + (int)tag;
+        var index = 535 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMissingUserLogin(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1)
     {
-        var index = 537 + (int)tag;
+        var index = 539 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType tag, int increment = 1)
     {
-        var index = 541 + (int)tag;
+        var index = 543 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[555], increment);
+        Interlocked.Add(ref _buffer.Count[557], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
-        var index = 556 + (int)tag;
+        var index = 558 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[583], increment);
+        Interlocked.Add(ref _buffer.Count[585], increment);
     }
 
     public void RecordCountIastSuppressedVulnerabilities(Datadog.Trace.Telemetry.Metrics.MetricTags.IastVulnerabilityType tag, int increment = 1)
     {
-        var index = 584 + (int)tag;
+        var index = 586 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 }

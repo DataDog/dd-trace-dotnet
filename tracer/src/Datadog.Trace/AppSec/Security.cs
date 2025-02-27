@@ -562,11 +562,12 @@ namespace Datadog.Trace.AppSec
                 {
                     // occurs the first time we initialize the WAF
                     TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
-                    TelemetryFactory.Metrics.RecordCountWafInit();
+                    TelemetryFactory.Metrics.RecordCountWafInit(Telemetry.Metrics.MetricTags.WafStatus.Success);
                 }
             }
             else
             {
+                TelemetryFactory.Metrics.RecordCountWafInit(Telemetry.Metrics.MetricTags.WafStatus.Error);
                 _wafInitResult.Waf?.Dispose();
                 _configurationState.AppsecEnabled = false;
                 InitializationError = "Error initializing waf";
