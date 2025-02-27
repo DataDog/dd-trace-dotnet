@@ -45,7 +45,8 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        Interlocked.CompareExchange(ref _totalRetries, TestOptimization.Instance.Settings.TotalFlakyRetryCount, -1);
+        var testOptimizationSettings = TestOptimization.Instance.Settings;
+        Interlocked.CompareExchange(ref _totalRetries, testOptimizationSettings.TotalFlakyRetryCount, -1);
 
         var testcase = testcaseOriginal.DuckCast<IXunitTestCaseV3>()!;
         var testRunnerData = new TestRunnerStruct
@@ -81,7 +82,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true && TestOptimization.Instance.Settings.FlakyRetryEnabled != true)
+        if (testOptimizationSettings.EarlyFlakeDetectionEnabled != true && testOptimizationSettings.FlakyRetryEnabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -94,7 +95,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             retryMetadata = retryMessageBus.GetMetadata(testcase.UniqueID);
             if (retryMetadata.ExecutionIndex == 0)
             {
-                retryMetadata.FlakyRetryEnabled = TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true && TestOptimization.Instance.Settings.FlakyRetryEnabled == true;
+                retryMetadata.FlakyRetryEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled != true && testOptimizationSettings.FlakyRetryEnabled == true;
             }
         }
 
@@ -109,13 +110,14 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return returnValue;
         }
 
+        var testOptimizationSettings = TestOptimization.Instance.Settings;
         var retryMessageBus = stateArray[0] as RetryMessageBus;
         var retryMetadata = stateArray[1] as TestCaseMetadata;
         var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[2];
         var testcase = (IXunitTestCaseV3)stateArray[3];
 
         if (retryMessageBus is not null &&
-            retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } &&
+            retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } &&
             context.Instance is not null &&
             testcase.Instance is not null)
         {
@@ -144,7 +146,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                 if (isFlakyRetryEnabled)
                 {
-                    retryMetadata.TotalExecutions = TestOptimization.Instance.Settings.FlakyRetryCount + 1;
+                    retryMetadata.TotalExecutions = testOptimizationSettings.FlakyRetryCount + 1;
                 }
                 else
                 {
@@ -173,7 +175,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     }
                     else if (remainingTotalRetries < 1)
                     {
-                        Common.Log.Debug<int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", TestOptimization.Instance.Settings.TotalFlakyRetryCount);
+                        Common.Log.Debug<int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimizationSettings.TotalFlakyRetryCount);
                         doRetry = false;
                     }
                 }

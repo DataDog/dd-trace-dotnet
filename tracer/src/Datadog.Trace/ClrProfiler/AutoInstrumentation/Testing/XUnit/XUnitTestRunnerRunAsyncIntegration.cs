@@ -48,7 +48,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        Interlocked.CompareExchange(ref _totalRetries, TestOptimization.Instance.Settings.TotalFlakyRetryCount, -1);
+        var testOptimizationSettings = TestOptimization.Instance.Settings;
+        Interlocked.CompareExchange(ref _totalRetries, testOptimizationSettings.TotalFlakyRetryCount, -1);
 
         var runnerInstance = instance.DuckCast<TestRunnerStruct>();
         ITestRunner? testRunnerInstance = null;
@@ -74,8 +75,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true &&
-            TestOptimization.Instance.Settings.FlakyRetryEnabled != true)
+        if (testOptimizationSettings.EarlyFlakeDetectionEnabled != true &&
+            testOptimizationSettings.FlakyRetryEnabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -105,7 +106,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
             // EFD is disabled but FlakeRetry is enabled
             retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
-            retryMetadata.FlakyRetryEnabled = TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true && TestOptimization.Instance.Settings.FlakyRetryEnabled == true;
+            retryMetadata.FlakyRetryEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled != true && testOptimizationSettings.FlakyRetryEnabled == true;
             testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(_messageBusInterfaceType);
         }
         else
@@ -132,9 +133,10 @@ public static class XUnitTestRunnerRunAsyncIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
+        var testOptimizationSettings = TestOptimization.Instance.Settings;
         if (state.State is TestRunnerState { MessageBus: { } messageBus, RetryMetadata: { } retryMetadata } testRunnerState)
         {
-            if (retryMetadata is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
+            if (retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
              && returnValue.TryDuckCast<IRunSummary>(out var runSummary))
             {
                 var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
@@ -144,7 +146,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                     if (isFlakyRetryEnabled)
                     {
-                        retryMetadata.TotalExecutions = TestOptimization.Instance.Settings.FlakyRetryCount + 1;
+                        retryMetadata.TotalExecutions = testOptimizationSettings.FlakyRetryCount + 1;
                     }
                     else
                     {
@@ -168,7 +170,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                         else if (remainingTotalRetries < 1)
                         {
-                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", TestOptimization.Instance.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimizationSettings.TotalFlakyRetryCount);
                             doRetry = false;
                         }
                     }

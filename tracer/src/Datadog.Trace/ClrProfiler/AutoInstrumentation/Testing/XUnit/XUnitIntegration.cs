@@ -109,7 +109,7 @@ internal static class XUnitIntegration
 
             if (testCaseMetadata is not null)
             {
-                testCaseMetadata.TestIsNew = testIsNew;
+                testCaseMetadata.EarlyFlakeDetectionEnabled = testIsNew;
                 if (testIsNew)
                 {
                     if (testCaseMetadata.ExecutionIndex > 0)

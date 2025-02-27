@@ -11,7 +11,7 @@ internal class TestCaseMetadata
     {
         TotalExecutions = totalExecution;
         ExecutionNumber = executionNumber;
-        TestIsNew = null;
+        EarlyFlakeDetectionEnabled = false;
         AbortByThreshold = false;
         FlakyRetryEnabled = false;
         UniqueID = uniqueID;
@@ -23,7 +23,7 @@ internal class TestCaseMetadata
 
     public int ExecutionIndex => TotalExecutions - (ExecutionNumber + 1);
 
-    public bool? TestIsNew { get; set; }
+    public bool EarlyFlakeDetectionEnabled { get; set; }
 
     public bool AbortByThreshold { get; set; }
 
