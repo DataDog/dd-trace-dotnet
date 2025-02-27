@@ -28,6 +28,6 @@ internal interface IInferredProxyExtractor
         TCarrier carrier,
         TCarrierGetter carrierGetter,
         Tracer tracer,
-        out InferredProxyData? data)
+        out InferredProxyData data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
 }
