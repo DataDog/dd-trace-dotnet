@@ -5,12 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System;
 using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
-using MemoryExtensions = Datadog.Trace.Debugger.Helpers.MemoryExtensions;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -37,25 +33,25 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 throw new ArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
             }
 
-            var fnvHashCode = HashLine(VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(outerExceptionType), Fnv1aHash.FnvOffsetBias);
+            var fnvHashCode = HashLine(outerExceptionType.AsSpan(), Fnv1aHash.FnvOffsetBias);
 
             if (innerExceptionType != null)
             {
-                fnvHashCode = HashLine(VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(innerExceptionType), fnvHashCode);
+                fnvHashCode = HashLine(innerExceptionType.AsSpan(), fnvHashCode);
             }
 
-            var exceptionSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(exceptionString);
-            var inSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(" in ");
-            var atSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at ");
-            var lambdaSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("lambda_");
-            var microsoftSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at Microsoft.");
-            var systemSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at System.");
-            var datadogSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at Datadog.");
+            var exceptionSpan = exceptionString.AsSpan();
+            var inSpan = " in ".AsSpan();
+            var atSpan = "at ".AsSpan();
+            var lambdaSpan = "lambda_".AsSpan();
+            var microsoftSpan = "at Microsoft.".AsSpan();
+            var systemSpan = "at System.".AsSpan();
+            var datadogSpan = "at Datadog.".AsSpan();
 
             while (!exceptionSpan.IsEmpty)
             {
                 var lineEndIndex = exceptionSpan.IndexOfAny('\r', '\n');
-                VendoredMicrosoftCode.System.ReadOnlySpan<char> line;
+                ReadOnlySpan<char> line;
 
                 if (lineEndIndex >= 0)
                 {
@@ -73,15 +69,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
 
                 // Is frame line (starts with `in `).
-                if (VendoredMicrosoftCode.System.MemoryExtensions.StartsWith(line.TrimStart(), atSpan, StringComparison.Ordinal))
+                if (line.TrimStart().StartsWith(atSpan, StringComparison.Ordinal))
                 {
-                    var index = VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(line, inSpan, StringComparison.Ordinal);
+                    var index = line.IndexOf(inSpan, StringComparison.Ordinal);
                     line = index > 0 ? line.Slice(0, index) : line;
 
-                    if (VendoredMicrosoftCode.System.MemoryExtensions.Contains(line, lambdaSpan, StringComparison.Ordinal) ||
-                        VendoredMicrosoftCode.System.MemoryExtensions.Contains(line, microsoftSpan, StringComparison.Ordinal) ||
-                        VendoredMicrosoftCode.System.MemoryExtensions.Contains(line, datadogSpan, StringComparison.Ordinal) ||
-                        VendoredMicrosoftCode.System.MemoryExtensions.Contains(line, systemSpan, StringComparison.Ordinal))
+                    if (line.Contains(lambdaSpan, StringComparison.Ordinal) ||
+                        line.Contains(microsoftSpan, StringComparison.Ordinal) ||
+                        line.Contains(datadogSpan, StringComparison.Ordinal) ||
+                        line.Contains(systemSpan, StringComparison.Ordinal))
                     {
                         continue;
                     }
@@ -93,7 +89,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return fnvHashCode;
         }
 
-        protected virtual int HashLine(VendoredMicrosoftCode.System.ReadOnlySpan<char> line, int fnvHashCode)
+        protected virtual int HashLine(ReadOnlySpan<char> line, int fnvHashCode)
         {
             for (var i = 0; i < line.Length; i++)
             {
@@ -112,12 +108,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             var results = new List<string>();
-            var currentSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(exceptionString);
+            var currentSpan = exceptionString.AsSpan();
 
             while (!currentSpan.IsEmpty)
             {
                 var lineEndIndex = currentSpan.IndexOfAny('\r', '\n');
-                VendoredMicrosoftCode.System.ReadOnlySpan<char> line;
+                ReadOnlySpan<char> line;
 
                 if (lineEndIndex >= 0)
                 {
@@ -141,7 +137,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void ProcessLine(VendoredMicrosoftCode.System.ReadOnlySpan<char> line, List<string> results)
+        private static void ProcessLine(ReadOnlySpan<char> line, List<string> results)
         {
             line = line.TrimStart();
             if (line.IsEmpty)
@@ -150,7 +146,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             // Check if it's a stack frame line (starts with "at ")
-            if (!VendoredMicrosoftCode.System.MemoryExtensions.StartsWith(line, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at "), StringComparison.Ordinal))
+            if (!line.StartsWith("at ".AsSpan(), StringComparison.Ordinal))
             {
                 return;
             }
@@ -165,7 +161,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             // Find the " in " marker and truncate if found
-            var inIndex = VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(line, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(" in "), StringComparison.Ordinal);
+            var inIndex = line.IndexOf(" in ".AsSpan(), StringComparison.Ordinal);
 
             if (inIndex > 0)
             {
@@ -177,10 +173,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ContainsAny(VendoredMicrosoftCode.System.ReadOnlySpan<char> source, string first, string second)
+        private static bool ContainsAny(ReadOnlySpan<char> source, string first, string second)
         {
-            return VendoredMicrosoftCode.System.MemoryExtensions.Contains(source, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(first), StringComparison.Ordinal) ||
-                   VendoredMicrosoftCode.System.MemoryExtensions.Contains(source, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(second), StringComparison.Ordinal);
+            return source.Contains(first.AsSpan(), StringComparison.Ordinal) ||
+                   source.Contains(second.AsSpan(), StringComparison.Ordinal);
         }
     }
 }

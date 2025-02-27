@@ -8,7 +8,6 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
-using VendoredUnsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 
@@ -25,21 +24,13 @@ internal abstract class ContinuationGenerator<TTarget, TReturn>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected static TReturn ToTReturn<TFrom>(TFrom returnValue)
     {
-#if NETCOREAPP3_1_OR_GREATER
         return Unsafe.As<TFrom, TReturn>(ref returnValue);
-#else
-            return VendoredUnsafe.As<TFrom, TReturn>(ref returnValue);
-#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected static TTo FromTReturn<TTo>(TReturn returnValue)
     {
-#if NETCOREAPP3_1_OR_GREATER
         return Unsafe.As<TReturn, TTo>(ref returnValue);
-#else
-            return VendoredUnsafe.As<TReturn, TTo>(ref returnValue);
-#endif
     }
 
     internal abstract class CallbackHandler

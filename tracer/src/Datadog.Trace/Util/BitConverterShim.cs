@@ -5,16 +5,14 @@
 
 #nullable enable
 
-#if !NETCOREAPP
+#if !NETCOREAPP3_1_OR_GREATER
 
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Util;
 
-internal class BitConverterShim
+internal static class BitConverterShim
 {
     public static bool IsLittleEndian => BitConverter.IsLittleEndian;
 
