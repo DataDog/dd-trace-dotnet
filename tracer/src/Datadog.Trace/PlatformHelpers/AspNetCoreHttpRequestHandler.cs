@@ -104,22 +104,18 @@ namespace Datadog.Trace.PlatformHelpers
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
-
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
+
             resourceName ??= GetDefaultResourceName(request);
-
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
+            InferredProxyScopePropagationContext? proxyContext = null;
 
-            InferredProxyScopePropagationContext proxyContext = null;
-            if (tracer.Settings.InferredProxySpansEnabled)
+            if (tracer.Settings.InferredProxySpansEnabled && request.Headers is { } headers)
             {
-                if (request.Headers is { } headers)
+                proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new HeadersCollectionAdapter(headers), extractedContext);
+                if (proxyContext != null)
                 {
-                    proxyContext = InferredProxySpanHelper.ExtractAndCreateInferredProxyScope(tracer, new HeadersCollectionAdapter(headers), extractedContext);
-                    if (proxyContext != null)
-                    {
-                        extractedContext = proxyContext.Context;
-                    }
+                    extractedContext = proxyContext.Value.Context;
                 }
             }
 
@@ -133,9 +129,9 @@ namespace Datadog.Trace.PlatformHelpers
             var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
             var requestTrackingFeature = new RequestTrackingFeature(originalPath, scope);
 
-            if (proxyContext?.Scope != null)
+            if (proxyContext?.Scope is { } proxyScope)
             {
-                requestTrackingFeature.ProxyScope = proxyContext.Scope;
+                requestTrackingFeature.ProxyScope = proxyScope;
             }
 
             httpContext.Features.Set(requestTrackingFeature);
