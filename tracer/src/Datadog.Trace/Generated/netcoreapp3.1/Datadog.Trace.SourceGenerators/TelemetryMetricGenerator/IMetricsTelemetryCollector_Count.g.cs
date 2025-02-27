@@ -71,9 +71,9 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountDirectLogApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1);
 
-    public void RecordCountWafInit(int increment = 1);
+    public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1);
 
-    public void RecordCountWafUpdates(int increment = 1);
+    public void RecordCountWafUpdates(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1);
 
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1);
 
