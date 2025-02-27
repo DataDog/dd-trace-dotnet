@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
@@ -22,24 +21,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
     /// </summary>
     internal static class EnumerableExtensions
   {
-    public static T? FirstOrDefault<T>(this ImmutableArray<T> collection, Func<T, bool> predicate)
-    {
-      foreach (T obj in collection)
-      {
-        if (predicate(obj))
-          return obj;
-      }
-      return default (T);
-    }
-
-    public static IEnumerable<TResult> Select<TSource, TResult>(
-      this IEnumerable<TSource> source,
-      Func<TSource, TResult> selector)
-    {
-      foreach (TSource source1 in source)
-        yield return selector(source1);
-    }
-
     public static T Last<T>(this ImmutableArray<T>.Builder source) => source[source.Count - 1];
 
     public static IEnumerable<T> OrderBy<T>(this List<T> source, Comparison<T> comparison)

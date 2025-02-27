@@ -12,9 +12,7 @@
 using System;
 using System.IO;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
-
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable
