@@ -120,11 +120,11 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
     }
 

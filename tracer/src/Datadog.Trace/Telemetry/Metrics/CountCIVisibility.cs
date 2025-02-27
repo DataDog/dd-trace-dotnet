@@ -205,16 +205,16 @@ internal enum CountCIVisibility
     /// The number of requests sent to the known tests endpoint, regardless of success.
     /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
-        ("early_flake_detection.request", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequest,
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>("known_tests.request", isCommon: true, NS.CIVisibility)]
+    KnownTestsRequest,
 
     /// <summary>
     /// The number of known tests requests sent to the endpoint that errored, tagget by the error type
     /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
     /// and status code (400,401,403,404,408,429)
     /// </summary>
-    [TelemetryMetric<MetricTags.CIVisibilityErrorType>
-        ("early_flake_detection.request_errors", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestErrors,
+    [TelemetryMetric<MetricTags.CIVisibilityErrorType>("known_tests.request_errors", isCommon: true, NS.CIVisibility)]
+    KnownTestsRequestErrors,
 
     /// <summary>
     /// The number of requests sent to the modified files endpoint, regardless of success.

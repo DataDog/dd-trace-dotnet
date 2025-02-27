@@ -94,12 +94,12 @@ internal static class XUnitIntegration
         }
 
         // Early flake detection flags
-        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled == true)
+        if (TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true)
         {
-            var testIsNew = !TestOptimization.Instance.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
+            var testIsNew = !TestOptimization.Instance.KnownTestsFeature?.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
             if (testIsNew)
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                test.SetTag(TestTags.TestIsNew, "true");
 
                 if (testCaseMetadata is null)
                 {
@@ -114,7 +114,7 @@ internal static class XUnitIntegration
                 {
                     if (testCaseMetadata.ExecutionIndex > 0)
                     {
-                        test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                        test.SetTag(TestTags.TestIsRetry, "true");
                     }
                     else
                     {
@@ -131,7 +131,7 @@ internal static class XUnitIntegration
         {
             if (testCaseMetadata is { ExecutionIndex: > 0 })
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                test.SetTag(TestTags.TestIsRetry, "true");
             }
         }
 
@@ -161,7 +161,7 @@ internal static class XUnitIntegration
         {
             TimeSpan? duration = null;
             var testTags = test.GetTags();
-            if (testTags.EarlyFlakeDetectionTestIsNew == "true" && test.GetInternalSpan() is Span internalSpan)
+            if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
             {
                 duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
                 if (duration.Value.TotalMinutes >= 5)

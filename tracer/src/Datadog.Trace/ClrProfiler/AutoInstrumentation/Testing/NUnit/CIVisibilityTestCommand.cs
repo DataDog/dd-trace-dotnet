@@ -181,7 +181,7 @@ internal class CIVisibilityTestCommand
         {
             if (test.GetTags() is { } testTags)
             {
-                isTestNew = testTags.EarlyFlakeDetectionTestIsNew == "true";
+                isTestNew = testTags.TestIsNew == "true";
                 if (isTestNew && duration.TotalMinutes >= 5)
                 {
                     testTags.EarlyFlakeDetectionTestAbortReason = "slow";

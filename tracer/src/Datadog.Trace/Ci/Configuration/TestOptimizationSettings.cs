@@ -71,8 +71,15 @@ namespace Datadog.Trace.Ci.Configuration
             // Check if Datadog.Trace should be installed in the GAC
             InstallDatadogTraceInGac = config.WithKeys(ConfigurationKeys.CIVisibility.InstallDatadogTraceInGac).AsBool(true);
 
+            // Known tests feature
+            KnownTestsEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.KnownTestsEnabled).AsBool();
+
             // Early flake detection
             EarlyFlakeDetectionEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled).AsBool();
+            if (KnownTestsEnabled == false)
+            {
+                EarlyFlakeDetectionEnabled = false;
+            }
 
             // RUM flush milliseconds
             RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
@@ -224,6 +231,11 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? EarlyFlakeDetectionEnabled { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether the Known Tests feature is enabled.
+        /// </summary>
+        public bool? KnownTestsEnabled { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
         /// </summary>
         public int RumFlushWaitMillis { get; }
@@ -268,6 +280,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetTestsSkippingEnabled(bool value)
         {
             TestsSkippingEnabled = value;
+        }
+
+        internal void SetKnownTestsEnabled(bool value)
+        {
+            KnownTestsEnabled = value;
         }
 
         internal void SetEarlyFlakeDetectionEnabled(bool value)

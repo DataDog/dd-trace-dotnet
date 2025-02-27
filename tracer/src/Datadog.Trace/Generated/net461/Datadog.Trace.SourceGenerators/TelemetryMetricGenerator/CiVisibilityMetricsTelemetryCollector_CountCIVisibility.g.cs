@@ -413,10 +413,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(null),
             // code_coverage.errors, index = 366
             new(null),
-            // early_flake_detection.request, index = 367
+            // known_tests.request, index = 367
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // early_flake_detection.request_errors, index = 369
+            // known_tests.request_errors, index = 369
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -612,13 +612,13 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[366], increment);
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
         var index = 367 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 369 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);

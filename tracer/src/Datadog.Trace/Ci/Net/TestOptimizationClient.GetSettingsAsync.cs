@@ -35,7 +35,8 @@ internal sealed partial class TestOptimizationClient
             earlyFlakeDetection: new EarlyFlakeDetectionSettingsResponse(
                 enabled: settings.EarlyFlakeDetectionEnabled,
                 slowTestRetries: new SlowTestRetriesSettingsResponse(),
-                faultySessionThreshold: 0));
+                faultySessionThreshold: 0),
+            knownTestsEnabled: settings.KnownTestsEnabled);
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -176,11 +177,14 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("early_flake_detection")]
         public readonly EarlyFlakeDetectionSettingsResponse EarlyFlakeDetection;
 
+        [JsonProperty("known_tests_enabled")]
+        public readonly bool? KnownTestsEnabled;
+
         public SettingsResponse()
         {
         }
 
-        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection)
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled)
         {
             CodeCoverage = codeCoverage;
             TestsSkipping = testsSkipping;
@@ -188,6 +192,7 @@ internal sealed partial class TestOptimizationClient
             ImpactedTestsEnabled = impactedTestsEnabled;
             FlakyTestRetries = flakyTestRetries;
             EarlyFlakeDetection = earlyFlakeDetection;
+            KnownTestsEnabled = knownTestsEnabled;
         }
     }
 

@@ -30,6 +30,7 @@ internal class TestOptimization : ITestOptimization
     private Task? _additionalFeaturesTask;
     private ITestOptimizationTracerManagement? _tracerManagement;
     private ITestOptimizationHostInfo? _hostInfo;
+    private ITestOptimizationKnownTestsFeature? _knownTestsFeature;
     private ITestOptimizationEarlyFlakeDetectionFeature? _earlyFlakeDetectionFeature;
     private ITestOptimizationSkippableFeature? _skippableFeature;
     private ITestOptimizationImpactedTestsDetectionFeature? _impactedTestsDetectionFeature;
@@ -106,6 +107,20 @@ internal class TestOptimization : ITestOptimization
             return _tracerManagement;
         }
         private set => _tracerManagement = value;
+    }
+
+    public ITestOptimizationKnownTestsFeature? KnownTestsFeature
+    {
+        get
+        {
+            if (_knownTestsFeature is null)
+            {
+                _additionalFeaturesTask?.SafeWait();
+            }
+
+            return _knownTestsFeature;
+        }
+        private set => _knownTestsFeature = value;
     }
 
     public ITestOptimizationEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature
@@ -272,6 +287,7 @@ internal class TestOptimization : ITestOptimization
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings);
         var client = new NoopTestOptimizationClient();
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+        KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
@@ -535,6 +551,7 @@ internal class TestOptimization : ITestOptimization
                 }
 
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
@@ -555,6 +572,7 @@ internal class TestOptimization : ITestOptimization
 
                 var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings);
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, client);
+                KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);

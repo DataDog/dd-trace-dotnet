@@ -157,15 +157,15 @@ internal static class Common
     {
         // Early flake detection flags
         var ciVisibility = TestOptimization.Instance;
-        if (ciVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+        if (ciVisibility.EarlyFlakeDetectionFeature?.Enabled == true)
         {
-            var isTestNew = !ciVisibility.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
+            var isTestNew = !ciVisibility.KnownTestsFeature?.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
             if (isTestNew)
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                test.SetTag(TestTags.TestIsNew, "true");
                 if (isRetry)
                 {
-                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    test.SetTag(TestTags.TestIsRetry, "true");
                 }
                 else
                 {
@@ -179,7 +179,7 @@ internal static class Common
     {
         if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true && isRetry)
         {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            test.SetTag(TestTags.TestIsRetry, "true");
         }
     }
 
@@ -196,7 +196,7 @@ internal static class Common
 
                 // We need to stop the EFD feature off and set the session as a faulty.
                 // But session object is not available from the test host
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string?)null);
+                test.SetTag(TestTags.TestIsNew, (string?)null);
                 test.Suite?.Module?.TrySetSessionTag(EarlyFlakeDetectionTags.AbortReason, "faulty");
                 Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
             }

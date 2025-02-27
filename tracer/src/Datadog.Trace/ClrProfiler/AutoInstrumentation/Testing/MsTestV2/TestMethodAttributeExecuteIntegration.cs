@@ -98,7 +98,7 @@ public static class TestMethodAttributeExecuteIntegration
                     {
                         if (test.GetTags() is { } testTags)
                         {
-                            isTestNew = isTestNew || testTags.EarlyFlakeDetectionTestIsNew == "true";
+                            isTestNew = isTestNew || testTags.TestIsNew == "true";
                             if (isTestNew && duration.TotalMinutes >= 5)
                             {
                                 testTags.EarlyFlakeDetectionTestAbortReason = "slow";

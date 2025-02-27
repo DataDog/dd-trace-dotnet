@@ -447,7 +447,7 @@ public sealed class Test
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
-                tags.EarlyFlakeDetectionTestIsNew == "true",
+                tags is { TestIsNew: "true", TestRetryReason: "efd" },
                 tags.EarlyFlakeDetectionTestAbortReason == "slow",
                 !string.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)

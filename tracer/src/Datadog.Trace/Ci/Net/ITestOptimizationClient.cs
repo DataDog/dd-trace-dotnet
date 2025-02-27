@@ -12,7 +12,7 @@ internal interface ITestOptimizationClient
 {
     Task<TestOptimizationClient.SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false);
 
-    Task<TestOptimizationClient.EarlyFlakeDetectionResponse> GetEarlyFlakeDetectionTestsAsync();
+    Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync();
 
     Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync();
 
