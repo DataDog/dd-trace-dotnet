@@ -54,7 +54,7 @@ internal class SchemaExtractor
         }
 
         activeSpan.SetTag(Tags.SchemaType, "protobuf");
-        activeSpan.SetTag(Tags.SchemaName, descriptor.Value.Name);
+        activeSpan.SetTag(Tags.SchemaName, descriptor.Value.FullName);
         activeSpan.SetTag(Tags.SchemaOperation, operationName);
 
         // check rate limit
