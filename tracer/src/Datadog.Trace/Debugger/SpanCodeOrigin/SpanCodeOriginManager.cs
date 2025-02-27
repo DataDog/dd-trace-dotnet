@@ -8,7 +8,6 @@ using System;
 using System.Diagnostics;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {

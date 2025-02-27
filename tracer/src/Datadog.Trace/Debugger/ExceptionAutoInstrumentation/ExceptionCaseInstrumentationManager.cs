@@ -6,26 +6,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Threading;
-using System.Threading.Tasks;
-using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Expressions;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.PInvoke;
-using Datadog.Trace.Debugger.RateLimiting;
-using Datadog.Trace.Debugger.Sink.Models;
-using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
+
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionCaseInstrumentationManager
