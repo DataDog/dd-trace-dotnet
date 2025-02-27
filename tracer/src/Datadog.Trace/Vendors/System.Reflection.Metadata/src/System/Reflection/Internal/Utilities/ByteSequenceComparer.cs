@@ -11,7 +11,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal
