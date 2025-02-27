@@ -377,20 +377,6 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        private readonly struct HeadersCollectionGetterAndSetter<TCarrier> : ICarrierGetter<TCarrier>, ICarrierSetter<TCarrier>
-            where TCarrier : IHeadersCollection
-        {
-            public IEnumerable<string?> Get(TCarrier carrier, string key)
-            {
-                return carrier.GetValues(key);
-            }
-
-            public void Set(TCarrier carrier, string key, string value)
-            {
-                carrier.Set(key, value);
-            }
-        }
-
         private readonly struct FuncGetter<TCarrier> : ICarrierGetter<TCarrier>
         {
             private readonly Func<TCarrier, string, IEnumerable<string?>> _getter;
