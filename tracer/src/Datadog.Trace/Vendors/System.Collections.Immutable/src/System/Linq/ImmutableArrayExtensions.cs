@@ -13,8 +13,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Linq
