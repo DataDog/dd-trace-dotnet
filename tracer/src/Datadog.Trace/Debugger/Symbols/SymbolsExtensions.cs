@@ -6,14 +6,14 @@
 #nullable enable
 
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata; // keep vendored versions for now because we access internal members
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger.Symbols;
 
 internal static class SymbolsExtensions
 {
-    private static EntityHandle _nilEntityHandle = new(0);
+    private static readonly EntityHandle _nilEntityHandle = default;
 
     internal static ref readonly EntityHandle NilEntityHandle => ref _nilEntityHandle;
 
