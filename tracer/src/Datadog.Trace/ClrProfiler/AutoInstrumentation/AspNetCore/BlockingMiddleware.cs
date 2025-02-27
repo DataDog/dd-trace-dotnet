@@ -132,7 +132,7 @@ internal class BlockingMiddleware
                             securityReporter.TryReport(blockException.Result, endedResponse);
                         }
 
-                        securityReporter.AddResponseHeadersToSpanAndCleanup();
+                        securityReporter.AddResponseHeadersToSpan();
                     }
                     else
                     {
