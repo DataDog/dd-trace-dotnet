@@ -966,17 +966,20 @@ partial class Build
             // See also the ValidateNativeTracerGlibcCompatibility Nuke task and the checks
             // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
 
-            var filesAndVersion = new List<KeyValuePair<string, Version>>
+            // On Alpine/aarch64, libdatadog requires those two symbols (they are defined as weak with no implementation).
+            // Since the CLR requires them too, it seems safe to accept them.
+            // For information, those symbols comes from libgcc and are exposed for compatibility
+            var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
+            var filesAndVersion = new List<Tuple<string, Version, IEnumerable<string>>>
             {
-                new(FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17)),
-                new("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16))
+                new(FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null),
+                new("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols)
             };
 
-            foreach (var (file, expectedGlibcVersion) in filesAndVersion)
+            foreach (var (file, expectedGlibcVersion, allowedSymbols) in filesAndVersion)
             {
                 var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
-                ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
-
+                ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion, allowedSymbols);
             }
         });
 

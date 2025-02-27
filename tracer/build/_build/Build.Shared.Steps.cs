@@ -291,10 +291,10 @@ partial class Build
             ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
         });
 
-    void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion)
+    void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion, IEnumerable<string> allowedSymbols = null)
     {
         var filename = Path.GetFileNameWithoutExtension(libraryPath);
-        var glibcVersion = FindMaxGlibcVersion(libraryPath);
+        var glibcVersion = FindMaxGlibcVersion(libraryPath, allowedSymbols);
 
         Logger.Information("Maximum required glibc version for {Filename} is {GlibcVersion}", filename, glibcVersion);
 
@@ -308,7 +308,7 @@ partial class Build
         }
     }
 
-    Version FindMaxGlibcVersion(AbsolutePath libraryPath)
+    Version FindMaxGlibcVersion(AbsolutePath libraryPath, IEnumerable<string> allowedSymbols)
     {
         var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
 
@@ -333,8 +333,8 @@ partial class Build
         // In this example, we will return 2.18
 
         return output
-              .Where(x=>x.Contains("@GLIBC_"))
-              .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
+              .Where(x => x.Contains("@GLIBC_") && allowedSymbols?.Any(y => x.Contains(y)) != true)
+              .Select(x => System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
               .Max();
     }
 }
