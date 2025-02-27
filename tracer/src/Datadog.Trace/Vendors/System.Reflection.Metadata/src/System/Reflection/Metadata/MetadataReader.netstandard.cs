@@ -21,7 +21,6 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 using Microsoft.Win32.SafeHandles;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
