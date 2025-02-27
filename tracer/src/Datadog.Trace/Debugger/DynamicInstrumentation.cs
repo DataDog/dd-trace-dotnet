@@ -184,7 +184,7 @@ namespace Datadog.Trace.Debugger
                                 switch (status)
                                 {
                                     case LiveProbeResolveStatus.Bound:
-                                        lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                                        lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                         fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
                                         ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                                         SetRateLimit(probe);
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Debugger
                         noLongerUnboundProbes ??= new List<ProbeDefinition>();
 
                         noLongerUnboundProbes.Add(unboundProbe);
-                        lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                        lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                     }
                 }
 
