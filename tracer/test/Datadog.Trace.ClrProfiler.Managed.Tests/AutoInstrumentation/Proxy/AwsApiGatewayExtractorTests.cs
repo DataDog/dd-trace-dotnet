@@ -37,7 +37,7 @@ public class AwsApiGatewayExtractorTests
         var success = _extractor.TryExtract(headers, new TestCarrierGetter(), tracer, out var data);
 
         success.Should().BeFalse();
-        data.Should().BeNull();
+        data.Should().Be(default(InferredProxyData));
     }
 
     [Fact]
@@ -49,7 +49,6 @@ public class AwsApiGatewayExtractorTests
         var success = _extractor.TryExtract(headers, new TestCarrierGetter(), _tracer, out var data);
         success.Should().BeTrue();
 
-        data.Should().NotBeNull();
         data.ProxyName.Should().Be("aws-apigateway");
         data.StartTime.ToUnixTimeMilliseconds().Should().Be(start);
         data.DomainName.Should().Be("test.api.com");
@@ -71,7 +70,7 @@ public class AwsApiGatewayExtractorTests
         var success = _extractor.TryExtract(headers, new TestCarrierGetter(), _tracer, out var data);
 
         success.Should().BeFalse();
-        data.Should().BeNull();
+        data.Should().Be(default(InferredProxyData));
     }
 
     [Theory]
@@ -87,6 +86,6 @@ public class AwsApiGatewayExtractorTests
         var success = _extractor.TryExtract(headers, new TestCarrierGetter(), _tracer, out var data);
 
         success.Should().BeFalse();
-        data.Should().BeNull();
+        data.Should().Be(default(InferredProxyData));
     }
 }
