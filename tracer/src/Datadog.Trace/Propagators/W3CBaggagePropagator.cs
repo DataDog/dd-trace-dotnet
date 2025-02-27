@@ -9,7 +9,12 @@ using System.Text;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 #nullable enable
 

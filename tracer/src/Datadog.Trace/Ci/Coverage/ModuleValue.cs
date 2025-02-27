@@ -9,7 +9,10 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Ci.Coverage.Metadata;
+
+#if !NETCOREAPP3_1_OR_GREATER
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+#endif
 
 namespace Datadog.Trace.Ci.Coverage;
 

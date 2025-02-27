@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -13,11 +14,19 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+
+// keep vendored versions for now because we access internal members
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+using System.Collections.Immutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 namespace Datadog.Trace.Pdb
 {
@@ -249,7 +258,7 @@ namespace Datadog.Trace.Pdb
                     }
                 }
 
-                var memory = ArrayMemoryPool<DatadogSequencePoint>.Shared.Rent();
+                var memory = MemoryPool<DatadogSequencePoint>.Shared.Rent();
                 var sequencePoints = memory.Memory.Span;
                 foreach (var sp in methodDebugInformation.GetSequencePoints())
                 {
@@ -431,7 +440,7 @@ namespace Datadog.Trace.Pdb
                 {
                     MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefinitionHandle);
 
-                    foreach (VendoredMicrosoftCode.System.Reflection.Metadata.SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
+                    foreach (SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
                     {
                         if (sequencePoint.IsHidden)
                         {
@@ -540,7 +549,7 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            using var memory = ArrayMemoryPool<string>.Shared.Rent(methodLocalsCount);
+            using var memory = MemoryPool<string>.Shared.Rent(methodLocalsCount);
             var names = memory.Memory.Span;
 
             var signature = GetLocalSignature(method);
@@ -645,6 +654,13 @@ namespace Datadog.Trace.Pdb
             return IsCompilerGeneratedAttributeDefine(attributes);
         }
 
+        internal bool IsCompilerGeneratedAttributeDefinedOnType(TypeDefinitionHandle typeHandle)
+        {
+            var nestedType = MetadataReader.GetTypeDefinition(typeHandle);
+            var attributes = nestedType.GetCustomAttributes();
+            return IsCompilerGeneratedAttributeDefine(attributes);
+        }
+
         private bool IsCompilerGeneratedAttributeDefine(CustomAttributeHandleCollection attributes)
         {
             foreach (var attributeHandle in attributes)
@@ -727,7 +743,7 @@ namespace Datadog.Trace.Pdb
             return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(RidOf(methodToken)));
         }
 
-        internal ImmutableArray<LocalScope>? GetLocalSymbols(int methodToken, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
+        internal ImmutableArray<LocalScope>? GetLocalSymbols(int methodToken, ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
             if (_isDnlibPdbReader)
             {
@@ -751,7 +767,7 @@ namespace Datadog.Trace.Pdb
                 }
 
                 var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(false), 0);
-                localScopes = new ImmutableArray<LocalScope>.Builder();
+                localScopes = ImmutableArray.CreateBuilder<LocalScope>();
 
                 foreach (var scopeHandle in PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
                 {
@@ -764,7 +780,7 @@ namespace Datadog.Trace.Pdb
                     }
 
                     var datadogScop = new LocalScope();
-                    var scopeLocals = new ImmutableArray<DatadogLocal>.Builder();
+                    var scopeLocals = ImmutableArray.CreateBuilder<DatadogLocal>();
                     DatadogSequencePoint sequencePointForScope = default;
                     foreach (var localVarHandle in locals)
                     {

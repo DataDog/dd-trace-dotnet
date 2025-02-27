@@ -5,7 +5,11 @@
 
 #nullable enable
 
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 namespace Datadog.Trace.Debugger.Helpers
 {
@@ -16,7 +20,7 @@ namespace Datadog.Trace.Debugger.Helpers
         /// </summary>
         internal static IMemoryOwner<T> EnlargeBuffer<T>(this IMemoryOwner<T> memoryOwner, int currentSize)
         {
-            var newMemory = ArrayMemoryPool<T>.Shared.Rent(currentSize * 2);
+            var newMemory = MemoryPool<T>.Shared.Rent(currentSize * 2);
             memoryOwner.Memory.Span.CopyTo(newMemory.Memory.Span);
             memoryOwner.Dispose();
             return newMemory;

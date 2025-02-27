@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,6 +20,10 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
+
+#if !NETCOREAPP3_1_OR_GREATER
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+#endif
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
@@ -494,7 +499,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             for (var i = 0; i < maxChildrenCount; i++)
             {
                 var originalElement = dic.ElementAt(i);
-                var element = VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
+                var element = Unsafe.As<KeyValuePair<TKey, TValue>, KeyValuePair<TKey, TValue>>(ref originalElement);
                 var elementKey = getKey(element);
                 if (string.IsNullOrEmpty(elementKey))
                 {

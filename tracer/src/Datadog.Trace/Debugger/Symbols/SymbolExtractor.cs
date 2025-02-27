@@ -10,11 +10,18 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System;
+
+// keep vendored System.Reflection.Metadata for now because we access non-public members
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+using System.Collections.Immutable;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+#endif
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -168,7 +175,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeDefinitionHandle.RowId))
                 {
                     return false;
                 }
@@ -340,7 +347,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return new SourceLocationInfo(startLine: classStartLine, endLine: classEndLine, path: classSourceFile);
         }
 
-        private void PopulateNestedNotCompileGeneratedClassScope(ImmutableArray<TypeDefinitionHandle> nestedTypes, Model.Scope[] nestedClassScopes, ref int index)
+        private void PopulateNestedNotCompileGeneratedClassScope(VendoredMicrosoftCode.System.Collections.Immutable.ImmutableArray<TypeDefinitionHandle> nestedTypes, Model.Scope[] nestedClassScopes, ref int index)
         {
             for (var i = 0; i < nestedTypes.Length; i++)
             {
@@ -353,7 +360,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle)))
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
                     {
                         continue;
                     }
@@ -408,7 +415,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var fieldName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(fieldDef.Name));
+                var fieldName = MetadataReader.GetString(fieldDef.Name).AsSpan();
                 if (fieldName.IsEmpty)
                 {
                     continue;

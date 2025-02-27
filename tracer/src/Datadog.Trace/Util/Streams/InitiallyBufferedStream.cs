@@ -9,7 +9,12 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 namespace Datadog.Trace.Util.Streams;
 
