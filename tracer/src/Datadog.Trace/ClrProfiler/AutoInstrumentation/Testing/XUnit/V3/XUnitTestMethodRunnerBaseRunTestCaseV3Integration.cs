@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -14,7 +15,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
