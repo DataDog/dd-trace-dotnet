@@ -5,7 +5,12 @@
 
 using System;
 using Datadog.Trace.Debugger.Helpers;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 namespace Datadog.Trace.Debugger.Expressions;
 

@@ -7,27 +7,28 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-#if NETCOREAPP3_0_OR_GREATER
+using System.Text;
+
+#if NETCOREAPP3_1_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+#else
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #endif
+
 #if NET6_0
 using System.Runtime.Intrinsics.Arm;
 #endif
-using System.Text;
-using Datadog.Trace.Util;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.Ci.Coverage.Util;
 
 /// <summary>
 /// Represents a memory-efficient, modifiable file bitmap, optimized for high performance using unsafe code and SIMD instructions when available.
 /// </summary>
-internal unsafe ref struct FileBitmap
+internal readonly unsafe ref struct FileBitmap
 {
     /// <summary>
     /// Size of the bitmap in bytes.

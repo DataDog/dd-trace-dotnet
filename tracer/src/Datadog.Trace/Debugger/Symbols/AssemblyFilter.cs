@@ -8,7 +8,12 @@ using System;
 using System.Reflection;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Logging;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 namespace Datadog.Trace.Debugger.Symbols
 {

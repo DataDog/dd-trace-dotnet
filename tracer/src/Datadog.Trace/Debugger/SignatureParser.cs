@@ -7,7 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Logging;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 #nullable enable
 namespace Datadog.Trace.Debugger

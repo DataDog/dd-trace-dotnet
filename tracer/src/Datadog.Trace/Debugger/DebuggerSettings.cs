@@ -10,7 +10,12 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 namespace Datadog.Trace.Debugger
 {

@@ -9,7 +9,12 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Runtime.CompilerServices;
+#else
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+#endif
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 

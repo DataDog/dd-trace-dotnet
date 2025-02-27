@@ -8,7 +8,12 @@ using System;
 using System.Diagnostics;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {

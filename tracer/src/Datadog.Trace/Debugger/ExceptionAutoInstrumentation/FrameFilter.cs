@@ -7,7 +7,12 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Debugger.Symbols;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation

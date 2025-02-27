@@ -6,9 +6,14 @@
 
 using System;
 using System.IO;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Buffers;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#endif
 
 namespace Datadog.Trace.Ci.Ipc;
 
