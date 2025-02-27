@@ -120,6 +120,7 @@ internal static class CiUtils
         var testSkippingEnabled = testOptimizationSettings.TestsSkippingEnabled == true;
         var earlyFlakeDetectionEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled == true;
         var flakyRetryEnabled = testOptimizationSettings.FlakyRetryEnabled == true;
+        var impactedTestsDetectionEnabled = testOptimizationSettings.ImpactedTestsDetectionEnabled == true;
 
         var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
         if (agentless || hasEvpProxy)
@@ -187,7 +188,8 @@ internal static class CiUtils
              && (testOptimizationSettings.CodeCoverageEnabled == null ||
                  testOptimizationSettings.TestsSkippingEnabled == null ||
                  testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
-                 testOptimizationSettings.FlakyRetryEnabled == null))
+                 testOptimizationSettings.FlakyRetryEnabled == null ||
+                 testOptimizationSettings.ImpactedTestsDetectionEnabled == null))
             {
                 try
                 {
@@ -210,6 +212,7 @@ internal static class CiUtils
                     testSkippingEnabled = itrSettings.TestsSkipping == true;
                     earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
                     flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
+                    impactedTestsDetectionEnabled = impactedTestsDetectionEnabled || itrSettings.ImpactedTestsEnabled == true;
                 }
                 catch (Exception ex)
                 {
@@ -222,12 +225,15 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
+        Log.Debug("RunCiCommand: ImpactedTestsDetectionEnabled = {Value}", impactedTestsDetectionEnabled);
         testOptimizationSettings.SetCodeCoverageEnabled(codeCoverageEnabled);
         testOptimizationSettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
         testOptimizationSettings.SetFlakyRetryEnabled(flakyRetryEnabled);
+        testOptimizationSettings.SetImpactedTestsEnabled(impactedTestsDetectionEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled] = impactedTestsDetectionEnabled ? "1" : "0";
 
         if (!testSkippingEnabled)
         {
