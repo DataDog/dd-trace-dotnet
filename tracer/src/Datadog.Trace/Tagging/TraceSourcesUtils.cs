@@ -18,32 +18,6 @@ namespace Datadog.Trace.Tagging
     /// </summary>
     internal static class TraceSourcesUtils
     {
-        public static TraceSources GetTraceSources(string? traceSources)
-        {
-            if (string.IsNullOrEmpty(traceSources))
-            {
-                return TraceSources.None;
-            }
-
-            int.TryParse(traceSources, System.Globalization.NumberStyles.HexNumber, null, out var hexValue);
-            var result = TraceSources.None;
-
-            foreach (var source in TraceSourcesExtensions.GetValues())
-            {
-                if ((hexValue | (int)source) == (int)source)
-                {
-                    result |= source;
-                }
-            }
-
-            return result;
-        }
-
-        public static string ToTag(TraceSources sources)
-        {
-            return sources.ToString("X2");
-        }
-
         public static TraceSources GetTraceSources(this TraceTagCollection? tags)
         {
             if (tags == null)
@@ -76,6 +50,35 @@ namespace Datadog.Trace.Tagging
         public static bool HasTraceSources(this TraceTagCollection? tags, TraceSources sources)
         {
             return GetTraceSources(tags).HasFlagFast(sources);
+        }
+
+        private static TraceSources GetTraceSources(string? traceSources)
+        {
+            var result = TraceSources.None;
+
+            if (string.IsNullOrEmpty(traceSources) ||
+                !int.TryParse(traceSources, System.Globalization.NumberStyles.HexNumber, null, out var hexValue))
+            {
+                return result;
+            }
+
+            // Skip None value
+            var values = TraceSourcesExtensions.GetValues();
+            for (int x = 1; x < values.Length; x++)
+            {
+                var value = (int)values[x];
+                if ((hexValue | value) == value)
+                {
+                    result |= (TraceSources)value;
+                }
+            }
+
+            return result;
+        }
+
+        private static string ToTag(TraceSources sources)
+        {
+            return ((int)sources).ToString("X2");
         }
     }
 }
