@@ -11,9 +11,7 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
-
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata
