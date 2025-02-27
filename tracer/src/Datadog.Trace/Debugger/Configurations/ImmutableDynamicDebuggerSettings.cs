@@ -50,12 +50,12 @@ namespace Datadog.Trace.Debugger.Configurations
                 return true;
             }
 
-            if (obj.GetType() != this.GetType())
+            if (obj.GetType() != GetType())
             {
                 return false;
             }
 
-            return this.Equals((ImmutableDynamicDebuggerSettings)obj);
+            return Equals((ImmutableDynamicDebuggerSettings)obj);
         }
 
         public override int GetHashCode()
