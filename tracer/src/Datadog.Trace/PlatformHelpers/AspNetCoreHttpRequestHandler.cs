@@ -171,12 +171,7 @@ namespace Datadog.Trace.PlatformHelpers
                 if (security.AppsecEnabled)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
-                    securityCoordinator.Reporter.AddResponseHeadersToSpanAndCleanup();
-                }
-                else
-                {
-                    // remember security could have been disabled while a request is still executed
-                    new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
+                    securityCoordinator.Reporter.AddResponseHeadersToSpan();
                 }
 
                 CoreHttpContextStore.Instance.Remove();

@@ -150,25 +150,32 @@ namespace Datadog.Trace
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
+            if (span.IsRootSpan)
             {
-                Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
-
-                var iastInstance = Iast.Iast.Instance;
-                if (iastInstance.Settings.Enabled)
+                if (span.Type == SpanTypes.Web)
                 {
-                    if (_iastRequestContext is { } iastRequestContext)
+                    Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
+
+                    var iastInstance = Iast.Iast.Instance;
+                    if (iastInstance.Settings.Enabled)
                     {
-                        iastRequestContext.AddIastVulnerabilitiesToSpan(span);
-                        iastInstance.OverheadController.ReleaseRequest();
+                        if (_iastRequestContext is { } iastRequestContext)
+                        {
+                            iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                            iastInstance.OverheadController.ReleaseRequest();
+                        }
+                        else
+                        {
+                            IastRequestContext.AddIastDisabledFlagToSpan(span);
+                        }
                     }
-                    else
+
+                    if (_appSecRequestContext is not null)
                     {
-                        IastRequestContext.AddIastDisabledFlagToSpan(span);
+                        _appSecRequestContext.CloseWebSpan(Tags, span);
+                        _appSecRequestContext.DisposeAdditiveContext();
                     }
                 }
-
-                _appSecRequestContext?.CloseWebSpan(Tags, span);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
