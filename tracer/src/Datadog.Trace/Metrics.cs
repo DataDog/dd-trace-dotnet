@@ -88,6 +88,11 @@ namespace Datadog.Trace
         public const string AppSecWafAndBindingsDuration = "_dd.appsec.waf.duration_ext";
 
         /// <summary>
+        /// Returns the most relevant WAF error code
+        /// </summary>
+        public const string WAFError = "_dd.appsec.waf.error";
+
+        /// <summary>
         /// Total cumulative waf duration for RASP calls across spans for one request
         /// </summary>
         public const string RaspWafDuration = "_dd.appsec.rasp.duration";
@@ -106,6 +111,11 @@ namespace Datadog.Trace
         /// Counts the number of times a rule type is evaluated.
         /// </summary>
         public const string RaspRuleEval = "_dd.appsec.rasp.rule.eval";
+
+        /// <summary>
+        /// Returns the most relevant WAF error code when calling RASP
+        /// </summary>
+        public const string RaspWAFError = "_dd.appsec.rasp.error";
 
         /// <summary>
         /// Float representing the number of rules loaded successfully

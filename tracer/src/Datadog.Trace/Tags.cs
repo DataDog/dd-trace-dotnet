@@ -615,6 +615,16 @@ namespace Datadog.Trace
         internal const string AppSecWafVersion = "_dd.appsec.waf.version";
 
         /// <summary>
+        /// The most relevant WAF error code during a request
+        /// </summary>
+        public const string WAFError = "_dd.appsec.waf.error";
+
+        /// <summary>
+        /// The most relevant WAF error code during a request when using RASP
+        /// </summary>
+        public const string RaspWAFError = "_dd.appsec.rasp.error";
+
+        /// <summary>
         ///  String-serialized JSON array, each item being a map containing:
         ///  Error(e) - the error string.
         ///  Rules(r) - an array of rules which failed to load with this error.

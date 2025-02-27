@@ -76,6 +76,8 @@ internal readonly partial struct SecurityCoordinator
                          ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
+            SetErrorInformation(isRasp, result);
+
             SecurityReporter.RecordTelemetry(result);
         }
         catch (Exception ex) when (ex is not BlockException)
@@ -95,6 +97,14 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return result;
+    }
+
+    private void SetErrorInformation(bool isRasp, IResult? result)
+    {
+        if (result?.ReturnCode < 0)
+        {
+            _localRootSpan.Context.TraceContext.AppSecRequestContext.AddWAFError((int)result.ReturnCode, isRasp);
+        }
     }
 
     internal static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
@@ -132,6 +142,7 @@ internal readonly partial struct SecurityCoordinator
 
                 // run the WAF and execute the results
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
+                SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
                 RecordTelemetry(result);
 

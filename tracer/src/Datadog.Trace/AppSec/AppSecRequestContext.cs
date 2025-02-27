@@ -21,6 +21,8 @@ internal class AppSecRequestContext
     private const string AppsecKey = "appsec";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
+    private int? _wafError = null;
+    private int? _wafRaspError = null;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
     private RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
 
@@ -48,7 +50,33 @@ internal class AppSecRequestContext
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
 
+            if (_wafError != null)
+            {
+                tags.SetTag(Tags.WAFError, _wafError.ToString());
+            }
+
+            if (_wafRaspError != null)
+            {
+                tags.SetTag(Tags.RaspWAFError, _wafRaspError.ToString());
+            }
+
             _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
+        }
+    }
+
+    internal void AddWAFError(int code, bool isRasp)
+    {
+        int? existingValue = isRasp ? _wafRaspError : _wafError;
+        if (existingValue == null || existingValue < code)
+        {
+            if (isRasp)
+            {
+                _wafRaspError = code;
+            }
+            else
+            {
+                _wafError = code;
+            }
         }
     }
 
