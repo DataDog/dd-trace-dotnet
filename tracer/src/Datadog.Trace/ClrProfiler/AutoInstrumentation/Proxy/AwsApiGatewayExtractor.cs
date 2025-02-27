@@ -24,9 +24,9 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
     public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, Tracer tracer, out InferredProxyData? data)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>
     {
-        data = default;
+        data = null;
 
-        if (tracer is null || !tracer.Settings.InferredProxySpansEnabled)
+        if (tracer == null! || !tracer.Settings.InferredProxySpansEnabled)
         {
             return false;
         }
