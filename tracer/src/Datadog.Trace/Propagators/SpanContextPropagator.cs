@@ -48,7 +48,8 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier>(PropagationContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
+            var accesor = new HeadersCollectionAccesor<TCarrier>();
+            Inject(context, headers, accesor);
         }
 
         /// <summary>
@@ -105,7 +106,8 @@ namespace Datadog.Trace.Propagators
         public PropagationContext Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            return Extract(headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
+            var accesor = new HeadersCollectionAccesor<TCarrier>();
+            return Extract(headers, accesor);
         }
 
         /// <summary>
