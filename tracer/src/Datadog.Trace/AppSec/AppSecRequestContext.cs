@@ -5,26 +5,29 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
 
-internal class AppSecRequestContext
+internal partial class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
     private const string VulnerabilityStackKey = "vulnerability";
     private const string AppsecKey = "appsec";
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecRequestContext>();
     private readonly object _sync = new();
+    private readonly RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
     private int? _wafError = null;
     private int? _wafRaspError = null;
-    private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
     private RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
+    private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
     {
@@ -123,5 +126,38 @@ internal class AppSecRequestContext
 
             _raspStackTraces[stackCategory].Add(stackTrace);
         }
+    }
+}
+
+internal partial class AppSecRequestContext
+{
+    private bool _isAdditiveContextDisposed;
+
+    private IContext? _context;
+
+    /// <summary>
+    /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
+    /// </summary>
+    internal void DisposeAdditiveContext()
+    {
+        _context?.Dispose();
+        _isAdditiveContextDisposed = true;
+    }
+
+    internal IContext? GetOrCreateAdditiveContext(Security security)
+    {
+        if (_isAdditiveContextDisposed)
+        {
+            Log.Debug("Additive context was requested when already disposed");
+            return null;
+        }
+
+        if (_context is not null)
+        {
+            return _context;
+        }
+
+        _context = security.CreateAdditiveContext();
+        return _context;
     }
 }
