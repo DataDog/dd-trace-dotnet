@@ -66,6 +66,20 @@ public class SpanPointersTests
         link.Attributes.Should().Contain("ptr.hash", "b7b8ca30a2b7a33d8412d7ca62bcad36");
     }
 
+    [Fact]
+    public void AddS3SpanPointer_ShouldSkipMissingEtag()
+    {
+        var tracer = GetTracer();
+        var scope = AwsS3Common.CreateScope(tracer, "PutObject", out _);
+        var span = scope!.Span;
+        const string bucket = "test-bucket";
+        const string key = "test-key";
+        const string? eTag = null;
+        SpanPointers.AddS3SpanPointer(span, bucket, key, eTag);
+
+        span.SpanLinks.Should().BeNull();
+    }
+
     private static Tracer GetTracer()
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, "v1" } };

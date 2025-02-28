@@ -32,8 +32,13 @@ internal static class SpanPointers
     private const string S3PtrKind = "aws.s3.object";
 
     // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
-    public static void AddS3SpanPointer(Span span, string bucketName, string key, string eTag)
+    public static void AddS3SpanPointer(Span span, string bucketName, string key, string? eTag)
     {
+        if (eTag == null)
+        {
+            return;
+        }
+
         var components = ConcatenateComponents(bucketName, key, eTag);
         var hash = GeneratePointerHash(components);
 
