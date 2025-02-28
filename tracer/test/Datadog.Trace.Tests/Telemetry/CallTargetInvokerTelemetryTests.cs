@@ -152,6 +152,10 @@ namespace Datadog.Trace.Tests.Telemetry
             public void RecordGitMetadata(GitMetadata gitMetadata)
             {
             }
+
+            public void RecordAsmEndpoints(ICollection<AsmEndpointData> endpoints)
+            {
+            }
         }
     }
 }

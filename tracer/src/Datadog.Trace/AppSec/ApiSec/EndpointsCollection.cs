@@ -14,7 +14,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec.ApiSec.DuckType;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -29,19 +28,27 @@ internal class EndpointsCollection
 
     public static void CollectEndpoints(IReadOnlyList<object> endpoints)
     {
-        var maxEndpoints = 300;
+        var maxEndpoints = Security.Instance.ApiSecurity.GetEndpointsCollectionMessageLimit();
 
         List<AsmEndpointData> discoveredEndpoints = [];
-        for (var i = 0; i < endpoints.Count && i < maxEndpoints; i++)
+
+        for (var i = 0; i < endpoints.Count && discoveredEndpoints.Count < maxEndpoints; i++)
         {
-            CollectEndpoint(endpoints[i], discoveredEndpoints);
+            CollectEndpoint(endpoints[i], discoveredEndpoints, maxEndpoints);
+        }
+
+        var mapEndpoints = MapEndpointsCollection.GetMapEndpointsAndClean();
+
+        for (var j = 0; j < mapEndpoints.Count && discoveredEndpoints.Count < maxEndpoints; j++)
+        {
+            discoveredEndpoints.Add(new AsmEndpointData("*", mapEndpoints[j]));
         }
 
         // Send To telemetry
         ReportEndpoints(discoveredEndpoints);
     }
 
-    private static void CollectEndpoint(object endpoint, List<AsmEndpointData> discoveredEndpoints)
+    private static void CollectEndpoint(object endpoint, List<AsmEndpointData> discoveredEndpoints, int maxEndpoints)
     {
         if (!endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpoint))
         {
@@ -76,7 +83,10 @@ internal class EndpointsCollection
         // Check if the endpoint have constrained HTTP methods inside the metadata
         if (endpointMetadataCollection.GetHttpMethodMetadata() is { HttpMethods: { } httpMethods })
         {
-            discoveredEndpoints.AddRange(httpMethods.Select(method => new AsmEndpointData(method, path)));
+            for (var i = 0; i < httpMethods.Count && discoveredEndpoints.Count < maxEndpoints; i++)
+            {
+                discoveredEndpoints.Add(new AsmEndpointData(httpMethods[i], path));
+            }
         }
         else
         {
