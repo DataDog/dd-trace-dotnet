@@ -129,6 +129,13 @@ namespace Datadog.Trace.AppSec
                                            .AsDouble(30.0, val => val >= 0.0)
                                            .Value;
 
+            ApiSecurityEndpointCollectionEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled)
+                                           .AsBool(true);
+
+            ApiSecurityEndpointCollectionMessageLimit = config.WithKeys(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionMessageLimit)
+                                           .AsInt32(300, val => val >= 0)
+                                           .Value;
+
             UseUnsafeEncoder = config.WithKeys(ConfigurationKeys.AppSec.UseUnsafeEncoder)
                                      .AsBool(false);
 
@@ -170,6 +177,10 @@ namespace Datadog.Trace.AppSec
         public double ApiSecuritySampling { get; }
 
         public int ApiSecurityMaxConcurrentRequests { get; }
+
+        public bool ApiSecurityEndpointCollectionEnabled { get; }
+
+        public int ApiSecurityEndpointCollectionMessageLimit { get; }
 
         public bool AppsecEnabled { get; }
 
