@@ -26,19 +26,12 @@ internal static class InferredProxySpanHelper
     /// <param name="carrier">The headers to extract.</param>
     /// <param name="propagationContext">The currently extracted <see cref="PropagationContext"/> from the request headers.</param>
     /// <returns>Created <see cref="Scope"/> and updated <see cref="PropagationContext"/> when successful.</returns>
-    public static InferredProxyScopePropagationContext? ExtractAndCreateInferredProxyScope(
-            Tracer tracer,
-            IHeadersCollection carrier,
-            PropagationContext propagationContext)
+    public static InferredProxyScopePropagationContext? ExtractAndCreateInferredProxyScope<THeadersCollection>(
+        Tracer tracer,
+        THeadersCollection carrier,
+        PropagationContext propagationContext)
+        where THeadersCollection : struct, IHeadersCollection
     {
-        return Coordinator.ExtractAndCreateScope(tracer, carrier, new HeadersCollectionGetter(), propagationContext);
-    }
-
-    private readonly struct HeadersCollectionGetter : ICarrierGetter<IHeadersCollection>
-    {
-        public IEnumerable<string?> Get(IHeadersCollection carrier, string key)
-        {
-            return carrier.GetValues(key);
-        }
+        return Coordinator.ExtractAndCreateScope(tracer, carrier, carrier.GetAccesor(), propagationContext);
     }
 }

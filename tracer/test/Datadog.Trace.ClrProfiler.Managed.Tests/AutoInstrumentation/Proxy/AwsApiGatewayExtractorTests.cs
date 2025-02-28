@@ -7,6 +7,7 @@ using System;
 using System.Collections.Specialized;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Headers;
 using FluentAssertions;
 using Xunit;
 
@@ -34,7 +35,7 @@ public class AwsApiGatewayExtractorTests
         var tracer = ProxyTestHelpers.GetMockTracer(collection);
         var headers = ProxyTestHelpers.CreateValidHeaders(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
 
-        var success = _extractor.TryExtract(headers, new TestCarrierGetter(), tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccesor(), tracer, out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
@@ -46,7 +47,8 @@ public class AwsApiGatewayExtractorTests
         var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var headers = ProxyTestHelpers.CreateValidHeaders(start.ToString());
 
-        var success = _extractor.TryExtract(headers, new TestCarrierGetter(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccesor(), _tracer, out var data);
+
         success.Should().BeTrue();
 
         data.ProxyName.Should().Be("aws-apigateway");
@@ -67,7 +69,7 @@ public class AwsApiGatewayExtractorTests
         var headers = ProxyTestHelpers.CreateValidHeaders();
         headers.Set(InferredProxyHeaders.Name, proxyName);
 
-        var success = _extractor.TryExtract(headers, new TestCarrierGetter(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccesor(), _tracer, out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
@@ -83,7 +85,7 @@ public class AwsApiGatewayExtractorTests
         var headers = ProxyTestHelpers.CreateValidHeaders();
         headers.Set(InferredProxyHeaders.StartTime, startTime);
 
-        var success = _extractor.TryExtract(headers, new TestCarrierGetter(), _tracer, out var data);
+        var success = _extractor.TryExtract(headers, headers.GetAccesor(), _tracer, out var data);
 
         success.Should().BeFalse();
         data.Should().Be(default(InferredProxyData));
