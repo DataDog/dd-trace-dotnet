@@ -1,0 +1,22 @@
+{
+  "name": "dd-trace-dotnet",
+  "image": "ghcr.io/lucaspimentel/dd-trace-dotnet-devcontainer-image:latest",
+  "features": {
+    // "ghcr.io/devcontainers/features/dotnet:2": {}, // installed in base image
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    // "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/powershell:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot",
+        "GitHub.vscode-github-actions",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        "ms-dotnettools.csdevkit",
+        "ms-dotnettools.csharp"
+      ]
+    }
+  }
+}
