@@ -18,6 +18,7 @@ namespace Samples.RabbitMQ
         private static readonly string exchangeName = "test-exchange-name";
         private static readonly string routingKey = "test-routing-key";
         private static readonly string queueName = "test-queue-name";
+        private static readonly string customHeaderName = "x-custom-header";
 
         private static string Host()
         {
@@ -65,6 +66,8 @@ namespace Samples.RabbitMQ
                 string publishExchangeName;
                 string publishQueueName;
                 string publishRoutingKey;
+                string messageId = Guid.NewGuid().ToString();
+                string headerValue = Guid.NewGuid().ToString();
 
                 using (SampleHelpers.CreateScope(messagePrefix))
                 {
@@ -95,12 +98,21 @@ namespace Samples.RabbitMQ
                     // Test an empty BasicGetResult
                     await channel.BasicGetAsync(publishQueueName, true);
 
+                    // Setup basic properties to verify instrumentation preserves properties and headers.
+                    var properties = new BasicProperties
+                    {
+                        MessageId = messageId,
+                        Headers = new Dictionary<string, object>()
+                        {
+                            { customHeaderName, headerValue }
+                        }
+                    };
+
                     // Send message to the default exchange and use new queue as the routingKey
                     string message = $"{messagePrefix} - Message";
                     var body = Encoding.UTF8.GetBytes(message);
-                    await channel.BasicPublishAsync(exchange: publishExchangeName,
-                                         routingKey: publishRoutingKey,
-                                         body: body);
+
+                    await channel.BasicPublishAsync(publishExchangeName, publishRoutingKey, false, properties, body);
                     Console.WriteLine($"BasicPublish - Sent message: {message}");
                 }
 
@@ -110,6 +122,18 @@ namespace Samples.RabbitMQ
                 var result = await channel.BasicGetAsync(publishQueueName, true);
                 var resultMessage = Encoding.UTF8.GetString(result.Body.ToArray());
                 Console.WriteLine($"[Program.PublishAndGetDefault] BasicGet - Received message: {resultMessage}");
+
+                if (result.BasicProperties.MessageId != messageId)
+                {
+                    throw new Exception("MessageId was not preserved in BasicProperties");
+                }
+
+                if (!result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue)
+                    || receivedHeaderValue is not string receivedHeaderValueString
+                    || receivedHeaderValueString != headerValue)
+                {
+                    throw new Exception("Custom header was not preserved in BasicProperties");
+                }
             }
         }
 
