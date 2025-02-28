@@ -18,6 +18,10 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
+        // NOTE: now that .NET Framework is supported by default, the profiler tries to connect
+        //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
+        //       the ETW support is disabled in the tests for .NET Framework.
+
         // scenarios implemented in Computer01:
         // -----------------------------------------------------------------------------------------
         //  1: start threads with specific callstacks in another appdomain
@@ -30,6 +34,11 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckAppDomain(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            if (framework == "net462")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
             runner.RunAndCheck();
         }
 
@@ -37,6 +46,11 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckGenerics(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
+            if (framework == "net462")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
             runner.RunAndCheck();
         }
 
@@ -44,6 +58,11 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckPi(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
+            if (framework == "net462")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
             runner.RunAndCheck();
         }
 
@@ -51,6 +70,11 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
+            if (framework == "net462")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
             runner.RunAndCheck();
         }
 
