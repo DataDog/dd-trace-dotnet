@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
@@ -111,7 +112,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         }
 
         var testOptimization = TestOptimization.Instance;
-        var testOptimizationSettings = testOptimization.Settings;
         var retryMessageBus = stateArray[0] as RetryMessageBus;
         var retryMetadata = stateArray[1] as TestCaseMetadata;
         var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[2];
@@ -220,9 +220,12 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 retryMessageBus.FlushMessages(retryMetadata.UniqueID);
 
                 // Let's clear the failed and skipped runs if we have at least one successful run
-#pragma warning disable DDLOG004
-                Common.Log.Debug($"XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: Summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]");
-#pragma warning restore DDLOG004
+                if (Common.Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    var debugMsg = $"EFD/Retry: Summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]";
+                    Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: {Value}", debugMsg);
+                }
+
                 var passed = runSummaryUnsafe.Total - runSummaryUnsafe.Skipped - runSummaryUnsafe.Failed;
                 if (passed > 0)
                 {

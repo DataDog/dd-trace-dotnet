@@ -7,13 +7,13 @@
 
 using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -84,7 +84,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         // Try to ducktype the current instance to ITestClassRunner
         if (!instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
         {
-            Common.Log.Error("EFD/Retry: Current test runner instance cannot be ducktyped.");
+            Common.Log.Error("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Current test runner instance cannot be ducktyped.");
             return CallTargetState.GetDefault();
         }
 
@@ -93,14 +93,14 @@ public static class XUnitTestRunnerRunAsyncIntegration
         TestCaseMetadata retryMetadata;
         if (testRunnerInstance.MessageBus is IDuckType { Instance: { } } ducktypedMessageBus)
         {
-            Common.Log.Debug("EFD/Retry: Current message bus is a duck type, retrieving RetryMessageBus instance");
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Current message bus is a duck type, retrieving RetryMessageBus instance");
             retryMessageBus = (RetryMessageBus)ducktypedMessageBus.Instance;
             retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
         }
         else if (testRunnerInstance.MessageBus is { } messageBus)
         {
             // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
-            Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
             _messageBusInterfaceType ??= messageBus.GetType().GetInterface("IMessageBus")!;
             var duckMessageBus = messageBus.DuckCast<IMessageBus>();
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
@@ -111,7 +111,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
         else
         {
-            Common.Log.Error("EFD/Retry: Message bus is null.");
+            Common.Log.Error("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Message bus is null.");
             return CallTargetState.GetDefault();
         }
 
@@ -134,7 +134,6 @@ public static class XUnitTestRunnerRunAsyncIntegration
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
         var testOptimization = TestOptimization.Instance;
-        var testOptimizationSettings = testOptimization.Settings;
         if (state.State is TestRunnerState { MessageBus: { } messageBus, RetryMetadata: { } retryMetadata } testRunnerState)
         {
             if (retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
@@ -166,12 +165,12 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
                         if (runSummary.Failed == 0)
                         {
-                            Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
                             doRetry = false;
                         }
                         else if (remainingTotalRetries < 1)
                         {
-                            Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                             doRetry = false;
                         }
                     }
@@ -180,16 +179,16 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     {
                         var retryNumber = retryMetadata.ExecutionIndex + 1;
                         // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                        Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
+                        Common.Log.Debug<int, int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
                         var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
                         if (innerReturnValue.TryDuckCast<IRunSummary>(out var innerRunSummary))
                         {
-                            Common.Log.Debug<int>("EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
+                            Common.Log.Debug<int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
                             runSummary.Aggregate(innerRunSummary);
                         }
                         else
                         {
-                            Common.Log.Error<int>("EFD/Retry: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
+                            Common.Log.Error<int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
                         }
                     }
                 }
@@ -197,11 +196,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 {
                     if (isFlakyRetryEnabled && runSummary.Failed == 0)
                     {
-                        Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
                     }
                     else
                     {
-                        Common.Log.Debug("EFD/Retry: All retries were executed.");
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: All retries were executed.");
                     }
                 }
 
@@ -210,9 +209,12 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     messageBus.FlushMessages(retryMetadata.UniqueID);
 
                     // Let's clear the failed and skipped runs if we have at least one successful run
-#pragma warning disable DDLOG004
-                    Common.Log.Debug($"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
-#pragma warning restore DDLOG004
+                    if (Common.Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var debugMsg = $"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
+                    }
+
                     var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
                     if (passed > 0)
                     {
@@ -233,9 +235,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         runSummary.Failed = 1;
                     }
 
-#pragma warning disable DDLOG004
-                    Common.Log.Debug($"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
-#pragma warning restore DDLOG004
+                    if (Common.Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var debugMsg = $"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
+                    }
                 }
             }
             else

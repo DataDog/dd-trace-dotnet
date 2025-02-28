@@ -29,7 +29,7 @@ internal class CIVisibilityTestCommand
         Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
         var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ? contextWithRepeatCount : contextObject.DuckCast<ITestExecutionContext>();
         var executionNumber = 0;
-        var result = ExecuteTest(context, executionNumber++, out var isTestNew, out var duration);
+        var result = ExecuteTest(context, executionNumber++, out var isEfdTest, out var duration);
         var resultStatus = result.ResultState.Status;
 
         if (resultStatus is TestStatus.Skipped or TestStatus.Inconclusive)
@@ -38,7 +38,7 @@ internal class CIVisibilityTestCommand
             return result.Instance!;
         }
 
-        if (isTestNew)
+        if (isEfdTest)
         {
             // **************************************************************
             // Early flake detection mode
@@ -154,7 +154,7 @@ internal class CIVisibilityTestCommand
         }
     }
 
-    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isTestNew, out TimeSpan duration)
+    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isEfdTest, out TimeSpan duration)
     {
         ITestResult? testResult = null;
         duration = TimeSpan.Zero;
@@ -177,13 +177,13 @@ internal class CIVisibilityTestCommand
             duration = clock.UtcNow - startTime;
         }
 
-        isTestNew = false;
+        isEfdTest = false;
         if (test is not null)
         {
-            if (test.GetTags() is { } testTags)
+            if (test.GetTags() is { } testTags && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true)
             {
-                isTestNew = testTags.TestIsNew == "true";
-                if (isTestNew && duration.TotalMinutes >= 5)
+                isEfdTest = testTags.TestIsNew == "true";
+                if (isEfdTest && duration.TotalMinutes >= 5)
                 {
                     testTags.EarlyFlakeDetectionTestAbortReason = "slow";
                 }
