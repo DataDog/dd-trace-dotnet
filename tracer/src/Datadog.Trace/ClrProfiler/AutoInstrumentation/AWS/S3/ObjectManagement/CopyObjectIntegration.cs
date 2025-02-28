@@ -44,7 +44,7 @@ public class CopyObjectIntegration
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
-        where TReturn : ICopyObjectResponse
+        where TReturn : IS3EtagResponse
     {
         if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is ICopyObjectRequest request && returnValue is not null)
         {

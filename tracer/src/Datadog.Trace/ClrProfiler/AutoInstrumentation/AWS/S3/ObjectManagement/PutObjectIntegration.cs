@@ -44,7 +44,7 @@ public class PutObjectIntegration
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
-        where TReturn : IPutObjectResponse
+        where TReturn : IS3EtagResponse
     {
         if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is IPutObjectRequest request && returnValue is not null)
         {
