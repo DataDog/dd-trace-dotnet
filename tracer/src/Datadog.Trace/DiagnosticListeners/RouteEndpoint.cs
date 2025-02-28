@@ -3,9 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Routing;
-#endif
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.DiagnosticListeners;
@@ -26,7 +23,7 @@ internal struct RouteEndpoint
     /// </summary>
     public string DisplayName;
 
-#if !NETFRAMEWORK
+#if NETCOREAPP2_2_OR_GREATER
     /// <summary>
     /// Delegates to Endpoint.Metadata;
     /// </summary>
