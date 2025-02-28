@@ -160,7 +160,7 @@ public sealed class TestModule
                     tags.Command = fakeSessionTags.Command;
                     tags.WorkingDirectory = fakeSessionTags.WorkingDirectory;
 
-                    if (_testOptimization.Settings.EarlyFlakeDetectionEnabled == true)
+                    if (_testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                     {
                         fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
                     }
@@ -466,10 +466,10 @@ public sealed class TestModule
             }
         }
 
-        if (_testOptimization.Settings.TestsSkippingEnabled.HasValue)
+        if (_testOptimization.SkippableFeature is not null)
         {
-            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, _testOptimization.Settings.TestsSkippingEnabled.Value ? "true" : "false");
-            if (_testOptimization.Settings.TestsSkippingEnabled.Value)
+            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, _testOptimization.SkippableFeature.Enabled ? "true" : "false");
+            if (_testOptimization.SkippableFeature.Enabled)
             {
                 // If we detect a module with tests skipping enabled, we ensure we also have the session tag set
                 TrySetSessionTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");

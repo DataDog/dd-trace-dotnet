@@ -53,8 +53,9 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         object?[] constructorArguments)
         where TIXunitTestMethod : IXunitTestMethodV3
     {
-        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled != true &&
-            TestOptimization.Instance.Settings.FlakyRetryEnabled != true)
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
+            testOptimization.FlakyRetryFeature?.Enabled != true)
         {
             return CallTargetState.GetDefault();
         }

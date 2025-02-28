@@ -42,6 +42,7 @@ internal static class XUnitIntegration
             RuntimeHelpers.PrepareMethod(testMethod.MethodHandle);
         }
 
+        var testOptimization = TestOptimization.Instance;
         var test = testSuite.InternalCreateTest(testMethod?.Name ?? string.Empty);
 
         // Get test parameters
@@ -76,7 +77,7 @@ internal static class XUnitIntegration
         if (runnerInstance.TestCase.Traits is { } traits)
         {
             // Unskippable tests support
-            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
+            if (testOptimization.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
                 test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
@@ -86,7 +87,7 @@ internal static class XUnitIntegration
 
             test.SetTraits(traits);
         }
-        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
+        else if (testOptimization.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests support
             test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
@@ -94,9 +95,9 @@ internal static class XUnitIntegration
         }
 
         // Early flake detection flags
-        if (TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true)
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
         {
-            var testIsNew = !TestOptimization.Instance.KnownTestsFeature?.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
+            var testIsNew = !testOptimization.KnownTestsFeature?.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
             if (testIsNew)
             {
                 test.SetTag(TestTags.TestIsNew, "true");
@@ -127,7 +128,7 @@ internal static class XUnitIntegration
         }
 
         // Flaky retries
-        if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true)
+        if (testOptimization.FlakyRetryFeature?.Enabled == true)
         {
             if (testCaseMetadata is { ExecutionIndex: > 0 })
             {

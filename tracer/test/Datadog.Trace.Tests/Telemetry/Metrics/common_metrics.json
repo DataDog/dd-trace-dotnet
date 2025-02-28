@@ -915,7 +915,7 @@
       "tags": [
         "provider",
         "auto_injected",
-        "agentless_log_submission_enabled",
+        "agentless_log_submission_enabled"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1324,7 +1324,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request": {
+    "known_tests.request": {
       "tags": [
         "rq_compressed"
       ],
@@ -1334,7 +1334,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request_ms": {
+    "known_tests.request_ms": {
       "tags": [],
       "metric_type": "distribution",
       "data_type": "milliseconds",
@@ -1342,7 +1342,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request_errors": {
+    "known_tests.request_errors": {
       "tags": [
         "error_type",
         "status_code"
@@ -1353,7 +1353,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.response_bytes": {
+    "known_tests.response_bytes": {
       "tags": [
         "rs_compressed"
       ],
@@ -1363,7 +1363,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.response_tests": {
+    "known_tests.response_tests": {
       "tags": [],
       "metric_type": "distribution",
       "data_type": "tests",

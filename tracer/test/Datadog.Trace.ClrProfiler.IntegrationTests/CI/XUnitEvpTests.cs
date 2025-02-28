@@ -195,8 +195,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
                 // Remove EFD tags
-                targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+                targetTest.Meta.Remove(TestTags.TestIsNew);
+                targetTest.Meta.Remove(TestTags.TestIsRetry);
 
                 // Remove user provided service tag
                 targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
@@ -471,8 +471,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 tests
                    .OrderBy(s => s.Resource)
                    .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                   .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
-                   .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
+                   .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsNew))
+                   .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsRetry))
                    .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
                 settings);
         }

@@ -48,8 +48,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var testOptimizationSettings = TestOptimization.Instance.Settings;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimizationSettings.TotalFlakyRetryCount, -1);
+        var testOptimization = TestOptimization.Instance;
+        Interlocked.CompareExchange(ref _totalRetries, testOptimization.Settings.TotalFlakyRetryCount, -1);
 
         var runnerInstance = instance.DuckCast<TestRunnerStruct>();
         ITestRunner? testRunnerInstance = null;
@@ -75,8 +75,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (testOptimizationSettings.EarlyFlakeDetectionEnabled != true &&
-            testOptimizationSettings.FlakyRetryEnabled != true)
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
+            testOptimization.FlakyRetryFeature?.Enabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -106,7 +106,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
             // EFD is disabled but FlakeRetry is enabled
             retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
-            retryMetadata.FlakyRetryEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled != true && testOptimizationSettings.FlakyRetryEnabled == true;
+            retryMetadata.FlakyRetryEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled != true && testOptimization.FlakyRetryFeature?.Enabled == true;
             testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(_messageBusInterfaceType);
         }
         else

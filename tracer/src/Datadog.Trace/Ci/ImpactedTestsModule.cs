@@ -33,7 +33,7 @@ internal static class ImpactedTestsModule
 
     private static FileCoverageInfo[]? modifiedFiles = null;
 
-    public static bool IsEnabled => TestOptimization.Instance.Settings.ImpactedTestsDetectionEnabled ?? false;
+    public static bool IsEnabled => TestOptimization.Instance.ImpactedTestsDetectionFeature?.Enabled ?? false;
 
     private static string? CurrentCommit => CIEnvironmentValues.Instance.HeadCommit ?? CIEnvironmentValues.Instance.Commit;
 

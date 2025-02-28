@@ -260,6 +260,9 @@ namespace Datadog.Trace.Ci.Configuration
         /// </summary>
         public int TotalFlakyRetryCount { get; private set; }
 
+        /// <summary>
+        /// Gets a value indicating whether the Impacted Tests Detection feature is enabled.
+        /// </summary>
         public bool? ImpactedTestsDetectionEnabled { get; private set; }
 
         /// <summary>

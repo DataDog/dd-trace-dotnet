@@ -190,8 +190,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
                             // Remove EFD tags
-                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+                            targetTest.Meta.Remove(TestTags.TestIsNew);
+                            targetTest.Meta.Remove(TestTags.TestIsRetry);
 
                             // Remove user provided service tag
                             targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
@@ -450,8 +450,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                        .OrderBy(s => s.Resource)
                        .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
                        .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsNew))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsRetry))
                        .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
                     settings);
 

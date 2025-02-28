@@ -81,6 +81,7 @@ public static class TestMethodAttributeExecuteIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        var testOptimization = TestOptimization.Instance;
         if (state.State is TestRunnerState { Test: not null } testMethodState)
         {
             var duration = testMethodState.Elapsed;
@@ -137,11 +138,11 @@ public static class TestMethodAttributeExecuteIntegration
                     returnValue = (TReturn?)GetFinalResults(results);
                 }
             }
-            else if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true && resultStatus == TestStatus.Fail)
+            else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
             {
                 // Flaky retry is enabled and the test failed
-                Interlocked.CompareExchange(ref _totalRetries, TestOptimization.Instance.Settings.TotalFlakyRetryCount, -1);
-                var remainingRetries = TestOptimization.Instance.Settings.FlakyRetryCount;
+                Interlocked.CompareExchange(ref _totalRetries, testOptimization.Settings.TotalFlakyRetryCount, -1);
+                var remainingRetries = testOptimization.Settings.FlakyRetryCount;
                 if (remainingRetries > 0)
                 {
                     // Handle retries
@@ -151,7 +152,7 @@ public static class TestMethodAttributeExecuteIntegration
                     {
                         if (Interlocked.Decrement(ref _totalRetries) <= 0)
                         {
-                            Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", TestOptimization.Instance.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.Settings.TotalFlakyRetryCount);
                             break;
                         }
 

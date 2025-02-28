@@ -177,7 +177,7 @@ internal static class Common
 
     internal static void SetFlakyRetryTags(Test test, bool isRetry)
     {
-        if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true && isRetry)
+        if (TestOptimization.Instance.FlakyRetryFeature?.Enabled == true && isRetry)
         {
             test.SetTag(TestTags.TestIsRetry, "true");
         }
