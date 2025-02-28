@@ -74,8 +74,6 @@ internal readonly partial struct SecurityCoordinator
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
             SetErrorInformation(isRasp, result);
-            _localRootSpan.Context.TraceContext.AppSecRequestContext.CheckWAFError((int)result.ReturnCode, isRasp);
-
             SecurityReporter.RecordTelemetry(result);
         }
         catch (Exception ex) when (ex is not BlockException)

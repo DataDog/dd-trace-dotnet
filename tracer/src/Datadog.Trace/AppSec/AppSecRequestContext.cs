@@ -26,7 +26,6 @@ internal partial class AppSecRequestContext
     private readonly List<object> _wafSecurityEvents = new();
     private int? _wafError = null;
     private int? _wafRaspError = null;
-    private RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
