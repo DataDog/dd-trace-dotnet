@@ -88,14 +88,12 @@ internal partial class SecurityReporter
 
     internal void AddRequestHeaders(IHeadersCollection headers) => AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
-    internal void AddResponseHeadersToSpanAndCleanup()
+    internal void AddResponseHeadersToSpan()
     {
         if (_span.IsAppsecEvent())
         {
             AddResponseHeaderTags();
         }
-
-        _httpTransport.DisposeAdditiveContext();
     }
 
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
@@ -177,11 +175,14 @@ internal partial class SecurityReporter
     internal void TryReport(IResult result, bool blocked, int? status = null)
     {
         IHeadersCollection? headers = null;
-        if (!_httpTransport.ReportedExternalWafsRequestHeaders && !_httpTransport.IsAdditiveContextDisposed())
+        if (_httpTransport is { ReportedExternalWafsRequestHeaders: false, IsHttpContextDisposed: false })
         {
             headers = _httpTransport.GetRequestHeaders();
-            AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
-            _httpTransport.ReportedExternalWafsRequestHeaders = true;
+            if (headers is not null)
+            {
+                AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                _httpTransport.ReportedExternalWafsRequestHeaders = true;
+            }
         }
 
         AttackerFingerprintHelper.AddSpanTags(_span, result);
@@ -220,7 +221,7 @@ internal partial class SecurityReporter
             _span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
 
-            if (headers is null && !_httpTransport.IsAdditiveContextDisposed())
+            if (headers is null && !_httpTransport.IsHttpContextDisposed)
             {
                 headers = _httpTransport.GetRequestHeaders();
             }

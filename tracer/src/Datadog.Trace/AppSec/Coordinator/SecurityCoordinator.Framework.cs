@@ -32,6 +32,7 @@ internal readonly partial struct SecurityCoordinator
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
+        _appsecRequestContext = _localRootSpan.Context.TraceContext.AppSecRequestContext;
         _httpTransport = transport;
         Reporter = new SecurityReporter(_localRootSpan, transport, true);
     }
@@ -519,8 +520,6 @@ internal readonly partial struct SecurityCoordinator
 
     internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
-        private const string WafKey = "waf";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpTransport>();
 
         private static bool _canReadHttpResponseHeaders = true;
@@ -540,10 +539,6 @@ internal readonly partial struct SecurityCoordinator
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
-
-        internal override IContext? GetAdditiveContext() => Context.Items[WafKey] as IContext;
-
-        internal override void SetAdditiveContext(IContext additiveContext) => Context.Items[WafKey] = additiveContext;
 
         internal override IHeadersCollection GetRequestHeaders() => new NameValueHeadersCollection(Context.Request.Headers);
 

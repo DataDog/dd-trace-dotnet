@@ -501,22 +501,36 @@ internal class TestOptimization : ITestOptimization
                 uploadRepositoryChangesTask = Task.Run(TryUploadRepositoryChangesAsync);
             }
 
+            // If intelligent test runner is disabled we check if we need to move the upload repository changes task to the background
+            if (!settings.IntelligentTestRunnerEnabled)
+            {
+                if (uploadRepositoryChangesTask is not null)
+                {
+                    Log.Information("TestOptimization: Intelligent Test Runner is disabled, but git upload is enabled. Uploading git metadata on background.");
+                    LifetimeManager.Instance.AddAsyncShutdownTask(_ => uploadRepositoryChangesTask);
+                }
+
+                return;
+            }
+
             // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
             // We query the settings api for those
             if (settings.CodeCoverageEnabled == null
              || settings.TestsSkippingEnabled == null
              || settings.EarlyFlakeDetectionEnabled != false
+             || settings.FlakyRetryEnabled == null
              || settings.ImpactedTestsDetectionEnabled == null)
             {
+                Log.Information("TestOptimization: Calling the configuration api.");
                 var remoteSettings = await client.GetSettingsAsync().ConfigureAwait(false);
 
                 // we check if the backend require the git metadata first
                 if (remoteSettings.RequireGit == true && uploadRepositoryChangesTask is not null)
                 {
-                    Log.Debug("TestOptimization: Require git received, awaiting for the git repository upload.");
+                    Log.Information("TestOptimization: Require git received, awaiting for the git repository upload.");
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
 
-                    Log.Debug("TestOptimization: Calling the configuration api again.");
+                    Log.Information("TestOptimization: Calling the configuration api again.");
                     remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                 }
 
@@ -533,7 +547,6 @@ internal class TestOptimization : ITestOptimization
             }
             else
             {
-                // For ITR we need the git metadata upload before consulting the skippable tests.
                 // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
                 if (uploadRepositoryChangesTask is not null)
                 {
@@ -546,12 +559,14 @@ internal class TestOptimization : ITestOptimization
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
             }
-
-            Log.Information("TestOptimization: Additional features intialized.");
         }
         catch (Exception ex)
         {
             Log.Error(ex, "TestOptimization: Error initializing additional features.");
+        }
+        finally
+        {
+            Log.Information("TestOptimization: Additional features intialized.");
         }
     }
 
