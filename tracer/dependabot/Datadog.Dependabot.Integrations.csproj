@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.5 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.402.5" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.6 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.402.6" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.26 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.26" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.405.27 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.405.27" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.41 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.41" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.42 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.42" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.76 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.76" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.77 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.77" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.415.4 -->
-    <PackageReference Include="AWSSDK.S3" Version="3.7.415.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.415.5 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415.5" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.99 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.99" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.100 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.100" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.99 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.99" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.100 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.100" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.42 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.42" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.43 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.43" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -252,8 +252,8 @@
 
     <!-- Integration: Npgsql -->
     <!--    Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/9.0.2 -->
-    <PackageReference Include="Npgsql" Version="9.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/9.0.3 -->
+    <PackageReference Include="Npgsql" Version="9.0.3" />
 
     <!-- Integration: nunit.framework -->
     <!--    Assembly: nunit.framework -->
