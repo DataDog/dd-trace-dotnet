@@ -35,13 +35,17 @@ public class InferredProxyCoordinatorTests
     {
         var headers = new NameValueHeadersCollection(new System.Collections.Specialized.NameValueCollection());
         _extractor.Setup(e => e.TryExtract(
-            It.IsAny<NameValueHeadersCollection>(),
-            It.IsAny<TestCarrierGetter>(),
-            It.IsAny<Tracer>(),
-            out It.Ref<InferredProxyData>.IsAny))
-            .Returns(false);
+                      It.IsAny<NameValueHeadersCollection>(),
+                      It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
+                      It.IsAny<Tracer>(),
+                      out It.Ref<InferredProxyData>.IsAny))
+                  .Returns(false);
 
-        var result = _coordinator.ExtractAndCreateScope(_tracer, headers, new TestCarrierGetter(), new PropagationContext());
+        var result = _coordinator.ExtractAndCreateScope(
+            _tracer,
+            headers,
+            headers.GetAccesor(),
+            new PropagationContext());
 
         result.Should().BeNull();
     }
@@ -49,20 +53,21 @@ public class InferredProxyCoordinatorTests
     [Fact]
     public void ExtractAndCreateScope_WhenSpanFactoryReturnsNull_ShouldReturnNull()
     {
-        var headers = ProxyTestHelpers.CreateValidHeaders(); // unimportant
-        var proxyData = new InferredProxyData("aws-apigateway", DateTimeOffset.UtcNow, "test.api.com", "GET", "/api/test", "prod"); // unimportant
+        // header values not important
+        var headers = ProxyTestHelpers.CreateValidHeaders();
+        var proxyData = new InferredProxyData("aws-apigateway", DateTimeOffset.UtcNow, "test.api.com", "GET", "/api/test", "prod");
 
         _extractor.Setup(e => e.TryExtract(
-            It.IsAny<NameValueHeadersCollection>(),
-            It.IsAny<TestCarrierGetter>(),
-            It.IsAny<Tracer>(),
-            out proxyData))
-            .Returns(true); // we successfully extract headers
+                      It.IsAny<NameValueHeadersCollection>(),
+                      It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
+                      It.IsAny<Tracer>(),
+                      out proxyData))
+                  .Returns(true); // we successfully extract headers
 
         // and then fail creating the span within the factory (for some reason)
         _factory.Setup(f => f.CreateSpan(It.IsAny<Tracer>(), It.IsAny<InferredProxyData>(), It.IsAny<ISpanContext>())).Returns((Scope?)null);
 
-        var result = _coordinator.ExtractAndCreateScope(_tracer, headers, new TestCarrierGetter(), new PropagationContext());
+        var result = _coordinator.ExtractAndCreateScope(_tracer, headers, headers.GetAccesor(), new PropagationContext());
 
         result.Should().BeNull();
     }
@@ -81,30 +86,34 @@ public class InferredProxyCoordinatorTests
             "prod");
 
         _extractor.Setup(e => e.TryExtract(
-            It.IsAny<NameValueHeadersCollection>(),
-            It.IsAny<TestCarrierGetter>(),
-            It.IsAny<Tracer>(),
-            out It.Ref<InferredProxyData>.IsAny))
-            .Returns(true)
-            .Callback((NameValueHeadersCollection carrier, TestCarrierGetter getter, Tracer tracer, out InferredProxyData data) =>
-            {
-                data = proxyData;
-            });
+                      It.IsAny<NameValueHeadersCollection>(),
+                      It.IsAny<HeadersCollectionAccesor<NameValueHeadersCollection>>(),
+                      It.IsAny<Tracer>(),
+                      out It.Ref<InferredProxyData>.IsAny))
+                  .Returns(true)
+                  .Callback((
+                      NameValueHeadersCollection _,
+                      HeadersCollectionAccesor<NameValueHeadersCollection> _,
+                      Tracer _,
+                      out InferredProxyData data) =>
+                  {
+                      data = proxyData;
+                  });
 
         // using an actual scope that the factor will return
         using var realScope = _tracer.StartActiveInternal("test.operation");
         _factory.Setup(f => f.CreateSpan(
-            It.IsAny<Tracer>(),
-            It.Is<InferredProxyData>(d =>
-                d.ProxyName == proxyData.ProxyName &&
-                d.StartTime == proxyData.StartTime),
-            It.IsAny<ISpanContext>()))
-            .Returns(realScope);
+                    It.IsAny<Tracer>(),
+                    It.Is<InferredProxyData>(d =>
+                        d.ProxyName == proxyData.ProxyName &&
+                        d.StartTime == proxyData.StartTime),
+                    It.IsAny<ISpanContext>()))
+                .Returns(realScope);
 
         var result = _coordinator.ExtractAndCreateScope(
             _tracer,
             headers,
-            new TestCarrierGetter(),
+            headers.GetAccesor(),
             new PropagationContext())!;
 
         result.Should().NotBeNull();
