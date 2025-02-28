@@ -141,8 +141,8 @@ public static class TestMethodAttributeExecuteIntegration
             else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
             {
                 // Flaky retry is enabled and the test failed
-                Interlocked.CompareExchange(ref _totalRetries, testOptimization.Settings.TotalFlakyRetryCount, -1);
-                var remainingRetries = testOptimization.Settings.FlakyRetryCount;
+                Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
+                var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0;
                 if (remainingRetries > 0)
                 {
                     // Handle retries
@@ -152,7 +152,7 @@ public static class TestMethodAttributeExecuteIntegration
                     {
                         if (Interlocked.Decrement(ref _totalRetries) <= 0)
                         {
-                            Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug("FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                             break;
                         }
 

@@ -46,7 +46,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         }
 
         var testOptimization = TestOptimization.Instance;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimization.Settings.TotalFlakyRetryCount, -1);
+        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
 
         var testcase = testcaseOriginal.DuckCast<IXunitTestCaseV3>()!;
         var testRunnerData = new TestRunnerStruct
@@ -110,7 +110,8 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return returnValue;
         }
 
-        var testOptimizationSettings = TestOptimization.Instance.Settings;
+        var testOptimization = TestOptimization.Instance;
+        var testOptimizationSettings = testOptimization.Settings;
         var retryMessageBus = stateArray[0] as RetryMessageBus;
         var retryMetadata = stateArray[1] as TestCaseMetadata;
         var context = (IXunitTestMethodRunnerBaseContextV3)stateArray[2];
@@ -146,7 +147,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                 if (isFlakyRetryEnabled)
                 {
-                    retryMetadata.TotalExecutions = testOptimizationSettings.FlakyRetryCount + 1;
+                    retryMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0) + 1;
                 }
                 else
                 {
@@ -175,7 +176,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     }
                     else if (remainingTotalRetries < 1)
                     {
-                        Common.Log.Debug<int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimizationSettings.TotalFlakyRetryCount);
+                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                         doRetry = false;
                     }
                 }

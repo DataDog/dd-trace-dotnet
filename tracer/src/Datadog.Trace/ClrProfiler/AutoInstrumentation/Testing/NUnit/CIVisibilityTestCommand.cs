@@ -26,7 +26,7 @@ internal class CIVisibilityTestCommand
     public object? Execute(object contextObject)
     {
         var testOptimization = TestOptimization.Instance;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimization.Settings.TotalFlakyRetryCount, -1);
+        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
         var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ? contextWithRepeatCount : contextObject.DuckCast<ITestExecutionContext>();
         var executionNumber = 0;
         var result = ExecuteTest(context, executionNumber++, out var isTestNew, out var duration);
@@ -72,7 +72,7 @@ internal class CIVisibilityTestCommand
             // **************************************************************
 
             // Get retries number
-            var remainingRetries = testOptimization.Settings.FlakyRetryCount;
+            var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0;
 
             // Retries
             var retryNumber = 0;
@@ -80,7 +80,7 @@ internal class CIVisibilityTestCommand
             {
                 if (Interlocked.Decrement(ref _totalRetries) <= 0)
                 {
-                    Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.Settings.TotalFlakyRetryCount);
+                    Common.Log.Debug<int?>("FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                     break;
                 }
 

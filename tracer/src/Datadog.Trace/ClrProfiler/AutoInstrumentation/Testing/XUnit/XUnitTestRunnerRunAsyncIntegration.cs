@@ -49,7 +49,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
 
         var testOptimization = TestOptimization.Instance;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimization.Settings.TotalFlakyRetryCount, -1);
+        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
 
         var runnerInstance = instance.DuckCast<TestRunnerStruct>();
         ITestRunner? testRunnerInstance = null;
@@ -133,7 +133,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        var testOptimizationSettings = TestOptimization.Instance.Settings;
+        var testOptimization = TestOptimization.Instance;
+        var testOptimizationSettings = testOptimization.Settings;
         if (state.State is TestRunnerState { MessageBus: { } messageBus, RetryMetadata: { } retryMetadata } testRunnerState)
         {
             if (retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
@@ -146,7 +147,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                     if (isFlakyRetryEnabled)
                     {
-                        retryMetadata.TotalExecutions = testOptimizationSettings.FlakyRetryCount + 1;
+                        retryMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0) + 1;
                     }
                     else
                     {
@@ -170,7 +171,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                         else if (remainingTotalRetries < 1)
                         {
-                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimizationSettings.TotalFlakyRetryCount);
+                            Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                             doRetry = false;
                         }
                     }
