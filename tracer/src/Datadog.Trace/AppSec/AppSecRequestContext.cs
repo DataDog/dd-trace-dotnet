@@ -64,10 +64,10 @@ internal class AppSecRequestContext
         }
     }
 
-    internal void AddWAFError(int code, bool isRasp)
+    internal void CheckWAFError(int code, bool isRasp)
     {
         int? existingValue = isRasp ? _wafRaspError : _wafError;
-        if (existingValue == null || existingValue < code)
+        if (code < 0 && (existingValue == null || existingValue < code))
         {
             if (isRasp)
             {

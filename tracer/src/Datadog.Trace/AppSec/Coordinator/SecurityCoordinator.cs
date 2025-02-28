@@ -77,6 +77,7 @@ internal readonly partial struct SecurityCoordinator
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
             SetErrorInformation(isRasp, result);
+            _localRootSpan.Context.TraceContext.AppSecRequestContext.CheckWAFError((int)result.ReturnCode, isRasp);
 
             SecurityReporter.RecordTelemetry(result);
         }
@@ -101,9 +102,9 @@ internal readonly partial struct SecurityCoordinator
 
     private void SetErrorInformation(bool isRasp, IResult? result)
     {
-        if (result?.ReturnCode < 0)
+        if (result is not null)
         {
-            _localRootSpan.Context.TraceContext.AppSecRequestContext.AddWAFError((int)result.ReturnCode, isRasp);
+            _localRootSpan.Context.TraceContext.AppSecRequestContext.CheckWAFError((int)result.ReturnCode, isRasp);
         }
     }
 
