@@ -10,6 +10,7 @@
       aspnet.action: transientfailure,
       aspnet.controller: conventions,
       aspnet.route: api2/{action}/{value},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
