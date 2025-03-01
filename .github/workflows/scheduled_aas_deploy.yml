@@ -52,7 +52,7 @@ jobs:
           fi
 
       # Check skip milestone
-      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+      - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         if: steps.should_run.outputs.should_proceed == 'true'
         name: 'Check Skip Milestone'
         id: skip_milestone
@@ -78,7 +78,7 @@ jobs:
           fi
 
       # Close skip milestone if we're skipping
-      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+      - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
         if: steps.should_run.outputs.should_proceed == 'true' && steps.check_skip.outputs.should_proceed == 'false'
         name: 'Close Skip Milestone'
         with:
@@ -92,7 +92,7 @@ jobs:
       # Checkout and deploy if we should proceed
       - name: Clone repository
         if: steps.check_skip.outputs.should_proceed == 'true'
-        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - uses: ./.github/actions/deploy-aas-dev-apps
         if: steps.check_skip.outputs.should_proceed == 'true'

@@ -18,7 +18,7 @@ jobs:
       statuses: write # add a commit status check
 
     steps:
-    - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+    - uses: octokit/request-action@05a2312de9f8207044c4c9e41fe19703986acc13 # v2.x
       name: 'Get Milestones'
       id: milestones
       with:
