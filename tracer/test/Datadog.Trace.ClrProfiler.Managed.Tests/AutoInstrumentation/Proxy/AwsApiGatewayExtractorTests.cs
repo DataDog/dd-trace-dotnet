@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Specialized;
+using System.Globalization;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
@@ -33,7 +34,7 @@ public class AwsApiGatewayExtractorTests
         };
 
         var tracer = ProxyTestHelpers.GetMockTracer(collection);
-        var headers = ProxyTestHelpers.CreateValidHeaders(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
+        var headers = ProxyTestHelpers.CreateValidHeaders();
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), tracer, out var data);
 
@@ -44,15 +45,17 @@ public class AwsApiGatewayExtractorTests
     [Fact]
     public void TryExtract_WithValidHeaders_ReturnsTrue()
     {
-        var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var headers = ProxyTestHelpers.CreateValidHeaders(start.ToString());
+        // this reduces precision to 1ms, so we can't compare extracted value to the original DateTimeOffset directly
+        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+
+        var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
 
         success.Should().BeTrue();
-
         data.ProxyName.Should().Be("aws-apigateway");
-        data.StartTime.ToUnixTimeMilliseconds().Should().Be(start);
+        data.StartTime.Should().Be(start);
         data.DomainName.Should().Be("test.api.com");
         data.HttpMethod.Should().Be("GET");
         data.Path.Should().Be("/api/test");
