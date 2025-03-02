@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Specialized;
+using System.Globalization;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
@@ -30,9 +31,10 @@ internal static class ProxyTestHelpers
 
     internal static NameValueHeadersCollection CreateValidHeaders(string? start = null)
     {
+        start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
+
         var headers = new NameValueHeadersCollection([]);
         headers.Set(InferredProxyHeaders.Name, "aws-apigateway");
-        start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
         headers.Set(InferredProxyHeaders.StartTime, start);
         headers.Set(InferredProxyHeaders.Domain, "test.api.com");
         headers.Set(InferredProxyHeaders.HttpMethod, "GET");
