@@ -544,7 +544,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
 
-                var routePattern = routeEndpoint.Value.RoutePattern;
+                if (!routeEndpoint.Value.RoutePattern.TryDuckCast<RoutePattern>(out var routePattern))
+                {
+                    // Failed to cast
+                    return;
+                }
 
                 // Have to pass this value through to the MVC span, as not available there
                 var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
