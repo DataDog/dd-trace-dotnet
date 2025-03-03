@@ -17,8 +17,6 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.dnlib.Threading;
-using OperationCanceledException = System.OperationCanceledException;
 
 #nullable enable
 
@@ -209,6 +207,8 @@ namespace Datadog.Trace.Debugger
                 if (dynamicallyDisabled)
                 {
                     Log.Information("Dynamic Instrumentation is disabled by remote enablement. To enable it, re-enable it via Datadog UI");
+                    TracerManager.Instance.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
+
                     DynamicInstrumentation?.Dispose();
                     DynamicInstrumentation = null;
                     return;
@@ -242,6 +242,7 @@ namespace Datadog.Trace.Debugger
                     {
                         sw.Restart();
                         await DynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
+                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
                         TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
                     }
                     else
