@@ -49,8 +49,6 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
 
         var testOptimization = TestOptimization.Instance;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
-
         var runnerInstance = instance.DuckCast<TestRunnerStruct>();
         ITestRunner? testRunnerInstance = null;
 
@@ -79,6 +77,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
             testOptimization.FlakyRetryFeature?.Enabled != true)
         {
             return CallTargetState.GetDefault();
+        }
+
+        if (testOptimization.FlakyRetryFeature?.Enabled == true)
+        {
+            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature.TotalFlakyRetryCount, -1);
         }
 
         // Try to ducktype the current instance to ITestClassRunner

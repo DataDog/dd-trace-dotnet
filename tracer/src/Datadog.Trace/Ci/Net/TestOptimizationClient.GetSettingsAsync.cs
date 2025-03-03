@@ -24,8 +24,25 @@ internal sealed partial class TestOptimizationClient
     private const string SettingsType = "ci_app_test_service_libraries_settings";
     private Uri? _settingsUrl;
 
-    public static SettingsResponse CreateSettingsResponseFromTestOptimizationSettings(TestOptimizationSettings settings)
+    public static SettingsResponse CreateSettingsResponseFromTestOptimizationSettings(TestOptimizationSettings settings, ITestOptimizationTracerManagement? tracerManagement)
     {
+        if (!settings.IntelligentTestRunnerEnabled ||
+            (!settings.Agentless && tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.None))
+        {
+            // No additional features should be enabled
+            return new SettingsResponse(
+                codeCoverage: false,
+                testsSkipping: false,
+                requireGit: false,
+                impactedTestsEnabled: false,
+                flakyTestRetries: false,
+                earlyFlakeDetection: new EarlyFlakeDetectionSettingsResponse(
+                    enabled: false,
+                    slowTestRetries: new SlowTestRetriesSettingsResponse(),
+                    faultySessionThreshold: 0),
+                knownTestsEnabled: false);
+        }
+
         return new SettingsResponse(
             codeCoverage: settings.CodeCoverageEnabled,
             testsSkipping: settings.TestsSkippingEnabled,
