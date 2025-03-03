@@ -16,17 +16,15 @@ internal struct RouteEndpoint
     /// <summary>
     /// Delegates to Endpoint.RoutePattern;
     /// </summary>
-    public RoutePattern RoutePattern;
+    public object RoutePattern;
 
     /// <summary>
     /// Delegates to Endpoint.DisplayName;
     /// </summary>
     public string DisplayName;
 
-#if NETCOREAPP2_2_OR_GREATER
     /// <summary>
     /// Delegates to Endpoint.Metadata;
     /// </summary>
     public object Metadata;
-#endif
 }
