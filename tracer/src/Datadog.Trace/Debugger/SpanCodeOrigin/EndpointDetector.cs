@@ -7,7 +7,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
@@ -52,7 +54,7 @@ internal static class EndpointDetector
 
     private static readonly HashSet<string> NoHandlerAttributes = ["Microsoft.AspNetCore.Mvc.RazorPages.NonHandlerAttribute"];
 
-    public static ImmutableHashSet<int> GetEndpointMethodTokens(DatadogMetadataReader datadogMetadataReader)
+    internal static ImmutableHashSet<int> GetEndpointMethodTokens(DatadogMetadataReader datadogMetadataReader)
     {
         var builder = ImmutableHashSet.CreateBuilder<int>();
         var metadataReader = datadogMetadataReader.MetadataReader;
@@ -150,7 +152,7 @@ internal static class EndpointDetector
         {
             if (TryGetBaseTypeInfo(baseTypeHandle, reader, out var baseTypeName, out var nextBaseTypeHandle))
             {
-                if (baseTypeNames.Contains(baseTypeName!))
+                if (baseTypeNames.Contains(baseTypeName))
                 {
                     return true;
                 }
@@ -212,7 +214,13 @@ internal static class EndpointDetector
         {
             if (TryGetBaseTypeInfo(baseTypeHandle, reader, out var baseTypeName, out var nextBaseTypeHandle))
             {
-                if (baseTypeNames.Contains(baseTypeName!))
+                var indexOfTypeArg = baseTypeName.IndexOf('<');
+                if (indexOfTypeArg > 0)
+                {
+                    baseTypeName = baseTypeName.Substring(0, indexOfTypeArg);
+                }
+
+                if (baseTypeNames.Contains(baseTypeName))
                 {
                     return true;
                 }
@@ -267,7 +275,7 @@ internal static class EndpointDetector
         return false;
     }
 
-    private static bool TryGetBaseTypeInfo(EntityHandle typeHandle, MetadataReader reader, out string? baseTypeName, out EntityHandle baseType)
+    private static bool TryGetBaseTypeInfo(EntityHandle typeHandle, MetadataReader reader, [NotNullWhen(true)] out string? baseTypeName, out EntityHandle baseType)
     {
         switch (typeHandle.Kind)
         {
@@ -275,19 +283,26 @@ internal static class EndpointDetector
                 var typeDef = reader.GetTypeDefinition((TypeDefinitionHandle)typeHandle);
                 baseTypeName = GetFullTypeName(typeDef.Namespace, typeDef.Name, reader);
                 baseType = typeDef.BaseType;
-                return true;
+                break;
 
             case HandleKind.TypeReference:
                 var typeRef = reader.GetTypeReference((TypeReferenceHandle)typeHandle);
                 baseTypeName = GetFullTypeName(typeRef.Namespace, typeRef.Name, reader);
                 baseType = default;
-                return true;
+                break;
+
+            case HandleKind.TypeSpecification:
+                baseTypeName = ((TypeSpecificationHandle)typeHandle).FullName(reader);
+                baseType = default;
+                break;
 
             default:
                 baseTypeName = null;
                 baseType = default;
-                return false;
+                break;
         }
+
+        return !string.IsNullOrEmpty(baseTypeName);
     }
 
     private static string GetFullTypeName(StringHandle namespaceHandle, StringHandle nameHandle, MetadataReader reader)
@@ -296,4 +311,6 @@ internal static class EndpointDetector
         var name = reader.GetString(nameHandle);
         return $"{nameSpace}.{name}";
     }
+
+    private record Entity(string Name, EntityHandle Handle);
 }
