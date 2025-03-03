@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal virtual DebuggerSnapshotCreator EndSnapshot()
+        internal virtual DebuggerSnapshotCreator EndSnapshot(bool isMethodProbe)
         {
             JsonWriter.WritePropertyName("id");
             JsonWriter.WriteValue(SnapshotId);
@@ -334,8 +334,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WritePropertyName("timestamp");
             JsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
 
-            JsonWriter.WritePropertyName("duration");
-            JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
+            if (isMethodProbe)
+            {
+                JsonWriter.WritePropertyName("duration");
+                JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
+            }
 
             JsonWriter.WritePropertyName("language");
             JsonWriter.WriteValue(TracerConstants.Language);
@@ -684,7 +687,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        info.LineCaptureInfo.ProbeFilePath);
+                        info.LineCaptureInfo.ProbeFilePath,
+                        isMethodProbe: false);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
@@ -711,14 +715,15 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        null);
+                        null,
+                        isMethodProbe: true);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
+        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath, bool isMethodProbe)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
 
@@ -727,7 +732,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var spanId = activeScope?.Span.SpanId.ToString(CultureInfo.InvariantCulture);
 
             AddStackInfo()
-            .EndSnapshot()
+            .EndSnapshot(isMethodProbe)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
             .AddGeneralInfo(DynamicInstrumentationHelper.ServiceName, traceId, spanId)
