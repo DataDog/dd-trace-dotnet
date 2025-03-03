@@ -14,6 +14,7 @@ namespace Datadog.Trace.Ci;
 internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFeature
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationKnownTestsFeature));
+    private readonly bool _enabled;
     private readonly Task<TestOptimizationClient.KnownTestsResponse> _knownTestsTask;
 
     private TestOptimizationKnownTestsFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
@@ -33,7 +34,7 @@ internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFe
             Log.Information("TestOptimizationKnownTestsFeature: Known tests is enabled.");
             settings.SetKnownTestsEnabled(true);
             _knownTestsTask = Task.Run(() => InternalGetKnownTestsAsync(testOptimizationClient));
-            Enabled = true;
+            _enabled = true;
         }
         else
         {
@@ -41,7 +42,7 @@ internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFe
             settings.SetKnownTestsEnabled(false);
             settings.SetEarlyFlakeDetectionEnabled(false);
             _knownTestsTask = Task.FromResult(default(TestOptimizationClient.KnownTestsResponse));
-            Enabled = false;
+            _enabled = false;
         }
 
         return;
@@ -55,9 +56,9 @@ internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFe
         }
     }
 
-    public bool Enabled { get; }
+    public bool Enabled => _enabled && KnownTests.Tests is not null; // Ensure that the known tests response was not empty
 
-    public TestOptimizationClient.KnownTestsResponse? KnownTests
+    public TestOptimizationClient.KnownTestsResponse KnownTests
         => _knownTestsTask.SafeGetResult();
 
     public static ITestOptimizationKnownTestsFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)

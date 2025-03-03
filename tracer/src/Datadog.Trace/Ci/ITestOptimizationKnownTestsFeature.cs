@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci;
 
 internal interface ITestOptimizationKnownTestsFeature : ITestOptimizationFeature
 {
-    TestOptimizationClient.KnownTestsResponse? KnownTests { get; }
+    TestOptimizationClient.KnownTestsResponse KnownTests { get; }
 
     bool IsAKnownTest(string moduleName, string testSuite, string testName);
 }
