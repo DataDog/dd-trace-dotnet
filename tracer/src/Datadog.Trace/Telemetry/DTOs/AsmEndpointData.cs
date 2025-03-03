@@ -11,9 +11,22 @@ namespace Datadog.Trace.Telemetry;
 
 internal class AsmEndpointData
 {
+    private static readonly string[] ValidMethods = [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "HEAD",
+        "OPTIONS",
+        "TRACE",
+        "CONNECT",
+        "*"
+    ];
+
     public AsmEndpointData(string method, string path)
     {
-        if (!VerifyEndpointMethod(method))
+        if (!ValidMethods.Contains(method))
         {
             throw new ArgumentException($"Invalid method {nameof(method)}");
         }
@@ -45,22 +58,4 @@ internal class AsmEndpointData
     /// Gets or sets the operation name for the endpoint.
     /// </summary>
     public string OperationName { get; set; }
-
-    private static bool VerifyEndpointMethod(string method)
-    {
-        string[] validMethods = [
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "PATCH",
-            "HEAD",
-            "OPTIONS",
-            "TRACE",
-            "CONNECT",
-            "*"
-        ];
-
-        return validMethods.Contains(method);
-    }
 }
