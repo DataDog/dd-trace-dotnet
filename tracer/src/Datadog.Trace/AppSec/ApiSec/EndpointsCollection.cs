@@ -9,16 +9,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec.ApiSec.DuckType;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.AppSec;
 
@@ -41,7 +36,7 @@ internal class EndpointsCollection
 
         for (var j = 0; j < mapEndpoints.Count && discoveredEndpoints.Count < maxEndpoints; j++)
         {
-            discoveredEndpoints.Add(new AsmEndpointData("*", mapEndpoints[j]));
+            InsertEndpoint("*", mapEndpoints[j], discoveredEndpoints);
         }
 
         // Send To telemetry
@@ -100,12 +95,24 @@ internal class EndpointsCollection
         {
             for (var i = 0; i < httpMethods.Count && discoveredEndpoints.Count < maxEndpoints; i++)
             {
-                discoveredEndpoints.Add(new AsmEndpointData(httpMethods[i], path));
+                InsertEndpoint(httpMethods[i], path, discoveredEndpoints);
             }
         }
         else
         {
-            discoveredEndpoints.Add(new AsmEndpointData("*", path));
+            InsertEndpoint("*", path, discoveredEndpoints);
+        }
+    }
+
+    private static void InsertEndpoint(string httpMethod, string path, List<AsmEndpointData> discoveredEndpoints)
+    {
+        try
+        {
+            discoveredEndpoints.Add(new AsmEndpointData(httpMethod, path));
+        }
+        catch (Exception e)
+        {
+            Log.Debug(e, "Failed to add endpoint to the list");
         }
     }
 
