@@ -289,6 +289,12 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
+    public enum WafStatus
+    {
+        [Description("waf_version;event_rules_version;success:true")] Success,
+        [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
     [EnumExtensions]
     public enum RaspRuleType
     {

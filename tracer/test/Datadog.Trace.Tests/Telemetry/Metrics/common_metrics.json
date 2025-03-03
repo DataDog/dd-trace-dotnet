@@ -636,7 +636,8 @@
     "waf.init": {
       "tags": [
         "waf_version",
-        "event_rules_version"
+        "event_rules_version",
+        "success"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -647,7 +648,8 @@
     "waf.updates": {
       "tags": [
         "waf_version",
-        "event_rules_version"
+        "event_rules_version",
+        "success"
       ],
       "metric_type": "count",
       "data_type": "requests",
