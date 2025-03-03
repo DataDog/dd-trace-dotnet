@@ -29,7 +29,8 @@ internal enum CountCIVisibility
     /// </summary>
     [TelemetryMetric<
         MetricTags.CIVisibilityTestFramework,
-        MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum>
+        MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum,
+        MetricTags.CIVisibilityTestingEventTypeRetryReason>
         ("event_finished", isCommon: true, NS.CIVisibility)] EventFinished,
 
     /// <summary>

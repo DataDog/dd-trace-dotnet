@@ -35,7 +35,7 @@ public class MetricTests
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
     {
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
-        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled" } },
+        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled", "retry_reason", string.Empty } },
         { "endpoint_payload.requests_errors", ["status_code"] },
         { "git_requests.search_commits_errors", ["status_code"] },
         { "git_requests.objects_pack_errors", ["status_code"] },

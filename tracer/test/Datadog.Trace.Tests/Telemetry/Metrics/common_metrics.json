@@ -947,7 +947,8 @@
         "is_new",
         "is_rum",
         "browser_driver",
-        "early_flake_detection_abort_reason"
+        "early_flake_detection_abort_reason",
+        "retry_reason"
       ],
       "metric_type": "count",
       "data_type": "events",

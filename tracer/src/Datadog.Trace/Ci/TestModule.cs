@@ -519,7 +519,10 @@ public sealed class TestModule
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
-        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module);
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+            TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
+            MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module,
+            MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
 
         Current = null;
         lock (OpenedTestModules)

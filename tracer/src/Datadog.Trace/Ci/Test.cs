@@ -447,12 +447,15 @@ public sealed class Test
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
-                tags is { TestIsNew: "true", TestRetryReason: "efd" },
+                tags.TestIsNew == "true",
                 tags.EarlyFlakeDetectionTestAbortReason == "slow",
                 !string.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+                TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
+                eventTypeWithMetadata,
+                tags.TestRetryReason == "efd" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection : tags.TestRetryReason == "atr" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry : MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
         }
 
         Current = null;

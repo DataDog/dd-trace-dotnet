@@ -413,6 +413,13 @@ internal static class MetricTags
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
     }
 
+    public enum CIVisibilityTestingEventTypeRetryReason
+    {
+        [Description("")] None,
+        [Description("retry_reason:efd")] EarlyFlakeDetection,
+        [Description("retry_reason:atr")] AutomaticTestRetry,
+    }
+
     public enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
