@@ -5,9 +5,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
+using Datadog.Trace.Debugger.Caching;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
-        private readonly ConcurrentDictionary<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
+        private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
 
         private readonly CodeOriginTags _tags;
 
