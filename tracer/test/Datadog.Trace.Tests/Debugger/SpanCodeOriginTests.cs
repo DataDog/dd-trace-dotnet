@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Debugger
                 using var settingsSetter = SetCodeOriginManagerSettings(true);
                 var span = CreateSpan();
                 var type = GetType();
-                var method = type.GetMethod(nameof(this.TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
+                var method = type.GetMethod(nameof(TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
 
                 // Act
                 SpanCodeOriginManager.Instance.SetCodeOriginForEntrySpan(span, type, method);
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Debugger
                 // Assert
                 span.GetTag($"{CodeOriginTag}.type").Should().Be("entry");
                 span.GetTag($"{CodeOriginTag}.frames.0.index").Should().Be("0");
-                span.GetTag($"{CodeOriginTag}.frames.0.method").Should().Be(nameof(this.TestMethod));
+                span.GetTag($"{CodeOriginTag}.frames.0.method").Should().Be(nameof(TestMethod));
                 span.GetTag($"{CodeOriginTag}.frames.0.type").Should().Be(type.FullName);
             }
 
@@ -117,14 +117,14 @@ namespace Datadog.Trace.Tests.Debugger
                 using var settingsSetter = SetCodeOriginManagerSettings(true);
                 var span = CreateSpan();
                 var type = GetType();
-                var method = type.GetMethod(nameof(this.TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
+                var method = type.GetMethod(nameof(TestMethod), BindingFlags.Instance | BindingFlags.NonPublic);
 
                 // Act
                 SpanCodeOriginManager.Instance.SetCodeOriginForEntrySpan(span, type, method);
 
                 // Assert
                 span.GetTag($"{CodeOriginTag}.type").Should().Be("entry");
-                span.GetTag($"{CodeOriginTag}.frames.0.method").Should().Be(nameof(this.TestMethod));
+                span.GetTag($"{CodeOriginTag}.frames.0.method").Should().Be(nameof(TestMethod));
                 span.GetTag($"{CodeOriginTag}.frames.{0}.file").Should().BeNull();
             }
 
@@ -326,7 +326,7 @@ namespace Datadog.Trace.Tests.Debugger
                 var isCodeOriginEnabledField = instance.GetType().GetField("_isCodeOriginEnabled", BindingFlags.NonPublic | BindingFlags.Instance);
                 var thirdPartyDetectionExcludesField = instance.GetType().GetField("_thirdPartyDetectionExcludes", BindingFlags.NonPublic | BindingFlags.Instance);
                 var tagsField = instance.GetType().GetField("_tags", BindingFlags.NonPublic | BindingFlags.Instance);
-                maxUserFrameField.SetValue(instance, this._maxUserFrames);
+                maxUserFrameField.SetValue(instance, _maxUserFrames);
                 isCodeOriginEnabledField.SetValue(instance, _isCodeOriginEnabled);
                 thirdPartyDetectionExcludesField.SetValue(instance, _thirdPartyDetectionExcludes);
                 tagsField.SetValue(instance, _tags);
