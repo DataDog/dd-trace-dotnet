@@ -55,16 +55,27 @@ internal class EndpointsCollection
             return;
         }
 
-        var routePattern = routeEndpoint.RoutePattern;
+        if (!routeEndpoint.RoutePattern.TryDuckCast<RoutePattern>(out var routePattern))
+        {
+            return;
+        }
+
         var endpointMetadataCollection = routeEndpoint.Metadata.DuckCast<IEndpointMetadataCollection>();
-        string path;
+        string? path;
 
 #if NETCOREAPP3_0_OR_GREATER
         // >= 3.0
-        var areaName = routePattern.RequiredValues.TryGetValue("area", out var area) ? area as string : null;
-        var controllerName = routePattern.RequiredValues.TryGetValue("controller", out var controller) ? controller as string : null;
-        var actionName = routePattern.RequiredValues.TryGetValue("action", out var action) ? action as string : null;
-        path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePattern.RequiredValues, areaName, controllerName, actionName, false);
+        if (routeEndpoint.RoutePattern.TryDuckCast<RoutePatternRequiredValues>(out var routePatternV3))
+        {
+            var areaName = routePatternV3.RequiredValues.TryGetValue("area", out var area) ? area as string : null;
+            var controllerName = routePatternV3.RequiredValues.TryGetValue("controller", out var controller) ? controller as string : null;
+            var actionName = routePatternV3.RequiredValues.TryGetValue("action", out var action) ? action as string : null;
+            path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePatternV3.RequiredValues, areaName, controllerName, actionName, false);
+        }
+        else
+        {
+            path = routePattern.RawText;
+        }
 #elif NETCOREAPP2_2_OR_GREATER
         // Only 2.2
         if (endpointMetadataCollection.GetRouteValuesAddressMetadata() is { RequiredValues: { } address })
@@ -79,6 +90,10 @@ internal class EndpointsCollection
             path = routePattern.RawText;
         }
 #endif
+        if (path is null)
+        {
+            return;
+        }
 
         // Check if the endpoint have constrained HTTP methods inside the metadata
         if (endpointMetadataCollection.GetHttpMethodMetadata() is { HttpMethods: { } httpMethods })
