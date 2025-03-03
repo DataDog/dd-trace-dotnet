@@ -100,8 +100,8 @@ namespace Datadog.Trace.Configuration
                     .WithKeys(ConfigurationKeys.ExperimentalFeaturesEnabled)
                     .AsString()?.Trim() switch
                     {
-                        null or "false" => new HashSet<string>(),
-                        "true" => DefaultExperimentalFeatures,
+                        null or "none" => new HashSet<string>(),
+                        "all" => DefaultExperimentalFeatures,
                         string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
                     };
 

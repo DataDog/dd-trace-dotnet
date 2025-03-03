@@ -17,7 +17,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Configuration key to enable experimental features.
         /// </summary>
-        public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_ENABLED";
+        public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
 
         /// <summary>
         /// Configuration key for the path to the configuration file.
