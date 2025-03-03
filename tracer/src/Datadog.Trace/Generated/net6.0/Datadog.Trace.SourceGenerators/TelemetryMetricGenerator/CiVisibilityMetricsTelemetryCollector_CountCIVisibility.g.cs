@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountCIVisibilityLength = 394;
+    private const int CountCIVisibilityLength = 410;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
@@ -359,26 +359,42 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
             // git_requests.settings_response, index = 322
-            new(null),
-            new(new[] { "coverage_enabled" }),
-            new(new[] { "itrskip_enabled" }),
-            new(new[] { "coverage_enabled", "itrskip_enabled" }),
-            new(new[] { "early_flake_detection_enabled:true" }),
-            new(new[] { "coverage_enabled", "early_flake_detection_enabled:true" }),
-            new(new[] { "itrskip_enabled", "early_flake_detection_enabled:true" }),
-            new(new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled:true" }),
-            new(new[] { "flaky_test_retries_enabled:true" }),
-            new(new[] { "coverage_enabled", "flaky_test_retries_enabled:true" }),
-            new(new[] { "itrskip_enabled", "flaky_test_retries_enabled:true" }),
-            new(new[] { "coverage_enabled", "itrskip_enabled", "flaky_test_retries_enabled:true" }),
-            new(new[] { "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
-            new(new[] { "coverage_enabled", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
-            new(new[] { "itrskip_enabled", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
-            new(new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
-            // itr_skippable_tests.request, index = 338
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            // itr_skippable_tests.request, index = 354
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // itr_skippable_tests.request_errors, index = 340
+            // itr_skippable_tests.request_errors, index = 356
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -390,33 +406,33 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // itr_skippable_tests.response_tests, index = 351
+            // itr_skippable_tests.response_tests, index = 367
             new(null),
-            // itr_skippable_tests.response_suites, index = 352
+            // itr_skippable_tests.response_suites, index = 368
             new(null),
-            // itr_skipped, index = 353
+            // itr_skipped, index = 369
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_unskippable, index = 357
+            // itr_unskippable, index = 373
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_forced_run, index = 361
+            // itr_forced_run, index = 377
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // code_coverage.is_empty, index = 365
+            // code_coverage.is_empty, index = 381
             new(null),
-            // code_coverage.errors, index = 366
+            // code_coverage.errors, index = 382
             new(null),
-            // known_tests.request, index = 367
+            // known_tests.request, index = 383
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // known_tests.request_errors, index = 369
+            // known_tests.request_errors, index = 385
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -428,10 +444,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests_detection.request, index = 380
+            // impacted_tests_detection.request, index = 396
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // impacted_tests_detection.request_errors, index = 382
+            // impacted_tests_detection.request_errors, index = 398
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -443,7 +459,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests_detection.is_modified, index = 393
+            // impacted_tests_detection.is_modified, index = 409
             new(null),
         };
 
@@ -453,7 +469,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
-        = new int[]{ 40, 100, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 16, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, };
+        = new int[]{ 40, 100, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 32, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, };
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
@@ -556,88 +572,88 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_CoverageFeature tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature tag3, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature tag4, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature tag5, int increment = 1)
     {
-        var index = 322 + (int)tag;
+        var index = 322 + ((int)tag1 * 16) + ((int)tag2 * 8) + ((int)tag3 * 4) + ((int)tag4 * 2) + (int)tag5;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 338 + (int)tag;
+        var index = 354 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 340 + (int)tag;
+        var index = 356 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[351], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[367], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[352], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[368], increment);
     }
 
     public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
-    {
-        var index = 353 + (int)tag;
-        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
-    }
-
-    public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
-    {
-        var index = 357 + (int)tag;
-        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
-    }
-
-    public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
-    {
-        var index = 361 + (int)tag;
-        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
-    }
-
-    public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
-    {
-        Interlocked.Add(ref _buffer.CountCIVisibility[365], increment);
-    }
-
-    public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
-    {
-        Interlocked.Add(ref _buffer.CountCIVisibility[366], increment);
-    }
-
-    public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
-    {
-        var index = 367 + (int)tag;
-        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
-    }
-
-    public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 369 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
+    public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+        var index = 373 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+        var index = 377 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.CountCIVisibility[381], increment);
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.CountCIVisibility[382], increment);
+    }
+
+    public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    {
+        var index = 383 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 385 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
     public void RecordCountCIVisibilityImpactedTestsDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 380 + (int)tag;
+        var index = 396 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 382 + (int)tag;
+        var index = 398 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[393], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[409], increment);
     }
 }

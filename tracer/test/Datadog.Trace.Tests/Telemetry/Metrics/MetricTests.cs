@@ -36,7 +36,6 @@ public class MetricTests
     {
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
         { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled" } },
-        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled", "flaky_test_retries_enabled" } },
         { "endpoint_payload.requests_errors", ["status_code"] },
         { "git_requests.search_commits_errors", ["status_code"] },
         { "git_requests.objects_pack_errors", ["status_code"] },
@@ -253,14 +252,18 @@ public class MetricTests
                         return GetAllTagPermutations(attributeType.GenericTypeArguments[0]).ToList();
                     }
 
-                    if (genericDefinition == typeof(TelemetryMetricAttribute<,>))
+                    if (genericDefinition.BaseType == typeof(TelemetryMetricAttribute))
                     {
-                        // two tags, grab the tags
-                        var tags1 = GetAllTagPermutations(attributeType.GenericTypeArguments[0]);
-                        var tags2 = GetAllTagPermutations(attributeType.GenericTypeArguments[1]);
-                        return (from tagset1 in tags1
-                                from tagset2 in tags2
-                                select tagset1.Concat(tagset2).ToArray()).ToList();
+                        // Start with a sequence containing a single empty array.
+                        // This serves as the initial seed for our aggregate.
+                        var combinedTags = attributeType.GenericTypeArguments.Aggregate(
+                            new[] { Array.Empty<string>() },
+                            (accumulator, typeArg) =>
+                                (from prefix in accumulator
+                                from tags in GetAllTagPermutations(typeArg)
+                                select prefix.Concat(tags).ToArray()).ToArray());
+
+                        return combinedTags.ToList();
                     }
                 }
             }

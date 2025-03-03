@@ -145,7 +145,12 @@ internal enum CountCIVisibility
     /// <summary>
     /// The number of settings responses from the endpoint by CI Visibility
     /// </summary>
-    [TelemetryMetric<MetricTags.CIVisibilityITRSettingsResponse>
+    [TelemetryMetric<
+            MetricTags.CIVisibilitySettingsResponse_CoverageFeature,
+            MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature,
+            MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature,
+            MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature,
+            MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature>
         ("git_requests.settings_response", isCommon: true, NS.CIVisibility)] GitRequestsSettingsResponse,
 
     /// <summary>

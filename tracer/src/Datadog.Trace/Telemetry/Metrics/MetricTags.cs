@@ -482,25 +482,34 @@ internal static class MetricTags
         [Description("exit_code:129")] EC129,
     }
 
-    public enum CIVisibilityITRSettingsResponse
+    public enum CIVisibilitySettingsResponse_CoverageFeature
     {
-        [Description("")] CoverageDisabled_ItrSkipDisabled_AtrDisabled,
-        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled_AtrDisabled,
-        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled_AtrDisabled,
-        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled_AtrDisabled,
-        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-        // ...
-        [Description("flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipDisabled_AtrEnabled,
-        [Description("coverage_enabled;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipDisabled_AtrEnabled,
-        [Description("itrskip_enabled;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipEnabled_AtrEnabled,
-        [Description("coverage_enabled;itrskip_enabled;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipEnabled_AtrEnabled,
-        [Description("early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+        [Description("coverage_enabled:true")] Enabled,
+        [Description("coverage_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_ItrSkippingFeature
+    {
+        [Description("itrskip_enabled:true")] Enabled,
+        [Description("itrskip_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature
+    {
+        [Description("early_flake_detection_enabled:true")] Enabled,
+        [Description("early_flake_detection_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_FlakyTestRetriesFeature
+    {
+        [Description("flaky_test_retries_enabled:true")] Enabled,
+        [Description("flaky_test_retries_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_KnownTestsFeature
+    {
+        [Description("known_tests_enabled:true")] Enabled,
+        [Description("known_tests_enabled:false")] Disabled,
     }
 
     public enum CIVisibilityRequestCompressed

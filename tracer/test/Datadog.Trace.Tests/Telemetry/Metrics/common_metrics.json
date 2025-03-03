@@ -1207,7 +1207,8 @@
         "coverage_enabled",
         "itrskip_enabled",
         "flaky_test_retries_enabled",
-        "early_flake_detection_enabled"
+        "early_flake_detection_enabled",
+        "known_tests_enabled"
       ],
       "metric_type": "count",
       "data_type": "response",
