@@ -22,6 +22,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.AppSec
@@ -604,7 +605,7 @@ namespace Datadog.Trace.AppSec
             else if (_rateLimiter?.Allowed(span) ?? false)
             {
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                span.Context.TraceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
+                span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
             }
         }
 

@@ -45,7 +45,7 @@ namespace Datadog.Trace.Configuration
         private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
-        private readonly bool _appsecStandaloneEnabled;
+        private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
@@ -238,9 +238,9 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
 
-            _appsecStandaloneEnabled = config
-                                      .WithKeys(ConfigurationKeys.AppsecStandaloneEnabled)
-                                      .AsBool(defaultValue: false);
+            _apmTracingEnabled = config
+                                      .WithKeys(ConfigurationKeys.ApmTracingEnabled)
+                                      .AsBool(defaultValue: true);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -554,7 +554,7 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (AppsecStandaloneEnabledInternal && StatsComputationEnabled)
+            if (!ApmTracingEnabledInternal && StatsComputationEnabled)
             {
                 telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
@@ -716,11 +716,11 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether Appsec standalone is enabled.
-        /// Default is <c>false</c>.
+        /// Gets a value indicating whether APM traces are enabled.
+        /// Default is <c>true</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
-        internal bool AppsecStandaloneEnabledInternal => DynamicSettings.AppsecStandaloneEnabled ?? _appsecStandaloneEnabled;
+        /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
+        internal bool ApmTracingEnabledInternal => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.
