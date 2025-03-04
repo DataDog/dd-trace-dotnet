@@ -522,7 +522,9 @@ public sealed class TestModule
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
             TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
             MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module,
-            MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+            MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         Current = null;
         lock (OpenedTestModules)

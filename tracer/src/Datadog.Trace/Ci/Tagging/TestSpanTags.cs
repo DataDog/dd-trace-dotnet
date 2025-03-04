@@ -58,6 +58,7 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         GitCommitCommitterName = suiteTags.GitCommitCommitterName;
         Command = suiteTags.Command;
         WorkingDirectory = suiteTags.WorkingDirectory;
+        TestManagementEnabled = suiteTags.TestManagementEnabled;
     }
 
     [Tag(TestTags.Name)]
@@ -119,4 +120,19 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(BrowserTags.IsModified)]
     public string? IsModified { get; set; }
+
+    [Tag(TestTags.TestIsQuarantined)]
+    public string? IsQuarantined { get; set; }
+
+    [Tag(TestTags.TestIsDisabled)]
+    public string? IsDisabled { get; set; }
+
+    [Tag(TestTags.TestIsAttemptToFix)]
+    public string? IsAttemptToFix { get; set; }
+
+    [Tag(TestTags.TestHasFailedAllRetries)]
+    public string? HasFailedAllRetries { get; set; }
+
+    [Tag(TestTags.TestAttemptToFixPassed)]
+    public string? AttemptToFixPassed { get; set; }
 }

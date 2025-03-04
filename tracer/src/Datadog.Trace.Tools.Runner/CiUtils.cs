@@ -122,6 +122,7 @@ internal static class CiUtils
         var earlyFlakeDetectionEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled == true;
         var flakyRetryEnabled = testOptimizationSettings.FlakyRetryEnabled == true;
         var impactedTestsDetectionEnabled = testOptimizationSettings.ImpactedTestsDetectionEnabled == true;
+        var testManagementEnabled = testOptimizationSettings.TestManagementEnabled == true;
 
         var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
         if (agentless || hasEvpProxy)
@@ -191,7 +192,8 @@ internal static class CiUtils
                  testOptimizationSettings.KnownTestsEnabled == null ||
                  testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
                  testOptimizationSettings.FlakyRetryEnabled == null ||
-                 testOptimizationSettings.ImpactedTestsDetectionEnabled == null))
+                 testOptimizationSettings.ImpactedTestsDetectionEnabled == null ||
+                 testOptimizationSettings.TestManagementEnabled == null))
             {
                 try
                 {
@@ -216,6 +218,7 @@ internal static class CiUtils
                     earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
                     flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
                     impactedTestsDetectionEnabled = impactedTestsDetectionEnabled || itrSettings.ImpactedTestsEnabled == true;
+                    testManagementEnabled = testManagementEnabled || itrSettings.TestManagement.Enabled == true;
                 }
                 catch (Exception ex)
                 {
@@ -230,16 +233,19 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
         Log.Debug("RunCiCommand: ImpactedTestsDetectionEnabled = {Value}", impactedTestsDetectionEnabled);
+        Log.Debug("RunCiCommand: TestManagementEnabled = {Value}", testManagementEnabled);
         testOptimizationSettings.SetCodeCoverageEnabled(codeCoverageEnabled);
         testOptimizationSettings.SetKnownTestsEnabled(knownTestsEnabled);
         testOptimizationSettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
         testOptimizationSettings.SetFlakyRetryEnabled(flakyRetryEnabled);
         testOptimizationSettings.SetImpactedTestsEnabled(impactedTestsDetectionEnabled);
+        testOptimizationSettings.SetTestManagementEnabled(testManagementEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled] = knownTestsEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled] = impactedTestsDetectionEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.TestManagementEnabled] = testManagementEnabled ? "1" : "0";
 
         if (!testSkippingEnabled)
         {

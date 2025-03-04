@@ -54,6 +54,16 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> IsRumActiveBytes => new byte[] { 178, 116, 101, 115, 116, 46, 105, 115, 95, 114, 117, 109, 95, 97, 99, 116, 105, 118, 101 };
         // IsModifiedBytes = MessagePack.Serialize("test.is_modified");
         private static ReadOnlySpan<byte> IsModifiedBytes => new byte[] { 176, 116, 101, 115, 116, 46, 105, 115, 95, 109, 111, 100, 105, 102, 105, 101, 100 };
+        // IsQuarantinedBytes = MessagePack.Serialize("test.test_management.is_quarantined");
+        private static ReadOnlySpan<byte> IsQuarantinedBytes => new byte[] { 217, 35, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 113, 117, 97, 114, 97, 110, 116, 105, 110, 101, 100 };
+        // IsDisabledBytes = MessagePack.Serialize("test.test_management.is_test_disabled");
+        private static ReadOnlySpan<byte> IsDisabledBytes => new byte[] { 217, 37, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 116, 101, 115, 116, 95, 100, 105, 115, 97, 98, 108, 101, 100 };
+        // IsAttemptToFixBytes = MessagePack.Serialize("test.test_management.is_attempt_to_fix");
+        private static ReadOnlySpan<byte> IsAttemptToFixBytes => new byte[] { 217, 38, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 105, 115, 95, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120 };
+        // HasFailedAllRetriesBytes = MessagePack.Serialize("test.has_failed_all_retries");
+        private static ReadOnlySpan<byte> HasFailedAllRetriesBytes => new byte[] { 187, 116, 101, 115, 116, 46, 104, 97, 115, 95, 102, 97, 105, 108, 101, 100, 95, 97, 108, 108, 95, 114, 101, 116, 114, 105, 101, 115 };
+        // AttemptToFixPassedBytes = MessagePack.Serialize("test.test_management.attempt_to_fix_passed");
+        private static ReadOnlySpan<byte> AttemptToFixPassedBytes => new byte[] { 217, 42, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 97, 116, 116, 101, 109, 112, 116, 95, 116, 111, 95, 102, 105, 120, 95, 112, 97, 115, 115, 101, 100 };
 
         public override string? GetTag(string key)
         {
@@ -77,6 +87,11 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.browser.version" => BrowserVersion,
                 "test.is_rum_active" => IsRumActive,
                 "test.is_modified" => IsModified,
+                "test.test_management.is_quarantined" => IsQuarantined,
+                "test.test_management.is_test_disabled" => IsDisabled,
+                "test.test_management.is_attempt_to_fix" => IsAttemptToFix,
+                "test.has_failed_all_retries" => HasFailedAllRetries,
+                "test.test_management.attempt_to_fix_passed" => AttemptToFixPassed,
                 _ => base.GetTag(key),
             };
         }
@@ -138,6 +153,21 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.is_modified": 
                     IsModified = value;
+                    break;
+                case "test.test_management.is_quarantined": 
+                    IsQuarantined = value;
+                    break;
+                case "test.test_management.is_test_disabled": 
+                    IsDisabled = value;
+                    break;
+                case "test.test_management.is_attempt_to_fix": 
+                    IsAttemptToFix = value;
+                    break;
+                case "test.has_failed_all_retries": 
+                    HasFailedAllRetries = value;
+                    break;
+                case "test.test_management.attempt_to_fix_passed": 
+                    AttemptToFixPassed = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -235,6 +265,31 @@ namespace Datadog.Trace.Ci.Tagging
             if (IsModified is not null)
             {
                 processor.Process(new TagItem<string>("test.is_modified", IsModified, IsModifiedBytes));
+            }
+
+            if (IsQuarantined is not null)
+            {
+                processor.Process(new TagItem<string>("test.test_management.is_quarantined", IsQuarantined, IsQuarantinedBytes));
+            }
+
+            if (IsDisabled is not null)
+            {
+                processor.Process(new TagItem<string>("test.test_management.is_test_disabled", IsDisabled, IsDisabledBytes));
+            }
+
+            if (IsAttemptToFix is not null)
+            {
+                processor.Process(new TagItem<string>("test.test_management.is_attempt_to_fix", IsAttemptToFix, IsAttemptToFixBytes));
+            }
+
+            if (HasFailedAllRetries is not null)
+            {
+                processor.Process(new TagItem<string>("test.has_failed_all_retries", HasFailedAllRetries, HasFailedAllRetriesBytes));
+            }
+
+            if (AttemptToFixPassed is not null)
+            {
+                processor.Process(new TagItem<string>("test.test_management.attempt_to_fix_passed", AttemptToFixPassed, AttemptToFixPassedBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -365,6 +420,41 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.is_modified (tag):")
                   .Append(IsModified)
+                  .Append(',');
+            }
+
+            if (IsQuarantined is not null)
+            {
+                sb.Append("test.test_management.is_quarantined (tag):")
+                  .Append(IsQuarantined)
+                  .Append(',');
+            }
+
+            if (IsDisabled is not null)
+            {
+                sb.Append("test.test_management.is_test_disabled (tag):")
+                  .Append(IsDisabled)
+                  .Append(',');
+            }
+
+            if (IsAttemptToFix is not null)
+            {
+                sb.Append("test.test_management.is_attempt_to_fix (tag):")
+                  .Append(IsAttemptToFix)
+                  .Append(',');
+            }
+
+            if (HasFailedAllRetries is not null)
+            {
+                sb.Append("test.has_failed_all_retries (tag):")
+                  .Append(HasFailedAllRetries)
+                  .Append(',');
+            }
+
+            if (AttemptToFixPassed is not null)
+            {
+                sb.Append("test.test_management.attempt_to_fix_passed (tag):")
+                  .Append(AttemptToFixPassed)
                   .Append(',');
             }
 

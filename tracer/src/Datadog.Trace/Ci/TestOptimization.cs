@@ -35,6 +35,7 @@ internal class TestOptimization : ITestOptimization
     private ITestOptimizationSkippableFeature? _skippableFeature;
     private ITestOptimizationImpactedTestsDetectionFeature? _impactedTestsDetectionFeature;
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
+    private ITestOptimizationTestManagementFeature? _testManagementFeature;
 
     public TestOptimization()
     {
@@ -177,6 +178,20 @@ internal class TestOptimization : ITestOptimization
             return _flakyRetryFeature;
         }
         private set => _flakyRetryFeature = value;
+    }
+
+    public ITestOptimizationTestManagementFeature? TestManagementFeature
+    {
+        get
+        {
+            if (_testManagementFeature is null)
+            {
+                _additionalFeaturesTask?.SafeWait();
+            }
+
+            return _testManagementFeature;
+        }
+        private set => _testManagementFeature = value;
     }
 
     public void Initialize()
@@ -535,7 +550,8 @@ internal class TestOptimization : ITestOptimization
              || settings.TestsSkippingEnabled == null
              || settings.EarlyFlakeDetectionEnabled != false
              || settings.FlakyRetryEnabled == null
-             || settings.ImpactedTestsDetectionEnabled == null)
+             || settings.ImpactedTestsDetectionEnabled == null
+             || settings.TestManagementEnabled == null)
             {
                 Log.Information("TestOptimization: Calling the configuration api.");
                 var remoteSettings = await client.GetSettingsAsync().ConfigureAwait(false);
@@ -555,6 +571,7 @@ internal class TestOptimization : ITestOptimization
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+                TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
 
                 if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
                 {
@@ -603,5 +620,6 @@ internal class TestOptimization : ITestOptimization
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, client);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, client);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+        TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
     }
 }

@@ -1,0 +1,78 @@
+// <copyright file="TestOptimizationTestManagementFeature.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+using System.Threading.Tasks;
+using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Logging;
+
+namespace Datadog.Trace.Ci;
+
+internal class TestOptimizationTestManagementFeature : ITestOptimizationTestManagementFeature
+{
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationTestManagementFeature));
+    private readonly bool _enabled;
+    private readonly Task<TestOptimizationClient.TestManagementResponse> _testManagementTask;
+
+    private TestOptimizationTestManagementFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    {
+        if (settings is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
+        }
+
+        if (testOptimizationClient is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
+        }
+
+        if (settings.TestManagementEnabled == true || clientSettingsResponse.TestManagement.Enabled == true)
+        {
+            Log.Information("TestOptimizationTestManagementFeature: Test management is enabled.");
+            settings.SetTestManagementEnabled(true);
+            _testManagementTask = Task.Run(() => InternalGetTestManagementTestsAsync(testOptimizationClient));
+            _enabled = true;
+        }
+        else
+        {
+            Log.Information("TestOptimizationTestManagementFeature: Test management is disabled.");
+            settings.SetTestManagementEnabled(false);
+            _testManagementTask = Task.FromResult(new TestOptimizationClient.TestManagementResponse());
+            _enabled = false;
+        }
+
+        return;
+
+        static async Task<TestOptimizationClient.TestManagementResponse> InternalGetTestManagementTestsAsync(ITestOptimizationClient testOptimizationClient)
+        {
+            Log.Debug("TestOptimizationTestManagementFeature: Getting test management data...");
+            var response = await testOptimizationClient.GetTestManagementTests().ConfigureAwait(false);
+            Log.Debug("TestOptimizationTestManagementFeature: Testa management data received.");
+            return response;
+        }
+    }
+
+    public bool Enabled => _enabled && TestManagement.Modules is not null; // Ensure that the test management response was not empty
+
+    public TestOptimizationClient.TestManagementResponse TestManagement
+        => _testManagementTask.SafeGetResult();
+
+    public static ITestOptimizationTestManagementFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+        => new TestOptimizationTestManagementFeature(settings, clientSettingsResponse, testOptimizationClient);
+
+    public TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties(string moduleName, string testSuite, string testName)
+    {
+        if (TestManagement is { Modules: { } modules } &&
+            modules.TryGetValue(moduleName, out var module) &&
+            module?.Suites?.TryGetValue(testSuite, out var testSuiteProperties) == true &&
+            testSuiteProperties?.Tests?.TryGetValue(testName, out var testProperties) == true)
+        {
+            return testProperties.Properties;
+        }
+
+        return new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes();
+    }
+}
