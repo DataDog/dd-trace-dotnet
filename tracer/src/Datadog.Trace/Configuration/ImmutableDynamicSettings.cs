@@ -14,7 +14,7 @@ namespace Datadog.Trace.Configuration
     {
         public bool? TraceEnabled { get; init; }
 
-        public bool? AppsecStandaloneEnabled { get; init; }
+        public bool? ApmTracingEnabled { get; init; }
 
         public bool? RuntimeMetricsEnabled { get; init; }
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Configuration
 
             return
                 TraceEnabled == other.TraceEnabled
-             && AppsecStandaloneEnabled == other.AppsecStandaloneEnabled
+             && ApmTracingEnabled == other.ApmTracingEnabled
              && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration
         {
             return HashCode.Combine(
                 TraceEnabled,
-                AppsecStandaloneEnabled,
+                ApmTracingEnabled,
                 RuntimeMetricsEnabled,
                 DataStreamsMonitoringEnabled,
                 GlobalSamplingRate,
