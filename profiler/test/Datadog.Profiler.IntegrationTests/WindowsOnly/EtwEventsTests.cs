@@ -28,9 +28,6 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
 
-            // Overwrite the one set in EnvironmentHelper
-            runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
-
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
