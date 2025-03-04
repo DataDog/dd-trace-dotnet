@@ -162,7 +162,7 @@ public class W3CBaggagePropagatorTests
     [MemberData(nameof(ExtractBaggageData))]
     public void ParseHeader(string inputHeader, (string Key, string Value)[] expectedPairs)
     {
-        var baggage = W3CBaggagePropagator.ParseHeader(inputHeader);
+        var baggage = W3CBaggagePropagator.ParseHeader(inputHeader)!;
 
         if (expectedPairs is null || expectedPairs.Length == 0)
         {
