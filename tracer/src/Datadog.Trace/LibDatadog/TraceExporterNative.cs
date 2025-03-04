@@ -97,10 +97,11 @@ internal class TraceExporterNative
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
+            bool isMusl = IsAlpine();
             return RuntimeInformation.ProcessArchitecture switch
             {
-                Architecture.X64 => "linux-x64",
-                Architecture.Arm64 => "linux-arm64",
+                Architecture.X64 => isMusl ? "linux-musl-x64" : "linux-x64",
+                Architecture.Arm64 => isMusl ? "linux-musl-arm64" : "linux-arm64",
                 _ => throw new PlatformNotSupportedException($"Architecture {RuntimeInformation.ProcessArchitecture} is not supported")
             };
         }
@@ -128,6 +129,33 @@ internal class TraceExporterNative
             throw new PlatformNotSupportedException("Only Windows is supported in .NET Framework");
         }
 #endif
+    }
+
+    /// <summary>
+    /// Check if the current OS is Alpine Linux.
+    /// </summary>
+    public static bool IsAlpine()
+    {
+        try
+        {
+            if (File.Exists("/etc/os-release"))
+            {
+                var strArray = File.ReadAllLines("/etc/os-release");
+                foreach (var str in strArray)
+                {
+                    if (str.StartsWith("ID=", StringComparison.Ordinal))
+                    {
+                        return str.Substring(3).Trim('"', '\'') == "alpine";
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // ignore error checking if the file doesn't exist or we can't read it
+        }
+
+        return false;
     }
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
