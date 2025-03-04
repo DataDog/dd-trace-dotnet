@@ -46,9 +46,11 @@ public class W3CBaggagePropagatorTests
         => new()
         {
             // input header ➡️ expected key/value pairs after decoding
+            // empty
             { null, null },
             { string.Empty, null },
             { " ", null },
+            // invalid
             { "invalid", null },
             { "invalid;", null },
             { "invalid=", null },
@@ -73,7 +75,7 @@ public class W3CBaggagePropagatorTests
             { "=value1,key2=value2", null },
             { "=,key2=value2", null },
             { "key1;a=value1,key2=value2", null },
-            // valid headers
+            // valid
             { "valid=%20", [("valid", " ")] },
             { "%20=valid", [(" ", "valid")] },
             { "%20=%20", [(" ", " ")] },
