@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.LibDatadog;
@@ -14,6 +16,119 @@ namespace Datadog.Trace.LibDatadog;
 internal class TraceExporterNative
 {
     private const string DllName = "datadog_profiling_ffi";
+
+    /// <summary>
+    /// This is just workaround to load the native library.
+    /// TODO: Remove this workaround once we have libdatadog integration in the profiler and tracer.
+    /// </summary>
+    static TraceExporterNative()
+    {
+        CopyLibrary();
+    }
+
+    /// <summary>
+    /// Copy the native library to same directory as the executing assembly.
+    /// </summary>
+    private static void CopyLibrary()
+    {
+        var rid = GetRuntimeIdentifier();
+        var libraryName = GetLibraryFileName(DllName);
+        var libraryPath = Path.Combine("runtimes", rid, "native", libraryName);
+
+        var executingAssemblyPath = Assembly.GetExecutingAssembly().Location;
+        var destinationDirectory = Path.GetDirectoryName(executingAssemblyPath);
+        if (destinationDirectory == null)
+        {
+            throw new InvalidOperationException("The directory of the executing assembly could not be determined.");
+        }
+
+        var destinationPath = Path.Combine(destinationDirectory, libraryName);
+        File.Copy(libraryPath, destinationPath, overwrite: true);
+    }
+
+    /// <summary>
+    /// Gets the platform-specific file name for the native library.
+    /// </summary>
+    private static string GetLibraryFileName(string libraryName)
+    {
+#if NETCOREAPP || NET5_0_OR_GREATER
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return $"{libraryName}.dll";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return $"{libraryName}.so";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return $"{libraryName}.dylib";
+        }
+#else
+        // Fallback for .NET Framework
+        switch (Environment.OSVersion.Platform)
+        {
+            case PlatformID.Win32NT:
+                return $"{libraryName}.dll";
+            case PlatformID.Unix:
+                return $"{libraryName}.so"; // .NET Framework assumes Linux for Unix
+            case PlatformID.MacOSX:
+                return $"{libraryName}.dylib";
+        }
+#endif
+        throw new PlatformNotSupportedException("Current OS platform is not supported");
+    }
+
+    /// <summary>
+    /// Gets the runtime identifier (RID) for the current platform and architecture.
+    /// </summary>
+    private static string GetRuntimeIdentifier()
+    {
+#if NETCOREAPP || NET5_0_OR_GREATER
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "win-x64",
+                Architecture.X86 => "win-x86",
+                Architecture.Arm64 => "win-arm64",
+                _ => throw new PlatformNotSupportedException($"Architecture {RuntimeInformation.ProcessArchitecture} is not supported")
+            };
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "linux-x64",
+                Architecture.Arm64 => "linux-arm64",
+                _ => throw new PlatformNotSupportedException($"Architecture {RuntimeInformation.ProcessArchitecture} is not supported")
+            };
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return RuntimeInformation.ProcessArchitecture switch
+            {
+                Architecture.X64 => "osx-x64",
+                Architecture.Arm64 => "osx-arm64",
+                _ => throw new PlatformNotSupportedException($"Architecture {RuntimeInformation.ProcessArchitecture} is not supported")
+            };
+        }
+        else
+        {
+            throw new PlatformNotSupportedException("Current OS platform is not supported");
+        }
+#else
+        // Fallback for .NET Framework
+        if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+        {
+            return Environment.Is64BitOperatingSystem ? "win-x64" : "win-x86";
+        }
+        else
+        {
+            throw new PlatformNotSupportedException("Only Windows is supported in .NET Framework");
+        }
+#endif
+    }
 
     [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
     internal static extern ErrorHandle ddog_trace_exporter_new(out IntPtr outHandle, SafeHandle config);
