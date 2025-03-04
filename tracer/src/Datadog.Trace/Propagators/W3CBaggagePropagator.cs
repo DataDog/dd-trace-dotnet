@@ -86,10 +86,15 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
 
         var baggage = ParseHeader(header!);
-        context = new PropagationContext(spanContext: null, baggage);
-        TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Baggage);
 
-        return baggage is { Count: > 0 };
+        if (baggage is { Count: > 0 })
+        {
+            context = new PropagationContext(spanContext: null, baggage);
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Baggage);
+            return true;
+        }
+
+        return false;
     }
 
     internal static void EncodeStringAndAppend(StringBuilder sb, string source, bool isKey)
