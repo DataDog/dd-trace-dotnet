@@ -3502,18 +3502,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET6_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #if NET7_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #if NET8_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #if NET9_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #endif
             };
@@ -3528,18 +3532,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET6_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #if NET7_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #if NET8_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #if NET9_0
                 new object[] { "1.0.1" },
                 new object[] { "1.1.0" },
+                new object[] { "2.0.0" },
 #endif
 #endif
             };
