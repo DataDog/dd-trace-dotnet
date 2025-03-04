@@ -40,9 +40,11 @@ namespace Honeypot
             NugetPackages.Add("AWSSDK.DynamoDBv2", new [] { "AWSSDK.DynamoDBv2" });
             NugetPackages.Add("AWSSDK.Core", new [] { "AWSSDK.Core" });
             NugetPackages.Add("AWSSDK.Kinesis", new [] { "AWSSDK.Kinesis" });
+            NugetPackages.Add("AWSSDK.S3", new [] { "AWSSDK.S3" });
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("AWSSDK.EventBridge", new [] { "AWSSDK.EventBridge" });
+            NugetPackages.Add("AWSSDK.StepFunctions", new [] { "AWSSDK.StepFunctions" });
             NugetPackages.Add("Microsoft.Azure.Cosmos.Client", new [] { "Microsoft.Azure.Cosmos" });
             NugetPackages.Add("Elasticsearch.Net", new [] { "Elasticsearch.Net" });
             NugetPackages.Add("GraphQL", new [] { "GraphQL" });
@@ -77,11 +79,13 @@ namespace Honeypot
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });
+            NugetPackages.Add("xunit.v3.core", new [] { "xunit.v3" });
             NugetPackages.Add("MSTest", new [] { "MSTest.TestFramework" });
             NugetPackages.Add("Serilog", new [] { "Serilog" });
             NugetPackages.Add("NLog", new [] { "NLog" });
             NugetPackages.Add("log4net", new [] { "log4net" });
-            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { "Microsoft.Azure.Functions.Worker.Core" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker", new string[] { "Microsoft.Azure.Functions.Worker" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
@@ -94,6 +98,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Identity", new [] { "Microsoft.AspNetCore.Identity" });
             NugetPackages.Add("Microsoft.Extensions.Identity.Core", new [] { "Microsoft.Extensions.Identity.Core" });
             NugetPackages.Add("Microsoft.AspNetCore.Authentication.Abstractions", new [] { "Microsoft.AspNetCore.Authentication.Abstractions" });
+            NugetPackages.Add("Microsoft.AspNetCore.Http.Abstractions", new [] { "Microsoft.AspNetCore.Http.Abstractions" });
             NugetPackages.Add("OpenTelemetry.Api", new [] { "OpenTelemetry.Api" });
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
@@ -112,6 +117,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
+            NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
             NugetPackages.Add("RestSharp", Array.Empty<string>());
 
             // Manual instrumentation

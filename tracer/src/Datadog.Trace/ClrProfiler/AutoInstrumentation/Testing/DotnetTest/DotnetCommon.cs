@@ -1,7 +1,8 @@
-﻿// <copyright file="DotnetCommon.cs" company="Datadog">
+// <copyright file="DotnetCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -27,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal const string DotnetTestIntegrationName = nameof(IntegrationId.DotnetTest);
         internal const IntegrationId DotnetTestIntegrationId = Configuration.IntegrationId.DotnetTest;
 
-        internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
+        internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
         private static bool? _isDataCollectorDomainCache;
         private static bool? _isMsBuildTaskCache;
 
-        internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
+        internal static bool DotnetTestIntegrationEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
         internal static bool IsDataCollectorDomain
         {
@@ -92,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             // Let's detect if we already have a session for this test process
-            var context = SpanContextPropagator.Instance.Extract(
+            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
                 EnvironmentHelpers.GetEnvironmentVariables(),
                 new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
@@ -103,9 +104,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return null;
             }
 
-            var ciVisibilitySettings = CIVisibility.Settings;
-            var agentless = ciVisibilitySettings.Agentless;
-            var isEvpProxy = CIVisibility.EventPlatformProxySupport != EventPlatformProxySupport.None;
+            var testOptimization = TestOptimization.Instance;
+            var testOptimizationSettings = testOptimization.Settings;
+            var agentless = testOptimizationSettings.Agentless;
+            var isEvpProxy = (testOptimization.TracerManagement?.EventPlatformProxySupport ?? EventPlatformProxySupport.None) != EventPlatformProxySupport.None;
 
             Log.Information("CreateSession: Agentless: {Agentless} | IsEvpProxy: {IsEvpProxy}", agentless, isEvpProxy);
 
@@ -125,16 +127,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
-                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
-                session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
-                if (ciVisibilitySettings.EarlyFlakeDetectionEnabled == true)
+                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimization.SkippableFeature?.Enabled == true ? "true" : "false");
+                session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
+                if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                 {
                     session.SetTag(EarlyFlakeDetectionTags.Enabled, "true");
                 }
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
-                if (ciVisibilitySettings.TestsSkippingEnabled == false)
+                if (testOptimization.SkippableFeature?.Enabled == false)
                 {
                     session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }
@@ -517,7 +519,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     {
                         isCollectIndex = i;
                         var argValue = arg.Replace(collectProperty, string.Empty)
-                                                .Replace("\"", string.Empty);
+                                          .Replace("\"", string.Empty);
                         disableCollectInjection = disableCollectInjection || argValue == datadogCoverageCollector;
                         continue;
                     }
@@ -526,7 +528,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     {
                         isTestAdapterPathIndex = i;
                         var argValue = arg.Replace(testAdapterPathProperty, string.Empty)
-                                                .Replace("\"", string.Empty);
+                                          .Replace("\"", string.Empty);
                         disableTestAdapterInjection = disableTestAdapterInjection || argValue == codeCoverageCollectorPath;
                     }
                 }

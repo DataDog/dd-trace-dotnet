@@ -140,7 +140,7 @@ namespace Datadog.Trace.AspNet
                     {
                         // extract propagated http headers
                         headers = requestHeaders.Wrap();
-                        extractedContext = SpanContextPropagator.Instance.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -151,14 +151,14 @@ namespace Datadog.Trace.AspNet
                 string host = requestHeaders.Get("Host");
                 var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
@@ -174,7 +174,7 @@ namespace Datadog.Trace.AspNet
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
                     var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
-                    SpanContextPropagator.Instance.Inject(injectedContext, requestHeaders.Wrap());
+                    tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -201,7 +201,7 @@ namespace Datadog.Trace.AspNet
                         }
                     }
 
-                    securityCoordinator.BlockAndReport(args);
+                    securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
                 }
 
                 var iastInstance = Iast.Iast.Instance;
@@ -226,8 +226,6 @@ namespace Datadog.Trace.AspNet
 
         private void OnEndRequest(object sender, EventArgs eventArgs)
         {
-            var securityContextCleaned = false;
-
             try
             {
                 var tracer = Tracer.Instance;
@@ -273,10 +271,9 @@ namespace Datadog.Trace.AspNet
                                 }
                             }
 
-                            securityCoordinator.BlockAndReport(args, true);
+                            securityCoordinator.BlockAndReport(args, true, isInHttpTracingModule: true);
 
-                            securityCoordinator.Reporter.AddResponseHeadersToSpanAndCleanup();
-                            securityContextCleaned = true;
+                            securityCoordinator.Reporter.AddResponseHeadersToSpan();
                         }
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
@@ -285,7 +282,9 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    var requestUrl = RequestDataHelper.GetUrl(app.Context.Request);
+                                    var requestUrl = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                                        ? RequestDataHelper.BuildUrl(app.Context.Request)
+                                        : RequestDataHelper.GetUrl(app.Context.Request);
                                     ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, requestUrl?.Scheme);
                                     var headers = RequestDataHelper.GetHeaders(app.Context.Request);
                                     if (headers is not null)
@@ -347,7 +346,9 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            var url = RequestDataHelper.GetUrl(app.Request);
+                            var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                                ? RequestDataHelper.BuildUrl(app.Request)
+                                : RequestDataHelper.GetUrl(app.Request);
                             if (url is not null)
                             {
                                 string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
@@ -370,16 +371,6 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-            }
-            finally
-            {
-                // security might have been disabled in the meantime but contexts would still be open
-                // and this integration may be disabled but others might have opened a context
-                if (!securityContextCleaned && sender is HttpApplication app)
-                {
-                    var securityTransport = new SecurityCoordinator.HttpTransport(app.Context);
-                    securityTransport.DisposeAdditiveContext();
-                }
             }
         }
 

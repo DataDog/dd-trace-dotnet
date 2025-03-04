@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,6 +17,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class ExceptionNormalizer
     {
+        protected ExceptionNormalizer()
+        {
+        }
+
+        public static ExceptionNormalizer Instance { get; } = new();
+
         /// <summary>
         /// Given the string representation of an exception alongside it's FQN of the outer and (potential) inner exception,
         /// this function cleanse the stack trace from error messages, customized information attached to the exception and PDB line info if present.
@@ -94,6 +101,86 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             }
 
             return fnvHashCode;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal List<string> ParseFrames(string exceptionString)
+        {
+            if (string.IsNullOrEmpty(exceptionString))
+            {
+                throw new ArgumentException(@"Exception string cannot be null or empty", nameof(exceptionString));
+            }
+
+            var results = new List<string>();
+            var currentSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(exceptionString);
+
+            while (!currentSpan.IsEmpty)
+            {
+                var lineEndIndex = currentSpan.IndexOfAny('\r', '\n');
+                VendoredMicrosoftCode.System.ReadOnlySpan<char> line;
+
+                if (lineEndIndex >= 0)
+                {
+                    line = currentSpan.Slice(0, lineEndIndex);
+                    currentSpan = currentSpan.Slice(lineEndIndex + 1);
+                    if (!currentSpan.IsEmpty && currentSpan[0] == '\n')
+                    {
+                        currentSpan = currentSpan.Slice(1);
+                    }
+                }
+                else
+                {
+                    line = currentSpan;
+                    currentSpan = default;
+                }
+
+                ProcessLine(line, results);
+            }
+
+            return results;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ProcessLine(VendoredMicrosoftCode.System.ReadOnlySpan<char> line, List<string> results)
+        {
+            line = line.TrimStart();
+            if (line.IsEmpty)
+            {
+                return;
+            }
+
+            // Check if it's a stack frame line (starts with "at ")
+            if (!VendoredMicrosoftCode.System.MemoryExtensions.StartsWith(line, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at "), StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            // Skip the "at " prefix
+            line = line.Slice(3);
+
+            // Skip lambda and Datadog frames early
+            if (ContainsAny(line, "lambda_", "at Datadog."))
+            {
+                return;
+            }
+
+            // Find the " in " marker and truncate if found
+            var inIndex = VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(line, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(" in "), StringComparison.Ordinal);
+
+            if (inIndex > 0)
+            {
+                line = line.Slice(0, inIndex);
+            }
+
+            // Only create a string when we're sure we want to keep this frame
+            results.Add(line.ToString());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ContainsAny(VendoredMicrosoftCode.System.ReadOnlySpan<char> source, string first, string second)
+        {
+            return VendoredMicrosoftCode.System.MemoryExtensions.Contains(source, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(first), StringComparison.Ordinal) ||
+                   VendoredMicrosoftCode.System.MemoryExtensions.Contains(source, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(second), StringComparison.Ordinal);
         }
     }
 }

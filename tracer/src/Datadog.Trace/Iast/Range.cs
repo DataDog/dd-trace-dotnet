@@ -16,6 +16,23 @@ internal readonly struct Range : IComparable<Range>
 {
     private static readonly SecureMarks NotMarked = SecureMarks.None;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Range"/> struct with a WHOLE range.
+    /// </summary>
+    /// <param name="source"> Optional source </param>
+    /// <param name="secureMarks"> Secure marks </param>
+    internal Range(Source? source = null, SecureMarks secureMarks = SecureMarks.None)
+        : this(0, 0, source, secureMarks)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Range"/> struct with the given start and length.
+    /// </summary>
+    /// <param name="start"> Range start </param>
+    /// <param name="length"> Range length </param>
+    /// <param name="source"> Optional source </param>
+    /// <param name="secureMarks"> Secure marks </param>
     public Range(int start, int length, Source? source = null, SecureMarks secureMarks = SecureMarks.None)
     {
         this.Start = start;
@@ -182,4 +199,6 @@ internal readonly struct Range : IComparable<Range>
             return new Range(start, end - start);
         }
     }
+
+    internal bool IsWhole() => Start == 0 && Length == 0; // 0, 0 is a special case and safer than 0, int.MaxValue
 }

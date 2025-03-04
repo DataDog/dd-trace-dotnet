@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Waf
             _encoder = encoder;
         }
 
-        internal bool Disposed { get; private set; }
+        public bool Disposed { get; private set; }
 
         public string Version => _wafLibraryInvoker.GetVersion();
 
@@ -113,7 +113,33 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string[] GetKnownAddresses()
         {
-            return _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+            bool lockAcquired = false;
+            try
+            {
+                if (_wafLocker.EnterWriteLock())
+                {
+                    lockAcquired = true;
+
+                    var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+                    return result;
+                }
+                else
+                {
+                    return Array.Empty<string>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while getting known addresses");
+                return Array.Empty<string>();
+            }
+            finally
+            {
+                if (lockAcquired)
+                {
+                    _wafLocker.ExitWriteLock();
+                }
+            }
         }
 
         private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
@@ -228,14 +254,18 @@ namespace Datadog.Trace.AppSec.Waf
                 var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
                 updated = UpdateWafAndDispose(encodedArgs);
 
-                // only if rules are provided will the waf give metrics
-                if (arguments is Dictionary<string, object> dic && dic.ContainsKey("rules"))
+                if (updated.Success)
                 {
-                    TelemetryFactory.Metrics.RecordCountWafUpdates();
+                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Success);
+                }
+                else
+                {
+                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
                 }
             }
             catch
             {
+                TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
                 updated = UpdateResult.FromUnusableRules();
             }
 

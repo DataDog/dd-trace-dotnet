@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -57,6 +58,9 @@ public static class EventTrackingSdk
 
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, Tags.AppSec.EventsUsers.True);
+        // cf https://datadoghq.atlassian.net/wiki/spaces/SAAL/pages/2755793809/Application+Security+Events+Tracking+API+SDK#Specification
+        // ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to root span metadata tags (appsec.events.users.login.(success|failure).usr.login), and to the WAF
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, userId);
         setTag(Tags.User.Id, userId);
 
         if (metadata is { Count: > 0 })
@@ -67,18 +71,49 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(internalSpan);
+        RunSecurityChecksAndReport(internalSpan, userId: userId, loginSuccess: true);
     }
 
-    private static void FillUp(Span span)
+    /// <summary>
+    /// Biggest part of this method will only work in a web context
+    /// </summary>
+    /// <param name="span">span</param>
+    /// <param name="userId">userid</param>
+    /// <param name="loginSuccess">whether it's a login success</param>
+    private static void RunSecurityChecksAndReport(Span span, string userId = null, bool loginSuccess = false)
     {
         if (span is null)
         {
             return;
         }
 
-        Security.Instance.SetTraceSamplingPriority(span);
-        SecurityReporter.SafeCollectHeaders(span, true);
+        var securityInstance = Security.Instance;
+        if (!securityInstance.IsTrackUserEventsEnabled)
+        {
+            return;
+        }
+
+        securityInstance.SetTraceSamplingPriority(span);
+
+        var securityCoordinator = SecurityCoordinator.TryGetSafe(securityInstance, span);
+        if (securityCoordinator is not null)
+        {
+            RunWafAndCollectHeaders();
+        }
+
+        return;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        void RunWafAndCollectHeaders()
+        {
+            securityCoordinator.Value.Reporter.CollectHeaders();
+            if (userId is not null)
+            {
+                // confluence [ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to the WAF. The value of this field must be sourced from either the user object when available, or copied from the value of the mandatory user ID.
+                var result = securityCoordinator.Value.RunWafForUser(userId: userId, userLogin: userId, fromSdk: true, otherTags: new() { { loginSuccess ? AddressesConstants.UserBusinessLoginSuccess : AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                securityCoordinator.Value.BlockAndReport(result);
+            }
+        }
     }
 
     /// <summary>
@@ -126,6 +161,9 @@ public static class EventTrackingSdk
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureSdkSource, Tags.AppSec.EventsUsers.True);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
+        // cf https://datadoghq.atlassian.net/wiki/spaces/SAAL/pages/2755793809/Application+Security+Events+Tracking+API+SDK#Specification
+        // ADDENDUM 2024-12-18] In both login success and failure, the field usr.login must be passed to root span metadata tags (appsec.events.users.login.(success|failure).usr.login), and to the WAF
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, userId);
 
         if (metadata is { Count: > 0 })
         {
@@ -135,7 +173,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(spanInternal);
+        RunSecurityChecksAndReport(spanInternal, userId: userId, loginSuccess: false);
     }
 
     /// <summary>
@@ -188,9 +226,6 @@ public static class EventTrackingSdk
             }
         }
 
-        if (internalSpan is not null)
-        {
-            FillUp(internalSpan);
-        }
+        RunSecurityChecksAndReport(internalSpan);
     }
 }

@@ -183,7 +183,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Origin = null,
                           SamplingPriority = samplingPriority,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }
@@ -233,7 +234,8 @@ namespace Datadog.Trace.Tests.Propagators
                           Origin = null,
                           SamplingPriority = samplingPriority,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
         }

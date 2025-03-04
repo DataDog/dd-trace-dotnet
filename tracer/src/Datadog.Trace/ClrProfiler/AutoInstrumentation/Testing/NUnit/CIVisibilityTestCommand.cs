@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -24,12 +25,10 @@ internal class CIVisibilityTestCommand
     [DuckReverseMethod]
     public object? Execute(object contextObject)
     {
-        Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
-        var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ?
-                          contextWithRepeatCount :
-                          contextObject.DuckCast<ITestExecutionContext>();
+        var testOptimization = TestOptimization.Instance;
+        var context = contextObject.TryDuckCast<ITestExecutionContextWithRepeatCount>(out var contextWithRepeatCount) ? contextWithRepeatCount : contextObject.DuckCast<ITestExecutionContext>();
         var executionNumber = 0;
-        var result = ExecuteTest(context, executionNumber++, out var isTestNew, out var duration);
+        var result = ExecuteTest(context, executionNumber++, out var isEfdTest, out var duration);
         var resultStatus = result.ResultState.Status;
 
         if (resultStatus is TestStatus.Skipped or TestStatus.Inconclusive)
@@ -38,7 +37,7 @@ internal class CIVisibilityTestCommand
             return result.Instance!;
         }
 
-        if (isTestNew)
+        if (isEfdTest)
         {
             // **************************************************************
             // Early flake detection mode
@@ -65,14 +64,15 @@ internal class CIVisibilityTestCommand
                 Common.Log.Debug("EFD: All retries were executed.");
             }
         }
-        else if (resultStatus == TestStatus.Failed && CIVisibility.Settings.FlakyRetryEnabled == true)
+        else if (resultStatus == TestStatus.Failed && testOptimization.FlakyRetryFeature?.Enabled == true)
         {
             // **************************************************************
             // Flaky retry mode
             // **************************************************************
+            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature.TotalFlakyRetryCount, -1);
 
             // Get retries number
-            var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
+            var remainingRetries = testOptimization.FlakyRetryFeature.FlakyRetryCount;
 
             // Retries
             var retryNumber = 0;
@@ -80,7 +80,7 @@ internal class CIVisibilityTestCommand
             {
                 if (Interlocked.Decrement(ref _totalRetries) <= 0)
                 {
-                    Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                    Common.Log.Debug<int?>("FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature.TotalFlakyRetryCount);
                     break;
                 }
 
@@ -154,7 +154,7 @@ internal class CIVisibilityTestCommand
         }
     }
 
-    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isTestNew, out TimeSpan duration)
+    private ITestResult ExecuteTest(ITestExecutionContext context, int executionNumber, out bool isEfdTest, out TimeSpan duration)
     {
         ITestResult? testResult = null;
         duration = TimeSpan.Zero;
@@ -177,13 +177,13 @@ internal class CIVisibilityTestCommand
             duration = clock.UtcNow - startTime;
         }
 
-        isTestNew = false;
+        isEfdTest = false;
         if (test is not null)
         {
-            if (test.GetTags() is { } testTags)
+            if (test.GetTags() is { } testTags && TestOptimization.Instance.EarlyFlakeDetectionFeature?.Enabled == true)
             {
-                isTestNew = testTags.EarlyFlakeDetectionTestIsNew == "true";
-                if (isTestNew && duration.TotalMinutes >= 5)
+                isEfdTest = testTags.TestIsNew == "true";
+                if (isEfdTest && duration.TotalMinutes >= 5)
                 {
                     testTags.EarlyFlakeDetectionTestAbortReason = "slow";
                 }

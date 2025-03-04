@@ -105,6 +105,41 @@ namespace Datadog.Trace.Configuration
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
         /// <summary>
+        /// Configuration key for a list of ActivitySource names (supports globbing) that will be disabled.
+        /// Default is empty (all ActivitySources will be subscribed to by default).
+        /// <para><b>Disabling ActivitySources may break distributed tracing if those Activities are used to propagate trace context.</b></para>
+        /// <para>
+        /// Supports multiple values separated with commas.
+        /// For example: "SomeGlob.*.PatternSource,Some.Specific.Source"
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When the tracer doesn't subscribe to an ActivitySource, we will <em>NOT</em> propagate the trace context from those Activities (we don't see them anymore).
+        /// <br/><b>This means that distributed tracing flows that rely on these Activities for context propagation
+        /// will break and cause disconnected traces.</b>
+        /// </para>
+        /// <para>
+        /// Potential impact on distributed tracing:
+        /// <list type="bullet">
+        /// <item>
+        ///   <description>
+        ///     Service A -> Ignored Activity -> Service B
+        ///     <para>Creates a single trace with Service A as root and Service B as child</para>
+        ///   </description>
+        /// </item>
+        /// <item>
+        ///   <description>
+        ///     Service A -> Disabled Activity -> Service B
+        ///     <para>Creates TWO separate traces with Service A and Service B each as root spans</para>
+        ///   </description>
+        /// </item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public const string DisabledActivitySources = "DD_TRACE_DISABLED_ACTIVITY_SOURCES";
+
+        /// <summary>
         /// Configuration key for enabling or disabling default Analytics.
         /// </summary>
         /// <seealso cref="TracerSettings.AnalyticsEnabled"/>
@@ -392,6 +427,17 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
+        /// Configuration key for setting the header extraction propagation behavior. Accepted values are:
+        /// <ul>
+        ///   <li>continue: Extracted span context becomes the parent and baggage is propagated</li>
+        ///   <li>restart: Extracted span context becomes a span link (a new trace is started) and baggage is propagated</li>
+        ///   <li>ignore: We disregard the incoming trace context headers and we also disregard baggage</li>
+        /// </ul>
+        /// Default value is continue.
+        /// </summary>
+        public const string PropagationBehaviorExtract = "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT";
+
+        /// <summary>
         /// Configuration key to configure if propagation should only extract the first header once a configure
         /// propagator extracts a valid trace context.
         /// </summary>
@@ -589,6 +635,11 @@ namespace Datadog.Trace.Configuration
             public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
 
             /// <summary>
+            /// Configuration key for enabling or disabling the known tests feature in CI Visibility
+            /// </summary>
+            public const string KnownTestsEnabled = "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED";
+
+            /// <summary>
             /// Configuration key for setting the code coverage collector path
             /// </summary>
             public const string CodeCoverageCollectorPath = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";
@@ -617,6 +668,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for the maximum number of retry attempts for the entire session.
             /// </summary>
             public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
+
+            /// <summary>
+            /// Configuration key for enabling Impacted Tests Detection.
+            /// </summary>
+            public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
         }
 
         /// <summary>
@@ -724,7 +780,7 @@ namespace Datadog.Trace.Configuration
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
             /// Note that a 128-bit trace id may be received from an upstream service or from
             /// an Activity even if we are not generating them ourselves.
-            /// Default value is <c>false</c> (disabled).
+            /// Default value is <c>true</c> (enabled).
             /// </summary>
             public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
 
@@ -742,6 +798,8 @@ namespace Datadog.Trace.Configuration
             /// when an obfuscation mechanism will be implemented in the agent.
             /// </summary>
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
+
+            public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
         }
 
         internal static class Telemetry

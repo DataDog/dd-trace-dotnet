@@ -204,6 +204,8 @@ partial class Build : NukeBuild
                     // new {framework = TargetFramework.NETCOREAPP3_1, runtimeInstall = v3Install, runtimeUninstall = v3Uninstall },
                     new {framework = TargetFramework.NET6_0 },
                     new {framework = TargetFramework.NET7_0 },
+                    new {framework = TargetFramework.NET8_0 },
+                    new {framework = TargetFramework.NET9_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -448,11 +450,15 @@ partial class Build : NukeBuild
 
                 GenerateLinuxDotnetToolNugetSmokeTestsMatrix();
 
+                // Trimming tests
+                GenerateLinuxTrimmingSmokeTestsMatrix();
+
                 // msi smoke tests
                 GenerateWindowsMsiSmokeTestsMatrix();
 
-                // tracer home smoke tests
+                // tracer home / fleet installer smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
+                GenerateWindowsFleetInstalerSmokeTestsMatrix();
 
                 // macos smoke tests
                 GenerateMacosDotnetToolNugetSmokeTestsMatrix();
@@ -1150,6 +1156,122 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable("dotnet_tool_nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
+                void GenerateLinuxTrimmingSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToLinuxTrimmingSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
+                        },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
+                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    // Alpine tests with the musl-specific package
+                    AddToLinuxTrimmingSmokeTestsMatrix(
+                        matrix,
+                        "alpine_musl",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                        },
+                        installer: "datadog-dotnet-apm*-musl.tar.gz",
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-musl-x64",
+                        runtimeId: "linux-musl-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    AddToLinuxTrimmingSmokeTestsMatrix(
+                        matrix,
+                        "rhel",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "9-9.0"),
+                            new (publishFramework: TargetFramework.NET9_0, "8-9.0"),
+                        },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
+                        installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "andrewlock/dotnet-rhel"
+                    );
+
+                    AddToLinuxTrimmingSmokeTestsMatrix(
+                        matrix,
+                        "opensuse",
+                        new SmokeTestImage[]
+                        {
+                            new (publishFramework: TargetFramework.NET9_0, "15-9.0"),
+                        },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
+                        installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "andrewlock/dotnet-opensuse"
+                    );
+
+                    Logger.Information($"Trimming installer smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("trimming_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+
+                    void AddToLinuxTrimmingSmokeTestsMatrix(
+                        Dictionary<string, object> matrix,
+                        string shortName,
+                        SmokeTestImage[] images,
+                        string installer,
+                        string installCmd,
+                        string linuxArtifacts,
+                        string runtimeId,
+                        string dockerName
+                    )
+                    {
+                        var packages = new[]
+                        {
+                            (name: "Datadog.Trace", suffix: string.Empty, shortName: "ddtrace"),
+                            (name: "Datadog.Trace.Trimming", suffix: "-prerelease", shortName: "ddtrace_trimming")
+                        };
+                        var pairs = from image in images
+                                    from package in packages
+                                    select (image, package);
+
+                        foreach (var pair in pairs)
+                        {
+                            var image = pair.image;
+                            var dockerTag = $"{pair.package.shortName}_{shortName}_{image.RuntimeTag.Replace('.', '_')}";
+                            matrix.Add(
+                                dockerTag,
+                                new
+                                {
+                                    expectedInstaller = installer,
+                                    expectedPath = runtimeId,
+                                    installCmd = installCmd,
+                                    dockerTag = dockerTag,
+                                    publishFramework = image.PublishFramework,
+                                    linuxArtifacts = linuxArtifacts,
+                                    runCrashTest = "false", // this doesn't work yet
+                                    runtimeImage = $"{dockerName}:{image.RuntimeTag}",
+                                    runtimeId = runtimeId,
+                                    packageName = pair.package.name,
+                                    packageVersionSuffix = pair.package.suffix,
+                                });
+                        }
+                    }
+                }
+
                 void AddToDotNetToolSmokeTestsMatrix(
                     Dictionary<string, object> matrix,
                     string shortName,
@@ -1246,6 +1368,36 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable("tracer_home_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
+                void GenerateWindowsFleetInstalerSmokeTestsMatrix()
+                {
+                    var dockerName = "mcr.microsoft.com/dotnet/framework/aspnet";
+
+                    var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
+                    var runtimeImages = new SmokeTestImage[]
+                    {
+                        // We can only test Windows 2022 images currently, due to VM + docker image support
+                        new (publishFramework: TargetFramework.NET9_0, "4.8-windowsservercore-ltsc2022"),
+                        new (publishFramework: TargetFramework.NET8_0, "4.8-windowsservercore-ltsc2022"),
+                    };
+
+                    var matrix = (
+                                     from platform in platforms
+                                     from image in runtimeImages
+                                     let dockerTag = $"{image.PublishFramework}_{platform}_{image.RuntimeTag}".Replace('.', '_')
+                                     select new
+                                     {
+                                         dockerTag = dockerTag,
+                                         publishFramework = image.PublishFramework,
+                                         runtimeImage = $"{dockerName}:{image.RuntimeTag}",
+                                         targetPlatform = platform,
+                                         channel = GetInstallerChannel(image.PublishFramework),
+                                     }).ToDictionary(x=>x.dockerTag, x => x);
+
+                    Logger.Information($"Installer smoke tests fleet-installer matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("fleet_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
                 void GenerateWindowsNuGetSmokeTestsMatrix()
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
@@ -1319,11 +1471,7 @@ partial class Build : NukeBuild
                 {
                     var matrix = new Dictionary<string, object>
                     {
-                        // macos-11 environments are no longer available in Azure Devops
-                        { "macos-12_netcoreapp3.1", new { vmImage = "macos-12", publishFramework = "netcoreapp3.1" } },
-                        { "macos-12_net6.0", new { vmImage = "macos-12", publishFramework = "net6.0" } },
-                        { "macos-12_net8.0", new { vmImage = "macos-12", publishFramework = "net8.0" } },
-                        { "macos-12_net9.0", new { vmImage = "macos-12", publishFramework = "net9.0" } },
+                        // macos-11/12 environments are no longer available in Azure Devops
                         { "macos-13_netcoreapp3.1", new { vmImage = "macos-13", publishFramework = "netcoreapp3.1" } },
                         { "macos-13_net5.0", new { vmImage = "macos-13", publishFramework = "net5.0" } },
                         { "macos-13_net6.0", new { vmImage = "macos-13", publishFramework = "net6.0" } },
@@ -1334,6 +1482,9 @@ partial class Build : NukeBuild
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
                         { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
+                        { "macos-15_net6.0", new { vmImage = "macos-15", publishFramework = "net6.0" } },
+                        { "macos-15_net8.0", new { vmImage = "macos-15", publishFramework = "net8.0" } },
+                        { "macos-15_net9.0", new { vmImage = "macos-15", publishFramework = "net9.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");

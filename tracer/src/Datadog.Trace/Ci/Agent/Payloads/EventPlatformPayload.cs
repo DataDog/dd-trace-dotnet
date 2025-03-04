@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -17,11 +18,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads;
 /// </summary>
 internal abstract class EventPlatformPayload
 {
-    private readonly CIVisibilitySettings _settings;
+    private readonly TestOptimizationSettings _settings;
     private bool? _useGzip;
     private Uri? _url;
 
-    protected EventPlatformPayload(CIVisibilitySettings settings)
+    protected EventPlatformPayload(TestOptimizationSettings settings)
     {
         if (settings is null)
         {
@@ -162,12 +163,13 @@ internal abstract class EventPlatformPayload
                     break;
             }
 
-            if (CIVisibility.EventPlatformProxySupport == EventPlatformProxySupport.V4)
+            var tracerManagement = TestOptimization.Instance.TracerManagement;
+            if (tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V4)
             {
                 builder.Path = $"/evp_proxy/v4/{EventPlatformPath}";
                 _useGzip = true;
             }
-            else if (CIVisibility.EventPlatformProxySupport == EventPlatformProxySupport.V2)
+            else if (tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.V2)
             {
                 builder.Path = $"/evp_proxy/v2/{EventPlatformPath}";
                 _useGzip = false;

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -52,7 +53,7 @@ public static class NUnitWorkItemPerformWorkIntegration
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is null && item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                 var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                CIVisibility.WaitForSkippableTaskToFinish();
+                TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
                 var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
                 NUnitIntegration.SetTestModuleTo(item, newModule);
@@ -64,7 +65,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                 if (NUnitIntegration.ShouldSkip(item, out _, out _))
                 {
                     var testMethod = item.Method?.MethodInfo;
-                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
+                    Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
                 }

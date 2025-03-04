@@ -1,0 +1,36 @@
+name: Verify Sample solution changes have been persisted
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify_solution_changes_are_persisted:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+
+      - uses: actions/setup-dotnet@71a4fd9b27383962fc5df13a9c871636b43199b4 # v1.10.0
+        with:
+          dotnet-version: '9.0.102'
+
+      - name: "Regenerating Solutions"
+        run: .\tracer\build.ps1 RegenerateSolutions
+
+      - name: "Verify no changes in generated solutions"
+        run: |
+          git diff --quiet
+          if ($LASTEXITCODE -eq 1) {
+            git diff
+            Write-Error "Found changes in generated solutions. Did you add a new sample? Regenerate the build solution locally by running the target 'RegenerateSolutions', and ensure the changed files are committed to git."
+            Exit 1
+          } else {
+            echo "No changes found to generated files"
+          }

@@ -71,22 +71,4 @@ public static class TestMethodRunnerExecuteIntegration
 
         return new CallTargetReturn<TReturn?>(returnValue);
     }
-
-    [DuckCopy]
-    internal struct ClassInfoInitializationExceptionStruct
-    {
-        public Exception? ClassInitializationException;
-    }
-
-    [DuckCopy]
-    internal struct ClassInfoCleanupExceptionsStruct
-    {
-        public Exception? ClassCleanupException;
-    }
-
-    [DuckCopy]
-    internal struct AssemblyInfoExceptionsStruct
-    {
-        public Exception? AssemblyInitializationException;
-    }
 }

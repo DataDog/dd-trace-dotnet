@@ -1,0 +1,222 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /api/route/?,
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/route/2?arg=[blocking_test],
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-33e6044f-b25f03de-,
+      _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
+      _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"block-on-path-params","name":"Block on path params","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[blocking_test\\]))","parameters":[{"address":"server.request.query","highlight":["[blocking_test]"],"key_path":["arg","0"],"value":"[blocking_test]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: aspnet.request,
+    Resource: GET /api/route/?,
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/route/2?arg=[blocking_test],
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-33e6044f-b25f03de-,
+      _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
+      _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"block-on-path-params","name":"Block on path params","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[blocking_test\\]))","parameters":[{"address":"server.request.query","highlight":["[blocking_test]"],"key_path":["arg","0"],"value":"[blocking_test]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: aspnet.request,
+    Resource: GET /api/route/?,
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/route/2?arg=[blocking_test],
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-33e6044f-b25f03de-,
+      _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
+      _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"block-on-path-params","name":"Block on path params","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[blocking_test\\]))","parameters":[{"address":"server.request.query","highlight":["[blocking_test]"],"key_path":["arg","0"],"value":"[blocking_test]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: aspnet.request,
+    Resource: GET /api/route/?,
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/route/2?arg=[blocking_test],
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-33e6044f-b25f03de-,
+      _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
+      _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"block-on-path-params","name":"Block on path params","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[blocking_test\\]))","parameters":[{"address":"server.request.query","highlight":["[blocking_test]"],"key_path":["arg","0"],"value":"[blocking_test]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: aspnet.request,
+    Resource: GET /api/route/?,
+    Service: sample,
+    Type: web,
+    Tags: {
+      actor.ip: 86.242.244.246,
+      appsec.blocked: true,
+      appsec.event: true,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.status_code: 403,
+      http.url: http://localhost:00000/api/route/2?arg=[blocking_test],
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: ::1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-33e6044f-b25f03de-,
+      _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
+      _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"block-on-path-params","name":"Block on path params","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[blocking_test\\]))","parameters":[{"address":"server.request.query","highlight":["[blocking_test]"],"key_path":["arg","0"],"value":"[blocking_test]"}]}]}]},
+      _dd.origin: appsec,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.appsec.waf.duration: 0.0,
+      _dd.appsec.waf.duration_ext: 0.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
+    }
+  }
+]

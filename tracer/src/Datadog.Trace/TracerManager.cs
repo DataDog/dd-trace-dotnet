@@ -24,6 +24,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -101,6 +102,8 @@ namespace Datadog.Trace
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
+
+            SpanContextPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly, settings.PropagationBehaviorExtract);
         }
 
         /// <summary>
@@ -163,6 +166,8 @@ namespace Datadog.Trace
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public PerTraceSettings PerTraceSettings { get; }
+
+        public SpanContextPropagator SpanContextPropagator { get; }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
@@ -525,6 +530,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("wcf_obfuscation_enabled");
                     writer.WriteValue(instanceSettings.WcfObfuscationEnabled);
 
+                    writer.WritePropertyName("bypass_http_request_url_caching_enabled");
+                    writer.WriteValue(instanceSettings.BypassHttpRequestUrlCachingEnabled);
+
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 
@@ -551,6 +559,12 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("trace_propagation_style_extract_first_only");
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
+
+                    writer.WritePropertyName("tracer_datadog_json_configuration_filepaths");
+                    writer.WriteValue(string.Join(";", instanceSettings.JsonConfigurationFilePaths));
+
+                    writer.WritePropertyName("trace_propagation_behavior_extract");
+                    writer.WriteValue(instanceSettings.PropagationBehaviorExtract);
 
                     writer.WritePropertyName("trace_propagation_style_inject");
                     writer.WriteStartArray();

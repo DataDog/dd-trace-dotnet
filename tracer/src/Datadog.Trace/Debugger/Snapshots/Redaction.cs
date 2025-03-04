@@ -12,9 +12,12 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
+using Datadog.Trace.Debugger.Caching;
 using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Util;
+using Datadog.Trace.Logging;
 using TypeExtensions = Datadog.Trace.Debugger.Helpers.TypeExtensions;
+
+#nullable enable
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -25,10 +28,14 @@ namespace Datadog.Trace.Debugger.Snapshots
         Type
     }
 
-    internal static class Redaction
+    internal class Redaction
     {
+        private const int MaxStackAlloc = 512;
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Redaction));
+
         private static readonly Type[] AllowedCollectionTypes =
-        {
+        [
             typeof(List<>),
             typeof(ArrayList),
             typeof(LinkedList<>),
@@ -44,21 +51,26 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SortedSet<>),
             typeof(ConcurrentBag<>),
             typeof(BlockingCollection<>),
-            typeof(ConditionalWeakTable<,>),
-        };
+            typeof(ConditionalWeakTable<,>)
+        ];
 
         private static readonly Type[] AllowedDictionaryTypes =
-        {
+        [
             typeof(Dictionary<,>),
             typeof(SortedDictionary<,>),
             typeof(ConcurrentDictionary<,>),
-            typeof(Hashtable),
-        };
+            typeof(Hashtable)
+        ];
 
-        private static readonly string[] AllowedSpecialCasedCollectionTypeNames = { }; // "RangeIterator"
+        private static readonly string[] AllowedSpecialCasedCollectionTypeNames = []; // "RangeIterator"
+
+        private static readonly Type[] DeniedTypes =
+        [
+            typeof(SecureString)
+        ];
 
         internal static readonly Type[] AllowedTypesSafeToCallToString =
-        {
+        [
             typeof(DateTime),
             typeof(TimeSpan),
             typeof(DateTimeOffset),
@@ -67,107 +79,117 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(Version),
             typeof(StackTrace),
             typeof(StringBuilder)
-        };
+        ];
 
-        private static readonly Type[] DeniedTypes =
+        private static Redaction _instnace = new();
+
+        private readonly Trie _typeTrie;
+
+        private readonly HashSet<string> _redactedTypes;
+
+        private readonly HashSet<string> _redactKeywords;
+
+        private readonly ConcurrentAdaptiveCache<Type, bool> _redactedTypesCache;
+
+        private readonly ConcurrentAdaptiveCache<string, bool> _redactedKeywordsCache;
+
+        private Redaction()
         {
-            typeof(SecureString),
-        };
+            _typeTrie = new Trie();
+            _redactedTypes = [];
+            _redactKeywords =
+            [
+                "2fa",
+                "accesstoken",
+                "aiohttpsession",
+                "apikey",
+                "appkey",
+                "apisecret",
+                "apisignature",
+                "applicationkey",
+                "auth",
+                "authorization",
+                "authtoken",
+                "ccnumber",
+                "certificatepin",
+                "cipher",
+                "clientid",
+                "clientsecret",
+                "connectionstring",
+                "connectsid",
+                "cookie",
+                "credentials",
+                "creditcard",
+                "csrf",
+                "csrftoken",
+                "cvv",
+                "databaseurl",
+                "dburl",
+                "encryptionkey",
+                "encryptionkeyid",
+                "geolocation",
+                "gpgkey",
+                "ipaddress",
+                "jti",
+                "jwt",
+                "licensekey",
+                "masterkey",
+                "mysqlpwd",
+                "nonce",
+                "oauth",
+                "oauthtoken",
+                "otp",
+                "passhash",
+                "passwd",
+                "password",
+                "passwordb",
+                "pemfile",
+                "pgpkey",
+                "phpsessid",
+                "pin",
+                "pincode",
+                "pkcs8",
+                "privatekey",
+                "publickey",
+                "pwd",
+                "recaptchakey",
+                "refreshtoken",
+                "routingnumber",
+                "salt",
+                "secret",
+                "secretkey",
+                "secrettoken",
+                "securityanswer",
+                "securitycode",
+                "securityquestion",
+                "serviceaccountcredentials",
+                "session",
+                "sessionid",
+                "sessionkey",
+                "setcookie",
+                "signature",
+                "signaturekey",
+                "sshkey",
+                "ssn",
+                "symfony",
+                "token",
+                "transactionid",
+                "twiliotoken",
+                "usersession",
+                "voterid",
+                "xapikey",
+                "xauthtoken",
+                "xcsrftoken",
+                "xforwardedfor",
+                "xrealip",
+                "xsrf",
+                "xsrftoken"
+            ];
+            _redactedTypesCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
+            _redactedKeywordsCache = new(evictionPolicyKind: EvictionPolicy.Lfu);
+        }
 
-        private static readonly Trie TypeTrie = new();
-        private static readonly HashSet<string> RedactedTypes = new();
-
-        private static HashSet<string> _redactKeywords = new()
-        {
-            "2fa",
-            "accesstoken",
-            "address",
-            "aiohttpsession",
-            "apikey",
-            "appkey",
-            "apisecret",
-            "apisignature",
-            "applicationkey",
-            "auth",
-            "authorization",
-            "authtoken",
-            "ccnumber",
-            "certificatepin",
-            "cipher",
-            "clientid",
-            "clientsecret",
-            "config",
-            "connectionstring",
-            "connectsid",
-            "cookie",
-            "credentials",
-            "creditcard",
-            "csrf",
-            "csrftoken",
-            "cvv",
-            "databaseurl",
-            "dburl",
-            "encryptionkey",
-            "encryptionkeyid",
-            "env",
-            "geolocation",
-            "gpgkey",
-            "ipaddress",
-            "jti",
-            "jwt",
-            "licensekey",
-            "masterkey",
-            "mysqlpwd",
-            "nonce",
-            "oauth",
-            "oauthtoken",
-            "otp",
-            "passhash",
-            "passwd",
-            "password",
-            "passwordb",
-            "pemfile",
-            "pgpkey",
-            "phpsessid",
-            "pin",
-            "pincode",
-            "pkcs8",
-            "privatekey",
-            "publickey",
-            "pwd",
-            "recaptchakey",
-            "refreshtoken",
-            "routingnumber",
-            "salt",
-            "secret",
-            "secretkey",
-            "secrettoken",
-            "securityanswer",
-            "securitycode",
-            "securityquestion",
-            "serviceaccountcredentials",
-            "session",
-            "sessionid",
-            "sessionkey",
-            "setcookie",
-            "signature",
-            "signaturekey",
-            "sshkey",
-            "ssn",
-            "symfony",
-            "token",
-            "transactionid",
-            "twiliotoken",
-            "usersession",
-            "voterid",
-            "xapikey",
-            "xauthtoken",
-            "xcsrftoken",
-            "xforwardedfor",
-            "xrealip",
-            "xsrf",
-            "xsrftoken"
-        };
+        internal static Redaction Instance => _instnace;
 
         internal static bool IsSafeToCallToString(Type type)
         {
@@ -176,7 +198,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                    IsSupportedCollection(type);
         }
 
-        internal static bool IsSupportedDictionary(object o)
+        internal static bool IsSupportedDictionary(object? o)
         {
             if (o == null)
             {
@@ -187,7 +209,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return AllowedDictionaryTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition()));
         }
 
-        internal static bool IsSupportedCollection(object o)
+        internal static bool IsSupportedCollection(object? o)
         {
             if (o == null)
             {
@@ -197,7 +219,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return IsSupportedCollection(o.GetType());
         }
 
-        internal static bool IsSupportedCollection(Type type)
+        internal static bool IsSupportedCollection(Type? type)
         {
             if (type == null)
             {
@@ -213,18 +235,31 @@ namespace Datadog.Trace.Debugger.Snapshots
                    AllowedSpecialCasedCollectionTypeNames.Any(white => white.Equals(type.Name, StringComparison.OrdinalIgnoreCase));
         }
 
-        internal static bool IsRedactedType(Type type)
+        internal bool IsRedactedType(Type? type)
         {
             if (type == null)
             {
                 return false;
             }
 
-            var shouldRedact = DeniedTypes.Any(deniedType => deniedType == type || (type.IsGenericType && deniedType == type.GetGenericTypeDefinition()));
+            return _redactedTypesCache.GetOrAdd(type, CheckForRedactedType);
+        }
 
-            if (shouldRedact)
+        private bool CheckForRedactedType(Type type)
+        {
+            Type? genericDefinition = null;
+            if (type.IsGenericType)
             {
-                return true;
+                genericDefinition = type.GetGenericTypeDefinition();
+            }
+
+            foreach (var deniedType in DeniedTypes)
+            {
+                if (deniedType == type ||
+                    (genericDefinition != null && deniedType == genericDefinition))
+                {
+                    return true;
+                }
             }
 
             var typeFullName = type.FullName;
@@ -234,27 +269,36 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            if (TypeTrie.HasMatchingPrefix(typeFullName))
+            if (_redactedTypes.Contains(typeFullName))
             {
-                var stringStartsWith = TypeTrie.GetStringStartingWith(typeFullName);
+                return true;
+            }
+
+            if (_typeTrie.HasMatchingPrefix(typeFullName))
+            {
+                var stringStartsWith = _typeTrie.GetStringStartingWith(typeFullName);
                 return string.IsNullOrEmpty(stringStartsWith) || stringStartsWith.Length == typeFullName.Length;
             }
 
-            return RedactedTypes.Contains(typeFullName);
+            return false;
         }
 
-        public static bool IsRedactedKeyword(string name)
+        internal bool IsRedactedKeyword(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
                 return false;
             }
 
-            name = Normalize(name);
-            return _redactKeywords.Contains(name);
+            return _redactedKeywordsCache.GetOrAdd(name, this.CheckForRedactedKeyword);
         }
 
-        public static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
+        internal bool CheckForRedactedKeyword(string keyword)
+        {
+            return TryNormalize(keyword, out var result) && _redactKeywords.Contains(result);
+        }
+
+        internal bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
         {
             if (IsRedactedKeyword(name))
             {
@@ -272,60 +316,110 @@ namespace Datadog.Trace.Debugger.Snapshots
             return false;
         }
 
-        private static string Normalize(string name)
+        private static unsafe bool TryNormalize(string identifier, out string result)
         {
-            StringBuilder sb = null;
-            for (var i = 0; i < name.Length; i++)
+            result = identifier;
+            if (string.IsNullOrEmpty(identifier))
             {
-                var c = name[i];
-                var isUpper = char.IsUpper(c);
-                var isRemovable = IsRemovableChar(c);
-                if (isUpper || isRemovable || sb != null)
-                {
-                    if (sb == null)
-                    {
-                        sb = StringBuilderCache.Acquire();
-                        sb.Append(name.Substring(startIndex: 0, i));
-                    }
+                return true;
+            }
 
-                    if (isUpper)
-                    {
-                        sb.Append(char.ToLower(c));
-                    }
-                    else if (!isRemovable)
-                    {
-                        sb.Append(c);
-                    }
+            if (identifier.Length > MaxStackAlloc)
+            {
+                Log.Error("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, hence we are going to redact this identifier", identifier.Length, property1: MaxStackAlloc);
+                return false;
+            }
+
+            bool needsNormalization = false;
+            var length = identifier.Length;
+            for (int i = 0; i < length && !needsNormalization; i++)
+            {
+                char c = identifier[i];
+                needsNormalization = char.IsUpper(c) || IsRemovableChar(c);
+            }
+
+            if (!needsNormalization)
+            {
+                return true;
+            }
+
+            int written = 0;
+            var buffer = stackalloc char[length];
+            for (int i = 0; i < identifier.Length; i++)
+            {
+                char c = identifier[i];
+                if (char.IsUpper(c))
+                {
+                    buffer[written++] = char.ToLowerInvariant(c);
+                }
+                else if (!IsRemovableChar(c))
+                {
+                    buffer[written++] = c;
                 }
             }
 
-            return sb != null ? StringBuilderCache.GetStringAndRelease(sb) : name;
+            result = new string(buffer, 0, written);
+            return true;
         }
 
         private static bool IsRemovableChar(char c)
         {
-            return c == '_' || c == '-' || c == '$' || c == '@';
+            return c is '_' or '-' or '$' or '@';
         }
 
-        public static void SetConfig(DebuggerSettings settings)
+        internal void SetConfig(HashSet<string> redactedIdentifiers, HashSet<string> redactedExcludedIdentifiers, HashSet<string> redactedTypes)
         {
-            foreach (var identifier in settings.RedactedIdentifiers)
+#if NET6_0_OR_GREATER
+            _redactKeywords.EnsureCapacity(_redactKeywords.Count + redactedIdentifiers.Count);
+#endif
+            foreach (var identifier in redactedIdentifiers)
             {
-                _redactKeywords.Add(Normalize(identifier.Trim()));
-            }
-
-            foreach (var type in settings.RedactedTypes)
-            {
-                if (type.EndsWith("*"))
+                if (TryNormalize(identifier, out var result))
                 {
-                    var newTypeName = type.Substring(0, type.Length - 1);
-                    TypeTrie.Insert(newTypeName);
+                    _redactKeywords.Add(result);
                 }
                 else
                 {
-                    RedactedTypes.Add(type);
+                    Log.Error("Skipping identifier that exceeds maximum length: {Length}", property: identifier.Length);
                 }
             }
+
+            foreach (var excluded in redactedExcludedIdentifiers)
+            {
+                if (TryNormalize(excluded, out var result))
+                {
+                    _redactKeywords.Remove(result);
+                }
+                else
+                {
+                    Log.Error("Skipping excluded identifier that exceeds maximum length: {Length}", property: excluded.Length);
+                }
+            }
+
+            foreach (var type in redactedTypes)
+            {
+                if (type.EndsWith("*"))
+                {
+#if NETCOREAPP3_1_OR_GREATER
+                    _typeTrie.Insert(type[..^1]);
+#else
+                    var newTypeName = type.Substring(0, type.Length - 1);
+                    _typeTrie.Insert(newTypeName);
+#endif
+                }
+                else
+                {
+                    _redactedTypes.Add(type);
+                }
+            }
+        }
+
+        /// <summary>
+        /// For unit tests only!
+        /// </summary>
+        internal void ResetInstance()
+        {
+           System.Threading.Interlocked.Exchange(ref _instnace, new());
         }
     }
 }

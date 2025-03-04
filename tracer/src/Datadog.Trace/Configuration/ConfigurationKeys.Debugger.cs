@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration
             public const string SymDbThirdPartyDetectionIncludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES";
 
             /// <summary>
-            /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
+            /// Configuration key for a separated comma list of libraries to exclude in the 3rd party detection
             /// Default value is empty.
             /// </summary>
             public const string SymDbThirdPartyDetectionExcludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES";
@@ -105,6 +105,18 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.RedactedIdentifiers"/>
             public const string RedactedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS";
+
+            /// <summary>
+            /// Configuration key for set of identifiers that are excluded from redaction decisions.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.RedactedExcludedIdentifiers"/>
+            public const string RedactionExcludedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS";
+
+            /// <summary>
+            /// Configuration key for set of identifiers that are excluded from redaction decisions.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.RedactedExcludedIdentifiers"/>
+            public const string RedactedExcludedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS";
 
             /// <summary>
             /// Configuration key for set of types that are used in redaction decisions.

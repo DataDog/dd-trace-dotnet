@@ -1,4 +1,4 @@
-﻿// <copyright file="SecurityReporter.cs" company="Datadog">
+// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -88,17 +88,15 @@ internal partial class SecurityReporter
 
     internal void AddRequestHeaders(IHeadersCollection headers) => AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
-    internal void AddResponseHeadersToSpanAndCleanup()
+    internal void AddResponseHeadersToSpan()
     {
         if (_span.IsAppsecEvent())
         {
             AddResponseHeaderTags();
         }
-
-        _httpTransport.DisposeAdditiveContext();
     }
 
-    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
+    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
 
     private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
     {
@@ -169,7 +167,7 @@ internal partial class SecurityReporter
 
     /// <summary>
     /// This functions reports the security scan result and the schema extraction if there was one
-    /// Dont try to test if result should be reported, it's all in here
+    /// Don't try to test if result should be reported, it's all in here
     /// </summary>
     /// <param name="result">waf's result</param>
     /// <param name="blocked">if request was blocked</param>
@@ -177,11 +175,14 @@ internal partial class SecurityReporter
     internal void TryReport(IResult result, bool blocked, int? status = null)
     {
         IHeadersCollection? headers = null;
-        if (!_httpTransport.ReportedExternalWafsRequestHeaders)
+        if (_httpTransport is { ReportedExternalWafsRequestHeaders: false, IsHttpContextDisposed: false })
         {
             headers = _httpTransport.GetRequestHeaders();
-            AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
-            _httpTransport.ReportedExternalWafsRequestHeaders = true;
+            if (headers is not null)
+            {
+                AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                _httpTransport.ReportedExternalWafsRequestHeaders = true;
+            }
         }
 
         AttackerFingerprintHelper.AddSpanTags(_span, result);
@@ -219,8 +220,16 @@ internal partial class SecurityReporter
 
             _span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
-            headers ??= _httpTransport.GetRequestHeaders();
-            AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+
+            if (headers is null && !_httpTransport.IsHttpContextDisposed)
+            {
+                headers = _httpTransport.GetRequestHeaders();
+            }
+
+            if (headers is not null)
+            {
+                AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+            }
 
             if (status is not null)
             {

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -38,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
         private static int _firstInitialization = 1;
+
         private static int _firstNonNativePartsInitialization = 1;
 
         /// <summary>
@@ -74,6 +76,8 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         /// <returns>In a managed-only context, where the profiler is not attached, <c>None</c>,
         /// otherwise the version of the Datadog native tracer library.</returns>
+        // [Instrumented] This is auto-rewritten, not instrumented with calltarget
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetNativeTracerVersion() => "None";
 
         /// <summary>
@@ -250,9 +254,10 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                if (CIVisibility.Enabled)
+                var testOptimization = TestOptimization.Instance;
+                if (testOptimization.Enabled)
                 {
-                    CIVisibility.Initialize();
+                    testOptimization.Initialize();
                 }
                 else
                 {
@@ -301,7 +306,7 @@ namespace Datadog.Trace.ClrProfiler
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
             if (FrameworkDescription.Instance.IsCoreClr())
             {
-                Log.Information("Initializing ServiceFabric instrumentation");
+                Log.Debug("Initializing ServiceFabric instrumentation");
 
                 try
                 {
@@ -334,6 +339,19 @@ namespace Datadog.Trace.ClrProfiler
             catch (Exception ex)
             {
                 Log.Error(ex, "Error initializing activity listener");
+            }
+
+            try
+            {
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                {
+                    Log.Debug("Initializing OpenTelemetry components.");
+                    OpenTelemetry.Sdk.Initialize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error initializing OpenTelemetry components.");
             }
 
             Log.Debug("Initialization of non native parts finished.");

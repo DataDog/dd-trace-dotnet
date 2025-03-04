@@ -2,17 +2,18 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -32,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 public static class XUnitTestRunnerRunAsyncIntegration
 {
     private static int _totalRetries = -1;
+    private static Type? _messageBusInterfaceType;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -46,8 +48,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
-
+        var testOptimization = TestOptimization.Instance;
         var runnerInstance = instance.DuckCast<TestRunnerStruct>();
         ITestRunner? testRunnerInstance = null;
 
@@ -56,11 +57,11 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             if (instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
             {
-                Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
+                Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Test skipped by test skipping feature: {Class}.{Name}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
                 // Refresh values after skip reason change, and create Skip by ITR span.
                 runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
                 testRunnerInstance.SkipReason = runnerInstance.SkipReason;
-                XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
+                XUnitIntegration.CreateTest(ref runnerInstance);
                 return CallTargetState.GetDefault();
             }
         }
@@ -68,51 +69,59 @@ public static class XUnitTestRunnerRunAsyncIntegration
         if (runnerInstance.SkipReason is not null)
         {
             // Skip test support
-            XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
+            XUnitIntegration.CreateTest(ref runnerInstance);
             return CallTargetState.GetDefault();
         }
 
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
-            CIVisibility.Settings.FlakyRetryEnabled != true)
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
+            testOptimization.FlakyRetryFeature?.Enabled != true)
         {
             return CallTargetState.GetDefault();
+        }
+
+        if (testOptimization.FlakyRetryFeature?.Enabled == true)
+        {
+            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature.TotalFlakyRetryCount, -1);
         }
 
         // Try to ducktype the current instance to ITestClassRunner
         if (!instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
         {
-            Common.Log.Error("EFD/Retry: Current test runner instance cannot be ducktyped.");
+            Common.Log.Error("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Current test runner instance cannot be ducktyped.");
             return CallTargetState.GetDefault();
         }
 
         // Let's check if the current message bus is our own implementation.
         RetryMessageBus retryMessageBus;
+        TestCaseMetadata retryMetadata;
         if (testRunnerInstance.MessageBus is IDuckType { Instance: { } } ducktypedMessageBus)
         {
-            Common.Log.Debug("EFD/Retry: Current message bus is a duck type, retrieving RetryMessageBus instance");
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Current message bus is a duck type, retrieving RetryMessageBus instance");
             retryMessageBus = (RetryMessageBus)ducktypedMessageBus.Instance;
+            retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
         }
         else if (testRunnerInstance.MessageBus is { } messageBus)
         {
             // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
-            Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
+            _messageBusInterfaceType ??= messageBus.GetType().GetInterface("IMessageBus")!;
             var duckMessageBus = messageBus.DuckCast<IMessageBus>();
-            var messageBusInterfaceType = messageBus.GetType().GetInterface("IMessageBus")!;
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
             // EFD is disabled but FlakeRetry is enabled
-            retryMessageBus.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
-            testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(messageBusInterfaceType);
+            retryMetadata = retryMessageBus.GetMetadata(runnerInstance.TestCase.UniqueID);
+            retryMetadata.FlakyRetryEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled != true && testOptimization.FlakyRetryFeature?.Enabled == true;
+            testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(_messageBusInterfaceType);
         }
         else
         {
-            Common.Log.Error("EFD/Retry: Message bus is null.");
+            Common.Log.Error("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: Message bus is null.");
             return CallTargetState.GetDefault();
         }
 
         // Decrement the execution number (the method body will do the execution)
-        retryMessageBus.ExecutionNumber--;
+        retryMetadata.ExecutionNumber--;
 
-        return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus));
+        return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus, retryMetadata));
     }
 
     /// <summary>
@@ -127,30 +136,31 @@ public static class XUnitTestRunnerRunAsyncIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        if (state.State is TestRunnerState { MessageBus: { } messageBus } testRunnerState)
+        var testOptimization = TestOptimization.Instance;
+        if (state.State is TestRunnerState { MessageBus: { } messageBus, RetryMetadata: { } retryMetadata } testRunnerState)
         {
-            if (messageBus is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
+            if (retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
              && returnValue.TryDuckCast<IRunSummary>(out var runSummary))
             {
-                var isFlakyRetryEnabled = messageBus.FlakyRetryEnabled;
-                var index = messageBus.ExecutionIndex;
+                var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
+                var index = retryMetadata.ExecutionIndex;
                 if (index == 0)
                 {
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                     if (isFlakyRetryEnabled)
                     {
-                        messageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
+                        retryMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0) + 1;
                     }
                     else
                     {
                         var duration = TraceClock.Instance.UtcNow - testRunnerState.StartTime;
-                        messageBus.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
+                        retryMetadata.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
                     }
 
-                    messageBus.ExecutionNumber = messageBus.TotalExecutions - 1;
+                    retryMetadata.ExecutionNumber = retryMetadata.TotalExecutions - 1;
                 }
 
-                if (messageBus.ExecutionNumber > 0)
+                if (retryMetadata.ExecutionNumber > 0)
                 {
                     var doRetry = true;
                     if (isFlakyRetryEnabled)
@@ -158,30 +168,30 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
                         if (runSummary.Failed == 0)
                         {
-                            Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
                             doRetry = false;
                         }
                         else if (remainingTotalRetries < 1)
                         {
-                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                             doRetry = false;
                         }
                     }
 
                     if (doRetry)
                     {
-                        var retryNumber = messageBus.ExecutionIndex + 1;
+                        var retryNumber = retryMetadata.ExecutionIndex + 1;
                         // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                        Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
+                        Common.Log.Debug<int, int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
                         var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
                         if (innerReturnValue.TryDuckCast<IRunSummary>(out var innerRunSummary))
                         {
-                            Common.Log.Debug<int>("EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
+                            Common.Log.Debug<int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
                             runSummary.Aggregate(innerRunSummary);
                         }
                         else
                         {
-                            Common.Log.Error<int>("EFD/Retry: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
+                            Common.Log.Error<int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
                         }
                     }
                 }
@@ -189,22 +199,25 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 {
                     if (isFlakyRetryEnabled && runSummary.Failed == 0)
                     {
-                        Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
                     }
                     else
                     {
-                        Common.Log.Debug("EFD/Retry: All retries were executed.");
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: All retries were executed.");
                     }
                 }
 
                 if (index == 0)
                 {
-                    messageBus.FlushMessages();
+                    messageBus.FlushMessages(retryMetadata.UniqueID);
 
                     // Let's clear the failed and skipped runs if we have at least one successful run
-#pragma warning disable DDLOG004
-                    Common.Log.Debug($"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
-#pragma warning restore DDLOG004
+                    if (Common.Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var debugMsg = $"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
+                    }
+
                     var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
                     if (passed > 0)
                     {
@@ -225,14 +238,16 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         runSummary.Failed = 1;
                     }
 
-#pragma warning disable DDLOG004
-                    Common.Log.Debug($"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
-#pragma warning restore DDLOG004
+                    if (Common.Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var debugMsg = $"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
+                    }
                 }
             }
             else
             {
-                messageBus.FlushMessages();
+                messageBus.FlushMessages(retryMetadata.UniqueID);
             }
         }
 
@@ -244,12 +259,14 @@ public static class XUnitTestRunnerRunAsyncIntegration
         public readonly DateTimeOffset StartTime;
         public readonly ITestRunner TestRunner;
         public readonly RetryMessageBus MessageBus;
+        public readonly TestCaseMetadata RetryMetadata;
 
-        public TestRunnerState(ITestRunner testRunner, RetryMessageBus messageBus)
+        public TestRunnerState(ITestRunner testRunner, RetryMessageBus messageBus, TestCaseMetadata retryMetadata)
         {
             StartTime = TraceClock.Instance.UtcNow;
             TestRunner = testRunner;
             MessageBus = messageBus;
+            RetryMetadata = retryMetadata;
         }
     }
 }

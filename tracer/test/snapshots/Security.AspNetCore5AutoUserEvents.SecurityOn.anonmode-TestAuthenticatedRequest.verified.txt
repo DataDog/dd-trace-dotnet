@@ -1,0 +1,40 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: GET /account/someauthenticatedaction,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.SomeAuthenticatedAction (Samples.Security.AspNetCore5),
+      aspnet_core.route: {controller=home}/{action=index}/{id?},
+      component: aspnet_core,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.route: {controller=home}/{action=index}/{id?},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Account/SomeAuthenticatedAction,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      usr.id: anon_74ff86ebe90bfdc4f169315d955bacd1,
+      _dd.appsec.user.collection_mode: anonymization,
+      _dd.appsec.usr.id: anon_74ff86ebe90bfdc4f169315d955bacd1,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

@@ -7,6 +7,9 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -17,6 +20,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 internal static class SecurityCoordinatorHelpers
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SecurityCoordinatorHelpers));
+
+    internal static readonly Type? SessionFeature = Assembly.GetAssembly(typeof(IHeaderDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.ISessionFeature", throwOnError: false);
 
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {
@@ -45,12 +50,14 @@ internal static class SecurityCoordinatorHelpers
 
                     var args = new Dictionary<string, object>
                     {
-                        {
-                            AddressesConstants.ResponseHeaderNoCookies,
-                            SecurityCoordinator.ExtractHeadersFromRequest(headers)
-                        },
                         { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
                     };
+
+                    var extractedHeaders = SecurityCoordinator.ExtractHeadersFromRequest(headers);
+                    if (extractedHeaders is not null)
+                    {
+                        args.Add(AddressesConstants.ResponseHeaderNoCookies, extractedHeaders);
+                    }
 
                     var result = securityCoordinator.RunWaf(args, true);
                     securityCoordinator.BlockAndReport(result);
@@ -67,7 +74,7 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static void CheckPathParams(this Security security, HttpContext context, Span span, IDictionary<string, object> pathParams)
+    internal static void CheckPathParamsAndSessionId(this Security security, HttpContext context, Span span, IDictionary<string, object> pathParams)
     {
         if (security.AppsecEnabled)
         {
@@ -76,22 +83,24 @@ internal static class SecurityCoordinatorHelpers
             {
                 var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.BlockAndReport(result);
-            }
-        }
-    }
+                IResult? result;
+                // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
+                var sessionFeature = context.Features[SessionFeature];
+                Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature? sessionFeatureProxy = null;
+                if (sessionFeature is not null)
+                {
+                    sessionFeatureProxy = sessionFeature.DuckCast<ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature>();
+                }
 
-    internal static void CheckUser(this Security security, HttpContext context, Span span, string userId)
-    {
-        if (security.AppsecEnabled)
-        {
-            var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.IsBlocked)
-            {
-                var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
-                var args = new Dictionary<string, object> { { AddressesConstants.UserId, userId } };
-                var result = securityCoordinator.RunWaf(args);
+                if (sessionFeatureProxy?.Session?.IsAvailable == true)
+                {
+                    result = securityCoordinator.RunWaf(args, sessionId: sessionFeatureProxy.Session.Id);
+                }
+                else
+                {
+                    result = securityCoordinator.RunWaf(args);
+                }
+
                 securityCoordinator.BlockAndReport(result);
             }
         }

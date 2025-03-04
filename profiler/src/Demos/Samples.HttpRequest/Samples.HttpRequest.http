@@ -1,0 +1,6 @@
+@Samples.HttpRequest_HostAddress = http://localhost:5148
+
+GET {{Samples.HttpRequest_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

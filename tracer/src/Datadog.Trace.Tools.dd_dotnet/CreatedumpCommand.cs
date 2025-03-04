@@ -522,7 +522,7 @@ internal class CreatedumpCommand : Command
 
             try
             {
-                crashReport.AddTag(0x1, 0x1);
+                crashReport.Panic();
             }
             catch
             {
@@ -586,13 +586,17 @@ internal class CreatedumpCommand : Command
                 "System.InvalidProgramException",
                 "System.MissingFieldException",
                 "System.MissingMemberException",
-                "System.BadImageFormatException",
-                "System.TypeLoadException"
+                "System.BadImageFormatException"
             };
 
             if (exceptionType.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase) || suspiciousExceptionTypes.Contains(exceptionType))
             {
                 isSuspicious = true;
+            }
+            else if (exceptionType == "System.TypeLoadException")
+            {
+                isSuspicious = exception.Message?.Contains("datadog", StringComparison.OrdinalIgnoreCase) == true
+                    || exception.StackTrace.Any(f => f.Method != null && IsMethodSuspicious(f.Method));
             }
         }
 

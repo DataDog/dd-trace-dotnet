@@ -1,6 +1,11 @@
 # dd-trace-dotnet/profiler
 
-This folder contains the source code for the Datadog .NET APM Profiler. The .NET Profiler runs in your application process to collect managed threads call stacks related to wall time, CPU consumption, and exceptions.
+This folder contains the source code for the Datadog .NET APM Profiler. The .NET Profiler runs in your application process to collect managed threads call stacks related to wall time, CPU consumption, exceptions, lock contention and allocations. Read the following posts explaining implementation details:
+
+- [Architecture and interations with the .NET CLR](https://www.datadoghq.com/blog/engineering/dotnet-continuous-profiler/)
+- [CPU and walltime profiling](https://www.datadoghq.com/blog/engineering/dotnet-continuous-profiler-part-2/)
+- [Exception and lock contention](https://www.datadoghq.com/blog/engineering/dotnet-continuous-profiler-part-3/)
+- [Memory usage profiling](https://www.datadoghq.com/blog/engineering/dotnet-continuous-profiler-part-4/)
 
 ## Installation and usage
 
@@ -15,7 +20,7 @@ You can develop the profiler on various environments.
 ### Windows
 
 #### Setup and minimum requirements
-- [Visual Studio 2019/2022](https://visualstudio.microsoft.com/downloads/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/)
   - Workloads
     - Desktop development with C++
     - .NET desktop development
@@ -38,12 +43,25 @@ Go to the Tracer folder and use the NUKE build.cmd script
 
 Note: build Release binaries by default; use `--buildConfiguration Debug` for debug build
 
+#### Debugging with Visual Studio
+In the generation solution `dd-trace-dotnet\Datadog.Profiler.sln`, look at the C# projects under the Demos folder for specific scenarios:
+- **Samples.BuggyBits**: web app updated from Tess Ferrandez [repository](https://github.com/TessFerrandez/BuggyBits) that implements anti-patterns suc has too many allocations/exceptions, memory leak or outgoing HTTP requests  
+- **Samples.Computer01**: contains simple scenarios for end to end tests in worse case situations
+
+In both cases, the `Program.cs` file contains the list of scenarios. When you want to debug a list of scenarios, OR the corresponding enumeration values and add it after `"CommandLineArgs": --scenario` it in the `Properties\LaunchSettings.json` file.
+
+As a final step, enable the profiler you would like to debug by setting the corresponding `DD_PROFILING_xxx_ENABLED=1`
+
+Note:
+- the .pprof files are generated in the folder given by the `DD_INTERNAL_PROFILING_OUTPUT_DIR` environment variable
+- the log files are stored in the `C:\ProgramData\Datadog .NET Tracer\logs` folder
+
 ### Linux
 
 #### Minimun requirements
 
 To build C# projects
-- [Install .NET 5.0 SDK](https://docs.microsoft.com/en-us/dotnet/core/install/linux)
+- [Install the latest .NET SDK](https://docs.microsoft.com/en-us/dotnet/core/install/linux)
 
 To build C++ projects
 - Clang >= 9.0 (recommended)
@@ -69,4 +87,4 @@ make -j
 ctest
 ```
 
-Note: the clang compiler often find errors that are not seen by Visual Studio
+Note: the clang compiler often finds errors that are not detected by Visual Studio

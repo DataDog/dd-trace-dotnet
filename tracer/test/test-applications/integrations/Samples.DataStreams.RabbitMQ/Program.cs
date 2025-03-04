@@ -28,8 +28,13 @@ namespace Samples.DataStreams.RabbitMQ
             await SampleHelpers.WaitForDiscoveryService();
 
             var factory = new ConnectionFactory() { HostName = Host };
+#if RABBITMQ_7_0
+            using var connection = await factory.CreateConnectionAsync();
+            using var model = await connection.CreateChannelAsync();
+#else
             using var connection = factory.CreateConnection();
             using var model = connection.CreateModel();
+#endif
 
             // This should create 4 separate Rabbit Pipeline:
             // 1. default exchange pipeline:
@@ -50,30 +55,163 @@ namespace Samples.DataStreams.RabbitMQ
             //        (direction:in, topic:FanoutQueue2)
 
             // produce (default exchange)
-            PublishMessageToDefaultExchange(model);
+            await PublishMessageToDefaultExchange(model);
 
             // produce (direct exchange)
-            List<string> directQueues = PublishMessageToDirectExchange(model);
+            var directQueues = await PublishMessageToDirectExchange(model);
 
             // produce (fanout exchange)
-            List<string> fanoutQueues = PublishMessageToFanoutExchange(model);
+            var fanoutQueues = await PublishMessageToFanoutExchange(model);
 
             // produce (topic exchange)
-            List<string> topicQueues = PublishMessageToTopicExchange(model);
+            var topicQueues = await PublishMessageToTopicExchange(model);
 
-            GetMessage(model, DefaultQueue);
+            await GetMessage(model, DefaultQueue);
             foreach (var queue in directQueues) {
-                GetMessage(model, queue);
+                await GetMessage(model, queue);
             }
             foreach (var queue in topicQueues) {
-                GetMessage(model, queue);
+                await GetMessage(model, queue);
             }
             foreach (var queue in fanoutQueues) {
-                GetMessage(model, queue);
+                await GetMessage(model, queue);
             }
         }
 
-        private static void PublishMessageToDefaultExchange(IModel model)
+#if RABBITMQ_7_0
+        private static async Task PublishMessageToDefaultExchange(IChannel model)
+        {
+            // Atomically binded to default exchange with routing key of the same name
+            await model.QueueDeclareAsync(queue: DefaultQueue,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueuePurgeAsync(DefaultQueue);
+
+            await model.BasicPublishAsync(
+                // no exchange, aka default
+                "",
+                // routing key === queue name
+                DefaultQueue,
+                Encoding.UTF8.GetBytes(Message));
+
+            Console.WriteLine($"[Sent] {Message} to {DefaultQueue} in default exchange.");
+        }
+
+        private static async Task<List<string>> PublishMessageToDirectExchange(IChannel model)
+        {
+            await model.ExchangeDeclareAsync(DirectExchange, "direct");
+            await model.QueueDeclareAsync(queue: DirectQueue1,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueBindAsync(DirectQueue1, DirectExchange, DirectRoutingKey);
+            await model.QueuePurgeAsync(DirectQueue1);
+
+            await model.BasicPublishAsync(exchange: DirectExchange,
+                               routingKey: DirectRoutingKey,
+                               body: Encoding.UTF8.GetBytes(Message));
+
+            Console.WriteLine($"[Sent] {Message} to {DirectExchange}, using routing key {DirectRoutingKey}.");
+            List<string> output = new List<string>();
+            output.Add(DirectQueue1);
+            return output;
+        }
+
+        private static async Task<List<string>> PublishMessageToFanoutExchange(IChannel model)
+        {
+            await model.ExchangeDeclareAsync(FanoutExchange, "fanout");
+            await model.QueueDeclareAsync(queue: FanoutQueue1,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueDeclareAsync(queue: FanoutQueue2,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueDeclareAsync(queue: FanoutQueue3,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueBindAsync(FanoutQueue1, FanoutExchange, "");
+            await model.QueueBindAsync(FanoutQueue2, FanoutExchange, "");
+            await model.QueueBindAsync(FanoutQueue3, FanoutExchange, "");
+            await model.QueuePurgeAsync(FanoutQueue1);
+            await model.QueuePurgeAsync(FanoutQueue2);
+            await model.QueuePurgeAsync(FanoutQueue3);
+
+            await model.BasicPublishAsync(exchange: FanoutExchange,
+                               routingKey: string.Empty,
+                               body: Encoding.UTF8.GetBytes(Message));
+
+            Console.WriteLine($"[Sent] {Message} to {FanoutExchange}, a Fanout exchange.");
+            List<string> output = new List<string>();
+            output.Add(FanoutQueue1);
+            output.Add(FanoutQueue2);
+            output.Add(FanoutQueue3);
+            return output;
+        }
+
+        private static async Task<List<string>> PublishMessageToTopicExchange(IChannel model)
+        {
+            await model.ExchangeDeclareAsync(TopicExchange, "topic");
+            await model.QueueDeclareAsync(queue: TopicQueue1,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueDeclareAsync(queue: TopicQueue2,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueDeclareAsync(queue: TopicQueue3,
+                               durable: false,
+                               exclusive: false,
+                               autoDelete: false,
+                               arguments: null);
+            await model.QueueBindAsync(TopicQueue1, TopicExchange, "test.topic.*.cake");
+            await model.QueueBindAsync(TopicQueue2, TopicExchange, "test.topic.vanilla.*");
+            await model.QueueBindAsync(TopicQueue3, TopicExchange, "test.topic.chocolate.*");
+            await model.QueuePurgeAsync(TopicQueue1);
+            await model.QueuePurgeAsync(TopicQueue2);
+            await model.QueuePurgeAsync(TopicQueue3);
+
+            // Routes to queue1 and queue3.
+            await model.BasicPublishAsync(exchange: TopicExchange,
+                               routingKey: "test.topic.chocolate.cake",
+                               body: Encoding.UTF8.GetBytes(Message));
+            // Routes to queue2.
+            await model.BasicPublishAsync(exchange: TopicExchange,
+                               routingKey: "test.topic.vanilla.icecream",
+                               body: Encoding.UTF8.GetBytes(Message));
+
+            Console.WriteLine($"[Sent] {Message} to {TopicExchange}, a Topic exchange.");
+            List<string> output = new List<string>();
+            output.Add(TopicQueue1);
+            output.Add(TopicQueue2);
+            output.Add(TopicQueue3);
+            return output;
+        }
+
+        private static async Task<string> GetMessage(IChannel model, string queue)
+        {
+            var result = await model.BasicGetAsync(queue, true);
+#if RABBITMQ_6_0
+            var message = Encoding.UTF8.GetString(result.Body.ToArray());
+#else
+            var message =  Encoding.UTF8.GetString(result.Body);
+#endif
+            Console.WriteLine($"[Received] {message} from {queue}");
+            return message;
+        }
+#else
+        private static Task PublishMessageToDefaultExchange(IModel model)
         {
             // Atomically binded to default exchange with routing key of the same name
             model.QueueDeclare(queue: DefaultQueue,
@@ -92,9 +230,10 @@ namespace Samples.DataStreams.RabbitMQ
                 Encoding.UTF8.GetBytes(Message));
             
             Console.WriteLine($"[Sent] {Message} to {DefaultQueue} in default exchange.");
+            return Task.CompletedTask;
         }
 
-        private static List<string> PublishMessageToDirectExchange(IModel model)
+        private static Task<List<string>> PublishMessageToDirectExchange(IModel model)
         {
             model.ExchangeDeclare(DirectExchange, "direct");
             model.QueueDeclare(queue: DirectQueue1,
@@ -113,10 +252,10 @@ namespace Samples.DataStreams.RabbitMQ
             Console.WriteLine($"[Sent] {Message} to {DirectExchange}, using routing key {DirectRoutingKey}.");
             List<string> output = new List<string>();
             output.Add(DirectQueue1);
-            return output;
+            return Task.FromResult(output);
         }
 
-        private static List<string> PublishMessageToFanoutExchange(IModel model)
+        private static Task<List<string>> PublishMessageToFanoutExchange(IModel model)
         {
             model.ExchangeDeclare(FanoutExchange, "fanout");
             model.QueueDeclare(queue: FanoutQueue1,
@@ -151,10 +290,10 @@ namespace Samples.DataStreams.RabbitMQ
             output.Add(FanoutQueue1);
             output.Add(FanoutQueue2);
             output.Add(FanoutQueue3);
-            return output;
+            return Task.FromResult(output);
         }
 
-        private static List<string> PublishMessageToTopicExchange(IModel model)
+        private static Task<List<string>> PublishMessageToTopicExchange(IModel model)
         {
             model.ExchangeDeclare(TopicExchange, "topic");
             model.QueueDeclare(queue: TopicQueue1,
@@ -195,10 +334,10 @@ namespace Samples.DataStreams.RabbitMQ
             output.Add(TopicQueue1);
             output.Add(TopicQueue2);
             output.Add(TopicQueue3);
-            return output;
+            return Task.FromResult(output);
         }
 
-        private static string GetMessage(IModel model, string queue)
+        private static Task<string> GetMessage(IModel model, string queue)
         {
             var result = model.BasicGet(queue, true);
 #if RABBITMQ_6_0
@@ -207,7 +346,8 @@ namespace Samples.DataStreams.RabbitMQ
             var message =  Encoding.UTF8.GetString(result.Body);
 #endif
             Console.WriteLine($"[Received] {message} from {queue}");
-            return message;
+            return Task.FromResult(message);
         }
+#endif
     }
 }

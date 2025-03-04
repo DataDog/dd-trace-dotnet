@@ -63,7 +63,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
 
                 module.Close();
                 // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
-                CIVisibility.Close();
+                TestOptimization.Instance.Close();
 
                 break;
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is { } suite:

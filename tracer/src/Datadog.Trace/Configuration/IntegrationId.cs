@@ -37,10 +37,12 @@ namespace Datadog.Trace.Configuration
         Msmq,
         Kafka,
         CosmosDb,
+        AwsS3,
         AwsSdk,
         AwsSqs,
         AwsSns,
         AwsEventBridge,
+        AwsStepFunctions,
         AwsLambda,
         ILogger,
         Aerospike,
@@ -83,6 +85,7 @@ namespace Datadog.Trace.Configuration
         DirectoryListingLeak,
         SessionTimeout,
         DatadogTraceManual,
-        EmailHtmlInjection
+        EmailHtmlInjection,
+        Protobuf
     }
 }

@@ -218,10 +218,12 @@ internal static class MetricTags
         [Description("integration_name:msmq")]Msmq,
         [Description("integration_name:kafka")]Kafka,
         [Description("integration_name:cosmosdb")]CosmosDb,
+        [Description("integration_name:awss3")]AwsS3,
         [Description("integration_name:awssdk")]AwsSdk,
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
         [Description("integration_name:awseventbridge")]AwsEventBridge,
+        [Description("integration_name:awsstepfunctions")]AwsStepFunctions,
         [Description("integration_name:ilogger")]ILogger,
         [Description("integration_name:aerospike")]Aerospike,
         [Description("integration_name:azurefunctions")]AzureFunctions,
@@ -239,7 +241,7 @@ internal static class MetricTags
         [Description("integration_name:process")]Process,
         [Description("integration_name:hashalgorithm")]HashAlgorithm,
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
-        [Description("integration_name:opentelemetry")]OpenTelemetry,
+        [Description("integration_name:otel")]OpenTelemetry, // Note: The naming of this tag value breaks the convention of using the integration name to use a standardized value
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
@@ -263,7 +265,8 @@ internal static class MetricTags
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
-        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection
+        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
+        [Description("integration_name:protobuf")] Protobuf
     }
 
     public enum InstrumentationError
@@ -286,6 +289,12 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
+    public enum WafStatus
+    {
+        [Description("waf_version;event_rules_version;success:true")] Success,
+        [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
     [EnumExtensions]
     public enum RaspRuleType
     {
@@ -304,7 +313,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSources
+    public enum IastSourceType
     {
         [Description("source_type:http.request.body")] RequestBody = 0,
         [Description("source_type:http.request.path")] RequestPath = 1,
@@ -323,7 +332,7 @@ internal static class MetricTags
     }
 
     [EnumExtensions]
-    public enum IastInstrumentedSinks
+    public enum IastVulnerabilityType
     {
         [Description("vulnerability_type:none")] None = 0,
         [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
@@ -389,10 +398,17 @@ internal static class MetricTags
         [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
         [Description("event_type:suite")] Suite,
         [Description("event_type:module")] Module,
-        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
-        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+        // ...
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi_WithoutAgentlessLog,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi_WithoutAgentlessLog,
+        // ...
+        [Description("event_type:session;agentless_log_submission_enabled")] Session_NoCodeOwner_IsSupportedCi_WithAgentlessLog,
+        [Description("event_type:session;is_unsupported_ci;agentless_log_submission_enabled")] Session_NoCodeOwner_UnsupportedCi_WithAgentlessLog,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci;agentless_log_submission_enabled")] Session_HasCodeOwner_UnsupportedCi_WithAgentlessLog,
+        [Description("event_type:session;has_codeowner;agentless_log_submission_enabled")] Session_HasCodeOwner_IsSupportedCi_WithAgentlessLog,
+        // ...
         [Description("event_type:test;is_new:true")] Test_EFDTestIsNew,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow")] Test_EFDTestIsNew_EFDTestAbortSlow,
         [Description("event_type:test;browser_driver:selenium")] Test_BrowserDriverSelenium,
@@ -401,6 +417,13 @@ internal static class MetricTags
         [Description("event_type:test;browser_driver:selenium;is_rum:true")] Test_BrowserDriverSelenium_IsRum,
         [Description("event_type:test;is_new:true;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_BrowserDriverSelenium_IsRum,
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
+    }
+
+    public enum CIVisibilityTestingEventTypeRetryReason
+    {
+        [Description("")] None,
+        [Description("retry_reason:efd")] EarlyFlakeDetection,
+        [Description("retry_reason:atr")] AutomaticTestRetry,
     }
 
     public enum CIVisibilityCoverageLibrary
@@ -457,6 +480,7 @@ internal static class MetricTags
         [Description("command:get_local_commits")] GetLocalCommits,
         [Description("command:get_objects")] GetObjects,
         [Description("command:pack_objects")] PackObjects,
+        [Description("command:diff")] Diff,
     }
 
     public enum CIVisibilityExitCodes
@@ -471,16 +495,34 @@ internal static class MetricTags
         [Description("exit_code:129")] EC129,
     }
 
-    public enum CIVisibilityITRSettingsResponse
+    public enum CIVisibilitySettingsResponse_CoverageFeature
     {
-        [Description("")] CoverageDisabled_ItrSkipDisabled,
-        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
-        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
-        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
-        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled,
+        [Description("coverage_enabled:true")] Enabled,
+        [Description("coverage_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_ItrSkippingFeature
+    {
+        [Description("itrskip_enabled:true")] Enabled,
+        [Description("itrskip_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature
+    {
+        [Description("early_flake_detection_enabled:true")] Enabled,
+        [Description("early_flake_detection_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_FlakyTestRetriesFeature
+    {
+        [Description("flaky_test_retries_enabled:true")] Enabled,
+        [Description("flaky_test_retries_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_KnownTestsFeature
+    {
+        [Description("known_tests_enabled:true")] Enabled,
+        [Description("known_tests_enabled:false")] Disabled,
     }
 
     public enum CIVisibilityRequestCompressed

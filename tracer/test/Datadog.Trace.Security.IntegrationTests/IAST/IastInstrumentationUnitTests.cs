@@ -22,10 +22,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
+using Amazon.SimpleEmail;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Equivalency.Tracing;
+using MimeKit;
 using Xunit;
 using Xunit.Abstractions;
 using DirectoryEntry = System.DirectoryServices.DirectoryEntry;
@@ -151,6 +153,12 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(SmtpClient), "Send", new[] { "Void Send(System.String, System.String, System.String, System.String)" }, true)]
     [InlineData(typeof(SmtpClient), "SendAsync", new[] { "Void SendAsync(System.String, System.String, System.String, System.String, System.Object)" }, true)]
     [InlineData(typeof(SmtpClient), "SendMailAsync", new[] { "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String, System.Threading.CancellationToken)", "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String)" }, true)]
+#if NETFRAMEWORK
+    [InlineData(typeof(AmazonSimpleEmailServiceClient), "SendEmail", null, true)]
+#endif
+    [InlineData(typeof(AmazonSimpleEmailServiceClient), "SendEmailAsync", null, true)]
+    [InlineData(typeof(TextPart), "SetText", null, false)]
+    [InlineData(typeof(TextPart), "set_Text", null, false)]
 #if NET6_0_OR_GREATER
     [InlineData(typeof(DefaultInterpolatedStringHandler), null, new[] { "Void AppendFormatted(System.ReadOnlySpan`1[System.Char], Int32, System.String)" }, true)]
 #endif
@@ -293,6 +301,8 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(Extensions))]
     [InlineData(typeof(XPathExpression))]
     [InlineData(typeof(SmtpClient), new[] { "System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])]" })]
+    [InlineData(typeof(AmazonSimpleEmailServiceClient))]
+    [InlineData(typeof(TextPart))]
     [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
 #if !NETFRAMEWORK
 #if NET9_0_OR_GREATER
@@ -373,6 +383,14 @@ public class IastInstrumentationUnitTests : TestHelper
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
+
+            var securityControlsConfig = """
+                INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);
+                INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;
+                      SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)
+                """;
+            SetEnvironmentVariable("DD_IAST_SECURITY_CONTROLS_CONFIGURATION", securityControlsConfig);
+
             ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }

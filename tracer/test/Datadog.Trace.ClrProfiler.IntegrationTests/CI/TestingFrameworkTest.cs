@@ -1,7 +1,8 @@
-﻿// <copyright file="TestingFrameworkTest.cs" company="Datadog">
+// <copyright file="TestingFrameworkTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -128,7 +129,7 @@ public abstract class TestingFrameworkTest : TestHelper
         AssertTargetSpanExists(targetSpan, CommonTags.RuntimeArchitecture);
         AssertTargetSpanExists(targetSpan, CommonTags.OSArchitecture);
         AssertTargetSpanExists(targetSpan, CommonTags.OSPlatform);
-        AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
+        AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, TestOptimization.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty);
     }
 
     protected virtual void CheckOriginTag(MockSpan targetSpan)
@@ -218,29 +219,30 @@ public abstract class TestingFrameworkTest : TestHelper
     protected void SetCIEnvironmentValues()
     {
         var current = GitInfo.GetCurrent();
-        var ciDictionaryValues = new Dictionary<string, string>
-        {
-            [CIEnvironmentValues.Constants.AzureTFBuild] = "1",
-            [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
-            [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
-            [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
-            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
-            [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
-            [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
-            [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",
-            [CIEnvironmentValues.Constants.AzureSystemJobDisplayName] = "JobDisplayName",
-            [CIEnvironmentValues.Constants.AzureSystemTaskInstanceId] = "TaskInstanceId",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureBuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
-            [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceBranch] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceBranch] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceBranchName] = "main",
-            [CIEnvironmentValues.Constants.AzureBuildSourceVersionMessage] = "Fake commit for testing",
-            [CIEnvironmentValues.Constants.AzureBuildRequestedForId] = "AuthorName",
-            [CIEnvironmentValues.Constants.AzureBuildRequestedForEmail] = "author@company.com",
-        };
+        var ciDictionaryValues = DefineCIEnvironmentValues(
+            new Dictionary<string, string>
+            {
+                [CIEnvironmentValues.Constants.AzureTFBuild] = "1",
+                [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
+                [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
+                [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
+                [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
+                [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
+                [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
+                [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",
+                [CIEnvironmentValues.Constants.AzureSystemJobDisplayName] = "JobDisplayName",
+                [CIEnvironmentValues.Constants.AzureSystemTaskInstanceId] = "TaskInstanceId",
+                [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+                [CIEnvironmentValues.Constants.AzureBuildRepositoryUri] = "git@github.com:DataDog/dd-trace-dotnet.git",
+                [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceCommitId] = "3245605c3d1edc67226d725799ee969c71f7632b",
+                [CIEnvironmentValues.Constants.AzureBuildSourceVersion] = "3245605c3d1edc67226d725799ee969c71f7632b",
+                [CIEnvironmentValues.Constants.AzureSystemPullRequestSourceBranch] = "main",
+                [CIEnvironmentValues.Constants.AzureBuildSourceBranch] = "main",
+                [CIEnvironmentValues.Constants.AzureBuildSourceBranchName] = "main",
+                [CIEnvironmentValues.Constants.AzureBuildSourceVersionMessage] = "Fake commit for testing",
+                [CIEnvironmentValues.Constants.AzureBuildRequestedForId] = "AuthorName",
+                [CIEnvironmentValues.Constants.AzureBuildRequestedForEmail] = "author@company.com",
+            });
 
         foreach (var item in ciDictionaryValues)
         {
@@ -248,5 +250,10 @@ public abstract class TestingFrameworkTest : TestHelper
         }
 
         CIValues = CIEnvironmentValues.Create(ciDictionaryValues);
+    }
+
+    protected virtual Dictionary<string, string> DefineCIEnvironmentValues(Dictionary<string, string> values)
+    {
+        return values;
     }
 }

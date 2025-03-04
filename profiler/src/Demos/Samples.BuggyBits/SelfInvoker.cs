@@ -183,6 +183,11 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/Products/IndexSlow");
                 }
+
+                if ((_scenario & Scenario.Redirect) == Scenario.Redirect)
+                {
+                    urls.Add($"{rootUrl}/CompanyInformation");
+                }
             }
 
             return urls;

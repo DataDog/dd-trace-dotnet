@@ -140,4 +140,19 @@ internal static class TestTags
     /// Test command working directory
     /// </summary>
     public const string CommandWorkingDirectory = "test.working_directory";
+
+    /// <summary>
+    /// Test is new flag
+    /// </summary>
+    public const string TestIsNew = "test.is_new";
+
+    /// <summary>
+    /// Test is retry flag
+    /// </summary>
+    public const string TestIsRetry = "test.is_retry";
+
+    /// <summary>
+    /// Test retry reason
+    /// </summary>
+    public const string TestRetryReason = "test.retry_reason";
 }

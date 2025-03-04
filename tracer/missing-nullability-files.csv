@@ -138,7 +138,6 @@ src/Datadog.Trace/HttpOverStreams/HttpMessage.cs
 src/Datadog.Trace/HttpOverStreams/HttpRequest.cs
 src/Datadog.Trace/HttpOverStreams/HttpResponse.cs
 src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
-src/Datadog.Trace/Iast/Iast.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
@@ -227,7 +226,6 @@ src/Datadog.Trace/Util/ArraySlice.cs
 src/Datadog.Trace/Util/AsyncUtil.cs
 src/Datadog.Trace/Util/Clock.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
-src/Datadog.Trace/Util/FnvHash64.cs
 src/Datadog.Trace/Util/IClock.cs
 src/Datadog.Trace/Util/IRandomIdGenerator.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
@@ -329,15 +327,12 @@ src/Datadog.Trace/Debugger/Snapshots/DebuggerSnapshotSerializer.UnreachableLocal
 src/Datadog.Trace/Debugger/Snapshots/ExceptionSnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/LazySnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/OldStyleTupleSnapshotSerializerFieldsAndPropsSelector.cs
-src/Datadog.Trace/Debugger/Snapshots/Redaction.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotPruner.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSummary.cs
 src/Datadog.Trace/Debugger/Snapshots/TaskSnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Headers/Ip/ExtractedHeadersAndIpInfos.cs
-src/Datadog.Trace/Headers/Ip/IpExtractor.cs
 src/Datadog.Trace/Headers/Ip/IpInfo.cs
-src/Datadog.Trace/Headers/Ip/RequestIpExtractor.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/BufferContent.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/StreamContent.cs
 src/Datadog.Trace/Iast/Analyzers/UserStringInterop.cs
@@ -602,12 +597,9 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/HotChocol
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IError.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IExecutionResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IOperationContext.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IOperationContextV13.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/NameStringProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/OperationTypeProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/PreparedOperationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegrationV5AndV7.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/GraphQLCommon.cs
@@ -657,7 +649,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Http/HttpClient/SocketsHttpHan
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Http/HttpClient/WinHttpHandler/WinHttpHandlerIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmission/IExternalScopeProvider.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/DirectSubmission/ILoggerFactory.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/DatadogLoggingScope.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerExternalScopeProviderForEachScopeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerFactoryScopeProviderForEachScopeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Logging/ILogger/LogsInjection/LoggerIntegrationCommon.cs

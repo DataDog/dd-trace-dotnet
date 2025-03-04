@@ -116,6 +116,8 @@ namespace Datadog.Trace.Propagators
 
         public PropagatorType PropagatorType => PropagatorType.TraceContext;
 
+        public string DisplayName => "tracecontext";
+
         public void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
@@ -663,7 +665,8 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        private static bool TryGetSingle(IEnumerable<string?> values, out string value)
+        // internal for regression testing
+        internal static bool TryGetSingle(IEnumerable<string?> values, out string value)
         {
             // fast path for string[], List<string>, and others
             if (values is IReadOnlyList<string?> list)
@@ -681,28 +684,29 @@ namespace Datadog.Trace.Propagators
             return TryGetSingleRare(values, out value);
         }
 
-        private static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
+        // internal for regression testing
+        internal static bool TryGetSingleRare(IEnumerable<string?> values, out string value)
         {
-            value = string.Empty;
-            var hasValue = false;
+            using var enumerator = values.GetEnumerator();
 
-            foreach (var s in values)
+            if (!enumerator.MoveNext())
             {
-                if (!hasValue)
-                {
-                    // save first item
-                    value = s ?? string.Empty;
-                    hasValue = true;
-                }
-                else
-                {
-                    // we already saved the first item and there is a second one
-                    return false;
-                }
+                // there were no items
+                value = string.Empty;
+                return false;
             }
 
-            // there were no items
-            return false;
+            // store first value
+            value = enumerator.Current ?? string.Empty;
+
+            // is there a second value?
+            if (enumerator.MoveNext())
+            {
+                value = string.Empty;
+                return false; // more than one value
+            }
+
+            return true;
         }
 
         private static string TrimAndJoinStrings(IEnumerable<string?> values)

@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
         with:
           fetch-depth: 0
 
@@ -38,14 +38,34 @@ jobs:
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@v1
+      - uses: actions/setup-dotnet@71a4fd9b27383962fc5df13a9c871636b43199b4 # v1.10.0
         with:
-          dotnet-version: '9.0.100'
+          dotnet-version: '9.0.102'
 
       - name: "Configure Git Credentials"
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Check NuGet token validity"
+        run: |
+          echo "Downloading test package"
+          if ! curl -fL -o Datadog.Trace.Annotations.1.0.0.nupkg https://www.nuget.org/api/v2/package/Datadog.Trace.Annotations/1.0.0; then
+            echo "Download failed!" >&2
+            exit 1
+          fi
+
+          echo "Pushing package to test NuGet API key validity"
+          if ! dotnet nuget push "Datadog.Trace.Annotations.1.0.0.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate --source https://api.nuget.org/v3/index.json; then
+            echo "Push failed - the API key is likely not valid" >&2
+            echo "Create a new NuGet api key at nuget.org, with glob permissions * to push to the Datadog org and" >&2
+            echo "replace the NUGET_API_KEY GitHub secret with the new key at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+            echo "and then try running this release again" >&2
+            exit 1
+          fi
+          
+          echo "Push succeeded, cleaning up"
+          rm Datadog.Trace.Annotations.1.0.0.nupkg
 
       - name: "Check GitLab status"
         if: ${{ !github.event.inputs.ignore_gitlab_failures }}
@@ -84,7 +104,7 @@ jobs:
           git push origin "v${{steps.versions.outputs.full_version}}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1.0.0
         with:
           draft: true
           name: "${{steps.versions.outputs.full_version}}"

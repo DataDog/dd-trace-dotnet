@@ -11,10 +11,10 @@
     <None Remove="xunit.runner.json" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
     <Content Include="applicationHost.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
@@ -27,6 +27,8 @@
 
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
 
+    <PackageReference Include="Testcontainers" Version="3.6.0" />
+    <PackageReference Include="StrongNamer" Version="0.2.5" />  
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">

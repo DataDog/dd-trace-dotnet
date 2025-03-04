@@ -142,7 +142,7 @@ namespace Datadog.Trace.Debugger
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
                 DebuggerSnapshotSerializer.SetConfig(Settings);
-                Redaction.SetConfig(Settings);
+                Redaction.Instance.SetConfig(Settings.RedactedIdentifiers, Settings.RedactedExcludedIdentifiers, Settings.RedactedTypes);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 
                 await StartAsync().ConfigureAwait(false);

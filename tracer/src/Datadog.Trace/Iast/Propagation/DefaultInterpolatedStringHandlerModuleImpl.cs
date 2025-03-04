@@ -8,21 +8,28 @@
 #nullable enable
 
 using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Iast.Propagation;
 
 internal static class DefaultInterpolatedStringHandlerModuleImpl
 {
-    public static unsafe void Append(IntPtr target, string? value)
+    private const int MaxStackSize = 4;
+
+    [ThreadStatic]
+    private static Stack<object>? _taintedRefStructs;
+
+    private static Stack<object> TaintedRefStructs
+    {
+        get => _taintedRefStructs ??= new Stack<object>(MaxStackSize);
+    }
+
+    public static void Append(IntPtr target, string? value)
     {
         FullTaintIfAnyTainted(target, value);
     }
 
-    public static unsafe void FullTaintIfAnyTainted(IntPtr target, string? input)
+    public static void FullTaintIfAnyTainted(IntPtr target, string? input)
     {
         try
         {
@@ -48,10 +55,19 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return;
             }
 
-            var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
+            var rangesResult = new[] { new Range(tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
             if (!targetIsTainted)
             {
-                taintedObjects.Taint(target, rangesResult);
+                // Safe guard to avoid memory leak
+                if (TaintedRefStructs.Count >= MaxStackSize)
+                {
+                    TaintedRefStructs.Clear();
+                }
+
+                object targetObj = target;
+                TaintedRefStructs.Push(targetObj);
+
+                taintedObjects.Taint(targetObj, rangesResult);
             }
             else
             {
@@ -91,6 +107,11 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
 
             var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
             taintedObjects.Taint(result, [range]);
+            taintedSelf.Invalidate();
+            if (TaintedRefStructs.Count > 0)
+            {
+                TaintedRefStructs.Pop();
+            }
         }
         catch (Exception err)
         {

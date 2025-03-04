@@ -40,7 +40,7 @@ internal class CIFormatterResolver : IFormatterResolver
     private CIFormatterResolver()
     {
         _spanFormatter = SpanMessagePackFormatter.Instance;
-        _eventsPayloadFormatter = new CIEventMessagePackFormatter(CIVisibility.Settings.TracerSettings);
+        _eventsPayloadFormatter = new CIEventMessagePackFormatter(TestOptimization.Instance.Settings.TracerSettings);
         _eventFormatter = new IEventMessagePackFormatter();
         _ciVisibilityEventFormatter = new CIVisibilityEventMessagePackFormatter<Span>();
         _coveragePayloadFormatter = new CoveragePayloadMessagePackFormatter();

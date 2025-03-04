@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             try
             {
-                if (Redaction.ShouldRedact(variableName, type, out var redactionReason))
+                if (Redaction.Instance.ShouldRedact(variableName, type, out var redactionReason))
                 {
                     if (variableName != null)
                     {

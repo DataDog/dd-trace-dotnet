@@ -29,10 +29,10 @@ internal class RedactedErrorLogCollector
     private TaskCompletionSource<bool> _tcs = new(TaskOptions);
     private bool _isEnabled = true;
 
-    private ConcurrentDictionary<uint, int> _logCounts = new();
-    private ConcurrentDictionary<uint, int> _logCountsReserve = new();
+    private ConcurrentDictionary<LogKey, int> _logCounts = new();
+    private ConcurrentDictionary<LogKey, int> _logCountsReserve = new();
 
-    public List<List<LogMessageData>>? GetLogs()
+    public List<List<LogMessageData>>? GetLogs(string? tags = null)
     {
         // This method should only be called in a single-threaded loop
         List<List<LogMessageData>>? batches = null;
@@ -42,9 +42,10 @@ internal class RedactedErrorLogCollector
 
         while (_queue.TryDequeue(out var log))
         {
+            log.Tags = tags;
             var logSize = log.GetApproximateSerializationSize();
             // modify the message to add the final log count
-            var eventId = EventIdHash.Compute(log.Message, log.StackTrace);
+            var eventId = new LogKey(log.Message, log.StackTrace);
             if (logCounts.TryGetValue(eventId, out var count) && count > 1)
             {
                 log.Count = count;
@@ -91,9 +92,9 @@ internal class RedactedErrorLogCollector
     {
         if (Volatile.Read(ref _isEnabled))
         {
-            var eventId = EventIdHash.Compute(message, stackTrace);
+            var logKey = new LogKey(message, stackTrace);
             var logCounts = _logCounts;
-            var newCount = logCounts.AddOrUpdate(eventId, addValue: 1, updateValueFactory: static (_, prev) => prev + 1);
+            var newCount = logCounts.AddOrUpdate(logKey, addValue: 1, updateValueFactory: static (_, prev) => prev + 1);
             if (newCount != 1)
             {
                 // already have this log, so don't enqueue it again
@@ -142,5 +143,11 @@ internal class RedactedErrorLogCollector
         while (_queue.TryDequeue(out _))
         {
         }
+    }
+
+    private readonly record struct LogKey(string Message, string? StackTrace)
+    {
+        public readonly string Message = Message;
+        public readonly string? StackTrace = StackTrace;
     }
 }

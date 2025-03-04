@@ -16,7 +16,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, int increment = 1)
+    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeRetryReason tag3, int increment = 1)
     {
     }
 
@@ -80,7 +80,7 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_CoverageFeature tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature tag3, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature tag4, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature tag5, int increment = 1)
     {
     }
 
@@ -120,11 +120,23 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
     {
     }
 }

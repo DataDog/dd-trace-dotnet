@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task SubmitTraces(string packageVersion)
         {
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.3") : new Version(packageVersion);
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             List<MockSpan> spans = null;
             var expectedSpanCount = version.CompareTo(new Version("2.2.3")) <= 0 ? Pre224TestCount : Post224TestCount;
 
@@ -101,8 +101,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
                             // Remove EFD tags
-                            targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                            targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+                            targetSpan.Tags.Remove(TestTags.TestIsNew);
+                            targetSpan.Tags.Remove(TestTags.TestIsRetry);
 
                             // Remove user provided service tag
                             targetSpan.Tags.Remove(CommonTags.UserProvidedTestServiceTag);

@@ -209,7 +209,7 @@ internal partial class ProbeExpressionParser<T>
 
             var constantValue = constant.Value?.ToString();
 
-            if (Redaction.ShouldRedact(constantValue, constant.Type, out _))
+            if (Redaction.Instance.ShouldRedact(constantValue, constant.Type, out _))
             {
                 AddError(reader.Value?.ToString() ?? "N/A", "The property or field is redacted.");
                 return RedactedValue();
@@ -242,7 +242,7 @@ internal partial class ProbeExpressionParser<T>
 
         try
         {
-            if (Redaction.ShouldRedact(propertyOrFieldValue, propertyOrField.Type, out _))
+            if (Redaction.Instance.ShouldRedact(propertyOrFieldValue, propertyOrField.Type, out _))
             {
                 AddError($"{expression}.{propertyOrFieldValue}", "The property or field is redacted.");
                 return RedactedValue();

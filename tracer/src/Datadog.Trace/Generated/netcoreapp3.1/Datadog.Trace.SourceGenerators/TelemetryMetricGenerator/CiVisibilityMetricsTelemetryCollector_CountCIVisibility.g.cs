@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountCIVisibilityLength = 343;
+    private const int CountCIVisibilityLength = 610;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
@@ -62,86 +62,306 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner" }),
             // event_finished, index = 40
             new(new[] { "test_framework:xunit", "event_type:test" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_benchmark", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_benchmark", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:suite" }),
+            new(new[] { "test_framework:xunit", "event_type:suite", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:suite", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:module" }),
+            new(new[] { "test_framework:xunit", "event_type:module", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:module", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:session" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:session", "is_unsupported_ci" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "is_unsupported_ci" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "retry_reason:atr" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_new:true" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "browser_driver:selenium" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "browser_driver:selenium" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_benchmark", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_benchmark", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:suite" }),
+            new(new[] { "test_framework:nunit", "event_type:suite", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:suite", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:module" }),
+            new(new[] { "test_framework:nunit", "event_type:module", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:module", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:session" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:session", "is_unsupported_ci" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "is_unsupported_ci" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "retry_reason:atr" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_new:true" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "browser_driver:selenium" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "browser_driver:selenium" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_benchmark", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_benchmark", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:suite" }),
+            new(new[] { "test_framework:mstest", "event_type:suite", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:suite", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:module" }),
+            new(new[] { "test_framework:mstest", "event_type:module", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:module", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:session" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:session", "is_unsupported_ci" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "is_unsupported_ci" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "retry_reason:atr" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_new:true" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "browser_driver:selenium" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "browser_driver:selenium" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_benchmark", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_benchmark", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:suite" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:suite", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:suite", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:module" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:module", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:module", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:session" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "is_unsupported_ci" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "is_unsupported_ci" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "retry_reason:atr" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "browser_driver:selenium" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "browser_driver:selenium" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_benchmark", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_benchmark", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:suite" }),
+            new(new[] { "test_framework:unknown", "event_type:suite", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:suite", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:module" }),
+            new(new[] { "test_framework:unknown", "event_type:module", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:module", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:session" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:session", "is_unsupported_ci" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "is_unsupported_ci" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "is_unsupported_ci", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "retry_reason:atr" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "is_unsupported_ci", "agentless_log_submission_enabled", "retry_reason:atr" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "agentless_log_submission_enabled" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "agentless_log_submission_enabled", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_new:true" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "browser_driver:selenium" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "browser_driver:selenium" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
             new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true" }),
-            // code_coverage_started, index = 120
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:efd" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_new:true", "early_flake_detection_abort_reason:slow", "browser_driver:selenium", "is_rum:true", "retry_reason:atr" }),
+            // code_coverage_started, index = 340
             new(new[] { "test_framework:xunit", "library:custom" }),
             new(new[] { "test_framework:xunit", "library:unknown" }),
             new(new[] { "test_framework:nunit", "library:custom" }),
@@ -152,7 +372,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "test_framework:benchmarkdotnet", "library:unknown" }),
             new(new[] { "test_framework:unknown", "library:custom" }),
             new(new[] { "test_framework:unknown", "library:unknown" }),
-            // code_coverage_finished, index = 130
+            // code_coverage_finished, index = 350
             new(new[] { "test_framework:xunit", "library:custom" }),
             new(new[] { "test_framework:xunit", "library:unknown" }),
             new(new[] { "test_framework:nunit", "library:custom" }),
@@ -163,19 +383,19 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "test_framework:benchmarkdotnet", "library:unknown" }),
             new(new[] { "test_framework:unknown", "library:custom" }),
             new(new[] { "test_framework:unknown", "library:unknown" }),
-            // manual_api_events, index = 140
+            // manual_api_events, index = 360
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // events_enqueued_for_serialization, index = 144
+            // events_enqueued_for_serialization, index = 364
             new(null),
-            // endpoint_payload.requests, index = 145
+            // endpoint_payload.requests, index = 365
             new(new[] { "endpoint:test_cycle" }),
             new(new[] { "endpoint:test_cycle", "rq_compressed:true" }),
             new(new[] { "endpoint:code_coverage" }),
             new(new[] { "endpoint:code_coverage", "rq_compressed:true" }),
-            // endpoint_payload.requests_errors, index = 149
+            // endpoint_payload.requests_errors, index = 369
             new(new[] { "endpoint:test_cycle", "error_type:timeout" }),
             new(new[] { "endpoint:test_cycle", "error_type:network" }),
             new(new[] { "endpoint:test_cycle", "error_type:status_code" }),
@@ -198,10 +418,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "endpoint:code_coverage", "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "endpoint:code_coverage", "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "endpoint:code_coverage", "error_type:status_code_4xx_response", "status_code:429" }),
-            // endpoint_payload.dropped, index = 171
+            // endpoint_payload.dropped, index = 391
             new(new[] { "endpoint:test_cycle" }),
             new(new[] { "endpoint:code_coverage" }),
-            // git.command, index = 173
+            // git.command, index = 393
             new(new[] { "command:get_repository" }),
             new(new[] { "command:get_branch" }),
             new(new[] { "command:get_remote" }),
@@ -211,7 +431,8 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "command:get_local_commits" }),
             new(new[] { "command:get_objects" }),
             new(new[] { "command:pack_objects" }),
-            // git.command_errors, index = 182
+            new(new[] { "command:diff" }),
+            // git.command_errors, index = 403
             new(new[] { "command:get_repository", "exit_code:missing" }),
             new(new[] { "command:get_repository", "exit_code:unknown" }),
             new(new[] { "command:get_repository", "exit_code:-1" }),
@@ -284,10 +505,18 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "command:pack_objects", "exit_code:127" }),
             new(new[] { "command:pack_objects", "exit_code:128" }),
             new(new[] { "command:pack_objects", "exit_code:129" }),
-            // git_requests.search_commits, index = 254
+            new(new[] { "command:diff", "exit_code:missing" }),
+            new(new[] { "command:diff", "exit_code:unknown" }),
+            new(new[] { "command:diff", "exit_code:-1" }),
+            new(new[] { "command:diff", "exit_code:1" }),
+            new(new[] { "command:diff", "exit_code:2" }),
+            new(new[] { "command:diff", "exit_code:127" }),
+            new(new[] { "command:diff", "exit_code:128" }),
+            new(new[] { "command:diff", "exit_code:129" }),
+            // git_requests.search_commits, index = 483
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // git_requests.search_commits_errors, index = 256
+            // git_requests.search_commits_errors, index = 485
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -299,10 +528,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // git_requests.objects_pack, index = 267
+            // git_requests.objects_pack, index = 496
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // git_requests.objects_pack_errors, index = 269
+            // git_requests.objects_pack_errors, index = 498
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -314,10 +543,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // git_requests.settings, index = 280
+            // git_requests.settings, index = 509
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // git_requests.settings_errors, index = 282
+            // git_requests.settings_errors, index = 511
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -329,19 +558,43 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // git_requests.settings_response, index = 293
-            new(null),
-            new(new[] { "coverage_enabled" }),
-            new(new[] { "itrskip_enabled" }),
-            new(new[] { "coverage_enabled", "itrskip_enabled" }),
-            new(new[] { "early_flake_detection_enabled:true" }),
-            new(new[] { "coverage_enabled", "early_flake_detection_enabled:true" }),
-            new(new[] { "itrskip_enabled", "early_flake_detection_enabled:true" }),
-            new(new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled:true" }),
-            // itr_skippable_tests.request, index = 301
+            // git_requests.settings_response, index = 522
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:true", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:true", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:true", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true" }),
+            new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false" }),
+            // itr_skippable_tests.request, index = 554
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // itr_skippable_tests.request_errors, index = 303
+            // itr_skippable_tests.request_errors, index = 556
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -353,33 +606,33 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // itr_skippable_tests.response_tests, index = 314
+            // itr_skippable_tests.response_tests, index = 567
             new(null),
-            // itr_skippable_tests.response_suites, index = 315
+            // itr_skippable_tests.response_suites, index = 568
             new(null),
-            // itr_skipped, index = 316
+            // itr_skipped, index = 569
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_unskippable, index = 320
+            // itr_unskippable, index = 573
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_forced_run, index = 324
+            // itr_forced_run, index = 577
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // code_coverage.is_empty, index = 328
+            // code_coverage.is_empty, index = 581
             new(null),
-            // code_coverage.errors, index = 329
+            // code_coverage.errors, index = 582
             new(null),
-            // early_flake_detection.request, index = 330
+            // known_tests.request, index = 583
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // early_flake_detection.request_errors, index = 332
+            // known_tests.request_errors, index = 585
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -391,6 +644,23 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
+            // impacted_tests_detection.request, index = 596
+            new(null),
+            new(new[] { "rq_compressed:true" }),
+            // impacted_tests_detection.request_errors, index = 598
+            new(new[] { "error_type:timeout" }),
+            new(new[] { "error_type:network" }),
+            new(new[] { "error_type:status_code" }),
+            new(new[] { "error_type:status_code_4xx_response" }),
+            new(new[] { "error_type:status_code_5xx_response" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:400" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:401" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:403" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
+            // impacted_tests_detection.is_modified, index = 609
+            new(null),
         };
 
     /// <summary>
@@ -399,7 +669,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
-        = new int[]{ 40, 80, 10, 10, 4, 1, 4, 22, 2, 9, 72, 2, 11, 2, 11, 2, 11, 8, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, };
+        = new int[]{ 40, 300, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 32, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, };
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
@@ -407,166 +677,183 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, int increment = 1)
+    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeRetryReason tag3, int increment = 1)
     {
-        var index = 40 + ((int)tag1 * 16) + (int)tag2;
+        var index = 40 + ((int)tag1 * 60) + ((int)tag2 * 3) + (int)tag3;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageStarted(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
     {
-        var index = 120 + ((int)tag1 * 2) + (int)tag2;
+        var index = 340 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
     {
-        var index = 130 + ((int)tag1 * 2) + (int)tag2;
+        var index = 350 + ((int)tag1 * 2) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityManualApiEvent(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 140 + (int)tag;
+        var index = 360 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityEventsEnqueueForSerialization(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[144], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[364], increment);
     }
 
     public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpointAndCompression tag, int increment = 1)
     {
-        var index = 145 + (int)tag;
+        var index = 365 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityEndpointPayloadRequestsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag2, int increment = 1)
     {
-        var index = 149 + ((int)tag1 * 11) + (int)tag2;
+        var index = 369 + ((int)tag1 * 11) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityEndpointPayloadDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
     {
-        var index = 171 + (int)tag;
+        var index = 391 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitCommand(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, int increment = 1)
     {
-        var index = 173 + (int)tag;
+        var index = 393 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
     {
-        var index = 182 + ((int)tag1 * 8) + (int)tag2;
+        var index = 403 + ((int)tag1 * 8) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSearchCommits(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 254 + (int)tag;
+        var index = 483 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 256 + (int)tag;
+        var index = 485 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsObjectsPack(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 267 + (int)tag;
+        var index = 496 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 269 + (int)tag;
+        var index = 498 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettings(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 280 + (int)tag;
+        var index = 509 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 282 + (int)tag;
+        var index = 511 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
+    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_CoverageFeature tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature tag3, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature tag4, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature tag5, int increment = 1)
     {
-        var index = 293 + (int)tag;
+        var index = 522 + ((int)tag1 * 16) + ((int)tag2 * 8) + ((int)tag3 * 4) + ((int)tag4 * 2) + (int)tag5;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 301 + (int)tag;
+        var index = 554 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 303 + (int)tag;
+        var index = 556 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[314], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[567], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[315], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[568], increment);
     }
 
     public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 316 + (int)tag;
+        var index = 569 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 320 + (int)tag;
+        var index = 573 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 324 + (int)tag;
+        var index = 577 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[328], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[581], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[329], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[582], increment);
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 330 + (int)tag;
+        var index = 583 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
-    public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 332 + (int)tag;
+        var index = 585 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    {
+        var index = 596 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 598 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.CountCIVisibility[609], increment);
     }
 }

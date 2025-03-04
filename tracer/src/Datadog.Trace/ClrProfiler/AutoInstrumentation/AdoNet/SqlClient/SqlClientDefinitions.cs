@@ -73,7 +73,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     AssemblyName = "Microsoft.Data.SqlClient",
     TypeName = "Microsoft.Data.SqlClient.SqlCommand",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "5.*.*",
+    MaximumVersion = "6.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = "Microsoft.Data.SqlClient.SqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Microsoft.Data.SqlClient.SqlDataReader]",
@@ -115,12 +115,11 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
@@ -133,28 +132,26 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Microsoft.Data.SqlClient",
     TypeName = "Microsoft.Data.SqlClient.SqlDataReader",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "5.*.*",
+    MaximumVersion = "6.*.*",
     IntegrationName = nameof(IntegrationId.SqlClient),
     DataReaderType = TypeNames.DbDataReaderType,
     DataReaderTaskType = TypeNames.DbDataReaderTaskType,
     TargetMethodAttributes = new[]
     {
-        // string System.Data.Common.DbDataReader.GetString()
-        typeof(ReaderReadAttribute),
-        typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
-        typeof(ReaderGetStringAttribute),
-        typeof(ReaderGetValueAttribute),
+        typeof(IastReaderReadAttribute),
+        typeof(IastReaderReadAsyncAttribute),
+        typeof(IastReaderCloseAttribute),
+        typeof(IastReaderGetStringAttribute),
+        typeof(IastReaderGetValueAttribute),
     })]

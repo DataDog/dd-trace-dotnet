@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributionCIVisibility.cs" company="Datadog">
+// <copyright file="DistributionCIVisibility.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -88,18 +88,36 @@ internal enum DistributionCIVisibility
     [TelemetryMetric("code_coverage.files", isCommon: true, NS.CIVisibility)] CodeCoverageFiles,
 
     /// <summary>
-    /// The time it takes to get the response of the early flake detection endpoint request in ms by CI Visibility
+    /// The time it takes to get the response of the known tests endpoint request in ms by CI Visibility
     /// </summary>
-    [TelemetryMetric("early_flake_detection.request_ms", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestMs,
+    [TelemetryMetric("known_tests.request_ms", isCommon: true, NS.CIVisibility)]
+    KnownTestsRequestMs,
+
+    /// <summary>
+    /// The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityResponseCompressed>("known_tests.response_bytes", isCommon: true, NS.CIVisibility)]
+    KnownTestsResponseBytes,
+
+    /// <summary>
+    /// The number of tests received by the endpoint by CI Visibility
+    /// </summary>
+    [TelemetryMetric("known_tests.response_tests", isCommon: true, NS.CIVisibility)]
+    KnownTestsResponseTests,
+
+    /// <summary>
+    /// The time it takes to get the response of the impacted tests detection endpoint request in ms by CI Visibility
+    /// </summary>
+    [TelemetryMetric("impacted_tests_detection.request_ms", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionRequestMs,
 
     /// <summary>
     /// The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityResponseCompressed>
-        ("early_flake_detection.response_bytes", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionResponseBytes,
+        ("impacted_tests_detection.response_bytes", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionResponseBytes,
 
     /// <summary>
-    /// The number of bytes received by the endpoint by CI Visibility
+    /// The number of modified files received by the endpoint by CI Visibility
     /// </summary>
-    [TelemetryMetric("early_flake_detection.response_tests", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionResponseTests,
+    [TelemetryMetric("impacted_tests_detection.response_files", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionResponseFiles,
 }

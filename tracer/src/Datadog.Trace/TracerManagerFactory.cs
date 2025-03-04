@@ -150,8 +150,6 @@ namespace Datadog.Trace
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
 
-            SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract, settings.PropagationExtractFirstOnly);
-
             dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
             if (ShouldEnableRemoteConfiguration(settings))
@@ -227,7 +225,7 @@ namespace Datadog.Trace
             => settings.IsRemoteConfigurationAvailable;
 
         /// <summary>
-        ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.CITracerManager"/>
+        ///  Can be overriden to create a different <see cref="TracerManager"/>, e.g. <see cref="Ci.TestOptimizationTracerManager"/>
         /// </summary>
         protected virtual TracerManager CreateTracerManagerFrom(
             TracerSettings settings,

@@ -63,6 +63,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public ITestOutputHelper XUnitLogger => _output;
 
+        public string AppListenerPort => _appListenerPort;
+
         public static string GetApplicationOutputFolderPath(string appName)
         {
             var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";

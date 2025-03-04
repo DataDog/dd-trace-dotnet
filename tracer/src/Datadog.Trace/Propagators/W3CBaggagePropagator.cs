@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
+// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,6 +32,11 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
     //      ^           ^
     private const char KeyAndValueSeparator = '=';
 
+    // the standard W3C separator between the value and an optional list of properties
+    // "key1=value1,key2=value2;property;propertyKey=propertyValue"
+    //                         ^
+    private const char ValueAndPropertySeparator = ';';
+
     public static readonly W3CBaggagePropagator Instance = new();
 
     private W3CBaggagePropagator()
@@ -39,6 +44,8 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
     }
 
     public PropagatorType PropagatorType => PropagatorType.Baggage;
+
+    public string DisplayName => "baggage";
 
     public void Inject<TCarrier, TCarrierSetter>(
         PropagationContext context,
@@ -270,7 +277,22 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 continue;
             }
 
-            var value = Decode(span.Slice(separatorPosition + 1).Trim());
+            // Ignore everything starting with the first `;` character after the value.
+            // This begins the optional list of properties, as defined by the W3C spec,
+            // which is separate from the value. We do not support properties in our
+            // API so we will ignore it at this time.
+            var propertiesPosition = span.IndexOf(ValueAndPropertySeparator);
+            if (propertiesPosition >= 0 && propertiesPosition < separatorPosition)
+            {
+                // invalid, ';' character was found before the value token, e.g. "key;=value" or ";="
+                continue;
+            }
+
+            // If no ';' character is found, make sure we parse the remaining string, e.g. "key=value"
+            propertiesPosition = propertiesPosition == -1 ? span.Length : propertiesPosition;
+            var valuePosition = separatorPosition + 1;
+
+            var value = Decode(span.Slice(valuePosition, propertiesPosition - valuePosition).Trim());
 
             if (value.Length == 0)
             {

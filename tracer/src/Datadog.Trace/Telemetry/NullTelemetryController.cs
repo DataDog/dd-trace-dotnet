@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 
@@ -30,6 +31,10 @@ namespace Datadog.Trace.Telemetry
         }
 
         public void RecordProfilerSettings(Profiler profiler)
+        {
+        }
+
+        public void RecordTestOptimizationSettings(TestOptimizationSettings settings)
         {
         }
 

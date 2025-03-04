@@ -436,6 +436,16 @@ namespace Datadog.Trace
         internal const string RuleName = "rulename";
 
         /// <summary>
+        /// The bucket name associated with the AWS S3 span.
+        /// </summary>
+        internal const string BucketName = "bucketname";
+
+        /// <summary>
+        /// The object key associated with the AWS S3 span.
+        /// </summary>
+        internal const string ObjectKey = "objectkey";
+
+        /// <summary>
         /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
         internal const string StreamName = "streamname";
@@ -444,6 +454,11 @@ namespace Datadog.Trace
         /// The table name associated with the AWS SDK DynamoDB span.
         /// </summary>
         internal const string TableName = "tablename";
+
+        /// <summary>
+        /// The state machine name associated with the AWS SDK Step Functions span.
+        /// </summary>
+        internal const string StateMachineName = "statemachinename";
 
         /// <summary>
         /// Configures Trace Analytics.
@@ -716,6 +731,15 @@ namespace Datadog.Trace
         /// Marks a span as injected when DBM comment has the traceParent on it
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
+
+        // Data Streams Monitoring
+        internal const string SchemaDefinition = "schema.definition";
+        internal const string SchemaWeight = "schema.weight";
+        internal const string SchemaType = "schema.type";
+        internal const string SchemaId = "schema.id";
+        internal const string SchemaTopic = "schema.topic";
+        internal const string SchemaOperation = "schema.operation";
+        internal const string SchemaName = "schema.name";
 
         /// <summary>
         /// Holds the original value for Service when Service is overriden after span creation

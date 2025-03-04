@@ -61,12 +61,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 #pragma warning restore SA1202 // Elements should be ordered by access
 #pragma warning restore SA1401 // Fields should be private
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false, bool allowAutoRedirect = true)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
             _cookieContainer = new CookieContainer();
-            var handler = new HttpClientHandler();
+            var handler = new HttpClientHandler { AllowAutoRedirect = allowAutoRedirect };
             handler.CookieContainer = _cookieContainer;
             _httpClient = new HttpClient(handler);
             _shutdownPath = shutdownPath;
@@ -83,6 +83,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             _clearMetaStruct = clearMetaStruct;
             SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
+            // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
+            SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -114,10 +116,26 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.Remove("user-agent");
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
+        /// <summary>
+        /// Will call verify for this type of request and add the right scrubbers and right serialization methods
+        /// </summary>
+        /// <param name="agent">agent</param>
+        /// <param name="url">url</param>
+        /// <param name="body">body</param>
+        /// <param name="expectedSpans">expected spans</param>
+        /// <param name="spansPerRequest">spans per request</param>
+        /// <param name="settings">settings</param>
+        /// <param name="contentType">content type</param>
+        /// <param name="testInit">are we testing first spans at app start</param>
+        /// <param name="userAgent">user agent</param>
+        /// <param name="methodNameOverride">override the method name</param>
+        /// <param name="fileNameOverride">override the file name</param>
+        /// <param name="scrubCookiesFingerprint">only scrub session fingerprint part that changes every request. in some conditions we might want to scrub cookies fields and values, as an authenticated user/login might generate changing values at each request</param>
+        /// <returns>when it's finished</returns>
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null, bool scrubCookiesFingerprint = false)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
-            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride);
+            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride, scrubCookiesFingerprint: scrubCookiesFingerprint);
         }
 
         public void ScrubFingerprintHeaders(VerifySettings settings)
@@ -126,7 +144,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -189,6 +207,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecRaspWafDuration, "_dd.appsec.rasp.duration: 0.0");
             settings.AddRegexScrubber(AppSecRaspWafDurationWithBindings, "_dd.appsec.rasp.duration_ext: 0.0");
             settings.AddRegexScrubber(AppSecSpanIdRegex, "\"span_id\": XXX");
+            settings.ScrubSessionFingerprint(scrubCookiesFingerprint);
+
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
@@ -204,8 +224,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
             if (appsecSpans.Any())
             {
-                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
-                || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
+                appsecSpans.Should()
+                           .OnlyContain(
+                                s =>
+                                    (s.Metrics.ContainsKey("_dd.appsec.waf.duration")
+                                 && s.Metrics.ContainsKey("_dd.appsec.waf.duration_ext"))
+                                 || (s.Metrics.ContainsKey("_dd.appsec.rasp.duration")
+                                 && s.Metrics.ContainsKey("_dd.appsec.rasp.duration_ext")),
+                                "if waf has run, these metrics should be present and are not, has the waf really run?")
+                           .And.OnlyContain(
+                                s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]
+                                  || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"],
+                                "duration with encodings should be longer than duration for only a waf run");
             }
 
             if (string.IsNullOrEmpty(fileNameOverride))

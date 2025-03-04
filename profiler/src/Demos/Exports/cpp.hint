@@ -1,0 +1,2 @@
+#define EXPORTS_API __declspec(dllexport)
+#define EXPORTS_API __declspec(dllimport)

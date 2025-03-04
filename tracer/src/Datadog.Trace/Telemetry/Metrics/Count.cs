@@ -186,12 +186,12 @@ internal enum Count
     /// <summary>
     /// The number of times the waf is initialized
     /// </summary>
-    [TelemetryMetric("waf.init", isCommon: true, NS.ASM)] WafInit,
+    [TelemetryMetric<MetricTags.WafStatus>("waf.init", isCommon: true, NS.ASM)] WafInit,
 
     /// <summary>
     /// The number of times we reload the rules (startup + Remote Configuration)
     /// </summary>
-    [TelemetryMetric("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
+    [TelemetryMetric<MetricTags.WafStatus>("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
 
     /// <summary>
     /// Requests analyzed by ddwaf
@@ -234,7 +234,7 @@ internal enum Count
     /// <summary>
     /// Counts the number of source methods that have been called
     /// </summary>
-    [TelemetryMetric<MetricTags.IastInstrumentedSources>("executed.source", isCommon: true, NS.Iast)] IastExecutedSources,
+    [TelemetryMetric<MetricTags.IastSourceType>("executed.source", isCommon: true, NS.Iast)] IastExecutedSources,
 
     /// <summary>
     /// Counts the number of proopagation methods that have been called
@@ -244,11 +244,16 @@ internal enum Count
     /// <summary>
     /// Counts the number of sinks that have been called
     /// </summary>
-    [TelemetryMetric<MetricTags.IastInstrumentedSinks>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
+    [TelemetryMetric<MetricTags.IastVulnerabilityType>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
 
     /// <summary>
     /// Counts the number of tainted objects after a request
     /// </summary>
     [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,
-#endregion
+
+    /// <summary>
+    /// Counts the number of suppressed vulnerabilities by type
+    /// </summary>
+    [TelemetryMetric<MetricTags.IastVulnerabilityType>("suppressed.vulnerabilities", isCommon: true, NS.Iast)] IastSuppressedVulnerabilities,
+    #endregion
 }

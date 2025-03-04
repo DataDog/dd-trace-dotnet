@@ -24,11 +24,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             var tracer = Tracer.Instance;
             var headers = requestMessage.Headers;
-            Scope scope = null;
 
             if (IsTracingEnabled(headers, implementationIntegrationId))
             {
-                scope = ScopeFactory.CreateOutboundHttpScope(
+                var scope = ScopeFactory.CreateOutboundHttpScope(
                     tracer,
                     requestMessage.Method.Method,
                     requestMessage.RequestUri,
@@ -38,15 +37,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (scope is not null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
+
+                    // add propagation headers to the HTTP request
+                    var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
+
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
+                    return new CallTargetState(scope);
                 }
             }
 
-            // add propagation headers to the HTTP request
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            SpanContextPropagator.Instance.Inject(context, new HttpHeadersCollection(headers));
-
-            return scope is null ? CallTargetState.GetDefault() : new CallTargetState(scope);
+            return CallTargetState.GetDefault();
         }
 
         public static TResponse OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)

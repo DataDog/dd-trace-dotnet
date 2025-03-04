@@ -254,7 +254,7 @@ namespace Datadog.Trace.Configuration
                 if (string.IsNullOrEmpty(serviceName))
                 {
                     // Extract repository name from the git url and use it as a default service name.
-                    ciVisServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
                     isUserProvidedTestServiceTag = false;
                 }
 
@@ -562,6 +562,19 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
                                          .AsBool(false);
 
+            PropagationBehaviorExtract = config
+                                         .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
+                                         .GetAs(
+                                             () => new DefaultResult<ExtractBehavior>(ExtractBehavior.Continue, "continue"),
+                                             converter: x => x.ToLowerInvariant() switch
+                                             {
+                                                 "continue" => ExtractBehavior.Continue,
+                                                 "restart" => ExtractBehavior.Restart,
+                                                 "ignore" => ExtractBehavior.Ignore,
+                                                 _ => ParsingResult<ExtractBehavior>.Failure(),
+                                             },
+                                             validator: null);
+
             BaggageMaximumItems = config
                                  .WithKeys(ConfigurationKeys.BaggageMaximumItems)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageItems);
@@ -654,6 +667,9 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
                                        .AsBool(false);
 
+            BypassHttpRequestUrlCachingEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled)
+                                                       .AsBool(false);
+
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
             var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
 
@@ -664,6 +680,22 @@ namespace Datadog.Trace.Configuration
                 var userSplit = TrimSplitString(userDisabledAdoNetCommandTypes, commaSeparator);
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
+
+            if (source is CompositeConfigurationSource compositeSource)
+            {
+                foreach (var nestedSource in compositeSource)
+                {
+                    if (nestedSource is JsonConfigurationSource { JsonConfigurationFilePath: { } jsonFilePath }
+                     && !string.IsNullOrEmpty(jsonFilePath))
+                    {
+                        JsonConfigurationFilePaths.Add(jsonFilePath);
+                    }
+                }
+            }
+
+            var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
+
+            DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
@@ -771,6 +803,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <summary>
+        /// Gets the names of disabled ActivitySources.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
+        internal string[] DisabledActivitySources { get; }
 
         /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.
@@ -979,6 +1017,11 @@ namespace Datadog.Trace.Configuration
         internal bool PropagationExtractFirstOnly { get; }
 
         /// <summary>
+        /// Gets a value indicating the behavior when extracting propagation headers.
+        /// </summary>
+        internal ExtractBehavior PropagationBehaviorExtract { get; }
+
+        /// <summary>
         /// Gets the maximum number of items that can be
         /// injected into the baggage header when propagating to a downstream service.
         /// Default value is 64 items.
@@ -1126,6 +1169,12 @@ namespace Datadog.Trace.Configuration
         internal bool CommandsCollectionEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the tracer will bypass .NET Framework's
+        /// HttpRequestUrl caching when HttpRequest.Url is accessed.
+        /// </summary>
+        internal bool BypassHttpRequestUrlCachingEnabled { get; }
+
+        /// <summary>
         /// Gets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
@@ -1156,6 +1205,8 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
+
+        internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.

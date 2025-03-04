@@ -365,9 +365,105 @@ namespace Datadog.Trace.Tests.Propagators
                           Origin = null,
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void Extract_Behavior_Continue()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var result = Propagator.Extract(headers.Object);
+
+            result.SpanContext
+                  .Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                      new SpanContextMock
+                      {
+                          TraceId128 = (TraceId)123456789,
+                          TraceId = 123456789,
+                          SpanId = 987654321,
+                          RawTraceId = "000000000000000000000000075bcd15",
+                          RawSpanId = "000000003ade68b1",
+                          Origin = null,
+                          SamplingPriority = SamplingPriorityValues.AutoKeep,
+                          PropagatedTags = EmptyPropagatedTags,
+                          IsRemote = true,
+                          LastParentId = ZeroLastParentId,
+                      },
+                      opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Extract_Behavior_Ignore()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var names = new[] { ContextPropagationHeaderStyle.W3CTraceContext };
+            var ignorePropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: true, ExtractBehavior.Ignore);
+            var result = ignorePropagator.Extract(headers.Object);
+
+            result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void Extract_Behavior_Restart()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var names = new[] { ContextPropagationHeaderStyle.W3CTraceContext };
+            var restartPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: true, ExtractBehavior.Restart);
+            var result = restartPropagator.Extract(headers.Object);
+
+            result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
+            result.Links
+                  .Should().BeEquivalentTo(
+                        new SpanLinkMock[]
+                        {
+                            new SpanLinkMock
+                            {
+                                Context = new SpanContextMock
+                                {
+                                    TraceId128 = (TraceId)123456789,
+                                    TraceId = 123456789,
+                                    SpanId = 987654321,
+                                    RawTraceId = "000000000000000000000000075bcd15",
+                                    RawSpanId = "000000003ade68b1",
+                                    Origin = null,
+                                    SamplingPriority = SamplingPriorityValues.AutoKeep,
+                                    PropagatedTags = EmptyPropagatedTags,
+                                    IsRemote = true,
+                                    LastParentId = ZeroLastParentId,
+                                },
+                                Attributes =
+                                [
+                                    new("reason", "propagation_behavior_extract"),
+                                    new("context_headers", "tracecontext")
+                                ],
+                            }
+                        },
+                        opts => opts.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -397,9 +493,11 @@ namespace Datadog.Trace.Tests.Propagators
                           Origin = null,
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -432,9 +530,11 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = EmptyPropagatedTags,
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -473,9 +573,11 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -518,9 +620,11 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -545,6 +649,7 @@ namespace Datadog.Trace.Tests.Propagators
             result.SpanId.Should().Be(expectedSpanId);
 
             context.Baggage.Should().BeNull();
+            context.Links.Should().BeNullOrEmpty();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -581,6 +686,7 @@ namespace Datadog.Trace.Tests.Propagators
             result.SpanId.Should().Be(expectedSpanId);
 
             context.Baggage.Should().BeNull();
+            context.Links.Should().BeNullOrEmpty();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -615,6 +721,7 @@ namespace Datadog.Trace.Tests.Propagators
             result.SpanId.Should().Be(expectedSpanId);
 
             context.Baggage.Should().BeNull();
+            context.Links.Should().BeNullOrEmpty();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -680,7 +787,11 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -734,7 +845,11 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -788,7 +903,11 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -844,7 +963,11 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           IsRemote = true,
                           LastParentId = expectW3cParentIds ? "0123456789abcdef" : null,
-                      });
+                      },
+                      opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -862,7 +985,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("tracestate"))
                    .Returns(new[] { "foo=1" });
             headers.Setup(h => h.GetValues("baggage"))
-                   .Returns(new[] { "usr=customer" });
+                   .Returns(new[] { "usr=customer,foo2=bar2" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "3541" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
@@ -881,30 +1004,200 @@ namespace Datadog.Trace.Tests.Propagators
                 },
                 null);
 
-            var traceId = new TraceId(0x1111111111111111, (ulong)(w3CHeaderFirst ? 5 : 0xdd5));
+            var w3CtraceId = new TraceId(0x1111111111111111, 5);
+            var ddtraceId = new TraceId(0x1111111111111111, 0xdd5);
+
+            var w3cSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = w3CtraceId,
+                    TraceId = 5,
+                    SpanId = 987654321,
+                    RawTraceId = w3CtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 1,
+                    PropagatedTags = new TraceTagCollection(),
+                    AdditionalW3CTraceState = "foo=1",
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = ZeroLastParentId,
+                };
+
+            var ddSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = ddtraceId,
+                    TraceId = 0xdd5,
+                    SpanId = 987654321,
+                    RawTraceId = ddtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 2,
+                    PropagatedTags = propagatedTags,
+                    AdditionalW3CTraceState = null,
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = null,
+                };
 
             result.SpanContext
                   .Should()
                   .NotBeNull()
                   .And
-                  .BeEquivalentTo(
-                      new SpanContextMock
-                      {
-                          TraceId128 = traceId,
-                          TraceId = (ulong)(w3CHeaderFirst ? 5 : 0xdd5),
-                          SpanId = 987654321,
-                          RawTraceId = traceId.ToString(),
-                          RawSpanId = "000000003ade68b1",
-                          SamplingPriority = w3CHeaderFirst ? 1 : 2,
-                          PropagatedTags = !w3CHeaderFirst ? propagatedTags : new TraceTagCollection(),
-                          AdditionalW3CTraceState = w3CHeaderFirst ? "foo=1" : null,
-                          Parent = null,
-                          ParentId = null,
-                          IsRemote = true,
-                          LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
-                      });
+                  .BeEquivalentTo(w3CHeaderFirst ? w3cSpanContextMock : ddSpanContextMock, opts => opts.ExcludingMissingMembers());
 
-            result.Baggage.Should().BeEquivalentTo(new Baggage([new KeyValuePair<string, string>("usr", "customer")]));
+            result.Baggage.Should().BeEquivalentTo(new Baggage([new KeyValuePair<string, string>("usr", "customer"), new KeyValuePair<string, string>("foo2", "bar2")]));
+
+            if (extractFirst)
+            {
+                result.Links.Should().BeNullOrEmpty();
+            }
+            else
+            {
+                result.Links
+                      .Should()
+                      .BeEquivalentTo(
+                        [
+                            new SpanLinkMock
+                            {
+                                Context = w3CHeaderFirst ? ddSpanContextMock : w3cSpanContextMock,
+                                Attributes =
+                                [
+                                    new("reason", "terminated_context"),
+                                    new("context_headers", w3CHeaderFirst ? "datadog" : "tracecontext")
+                                ]
+                            }
+                        ],
+                        opts => opts.ExcludingMissingMembers());
+            }
+        }
+
+        [Fact]
+        public void Extract_MultipleConflictingTraceIds_ProducesCorrespondingSpanLinks()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000005-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "3541" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+            headers.Setup(h => h.GetValues("x-b3-traceid"))
+                   .Returns(new[] { "11111111111111110000000000000b35" });
+            headers.Setup(h => h.GetValues("x-b3-spanid"))
+                   .Returns(new[] { "000000003ade68b1" });
+            headers.Setup(h => h.GetValues("x-b3-sampled"))
+                   .Returns(new[] { "1" });
+
+            var names = new[]
+                        {
+                            ContextPropagationHeaderStyle.W3CTraceContext,
+                            ContextPropagationHeaderStyle.Datadog,
+                            ContextPropagationHeaderStyle.B3MultipleHeaders,
+                            ContextPropagationHeaderStyle.W3CBaggage,
+                        };
+
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: false);
+
+            var result = propagator.Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            var w3CtraceId = new TraceId(0x1111111111111111, 5);
+            var ddtraceId = new TraceId(0x1111111111111111, 0xdd5);
+            var b3traceId = new TraceId(0x1111111111111111, 0xb35);
+
+            var w3cSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = w3CtraceId,
+                    TraceId = 5,
+                    SpanId = 987654321,
+                    RawTraceId = w3CtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 1,
+                    PropagatedTags = new TraceTagCollection(),
+                    AdditionalW3CTraceState = "foo=1",
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = ZeroLastParentId,
+                };
+
+            var ddSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = ddtraceId,
+                    TraceId = 0xdd5,
+                    SpanId = 987654321,
+                    RawTraceId = ddtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 2,
+                    PropagatedTags = propagatedTags,
+                    AdditionalW3CTraceState = null,
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = null,
+                };
+
+            var b3MultiContextMock = new SpanContextMock
+                {
+                    TraceId128 = b3traceId,
+                    TraceId = 0xb35,
+                    SpanId = 987654321,
+                    RawTraceId = b3traceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 1,
+                    PropagatedTags = new TraceTagCollection(),
+                    AdditionalW3CTraceState = null,
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = null,
+                };
+
+            result.SpanContext
+                  .Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(w3cSpanContextMock, opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+
+            result.Links
+                    .Should()
+                    .BeEquivalentTo(
+                    [
+                        new SpanLinkMock
+                        {
+                            Context = ddSpanContextMock,
+                            Attributes =
+                            [
+                                new("reason", "terminated_context"),
+                                new("context_headers", "datadog")
+                            ]
+                        },
+                        new SpanLinkMock
+                        {
+                            Context = b3MultiContextMock,
+                            Attributes =
+                            [
+                                new("reason", "terminated_context"),
+                                new("context_headers", "b3multi")
+                            ]
+                        },
+                    ],
+                    opts => opts.ExcludingMissingMembers());
         }
 
         [Theory]

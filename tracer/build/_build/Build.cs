@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.8.0";
+    readonly string Version = "3.12.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -129,6 +129,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
+                            Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
 
     Target Clean => _ => _
@@ -205,7 +206,8 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateTrimmingFile);
+        .DependsOn(CreateTrimmingFile)
+        .DependsOn(RegenerateSolutions);
     
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
@@ -270,9 +272,7 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
-        .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
@@ -280,7 +280,6 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the ASP.NET integration tests for Windows")
-        .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
@@ -290,21 +289,21 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileRegressionDependencyLibs)
-        .DependsOn(CompileRegressionSamples)
-        .DependsOn(CompileFrameworkReproductions)
         .DependsOn(CompileIntegrationTests);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows (non-IIS) integration tests")
         .DependsOn(BuildWindowsIntegrationTests)
-        .DependsOn(RunWindowsIntegrationTests);
+        .DependsOn(CompileSamples)
+        .DependsOn(CompileTrimmingSamples)
+        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows regression tests")
         .DependsOn(BuildWindowsRegressionTests)
+        .DependsOn(CompileSamples)
         .DependsOn(RunWindowsRegressionTests);
 
     Target BuildAndRunWindowsAzureFunctionsTests => _ => _
@@ -319,11 +318,7 @@ partial class Build : NukeBuild
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds the linux integration tests")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinuxOrOsx)
-        .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
@@ -333,17 +328,13 @@ partial class Build : NukeBuild
         .Requires(() => !IsWin)
         .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildLinuxIntegrationTests)
-        .DependsOn(RunLinuxIntegrationTests)
+        .DependsOn(RunIntegrationTests)
         .DependsOn(RunLinuxDdDotnetIntegrationTests);
 
     Target BuildOsxIntegrationTests => _ => _
         .Requires(() => IsOsx)
         .Description("Builds the osx integration tests")
-        .DependsOn(CompileDependencyLibs)
-        .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileSamplesLinuxOrOsx)
-        .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
@@ -352,7 +343,9 @@ partial class Build : NukeBuild
         .Requires(() => IsOsx)
         .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildOsxIntegrationTests)
-        .DependsOn(RunOsxIntegrationTests);
+        .DependsOn(CompileSamples)
+        .DependsOn(CompileTrimmingSamples)
+        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")

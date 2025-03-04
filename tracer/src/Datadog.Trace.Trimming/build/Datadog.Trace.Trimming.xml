@@ -6,8 +6,10 @@
    <assembly fullname="AWSSDK.DynamoDBv2" />
    <assembly fullname="AWSSDK.EventBridge" />
    <assembly fullname="AWSSDK.Kinesis" />
+   <assembly fullname="AWSSDK.S3" />
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
+   <assembly fullname="AWSSDK.StepFunctions" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
@@ -102,6 +104,7 @@
       <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
       <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
    </assembly>
+   <assembly fullname="Microsoft.TestPlatform.CrossPlatEngine" />
    <assembly fullname="Microsoft.TestPlatform.PlatformAbstractions" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
@@ -223,6 +226,7 @@
       <type fullname="System.Diagnostics.DebuggerBrowsableState" />
       <type fullname="System.Diagnostics.DebuggerDisplayAttribute" />
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
+      <type fullname="System.Diagnostics.DebuggerNonUserCodeAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
    </assembly>
@@ -246,6 +250,7 @@
       <type fullname="System.Diagnostics.SymbolStore.SymDocumentType" />
    </assembly>
    <assembly fullname="System.Diagnostics.Tools">
+      <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
    </assembly>
    <assembly fullname="System.Diagnostics.TraceSource">
@@ -494,6 +499,7 @@
       <type fullname="System.Buffers.SpanAction`2" />
       <type fullname="System.Byte" />
       <type fullname="System.Char" />
+      <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" />
       <type fullname="System.Collections.ArrayList" />
       <type fullname="System.Collections.DictionaryEntry" />
       <type fullname="System.Collections.Generic.ICollection`1" />
@@ -538,6 +544,8 @@
       <type fullname="System.Diagnostics.CodeAnalysis.AllowNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.DoesNotReturnIfAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes" />
       <type fullname="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute" />
@@ -546,6 +554,8 @@
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" />
       <type fullname="System.Diagnostics.CodeAnalysis.NotNullWhenAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.RequiresUnreferencedCodeAttribute" />
+      <type fullname="System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessageAttribute" />
       <type fullname="System.Diagnostics.ConditionalAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute" />
       <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" />
@@ -554,6 +564,7 @@
       <type fullname="System.Diagnostics.DebuggerBrowsableState" />
       <type fullname="System.Diagnostics.DebuggerDisplayAttribute" />
       <type fullname="System.Diagnostics.DebuggerHiddenAttribute" />
+      <type fullname="System.Diagnostics.DebuggerNonUserCodeAttribute" />
       <type fullname="System.Diagnostics.DebuggerStepThroughAttribute" />
       <type fullname="System.Diagnostics.DebuggerTypeProxyAttribute" />
       <type fullname="System.Diagnostics.StackTraceHiddenAttribute" />
@@ -579,6 +590,7 @@
       <type fullname="System.Func`6" />
       <type fullname="System.Func`7" />
       <type fullname="System.GC" />
+      <type fullname="System.GCMemoryInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />
@@ -719,6 +731,7 @@
       <type fullname="System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder" />
       <type fullname="System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder`1" />
+      <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
@@ -904,6 +917,7 @@
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.IO.UnmanagedMemoryStream" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
+      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
@@ -970,7 +984,10 @@
    </assembly>
    <assembly fullname="System.Security.Cryptography.Primitives">
       <type fullname="System.Security.Cryptography.AsymmetricAlgorithm" />
+      <type fullname="System.Security.Cryptography.CryptoStream" />
+      <type fullname="System.Security.Cryptography.CryptoStreamMode" />
       <type fullname="System.Security.Cryptography.HashAlgorithm" />
+      <type fullname="System.Security.Cryptography.ICryptoTransform" />
    </assembly>
    <assembly fullname="System.Text.Encoding.Extensions">
       <type fullname="System.Text.UnicodeEncoding" />
@@ -1072,5 +1089,6 @@
    <assembly fullname="WebDriver" />
    <assembly fullname="xunit.execution.desktop" />
    <assembly fullname="xunit.execution.dotnet" />
+   <assembly fullname="xunit.v3.core" />
    <assembly fullname="Yarp.ReverseProxy" />
 </linker>
