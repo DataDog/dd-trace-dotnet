@@ -31,11 +31,11 @@ internal static partial class TraceSourcesExtensions
         => value switch
         {
             Datadog.Trace.Tagging.TraceSources.None => nameof(Datadog.Trace.Tagging.TraceSources.None),
-            Datadog.Trace.Tagging.TraceSources.APM => nameof(Datadog.Trace.Tagging.TraceSources.APM),
-            Datadog.Trace.Tagging.TraceSources.ASM => nameof(Datadog.Trace.Tagging.TraceSources.ASM),
-            Datadog.Trace.Tagging.TraceSources.DSM => nameof(Datadog.Trace.Tagging.TraceSources.DSM),
-            Datadog.Trace.Tagging.TraceSources.DJM => nameof(Datadog.Trace.Tagging.TraceSources.DJM),
-            Datadog.Trace.Tagging.TraceSources.DBM => nameof(Datadog.Trace.Tagging.TraceSources.DBM),
+            Datadog.Trace.Tagging.TraceSources.Apm => nameof(Datadog.Trace.Tagging.TraceSources.Apm),
+            Datadog.Trace.Tagging.TraceSources.Asm => nameof(Datadog.Trace.Tagging.TraceSources.Asm),
+            Datadog.Trace.Tagging.TraceSources.Dsm => nameof(Datadog.Trace.Tagging.TraceSources.Dsm),
+            Datadog.Trace.Tagging.TraceSources.Djm => nameof(Datadog.Trace.Tagging.TraceSources.Djm),
+            Datadog.Trace.Tagging.TraceSources.Dbm => nameof(Datadog.Trace.Tagging.TraceSources.Dbm),
             _ => value.ToString(),
         };
         /// <summary>
@@ -61,11 +61,11 @@ internal static partial class TraceSourcesExtensions
         => new []
         {
             Datadog.Trace.Tagging.TraceSources.None,
-            Datadog.Trace.Tagging.TraceSources.APM,
-            Datadog.Trace.Tagging.TraceSources.ASM,
-            Datadog.Trace.Tagging.TraceSources.DSM,
-            Datadog.Trace.Tagging.TraceSources.DJM,
-            Datadog.Trace.Tagging.TraceSources.DBM,
+            Datadog.Trace.Tagging.TraceSources.Apm,
+            Datadog.Trace.Tagging.TraceSources.Asm,
+            Datadog.Trace.Tagging.TraceSources.Dsm,
+            Datadog.Trace.Tagging.TraceSources.Djm,
+            Datadog.Trace.Tagging.TraceSources.Dbm,
         };
 
     /// <summary>
@@ -80,10 +80,10 @@ internal static partial class TraceSourcesExtensions
         => new []
         {
             nameof(Datadog.Trace.Tagging.TraceSources.None),
-            nameof(Datadog.Trace.Tagging.TraceSources.APM),
-            nameof(Datadog.Trace.Tagging.TraceSources.ASM),
-            nameof(Datadog.Trace.Tagging.TraceSources.DSM),
-            nameof(Datadog.Trace.Tagging.TraceSources.DJM),
-            nameof(Datadog.Trace.Tagging.TraceSources.DBM),
+            nameof(Datadog.Trace.Tagging.TraceSources.Apm),
+            nameof(Datadog.Trace.Tagging.TraceSources.Asm),
+            nameof(Datadog.Trace.Tagging.TraceSources.Dsm),
+            nameof(Datadog.Trace.Tagging.TraceSources.Djm),
+            nameof(Datadog.Trace.Tagging.TraceSources.Dbm),
         };
 }

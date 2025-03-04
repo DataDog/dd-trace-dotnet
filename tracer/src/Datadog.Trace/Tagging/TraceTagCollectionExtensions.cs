@@ -1,4 +1,4 @@
-// <copyright file="TraceSourcesUtils.cs" company="Datadog">
+// <copyright file="TraceTagCollectionExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,9 +14,9 @@ using System.Threading.Tasks;
 namespace Datadog.Trace.Tagging
 {
     /// <summary>
-    /// Utility funtions to handle TraceSources values in the '_dd.p.ts' tag
+    /// Utility funtions to handle TraceTagCollection values, as is the case of TraceSources values in the '_dd.p.ts' tag
     /// </summary>
-    internal static class TraceSourcesUtils
+    internal static class TraceTagCollectionExtensions
     {
         public static TraceSources GetTraceSources(this TraceTagCollection? tags)
         {

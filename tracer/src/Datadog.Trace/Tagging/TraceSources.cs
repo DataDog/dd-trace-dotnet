@@ -22,10 +22,10 @@ namespace Datadog.Trace.Tagging
     internal enum TraceSources : byte
     {
         None = 0,
-        APM = 1,
-        ASM = 2,
-        DSM = 4,
-        DJM = 8,
-        DBM = 16,
+        Apm = 1 << 0,
+        Asm = 1 << 1,
+        Dsm = 1 << 2,
+        Djm = 1 << 3,
+        Dbm = 1 << 4,
     }
 }
