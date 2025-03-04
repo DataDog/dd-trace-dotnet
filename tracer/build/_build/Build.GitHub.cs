@@ -942,7 +942,7 @@ partial class Build
     Target CompareBenchmarksResults => _ => _
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
-         .Requires(() => AzureDevopsToken)
+        //  .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
          .Requires(() => GitHubToken)
          .Requires(() => BenchmarkCategory)
@@ -960,30 +960,32 @@ partial class Build
              EnsureCleanDirectory(masterDir);
 
              // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+            //  var connection = new VssConnection(
+            //      new Uri(AzureDevopsOrganisation),
+            //      new VssBasicCredential(string.Empty, AzureDevopsToken));
 
-             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-             var artifactName = string.Empty;
-             switch (BenchmarkCategory)
-             {
-                 case  "tracer": artifactName = "benchmarks_results"; break;
-                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
-                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
-             }
+            //  using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+            //  var artifactName = string.Empty;
+            //  switch (BenchmarkCategory)
+            //  {
+            //      case  "tracer": artifactName = "benchmarks_results"; break;
+            //      case  "appsec": artifactName = "benchmarks_appsec_results"; break;
+            //      default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
+            //  }
 
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
+            //  var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
 
-             if (oldBuild is null)
-             {
-                    Logger.Warning("Old build is null");
-                    return;
-             }
+            //  if (oldBuild is null)
+            //  {
+            //         Logger.Warning("Old build is null");
+            //         return;
+            //  }
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
+             string filePath = "C:\\benchmarks_report.md";
+             File.WriteAllText(filePath, markdown);
 
-             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
+            //  await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
          });
 
     Target CompareThroughputResults => _ => _
