@@ -18,7 +18,7 @@ internal class TraceExporterNative
     private const string DllName = "datadog_profiling_ffi";
 
     /// <summary>
-    /// This is just workaround to load the native library.
+    /// Initializes static members of the <see cref="TraceExporterNative"/> class.
     /// TODO: Remove this workaround once we have libdatadog integration in the profiler and tracer.
     /// </summary>
     static TraceExporterNative()
