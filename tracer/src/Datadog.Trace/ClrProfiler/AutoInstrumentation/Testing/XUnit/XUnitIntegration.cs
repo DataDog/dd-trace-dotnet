@@ -20,6 +20,7 @@ internal static class XUnitIntegration
     internal const string IntegrationName = nameof(IntegrationId.XUnit);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
 
+    private static readonly ConditionalWeakTable<Test, TestCaseMetadata?> TestCasesMetadata = new();
     private static long _totalTestCases;
     private static long _newTestCases;
 
@@ -31,7 +32,7 @@ internal static class XUnitIntegration
         var testSuite = TestSuite.Current;
         if (testSuite is null)
         {
-            Common.Log.Warning("Test suite cannot be found.");
+            Common.Log.Warning("XUnitIntegration: Test suite cannot be found.");
             return null;
         }
 
@@ -42,7 +43,17 @@ internal static class XUnitIntegration
             RuntimeHelpers.PrepareMethod(testMethod.MethodHandle);
         }
 
+        var testOptimization = TestOptimization.Instance;
         var test = testSuite.InternalCreateTest(testMethod?.Name ?? string.Empty);
+        var testTags = test.GetTags();
+
+        // Store test case metadata
+#if NETCOREAPP3_1_OR_GREATER
+        TestCasesMetadata.AddOrUpdate(test, testCaseMetadata);
+#else
+        TestCasesMetadata.Remove(test);
+        TestCasesMetadata.Add(test, testCaseMetadata);
+#endif
 
         // Get test parameters
         var testMethodArguments = runnerInstance.TestMethodArguments;
@@ -76,50 +87,49 @@ internal static class XUnitIntegration
         if (runnerInstance.TestCase.Traits is { } traits)
         {
             // Unskippable tests support
-            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
+            if (testOptimization.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTags.Unskippable = isUnskippable ? "true" : "false";
+                testTags.ForcedRun = isForcedRun ? "true" : "false";
                 traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
             }
 
             test.SetTraits(traits);
         }
-        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
+        else if (testOptimization.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests support
-            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+            testTags.Unskippable = "false";
+            testTags.ForcedRun = "false";
         }
 
-        // Early flake detection flags
-        if (TestOptimization.Instance.Settings.EarlyFlakeDetectionEnabled == true)
+        // Known tests
+        var testIsNew = false;
+        if (testOptimization.KnownTestsFeature?.Enabled == true)
         {
-            var testIsNew = !TestOptimization.Instance.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
+            testIsNew = !testOptimization.KnownTestsFeature.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
             if (testIsNew)
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                testTags.TestIsNew = "true";
 
-                if (testCaseMetadata is null)
+                if (testCaseMetadata is null || testCaseMetadata.ExecutionIndex == 0)
                 {
                     Interlocked.Increment(ref _newTestCases);
                 }
             }
+        }
 
+        // Early flake detection flags
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+        {
             if (testCaseMetadata is not null)
             {
-                testCaseMetadata.TestIsNew = testIsNew;
-                if (testIsNew)
+                testCaseMetadata.EarlyFlakeDetectionEnabled = testIsNew;
+                if (testIsNew && testCaseMetadata.ExecutionIndex > 0)
                 {
-                    if (testCaseMetadata.ExecutionIndex > 0)
-                    {
-                        test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
-                    }
-                    else
-                    {
-                        Interlocked.Increment(ref _newTestCases);
-                    }
+                    testTags.TestIsRetry = "true";
+                    testTags.TestRetryReason = "efd";
                 }
 
                 Common.CheckFaultyThreshold(test, Interlocked.Read(ref _newTestCases), Interlocked.Read(ref _totalTestCases));
@@ -127,11 +137,13 @@ internal static class XUnitIntegration
         }
 
         // Flaky retries
-        if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true)
+        if (testOptimization.FlakyRetryFeature?.Enabled == true)
         {
             if (testCaseMetadata is { ExecutionIndex: > 0 })
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                test.SetTag(TestTags.TestIsRetry, "true");
+                testTags.TestIsRetry = "true";
+                testTags.TestRetryReason = "atr";
             }
         }
 
@@ -160,13 +172,18 @@ internal static class XUnitIntegration
         try
         {
             TimeSpan? duration = null;
-            var testTags = test.GetTags();
-            if (testTags.EarlyFlakeDetectionTestIsNew == "true" && test.GetInternalSpan() is Span internalSpan)
+
+            if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) &&
+                testCaseMetadata?.EarlyFlakeDetectionEnabled == true)
             {
-                duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
-                if (duration.Value.TotalMinutes >= 5)
+                var testTags = test.GetTags();
+                if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
                 {
-                    testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                    duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
+                    if (duration.Value.TotalMinutes >= 5)
+                    {
+                        testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                    }
                 }
             }
 
@@ -190,7 +207,7 @@ internal static class XUnitIntegration
         }
         catch (Exception ex)
         {
-            TestOptimization.Instance.Log.Warning(ex, "Error finishing test scope");
+            TestOptimization.Instance.Log.Warning(ex, "XUnitIntegration: Error finishing test scope");
             test.Close(TestStatus.Pass);
         }
     }

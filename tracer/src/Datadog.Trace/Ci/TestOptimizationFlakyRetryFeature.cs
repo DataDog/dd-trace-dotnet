@@ -42,9 +42,16 @@ internal class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFe
             Log.Information("TestOptimizationFlakyRetryFeature: Flaky retries is disabled.");
             Enabled = false;
         }
+
+        FlakyRetryCount = settings.FlakyRetryCount;
+        TotalFlakyRetryCount = settings.TotalFlakyRetryCount;
     }
 
     public bool Enabled { get; }
+
+    public int FlakyRetryCount { get; }
+
+    public int TotalFlakyRetryCount { get; }
 
     public static ITestOptimizationFlakyRetryFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationFlakyRetryFeature(settings, clientSettingsResponse, testOptimizationClient);

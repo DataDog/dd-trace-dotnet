@@ -210,7 +210,7 @@ internal static class NUnitIntegration
 
             if (resultSplittedMessage.Length < 2 || string.IsNullOrWhiteSpace(tmpExType))
             {
-                Common.Log.Debug("Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
+                Common.Log.Debug("NUnitIntegration: Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
                 break;
             }
 
@@ -227,7 +227,7 @@ internal static class NUnitIntegration
 
         if (testMethod == null)
         {
-            Log.Warning("Test method cannot be found. ITest.Method(IMethodInfo).MethodInfo is null.");
+            Log.Warning("NUnitIntegration: Test method cannot be found. ITest.Method(IMethodInfo).MethodInfo is null.");
             return null;
         }
 
@@ -237,6 +237,7 @@ internal static class NUnitIntegration
         }
 
         var test = suite.InternalCreateTest(testMethod.Name);
+        var testTags = test.GetTags();
         string? skipReason = null;
 
         // Get test parameters
@@ -280,22 +281,22 @@ internal static class NUnitIntegration
             if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTags.Unskippable = isUnskippable ? "true" : "false";
+                testTags.ForcedRun = isForcedRun ? "true" : "false";
                 traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
             }
 
             test.SetTraits(traits);
         }
-        else
+        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable test
-            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
-            {
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
-            }
+            testTags.Unskippable = "false";
+            testTags.ForcedRun = "false";
         }
+
+        // Set known tests feature tags
+        Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);

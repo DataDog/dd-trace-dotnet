@@ -917,7 +917,7 @@
       "tags": [
         "provider",
         "auto_injected",
-        "agentless_log_submission_enabled",
+        "agentless_log_submission_enabled"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -949,7 +949,8 @@
         "is_new",
         "is_rum",
         "browser_driver",
-        "early_flake_detection_abort_reason"
+        "early_flake_detection_abort_reason",
+        "retry_reason"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1209,7 +1210,8 @@
         "coverage_enabled",
         "itrskip_enabled",
         "flaky_test_retries_enabled",
-        "early_flake_detection_enabled"
+        "early_flake_detection_enabled",
+        "known_tests_enabled"
       ],
       "metric_type": "count",
       "data_type": "response",
@@ -1326,7 +1328,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request": {
+    "known_tests.request": {
       "tags": [
         "rq_compressed"
       ],
@@ -1336,7 +1338,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request_ms": {
+    "known_tests.request_ms": {
       "tags": [],
       "metric_type": "distribution",
       "data_type": "milliseconds",
@@ -1344,7 +1346,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request_errors": {
+    "known_tests.request_errors": {
       "tags": [
         "error_type",
         "status_code"
@@ -1355,7 +1357,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.response_bytes": {
+    "known_tests.response_bytes": {
       "tags": [
         "rs_compressed"
       ],
@@ -1365,7 +1367,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.response_tests": {
+    "known_tests.response_tests": {
       "tags": [],
       "metric_type": "distribution",
       "data_type": "tests",

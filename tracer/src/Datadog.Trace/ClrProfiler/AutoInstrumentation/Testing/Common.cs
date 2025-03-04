@@ -122,50 +122,71 @@ internal static class Common
 
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
     {
+        var earlyFlakeDetectionFeature = TestOptimization.Instance.EarlyFlakeDetectionFeature;
+        if (earlyFlakeDetectionFeature?.Enabled != true)
+        {
+            return 1;
+        }
+
         int numberOfExecutions;
-        var slowRetriesSettings = TestOptimization.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
+        var slowRetriesSettings = earlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
         if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
         {
             numberOfExecutions = slowRetriesSettings.FiveSeconds.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", numberOfExecutions);
         }
         else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
         {
             numberOfExecutions = slowRetriesSettings.TenSeconds.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", numberOfExecutions);
         }
         else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
         {
             numberOfExecutions = slowRetriesSettings.ThirtySeconds.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", numberOfExecutions);
         }
         else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
         {
             numberOfExecutions = slowRetriesSettings.FiveMinutes.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", numberOfExecutions);
         }
         else
         {
             numberOfExecutions = 1;
-            Log.Information("EFD: Number of executions has been set to 1 (No retries). Current test duration is {Value}", duration);
+            Log.Information("Common: EFD: Number of executions has been set to 1 (No retries). Current test duration is {Value}", duration);
         }
 
         return numberOfExecutions;
     }
 
+    internal static void SetKnownTestsFeatureTags(Test test)
+    {
+        // Known tests feature
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.KnownTestsFeature?.Enabled == true)
+        {
+            var isTestNew = !testOptimization.KnownTestsFeature.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (isTestNew)
+            {
+                var testTags = test.GetTags();
+                testTags.TestIsNew = "true";
+            }
+        }
+    }
+
     internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
     {
         // Early flake detection flags
-        var ciVisibility = TestOptimization.Instance;
-        if (ciVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
         {
-            var isTestNew = !ciVisibility.EarlyFlakeDetectionFeature?.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty) ?? false;
-            if (isTestNew)
+            var testTags = test.GetTags();
+            if (testTags.TestIsNew == "true")
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
                 if (isRetry)
                 {
-                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    testTags.TestIsRetry = "true";
+                    testTags.TestRetryReason = "efd";
                 }
                 else
                 {
@@ -177,9 +198,11 @@ internal static class Common
 
     internal static void SetFlakyRetryTags(Test test, bool isRetry)
     {
-        if (TestOptimization.Instance.Settings.FlakyRetryEnabled == true && isRetry)
+        if (TestOptimization.Instance.FlakyRetryFeature?.Enabled == true && isRetry)
         {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            var testTags = test.GetTags();
+            testTags.TestIsRetry = "true";
+            testTags.TestRetryReason = "atr";
         }
     }
 
@@ -196,7 +219,7 @@ internal static class Common
 
                 // We need to stop the EFD feature off and set the session as a faulty.
                 // But session object is not available from the test host
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string?)null);
+                test.SetTag(TestTags.TestIsNew, (string?)null);
                 test.Suite?.Module?.TrySetSessionTag(EarlyFlakeDetectionTags.AbortReason, "faulty");
                 Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
             }
