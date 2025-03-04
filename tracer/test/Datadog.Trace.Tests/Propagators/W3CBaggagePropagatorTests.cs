@@ -171,7 +171,7 @@ public class W3CBaggagePropagatorTests
         }
 
         baggage.Should().NotBeNull();
-        baggage!.Count.Should().Be(expectedPairs.Length);
+        baggage.Should().HaveCount(expectedPairs.Length);
 
         foreach (var pair in expectedPairs)
         {
