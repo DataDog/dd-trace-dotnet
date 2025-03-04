@@ -264,9 +264,9 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             if (separatorPosition <= 0 || separatorPosition == span.Length - 1)
             {
-                // -1: invalid, no '=' character found, e.g. "foo"
-                // 0: invalid, key is empty, e.g. "=value" or "="
-                // span.Length - 1: invalid, value is empty, e.g. "key=" or "="
+                // separatorPosition == -1: invalid, no '=' character found, e.g. "foo"
+                // separatorPosition == 0: invalid, key is empty, e.g. "=value" or "="
+                // separatorPosition == span.Length - 1: invalid, value is empty, e.g. "key=" or "="
                 continue;
             }
 
