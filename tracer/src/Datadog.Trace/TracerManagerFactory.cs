@@ -353,9 +353,6 @@ namespace Datadog.Trace
 
         private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
         {
-#if NETFRAMEWORK
-            return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
-#else
             if (settings.DataPipelineEnabled)
             {
                 var configuration = new TraceExporterConfiguration
@@ -374,7 +371,6 @@ namespace Datadog.Trace
             }
 
             return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
-#endif
         }
 
         private string GetUrl(TracerSettings settings)
