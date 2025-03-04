@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 // EFD for all tests
                 yield return row.Concat(
-                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
+                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true,"known_tests_enabled":true}}}""",
                     """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{}}}}""",
                     146,
                     148,
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 // EFD with 1 test to bypass (TraitPassTest)
                 yield return row.Concat(
-                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}}""",
+                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true,"known_tests_enabled":true}}}""",
                     """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{"Samples.MSTestTests":{"Samples.MSTestTests.TestSuite":["TraitPassTest"]}}}}}""",
                     137,
                     139,
@@ -190,8 +190,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
                             // Remove EFD tags
-                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                            targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+                            targetTest.Meta.Remove(TestTags.TestIsNew);
+                            targetTest.Meta.Remove(TestTags.TestIsRetry);
 
                             // Remove user provided service tag
                             targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
@@ -450,8 +450,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                        .OrderBy(s => s.Resource)
                        .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
                        .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsNew))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.TestIsRetry))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsNew))
+                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsRetry))
                        .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
                     settings);
 

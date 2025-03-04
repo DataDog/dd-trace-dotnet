@@ -201,7 +201,10 @@ public sealed class TestSuite
         span.Finish(duration.Value);
 
         // Record EventFinished telemetry metric
-        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Suite);
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+            TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework),
+            MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Suite,
+            MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
 
         Current = null;
         lock (OpenedTestSuites)

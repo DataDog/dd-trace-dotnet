@@ -1,4 +1,4 @@
-// <copyright file="TestOptimizationClient.GetEarlyFlakeDetectionTestsAsync.cs" company="Datadog">
+// <copyright file="TestOptimizationClient.GetKnownTestsAsync.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,48 +20,48 @@ namespace Datadog.Trace.Ci.Net;
 
 internal sealed partial class TestOptimizationClient
 {
-    private const string EfdTestsUrlPath = "api/v2/ci/libraries/tests";
-    private const string EfdTestsType = "ci_app_libraries_tests_request";
-    private Uri? _efdTestsUrl;
+    private const string KnownTestsUrlPath = "api/v2/ci/libraries/tests";
+    private const string KnownTestsType = "ci_app_libraries_tests_request";
+    private Uri? _knownTestsUrl;
 
-    public async Task<EarlyFlakeDetectionResponse> GetEarlyFlakeDetectionTestsAsync()
+    public async Task<KnownTestsResponse> GetKnownTestsAsync()
     {
-        Log.Debug("TestOptimizationClient: Getting early flake detection tests...");
+        Log.Debug("TestOptimizationClient: Getting known tests...");
         if (!EnsureRepositoryUrl() || !EnsureCommitSha())
         {
             return default;
         }
 
-        _efdTestsUrl ??= GetUriFromPath(EfdTestsUrlPath);
-        var query = new DataEnvelope<Data<EarlyFlakeDetectionQuery>>(
-            new Data<EarlyFlakeDetectionQuery>(
+        _knownTestsUrl ??= GetUriFromPath(KnownTestsUrlPath);
+        var query = new DataEnvelope<Data<KnownTestsQuery>>(
+            new Data<KnownTestsQuery>(
                 _commitSha,
-                EfdTestsType,
-                new EarlyFlakeDetectionQuery(_serviceName, _environment, _repositoryUrl, GetTestConfigurations())),
+                KnownTestsType,
+                new KnownTestsQuery(_serviceName, _environment, _repositoryUrl, GetTestConfigurations())),
             null);
 
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
-        Log.Debug("TestOptimizationClient: Efd.JSON RQ = {Json}", jsonQuery);
+        Log.Debug("TestOptimizationClient: KnownTests.JSON RQ = {Json}", jsonQuery);
 
         string? queryResponse;
         try
         {
-            queryResponse = await SendJsonRequestAsync<EfdCallbacks>(_efdTestsUrl, jsonQuery).ConfigureAwait(false);
+            queryResponse = await SendJsonRequestAsync<KnownTestsCallbacks>(_knownTestsUrl, jsonQuery).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(MetricTags.CIVisibilityErrorType.Network);
-            Log.Error(ex, "TestOptimizationClient: Early flake detection tests request failed.");
+            TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+            Log.Error(ex, "TestOptimizationClient: Known tests request failed.");
             throw;
         }
 
-        Log.Debug("TestOptimizationClient: Efd.JSON RS = {Json}", queryResponse);
+        Log.Debug("TestOptimizationClient: KnownTests.JSON RS = {Json}", queryResponse);
         if (string.IsNullOrEmpty(queryResponse))
         {
             return default;
         }
 
-        var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<EarlyFlakeDetectionResponse>?>>(queryResponse);
+        var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<KnownTestsResponse>?>>(queryResponse);
         var finalResponse = deserializedResult.Data?.Attributes ?? default;
 
         // Count the number of tests for telemetry
@@ -80,38 +80,38 @@ internal sealed partial class TestOptimizationClient
             }
         }
 
-        TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(testsCount);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseTests(testsCount);
         return finalResponse;
     }
 
-    private readonly struct EfdCallbacks : ICallbacks
+    private readonly struct KnownTestsCallbacks : ICallbacks
     {
         public void OnBeforeSend()
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
         }
 
         public void OnStatusCodeReceived(int statusCode, int responseLength)
         {
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, responseLength);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, responseLength);
             if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(errorType);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(errorType);
             }
         }
 
         public void OnError(Exception ex)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
         }
 
         public void OnAfterSend(double totalMs)
         {
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(totalMs);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsRequestMs(totalMs);
         }
     }
 
-    private readonly struct EarlyFlakeDetectionQuery
+    private readonly struct KnownTestsQuery
     {
         [JsonProperty("service")]
         public readonly string Service;
@@ -125,7 +125,7 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("configurations")]
         public readonly TestsConfigurations Configurations;
 
-        public EarlyFlakeDetectionQuery(string service, string environment, string repositoryUrl, TestsConfigurations configurations)
+        public KnownTestsQuery(string service, string environment, string repositoryUrl, TestsConfigurations configurations)
         {
             Service = service;
             Environment = environment;
@@ -134,16 +134,16 @@ internal sealed partial class TestOptimizationClient
         }
     }
 
-    public readonly struct EarlyFlakeDetectionResponse
+    public readonly struct KnownTestsResponse
     {
         [JsonProperty("tests")]
-        public readonly EfdResponseModules? Tests;
+        public readonly KnownTestsModules? Tests;
 
-        public class EfdResponseSuites : Dictionary<string, string[]?>
+        public class KnownTestsSuites : Dictionary<string, string[]?>
         {
         }
 
-        public class EfdResponseModules : Dictionary<string, EfdResponseSuites?>
+        public class KnownTestsModules : Dictionary<string, KnownTestsSuites?>
         {
         }
     }

@@ -14,7 +14,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     private readonly ITestOptimizationClient _client;
     private readonly Lazy<Task<TestOptimizationClient.SettingsResponse>> _settingsWithoutFrameworkInfo;
     private readonly Lazy<Task<TestOptimizationClient.SettingsResponse>> _settingsWithFrameworkInfo;
-    private readonly Lazy<Task<TestOptimizationClient.EarlyFlakeDetectionResponse>> _earlyFlakeDetectionTests;
+    private readonly Lazy<Task<TestOptimizationClient.KnownTestsResponse>> _knownTests;
     private readonly Lazy<Task<TestOptimizationClient.SearchCommitResponse>> _commits;
     private readonly Lazy<Task<TestOptimizationClient.SkippableTestsResponse>> _skippableTests;
     private readonly Lazy<Task<TestOptimizationClient.ImpactedTestsDetectionResponse>> _impactedTestsDetectionFiles;
@@ -25,7 +25,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
         _client = client;
         _settingsWithoutFrameworkInfo = new(() => _client.GetSettingsAsync(true));
         _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(false));
-        _earlyFlakeDetectionTests = new(_client.GetEarlyFlakeDetectionTestsAsync);
+        _knownTests = new(_client.GetKnownTestsAsync);
         _commits = new(_client.GetCommitsAsync);
         _skippableTests = new(_client.GetSkippableTestsAsync);
         _impactedTestsDetectionFiles = new(_client.GetImpactedTestsDetectionFilesAsync);
@@ -42,8 +42,8 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
         return await _settingsWithFrameworkInfo.Value.ConfigureAwait(false);
     }
 
-    public async Task<TestOptimizationClient.EarlyFlakeDetectionResponse> GetEarlyFlakeDetectionTestsAsync()
-        => await _earlyFlakeDetectionTests.Value.ConfigureAwait(false);
+    public async Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()
+        => await _knownTests.Value.ConfigureAwait(false);
 
     public async Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()
         => await _commits.Value.ConfigureAwait(false);
