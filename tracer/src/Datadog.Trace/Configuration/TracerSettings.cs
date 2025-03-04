@@ -37,6 +37,7 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
+        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>();
 
         private readonly IConfigurationTelemetry _telemetry;
         // we cached the static instance here, because is being used in the hotpath
@@ -94,6 +95,15 @@ namespace Datadog.Trace.Configuration
             _telemetry = telemetry;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, _telemetry);
+
+            ExperimentalFeaturesEnabled = config
+                    .WithKeys(ConfigurationKeys.ExperimentalFeaturesEnabled)
+                    .AsString()?.Trim() switch
+                    {
+                        null or "none" => new HashSet<string>(),
+                        "all" => DefaultExperimentalFeatures,
+                        string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
+                    };
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -654,6 +664,8 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
+
+        internal HashSet<string> ExperimentalFeaturesEnabled { get; }
 
         internal OverrideErrorLog ErrorLog { get; }
 
