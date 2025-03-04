@@ -105,6 +105,7 @@ internal static class MsTestIntegration
         }
 
         var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
+        var testTags = test.GetTags();
 
         // Get test parameters
         UpdateTestParameters(test, testMethodInstance);
@@ -116,8 +117,8 @@ internal static class MsTestIntegration
             if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(testMethodInstance, out var isUnskippable, out var isForcedRun, testTraits);
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTags.Unskippable = isUnskippable ? "true" : "false";
+                testTags.ForcedRun = isForcedRun ? "true" : "false";
                 testTraits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
             }
 
@@ -126,9 +127,12 @@ internal static class MsTestIntegration
         else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests
-            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+            testTags.Unskippable = "false";
+            testTags.ForcedRun = "false";
         }
+
+        // Set known tests feature tags
+        Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);

@@ -127,16 +127,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
-                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimizationSettings.TestsSkippingEnabled == true ? "true" : "false");
+                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testOptimization.SkippableFeature?.Enabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, testOptimizationSettings.CodeCoverageEnabled == true ? "true" : "false");
-                if (testOptimizationSettings.EarlyFlakeDetectionEnabled == true)
+                if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                 {
                     session.SetTag(EarlyFlakeDetectionTags.Enabled, "true");
                 }
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
-                if (testOptimizationSettings.TestsSkippingEnabled == false)
+                if (testOptimization.SkippableFeature?.Enabled == false)
                 {
                     session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }

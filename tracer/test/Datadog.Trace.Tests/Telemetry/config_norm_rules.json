@@ -387,6 +387,7 @@
   "DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY": "ci_visibility_force_agent_evp_proxy_enabled",
   "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH": "ci_visibility_code_coverage_external_path",
   "DD_CIVISIBILITY_GAC_INSTALL_ENABLED": "ci_visibility_gac_install_enabled",
+  "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED": "ci_visibility_known_tests_enabled",
   "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED": "ci_visibility_early_flake_detection_enabled",
   "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH": "ci_visibility_code_coverage_collectorpath",
   "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS": "ci_visibility_rum_flush_wait_millis",

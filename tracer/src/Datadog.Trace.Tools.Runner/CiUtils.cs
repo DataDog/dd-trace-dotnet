@@ -118,6 +118,7 @@ internal static class CiUtils
         // Initialize flags to enable code coverage and test skipping
         var codeCoverageEnabled = testOptimizationSettings.CodeCoverageEnabled == true || testOptimizationSettings.TestsSkippingEnabled == true;
         var testSkippingEnabled = testOptimizationSettings.TestsSkippingEnabled == true;
+        var knownTestsEnabled = testOptimizationSettings.KnownTestsEnabled == true;
         var earlyFlakeDetectionEnabled = testOptimizationSettings.EarlyFlakeDetectionEnabled == true;
         var flakyRetryEnabled = testOptimizationSettings.FlakyRetryEnabled == true;
         var impactedTestsDetectionEnabled = testOptimizationSettings.ImpactedTestsDetectionEnabled == true;
@@ -187,6 +188,7 @@ internal static class CiUtils
             if (testOptimizationSettings.IntelligentTestRunnerEnabled
              && (testOptimizationSettings.CodeCoverageEnabled == null ||
                  testOptimizationSettings.TestsSkippingEnabled == null ||
+                 testOptimizationSettings.KnownTestsEnabled == null ||
                  testOptimizationSettings.EarlyFlakeDetectionEnabled == null ||
                  testOptimizationSettings.FlakyRetryEnabled == null ||
                  testOptimizationSettings.ImpactedTestsDetectionEnabled == null))
@@ -210,6 +212,7 @@ internal static class CiUtils
 
                     codeCoverageEnabled = codeCoverageEnabled || itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                     testSkippingEnabled = itrSettings.TestsSkipping == true;
+                    knownTestsEnabled = knownTestsEnabled || itrSettings.KnownTestsEnabled == true;
                     earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
                     flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
                     impactedTestsDetectionEnabled = impactedTestsDetectionEnabled || itrSettings.ImpactedTestsEnabled == true;
@@ -223,14 +226,17 @@ internal static class CiUtils
 
         Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
         Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
+        Log.Debug("RunCiCommand: KnownTestsEnabled = {Value}", knownTestsEnabled);
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
         Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
         Log.Debug("RunCiCommand: ImpactedTestsDetectionEnabled = {Value}", impactedTestsDetectionEnabled);
         testOptimizationSettings.SetCodeCoverageEnabled(codeCoverageEnabled);
+        testOptimizationSettings.SetKnownTestsEnabled(knownTestsEnabled);
         testOptimizationSettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
         testOptimizationSettings.SetFlakyRetryEnabled(flakyRetryEnabled);
         testOptimizationSettings.SetImpactedTestsEnabled(impactedTestsDetectionEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.KnownTestsEnabled] = knownTestsEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled] = impactedTestsDetectionEnabled ? "1" : "0";

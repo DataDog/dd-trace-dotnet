@@ -19,10 +19,10 @@ internal sealed class NoopTestOptimizationClient : ITestOptimizationClient
         return Task.FromResult<TestOptimizationClient.SettingsResponse>(default);
     }
 
-    public Task<TestOptimizationClient.EarlyFlakeDetectionResponse> GetEarlyFlakeDetectionTestsAsync()
+    public Task<TestOptimizationClient.KnownTestsResponse> GetKnownTestsAsync()
     {
-        Log.Debug("NoopTestOptimizationClient: Getting early flake detection tests...");
-        return Task.FromResult<TestOptimizationClient.EarlyFlakeDetectionResponse>(default);
+        Log.Debug("NoopTestOptimizationClient: Getting known tests...");
+        return Task.FromResult<TestOptimizationClient.KnownTestsResponse>(default);
     }
 
     public Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()

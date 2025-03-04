@@ -8,4 +8,7 @@ namespace Datadog.Trace.Ci;
 
 internal interface ITestOptimizationFlakyRetryFeature : ITestOptimizationFeature
 {
+    int FlakyRetryCount { get; }
+
+    int TotalFlakyRetryCount { get; }
 }

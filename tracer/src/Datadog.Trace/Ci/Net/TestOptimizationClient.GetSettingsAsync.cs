@@ -24,8 +24,25 @@ internal sealed partial class TestOptimizationClient
     private const string SettingsType = "ci_app_test_service_libraries_settings";
     private Uri? _settingsUrl;
 
-    public static SettingsResponse CreateSettingsResponseFromTestOptimizationSettings(TestOptimizationSettings settings)
+    public static SettingsResponse CreateSettingsResponseFromTestOptimizationSettings(TestOptimizationSettings settings, ITestOptimizationTracerManagement? tracerManagement)
     {
+        if (!settings.IntelligentTestRunnerEnabled ||
+            (!settings.Agentless && tracerManagement?.EventPlatformProxySupport == EventPlatformProxySupport.None))
+        {
+            // No additional features should be enabled
+            return new SettingsResponse(
+                codeCoverage: false,
+                testsSkipping: false,
+                requireGit: false,
+                impactedTestsEnabled: false,
+                flakyTestRetries: false,
+                earlyFlakeDetection: new EarlyFlakeDetectionSettingsResponse(
+                    enabled: false,
+                    slowTestRetries: new SlowTestRetriesSettingsResponse(),
+                    faultySessionThreshold: 0),
+                knownTestsEnabled: false);
+        }
+
         return new SettingsResponse(
             codeCoverage: settings.CodeCoverageEnabled,
             testsSkipping: settings.TestsSkippingEnabled,
@@ -35,7 +52,8 @@ internal sealed partial class TestOptimizationClient
             earlyFlakeDetection: new EarlyFlakeDetectionSettingsResponse(
                 enabled: settings.EarlyFlakeDetectionEnabled,
                 slowTestRetries: new SlowTestRetriesSettingsResponse(),
-                faultySessionThreshold: 0));
+                faultySessionThreshold: 0),
+            knownTestsEnabled: settings.KnownTestsEnabled);
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -78,24 +96,12 @@ internal sealed partial class TestOptimizationClient
         var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(queryResponse);
         var settingsResponse = deserializedResult.Data?.Attributes ?? default;
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(
-            settingsResponse switch
-            {
-                { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrDisabled,
-                { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrDisabled,
-                { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrDisabled,
-                { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-                { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-                { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-                { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-                { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrEnabled,
-                { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrEnabled,
-                { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrEnabled,
-                { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-                { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
-                { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-                { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
-                _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_AtrDisabled,
-            });
+            settingsResponse.CodeCoverage == true ? MetricTags.CIVisibilitySettingsResponse_CoverageFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_CoverageFeature.Disabled,
+            settingsResponse.TestsSkipping == true ? MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature.Disabled,
+            settingsResponse.KnownTestsEnabled == true ? MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature.Disabled,
+            settingsResponse.EarlyFlakeDetection.Enabled == true ? MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature.Disabled,
+            settingsResponse.FlakyTestRetries == true ? MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature.Enabled : MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature.Disabled);
+
         return settingsResponse;
     }
 
@@ -176,11 +182,14 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("early_flake_detection")]
         public readonly EarlyFlakeDetectionSettingsResponse EarlyFlakeDetection;
 
+        [JsonProperty("known_tests_enabled")]
+        public readonly bool? KnownTestsEnabled;
+
         public SettingsResponse()
         {
         }
 
-        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection)
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled)
         {
             CodeCoverage = codeCoverage;
             TestsSkipping = testsSkipping;
@@ -188,6 +197,7 @@ internal sealed partial class TestOptimizationClient
             ImpactedTestsEnabled = impactedTestsEnabled;
             FlakyTestRetries = flakyTestRetries;
             EarlyFlakeDetection = earlyFlakeDetection;
+            KnownTestsEnabled = knownTestsEnabled;
         }
     }
 

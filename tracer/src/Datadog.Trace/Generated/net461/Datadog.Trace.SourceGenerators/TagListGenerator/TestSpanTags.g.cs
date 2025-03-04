@@ -36,10 +36,12 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> UnskippableBytes => new byte[] { 180, 116, 101, 115, 116, 46, 105, 116, 114, 46, 117, 110, 115, 107, 105, 112, 112, 97, 98, 108, 101 };
         // ForcedRunBytes = MessagePack.Serialize("test.itr.forced_run");
         private static ReadOnlySpan<byte> ForcedRunBytes => new byte[] { 179, 116, 101, 115, 116, 46, 105, 116, 114, 46, 102, 111, 114, 99, 101, 100, 95, 114, 117, 110 };
-        // EarlyFlakeDetectionTestIsNewBytes = MessagePack.Serialize("test.is_new");
-        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsNewBytes => new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
-        // EarlyFlakeDetectionTestIsRetryBytes = MessagePack.Serialize("test.is_retry");
-        private static ReadOnlySpan<byte> EarlyFlakeDetectionTestIsRetryBytes => new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
+        // TestIsNewBytes = MessagePack.Serialize("test.is_new");
+        private static ReadOnlySpan<byte> TestIsNewBytes => new byte[] { 171, 116, 101, 115, 116, 46, 105, 115, 95, 110, 101, 119 };
+        // TestIsRetryBytes = MessagePack.Serialize("test.is_retry");
+        private static ReadOnlySpan<byte> TestIsRetryBytes => new byte[] { 173, 116, 101, 115, 116, 46, 105, 115, 95, 114, 101, 116, 114, 121 };
+        // TestRetryReasonBytes = MessagePack.Serialize("test.retry_reason");
+        private static ReadOnlySpan<byte> TestRetryReasonBytes => new byte[] { 177, 116, 101, 115, 116, 46, 114, 101, 116, 114, 121, 95, 114, 101, 97, 115, 111, 110 };
         // BrowserDriverBytes = MessagePack.Serialize("test.browser.driver");
         private static ReadOnlySpan<byte> BrowserDriverBytes => new byte[] { 179, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 100, 114, 105, 118, 101, 114 };
         // BrowserDriverVersionBytes = MessagePack.Serialize("test.browser.driver_version");
@@ -66,8 +68,9 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.skipped_by_itr" => SkippedByIntelligentTestRunner,
                 "test.itr.unskippable" => Unskippable,
                 "test.itr.forced_run" => ForcedRun,
-                "test.is_new" => EarlyFlakeDetectionTestIsNew,
-                "test.is_retry" => EarlyFlakeDetectionTestIsRetry,
+                "test.is_new" => TestIsNew,
+                "test.is_retry" => TestIsRetry,
+                "test.retry_reason" => TestRetryReason,
                 "test.browser.driver" => BrowserDriver,
                 "test.browser.driver_version" => BrowserDriverVersion,
                 "test.browser.name" => BrowserName,
@@ -110,10 +113,13 @@ namespace Datadog.Trace.Ci.Tagging
                     ForcedRun = value;
                     break;
                 case "test.is_new": 
-                    EarlyFlakeDetectionTestIsNew = value;
+                    TestIsNew = value;
                     break;
                 case "test.is_retry": 
-                    EarlyFlakeDetectionTestIsRetry = value;
+                    TestIsRetry = value;
+                    break;
+                case "test.retry_reason": 
+                    TestRetryReason = value;
                     break;
                 case "test.browser.driver": 
                     BrowserDriver = value;
@@ -186,14 +192,19 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("test.itr.forced_run", ForcedRun, ForcedRunBytes));
             }
 
-            if (EarlyFlakeDetectionTestIsNew is not null)
+            if (TestIsNew is not null)
             {
-                processor.Process(new TagItem<string>("test.is_new", EarlyFlakeDetectionTestIsNew, EarlyFlakeDetectionTestIsNewBytes));
+                processor.Process(new TagItem<string>("test.is_new", TestIsNew, TestIsNewBytes));
             }
 
-            if (EarlyFlakeDetectionTestIsRetry is not null)
+            if (TestIsRetry is not null)
             {
-                processor.Process(new TagItem<string>("test.is_retry", EarlyFlakeDetectionTestIsRetry, EarlyFlakeDetectionTestIsRetryBytes));
+                processor.Process(new TagItem<string>("test.is_retry", TestIsRetry, TestIsRetryBytes));
+            }
+
+            if (TestRetryReason is not null)
+            {
+                processor.Process(new TagItem<string>("test.retry_reason", TestRetryReason, TestRetryReasonBytes));
             }
 
             if (BrowserDriver is not null)
@@ -294,17 +305,24 @@ namespace Datadog.Trace.Ci.Tagging
                   .Append(',');
             }
 
-            if (EarlyFlakeDetectionTestIsNew is not null)
+            if (TestIsNew is not null)
             {
                 sb.Append("test.is_new (tag):")
-                  .Append(EarlyFlakeDetectionTestIsNew)
+                  .Append(TestIsNew)
                   .Append(',');
             }
 
-            if (EarlyFlakeDetectionTestIsRetry is not null)
+            if (TestIsRetry is not null)
             {
                 sb.Append("test.is_retry (tag):")
-                  .Append(EarlyFlakeDetectionTestIsRetry)
+                  .Append(TestIsRetry)
+                  .Append(',');
+            }
+
+            if (TestRetryReason is not null)
+            {
+                sb.Append("test.retry_reason (tag):")
+                  .Append(TestRetryReason)
                   .Append(',');
             }
 

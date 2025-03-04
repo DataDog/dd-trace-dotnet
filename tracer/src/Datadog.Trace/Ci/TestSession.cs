@@ -388,7 +388,10 @@ public sealed class TestSession
                 MetricTags.CIVisibilityTestingEventType.Session,
                 Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), eventTypeWithMetadata);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+                TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
+                eventTypeWithMetadata,
+                MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
         }
 
         if (_environmentVariablesToRestore is { } envVars)

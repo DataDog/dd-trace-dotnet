@@ -630,6 +630,11 @@ namespace Datadog.Trace.Configuration
             public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
 
             /// <summary>
+            /// Configuration key for enabling or disabling the known tests feature in CI Visibility
+            /// </summary>
+            public const string KnownTestsEnabled = "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED";
+
+            /// <summary>
             /// Configuration key for setting the code coverage collector path
             /// </summary>
             public const string CodeCoverageCollectorPath = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";

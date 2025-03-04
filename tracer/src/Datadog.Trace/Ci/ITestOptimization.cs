@@ -28,6 +28,8 @@ internal interface ITestOptimization
 
     ITestOptimizationTracerManagement? TracerManagement { get; }
 
+    ITestOptimizationKnownTestsFeature? KnownTestsFeature { get; }
+
     ITestOptimizationEarlyFlakeDetectionFeature? EarlyFlakeDetectionFeature { get; }
 
     ITestOptimizationSkippableFeature? SkippableFeature { get; }
