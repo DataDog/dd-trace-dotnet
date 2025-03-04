@@ -59,18 +59,32 @@ public class W3CBaggagePropagatorTests
             { "=", null },
             { " = ", null },
             { ";", null },
+            // valid + invalid
+            { "key1=value1,", null },
+            { "key1=value1,key2", null },
+            { "key1=value1,key2=", null },
+            { "key1=value1,=value", null },
+            { "key1=value1,=", null },
+            { "key1=value1,key2;a=value2", null },
+            // invalid + valid
+            { ",key2=value2", null },
+            { "key1,key2=value2", null },
+            { "key1=,key2=value2", null },
+            { "=value1,key2=value2", null },
+            { "=,key2=value2", null },
+            { "key1;a=value1,key2=value2", null },
+            // valid headers
             { "valid=%20", [("valid", " ")] },
             { "%20=valid", [(" ", "valid")] },
             { "%20=%20", [(" ", " ")] },
             { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
-            { "key1=value1,invalid", [("key1", "value1")] },
             { "key1=value1, key2 = value2;property1;property2, key3=value3; propertyKey=propertyValue", [("key1", "value1"), ("key2", "value2"), ("key3", "value3")] }, // W3C metadata/property not currently supported so the values are discarded
             { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
             { "key1=value1=valid", [("key1", "value1=valid")] },
             { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },                          // encoded whitespace
             { "key1 = value1, key2 = value\t2 ", [("key1", "value1"), ("key2", "value\t2")] }, // whitespace not encoded
-            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] },                      // encoded unicode
-            { "key🐶=value我", [("key🐶", "value我")] },                                       // unicode not encoded
+            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] },                       // encoded unicode
+            { "key🐶=value我", [("key🐶", "value我")] },                                         // unicode not encoded
         };
 
     [Theory]
@@ -263,6 +277,20 @@ public class W3CBaggagePropagatorTests
     [InlineData("")]
     [InlineData("  ")]
     [InlineData(null)]
+    // valid + invalid
+    [InlineData("key1=value1,")]
+    [InlineData("key1=value1,key2")]
+    [InlineData("key1=value1,key2=")]
+    [InlineData("key1=value1,=value2")]
+    [InlineData("key1=value1,=")]
+    [InlineData("key1=value1,key2;a=value2")]
+    // invalid + valid
+    [InlineData(",key2=value2")]
+    [InlineData("key1,key2=value2")]
+    [InlineData("key1=,key2=value2")]
+    [InlineData("=value1,key2=value2")]
+    [InlineData("=,key2=value2")]
+    [InlineData("key1;a=value1,key2=value2")]
     public void Extract_InvalidFormat(string header)
     {
         var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
