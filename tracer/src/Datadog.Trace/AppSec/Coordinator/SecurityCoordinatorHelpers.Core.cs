@@ -7,10 +7,11 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 
@@ -19,6 +20,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 internal static class SecurityCoordinatorHelpers
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SecurityCoordinatorHelpers));
+
+    internal static readonly Type? SessionFeature = Assembly.GetAssembly(typeof(IHeaderDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.ISessionFeature", throwOnError: false);
 
     internal static void CheckAndBlock(this Security security, HttpContext context, Span span)
     {
@@ -82,9 +85,16 @@ internal static class SecurityCoordinatorHelpers
                 var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
                 IResult? result;
                 // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
-                if (context.Features.Get<ISessionFeature>() is { Session.IsAvailable: true } feature)
+                var sessionFeature = context.Features[SessionFeature];
+                Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature? sessionFeatureProxy = null;
+                if (sessionFeature is not null)
                 {
-                    result = securityCoordinator.RunWaf(args, sessionId: feature.Session.Id);
+                    sessionFeatureProxy = sessionFeature.DuckCast<ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature>();
+                }
+
+                if (sessionFeatureProxy?.Session?.IsAvailable == true)
+                {
+                    result = securityCoordinator.RunWaf(args, sessionId: sessionFeatureProxy.Session.Id);
                 }
                 else
                 {

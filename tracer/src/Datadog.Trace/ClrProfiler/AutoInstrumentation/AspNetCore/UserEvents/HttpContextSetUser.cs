@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -90,8 +91,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         }
                     }
 
-                    var sessionId = httpContext.Features.Get<ISessionFeature>()?.Session?.Id;
-                    var result = secCoord.RunWafForUser(userSessionId: sessionId, userId: userId);
+                    ISessionFeature? sessionFeatureProxy = null;
+                    var sessionFeature = httpContext.Features[SecurityCoordinatorHelpers.SessionFeature];
+
+                    if (sessionFeature is not null)
+                    {
+                        sessionFeatureProxy = sessionFeature.DuckCast<ISessionFeature>();
+                    }
+
+                    var result = secCoord.RunWafForUser(userSessionId: sessionFeatureProxy?.Session?.Id, userId: userId);
                     secCoord.BlockAndReport(result);
 
                     UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, true);
