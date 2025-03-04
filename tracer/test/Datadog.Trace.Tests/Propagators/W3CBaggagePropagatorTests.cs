@@ -178,7 +178,7 @@ public class W3CBaggagePropagatorTests
     {
         var baggage = W3CBaggagePropagator.ParseHeader(inputHeader)!;
 
-        if (expectedPairs is null || expectedPairs.Length == 0)
+        if (expectedPairs is null)
         {
             baggage.Should().BeNull();
             return;
