@@ -50,7 +50,7 @@ internal static class SpanPointers
             new("link.kind", LinkKind)
         };
 
-        var spanLink = new SpanLink(SpanContext.None, spanLinkAttributes);
+        var spanLink = new SpanLink(SpanContext.ZeroContext, spanLinkAttributes);
         span.AddLink(spanLink);
     }
 

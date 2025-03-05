@@ -42,11 +42,16 @@ namespace Datadog.Trace
         };
 
         /// <summary>
-        /// An <see cref="SpanContext"/> with default values. Can be used as the value for
+        /// An <see cref="ISpanContext"/> with default values. Can be used as the value for
         /// <see cref="SpanCreationSettings.Parent"/> in <see cref="Tracer.StartActive(string, SpanCreationSettings)"/>
         /// to specify that the new span should not inherit the currently active scope as its parent.
         /// </summary>
-        public static readonly SpanContext None = new();
+        public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: Trace.TraceId.Zero, spanId: 0, serviceName: null);
+
+        /// <summary>
+        /// A SpanContext with all fields set to zero or empty values, for span pointers.
+        /// </summary>
+        public static readonly SpanContext ZeroContext = new();
 
         private string _rawTraceId;
         private string _rawSpanId;
@@ -176,6 +181,8 @@ namespace Datadog.Trace
         // Constructor for creating an empty span context.
         private SpanContext()
         {
+            TraceId128 = Trace.TraceId.Zero;  // Directly set zero without the random generation
+            SpanId = 0;
         }
 
         /// <summary>
