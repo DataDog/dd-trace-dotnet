@@ -15,6 +15,11 @@ namespace Datadog.Trace.Configuration
     internal static partial class ConfigurationKeys
     {
         /// <summary>
+        /// Configuration key to enable experimental features.
+        /// </summary>
+        public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
+
+        /// <summary>
         /// Configuration key for the path to the configuration file.
         /// Can only be set with an environment variable
         /// or in the <c>app.config</c>/<c>web.config</c> file.
@@ -68,16 +73,16 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling Standalone ASM, thus disabling APM tracing and its billing.
-        /// Default is value is false (disabled).
-        /// </summary>
-        public const string AppsecStandaloneEnabled = "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED";
-
-        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
         public const string DebugEnabled = "DD_TRACE_DEBUG";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the generation of APM traces.
+        /// Default is value is true (enabled).
+        /// </summary>
+        public const string ApmTracingEnabled = "DD_APM_TRACING_ENABLED";
 
         /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debugger mode.

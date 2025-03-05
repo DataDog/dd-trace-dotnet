@@ -6,7 +6,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
-        "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED": "true",
+        "DD_APM_TRACING_ENABLED": "false",
         "DD_APPSEC_BLOCKING_ENABLED": "false",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
         "CORECLR_ENABLE_PROFILING": "1",
@@ -28,7 +28,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
-        "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED": "true",
+        "DD_APM_TRACING_ENABLED": "false",
         "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_APPSEC_RASP_ENABLED": "true",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)\\shared\\bin\\monitoring-home\\",
