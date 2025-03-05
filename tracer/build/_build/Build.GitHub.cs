@@ -944,7 +944,7 @@ partial class Build
          .DependsOn(CreateRequiredDirectories)
         //  .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
+        //  .Requires(() => GitHubToken)
          .Requires(() => BenchmarkCategory)
          .Executes(async () =>
          {
@@ -981,7 +981,7 @@ partial class Build
             //         return;
             //  }
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, BenchmarkCategory);
              string filePath = "C:\\benchmarks_report.md";
              File.WriteAllText(filePath, markdown);
 
