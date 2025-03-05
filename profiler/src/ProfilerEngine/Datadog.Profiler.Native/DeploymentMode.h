@@ -5,7 +5,7 @@
 
 #include <string>
 
-enum class DeploymentMode
+enum DeploymentMode : int
 {
     Manual,
     SingleStepInstrumentation

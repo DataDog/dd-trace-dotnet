@@ -5,7 +5,7 @@
 
 #include "shared/src/native-src/string.h"
 
-enum class CpuProfilerType
+enum CpuProfilerType : int
 {
     ManualCpuTime,
 #ifdef LINUX
