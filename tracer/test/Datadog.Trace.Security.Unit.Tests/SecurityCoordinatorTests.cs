@@ -155,7 +155,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             try
             {
-                securityCoordinator?.ReportAndBlock(resultMock.Object);
+                securityCoordinator?.ReportAndBlock(resultMock.Object, () => Console.WriteLine("Telemetry reported"));
                 Assert.Fail("Expected BlockException");
             }
             catch (BlockException)

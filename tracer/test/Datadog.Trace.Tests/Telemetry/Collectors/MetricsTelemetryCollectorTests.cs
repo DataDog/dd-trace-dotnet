@@ -107,7 +107,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
-        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleType.Lfi, 3);
+        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleTypeMatch.LfiSuccess, 3);
         collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
@@ -261,7 +261,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleEval.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -270,7 +270,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleMatch.GetName(),
                 Points = new[] { new { Value = 3 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "block:success", "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -279,7 +279,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspTimeout.GetName(),
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
