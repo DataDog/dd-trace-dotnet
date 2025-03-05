@@ -8,6 +8,7 @@
 using System;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
@@ -68,7 +69,13 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
             var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
 
             data = new InferredProxyData(proxyName, startTimeOffset, domainName, httpMethod, path, stage);
-            Log.Debug("Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}", [startTime!, domainName!, httpMethod!, path!, stage!]);
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug(
+                    "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}",
+                    [startTime, domainName, httpMethod, path, stage]);
+            }
 
             return true;
         }
