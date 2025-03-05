@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             _assemblies = assemblies.ToArray();
-            StartupLogger.Debug("Total number of assemblies: {0}", [_assemblies.Length]);
+            StartupLogger.Debug("Total number of assemblies: {0}", _assemblies.Length);
 
             return fullPath;
         }
@@ -76,9 +76,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-            StartupLogger.Debug("Assembly Resolve event received for: {0}", [name]);
+            StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
-            StartupLogger.Debug("Looking for: {0}", [path]);
+            StartupLogger.Debug("Looking for: {0}", path);
 
             if (IsDatadogAssembly(path, out var cachedAssembly))
             {
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 if (cachedAssembly is not null)
                 {
                     // The assembly is already loaded.
-                    StartupLogger.Debug("Loading from cache. [Path: {0}]", [path]);
+                    StartupLogger.Debug("Loading from cache. [Path: {0}]", path);
                     return cachedAssembly;
                 }
 
@@ -97,14 +97,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 // 2) The AssemblyVersion is lower than the version used by Datadog.Trace, the assembly will fail to load
                 //    and invoke this resolve event. It must be loaded in a separate AssemblyLoadContext since the application will only
                 //    load the originally referenced version
-                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", [path]);
+                StartupLogger.Debug("Loading {0} with DependencyLoadContext.LoadFromAssemblyPath", path);
                 var assembly = DependencyLoadContext.LoadFromAssemblyPath(path); // Load unresolved framework and third-party dependencies into a custom Assembly Load Context
                 SetDatadogAssembly(path, assembly);
                 return assembly;
             }
 
             // The file doesn't exist in the Home folder.
-            StartupLogger.Debug("Assembly not found in path: {0}", [path]);
+            StartupLogger.Debug("Assembly not found in path: {0}", path);
             return null;
         }
 
