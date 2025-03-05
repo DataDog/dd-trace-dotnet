@@ -51,7 +51,7 @@ namespace Datadog.Trace
         /// <summary>
         /// A SpanContext with all fields set to zero or empty values, for span pointers.
         /// </summary>
-        public static readonly SpanContext ZeroContext = new();
+        public static readonly SpanContext Zero = new();
 
         private string _rawTraceId;
         private string _rawSpanId;
