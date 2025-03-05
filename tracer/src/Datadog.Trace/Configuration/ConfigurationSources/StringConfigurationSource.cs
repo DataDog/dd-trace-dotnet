@@ -276,5 +276,30 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
         }
+
+        /// <inheritdoc />
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        {
+            var value = GetString(key);
+
+            if (value is null)
+            {
+                return ConfigurationResult<IDictionary<string, string>>.NotFound();
+            }
+
+            // We record the original dictionary value here instead of serializing the _parsed_ value
+            // Currently we have no validation of the dictionary values during parsing, so there's no way to get
+            // a validation error that needs recording at this stage
+            var result = parser(value);
+
+            if (validator is null || validator(result))
+            {
+                telemetry.Record(key, value, recordValue: true, Origin);
+                return ConfigurationResult<IDictionary<string, string>>.Valid(result);
+            }
+
+            telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
+            return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
+        }
     }
 }

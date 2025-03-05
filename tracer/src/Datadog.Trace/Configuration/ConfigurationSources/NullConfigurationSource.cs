@@ -36,6 +36,9 @@ internal class NullConfigurationSource : IConfigurationSource
     public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         => ConfigurationResult<IDictionary<string, string>>.NotFound();
 
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        => ConfigurationResult<IDictionary<string, string>>.NotFound();
+
     public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         => ConfigurationResult<T>.NotFound();
 }
