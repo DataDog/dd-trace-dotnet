@@ -67,17 +67,21 @@ namespace Datadog.Trace.Propagators
             return null;
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out ulong result)
+            static bool TryParse(IEnumerable<string?>? headerValues, ref bool hasValue, out ulong result)
             {
                 result = 0;
-                foreach (string? headerValue in headerValues)
-                {
-                    if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
-                    {
-                        return true;
-                    }
 
-                    hasValue = true;
+                if (headerValues is not null)
+                {
+                    foreach (string? headerValue in headerValues)
+                    {
+                        if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
+                        {
+                            return true;
+                        }
+
+                        hasValue = true;
+                    }
                 }
 
                 return false;
@@ -133,20 +137,24 @@ namespace Datadog.Trace.Propagators
             return null;
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out int result)
+            static bool TryParse(IEnumerable<string?>? headerValues, ref bool hasValue, out int result)
             {
                 result = 0;
-                foreach (string? headerValue in headerValues)
-                {
-                    if (int.TryParse(headerValue, out result))
-                    {
-                        // note this int value may not be defined in the enum,
-                        // but we should pass it along without validation
-                        // for forward compatibility
-                        return true;
-                    }
 
-                    hasValue = true;
+                if (headerValues is not null)
+                {
+                    foreach (string? headerValue in headerValues)
+                    {
+                        if (int.TryParse(headerValue, out result))
+                        {
+                            // note this int value may not be defined in the enum,
+                            // but we should pass it along without validation
+                            // for forward compatibility
+                            return true;
+                        }
+
+                        hasValue = true;
+                    }
                 }
 
                 return false;
@@ -175,13 +183,16 @@ namespace Datadog.Trace.Propagators
             return ParseStringIEnumerable(headerValues);
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
+            static string? ParseStringIEnumerable(IEnumerable<string?>? headerValues)
             {
-                foreach (string? headerValue in headerValues)
+                if (headerValues is not null)
                 {
-                    if (!string.IsNullOrEmpty(headerValue))
+                    foreach (string? headerValue in headerValues)
                     {
-                        return headerValue;
+                        if (!string.IsNullOrEmpty(headerValue))
+                        {
+                            return headerValue;
+                        }
                     }
                 }
 
@@ -211,13 +222,16 @@ namespace Datadog.Trace.Propagators
             return ParseStringIEnumerable(headerValues);
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
+            static string? ParseStringIEnumerable(IEnumerable<string?>? headerValues)
             {
-                foreach (string? headerValue in headerValues)
+                if (headerValues is not null)
                 {
-                    if (!string.IsNullOrEmpty(headerValue))
+                    foreach (string? headerValue in headerValues)
                     {
-                        return headerValue;
+                        if (!string.IsNullOrEmpty(headerValue))
+                        {
+                            return headerValue;
+                        }
                     }
                 }
 
