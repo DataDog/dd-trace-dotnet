@@ -21,6 +21,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class TransportTests : TestHelper
     {
+        private static readonly TestTransports[] Transports = new[]
+        {
+            TestTransports.Tcp,
+            TestTransports.WindowsNamedPipe,
+#if NETCOREAPP3_1_OR_GREATER
+            TestTransports.Uds,
+#endif
+        };
+
         private readonly ITestOutputHelper _output;
 
         // Using Telemetry sample as it's simple
@@ -31,23 +40,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public static IEnumerable<object[]> Data =>
-            Enum.GetValues(typeof(TracesTransportType))
-                .Cast<TracesTransportType>()
-#if !NETCOREAPP3_1_OR_GREATER
-                .Where(x => x != TracesTransportType.UnixDomainSocket)
-#endif
-                .Select(x => new object[] { x });
+            from transport in Transports
+            from dataPipelineEnabled in new[] { true, false }
+            select new object[] { transport, dataPipelineEnabled };
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task TransportsWorkCorrectly(Enum transport)
+        public async Task TransportsWorkCorrectly(TestTransports transport, bool dataPipelineEnabled)
         {
-            var transportType = (TracesTransportType)transport;
+            var transportType = TracesTransportTypeFromTestTransport(transport);
             if (transportType != TracesTransportType.WindowsNamedPipe)
             {
-                await RunTest(transportType);
+                await RunTest(transportType, dataPipelineEnabled);
                 return;
             }
 
@@ -58,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 try
                 {
                     attemptsRemaining--;
-                    await RunTest(transportType);
+                    await RunTest(transportType, dataPipelineEnabled);
                     return;
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
@@ -68,7 +74,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task RunTest(TracesTransportType transportType)
+        private TracesTransportType TracesTransportTypeFromTestTransport(TestTransports transport)
+        {
+            return transport switch
+            {
+                TestTransports.Tcp => TracesTransportType.Default,
+                TestTransports.WindowsNamedPipe => TracesTransportType.WindowsNamedPipe,
+                TestTransports.Uds => TracesTransportType.UnixDomainSocket,
+                _ => TracesTransportType.Default,
+            };
+        }
+
+        private async Task RunTest(TracesTransportType transportType, bool dataPipelineEnabled)
         {
             const int expectedSpanCount = 1;
 
@@ -77,6 +94,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
             }
 
+            if (transportType == TracesTransportType.UnixDomainSocket && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
+            {
+                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+            }
+
+            EnvironmentHelper.EnableDataPipeline(dataPipelineEnabled);
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
             using var telemetry = this.ConfigureTelemetry();
