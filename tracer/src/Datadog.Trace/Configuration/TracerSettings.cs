@@ -307,6 +307,9 @@ namespace Datadog.Trace.Configuration
             RemoveClientServiceNamesEnabled = config
                .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
                .AsBool(defaultValue: false);
+            SpanPointersEnabled = config
+               .WithKeys(ConfigurationKeys.SpanPointersEnabled)
+               .AsBool(defaultValue: true);
 
             PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
 
@@ -1124,6 +1127,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether to remove the service names when using the v0 schema.
         /// </summary>
         internal bool RemoveClientServiceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to add span pointers on AWS requests.
+        /// </summary>
+        internal bool SpanPointersEnabled { get; }
 
         /// <summary>
         /// Gets the metadata schema version

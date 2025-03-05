@@ -74,7 +74,17 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_4,
+          ptr.kind: aws.s3.object
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -87,7 +97,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: GetObject,
-      aws.requestId: Guid_4,
+      aws.requestId: Guid_5,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -117,7 +127,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CopyObject,
-      aws.requestId: Guid_5,
+      aws.requestId: Guid_6,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -134,7 +144,17 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_7,
+          ptr.kind: aws.s3.object
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -147,7 +167,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ListObjectsV2,
-      aws.requestId: Guid_6,
+      aws.requestId: Guid_8,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -176,7 +196,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteObject,
-      aws.requestId: Guid_7,
+      aws.requestId: Guid_9,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -206,7 +226,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteObjects,
-      aws.requestId: Guid_8,
+      aws.requestId: Guid_10,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -235,7 +255,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: InitiateMultipartUpload,
-      aws.requestId: Guid_9,
+      aws.requestId: Guid_11,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -265,7 +285,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: UploadPart,
-      aws.requestId: Guid_10,
+      aws.requestId: Guid_12,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -295,7 +315,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: UploadPart,
-      aws.requestId: Guid_11,
+      aws.requestId: Guid_13,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -325,7 +345,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: CompleteMultipartUpload,
-      aws.requestId: Guid_12,
+      aws.requestId: Guid_14,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -342,7 +362,17 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_15,
+          ptr.kind: aws.s3.object
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -355,7 +385,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ListBuckets,
-      aws.requestId: Guid_13,
+      aws.requestId: Guid_16,
       aws.service: S3,
       aws_service: S3,
       component: aws-sdk,
@@ -383,7 +413,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ListObjectsV2,
-      aws.requestId: Guid_14,
+      aws.requestId: Guid_17,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -412,7 +442,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteObject,
-      aws.requestId: Guid_15,
+      aws.requestId: Guid_18,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
@@ -442,7 +472,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteBucket,
-      aws.requestId: Guid_16,
+      aws.requestId: Guid_19,
       aws.service: S3,
       aws_service: S3,
       bucketname: my-bucket,
