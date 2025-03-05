@@ -108,16 +108,37 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <!-- files included in build when IncludeAllProducts == true -->
-    <NonTracingFiles>
-      AspNet/**;
+    <AppSecFiles>
       AppSec/**;
-      Ci/**;
+      Iast/**;
+      Configuration/ConfigurationKeys.AppSec.cs;
       Configuration/ConfigurationKeys.Iast.cs;
+    </AppSecFiles>
+    <AppSecStubs>
+      MinimalBuildStubs/AppSec/**;
+      MinimalBuildStubs/Iast/**;
+    </AppSecStubs>
+
+    <CiVisibilityFiles>
+      Ci/**;
+    </CiVisibilityFiles>
+    <CiVisibilityStubs>
+      MinimalBuildStubs/Ci/**;
+    </CiVisibilityStubs>
+
+    <DynamicDebuggerFiles>
       Configuration/ConfigurationKeys.Debugger.cs;
       Debugger/**;
-      Iast/**;
       PDBs/**;
+      Vendors/dnlib/**;
+      Vendors/System.*/**;
+    </DynamicDebuggerFiles>
+    <DynamicDebuggerStubs>
+      MinimalBuildStubs/Debugger/**;
+      MinimalBuildStubs/Pdb/**;
+    </DynamicDebuggerStubs>
+
+    <OptionalFeaturesFiles>
       RuntimeMetrics/**;
       ServiceFabric/**;
 
@@ -144,32 +165,29 @@
       ClrProfiler/AutoInstrumentation/StackTraceLeak/**;
       ClrProfiler/AutoInstrumentation/Testing/**;
 
-      Vendors/dnlib/**;
       Vendors/Microsoft.OpenApi/**;
       Vendors/StatsdClient/**;
-      Vendors/System.*/**;
-    </NonTracingFiles>
-
-    <!-- api stubs included in build when IncludeAllProducts != true -->
-    <NonTracingFileStubs>
-      MinimalBuildStubs/**;
-    </NonTracingFileStubs>
+    </OptionalFeaturesFiles>
+    <OptionalFeaturesStubs>
+      MinimalBuildStubs/RuntimeMetrics/**;
+      MinimalBuildStubs/Vendors/StatsdClient/**;
+    </OptionalFeaturesStubs>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IncludeAllProducts)' == 'true'">
     <!-- we're including all products, remove the stubs -->
-    <None Remove="$(NonTracingFileStubs)" />
-    <Compile Remove="$(NonTracingFileStubs)" />
-    <Content Remove="$(NonTracingFileStubs)" />
-    <EmbeddedResource Remove="$(NonTracingFileStubs)" />
+    <None Remove="$(AppSecStubs);$(CiVisibilityStubs);$(DynamicDebuggerStubs);$(OptionalFeaturesStubs)" />
+    <Compile Remove="$(AppSecStubs);$(CiVisibilityStubs);$(DynamicDebuggerStubs);$(OptionalFeaturesStubs)" />
+    <Content Remove="$(AppSecStubs);$(CiVisibilityStubs);$(DynamicDebuggerStubs);$(OptionalFeaturesStubs)" />
+    <EmbeddedResource Remove="$(AppSecStubs);$(CiVisibilityStubs);$(DynamicDebuggerStubs);$(OptionalFeaturesStubs)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IncludeAllProducts)' != 'true'">
-    <!-- we're not including all products, remove excluded items, keep the stubs -->
-    <None Remove="$(NonTracingFiles)" />
-    <Compile Remove="$(NonTracingFiles)" />
-    <Content Remove="$(NonTracingFiles)" />
-    <EmbeddedResource Remove="$(NonTracingFiles)" />
+    <!-- we're excluding some products and features -->
+    <None Remove="$(AppSecFiles);$(CiVisibilityFiles);$(DynamicDebuggerFiles);$(OptionalFeaturesFiles)" />
+    <Compile Remove="$(AppSecFiles);$(CiVisibilityFiles);$(DynamicDebuggerFiles);$(OptionalFeaturesFiles)" />
+    <Content Remove="$(AppSecFiles);$(CiVisibilityFiles);$(DynamicDebuggerFiles);$(OptionalFeaturesFiles)" />
+    <EmbeddedResource Remove="$(AppSecFiles);$(CiVisibilityFiles);$(DynamicDebuggerFiles);$(OptionalFeaturesFiles)" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->
