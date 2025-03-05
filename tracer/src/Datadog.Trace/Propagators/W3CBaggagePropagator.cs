@@ -86,10 +86,15 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
 
         var baggage = ParseHeader(header!);
-        context = new PropagationContext(spanContext: null, baggage);
-        TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Baggage);
 
-        return baggage is { Count: > 0 };
+        if (baggage is { Count: > 0 })
+        {
+            context = new PropagationContext(spanContext: null, baggage);
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Baggage);
+            return true;
+        }
+
+        return false;
     }
 
     internal static void EncodeStringAndAppend(StringBuilder sb, string source, bool isKey)
@@ -264,17 +269,19 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             if (separatorPosition <= 0 || separatorPosition == span.Length - 1)
             {
-                // -1: invalid, no '=' character found, e.g. "foo"
-                // 0: invalid, key is empty, e.g. "=value" or "="
-                // span.Length - 1: invalid, value is empty, e.g. "key=" or "="
-                continue;
+                // invalid format, ignore entire header.
+                // separatorPosition == -1: no '=' character found, e.g. "foo"
+                // separatorPosition == 0: key is empty, e.g. "=value" or "="
+                // separatorPosition == span.Length - 1: value is empty, e.g. "key=" or "="
+                return null;
             }
 
             var key = Decode(span.Slice(0, separatorPosition).Trim());
 
             if (key.Length == 0)
             {
-                continue;
+                // key was whitespace only. invalid format, ignore entire header.
+                return null;
             }
 
             // Ignore everything starting with the first `;` character after the value.
@@ -285,7 +292,8 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             if (propertiesPosition >= 0 && propertiesPosition < separatorPosition)
             {
                 // invalid, ';' character was found before the value token, e.g. "key;=value" or ";="
-                continue;
+                // invalid format, ignore entire header.
+                return null;
             }
 
             // If no ';' character is found, make sure we parse the remaining string, e.g. "key=value"
@@ -296,7 +304,8 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             if (value.Length == 0)
             {
-                continue;
+                // value was whitespace only. invalid format, ignore entire header.
+                return null;
             }
 
             baggage ??= new Baggage();
