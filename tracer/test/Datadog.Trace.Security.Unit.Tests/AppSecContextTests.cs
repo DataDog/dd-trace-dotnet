@@ -29,7 +29,7 @@ public class AppSecContextTests
         appSecContext.CheckWAFError(wafErrorCode2, false);
         TraceTagCollection tags = new();
         appSecContext.CloseWebSpan(tags, rootTestScope.Span);
-        tags.GetTag(Tags.WAFError).Should().Be(expectedWafErrorCode?.ToString());
-        tags.GetTag(Tags.RaspWAFError).Should().Be(expectedRaspErrorCode?.ToString());
+        tags.GetTag(Tags.WafError).Should().Be(expectedWafErrorCode?.ToString());
+        tags.GetTag(Tags.RaspWafError).Should().Be(expectedRaspErrorCode?.ToString());
     }
 }

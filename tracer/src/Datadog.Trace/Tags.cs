@@ -617,12 +617,12 @@ namespace Datadog.Trace
         /// <summary>
         /// The most relevant WAF error code during a request
         /// </summary>
-        public const string WAFError = "_dd.appsec.waf.error";
+        public const string WafError = "_dd.appsec.waf.error";
 
         /// <summary>
         /// The most relevant WAF error code during a request when using RASP
         /// </summary>
-        public const string RaspWAFError = "_dd.appsec.rasp.error";
+        public const string RaspWafError = "_dd.appsec.rasp.error";
 
         /// <summary>
         ///  String-serialized JSON array, each item being a map containing:

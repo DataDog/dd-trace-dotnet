@@ -54,12 +54,12 @@ internal partial class AppSecRequestContext
 
             if (_wafError != null)
             {
-                tags.SetTag(Tags.WAFError, _wafError.ToString());
+                tags.SetTag(Tags.WafError, _wafError.ToString());
             }
 
             if (_wafRaspError != null)
             {
-                tags.SetTag(Tags.RaspWAFError, _wafRaspError.ToString());
+                tags.SetTag(Tags.RaspWafError, _wafRaspError.ToString());
             }
 
             _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
