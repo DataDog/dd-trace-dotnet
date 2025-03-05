@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-#if !NETFRAMEWORK
+#if NETCOREAPP2_2_OR_GREATER
 
 using System;
 using System.ComponentModel;
@@ -23,14 +23,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     MethodName = "Map",
     ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
     ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Http.PathString", ClrNames.Bool, "System.Action`1[Microsoft.AspNetCore.Builder.IApplicationBuilder]"],
-    MinimumVersion = "2.0.0",
-    MaximumVersion = "9.*.*",
+    MinimumVersion = "5.0.0",
+    MaximumVersion = SupportedVersions.LatestDotNet,
+    InstrumentationCategory = InstrumentationCategory.AppSec,
+    IntegrationName = nameof(IntegrationId.AspNetCore))]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.AspNetCore.Http.Abstractions",
+    TypeName = "Microsoft.AspNetCore.Builder.MapExtensions",
+    MethodName = "Map",
+    ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
+    ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Http.PathString", "System.Action`1[Microsoft.AspNetCore.Builder.IApplicationBuilder]"],
+    MinimumVersion = "2.2.0",
+    MaximumVersion = "3.*.*",
+    InstrumentationCategory = InstrumentationCategory.AppSec,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MapExtensionsMapIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TApp, TPathMatch, TConfiguration>(ref TApp? app, ref TPathMatch pathMatch, ref bool preserveMatchedPathSegment, ref TConfiguration? configuration)
+    {
+        if (Security.Instance.ApiSecurity.CanCollectEndpoints())
+        {
+            MapEndpointsCollection.BeggingMapEndpoint(pathMatch!.ToString()!);
+        }
+
+        return CallTargetState.GetDefault();
+    }
+
+    internal static CallTargetState OnMethodBegin<TTarget, TApp, TPathMatch, TConfiguration>(ref TApp? app, ref TPathMatch pathMatch, ref TConfiguration? configuration)
     {
         if (Security.Instance.ApiSecurity.CanCollectEndpoints())
         {
