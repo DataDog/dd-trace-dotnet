@@ -42,30 +42,11 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
                 return false;
             }
 
+            var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
+
             // we also need to validate that we have the start time header otherwise we won't be able to create the span
-            var startTime = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
-
-            if (string.IsNullOrEmpty(startTime))
+            if (!GetStartTime(startTimeHeaderValue, out var startTime))
             {
-                Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
-                return false;
-            }
-
-            if (!long.TryParse(startTime, out var startTimeMs))
-            {
-                Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
-                return false;
-            }
-
-            DateTimeOffset start;
-
-            try
-            {
-                start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
                 return false;
             }
 
@@ -75,13 +56,13 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
 
-            data = new InferredProxyData(proxyName, start, domainName, httpMethod, path, stage);
+            data = new InferredProxyData(proxyName, startTime, domainName, httpMethod, path, stage);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
                     "Successfully extracted proxy data: StartTime={StartTime}, Domain={Domain}, Method={Method}, Path={Path}, Stage={Stage}",
-                    [startTime, domainName, httpMethod, path, stage]);
+                    [startTimeHeaderValue, domainName, httpMethod, path, stage]);
             }
 
             return true;
@@ -89,6 +70,34 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
         catch (Exception ex)
         {
             Log.Error(ex, "Error extracting proxy data from {Proxy} headers", ProxyName);
+            return false;
+        }
+    }
+
+    private static bool GetStartTime(string? startTime, out DateTimeOffset start)
+    {
+        start = default;
+
+        if (string.IsNullOrEmpty(startTime))
+        {
+            Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
+            return false;
+        }
+
+        if (!long.TryParse(startTime, out var startTimeMs))
+        {
+            Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
+            return false;
+        }
+
+        try
+        {
+            start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
             return false;
         }
     }
