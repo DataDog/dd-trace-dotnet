@@ -405,7 +405,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://fakeorg,DC=com&userName=BabsJensen", null)]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com", null)]
     public async Task TestIastLdapRequest(string test, string url, string body)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
