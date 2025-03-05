@@ -29,6 +29,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     ParameterTypeNames = ["Microsoft.AspNetCore.Hosting.Server.IHttpApplication`1[!!0]", ClrNames.CancellationToken],
     MinimumVersion = "2.2.0",
     MaximumVersion = SupportedVersions.LatestDotNet,
+    InstrumentationCategory = InstrumentationCategory.AppSec,
+    IntegrationName = nameof(IntegrationId.AspNetCore))]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.AspNetCore.Server.Kestrel.Core",
+    TypeName = "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer",
+    MethodName = "StartAsync",
+    ReturnTypeName = ClrNames.Task,
+    ParameterTypeNames = ["Microsoft.AspNetCore.Hosting.Server.IHttpApplication`1[!!0]", ClrNames.CancellationToken],
+    MinimumVersion = "2.2.0",
+    MaximumVersion = "3.*.*",
+    InstrumentationCategory = InstrumentationCategory.AppSec,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
