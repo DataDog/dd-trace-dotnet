@@ -19,10 +19,7 @@
 
     <IncludeAllProducts Condition="'$(IncludeAllProducts)' == ''">true</IncludeAllProducts>
     <DefineConstants Condition="'$(IncludeAllProducts)' == 'true'">$(DefineConstants);INCLUDE_ALL_PRODUCTS</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(IncludeAllProducts)' != 'true'">
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IncludeAllProducts)' != 'true'">net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -109,7 +106,7 @@
     <Compile Include="Vendors/System.Private.CoreLib/src/System/Runtime/InteropServices/StringMarshalling.cs" />
     <Compile Include="Vendors/System.Private.CoreLib/SR.cs" />
   </ItemGroup>
-  
+
   <PropertyGroup>
     <!-- files included in build when IncludeAllProducts == true -->
     <NonTracingFiles>
