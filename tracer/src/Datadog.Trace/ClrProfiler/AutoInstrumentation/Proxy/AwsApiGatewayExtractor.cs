@@ -27,13 +27,13 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
     {
         data = default;
 
-        if (tracer == null! || !tracer.Settings.InferredProxySpansEnabled)
-        {
-            return false;
-        }
-
         try
         {
+            if (tracer?.Settings.InferredProxySpansEnabled != true)
+            {
+                return false;
+            }
+
             // we need to first validate whether or not we have the header and whether or not it matches aws-apigateway
             var proxyName = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Name);
             if (proxyName is null || !string.Equals(proxyName, ProxyName, StringComparison.OrdinalIgnoreCase))
@@ -45,20 +45,27 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
             // we also need to validate that we have the start time header otherwise we won't be able to create the span
             var startTime = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
 
-            if (string.IsNullOrEmpty(startTime) || !long.TryParse(startTime, out var startTimeMs))
+            if (string.IsNullOrEmpty(startTime))
             {
-                Log.Debug("Invalid or missing {HeaderName} header with value {Value}", InferredProxyHeaders.StartTime, startTime);
+                Log.Debug("Missing header '{HeaderName}'", InferredProxyHeaders.StartTime);
                 return false;
             }
 
-            DateTimeOffset startTimeOffset;
+            if (!long.TryParse(startTime, out var startTimeMs))
+            {
+                Log.Warning("Failed to parse header '{HeaderName}' with value '{Value}'", InferredProxyHeaders.StartTime, startTime);
+                return false;
+            }
+
+            DateTimeOffset start;
+
             try
             {
-                startTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
+                start = DateTimeOffset.FromUnixTimeMilliseconds(startTimeMs);
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Failed to start time with value of {Value}", startTimeMs);
+                Log.Error(ex, "Failed to convert value '{Value}' from header '{HeaderName}' to DateTimeOffset", InferredProxyHeaders.StartTime, startTimeMs);
                 return false;
             }
 
@@ -68,7 +75,7 @@ internal class AwsApiGatewayExtractor : IInferredProxyExtractor
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
 
-            data = new InferredProxyData(proxyName, startTimeOffset, domainName, httpMethod, path, stage);
+            data = new InferredProxyData(proxyName, start, domainName, httpMethod, path, stage);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
