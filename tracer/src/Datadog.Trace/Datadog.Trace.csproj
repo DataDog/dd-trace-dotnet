@@ -19,10 +19,7 @@
 
     <IncludeAllProducts Condition="'$(IncludeAllProducts)' == ''">true</IncludeAllProducts>
     <DefineConstants Condition="'$(IncludeAllProducts)' == 'true'">$(DefineConstants);INCLUDE_ALL_PRODUCTS</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(IncludeAllProducts)' != 'true'">
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(IncludeAllProducts)' != 'true'">net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -126,7 +123,7 @@
     </AdditionalFiles>
     <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
-  
+
   <PropertyGroup>
     <!-- files included in build when IncludeAllProducts == true -->
     <NonTracingFiles>
