@@ -35,6 +35,7 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
             settings.SetTestManagementEnabled(true);
             _testManagementTask = Task.Run(() => InternalGetTestManagementTestsAsync(testOptimizationClient));
             _enabled = true;
+            TestManagementAttemptToFixRetries = settings.TestManagementAttemptToFixRetries ?? clientSettingsResponse.TestManagement.AttemptToFixRetries ?? 10;
         }
         else
         {
@@ -42,6 +43,7 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
             settings.SetTestManagementEnabled(false);
             _testManagementTask = Task.FromResult(new TestOptimizationClient.TestManagementResponse());
             _enabled = false;
+            TestManagementAttemptToFixRetries = settings.TestManagementAttemptToFixRetries ?? 10;
         }
 
         return;
@@ -59,6 +61,8 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
 
     public TestOptimizationClient.TestManagementResponse TestManagement
         => _testManagementTask.SafeGetResult();
+
+    public int TestManagementAttemptToFixRetries { get; }
 
     public static ITestOptimizationTestManagementFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
         => new TestOptimizationTestManagementFeature(settings, clientSettingsResponse, testOptimizationClient);

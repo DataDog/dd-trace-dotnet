@@ -136,14 +136,19 @@ internal static class XUnitIntegration
             }
         }
 
+        var isRetry = testCaseMetadata is { ExecutionIndex: > 0 };
+
         // Flaky retries
-        if (testOptimization.FlakyRetryFeature?.Enabled == true)
+        Common.SetFlakyRetryTags(test, isRetry);
+
+        // Test management feature
+        if (Common.SetTestManagementFeature(test, isRetry) is { } testManagementData)
         {
-            if (testCaseMetadata is { ExecutionIndex: > 0 })
+            if (testCaseMetadata is not null)
             {
-                test.SetTag(TestTags.TestIsRetry, "true");
-                testTags.TestIsRetry = "true";
-                testTags.TestRetryReason = "atr";
+                testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
+                testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
+                testCaseMetadata.IsAttemptToFix = testManagementData.AttemptToFix;
             }
         }
 
@@ -229,6 +234,20 @@ internal static class XUnitIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static bool IsDisabled(ref TestRunnerStruct runnerInstance)
+    {
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            var testAssembly = runnerInstance.TestClass?.Assembly.GetName().Name ?? string.Empty;
+            var testClassName = runnerInstance.TestClass?.ToString() ?? string.Empty;
+            var testMethod = runnerInstance.TestMethod?.Name ?? string.Empty;
+            return testOptimization.TestManagementFeature.GetTestProperties(testAssembly, testClassName, testMethod).Disabled;
+        }
+
+        return false;
     }
 
     internal static void IncrementTotalTestCases()

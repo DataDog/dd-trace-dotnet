@@ -83,8 +83,19 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
-        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true && testOptimization.FlakyRetryFeature?.Enabled != true)
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
+            testOptimization.FlakyRetryFeature?.Enabled != true &&
+            testOptimization.TestManagementFeature?.Enabled != true)
         {
+            return CallTargetState.GetDefault();
+        }
+
+        // Disable test if it is marked as disabled in the test management feature
+        if (XUnitIntegration.IsDisabled(ref testRunnerData))
+        {
+            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Skipping test: {Class}.{Name} Reason: {Reason}", testcase.TestClass?.ToString() ?? string.Empty, testcase.TestMethod?.Method.Name ?? string.Empty, testcase.SkipReason);
+            testcase.SkipReason = "Flaky test is disabled by Datadog";
+            XUnitIntegration.CreateTest(ref testRunnerData);
             return CallTargetState.GetDefault();
         }
 
@@ -118,7 +129,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         var testcase = (IXunitTestCaseV3)stateArray[3];
 
         if (retryMessageBus is not null &&
-            retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } &&
+            retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } or { IsAttemptToFix: true } &&
             context.Instance is not null &&
             testcase.Instance is not null)
         {
@@ -140,6 +151,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             var runSummaryUnsafe = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref returnValue);
 
             var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
+            var isAttemptToFix = retryMetadata.IsAttemptToFix;
             var index = retryMetadata.ExecutionIndex;
 
             if (index == 0)
@@ -148,6 +160,10 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 if (isFlakyRetryEnabled)
                 {
                     retryMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0) + 1;
+                }
+                else if (isAttemptToFix)
+                {
+                    retryMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetries ?? 1;
                 }
                 else
                 {
@@ -184,9 +200,9 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 if (doRetry)
                 {
                     var retryNumber = retryMetadata.ExecutionIndex + 1;
+
                     // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
                     Common.Log.Debug<int, int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
-
                     var mrunner = instance.DuckCast<IXunitTestMethodRunnerV3>();
 
                     // Decrement the execution number (the method body will do the execution)
@@ -217,7 +233,16 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
             if (index == 0)
             {
-                retryMessageBus.FlushMessages(retryMetadata.UniqueID);
+                if (retryMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
+                {
+                    // Quarantined or disabled test results should be skipped.
+                    Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
+                    retryMessageBus.ClearMessages(testcase.UniqueID);
+                }
+                else
+                {
+                    retryMessageBus.FlushMessages(testcase.UniqueID);
+                }
 
                 // Let's clear the failed and skipped runs if we have at least one successful run
                 if (Common.Log.IsEnabled(LogEventLevel.Debug))
@@ -248,6 +273,12 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
                 Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: {Message}", $"EFD/Retry: Returned summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]");
             }
+        }
+        else if (retryMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
+        {
+            // Quarantined or disabled test results should be skipped.
+            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
+            retryMessageBus?.ClearMessages(testcase.UniqueID);
         }
         else
         {

@@ -162,6 +162,21 @@ internal class RetryMessageBus : IMessageBus
         }
     }
 
+    public bool ClearMessages(string testCaseUniqueID)
+    {
+        Common.Log.Debug("EFD: RetryMessageBus.ClearMessages: cleaning messages");
+
+        var metadata = (RetryTestCaseMetadata)GetMetadata(testCaseUniqueID);
+        var listOfMessages = metadata?.ListOfMessages;
+        if (listOfMessages is null || listOfMessages.Length == 0)
+        {
+            return true;
+        }
+
+        Array.Clear(listOfMessages, 0, listOfMessages.Length);
+        return true;
+    }
+
 #pragma warning disable SA1201 // ElementsMustAppearInTheCorrectOrder
     internal interface ITestCaseMessage
     {
