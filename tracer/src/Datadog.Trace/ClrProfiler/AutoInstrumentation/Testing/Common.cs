@@ -9,6 +9,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -204,6 +205,43 @@ internal static class Common
             testTags.TestIsRetry = "true";
             testTags.TestRetryReason = "atr";
         }
+    }
+
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? SetTestManagementFeature(Test test, bool isRetry)
+    {
+        // Test management feature
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            var testTags = test.GetTags();
+            var testManagementProperties = testOptimization.TestManagementFeature.GetTestProperties(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (testManagementProperties.Quarantined)
+            {
+                Log.Debug("Common: Test is quarantined. [Suite: {SuiteName}, Test: {TestName}]", test.Suite.Name, test.Name);
+                testTags.IsQuarantined = "true";
+            }
+
+            if (testManagementProperties.Disabled)
+            {
+                Log.Debug("Common: Test is disabled. [Suite: {SuiteName}, Test: {TestName}]", test.Suite.Name, test.Name);
+                testTags.IsDisabled = "true";
+            }
+
+            if (testManagementProperties.AttemptToFix)
+            {
+                Log.Debug("Common: Test is an attempt to fix. [Suite: {SuiteName}, Test: {TestName}, IsRetry: {IsRetry}]", test.Suite.Name, test.Name, isRetry);
+                testTags.IsAttemptToFix = "true";
+                if (isRetry)
+                {
+                    testTags.TestIsRetry = "true";
+                    testTags.TestRetryReason = "attempt_to_fix";
+                }
+            }
+
+            return testManagementProperties;
+        }
+
+        return null;
     }
 
     internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)

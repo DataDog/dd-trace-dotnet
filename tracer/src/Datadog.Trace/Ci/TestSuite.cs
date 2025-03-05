@@ -204,7 +204,9 @@ public sealed class TestSuite
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
             TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework),
             MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Suite,
-            MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+            MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         Current = null;
         lock (OpenedTestSuites)

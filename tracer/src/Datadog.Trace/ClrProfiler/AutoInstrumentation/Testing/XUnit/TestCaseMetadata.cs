@@ -29,5 +29,11 @@ internal class TestCaseMetadata
 
     public bool FlakyRetryEnabled { get; set; }
 
+    public bool IsQuarantinedTest { get; set; }
+
+    public bool IsDisabledTest { get; set; }
+
+    public bool IsAttemptToFix { get; set; }
+
     public string UniqueID { get; }
 }

@@ -391,7 +391,9 @@ public sealed class TestSession
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
                 TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
                 eventTypeWithMetadata,
-                MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+                MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+                MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+                MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
         }
 
         if (_environmentVariablesToRestore is { } envVars)

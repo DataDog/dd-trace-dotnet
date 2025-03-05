@@ -69,14 +69,29 @@ public static class XUnitTestRunnerRunAsyncIntegration
         if (runnerInstance.SkipReason is not null)
         {
             // Skip test support
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Skipping test: {Class}.{Name} Reason: {Reason}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty, runnerInstance.SkipReason);
             XUnitIntegration.CreateTest(ref runnerInstance);
             return CallTargetState.GetDefault();
         }
 
         if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
-            testOptimization.FlakyRetryFeature?.Enabled != true)
+            testOptimization.FlakyRetryFeature?.Enabled != true &&
+            testOptimization.TestManagementFeature?.Enabled != true)
         {
             return CallTargetState.GetDefault();
+        }
+
+        // Disable test if it is marked as disabled in the test management feature
+        if (XUnitIntegration.IsDisabled(ref runnerInstance))
+        {
+            if (instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
+            {
+                Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Skipping test: {Class}.{Name} Reason: {Reason}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty, runnerInstance.SkipReason);
+                runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
+                testRunnerInstance.SkipReason = runnerInstance.SkipReason;
+                XUnitIntegration.CreateTest(ref runnerInstance);
+                return CallTargetState.GetDefault();
+            }
         }
 
         if (testOptimization.FlakyRetryFeature?.Enabled == true)
@@ -139,17 +154,23 @@ public static class XUnitTestRunnerRunAsyncIntegration
         var testOptimization = TestOptimization.Instance;
         if (state.State is TestRunnerState { MessageBus: { } messageBus, RetryMetadata: { } retryMetadata } testRunnerState)
         {
-            if (retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
-             && returnValue.TryDuckCast<IRunSummary>(out var runSummary))
+            if (retryMetadata is { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } or { IsAttemptToFix: true } &&
+                returnValue.TryDuckCast<IRunSummary>(out var runSummary))
             {
                 var isFlakyRetryEnabled = retryMetadata.FlakyRetryEnabled;
+                var isAttemptToFix = retryMetadata.IsAttemptToFix;
                 var index = retryMetadata.ExecutionIndex;
+
                 if (index == 0)
                 {
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                     if (isFlakyRetryEnabled)
                     {
                         retryMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0) + 1;
+                    }
+                    else if (isAttemptToFix)
+                    {
+                        retryMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetries ?? 1;
                     }
                     else
                     {
@@ -181,6 +202,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     if (doRetry)
                     {
                         var retryNumber = retryMetadata.ExecutionIndex + 1;
+
                         // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
                         Common.Log.Debug<int, int>("XUnitTestRunnerRunAsyncIntegration: EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, retryMetadata.ExecutionNumber);
                         var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
@@ -209,7 +231,16 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                 if (index == 0)
                 {
-                    messageBus.FlushMessages(retryMetadata.UniqueID);
+                    if (retryMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
+                    {
+                        // Quarantined or disabled test results should be skipped.
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Quarantined or disabled test: {DisplayName}", testRunnerState.TestRunner.DisplayName);
+                        messageBus.ClearMessages(retryMetadata.UniqueID);
+                    }
+                    else
+                    {
+                        messageBus.FlushMessages(retryMetadata.UniqueID);
+                    }
 
                     // Let's clear the failed and skipped runs if we have at least one successful run
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
@@ -244,6 +275,12 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: {Value}", debugMsg);
                     }
                 }
+            }
+            else if (retryMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
+            {
+                // Quarantined or disabled test results should be skipped.
+                Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Quarantined or disabled test: {DisplayName}", testRunnerState.TestRunner.DisplayName);
+                messageBus.ClearMessages(retryMetadata.UniqueID);
             }
             else
             {
