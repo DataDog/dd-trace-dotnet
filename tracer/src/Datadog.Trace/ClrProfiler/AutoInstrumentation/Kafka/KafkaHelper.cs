@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (!string.IsNullOrEmpty(topicPartition?.Topic))
                 {
-                    tags.SetTag(Tags.MessagingDestinationName, topicPartition?.Topic);
+                    tags.SetTag(Tags.MessagingDestinationName, topicPartition!.Topic);
                 }
 
                 // Producer spans should always be measured
