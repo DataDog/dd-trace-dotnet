@@ -615,6 +615,21 @@ namespace Datadog.Trace
         internal const string AppSecWafVersion = "_dd.appsec.waf.version";
 
         /// <summary>
+        /// A tag containing the length of the largest truncated string provided to libddwaf.
+        /// </summary>
+        internal const string AppSecTruncatedStringLength = "_dd.appsec.truncated.string_length";
+
+        /// <summary>
+        /// A tag containing the size of the largest truncated container provided to libddwaf.
+        /// </summary>
+        internal const string AppSecTruncatedContainerSize = "_dd.appsec.truncated.container_size";
+
+        /// <summary>
+        /// A tag containing the maximum depth at which any container was truncated before providing it to libddwaf.
+        /// </summary>
+        internal const string AppSecTruncatedContainerDepth = "_dd.appsec.truncated.container_depth";
+
+        /// <summary>
         ///  String-serialized JSON array, each item being a map containing:
         ///  Error(e) - the error string.
         ///  Rules(r) - an array of rules which failed to load with this error.

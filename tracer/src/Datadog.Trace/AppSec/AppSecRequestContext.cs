@@ -5,11 +5,13 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
@@ -25,6 +27,9 @@ internal partial class AppSecRequestContext
     private readonly RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
+    private int _truncatedStringLength = 0;
+    private int _truncatedContainerSize = 0;
+    private int _truncatedContainerDepth = 0;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
     {
@@ -48,6 +53,21 @@ internal partial class AppSecRequestContext
             if (_raspStackTraces?.Count > 0)
             {
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
+            }
+
+            if (_truncatedStringLength != 0)
+            {
+                tags.SetTag(Tags.AppSecTruncatedStringLength, _truncatedStringLength.ToString());
+            }
+
+            if (_truncatedContainerSize != 0)
+            {
+                tags.SetTag(Tags.AppSecTruncatedContainerSize, _truncatedContainerSize.ToString());
+            }
+
+            if (_truncatedContainerDepth != 0)
+            {
+                tags.SetTag(Tags.AppSecTruncatedContainerDepth, _truncatedContainerDepth.ToString());
             }
 
             _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
@@ -96,6 +116,25 @@ internal partial class AppSecRequestContext
             }
 
             _raspStackTraces[stackCategory].Add(stackTrace);
+        }
+    }
+
+    internal void AddTruncation(MetricTags.TruncationReason reason, int size)
+    {
+        lock (_sync)
+        {
+            if (reason == MetricTags.TruncationReason.StringTooLong)
+            {
+                _truncatedStringLength = size;
+            }
+            else if (reason == MetricTags.TruncationReason.ListOrMapTooLarge)
+            {
+                _truncatedContainerSize = size;
+            }
+            else if (reason == MetricTags.TruncationReason.ObjectTooDeep)
+            {
+                _truncatedContainerDepth = size;
+            }
         }
     }
 }

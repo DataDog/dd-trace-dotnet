@@ -201,7 +201,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             if (context.ApplySafetyLimits && remainingDepth-- <= 0)
             {
-                TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                ReportTruncation(MetricTags.TruncationReason.ObjectTooDeep, WafConstants.MaxContainerDepth);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", enumerable));
@@ -214,7 +214,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             {
                 if (context.ApplySafetyLimits && count > WafConstants.MaxContainerSize)
                 {
-                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                    ReportTruncation(MetricTags.TruncationReason.ListOrMapTooLarge, WafConstants.MaxContainerSize);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -270,7 +270,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     childrenCount++;
                     if (context.ApplySafetyLimits && childrenCount == WafConstants.MaxContainerSize)
                     {
-                        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                        ReportTruncation(MetricTags.TruncationReason.ListOrMapTooLarge, WafConstants.MaxContainerSize);
                         if (Log.IsEnabled(LogEventLevel.Debug))
                         {
                             Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -305,6 +305,12 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
 
             return ddwafObjectStruct;
+        }
+
+        private static unsafe void ReportTruncation(MetricTags.TruncationReason reason, int size)
+        {
+            Tracer.Instance.InternalActiveScope?.Root?.Span?.Context?.TraceContext?.AppSecRequestContext?.AddTruncation(reason, size);
+            TelemetryFactory.Metrics.RecordCountInputTruncated(reason);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -360,7 +366,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         return StringBuilderCache.GetStringAndRelease(sb);
                     }
 
-                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+                    ReportTruncation(MetricTags.TruncationReason.ObjectTooDeep, WafConstants.MaxContainerDepth);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", GetItemsAsString());
@@ -371,7 +377,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
                 if (count > WafConstants.MaxContainerSize)
                 {
-                    TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                    ReportTruncation(MetricTags.TruncationReason.ListOrMapTooLarge, WafConstants.MaxContainerSize);
                     if (Log.IsEnabled(LogEventLevel.Debug))
                     {
                         Log.Debug<int>("EncodeList: list too long, it will be truncated, MaxMapOrArrayLength {MaxMapOrArrayLength}", WafConstants.MaxContainerSize);
@@ -520,6 +526,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
             var length = s.Length;
             if (applySafety || length <= WafConstants.MaxStringLength)
             {
+                if (length > WafConstants.MaxStringLength)
+                {
+                    ReportTruncation(MetricTags.TruncationReason.StringTooLong, WafConstants.MaxStringLength);
+                }
+
                 length = Math.Min(length, WafConstants.MaxStringLength);
                 unmanagedMemory = context.Pool.Rent();
                 fixed (char* chrPtr = s)

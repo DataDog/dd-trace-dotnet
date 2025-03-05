@@ -105,7 +105,7 @@ internal class EncoderLegacy : IEncoder
 
         if (applyLimits && remainingDepth-- <= 0)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+            ReportTruncation(MetricTags.TruncationReason.ObjectTooDeep, WafConstants.MaxContainerDepth);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
@@ -117,7 +117,7 @@ internal class EncoderLegacy : IEncoder
         var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
         if (applyLimits && count > WafConstants.MaxContainerSize)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+            ReportTruncation(MetricTags.TruncationReason.ListOrMapTooLarge, WafConstants.MaxContainerSize);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
@@ -141,7 +141,7 @@ internal class EncoderLegacy : IEncoder
 
         if (applyLimits && remainingDepth-- <= 0)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
+            ReportTruncation(MetricTags.TruncationReason.ObjectTooDeep, WafConstants.MaxContainerDepth);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
@@ -154,7 +154,7 @@ internal class EncoderLegacy : IEncoder
 
         if (applyLimits && count > WafConstants.MaxContainerSize)
         {
-            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+            ReportTruncation(MetricTags.TruncationReason.ListOrMapTooLarge, WafConstants.MaxContainerSize);
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, WafConstants.MaxContainerSize);
@@ -189,6 +189,12 @@ internal class EncoderLegacy : IEncoder
             applyLimits
                 ? TruncateLongString(s)
                 : s;
+
+        if (s.Length > encodeString.Length)
+        {
+            ReportTruncation(MetricTags.TruncationReason.StringTooLong, WafConstants.MaxStringLength);
+        }
+
         var objectStringLength = wafLibraryInvoker.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length));
         return objectStringLength;
     }
@@ -313,6 +319,12 @@ internal class EncoderLegacy : IEncoder
 
         sb.Append(" ]");
         return sb;
+    }
+
+    private static unsafe void ReportTruncation(MetricTags.TruncationReason reason, int size)
+    {
+        Tracer.Instance.InternalActiveScope?.Root?.Span?.Context?.TraceContext?.AppSecRequestContext?.AddTruncation(reason, size);
+        TelemetryFactory.Metrics.RecordCountInputTruncated(reason);
     }
 
     private class EncodeResult : IEncodeResult

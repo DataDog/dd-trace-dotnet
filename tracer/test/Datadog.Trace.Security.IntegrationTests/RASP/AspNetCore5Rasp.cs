@@ -59,6 +59,34 @@ public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
         settings.UseParameters(url, exploit);
         await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
+
+    [SkippableTheory]
+    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestRaspRequestSqlInBodyTruncate(string url, string exploit)
+    {
+        string body = "{\"UserName\": \"'David";
+
+        for (int i = 0; i <= 1000; i++)
+        {
+            body += "abcdefghijk";
+        }
+
+        body += "'\"}";
+
+        var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        _ = await SendRequestsAsync(agent, "/Iast/PopulateDDBB", null, 1, 1, string.Empty, "application/json", null);
+        var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && !x.Resource.Contains("/Iast/PopulateDDBB")).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit);
+        settings.AddIastScrubbing();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
+    }
 }
 
 public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTestFixture>
