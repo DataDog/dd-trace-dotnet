@@ -211,7 +211,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void Null_Service_Name_Does_Not_Throw()
+        public void Null_Service_Names_Dont_Throw()
         {
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
