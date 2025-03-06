@@ -24,6 +24,8 @@ internal partial class AppSecRequestContext
     private readonly object _sync = new();
     private readonly RaspTelemetryHelper? _raspTelemetryHelper = Security.Instance.RaspEnabled ? new RaspTelemetryHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
+    private int? _wafError = null;
+    private int? _wafRaspError = null;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(TraceTagCollection tags, Span span)
@@ -50,7 +52,33 @@ internal partial class AppSecRequestContext
                 span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_raspStackTraces));
             }
 
+            if (_wafError != null)
+            {
+                tags.SetTag(Tags.WafError, _wafError.ToString());
+            }
+
+            if (_wafRaspError != null)
+            {
+                tags.SetTag(Tags.RaspWafError, _wafRaspError.ToString());
+            }
+
             _raspTelemetryHelper?.GenerateRaspSpanMetricTags(span.Tags);
+        }
+    }
+
+    internal void CheckWAFError(int code, bool isRasp)
+    {
+        int? existingValue = isRasp ? _wafRaspError : _wafError;
+        if (code < 0 && (existingValue == null || existingValue < code))
+        {
+            if (isRasp)
+            {
+                _wafRaspError = code;
+            }
+            else
+            {
+                _wafError = code;
+            }
         }
     }
 
