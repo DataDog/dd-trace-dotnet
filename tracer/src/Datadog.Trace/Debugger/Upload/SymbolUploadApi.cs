@@ -42,7 +42,7 @@ namespace Datadog.Trace.Debugger.Upload
             discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
         }
 
-        public static IBatchUploadApi Create(
+        internal static IBatchUploadApi Create(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Debugger.Upload
             }
             else
             {
-                var compressedSymbols = await CompressDataAsync(symbols);
+                var compressedSymbols = await CompressDataAsync(symbols).ConfigureAwait(false);
                 if (compressedSymbols == null)
                 {
                     return false;
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Debugger.Upload
             return false;
         }
 
-        public static async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
+        internal async Task<ArraySegment<byte>?> CompressDataAsync(ArraySegment<byte> data)
         {
             using var memoryStream = new MemoryStream();
 
@@ -143,13 +143,15 @@ namespace Datadog.Trace.Debugger.Upload
             var compressedData = memoryStream.ToArray();
 
             // see here about the following validation: https://forensics.wiki/gzip/
-            if (compressedData.Length < 18) // minimum size for header + footer
+            // minimum size for header + footer
+            if (compressedData.Length < 18)
             {
                 Log.Error("Compression produced invalid data: size {Size} bytes is below minimum valid GZip size", property: compressedData.Length);
                 return null;
             }
 
-            if (compressedData[0] != 0x1F || compressedData[1] != 0x8B) // header magic numbers
+            // header magic numbers
+            if (compressedData[0] != 0x1F || compressedData[1] != 0x8B)
             {
                 Log.Error(
                     "Compression produced invalid data: invalid GZip header {Header}",
