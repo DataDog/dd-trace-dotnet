@@ -47,7 +47,8 @@ namespace Datadog.Trace.Debugger
         private readonly object _instanceLock = new();
         private bool _isRcmAvailable;
         private DebuggerSettings _settings;
-        private int _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
+        private long _initState = 0; // 0=not initialized, 1=initializing, 2=initialized
+        private long _disposeState = 0; // 0=not disposed, 1=disposing or disposed
 
         internal DynamicInstrumentation(
             DebuggerSettings settings,
@@ -81,11 +82,13 @@ namespace Datadog.Trace.Debugger
             discoveryService.SubscribeToChanges(DiscoveryCallback);
         }
 
-        public bool IsInitialized { get; private set; }
+        public bool IsDisposed => Interlocked.Read(ref _disposeState) != 0;
 
-        public async Task InitializeAsync()
+        public bool IsInitialized => Interlocked.Read(ref _initState) == 2;
+
+        internal void Initialize()
         {
-            int originalState = Interlocked.CompareExchange(ref _initState, 1, 0);
+            var originalState = Interlocked.CompareExchange(ref _initState, 1, 0);
 
             // If we weren't in "not initialized" state, return early
             if (originalState != 0)
@@ -120,13 +123,12 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Dynamic Instrumentation initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
-                AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
+                AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
 
-                await StartAsync().ConfigureAwait(false);
+                StartInBackground();
 
                 // Transition to "initialized" after successful initialization
                 Interlocked.Exchange(ref _initState, 2);
-                IsInitialized = true;
             }
             catch (Exception e)
             {
@@ -134,29 +136,34 @@ namespace Datadog.Trace.Debugger
                 // Reset to "not initialized"
                 Interlocked.Exchange(ref _initState, 0);
             }
+        }
 
-            Task StartAsync()
-            {
-                LifetimeManager.Instance.AddShutdownTask(ShutdownTask);
+        private void StartInBackground()
+        {
+            LifetimeManager.Instance.AddShutdownTask(ShutdownTask);
 
-                _probeStatusPoller.StartPolling();
-                _diagnosticsUploader.StartFlushingAsync();
-                return _snapshotUploader.StartFlushingAsync();
-            }
+            _probeStatusPoller.StartPolling();
+            _diagnosticsUploader.StartFlushingAsync();
+            _snapshotUploader.StartFlushingAsync();
         }
 
         private void ShutdownTask(Exception? ex)
         {
-            _discoveryService.RemoveSubscription(DiscoveryCallback);
-            _snapshotUploader.Dispose();
-            _diagnosticsUploader.Dispose();
-            _probeStatusPoller.Dispose();
-            _subscriptionManager.Unsubscribe(_subscription);
-            _dogStats.Dispose();
+            if (ex != null)
+            {
+                Log.Error(ex, "Shutdown task for DynamicInstrumentation is running with exception");
+            }
+
+            Dispose();
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             lock (_instanceLock)
             {
                 if (addedProbes.Count == 0)
@@ -262,6 +269,11 @@ namespace Datadog.Trace.Debugger
 
         internal void UpdateRemovedProbeInstrumentations(string[] removedProbesIds)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             lock (_instanceLock)
             {
                 if (removedProbesIds.Length == 0)
@@ -321,7 +333,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void CheckUnboundProbes()
+        private void CheckUnboundProbes(object sender, AssemblyLoadEventArgs args)
         {
             // A new assembly was loaded, so re-examine whether the probe can now be resolved.
             lock (_instanceLock)
@@ -463,12 +475,22 @@ namespace Datadog.Trace.Debugger
 
         internal void AddSnapshot(ProbeInfo probe, string snapshot)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             _snapshotUploader.Add(probe.ProbeId, snapshot);
             SetProbeStatusToEmitting(probe);
         }
 
         internal void SetProbeStatusToEmitting(ProbeInfo probe)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             if (!probe.IsEmitted)
             {
                 var probeStatus = new ProbeStatus(probe.ProbeId, Sink.Models.Status.EMITTING);
@@ -480,6 +502,11 @@ namespace Datadog.Trace.Debugger
 
         internal void SendMetrics(ProbeInfo probe, MetricKind metricKind, string metricName, double value, string probeId)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             if (_dogStats is NoOpStatsd)
             {
                 Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
@@ -515,7 +542,28 @@ namespace Datadog.Trace.Debugger
 
         public void Dispose()
         {
-            ShutdownTask(null);
+            var originalState = Interlocked.CompareExchange(ref _disposeState, 1, 0);
+
+            // Already disposing or disposed
+            if (originalState != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
+                _discoveryService.RemoveSubscription(DiscoveryCallback);
+                _snapshotUploader.Dispose();
+                _diagnosticsUploader.Dispose();
+                _probeStatusPoller.Dispose();
+                _subscriptionManager.Unsubscribe(_subscription);
+                _dogStats.Dispose();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Fail to dispose DynamicInstrumentation");
+            }
         }
     }
 }
