@@ -124,7 +124,7 @@ namespace Datadog.Trace.Configuration
                 DynamicInstrumentationEnabled = settings.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled).AsBool(),
                 ExceptionReplayEnabled = settings.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(),
                 CodeOriginEnabled = settings.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(),
-                DebuggerEnabled = false,
+                DebuggerEnabled = null,
             };
 
             var oldDebuggerSettings = DebuggerManager.Instance.DebuggerSettings;
@@ -136,6 +136,13 @@ namespace Datadog.Trace.Configuration
             else
             {
                 Log.Information("Applying new dynamic debugger configuration");
+                Log.Debug(
+                    "DynamicInstrumentationEnabled={DynamicInstrumentationEnabled}, ExceptionReplayEnabled={ExceptionReplayEnabled}, CodeOriginEnabled={CodeOriginEnabled}, DebuggerEnabled={DebuggerEnabled}",
+                    dynamicDebuggerSettings.DynamicInstrumentationEnabled,
+                    dynamicDebuggerSettings.ExceptionReplayEnabled,
+                    dynamicDebuggerSettings.CodeOriginEnabled,
+                    dynamicDebuggerSettings.DebuggerEnabled);
+
                 var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
                 _ = Task.Run(
                     async () =>
