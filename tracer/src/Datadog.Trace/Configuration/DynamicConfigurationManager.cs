@@ -144,18 +144,16 @@ namespace Datadog.Trace.Configuration
                     dynamicDebuggerSettings.DebuggerEnabled);
 
                 var newDebuggerSettings = oldDebuggerSettings with { DynamicSettings = dynamicDebuggerSettings };
-                _ = Task.Run(
-                    async () =>
-                    {
-                        try
-                        {
-                            await DebuggerManager.Instance.UpdateDynamicConfiguration(newDebuggerSettings).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error updating dynamic configuration for debugger");
-                        }
-                    }).ConfigureAwait(false);
+                DebuggerManager.Instance.UpdateDynamicConfiguration(newDebuggerSettings)
+                               .ContinueWith(
+                                    t =>
+                                    {
+                                        if (t.IsFaulted && t.Exception != null)
+                                        {
+                                            Log.Error(t.Exception.InnerException, "Error updating dynamic configuration for debugger");
+                                        }
+                                    },
+                                    TaskContinuationOptions.OnlyOnFaulted);
             }
         }
 
