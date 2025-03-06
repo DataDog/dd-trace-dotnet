@@ -23,6 +23,13 @@ public class ExtraServicesProviderTests
         servicesStored.Should().HaveElementAt(0, "extraVeg");
     }
 
+    [Fact]
+    public void Null_Service_Names_Dont_Throw()
+    {
+        var target = new ExtraServicesProvider();
+        target.AddService(null!);
+    }
+
     [Theory]
     [InlineData(1, 1)]
     [InlineData(63, 63)]
