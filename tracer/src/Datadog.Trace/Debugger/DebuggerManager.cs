@@ -231,7 +231,7 @@ namespace Datadog.Trace.Debugger
                     }
 
                     var discoveryService = tracerManager.DiscoveryService;
-                    DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, tracerManager.Telemetry, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
+                    DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                     Log.Debug("Dynamic Instrumentation has created.");
 
                     var sw = Stopwatch.StartNew();
@@ -241,7 +241,7 @@ namespace Datadog.Trace.Debugger
                     if (isDiscoverySuccessful)
                     {
                         sw.Restart();
-                        await DynamicInstrumentation.InitializeAsync().ConfigureAwait(false);
+                        DynamicInstrumentation.Initialize();
                         tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
                         TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
                     }
@@ -280,7 +280,7 @@ namespace Datadog.Trace.Debugger
             bool semaphoreAcquired = false;
             try
             {
-                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(10), _cancellationToken.Token).ConfigureAwait(false);
+                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(5), _cancellationToken.Token).ConfigureAwait(false);
                 if (!semaphoreAcquired || _isShuttingDown)
                 {
                     Log.Debug("Skipping update debugger state due to semaphore timed out");
