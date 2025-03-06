@@ -371,6 +371,9 @@ internal readonly struct ConfigurationBuilder
         public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings, char separator)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator));
 
+        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(Func<string, IDictionary<string, string>> parser)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(parser));
+
         private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
             => converter is null
                    ? GetResult(AsStringSelector, validator, recordValue)
@@ -473,6 +476,27 @@ internal readonly struct ConfigurationBuilder
             if (result.ShouldFallBack && FallbackKey3 is not null)
             {
                 result = Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings, separator);
+            }
+
+            return result;
+        }
+
+        private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(Func<string, IDictionary<string, string>> parser)
+        {
+            var result = Source.GetDictionary(Key, Telemetry, validator: null, parser);
+            if (result.ShouldFallBack && FallbackKey1 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey1, Telemetry, validator: null, parser);
+            }
+
+            if (result.ShouldFallBack && FallbackKey2 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey2, Telemetry, validator: null, parser);
+            }
+
+            if (result.ShouldFallBack && FallbackKey3 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey3, Telemetry, validator: null, parser);
             }
 
             return result;
