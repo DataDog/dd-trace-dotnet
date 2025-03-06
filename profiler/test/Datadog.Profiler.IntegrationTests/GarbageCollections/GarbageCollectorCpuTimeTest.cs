@@ -170,7 +170,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
         private static bool IsGcCpuSample((StackTrace StackTrace, PprofHelper.Label[] Labels, long[] Values) sample)
         {
-            return sample.StackTrace.Equals(GcStack) && sample.Labels.Any(label => label.Name == "internal" && label.Value == "true");
+            return sample.StackTrace.Equals(GcStack) && sample.Labels.Any(label => label.Name == "gc_cpu_sample" && label.Value == "true");
         }
     }
 }
