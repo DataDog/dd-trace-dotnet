@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "EnvironmentVariables.h"
+#include "Log.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
@@ -33,13 +34,13 @@ Configuration::Configuration()
     _pprofDirectory = ExtractPprofDirectory();
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
-    _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true);
-    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
-    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, true);
-    _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
+    _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true, true);
+    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true, true);
+    _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, true, true);
+    _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false, true);
     _isContentionProfilingEnabled = GetContention();
-    _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true);
-    _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false);
+    _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true, true);
+    _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false, true);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -50,7 +51,7 @@ Configuration::Configuration()
     _agentPort = GetEnvironmentValue(EnvironmentVariables::AgentPort, DefaultAgentPort);
     _site = ExtractSite();
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
-    _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
+    _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName(), true);
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 500);
     _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
@@ -90,7 +91,7 @@ Configuration::Configuration()
         _cpuProfilingInterval = ExtractCpuProfilingInterval(1ms);
     }
 
-    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true);
+    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true, true);
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
@@ -517,11 +518,12 @@ bool Configuration::GetContention()
     // first look at the supported env var
     if (IsEnvironmentValueSet(EnvironmentVariables::LockContentionProfilingEnabled, lockContentionEnabled))
     {
+        Log::Info("Configuration: ", EnvironmentVariables::LockContentionProfilingEnabled, " env var is set - lock contention is enabled");
         return lockContentionEnabled;
     }
 
     // if not there, look at the deprecated one
-    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled);
+    return GetEnvironmentValue(EnvironmentVariables::DeprecatedContentionProfilingEnabled, lockContentionEnabled, true);
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()
@@ -668,13 +670,32 @@ static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
 
 
 template <typename T>
-T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
+T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue, bool shouldLog)
 {
-    if (!shared::EnvironmentExist(name)) return defaultValue;
+    if (!shared::EnvironmentExist(name))
+    {
+        if (shouldLog)
+        {
+            Log::Info("Configuration: ", name, " env var is not set - '", defaultValue, "' is used as default value");
+        }
+        return defaultValue;
+    }
 
     T result{};
     auto r = shared::GetEnvironmentValue(name);
-    if (!convert_to(r, result)) return defaultValue;
+    if (!convert_to(r, result))
+    {
+        if (shouldLog)
+        {
+            Log::Info("Configuration: ", name, " env var is set to '", r,"' that cannot be converted - '", defaultValue, "' is used as default value");
+        }
+        return defaultValue;
+    }
+
+    if (shouldLog)
+    {
+        Log::Info("Configuration: ", name, " env var is set to '", r, "'");
+    }
     return result;
 }
 
