@@ -28,7 +28,7 @@ namespace Benchmarks.Trace
                 { ConfigurationKeys.TraceEnabled, false.ToString() },
             });
             var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
-            var settings = new CIVisibilitySettings(sources, NullConfigurationTelemetry.Instance);
+            var settings = new TestOptimizationSettings(sources, NullConfigurationTelemetry.Instance);
 
             EventWriter = new CIVisibilityProtocolWriter(settings, new FakeCIVisibilityProtocolWriter());
 

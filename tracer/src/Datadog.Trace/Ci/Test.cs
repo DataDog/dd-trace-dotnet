@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -28,6 +29,7 @@ public sealed class Test
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private static readonly HashSet<Test> OpenedTests = new();
 
+    private readonly ITestOptimization _testOptimization;
     private readonly Scope _scope;
     private int _finished;
     private List<Action<Test>>? _onCloseActions;
@@ -59,8 +61,9 @@ public sealed class Test
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         _scope = scope;
+        _testOptimization = TestOptimization.Instance;
 
-        if (CIVisibility.Settings.CodeCoverageEnabled == true)
+        if (_testOptimization.Settings.CodeCoverageEnabled == true)
         {
             Coverage.CoverageReporter.Handler.StartSession(module.Framework);
         }
@@ -71,7 +74,7 @@ public sealed class Test
             OpenedTests.Add(this);
         }
 
-        CIVisibility.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
+        _testOptimization.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
         {
@@ -359,7 +362,7 @@ public sealed class Test
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
-            CIVisibility.Log.Warning("Test.Close() was already called before.");
+            _testOptimization.Log.Warning("Test.Close() was already called before.");
             return;
         }
 
@@ -370,7 +373,7 @@ public sealed class Test
         duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
-        if (CIVisibility.Settings.CodeCoverageEnabled == true)
+        if (_testOptimization.Settings.CodeCoverageEnabled == true)
         {
             if (Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
             {
@@ -378,13 +381,13 @@ public sealed class Test
                 testCoverage.SuiteId = tags.SuiteId;
                 testCoverage.SpanId = _scope.Span.SpanId;
 
-                CIVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
-                CIVisibility.Manager?.WriteEvent(testCoverage);
+                _testOptimization.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+                _testOptimization.TracerManagement?.Manager?.WriteEvent(testCoverage);
             }
             else if (status != TestStatus.Skip)
             {
                 var testName = scope.Span.ResourceName;
-                CIVisibility.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
+                _testOptimization.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
             }
         }
 
@@ -444,12 +447,15 @@ public sealed class Test
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
-                tags.EarlyFlakeDetectionTestIsNew == "true",
+                tags.TestIsNew == "true",
                 tags.EarlyFlakeDetectionTestAbortReason == "slow",
                 !string.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+                TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
+                eventTypeWithMetadata,
+                tags.TestRetryReason == "efd" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection : tags.TestRetryReason == "atr" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry : MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
         }
 
         Current = null;
@@ -458,7 +464,7 @@ public sealed class Test
             OpenedTests.Remove(this);
         }
 
-        CIVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
+        _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()

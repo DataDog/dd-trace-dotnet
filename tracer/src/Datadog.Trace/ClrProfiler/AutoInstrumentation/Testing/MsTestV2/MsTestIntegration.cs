@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -83,7 +84,7 @@ internal static class MsTestIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
@@ -104,6 +105,7 @@ internal static class MsTestIntegration
         }
 
         var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
+        var testTags = test.GetTags();
 
         // Get test parameters
         UpdateTestParameters(test, testMethodInstance);
@@ -112,22 +114,25 @@ internal static class MsTestIntegration
         if (GetTraits(testMethod) is { } testTraits)
         {
             // Unskippable tests
-            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(testMethodInstance, out var isUnskippable, out var isForcedRun, testTraits);
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTags.Unskippable = isUnskippable ? "true" : "false";
+                testTags.ForcedRun = isForcedRun ? "true" : "false";
                 testTraits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
             }
 
             test.SetTraits(testTraits);
         }
-        else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests
-            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+            testTags.Unskippable = "false";
+            testTags.ForcedRun = "false";
         }
+
+        // Set known tests feature tags
+        Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
@@ -267,7 +272,7 @@ internal static class MsTestIntegration
         isUnskippable = false;
         isForcedRun = false;
 
-        if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+        if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
         }
@@ -289,7 +294,7 @@ internal static class MsTestIntegration
             return default;
         }
 
-        CIVisibility.WaitForSkippableTaskToFinish();
+        TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
 
         return TestModuleByTestAssemblyInfos.GetValue(
             objTestAssemblyInfo,

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "1.*.*",
+    MaximumVersion = "2.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -57,7 +58,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
                 }
             }
 
-            CIVisibility.WaitForSkippableTaskToFinish();
+            TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
             var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnitV3, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             module.EnableIpcClient();
             return new CallTargetState(null, module);
@@ -87,7 +88,7 @@ public static class XUnitTestAssemblyRunnerRunV3Integration
             await testModule.CloseAsync().ConfigureAwait(false);
 
             // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
-            CIVisibility.Close();
+            TestOptimization.Instance.Close();
         }
 
         return returnValue;

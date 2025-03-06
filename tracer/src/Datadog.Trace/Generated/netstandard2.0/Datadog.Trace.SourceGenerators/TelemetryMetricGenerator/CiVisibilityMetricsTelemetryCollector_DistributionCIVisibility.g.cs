@@ -60,12 +60,12 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "rs_compressed:true" }),
             // code_coverage.files, index = 27
             new(null),
-            // early_flake_detection.request_ms, index = 28
+            // known_tests.request_ms, index = 28
             new(null),
-            // early_flake_detection.response_bytes, index = 29
+            // known_tests.response_bytes, index = 29
             new(null),
             new(new[] { "rs_compressed:true" }),
-            // early_flake_detection.response_tests, index = 31
+            // known_tests.response_tests, index = 31
             new(null),
             // impacted_tests_detection.request_ms, index = 32
             new(null),
@@ -156,18 +156,18 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         _buffer.DistributionCIVisibility[27].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value)
+    public void RecordDistributionCIVisibilityKnownTestsRequestMs(double value)
     {
         _buffer.DistributionCIVisibility[28].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityKnownTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
         var index = 29 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value)
+    public void RecordDistributionCIVisibilityKnownTestsResponseTests(double value)
     {
         _buffer.DistributionCIVisibility[31].TryEnqueue(value);
     }

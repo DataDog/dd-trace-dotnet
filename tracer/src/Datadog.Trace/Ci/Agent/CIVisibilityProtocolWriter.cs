@@ -70,7 +70,7 @@ internal sealed class CIVisibilityProtocolWriter : IEventWriter
     private readonly int _batchInterval;
 
     public CIVisibilityProtocolWriter(
-        CIVisibilitySettings settings,
+        TestOptimizationSettings settings,
         ICIVisibilityProtocolWriterSender sender,
         IFormatterResolver? formatterResolver = null,
         int? concurrency = null,

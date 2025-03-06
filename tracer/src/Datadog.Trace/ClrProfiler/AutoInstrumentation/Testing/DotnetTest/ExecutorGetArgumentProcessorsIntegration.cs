@@ -28,7 +28,7 @@ public class ExecutorGetArgumentProcessorsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TProcessors>(TTarget instance, ref string[]? args, ref TProcessors? processors)
     {
-        if (!DotnetCommon.DotnetTestIntegrationEnabled || CIVisibility.Settings.CodeCoverageEnabled != true || args is null)
+        if (!DotnetCommon.DotnetTestIntegrationEnabled || TestOptimization.Instance.Settings.CodeCoverageEnabled != true || args is null)
         {
             return CallTargetState.GetDefault();
         }

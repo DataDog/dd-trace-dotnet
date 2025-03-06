@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -44,9 +45,10 @@ internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibil
             _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
         }
 
-        if (!string.IsNullOrWhiteSpace(Ci.CIVisibility.Settings.TestSessionName))
+        var testOptimization = TestOptimization.Instance;
+        if (!string.IsNullOrWhiteSpace(testOptimization.Settings.TestSessionName))
         {
-            _testSessionNameValueBytes = StringEncoding.UTF8.GetBytes(Ci.CIVisibility.Settings.TestSessionName);
+            _testSessionNameValueBytes = StringEncoding.UTF8.GetBytes(testOptimization.Settings.TestSessionName);
         }
 
         _envelopBytes = GetEnvelopeArraySegment();

@@ -1,7 +1,8 @@
-// <copyright file="CITracerManagerFactory.cs" company="Datadog">
+// <copyright file="TestOptimizationTracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -23,19 +24,17 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Ci
 {
-    internal class CITracerManagerFactory : TracerManagerFactory
+    internal class TestOptimizationTracerManagerFactory : TracerManagerFactory
     {
-        private readonly CIVisibilitySettings _settings;
-        private readonly IDiscoveryService _discoveryService;
+        private readonly TestOptimizationSettings _settings;
         private readonly bool _enabledEventPlatformProxy;
-        private readonly bool _useLockedManager;
+        private readonly ITestOptimizationTracerManagement _testOptimizationTracerManagement;
 
-        public CITracerManagerFactory(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
+        public TestOptimizationTracerManagerFactory(TestOptimizationSettings settings, ITestOptimizationTracerManagement testOptimizationTracerManagement, bool enabledEventPlatformProxy = false, bool useLockedManager = true)
         {
             _settings = settings;
-            _discoveryService = discoveryService;
             _enabledEventPlatformProxy = enabledEventPlatformProxy;
-            _useLockedManager = useLockedManager;
+            _testOptimizationTracerManagement = testOptimizationTracerManagement;
         }
 
         protected override TracerManager CreateTracerManagerFrom(
@@ -56,13 +55,13 @@ namespace Datadog.Trace.Ci
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager)
         {
-            telemetry.RecordCiVisibilitySettings(_settings);
-            if (_useLockedManager)
+            telemetry.RecordTestOptimizationSettings(_settings);
+            if (_testOptimizationTracerManagement.UseLockedTracerManager)
             {
-                return new CITracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
+                return new TestOptimizationTracerManager.LockedManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
             }
 
-            return new CITracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
+            return new TestOptimizationTracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
         }
 
         protected override ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
@@ -89,7 +88,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_testOptimizationTracerManagement.GetRequestFactory(settings)));
                 }
 
                 Environment.FailFast("An API key is required in Agentless mode.");
@@ -99,7 +98,7 @@ namespace Datadog.Trace.Ci
             // With agent scenario:
             if (_enabledEventPlatformProxy)
             {
-                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(_testOptimizationTracerManagement.GetRequestFactory(settings)));
             }
 
             // Event platform proxy not found
@@ -109,6 +108,6 @@ namespace Datadog.Trace.Ci
         }
 
         protected override IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => _discoveryService;
+            => _testOptimizationTracerManagement.DiscoveryService;
     }
 }

@@ -700,7 +700,7 @@ public class AspNetCore5IastTestsStandaloneBillingIastEnabled : AspNetCore5IastT
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsStandaloneBillingIastEnabled", redactionEnabled: true, samplingRate: 100)
     {
         // Set environment variable to enable the Standalone ASM Billing feature
-        SetEnvironmentVariable("DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED", "true");
+        SetEnvironmentVariable("DD_APM_TRACING_ENABLED", "false");
     }
 
     [SkippableFact]

@@ -95,8 +95,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
                             // Remove EFD tags
-                            targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                            targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+                            targetSpan.Tags.Remove(TestTags.TestIsNew);
+                            targetSpan.Tags.Remove(TestTags.TestIsRetry);
 
                             // Remove user provided service tag
                             targetSpan.Tags.Remove(CommonTags.UserProvidedTestServiceTag);

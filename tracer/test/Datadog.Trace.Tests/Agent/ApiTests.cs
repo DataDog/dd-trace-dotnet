@@ -215,7 +215,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, statsComputationEnabled, 0, 0, false);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, statsComputationEnabled, 0, 0);
 
             requestMock.Verify(x => x.AddHeader(AgentHttpHeaderNames.StatsComputation, "true"), statsComputationEnabled ? Times.Once : Times.Never);
         }

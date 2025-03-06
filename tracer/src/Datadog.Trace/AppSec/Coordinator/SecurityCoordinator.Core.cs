@@ -16,7 +16,6 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 
@@ -28,6 +27,7 @@ internal readonly partial struct SecurityCoordinator
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
+        _appsecRequestContext = _localRootSpan.Context.TraceContext.AppSecRequestContext;
         _httpTransport = transport;
         Reporter = new SecurityReporter(_localRootSpan, transport, true);
     }
@@ -175,11 +175,6 @@ internal readonly partial struct SecurityCoordinator
         {
             get
             {
-                if (IsAdditiveContextDisposed())
-                {
-                    return null;
-                }
-
                 try
                 {
                     return Context.Response.StatusCode;
@@ -191,7 +186,7 @@ internal readonly partial struct SecurityCoordinator
                         Log.Debug(e, "Exception while trying to access StatusCode of a Context.Response.");
                     }
 
-                    SetAdditiveContextDisposed(true);
+                    IsHttpContextDisposed = true;
                     return null;
                 }
             }
@@ -213,44 +208,9 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        internal override void MarkBlocked()
-        {
-            var items = GetItems();
-            if (items is not null)
-            {
-                items[BlockingAction.BlockDefaultActionName] = true;
-            }
-        }
-
-        internal override IContext? GetAdditiveContext() => IsAdditiveContextDisposed() ? null : GetContextFeatures()?.Get<IContext>();
-
-        internal override void SetAdditiveContext(IContext additiveContext) => Context.Features.Set(additiveContext);
-
-        internal override IHeadersCollection GetRequestHeaders() => new HeadersCollectionAdapter(Context.Request.Headers);
-
-        internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
-
-        // In some edge situations we can get an ObjectDisposedException when accessing the context features or other
-        // properties such as Context.Items or Context.Response.Headers that ultimately rely on features
-        // This means that the context has been uninitialized, and we should not try to access it anymore
-        // Unfortunately, there is no way to know that but catching the exception or using reflection
-        private IFeatureCollection? GetContextFeatures()
-        {
-            try
-            {
-                return Context.Features;
-            }
-            catch (ObjectDisposedException)
-            {
-                Log.Debug("ObjectDisposedException while trying to access a Context.");
-                SetAdditiveContextDisposed(true);
-                return null;
-            }
-        }
-
         private IDictionary<object, object>? GetItems()
         {
-            if (IsAdditiveContextDisposed())
+            if (IsHttpContextDisposed)
             {
                 return null;
             }
@@ -264,11 +224,35 @@ internal readonly partial struct SecurityCoordinator
             catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
             {
                 Log.Debug(e, "Exception while trying to access Items of a Context.");
-                SetAdditiveContextDisposed(true);
+                IsHttpContextDisposed = true;
                 return null;
             }
         }
+
+        internal override void MarkBlocked()
+        {
+            var items = GetItems();
+            if (items is not null)
+            {
+                items[BlockingAction.BlockDefaultActionName] = true;
+            }
+        }
+
+        internal override IHeadersCollection? GetRequestHeaders()
+        {
+            try
+            {
+                return new HeadersCollectionAdapter(Context.Request.Headers);
+            }
+            catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
+            {
+                Log.Debug(e, "Exception while trying to access Items of a Context.");
+                IsHttpContextDisposed = true;
+                return null;
+            }
+        }
+
+        internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
     }
 }
 #endif
-

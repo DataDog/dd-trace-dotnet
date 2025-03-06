@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using System;
 using System.ComponentModel;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 #pragma warning restore SA1118
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "1.0.0",
-    MaximumVersion = "1.*.*",
+    MaximumVersion = "2.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -52,8 +53,9 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         object?[] constructorArguments)
         where TIXunitTestMethod : IXunitTestMethodV3
     {
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
-            CIVisibility.Settings.FlakyRetryEnabled != true)
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled != true &&
+            testOptimization.FlakyRetryFeature?.Enabled != true)
         {
             return CallTargetState.GetDefault();
         }

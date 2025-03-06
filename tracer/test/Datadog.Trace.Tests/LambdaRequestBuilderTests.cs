@@ -55,14 +55,14 @@ namespace Datadog.Trace.Tests
         public async Task TestGetEndInvocationRequestWithScope()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } }.Wrap();
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } }.Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
-            request.Headers.Get("x-datadog-sampling-priority").Should().Be("-1");
+            request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().Be("1234");
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
         }

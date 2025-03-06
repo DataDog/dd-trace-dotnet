@@ -114,7 +114,6 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
             Guid guid = Guid.NewGuid();
             runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 

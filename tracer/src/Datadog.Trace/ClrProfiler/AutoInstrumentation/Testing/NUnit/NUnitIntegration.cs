@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -34,7 +35,7 @@ internal static class NUnitIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
     {
@@ -163,7 +164,7 @@ internal static class NUnitIntegration
         isUnskippable = false;
         isForcedRun = false;
 
-        if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+        if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
         }
@@ -209,7 +210,7 @@ internal static class NUnitIntegration
 
             if (resultSplittedMessage.Length < 2 || string.IsNullOrWhiteSpace(tmpExType))
             {
-                Common.Log.Debug("Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
+                Common.Log.Debug("NUnitIntegration: Exception type: {ExceptionType}, Message: {ResultMessage}", exceptionType, resultMessage);
                 break;
             }
 
@@ -226,7 +227,7 @@ internal static class NUnitIntegration
 
         if (testMethod == null)
         {
-            Log.Warning("Test method cannot be found. ITest.Method(IMethodInfo).MethodInfo is null.");
+            Log.Warning("NUnitIntegration: Test method cannot be found. ITest.Method(IMethodInfo).MethodInfo is null.");
             return null;
         }
 
@@ -236,6 +237,7 @@ internal static class NUnitIntegration
         }
 
         var test = suite.InternalCreateTest(testMethod.Name);
+        var testTags = test.GetTags();
         string? skipReason = null;
 
         // Get test parameters
@@ -276,25 +278,25 @@ internal static class NUnitIntegration
         if (traits?.Count > 0)
         {
             // Unskippable test
-            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTags.Unskippable = isUnskippable ? "true" : "false";
+                testTags.ForcedRun = isForcedRun ? "true" : "false";
                 traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
             }
 
             test.SetTraits(traits);
         }
-        else
+        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable test
-            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
-            {
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
-            }
+            testTags.Unskippable = "false";
+            testTags.ForcedRun = "false";
         }
+
+        // Set known tests feature tags
+        Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);

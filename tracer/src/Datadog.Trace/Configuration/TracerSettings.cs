@@ -37,6 +37,7 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
+        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>();
 
         private readonly IConfigurationTelemetry _telemetry;
         // we cached the static instance here, because is being used in the hotpath
@@ -44,7 +45,7 @@ namespace Datadog.Trace.Configuration
         private readonly DomainMetadata _domainMetadata = DomainMetadata.Instance;
         // These values can all be overwritten by dynamic config
         private readonly bool _traceEnabled;
-        private readonly bool _appsecStandaloneEnabled;
+        private readonly bool _apmTracingEnabled;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly ReadOnlyDictionary<string, string> _serviceNameMappings;
@@ -94,6 +95,15 @@ namespace Datadog.Trace.Configuration
             _telemetry = telemetry;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, _telemetry);
+
+            ExperimentalFeaturesEnabled = config
+                    .WithKeys(ConfigurationKeys.ExperimentalFeaturesEnabled)
+                    .AsString()?.Trim() switch
+                    {
+                        null or "none" => new HashSet<string>(),
+                        "all" => DefaultExperimentalFeatures,
+                        string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
+                    };
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
@@ -175,7 +185,7 @@ namespace Datadog.Trace.Configuration
                 if (string.IsNullOrEmpty(serviceName))
                 {
                     // Extract repository name from the git url and use it as a default service name.
-                    ciVisServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    ciVisServiceName = TestOptimization.Instance.TracerManagement?.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
                     isUserProvidedTestServiceTag = false;
                 }
 
@@ -228,9 +238,9 @@ namespace Datadog.Trace.Configuration
                                   .AsBoolResult()
                                   .OverrideWith(in otelTraceEnabled, ErrorLog, defaultValue: true);
 
-            _appsecStandaloneEnabled = config
-                                      .WithKeys(ConfigurationKeys.AppsecStandaloneEnabled)
-                                      .AsBool(defaultValue: false);
+            _apmTracingEnabled = config
+                                      .WithKeys(ConfigurationKeys.ApmTracingEnabled)
+                                      .AsBool(defaultValue: true);
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
@@ -544,7 +554,7 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (AppsecStandaloneEnabledInternal && StatsComputationEnabled)
+            if (!ApmTracingEnabledInternal && StatsComputationEnabled)
             {
                 telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
@@ -602,6 +612,18 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+            if (source is CompositeConfigurationSource compositeSource)
+            {
+                foreach (var nestedSource in compositeSource)
+                {
+                    if (nestedSource is JsonConfigurationSource { JsonConfigurationFilePath: { } jsonFilePath }
+                     && !string.IsNullOrEmpty(jsonFilePath))
+                    {
+                        JsonConfigurationFilePaths.Add(jsonFilePath);
+                    }
+                }
+            }
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -642,6 +664,8 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
             }
         }
+
+        internal HashSet<string> ExperimentalFeaturesEnabled { get; }
 
         internal OverrideErrorLog ErrorLog { get; }
 
@@ -692,11 +716,11 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
-        /// Gets a value indicating whether Appsec standalone is enabled.
-        /// Default is <c>false</c>.
+        /// Gets a value indicating whether APM traces are enabled.
+        /// Default is <c>true</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
-        internal bool AppsecStandaloneEnabledInternal => DynamicSettings.AppsecStandaloneEnabled ?? _appsecStandaloneEnabled;
+        /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
+        internal bool ApmTracingEnabledInternal => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.
@@ -1112,6 +1136,8 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
+
+        internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.

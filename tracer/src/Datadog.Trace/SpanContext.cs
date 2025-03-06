@@ -158,8 +158,8 @@ namespace Datadog.Trace
         private SpanContext(TraceId traceId, string serviceName)
         {
             TraceId128 = traceId == Trace.TraceId.Zero
-                          ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
-                          : traceId;
+                             ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
+                             : traceId;
 
             ServiceName = serviceName;
 
@@ -167,7 +167,7 @@ namespace Datadog.Trace
             // we need to ensure new SpanContext created by this .ctor has the CI Visibility origin
             // tag if the CI Visibility mode is running to ensure the correct propagation
             // to children spans and distributed trace.
-            if (CIVisibility.IsRunning)
+            if (TestOptimization.Instance.IsRunning)
             {
                 Origin = Ci.Tags.TestTags.CIAppTestOriginName;
             }
@@ -416,21 +416,21 @@ namespace Datadog.Trace
         private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
         {
             return context switch
-                   {
-                       // if there is no context or it has a zero trace id,
-                       // use the specified fallback value
-                       null or { TraceId: 0 } => fallback,
+            {
+                // if there is no context or it has a zero trace id,
+                // use the specified fallback value
+                null or { TraceId: 0 } => fallback,
 
-                       // use the 128-bit trace id from SpanContext if possible
-                       SpanContext sc => sc.TraceId128,
+                // use the 128-bit trace id from SpanContext if possible
+                SpanContext sc => sc.TraceId128,
 
-                       // otherwise use the 64-bit trace id from ISpanContext
-                       _ => (TraceId)context.TraceId
-                   };
+                // otherwise use the 64-bit trace id from ISpanContext
+                _ => (TraceId)context.TraceId
+            };
         }
 
         /// <summary>
-        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision"/>.
+        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision()"/>.
         /// Otherwise, returns <see cref="SamplingPriority"/>.
         /// </summary>
         internal int? GetOrMakeSamplingDecision() =>

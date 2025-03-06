@@ -90,7 +90,7 @@ Configuration::Configuration()
         _cpuProfilingInterval = ExtractCpuProfilingInterval(1ms);
     }
 
-    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
+    _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, true);
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);

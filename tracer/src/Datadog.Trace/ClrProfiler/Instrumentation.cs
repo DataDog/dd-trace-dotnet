@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
         private static int _firstInitialization = 1;
+
         private static int _firstNonNativePartsInitialization = 1;
 
         /// <summary>
@@ -253,9 +254,10 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                if (CIVisibility.Enabled)
+                var testOptimization = TestOptimization.Instance;
+                if (testOptimization.Enabled)
                 {
-                    CIVisibility.Initialize();
+                    testOptimization.Initialize();
                 }
                 else
                 {

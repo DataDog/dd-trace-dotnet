@@ -81,11 +81,12 @@ public static class TestMethodAttributeExecuteIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        var testOptimization = TestOptimization.Instance;
         if (state.State is TestRunnerState { Test: not null } testMethodState)
         {
             var duration = testMethodState.Elapsed;
             var testMethod = testMethodState.TestMethod;
-            var isTestNew = false;
+            var isEfdTest = false;
             var allowRetries = false;
             var resultStatus = TestStatus.Skip;
             if (returnValue is IList { Count: > 0 } returnValueList)
@@ -96,10 +97,10 @@ public static class TestMethodAttributeExecuteIntegration
                     var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
                     if (test is not null)
                     {
-                        if (test.GetTags() is { } testTags)
+                        if (test.GetTags() is { } testTags && testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                         {
-                            isTestNew = isTestNew || testTags.EarlyFlakeDetectionTestIsNew == "true";
-                            if (isTestNew && duration.TotalMinutes >= 5)
+                            isEfdTest = isEfdTest || testTags.TestIsNew == "true";
+                            if (isEfdTest && duration.TotalMinutes >= 5)
                             {
                                 testTags.EarlyFlakeDetectionTestAbortReason = "slow";
                             }
@@ -112,24 +113,23 @@ public static class TestMethodAttributeExecuteIntegration
             }
             else
             {
-                Common.Log.Warning("Failed to extract TestResult from return value");
+                Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to extract TestResult from return value");
                 testMethodState.Test.Close(TestStatus.Fail);
                 return new CallTargetReturn<TReturn?>(returnValue);
             }
 
-            if (isTestNew && allowRetries)
+            if (isEfdTest && allowRetries)
             {
                 // Get retries number
                 var remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
                 if (remainingRetries > 0)
                 {
                     // Handle retries
-                    var results = new List<IList>();
-                    results.Add(returnValueList);
-                    Common.Log.Debug<int>("EFD: We need to retry {Times} times", remainingRetries);
+                    var results = new List<IList> { returnValueList };
+                    Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: EFD: We need to retry {Times} times", remainingRetries);
                     for (var i = 0; i < remainingRetries; i++)
                     {
-                        Common.Log.Debug<int>("EFD: Retry number: {RetryNumber}", i);
+                        Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: EFD: Retry number: {RetryNumber}", i);
                         RunRetry(testMethod, testMethodState, results, out _);
                     }
 
@@ -137,11 +137,11 @@ public static class TestMethodAttributeExecuteIntegration
                     returnValue = (TReturn?)GetFinalResults(results);
                 }
             }
-            else if (CIVisibility.Settings.FlakyRetryEnabled == true && resultStatus == TestStatus.Fail)
+            else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
             {
                 // Flaky retry is enabled and the test failed
-                Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
-                var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
+                Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
+                var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0;
                 if (remainingRetries > 0)
                 {
                     // Handle retries
@@ -151,17 +151,17 @@ public static class TestMethodAttributeExecuteIntegration
                     {
                         if (Interlocked.Decrement(ref _totalRetries) <= 0)
                         {
-                            Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug("TestMethodAttributeExecuteIntegration: FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
                             break;
                         }
 
-                        Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", i + 1);
+                        Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
                         RunRetry(testMethod, testMethodState, results, out var failedResult);
 
                         // If the retried test passed, we can stop the retries
                         if (!failedResult)
                         {
-                            Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Test passed in retry.", i + 1);
+                            Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Test passed in retry.", i + 1);
                             break;
                         }
                     }
@@ -266,13 +266,13 @@ public static class TestMethodAttributeExecuteIntegration
                     test.Close(TestStatus.Pass);
                     return TestStatus.Pass;
                 default:
-                    Common.Log.Warning("Failed to handle the test status: {Outcome}", testResult.Outcome);
+                    Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to handle the test status: {Outcome}", testResult.Outcome);
                     test.Close(TestStatus.Fail);
                     return TestStatus.Fail;
             }
         }
 
-        Common.Log.Warning("Failed to cast {TestResultObject} to TestResultStruct", testResultObject);
+        Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to cast {TestResultObject} to TestResultStruct", testResultObject);
         test.Close(TestStatus.Fail);
         return TestStatus.Fail;
     }
