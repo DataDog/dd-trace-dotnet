@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
 using Xunit;
@@ -19,7 +21,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         private static readonly StackFrame GcFrame = new("|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:");
         private static readonly StackFrame ClrFrame = new("|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:");
 
-        private readonly StackTrace gcStack = new(GcFrame, ClrFrame);
+        private static readonly StackTrace GcStack = new(GcFrame, ClrFrame);
 
         private readonly ITestOutputHelper _output;
 
@@ -47,7 +49,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should()
                 // match the GC stacktrace and check that the waltime value is 0 and the cpu value is not 0
-                .Contain(sample => sample.StackTrace.Equals(gcStack) && sample.Values[0] == 0 && sample.Values[1] != 0);
+                .Contain(sample => IsGcCpuSample(sample) && sample.Values[0] == 0 && sample.Values[1] != 0);
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -68,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(GcStack));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -87,7 +89,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -106,7 +108,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -125,7 +127,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(GcStack) && sample.Labels.Any(x => x.Name == "" && x.Value == "") );
         }
 
         [TestAppFact("Samples.Computer01", new[] { "netcoreapp3.1" })]
@@ -144,7 +146,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net462" })]
@@ -163,7 +165,12 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => IsGcCpuSample(sample));
+        }
+
+        private static bool IsGcCpuSample((StackTrace StackTrace, PprofHelper.Label[] Labels, long[] Values) sample)
+        {
+            return sample.StackTrace.Equals(GcStack) && sample.Labels.Any(label => label.Name == "internal" && label.Value == "true");
         }
     }
 }
