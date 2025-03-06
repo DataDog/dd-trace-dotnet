@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Debugger;
 public class DynamicInstrumentationTests
 {
     [Fact]
-    public async Task DebuggerEnabled_ServicesCalled()
+    public void DebuggerEnabled_ServicesCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" }, }),
@@ -42,7 +42,7 @@ public class DynamicInstrumentationTests
         var updater = ConfigurationUpdater.Create("env", "version");
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
-        await debugger.InitializeAsync();
+        debugger.Initialize();
 
         probeStatusPoller.Called.Should().BeTrue();
         snapshotUploader.Called.Should().BeTrue();
@@ -51,7 +51,7 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
-    public async Task DebuggerDisabled_ServicesNotCalled()
+    public void DebuggerDisabled_ServicesNotCalled()
     {
         var settings = DebuggerSettings.FromSource(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
@@ -67,7 +67,7 @@ public class DynamicInstrumentationTests
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
         var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, diagnosticsUploader, probeStatusPoller, updater, new DogStatsd.NoOpStatsd());
-        await debugger.InitializeAsync();
+        debugger.Initialize();
 
         lineProbeResolver.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
