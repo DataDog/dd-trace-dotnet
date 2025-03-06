@@ -188,19 +188,19 @@ namespace Datadog.Trace.Tests.Configuration
         public void NameValueConfigurationSource() => AssertNameValueConfigurationSource(GetTestData());
 
         [Fact]
-        public void BreakingChanges_NameValueConfigurationSource() => AssertNameValueConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "true");
+        public void BreakingChanges_NameValueConfigurationSource() => AssertNameValueConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "all");
 
         [Fact]
         public void EnvironmentConfigurationSource() => AssertEnvironmentConfigurationSource(GetTestData());
 
         [Fact]
-        public void BreakingChanges_EnvironmentConfigurationSource() => AssertEnvironmentConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "true");
+        public void BreakingChanges_EnvironmentConfigurationSource() => AssertEnvironmentConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "all");
 
         [Fact]
         public void JsonConfigurationSource() => AssertJsonConfigurationSource(GetTestData());
 
         [Fact]
-        public void BreakingChanges_JsonConfigurationSource() => AssertJsonConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "true");
+        public void BreakingChanges_JsonConfigurationSource() => AssertJsonConfigurationSource(GetBreakingChangeTestData(), setExperimentalFeaturesEnabled: "all");
 
         [Fact]
         public void GlobalDefaultSetting()
