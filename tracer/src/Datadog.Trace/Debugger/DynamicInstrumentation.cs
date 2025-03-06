@@ -96,9 +96,10 @@ namespace Datadog.Trace.Debugger
             try
             {
                 var disabled =
-                    _settings.DynamicInstrumentationEnabled == null
-                 || (_settings.DynamicInstrumentationEnabled.HasValue && !_settings.DynamicInstrumentationEnabled.Value)
-                 || (_settings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !_settings.DynamicSettings.DynamicInstrumentationEnabled.Value);
+                    !(_settings.DynamicInstrumentationEnabled == true ||
+                      _settings.DynamicSettings.DynamicInstrumentationEnabled == true) ||
+                    _settings.DynamicInstrumentationEnabled == false ||
+                    _settings.DynamicSettings.DynamicInstrumentationEnabled == false;
 
                 if (disabled)
                 {
