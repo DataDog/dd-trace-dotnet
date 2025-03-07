@@ -792,9 +792,12 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
+            /// If enabled, 64-bit trace ids will continue to be injected as decimal strings.
             /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
-            /// and all trace ids will be injected as decimal strings
-            /// Default value is <c>false</c> (disabled).
+            /// and all trace ids will be injected as decimal strings.
+            /// Default value is <c>true</c> (enabled).
+            /// If <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> is set to <c>false</c>,
+            /// this setting will also be set to <c>false</c>.
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
 

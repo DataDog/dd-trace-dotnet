@@ -1050,10 +1050,13 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.TraceId128BitGenerationEnabled.Should().Be(expected);
+
+            // Additional behavior: Ensure that TraceId128BitLoggingEnabled is configured to the same value as TraceId128BitGenerationEnabled
+            settings.TraceId128BitLoggingEnabled.Should().Be(expected);
         }
 
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
+        [MemberData(nameof(BooleanTestCases), true)]
         public void TraceId128BitLoggingEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled, value));
