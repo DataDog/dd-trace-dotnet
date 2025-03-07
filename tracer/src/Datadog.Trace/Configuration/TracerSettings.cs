@@ -664,7 +664,7 @@ namespace Datadog.Trace.Configuration
                                             .AsBool(true);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
-                                         .AsBool(false);
+                                         .AsBool(TraceId128BitGenerationEnabled);
 
             CommandsCollectionEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
