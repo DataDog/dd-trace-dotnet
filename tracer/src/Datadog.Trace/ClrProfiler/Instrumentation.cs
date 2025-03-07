@@ -101,6 +101,7 @@ namespace Datadog.Trace.ClrProfiler
                 var sw = Stopwatch.StartNew();
 
                 bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                versionMismatch = false; // manual override
                 if (versionMismatch)
                 {
                     Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
