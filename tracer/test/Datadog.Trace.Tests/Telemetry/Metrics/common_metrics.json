@@ -730,6 +730,7 @@
     "rasp.rule.eval": {
       "tags": [
         "waf_version",
+        "event_rules_version",
         "rule_type",
         "rule_variant"
       ],
@@ -742,8 +743,10 @@
     "rasp.rule.match": {
       "tags": [
         "waf_version",
+        "event_rules_version",
         "rule_type",
-        "rule_variant"
+        "rule_variant",
+        "block"
       ],
       "metric_type": "count",
       "data_type": "matches",
@@ -754,6 +757,7 @@
     "rasp.timeout": {
       "tags": [
         "waf_version",
+        "event_rules_version",
         "rule_type",
         "rule_variant"
       ],
