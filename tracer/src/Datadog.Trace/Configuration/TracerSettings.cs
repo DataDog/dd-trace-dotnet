@@ -57,6 +57,7 @@ namespace Datadog.Trace.Configuration
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _customSamplingRules;
+        private readonly bool _dataPipelineEnabled;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -412,6 +413,10 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                                    .AsBoolResult()
                                    .OverrideWith(in otelRuntimeMetricsEnabled, ErrorLog, defaultValue: false);
+
+            _dataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.DataPipelineEnabled)
+                                  .AsBool(defaultValue: true);
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -1045,6 +1050,12 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         internal bool RuntimeMetricsEnabled => DynamicSettings.RuntimeMetricsEnabled ?? _runtimeMetricsEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether libdatadog data pipeline
+        /// is enabled.
+        /// </summary>
+        internal bool DataPipelineEnabled => _dataPipelineEnabled;
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.

@@ -8,6 +8,7 @@ using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace
@@ -32,6 +33,7 @@ namespace Benchmarks.Trace
             var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
             var settings = new TracerSettings(sources);
 
+            var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsAggregator: null, statsd: null, automaticFlush: false);

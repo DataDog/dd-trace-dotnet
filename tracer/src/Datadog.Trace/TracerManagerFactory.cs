@@ -15,6 +15,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Iast;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -343,11 +344,47 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
+            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory, settings.Exporter.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
             return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabledInternal);
+        }
+
+        private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
+        {
+            if (settings.DataPipelineEnabled)
+            {
+                var configuration = new TraceExporterConfiguration
+                {
+                    Url = GetUrl(settings),
+                    TraceVersion = TracerConstants.AssemblyVersion,
+                    Env = settings.Environment,
+                    Version = settings.ServiceVersion,
+                    Service = settings.ServiceName,
+                    Hostname = settings.Exporter.AgentUri.ToString(),
+                    Language = ".NET",
+                    LanguageVersion = FrameworkDescription.Instance.ProductVersion,
+                    LanguageInterpreter = ".NET"
+                };
+                return new TraceExporter(configuration);
+            }
+
+            return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
+        }
+
+        private string GetUrl(TracerSettings settings)
+        {
+            switch (settings.Exporter.TracesTransport)
+            {
+                case TracesTransportType.WindowsNamedPipe:
+                    return $"windows://./pipe/{settings.Exporter.TracesPipeName}";
+                case TracesTransportType.UnixDomainSocket:
+                    return $"unix://{settings.Exporter.TracesUnixDomainSocketPath}";
+                case TracesTransportType.Default:
+                default:
+                    return settings.Exporter.AgentUri.ToString();
+            }
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
