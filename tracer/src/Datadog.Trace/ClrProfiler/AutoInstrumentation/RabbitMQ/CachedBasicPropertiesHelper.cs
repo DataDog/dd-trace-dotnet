@@ -27,12 +27,13 @@ internal static class CachedBasicPropertiesHelper<TBasicProperties>
         var createBasicPropertiesMethod = new DynamicMethod(
             $"TypeActivator_{targetType.Name}_{parameterType.Name}",
             targetType,
-            [parameterType],
+            [typeof(object)],
             typeof(DuckType).Module,
             true);
 
         var il = createBasicPropertiesMethod.GetILGenerator();
-        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_0); // Load first argument (object).
+        il.Emit(OpCodes.Castclass, parameterType); // Cast to IReadOnlyBasicProperties
         il.Emit(OpCodes.Newobj, constructor);
         il.Emit(OpCodes.Ret);
         Activator = (Func<object, object>)createBasicPropertiesMethod.CreateDelegate(typeof(Func<object, object>), targetType);
