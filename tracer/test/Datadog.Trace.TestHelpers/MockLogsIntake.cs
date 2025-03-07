@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.TestHelpers
     {
         private static readonly JsonSerializer JsonSerializer = new();
         private readonly HttpListener _listener;
-        private readonly Thread _listenerThread;
+        private readonly Task _listenerTask;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
         public MockLogsIntake(int? initialPort = null, int retries = 5)
@@ -53,9 +54,7 @@ namespace Datadog.Trace.TestHelpers
                     Port = port;
                     _listener = listener;
 
-                    _listenerThread = new Thread(HandleHttpRequests);
-                    _listenerThread.IsBackground = true;
-                    _listenerThread.Start();
+                    _listenerTask = HandleHttpRequests();
 
                     return;
                 }
@@ -121,13 +120,13 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void HandleHttpRequests()
+        private async Task HandleHttpRequests()
         {
             while (_listener.IsListening)
             {
                 try
                 {
-                    var ctx = _listener.GetContext();
+                    var ctx = await _listener.GetContextAsync();
                     if (ShouldDeserializeLogs)
                     {
                         var logs = DeserializeFromStream(ctx.Request.InputStream);

@@ -214,15 +214,13 @@ void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp,
             }
             else
             {
-                rawSample.AppDomainId = -1;
+                rawSample.AppDomainId = 0;
             }
         }
         else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
         {
             rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
-
-            // TODO: do we need to set to -1?
-            //rawSample.AppDomainId = -1;
+            rawSample.AppDomainId = 0;
         }
     }
 

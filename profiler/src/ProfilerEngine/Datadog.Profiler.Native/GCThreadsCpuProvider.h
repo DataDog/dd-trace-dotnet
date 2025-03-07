@@ -24,6 +24,7 @@ protected:
 private:
     bool IsGcThread(std::shared_ptr<IThreadInfo> const& thread);
     std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() override;
+    Labels GetLabels() override;
     std::vector<FrameInfoView> GetFrames() override;
 
     std::vector<std::shared_ptr<IThreadInfo>> _gcThreads;

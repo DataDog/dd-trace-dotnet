@@ -1126,7 +1126,7 @@ namespace Datadog.Trace.TestHelpers
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");
-                        _tracesListenerTask = Task.Factory.StartNew(HandleHttpRequests, TaskCreationOptions.LongRunning);
+                        _tracesListenerTask = HandleHttpRequests();
 
                         return;
                     }
@@ -1165,13 +1165,13 @@ namespace Datadog.Trace.TestHelpers
                 _udpClient?.Close();
             }
 
-            private void HandleHttpRequests()
+            private async Task HandleHttpRequests()
             {
                 while (_listener.IsListening)
                 {
                     try
                     {
-                        var ctx = _listener.GetContext();
+                        var ctx = await _listener.GetContextAsync();
                         try
                         {
                             if (Version != null)
