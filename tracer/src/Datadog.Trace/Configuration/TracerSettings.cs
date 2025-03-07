@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -37,7 +38,10 @@ namespace Datadog.Trace.Configuration
     public record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>();
+        private static readonly HashSet<string> DefaultExperimentalFeatures = new HashSet<string>()
+        {
+            "DD_TAGS"
+        };
 
         private readonly IConfigurationTelemetry _telemetry;
         // we cached the static instance here, because is being used in the hotpath
@@ -149,7 +153,71 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
                           .AsDictionaryResult(separator: '=');
 
-            var globalTags = config
+            Dictionary<string, string>? globalTags = default;
+            if (ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
+            {
+                // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
+                // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
+                // 2. Key-value pairs with empty values are allowed, instead of discarded
+                // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
+                Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
+                {
+                    var dictionary = new ConcurrentDictionary<string, string>();
+                    if (string.IsNullOrWhiteSpace(data))
+                    {
+                        // return empty collection
+                        return dictionary;
+                    }
+
+                    char[] separatorChars = data.Contains(',') ? [','] : [' '];
+                    var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var entry in entries)
+                    {
+                        // we need Trim() before looking forthe separator so we can skip entries with no key
+                        // (that is, entries with a leading separator, like "<empty or whitespace>:value")
+                        var trimmedEntry = entry.Trim();
+                        if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
+                        {
+                            continue;
+                        }
+
+                        var separatorIndex = trimmedEntry.IndexOf(':');
+                        if (separatorIndex < 0)
+                        {
+                            // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                            // it's a key with no value.
+                            var key = trimmedEntry;
+                            dictionary[key] = string.Empty;
+                        }
+                        else if (separatorIndex > 0)
+                        {
+                            // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                            // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                            var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                            var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
+                            dictionary[key] = value;
+                        }
+                    }
+
+                    return dictionary;
+                };
+
+                globalTags = config
+                                .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
+                                .AsDictionaryResult(parser: updatedTagsParser)
+                                .OverrideWith(
+                                     RemapOtelTags(in otelTags),
+                                     ErrorLog,
+                                     () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
+
+                                // Filter out tags with empty keys, and trim whitespace
+                                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                                .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+            }
+            else
+            {
+                globalTags = config
                                 .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                                 .AsDictionaryResult()
                                 .OverrideWith(
@@ -157,16 +225,17 @@ namespace Datadog.Trace.Configuration
                                      ErrorLog,
                                      () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
 
-                                 // Filter out tags with empty keys or empty values, and trim whitespace
+                                // Filter out tags with empty keys or empty values, and trim whitespace
                                 .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                 .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            }
 
             Environment = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
 
             // DD_ENV has precedence over DD_TAGS
-            Environment = GetExplicitSettingOrTag(Environment, globalTags, Tags.Env, ConfigurationKeys.Environment);
+            Environment = GetExplicitSettingOrTag(Environment, globalTags!, Tags.Env, ConfigurationKeys.Environment);
 
             var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
             var serviceName = config
@@ -307,6 +376,9 @@ namespace Datadog.Trace.Configuration
             RemoveClientServiceNamesEnabled = config
                .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
                .AsBool(defaultValue: false);
+            SpanPointersEnabled = config
+               .WithKeys(ConfigurationKeys.SpanPointersEnabled)
+               .AsBool(defaultValue: true);
 
             PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
 
@@ -1124,6 +1196,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether to remove the service names when using the v0 schema.
         /// </summary>
         internal bool RemoveClientServiceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to add span pointers on AWS requests.
+        /// </summary>
+        internal bool SpanPointersEnabled { get; }
 
         /// <summary>
         /// Gets the metadata schema version
