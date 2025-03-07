@@ -304,6 +304,9 @@ internal static class NUnitIntegration
         // Flaky Retry
         Common.SetFlakyRetryTags(test, isRetry);
 
+        // Test management feature
+        Common.SetTestManagementFeature(test, isRetry);
+
         // Test code and code owners
         test.SetTestMethodInfo(testMethod);
 

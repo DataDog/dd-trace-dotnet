@@ -485,43 +485,4 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)
         => isGzipped ? tags.Contains("rq_compressed:true") : !tags.Contains("rq_compressed:true");
-
-    private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
-    {
-        public class Log
-        {
-            [JsonProperty("ddsource")]
-            public string Source { get; set; }
-
-            [JsonProperty("hostname")]
-            public string Hostname { get; set; }
-
-            [JsonProperty("timestamp")]
-            public long Timestamp { get; set; }
-
-            [JsonProperty("message")]
-            public string Message { get; set; }
-
-            [JsonProperty("status")]
-            public string Status { get; set; }
-
-            [JsonProperty("service")]
-            public string Service { get; set; }
-
-            [JsonProperty("dd.trace_id")]
-            public string TraceId { get; set; }
-
-            [JsonProperty(TestTags.Suite)]
-            public string TestSuite { get; set; }
-
-            [JsonProperty(TestTags.Name)]
-            public string TestName { get; set; }
-
-            [JsonProperty(TestTags.Bundle)]
-            public string TestBundle { get; set; }
-
-            [JsonProperty("ddtags")]
-            public string Tags { get; set; }
-        }
-    }
 }

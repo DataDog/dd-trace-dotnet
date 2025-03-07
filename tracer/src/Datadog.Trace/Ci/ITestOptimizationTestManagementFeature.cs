@@ -12,5 +12,7 @@ internal interface ITestOptimizationTestManagementFeature : ITestOptimizationFea
 {
     TestOptimizationClient.TestManagementResponse TestManagement { get; }
 
+    int TestManagementAttemptToFixRetries { get; }
+
     TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties(string moduleName, string testSuite, string testName);
 }

@@ -140,6 +140,9 @@ internal static class MsTestIntegration
         // Flaky retry
         Common.SetFlakyRetryTags(test, isRetry);
 
+        // Test management feature
+        Common.SetTestManagementFeature(test, isRetry);
+
         // Set test method
         if (testMethod is not null)
         {

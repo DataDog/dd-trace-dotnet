@@ -54,6 +54,7 @@ internal sealed partial class TestOptimizationClient
         Log.Debug("TestOptimizationClient: TestManagement.JSON RS = {Json}", queryResponse);
         if (string.IsNullOrEmpty(queryResponse))
         {
+            Log.Debug("TestOptimizationClient: TestManagement response has 0 tests.");
             return new TestManagementResponse();
         }
 
@@ -76,6 +77,7 @@ internal sealed partial class TestOptimizationClient
             }
         }
 
+        Log.Debug<int>("TestOptimizationClient: TestManagement response has {Count} test(s).", testsCount);
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityTestManagementTestsResponseTests(testsCount);
         return finalResponse;
     }
@@ -200,6 +202,8 @@ internal sealed partial class TestOptimizationClient
             Disabled = disabled;
             AttemptToFix = attemptToFix;
         }
+
+        public static TestManagementResponseTestPropertiesAttributes Default { get; } = new(false, false, false);
 
         [JsonProperty("quarantined")]
         public bool Quarantined { get; private set; }
