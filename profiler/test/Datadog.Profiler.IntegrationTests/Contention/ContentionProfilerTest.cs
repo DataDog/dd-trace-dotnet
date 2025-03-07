@@ -207,42 +207,46 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             {
                 var contentionTypeLabel = labels.FirstOrDefault(l => l.Name == "contention type");
                 stackTrace.FramesCount.Should().BeGreaterThan(0);
-                var function = stackTrace[stackTrace.FramesCount - 1].Function;
-                if (function.Contains("AutoResetEventThread"))
+
+                for (int currentFrame = 0; currentFrame < stackTrace.FramesCount; currentFrame++)
                 {
-                    waitTypes |= WaitHandleType.AutoResetEvent;
-                }
-                else if (function.Contains("ManualResetEventThread"))
-                {
-                    waitTypes |= WaitHandleType.ManualResetEvent;
-                }
-                else if (function.Contains("ManualResetEventSlimThread"))
-                {
-                    waitTypes |= WaitHandleType.ManualResetEventSlim;
-                }
-                else if (function.Contains("SemaphoreThread"))
-                {
-                    waitTypes |= WaitHandleType.Semaphore;
-                }
-                else if (function.Contains("SemaphoreSlimThread"))
-                {
-                    waitTypes |= WaitHandleType.SemaphoreSlim;
-                }
-                else if (function.Contains("ReaderWriterLockThread"))
-                {
-                    waitTypes |= WaitHandleType.ReaderWriterLock;
-                }
-                else if (function.Contains("ReaderWriterLockSlimThread"))
-                {
-                    waitTypes |= WaitHandleType.ReaderWriterLockSlim;
-                }
-                else if (function.Contains("MutexThread"))
-                {
-                    waitTypes |= WaitHandleType.Mutex;
+                    var function = stackTrace[currentFrame].Function;
+                    if (function.Contains("AutoResetEventThread"))
+                    {
+                        waitTypes |= WaitHandleType.AutoResetEvent;
+                    }
+                    else if (function.Contains("ManualResetEventThread"))
+                    {
+                        waitTypes |= WaitHandleType.ManualResetEvent;
+                    }
+                    else if (function.Contains("ManualResetEventSlimThread"))
+                    {
+                        waitTypes |= WaitHandleType.ManualResetEventSlim;
+                    }
+                    else if (function.Contains("SemaphoreThread"))
+                    {
+                        waitTypes |= WaitHandleType.Semaphore;
+                    }
+                    else if (function.Contains("SemaphoreSlimThread"))
+                    {
+                        waitTypes |= WaitHandleType.SemaphoreSlim;
+                    }
+                    else if (function.Contains("ReaderWriterLockThread"))
+                    {
+                        waitTypes |= WaitHandleType.ReaderWriterLock;
+                    }
+                    else if (function.Contains("ReaderWriterLockSlimThread"))
+                    {
+                        waitTypes |= WaitHandleType.ReaderWriterLockSlim;
+                    }
+                    else if (function.Contains("MutexThread"))
+                    {
+                        waitTypes |= WaitHandleType.Mutex;
+                    }
                 }
             }
 
-            waitTypes.Should().Be(WaitHandleType.All, GetMissingWaitType(waitTypes));
+            waitTypes.Should().Be(WaitHandleType.All, "missing Wait events = " + GetMissingWaitType(waitTypes));
         }
 
         private static string GetMissingWaitType(WaitHandleType waitTypes)
@@ -252,36 +256,48 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             {
                 missingWaitTypes += "AutoResetEvent ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.ManualResetEvent))
+
+            if (!waitTypes.HasFlag(WaitHandleType.ManualResetEvent))
             {
                 missingWaitTypes += "ManualResetEvent ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.ManualResetEventSlim))
+
+            if (!waitTypes.HasFlag(WaitHandleType.ManualResetEventSlim))
             {
                 missingWaitTypes += "ManualResetEventSlim ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.Semaphore))
+
+            if (!waitTypes.HasFlag(WaitHandleType.Semaphore))
             {
                 missingWaitTypes += "Semaphore ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.SemaphoreSlim))
+
+            if (!waitTypes.HasFlag(WaitHandleType.SemaphoreSlim))
             {
                 missingWaitTypes += "SemaphoreSlim ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.ReaderWriterLock))
+
+            if (!waitTypes.HasFlag(WaitHandleType.ReaderWriterLock))
             {
                 missingWaitTypes += "ReaderWriterLock ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.ReaderWriterLockSlim))
+
+            if (!waitTypes.HasFlag(WaitHandleType.ReaderWriterLockSlim))
             {
                 missingWaitTypes += "ReaderWriterLockSlim ";
             }
-            else if (!waitTypes.HasFlag(WaitHandleType.Mutex))
+
+            if (!waitTypes.HasFlag(WaitHandleType.Mutex))
             {
                 missingWaitTypes += "Mutex ";
             }
 
-            return missingWaitTypes;
+            if (missingWaitTypes == string.Empty)
+            {
+                missingWaitTypes = "All";
+            }
+
+            return "{ " + missingWaitTypes + "}";
         }
     }
 }
