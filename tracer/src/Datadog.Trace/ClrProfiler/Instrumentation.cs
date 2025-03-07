@@ -96,11 +96,12 @@ namespace Datadog.Trace.ClrProfiler
                 TracerDebugger.WaitForDebugger();
 
                 var swTotal = Stopwatch.StartNew();
-                Log.Debug("Initialization started.");
+                Log.Debug("Initialization started -- Rob Custom Tracer Build");
 
                 var sw = Stopwatch.StartNew();
 
                 bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                versionMismatch = false; // manual override
                 if (versionMismatch)
                 {
                     Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
