@@ -37,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
+                Log.Debug("Rob Producer Scope start");
+
                 var settings = tracer.Settings;
                 if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
@@ -145,6 +147,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
+                Log.Debug("Rob Consumer Scope start");
+
                 if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace

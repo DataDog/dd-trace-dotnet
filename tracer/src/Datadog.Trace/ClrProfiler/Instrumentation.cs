@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler
                 TracerDebugger.WaitForDebugger();
 
                 var swTotal = Stopwatch.StartNew();
-                Log.Debug("Initialization started.");
+                Log.Debug("Initialization started -- Rob Custom Tracer Build");
 
                 var sw = Stopwatch.StartNew();
 
