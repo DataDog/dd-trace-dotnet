@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var settings = tracer.Settings;
                 if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
+                    Log.Debug("Rob Producer Scope disabled");
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
                 }
@@ -86,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (!string.IsNullOrEmpty(topicPartition?.Topic))
                 {
+                    Log.Debug("Setting message.destination.name to topic {Topic}", topicPartition?.Topic);
                     tags.SetTag(Tags.MessagingDestinationName, topicPartition!.Topic);
                 }
 
