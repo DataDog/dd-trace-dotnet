@@ -8,6 +8,7 @@
 #include "IFrameStore.h"
 #include "ISamplesProvider.h"
 #include "IThreadInfo.h"
+#include "Sample.h"
 
 #include <vector>
 
@@ -26,6 +27,7 @@ private:
     std::unique_ptr<SamplesEnumerator> GetSamples() override;
     virtual std::vector<FrameInfoView> GetFrames() = 0;
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
+    virtual Labels GetLabels() = 0;
 
     CpuTimeProvider* _cpuTimeProvider;
     std::chrono::milliseconds _previousTotalCpuTime;
