@@ -170,22 +170,27 @@ internal static class XUnitIntegration
 
     internal static void FinishTest(Test test, IExceptionAggregator? exceptionAggregator)
     {
+        var clearExceptions = false;
         try
         {
             TimeSpan? duration = null;
 
-            if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) &&
-                testCaseMetadata?.EarlyFlakeDetectionEnabled == true)
+            if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) && testCaseMetadata is not null)
             {
-                var testTags = test.GetTags();
-                if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
+                if (testCaseMetadata.EarlyFlakeDetectionEnabled == true)
                 {
-                    duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
-                    if (duration.Value.TotalMinutes >= 5)
+                    var testTags = test.GetTags();
+                    if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
                     {
-                        testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                        duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
+                        if (duration.Value.TotalMinutes >= 5)
+                        {
+                            testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                        }
                     }
                 }
+
+                clearExceptions = testCaseMetadata.IsDisabledTest || testCaseMetadata.IsQuarantinedTest;
             }
 
             if (exceptionAggregator?.ToException() is { } exception)
@@ -210,6 +215,13 @@ internal static class XUnitIntegration
         {
             TestOptimization.Instance.Log.Warning(ex, "XUnitIntegration: Error finishing test scope");
             test.Close(TestStatus.Pass);
+        }
+        finally
+        {
+            if (clearExceptions)
+            {
+                exceptionAggregator?.Clear();
+            }
         }
     }
 

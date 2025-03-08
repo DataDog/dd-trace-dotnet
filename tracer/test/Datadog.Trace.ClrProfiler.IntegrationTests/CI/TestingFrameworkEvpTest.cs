@@ -466,7 +466,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: true);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: testScenario.ExpectedExitCode, useDotnetExec: true);
             Assert.Equal(testScenario.ExpectedSpans, executionData.Tests.Count);
 
             // Call the validate action
@@ -536,15 +536,17 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly string TypeName;
         public readonly string FriendlyName;
         public readonly MockData MockData;
+        public readonly int ExpectedExitCode;
         public readonly int ExpectedSpans;
         public readonly bool UseSnapshot;
         public readonly ExecutionData.ValidateDelegate ValidateAction;
 
-        public TestScenario(string typeName, string friendlyName, MockData mockData, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction)
+        public TestScenario(string typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction)
         {
             TypeName = typeName;
             FriendlyName = friendlyName;
             MockData = mockData;
+            ExpectedExitCode = expectedExitCode;
             ExpectedSpans = expectedSpans;
             UseSnapshot = useSnapshot;
             ValidateAction = validateAction;

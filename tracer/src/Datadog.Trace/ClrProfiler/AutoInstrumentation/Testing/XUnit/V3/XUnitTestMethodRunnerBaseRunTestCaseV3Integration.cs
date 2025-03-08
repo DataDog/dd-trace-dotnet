@@ -105,16 +105,18 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         // If we have a RetryMessageBus means that we are in a retry context
         if (context.MessageBus is IDuckType { Instance: { } and RetryMessageBus retryMessageBus })
         {
+            var testCaseMetadata = retryMessageBus.GetMetadata(testcase.TestMethod.UniqueID);
+
             // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
             if (XUnitIntegration.GetTestManagementProperties(ref testRunnerData) is { Disabled: true, AttemptToFix: false })
             {
                 testcase.SkipReason = "Flaky test is disabled by Datadog";
                 testRunnerData.SkipReason = testcase.SkipReason;
                 Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Skipping test: {Class}.{Name} Reason: {Reason}", testcase.TestClass?.ToString() ?? string.Empty, testcase.TestMethod.Method.Name, testcase.SkipReason);
-                XUnitIntegration.CreateTest(ref testRunnerData);
+                XUnitIntegration.CreateTest(ref testRunnerData, testCaseMetadata);
             }
 
-            return new CallTargetState(null, new TestRunnerState(retryMessageBus, retryMessageBus.GetMetadata(testcase.TestMethod.UniqueID), context, testcase));
+            return new CallTargetState(null, new TestRunnerState(retryMessageBus, testCaseMetadata, context, testcase));
         }
 
         return CallTargetState.GetDefault();
@@ -249,9 +251,9 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                         runSummaryUnsafe.Total = 1;
                         runSummaryUnsafe.Failed = 0;
                         runSummaryUnsafe.Skipped = 0;
-                        runSummaryUnsafe.NotRun = 1;
+                        runSummaryUnsafe.NotRun = 0;
 
-                        messageBus.QuarantinedOrDisabledFlushMessages(testcase.TestMethod.UniqueID);
+                        messageBus.FlushMessages(testcase.TestMethod.UniqueID);
                     }
                     else
                     {
@@ -303,8 +305,8 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 runSummaryUnsafe.Total = 1;
                 runSummaryUnsafe.Failed = 0;
                 runSummaryUnsafe.Skipped = 0;
-                runSummaryUnsafe.NotRun = 1;
-                messageBus.QuarantinedOrDisabledFlushMessages(testcase.TestMethod.UniqueID);
+                runSummaryUnsafe.NotRun = 0;
+                messageBus.FlushMessages(testcase.TestMethod.UniqueID);
                 break;
 
             // For everything else, we just flush the messages

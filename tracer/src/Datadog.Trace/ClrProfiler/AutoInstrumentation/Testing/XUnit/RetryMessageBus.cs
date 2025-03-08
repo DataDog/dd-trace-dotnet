@@ -6,9 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
@@ -16,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 internal class RetryMessageBus : IMessageBus
 {
     private readonly Dictionary<string, RetryTestCaseMetadata> _testMethodMetadata = new();
-    private readonly Dictionary<string, string> _ids = new();
     private readonly IMessageBus _innerMessageBus;
     private readonly int _totalExecutions;
     private readonly int _executionNumber;
@@ -91,11 +88,6 @@ internal class RetryMessageBus : IMessageBus
             if (metadata.Disposed)
             {
                 Common.Log.Debug("RetryMessageBus.QueueMessage: Metadata is disposed for: {UniqueID} direct flush of the message.", uniqueID);
-                if (metadata.IsDisabledTest || metadata.IsQuarantinedTest)
-                {
-                    return QuarantinedOrDisabledInternalQueueMessage(message, uniqueID);
-                }
-
                 return _innerMessageBus.QueueMessage(message);
             }
 
@@ -189,96 +181,6 @@ internal class RetryMessageBus : IMessageBus
         }
     }
 
-    public bool QuarantinedOrDisabledFlushMessages(string testMethodUniqueID)
-    {
-        Common.Log.Debug("RetryMessageBus.QuarantinedOrDisabledFlushMessages: Flushing messages for: {UniqueID}", testMethodUniqueID);
-
-        var metadata = (RetryTestCaseMetadata)GetMetadata(testMethodUniqueID);
-        var listOfMessages = metadata.ListOfMessages;
-        var messages = listOfMessages?.FirstOrDefault(msgs => msgs is not null);
-        if (messages is null)
-        {
-            Common.Log.Debug("RetryMessageBus.QuarantinedOrDisabledFlushMessages: Nothing to flush for: {UniqueID}", testMethodUniqueID);
-            return true;
-        }
-
-        var ret = InternalFlushMessages(messages);
-        metadata.Disposed = true;
-        return ret;
-
-        bool InternalFlushMessages(List<object> messages)
-        {
-            var retValue = true;
-            var count = 0;
-            foreach (var message in messages)
-            {
-                retValue = retValue && QuarantinedOrDisabledInternalQueueMessage(message, testMethodUniqueID);
-                count++;
-            }
-
-            Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", count, testMethodUniqueID);
-
-            if (listOfMessages is not null)
-            {
-                Array.Clear(listOfMessages, 0, listOfMessages.Length);
-            }
-
-            return retValue;
-        }
-    }
-
-    private bool QuarantinedOrDisabledInternalQueueMessage(object message, string testMethodUniqueID)
-    {
-        var messageType = message.GetType();
-
-        if (messageType.Name is "TestPassed" or "TestFailed" or "TestSkipped")
-        {
-            var testNoRunType = messageType.Assembly.GetType($"{messageType.Namespace}.TestNotRun", throwOnError: false) ??
-                                messageType.Assembly.GetType($"{messageType.Namespace}.TestSkipped", throwOnError: false);
-            if (testNoRunType is not null)
-            {
-#if NETCOREAPP3_1_OR_GREATER
-                var newMessage = RuntimeHelpers.GetUninitializedObject(testNoRunType);
-#else
-                var newMessage = FormatterServices.GetUninitializedObject(testNoRunType);
-#endif
-
-                // Let's copy the properties from the original message to the new one.
-                if (message.TryDuckCast<ITestResultMessageV3>(out var originalTestMessage) && newMessage.TryDuckCast<ITestResultMessageV3>(out var newTestMessage))
-                {
-                    newTestMessage.ExecutionTime = originalTestMessage.ExecutionTime;
-                    newTestMessage.FinishTime = originalTestMessage.FinishTime;
-                    newTestMessage.Output = originalTestMessage.Output;
-                    newTestMessage.Warnings = originalTestMessage.Warnings;
-                    newTestMessage.TestUniqueID = originalTestMessage.TestUniqueID;
-                    newTestMessage.TestCaseUniqueID = originalTestMessage.TestCaseUniqueID;
-                    newTestMessage.TestMethodUniqueID = originalTestMessage.TestMethodUniqueID;
-                    newTestMessage.TestClassUniqueID = originalTestMessage.TestClassUniqueID;
-                    newTestMessage.TestCollectionUniqueID = originalTestMessage.TestCollectionUniqueID;
-                    newTestMessage.AssemblyUniqueID = originalTestMessage.AssemblyUniqueID;
-                }
-
-                Common.Log.Debug("RetryMessageBus.QuarantinedOrDisabledInternalQueueMessage: Message {Message} | {UniqueId}", newMessage, testMethodUniqueID);
-                return _innerMessageBus.QueueMessage(newMessage);
-            }
-        }
-
-        if (messageType.Name is "TestCaseFinished" or "TestMethodFinished")
-        {
-            Common.Log.Debug("RetryMessageBus.QuarantinedOrDisabledInternalQueueMessage: Modifying values of {MessageType} for {UniqueId}", messageType.FullName, testMethodUniqueID);
-            if (message.TryDuckCast<IFinishedMessageV3>(out var finishedMessage))
-            {
-                finishedMessage.TestsFailed = 0;
-                finishedMessage.TestsNotRun = 1;
-                finishedMessage.TestsSkipped = 0;
-                finishedMessage.TestsTotal = 1;
-            }
-        }
-
-        Common.Log.Debug("RetryMessageBus.QuarantinedOrDisabledInternalQueueMessage: Message {Message} | {UniqueId}", message, testMethodUniqueID);
-        return _innerMessageBus.QueueMessage(message);
-    }
-
     public bool ClearMessages(string testMethodUniqueID)
     {
         Common.Log.Debug<string>("RetryMessageBus.ClearMessages: Cleaning messages for: {UniqueID}", testMethodUniqueID);
@@ -310,56 +212,14 @@ internal class RetryMessageBus : IMessageBus
         string TestMethodUniqueID { get; }
     }
 
-    internal interface IFinishedMessageV3
-    {
-        public int TestsFailed { get; set; }
-
-        public int TestsNotRun { get; set; }
-
-        public int TestsSkipped { get; set; }
-
-        public int TestsTotal { get; set; }
-    }
-
-    internal interface ITestResultMessageV3 : ITestMessageV3
-    {
-        decimal ExecutionTime { get; set; }
-
-        DateTimeOffset FinishTime { get; set; }
-
-        string Output { get; set; }
-
-        string[]? Warnings { get; set; }
-    }
-
-    internal interface ITestMessageV3 : ITestCaseMessageV3
-    {
-        string? TestUniqueID { get; set; }
-    }
-
     internal interface ITestCaseMessageV3 : ITestMethodMessageV3
     {
         string? TestCaseUniqueID { get; set; }
     }
 
-    internal interface ITestMethodMessageV3 : ITestClassMessageV3
+    internal interface ITestMethodMessageV3
     {
         string? TestMethodUniqueID { get; set; }
-    }
-
-    internal interface ITestClassMessageV3 : ITestCollectionMessageV3
-    {
-        string? TestClassUniqueID { get; set; }
-    }
-
-    internal interface ITestCollectionMessageV3 : ITestAssemblyMessageV3
-    {
-        string? TestCollectionUniqueID { get; set; }
-    }
-
-    internal interface ITestAssemblyMessageV3
-    {
-        string? AssemblyUniqueID { get; set; }
     }
 
     private class RetryTestCaseMetadata(string uniqueID, int totalExecution, int executionNumber) : TestCaseMetadata(uniqueID, totalExecution, executionNumber)

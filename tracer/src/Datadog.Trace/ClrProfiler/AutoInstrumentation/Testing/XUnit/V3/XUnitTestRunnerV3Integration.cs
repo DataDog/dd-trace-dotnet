@@ -83,57 +83,6 @@ public static class XUnitTestRunnerV3Integration
             XUnitIntegration.FinishTest(test, testRunnerContext.Aggregator);
         }
 
-        var proxyType = DuckType.GetOrCreateProxyType(typeof(ITestContextStatics), Type.GetType("Xunit.TestContext, xunit.v3.core", throwOnError: true)!);
-        var testContext = proxyType.CreateInstance<ITestContextStatics>(null);
-        if (testContext?.Current?.TestState is not null)
-        {
-            testContext.Current.TestState.Result = TestResult.NotRun;
-        }
-
         return returnValue;
-    }
-
-#pragma warning disable SA1201
-    internal interface ITestContextStatics
-    {
-        ITestContext Current { get; }
-    }
-
-    internal interface ITestContext
-    {
-        /// <summary>
-        /// Gets the current state of the test. Will only be available after the test has finished running.
-        /// </summary>
-        ITestResultState? TestState { get; }
-    }
-
-    internal interface ITestResultState
-    {
-        TestResult Result { get; set; }
-    }
-
-    internal enum TestResult
-    {
-        /// <summary>
-        /// The test passed.
-        /// </summary>
-        Passed,
-
-        /// <summary>
-        /// The test failed.
-        /// </summary>
-        Failed,
-
-        /// <summary>
-        /// The test was skipped.
-        /// </summary>
-        Skipped,
-
-        /// <summary>
-        /// The test was not run because it was excluded (either because it was marked as explicit
-        /// and explicit tests weren't run, or because it was marked as not explicit as only explicit
-        /// tests were run).
-        /// </summary>
-        NotRun,
     }
 }
