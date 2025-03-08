@@ -679,6 +679,16 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling Impacted Tests Detection.
             /// </summary>
             public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the Test Management feature.
+            /// </summary>
+            public const string TestManagementEnabled = "DD_TEST_MANAGEMENT_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the number of retries to fix a flaky test.
+            /// </summary>
+            public const string TestManagementAttemptToFixRetries = "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES";
         }
 
         /// <summary>

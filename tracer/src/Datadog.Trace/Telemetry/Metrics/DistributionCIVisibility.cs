@@ -120,4 +120,22 @@ internal enum DistributionCIVisibility
     /// The number of modified files received by the endpoint by CI Visibility
     /// </summary>
     [TelemetryMetric("impacted_tests_detection.response_files", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionResponseFiles,
+
+    /// <summary>
+    /// The time it takes to get the response of the test management tests endpoint request in ms by CI Visibility
+    /// </summary>
+    [TelemetryMetric("test_management_tests.request_ms", isCommon: true, NS.CIVisibility)]
+    TestManagementTestsRequestMs,
+
+    /// <summary>
+    /// The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityResponseCompressed>("test_management_tests.response_bytes", isCommon: true, NS.CIVisibility)]
+    TestManagementTestsResponseBytes,
+
+    /// <summary>
+    /// The number of tests received by the endpoint by CI Visibility
+    /// </summary>
+    [TelemetryMetric("test_management_tests.response_tests", isCommon: true, NS.CIVisibility)]
+    TestManagementTestsResponseTests,
 }

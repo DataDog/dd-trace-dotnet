@@ -452,10 +452,24 @@ public sealed class Test
                 !string.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
+#pragma warning disable SA1118
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
                 TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
                 eventTypeWithMetadata,
-                tags.TestRetryReason == "efd" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection : tags.TestRetryReason == "atr" ? MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry : MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+                tags.TestRetryReason switch
+                {
+                    "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
+                    "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
+                    _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
+                },
+                tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
+                    tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
+                                                MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+                tags.IsAttemptToFix == "true" ?
+                    (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries :
+                         MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) :
+                    MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
+#pragma warning restore SA1118
         }
 
         Current = null;

@@ -54,4 +54,10 @@ internal sealed class NoopTestOptimizationClient : ITestOptimizationClient
         Log.Debug("NoopTestOptimizationClient: Uploading repository changes...");
         return Task.FromResult<long>(0);
     }
+
+    public Task<TestOptimizationClient.TestManagementResponse> GetTestManagementTests()
+    {
+        Log.Debug("NoopTestOptimizationClient: Getting test management tests...");
+        return Task.FromResult(new TestOptimizationClient.TestManagementResponse());
+    }
 }
