@@ -35,11 +35,28 @@ endif()
 
 set(LIBDATADOG_BASE_DIR ${libdatadog-${LIBDATADOG_VERSION}_SOURCE_DIR})
 
-add_library(libdatadog-lib STATIC IMPORTED)
+add_library(libdatadog-lib SHARED IMPORTED)
 
 set_target_properties(libdatadog-lib PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${LIBDATADOG_BASE_DIR}/include
-    IMPORTED_LOCATION ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.a
+    IMPORTED_LOCATION ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.so
 )
 
 add_dependencies(libdatadog-lib libdatadog-${LIBDATADOG_VERSION})
+
+# Override target_link_libraries
+function(target_link_libraries target)
+    # Call the original target_link_libraries
+    _target_link_libraries(${ARGV})
+
+    if("libdatadog-lib" IN_LIST ARGN)
+        add_custom_command(
+            TARGET ${target}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:libdatadog-lib>
+                $<TARGET_FILE_DIR:${target}>
+            COMMENT "Copying libdatadog to ${target} output directory"
+        )
+    endif()
+endfunction()
