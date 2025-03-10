@@ -31,8 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class PopulateBasicPropertiesHeadersIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TActivity>(TTarget instance, TBasicProperties basicProperties, TActivity sendActivity, ulong publishSequenceNumber)
-        where TBasicProperties : IReadOnlyBasicProperties, IDuckType
+    internal static CallTargetState OnMethodBegin<TTarget, TActivity>(TTarget instance, object basicProperties, TActivity sendActivity, ulong publishSequenceNumber)
     {
         return new CallTargetState(null, basicProperties);
     }
