@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
+#if !NETFRAMEWORK
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 #pragma warning disable CS0162 // Unreachable code detected
@@ -53,10 +53,6 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
     [SkippableFact]
     public virtual async Task TestEndpointsCollection()
     {
-#if !NETCOREAPP2_2_OR_GREATER
-        // Skip all these tests on >=2.2 because the endpoints collection is not supported
-        throw new SkipException();
-#endif
         await TryStartApp();
 
         var agent = _fixture.Agent;

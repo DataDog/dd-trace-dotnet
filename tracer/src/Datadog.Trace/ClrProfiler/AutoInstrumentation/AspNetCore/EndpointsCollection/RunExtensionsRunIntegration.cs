@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-#if NETCOREAPP2_2_OR_GREATER
+#if !NETFRAMEWORK
 
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
