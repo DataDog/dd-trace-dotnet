@@ -23,6 +23,6 @@ namespace Datadog.Trace.Telemetry
 
         public const string MessageBatch = "message-batch";
 
-        public const string AsmEndpoints = "asm-endpoints";
+        public const string AppEndpoints = "app-endpoints";
     }
 }

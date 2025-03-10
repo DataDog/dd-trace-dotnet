@@ -153,7 +153,7 @@ namespace Datadog.Trace.Tests.Telemetry
             {
             }
 
-            public void RecordAsmEndpoints(ICollection<AsmEndpointData> endpoints)
+            public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
             {
             }
         }

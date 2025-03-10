@@ -25,7 +25,7 @@ internal class EndpointsCollection
     {
         var maxEndpoints = Security.Instance.ApiSecurity.GetEndpointsCollectionMessageLimit();
 
-        List<AsmEndpointData> discoveredEndpoints = [];
+        List<AppEndpointData> discoveredEndpoints = [];
 
         for (var i = 0; i < endpoints.Count && discoveredEndpoints.Count < maxEndpoints; i++)
         {
@@ -43,7 +43,7 @@ internal class EndpointsCollection
         ReportEndpoints(discoveredEndpoints);
     }
 
-    private static void CollectEndpoint(object endpoint, List<AsmEndpointData> discoveredEndpoints, int maxEndpoints)
+    private static void CollectEndpoint(object endpoint, List<AppEndpointData> discoveredEndpoints, int maxEndpoints)
     {
         if (!endpoint.TryDuckCast<RouteEndpoint>(out var routeEndpoint))
         {
@@ -99,11 +99,11 @@ internal class EndpointsCollection
         }
     }
 
-    private static void InsertEndpoint(string httpMethod, string path, List<AsmEndpointData> discoveredEndpoints)
+    private static void InsertEndpoint(string httpMethod, string path, List<AppEndpointData> discoveredEndpoints)
     {
         try
         {
-            discoveredEndpoints.Add(new AsmEndpointData(httpMethod, path));
+            discoveredEndpoints.Add(new AppEndpointData(httpMethod, path));
         }
         catch (Exception e)
         {
@@ -111,9 +111,9 @@ internal class EndpointsCollection
         }
     }
 
-    private static void ReportEndpoints(List<AsmEndpointData> discoveredEndpoints)
+    private static void ReportEndpoints(List<AppEndpointData> discoveredEndpoints)
     {
-        Tracer.Instance.TracerManager.Telemetry.RecordAsmEndpoints(discoveredEndpoints);
+        Tracer.Instance.TracerManager.Telemetry.RecordAppEndpoints(discoveredEndpoints);
     }
 }
 

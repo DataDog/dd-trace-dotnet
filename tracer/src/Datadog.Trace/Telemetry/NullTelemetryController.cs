@@ -58,7 +58,7 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordAsmEndpoints(ICollection<AsmEndpointData> asmEndpoints)
+        public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
         {
         }
     }

@@ -48,7 +48,7 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
         SetEnvironmentVariable(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
     }
 
-    internal ICollection<AsmEndpointData> Endpoints { get; private set; }
+    internal ICollection<AppEndpointData> Endpoints { get; private set; }
 
     [SkippableFact]
     public virtual async Task TestEndpointsCollection()
@@ -56,10 +56,10 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
         await TryStartApp();
 
         var agent = _fixture.Agent;
-        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AsmEndpoints));
+        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppEndpoints));
 
         var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
-        var telemetryData = allData.Where(x => x.IsRequestType(TelemetryRequestTypes.AsmEndpoints)).ToArray().FirstOrDefault();
+        var telemetryData = allData.Where(x => x.IsRequestType(TelemetryRequestTypes.AppEndpoints)).ToArray().FirstOrDefault();
 
         // If testing with collection disabled, we should not have any telemetry data
         if (!_collectionEnabled)
@@ -70,7 +70,7 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
 
         telemetryData.Should().NotBeNull();
 
-        var endpoints = telemetryData.TryGetPayload<AsmEndpointsPayload>(TelemetryRequestTypes.AsmEndpoints);
+        var endpoints = telemetryData.TryGetPayload<AppEndpointsPayload>(TelemetryRequestTypes.AppEndpoints);
         endpoints.Should().NotBeNull();
 
         endpoints.Endpoints.Should().NotBeEmpty();
