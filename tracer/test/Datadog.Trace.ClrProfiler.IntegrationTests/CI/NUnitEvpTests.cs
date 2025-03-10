@@ -252,6 +252,53 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
+        [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+        public static IEnumerable<object[]> GetDataForAttemptToFixTests()
+        {
+            foreach (var row in GetData())
+            {
+                yield return row.Concat(
+                    new MockData(
+                        TestManagementSettingsJson("true", "10"),
+                        string.Empty,
+                        """
+                        {
+                            "data": {
+                                "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                "type": "ci_app_libraries_tests",
+                                "attributes": {
+                                    "modules": {
+                                        "Samples.NUnitTests": {
+                                            "suites": {
+                                                "Samples.NUnitTests.TestSuite": {
+                                                    "tests": {
+                                                        "TraitErrorTest": {
+                                                            "properties": {
+                                                                "quarantined": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorTest": {
+                                                            "properties": {
+                                                                "disabled": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """),
+                    1,
+                    ExpectedTestCount + 9 + 9,
+                    "quarantined_and_disabled");
+            }
+        }
+
         public static string TestManagementSettingsJson(string testManagementEnabled, string attemptToFixRetries)
         {
             return $@"
@@ -684,6 +731,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         [Trait("Category", "DisabledTests")]
         public async Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+        {
+            await ExecuteTestAsync(
+                    packageVersion,
+                    evpVersionToRemove,
+                    expectedGzip,
+                    new TestScenario(
+                        nameof(NUnitEvpTests),
+                        friendlyName,
+                        mockData,
+                        expectedExitCode,
+                        expectedSpans,
+                        true,
+                        (in ExecutionData data) =>
+                        {
+                            // Check the tests, suites and modules count
+                            Assert.Equal(ExpectedTestSuiteCount, data.TestSuites.Count);
+                            Assert.Single(data.TestModules);
+                        },
+                        useDotnetExec: false))
+               .ConfigureAwait(false);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetDataForAttemptToFixTests))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        [Trait("Category", "AttemptToFixTests")]
+        public async Task AttemptToFixTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
         {
             await ExecuteTestAsync(
                     packageVersion,

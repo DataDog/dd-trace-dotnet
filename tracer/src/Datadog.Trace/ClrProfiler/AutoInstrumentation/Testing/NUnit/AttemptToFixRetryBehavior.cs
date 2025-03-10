@@ -15,7 +15,7 @@ internal readonly struct AttemptToFixRetryBehavior : IRetryBehavior
 
     public AttemptToFixRetryBehavior(ITestOptimization testOptimization, TestOptimizationClient.TestManagementResponseTestPropertiesAttributes testProperties)
     {
-        RemainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetries ?? 0;
+        RemainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetries - 1 ?? 0;
         _testProperties = testProperties;
     }
 
