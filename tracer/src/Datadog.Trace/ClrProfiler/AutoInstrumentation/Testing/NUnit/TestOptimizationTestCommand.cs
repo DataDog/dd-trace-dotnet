@@ -1,4 +1,4 @@
-// <copyright file="CIVisibilityTestCommand.cs" company="Datadog">
+// <copyright file="TestOptimizationTestCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,11 +12,11 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
-internal class CIVisibilityTestCommand
+internal class TestOptimizationTestCommand
 {
     private readonly ITestCommand _innerCommand;
 
-    public CIVisibilityTestCommand(ITestCommand innerCommand)
+    public TestOptimizationTestCommand(ITestCommand innerCommand)
     {
         _innerCommand = innerCommand;
     }
@@ -43,7 +43,7 @@ internal class CIVisibilityTestCommand
         // If test is disabled we mark it as skipped and don't run it
         if (testManagementProperties is { Disabled: true, AttemptToFix: false })
         {
-            Common.Log.Debug("CIVisibilityTestCommand: Test is disabled by Datadog.");
+            Common.Log.Debug("TestOptimizationTestCommand: Test is disabled by Datadog.");
             SetSkippedResult(result, "Flaky test is disabled by Datadog.");
             if (NUnitIntegration.GetOrCreateTest(context.CurrentTest, 0) is { } test)
             {
@@ -61,7 +61,7 @@ internal class CIVisibilityTestCommand
         // If test is quarantined we mark it as skipped after the first run so we hide the actual test status to the testing framework
         if (testManagementProperties is { Quarantined: true, AttemptToFix: false })
         {
-            Common.Log.Debug("CIVisibilityTestCommand: Test is quarantined by Datadog.");
+            Common.Log.Debug("TestOptimizationTestCommand: Test is quarantined by Datadog.");
             SetSkippedResult(result, "Flaky test is quarantined by Datadog.");
         }
 
@@ -190,21 +190,21 @@ internal class CIVisibilityTestCommand
         while (remainingRetries-- > 0)
         {
             retryNumber++;
-            Common.Log.Debug<string?, int, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Running retry of {TotalRetries}.", behavior.RetryMode, retryNumber, totalRetries);
+            Common.Log.Debug<string?, int, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Running retry of {TotalRetries}.", behavior.RetryMode, retryNumber, totalRetries);
             ClearResultForRetry(context);
             var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
-            Common.Log.Debug<string?, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Aggregating results.", behavior.RetryMode, retryNumber);
+            Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Aggregating results.", behavior.RetryMode, retryNumber);
             AgregateResults(result, retryResult);
             if (!behavior.ShouldRetry(result))
             {
-                Common.Log.Debug<string?, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Retry ended by the feature.", behavior.RetryMode, retryNumber);
+                Common.Log.Debug<string?, int>("TestOptimizationTestCommand: {Mode}: [Retry {Num}] Retry ended by the feature.", behavior.RetryMode, retryNumber);
                 break;
             }
         }
 
         if (retryNumber > 0)
         {
-            Common.Log.Debug("CIVisibilityTestCommand: {Mode}: All retries were executed.", behavior.RetryMode);
+            Common.Log.Debug("TestOptimizationTestCommand: {Mode}: All retries were executed.", behavior.RetryMode);
         }
 
         return behavior.ResultChanges(result);

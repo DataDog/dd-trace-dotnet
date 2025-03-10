@@ -29,7 +29,7 @@ internal readonly struct AttemptToFixRetryBehavior : IRetryBehavior
     {
         if (_testProperties is { Quarantined: true } or { Disabled: true })
         {
-            Common.Log.Debug("CIVisibilityTestCommand: Test is quarantined or disabled by Datadog.");
+            Common.Log.Debug("AttemptToFixRetryBehavior: Test is quarantined or disabled by Datadog.");
             result.SetResult(result.ResultState.StaticIgnored, "Flaky test is quarantined or disabled by Datadog.", string.Empty);
         }
 
