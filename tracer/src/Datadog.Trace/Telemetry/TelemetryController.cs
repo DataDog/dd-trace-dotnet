@@ -36,7 +36,7 @@ internal class TelemetryController : ITelemetryController
     private readonly IConfigurationTelemetry _configuration;
     private readonly IDependencyTelemetryCollector _dependencies;
     private readonly IntegrationTelemetryCollector _integrations = new();
-    private readonly AsmEndpointsTelemetryCollector _asmEndpoints = new();
+    private readonly AppEndpointsTelemetryCollector _appEndpoints = new();
     private readonly ProductsTelemetryCollector _products = new();
     private readonly IMetricsTelemetryCollector _metrics;
     private readonly RedactedErrorLogCollector? _redactedErrorLogs;
@@ -109,9 +109,9 @@ internal class TelemetryController : ITelemetryController
         _configuration.Record(ConfigurationKeys.GitCommitSha, gitMetadata.CommitSha, recordValue: true, ConfigurationOrigins.Calculated);
     }
 
-    public void RecordAsmEndpoints(ICollection<AsmEndpointData> asmEndpoints)
+    public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
     {
-        _asmEndpoints.RecordEndpoints(asmEndpoints);
+        _appEndpoints.RecordEndpoints(appEndpoints);
     }
 
     public void Start()
@@ -195,7 +195,7 @@ internal class TelemetryController : ITelemetryController
                 configuration: null, // we don't store this indefinitely, so no way of dumping full config
                 _dependencies.GetFullData(),
                 _integrations.GetFullData(),
-                _asmEndpoints.GetData(),
+                _appEndpoints.GetData(),
                 metrics: null,
                 _products.GetFullData(),
                 sendAppStarted: false);
@@ -333,7 +333,7 @@ internal class TelemetryController : ITelemetryController
                 _configuration.GetData(),
                 _dependencies.GetData(),
                 _integrations.GetData(),
-                _asmEndpoints.GetData(),
+                _appEndpoints.GetData(),
                 in metrics,
                 _products.GetData());
 

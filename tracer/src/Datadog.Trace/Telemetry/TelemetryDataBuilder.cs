@@ -111,13 +111,13 @@ internal class TelemetryDataBuilder
                 new DistributionsPayload(distributions)));
         }
 
-        if (input.AsmEndpoints is { } asmEndpoints)
+        if (input.AppEndpoints is { } appEndpoints)
         {
-            Log.Debug("ASM endpoints collected, sending asm-endpoints");
+            Log.Debug("Application endpoints collected, sending app-endpoints");
             data ??= new();
             data.Add(new(
-                TelemetryRequestTypes.AsmEndpoints,
-                new AsmEndpointsPayload(asmEndpoints, true)));
+                TelemetryRequestTypes.AppEndpoints,
+                new AppEndpointsPayload(appEndpoints, true)));
         }
 
         if (sendAppClosing)

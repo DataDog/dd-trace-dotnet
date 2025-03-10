@@ -238,7 +238,7 @@ namespace Datadog.Trace.TestHelpers
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
                     { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
                     { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
-                    { TelemetryRequestTypes.AsmEndpoints, CreateSerializer<AsmEndpointsPayload>() }
+                    { TelemetryRequestTypes.AppEndpoints, CreateSerializer<AppEndpointsPayload>() }
                 };
             }
 

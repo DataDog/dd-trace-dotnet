@@ -270,7 +270,7 @@ public class TelemetryControllerTests
     }
 
     [Fact]
-    public async Task TelemetryControllerRecordsAsmEndpoints()
+    public async Task TelemetryControllerRecordsAppEndpoints()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
         var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
@@ -284,7 +284,7 @@ public class TelemetryControllerTests
             _flushInterval);
 
         controller.RecordTracerSettings(new TracerSettings(), "DefaultServiceName");
-        controller.RecordAsmEndpoints(new List<AsmEndpointData>
+        controller.RecordAppEndpoints(new List<AppEndpointData>
         {
             new("GET", "/api/test"),
             new("POST", "/api/test"),
@@ -295,9 +295,9 @@ public class TelemetryControllerTests
         var data = await WaitForRequestStarted(transport, _timeout);
 
         var payloads = data
-                      .Where(x => ContainsMessage(x, TelemetryRequestTypes.AsmEndpoints))
-                      .Select(x => GetPayload(x, TelemetryRequestTypes.AsmEndpoints).Payload)
-                      .Cast<AsmEndpointsPayload>()
+                      .Where(x => ContainsMessage(x, TelemetryRequestTypes.AppEndpoints))
+                      .Select(x => GetPayload(x, TelemetryRequestTypes.AppEndpoints).Payload)
+                      .Cast<AppEndpointsPayload>()
                       .ToList();
 
         payloads.Should().NotBeNull();
