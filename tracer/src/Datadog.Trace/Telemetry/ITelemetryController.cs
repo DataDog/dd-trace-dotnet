@@ -75,6 +75,6 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Called to record endpoints of the current application for API Security,
         /// </summary>
-        void RecordAsmEndpoints(ICollection<AsmEndpointData> asmEndpoints);
+        void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints);
     }
 }

@@ -43,7 +43,7 @@ public class TelemetryDataAggregatorTests
             next.Configuration,
             next.Dependencies,
             next.Integrations,
-            next.AsmEndpoints,
+            next.AppEndpoints,
             new MetricResults((List<MetricData>)next.Metrics, (List<DistributionMetricData>)next.Distributions),
             next.Products);
 
@@ -67,7 +67,7 @@ public class TelemetryDataAggregatorTests
         var currentIntegrations = new IntegrationTelemetryData[] { new("current", false, true, null) };
         var previousIntegrations = new IntegrationTelemetryData[] { new("previous", false, true, null) };
 
-        var currentAsmEndpoints = new AsmEndpointData[] { new("GET", "/hello") };
+        var currentAppEndpoints = new AppEndpointData[] { new("GET", "/hello") };
 
         var currentProducts = new ProductsData { Appsec = new(true, null) };
         var previousProducts = new ProductsData { Profiler = new(true, null) };
@@ -91,7 +91,7 @@ public class TelemetryDataAggregatorTests
             currentConfig,
             currentDeps,
             currentIntegrations,
-            currentAsmEndpoints,
+            currentAppEndpoints,
             new MetricResults(currentMetrics, currentDistributions),
             currentProducts);
 
@@ -107,9 +107,9 @@ public class TelemetryDataAggregatorTests
                .Should()
                .Contain(currentIntegrations)
                .And.Contain(previousIntegrations);
-        results.AsmEndpoints
+        results.AppEndpoints
                .Should()
-               .Contain(currentAsmEndpoints);
+               .Contain(currentAppEndpoints);
         results.Metrics
                .Should()
                .Contain(currentMetrics);
@@ -175,7 +175,7 @@ public class TelemetryDataAggregatorTests
             Array.Empty<ConfigurationKeyValue>(),
             Array.Empty<DependencyTelemetryData>(),
             Array.Empty<IntegrationTelemetryData>(),
-            Array.Empty<AsmEndpointData>(),
+            Array.Empty<AppEndpointData>(),
             new MetricResults(new List<MetricData>(), new List<DistributionMetricData>()),
             new ProductsData(),
             sendAppStarted: false);
