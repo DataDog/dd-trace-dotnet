@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if NETCOREAPP2_2_OR_GREATER
+#if !NETFRAMEWORK
 
 using System;
 using System.ComponentModel;
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     MethodName = "StartAsync",
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = ["Microsoft.AspNetCore.Hosting.Server.IHttpApplication`1[!!0]", ClrNames.CancellationToken],
-    MinimumVersion = "2.2.0",
+    MinimumVersion = "5.0.0",
     MaximumVersion = SupportedVersions.LatestDotNet,
     InstrumentationCategory = InstrumentationCategory.AppSec,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
