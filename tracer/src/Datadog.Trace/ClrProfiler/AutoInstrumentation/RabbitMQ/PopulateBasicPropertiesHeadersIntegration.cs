@@ -1,4 +1,4 @@
-﻿// <copyright file="PopulateBasicPropertiesHeadersIntegration.cs" company="Datadog">
+// <copyright file="PopulateBasicPropertiesHeadersIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -31,6 +31,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class PopulateBasicPropertiesHeadersIntegration
 {
+    internal static CallTargetState OnMethodBegin<TTarget, TActivity>(TTarget instance, object basicProperties, TActivity sendActivity, ulong publishSequenceNumber)
+    {
+        return new CallTargetState(null, basicProperties);
+    }
+
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
         var tracer = Tracer.Instance;
@@ -45,7 +50,29 @@ public class PopulateBasicPropertiesHeadersIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        returnValue ??= CachedBasicPropertiesHelper<TReturn>.CreateHeaders();
+        // PopulateBasicPropertiesHeaders returns null if the supplied IReadOnlyBasicProperties
+        // does not have to be modified or if it's a writable instance.
+        // If that is the case then we have to fetch IReadOnlyBasicProperties from the argument
+        // list instead of creating a new instance that overwrites the supplied properties.
+        if (returnValue is null)
+        {
+            if (state.State.DuckIs<IBasicProperties>())
+            {
+                // Use the existing basic properties if possible...
+                returnValue = (TReturn)state.State!;
+            }
+            else if (state.State.DuckIs<IReadOnlyBasicProperties>())
+            {
+                // if not create new instance using the copy constructor on BasicProperties.
+                returnValue = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
+            }
+            else
+            {
+                // This case cannot happen as argument is not nullable.
+                return new CallTargetReturn<TReturn?>(returnValue);
+            }
+        }
+
         var duckType = returnValue.DuckCast<IBasicProperties>()!;
 
         // add distributed tracing headers to the message
