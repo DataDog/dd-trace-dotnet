@@ -31,7 +31,7 @@ internal class TelemetryDataAggregator
         ICollection<ConfigurationKeyValue>? configuration,
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
-        ICollection<AsmEndpointData>? asmEndpoints,
+        ICollection<AppEndpointData>? appEndpoints,
         in MetricResults? metrics,
         ProductsData? products)
     {
@@ -39,7 +39,7 @@ internal class TelemetryDataAggregator
             CombineWith(configuration),
             CombineWith(dependencies),
             CombineWith(integrations),
-            CombineWith(asmEndpoints),
+            CombineWith(appEndpoints),
             metrics,
             CombineWith(products),
             sendAppStarted: !_appStartedSent);
@@ -67,7 +67,7 @@ internal class TelemetryDataAggregator
                 input.Configuration,
                 input.Dependencies,
                 input.Integrations,
-                input.AsmEndpoints,
+                input.AppEndpoints,
                 metrics: null,
                 products: input.Products,
                 input.SendAppStarted);
@@ -162,9 +162,9 @@ internal class TelemetryDataAggregator
         };
     }
 
-    private ICollection<AsmEndpointData>? CombineWith(ICollection<AsmEndpointData>? newValues)
+    private ICollection<AppEndpointData>? CombineWith(ICollection<AppEndpointData>? newValues)
     {
         // The Endpoints are set only once, so we don't need to merge them
-        return _previous?.AsmEndpoints ?? newValues;
+        return _previous?.AppEndpoints ?? newValues;
     }
 }
