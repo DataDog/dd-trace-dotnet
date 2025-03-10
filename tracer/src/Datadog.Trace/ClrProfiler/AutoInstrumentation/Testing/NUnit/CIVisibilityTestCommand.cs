@@ -2,11 +2,9 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
 
 using System;
-using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tagging;
@@ -16,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 internal class CIVisibilityTestCommand
 {
-    private static int _totalRetries = -1;
     private readonly ITestCommand _innerCommand;
 
     public CIVisibilityTestCommand(ITestCommand innerCommand)
@@ -58,8 +55,7 @@ internal class CIVisibilityTestCommand
         }
 
         // Execute test
-        var executionNumber = 0;
-        result = ExecuteTest(context, executionNumber++, out var testTags, out var duration);
+        result = ExecuteTest(context, 0, out var testTags, out var duration);
         var resultStatus = result.ResultState.Status;
 
         // If test is quarantined we mark it as skipped after the first run so we hide the actual test status to the testing framework
@@ -76,50 +72,18 @@ internal class CIVisibilityTestCommand
             return result.Instance!;
         }
 
-        // Global retries locals
-        var remainingRetries = 0;
-        var retryNumber = 0;
-        Func<ITestResult, bool> shouldRetry = static _ => true;
-        string? retryMode = null;
-
-        // Check the retries conditions
+        // Apply retries
         if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true && testTags?.TestIsNew == "true")
         {
-            // Early flake detection mode
-            remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
-            retryMode = "EFD";
+            result = DoRetries(new EarlyFlakeDetectionRetryBehavior(duration), context, result);
         }
         else if (resultStatus == TestStatus.Failed && testOptimization.FlakyRetryFeature?.Enabled == true)
         {
-            // Flaky retry mode
-            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature.TotalFlakyRetryCount, -1);
-            remainingRetries = testOptimization.FlakyRetryFeature.FlakyRetryCount;
-            shouldRetry = static result => result.ResultState.Status == TestStatus.Failed && Interlocked.Decrement(ref _totalRetries) > 0;
-            retryMode = "FlakyRetry";
+            result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
         }
-
-        if (retryMode != null)
+        else if (testManagementProperties is { AttemptToFix: true })
         {
-            var totalRetries = remainingRetries;
-            while (remainingRetries-- > 0)
-            {
-                retryNumber++;
-                Common.Log.Debug<string?, int, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Running retry of {TotalRetries}.", retryMode, retryNumber, totalRetries);
-                ClearResultForRetry(context);
-                var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
-                Common.Log.Debug<string?, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Aggregating results.", retryMode, retryNumber);
-                AgregateResults(result, retryResult);
-                if (!shouldRetry(result))
-                {
-                    Common.Log.Debug<string?, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Retry ended by the feature.", retryMode, retryNumber);
-                    break;
-                }
-            }
-
-            if (retryNumber > 0)
-            {
-                Common.Log.Debug("CIVisibilityTestCommand: {Mode}: All retries were executed.", retryMode);
-            }
+            result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties), context, result);
         }
 
         context.CurrentResult = result;
@@ -163,7 +127,7 @@ internal class CIVisibilityTestCommand
         }
     }
 
-    private void SetSkippedResult(ITestResult result, string message)
+    private static void SetSkippedResult(ITestResult result, string message)
     {
         result.SetResult(result.ResultState.StaticIgnored, message, string.Empty);
     }
@@ -214,5 +178,35 @@ internal class CIVisibilityTestCommand
         }
 
         return testResult;
+    }
+
+    private ITestResult DoRetries<TBehavior>(in TBehavior behavior, ITestExecutionContext context, ITestResult result)
+        where TBehavior : struct, IRetryBehavior
+    {
+        var executionNumber = 1;
+        var remainingRetries = behavior.RemainingRetries;
+        var retryNumber = 0;
+        var totalRetries = remainingRetries;
+        while (remainingRetries-- > 0)
+        {
+            retryNumber++;
+            Common.Log.Debug<string?, int, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Running retry of {TotalRetries}.", behavior.RetryMode, retryNumber, totalRetries);
+            ClearResultForRetry(context);
+            var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
+            Common.Log.Debug<string?, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Aggregating results.", behavior.RetryMode, retryNumber);
+            AgregateResults(result, retryResult);
+            if (!behavior.ShouldRetry(result))
+            {
+                Common.Log.Debug<string?, int>("CIVisibilityTestCommand: {Mode}: [Retry {Num}] Retry ended by the feature.", behavior.RetryMode, retryNumber);
+                break;
+            }
+        }
+
+        if (retryNumber > 0)
+        {
+            Common.Log.Debug("CIVisibilityTestCommand: {Mode}: All retries were executed.", behavior.RetryMode);
+        }
+
+        return behavior.ResultChanges(result);
     }
 }
