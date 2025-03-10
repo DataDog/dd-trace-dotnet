@@ -466,7 +466,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: testScenario.ExpectedExitCode, useDotnetExec: true);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: testScenario.ExpectedExitCode, useDotnetExec: testScenario.UseDotnetExec);
             Assert.Equal(testScenario.ExpectedSpans, executionData.Tests.Count);
 
             // Call the validate action
@@ -482,10 +482,10 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 await Verifier.Verify(
                     executionData.Tests
                                  .OrderBy(s => s.Resource)
-                                 .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                                 .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsNew))
-                                 .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsRetry))
-                                 .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.Parameters))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsNew))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, EarlyFlakeDetectionTags.AbortReason)),
                     settings);
             }
         }
@@ -495,6 +495,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             throw;
         }
     }
+
+    private static TValue? GetValueOrDefault<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key)
+        where TKey : notnull => dictionary.TryGetValue(key, out var value) ? value : default;
 
     public readonly struct MockData
     {
@@ -539,9 +542,10 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly int ExpectedExitCode;
         public readonly int ExpectedSpans;
         public readonly bool UseSnapshot;
+        public readonly bool UseDotnetExec;
         public readonly ExecutionData.ValidateDelegate ValidateAction;
 
-        public TestScenario(string typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction)
+        public TestScenario(string typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true)
         {
             TypeName = typeName;
             FriendlyName = friendlyName;
@@ -549,6 +553,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             ExpectedExitCode = expectedExitCode;
             ExpectedSpans = expectedSpans;
             UseSnapshot = useSnapshot;
+            UseDotnetExec = useDotnetExec;
             ValidateAction = validateAction;
         }
     }

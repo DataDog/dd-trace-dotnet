@@ -25,22 +25,22 @@ internal class RetryMessageBus : IMessageBus
         _executionNumber = executionNumber;
     }
 
-    public TestCaseMetadata GetMetadata(string testMethodUniqueID)
+    public TestCaseMetadata GetMetadata(string uniqueID)
     {
-        Common.Log.Debug("RetryMessageBus.GetMetadata: Looking for: {Id}", testMethodUniqueID);
+        Common.Log.Debug("RetryMessageBus.GetMetadata: Looking for: {Id}", uniqueID);
 #if NET6_0_OR_GREATER
-        ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(_testMethodMetadata, testMethodUniqueID, out _);
+        ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(_testMethodMetadata, uniqueID, out _);
         if (value is null)
         {
-            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", testMethodUniqueID);
-            value = new RetryTestCaseMetadata(testMethodUniqueID, _totalExecutions, _executionNumber);
+            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", uniqueID);
+            value = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
         }
 #else
-        if (!_testMethodMetadata.TryGetValue(testMethodUniqueID, out var value))
+        if (!_testMethodMetadata.TryGetValue(uniqueID, out var value))
         {
-            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", testMethodUniqueID);
-            value = new RetryTestCaseMetadata(testMethodUniqueID, _totalExecutions, _executionNumber);
-            _testMethodMetadata[testMethodUniqueID] = value;
+            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", uniqueID);
+            value = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
+            _testMethodMetadata[uniqueID] = value;
         }
 #endif
 
@@ -129,15 +129,15 @@ internal class RetryMessageBus : IMessageBus
         return _innerMessageBus.QueueMessage(message);
     }
 
-    public bool FlushMessages(string testMethodUniqueID)
+    public bool FlushMessages(string uniqueID)
     {
-        Common.Log.Debug("RetryMessageBus.FlushMessages: Flushing messages for: {UniqueID}", testMethodUniqueID);
+        Common.Log.Debug("RetryMessageBus.FlushMessages: Flushing messages for: {UniqueID}", uniqueID);
 
-        var metadata = (RetryTestCaseMetadata)GetMetadata(testMethodUniqueID);
+        var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
         var listOfMessages = metadata.ListOfMessages;
         if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed)
         {
-            Common.Log.Debug("RetryMessageBus.FlushMessages: Nothing to flush for: {UniqueID}", testMethodUniqueID);
+            Common.Log.Debug("RetryMessageBus.FlushMessages: Nothing to flush for: {UniqueID}", uniqueID);
             return true;
         }
 
@@ -174,31 +174,11 @@ internal class RetryMessageBus : IMessageBus
                 retValue = retValue && _innerMessageBus.QueueMessage(messageInList);
             }
 
-            Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, testMethodUniqueID);
+            Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, uniqueID);
 
             Array.Clear(listOfMessages, 0, listOfMessages.Length);
             return retValue;
         }
-    }
-
-    public bool ClearMessages(string testMethodUniqueID)
-    {
-        Common.Log.Debug<string>("RetryMessageBus.ClearMessages: Cleaning messages for: {UniqueID}", testMethodUniqueID);
-
-        var metadata = (RetryTestCaseMetadata)GetMetadata(testMethodUniqueID);
-        var listOfMessages = metadata.ListOfMessages;
-        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed)
-        {
-            Common.Log.Debug<string>("RetryMessageBus.ClearMessages: No messages found for: {UniqueID}", testMethodUniqueID);
-            return false;
-        }
-
-        var numOfMessages = listOfMessages.SelectMany(i => i ?? []).Count();
-        Array.Clear(listOfMessages, 0, listOfMessages.Length);
-        Common.Log.Debug<int, string>("RetryMessageBus.ClearMessages: Cleared {Count} messages for: {UniqueID}", numOfMessages, testMethodUniqueID);
-        metadata!.ListOfMessages = null;
-        metadata.Disposed = true;
-        return true;
     }
 
 #pragma warning disable SA1201 // ElementsMustAppearInTheCorrectOrder

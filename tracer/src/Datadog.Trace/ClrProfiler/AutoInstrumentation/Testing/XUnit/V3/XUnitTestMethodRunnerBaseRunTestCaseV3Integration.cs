@@ -252,12 +252,10 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                         runSummaryUnsafe.Failed = 0;
                         runSummaryUnsafe.Skipped = 0;
                         runSummaryUnsafe.NotRun = 0;
-
-                        messageBus.FlushMessages(testcase.TestMethod.UniqueID);
                     }
                     else
                     {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Flusing test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
+                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Flushing test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
 
                         // Let's update the summary to have only one test run
                         var passed = runSummaryUnsafe.Total - runSummaryUnsafe.Skipped - runSummaryUnsafe.Failed;
@@ -282,9 +280,9 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                             runSummaryUnsafe.Failed = 1;
                             runSummaryUnsafe.NotRun = 0;
                         }
-
-                        messageBus.FlushMessages(testcase.TestMethod.UniqueID);
                     }
+
+                    messageBus.FlushMessages(testcase.TestMethod.UniqueID);
 
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {

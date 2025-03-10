@@ -92,16 +92,6 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
-        if (XUnitIntegration.GetTestManagementProperties(ref runnerInstance) is { Disabled: true, AttemptToFix: false })
-        {
-            runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
-            testRunnerInstance.SkipReason = runnerInstance.SkipReason;
-            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Skipping test: {Class}.{Name} Reason: {Reason}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty, runnerInstance.SkipReason);
-            XUnitIntegration.CreateTest(ref runnerInstance);
-            return CallTargetState.GetDefault();
-        }
-
         // If the flaky retry feature is enabled, we need to set the total retries to the total flaky retry count
         if (isFlakyRetryEnabled)
         {
@@ -134,6 +124,15 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
+        // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
+        if (XUnitIntegration.GetTestManagementProperties(ref runnerInstance) is { Disabled: true, AttemptToFix: false })
+        {
+            runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
+            testRunnerInstance.SkipReason = runnerInstance.SkipReason;
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Skipping test: {Class}.{Name} Reason: {Reason}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty, runnerInstance.SkipReason);
+            XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
+        }
+
         // Decrement the execution number (the method body will do the execution)
         testCaseMetadata.CountDownExecutionNumber--;
 
@@ -160,14 +159,20 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return returnValue;
         }
 
+        if (!returnValue.TryDuckCast<IRunSummary>(out var runSummary))
+        {
+            Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: TryGetEditableRunSummary failed. Flushing messages for: {DisplayName}", testRunnerState.TestRunner.DisplayName);
+            messageBus.FlushMessages(testCaseMetadata.UniqueID);
+            return returnValue;
+        }
+
         switch (testCaseMetadata)
         {
             // We retry tests if:
             // - EarlyFlakeDetectionEnabled is true and AbortByThreshold is false, or
             // - FlakyRetryEnabled is true, or
             // - IsAttemptToFix is true
-            case { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } or { IsAttemptToFix: true } when
-                returnValue.TryDuckCast<IRunSummary>(out var runSummary):
+            case { EarlyFlakeDetectionEnabled: true, AbortByThreshold: false } or { FlakyRetryEnabled: true } or { IsAttemptToFix: true }:
             {
                 var isFlakyRetryEnabled = testCaseMetadata.FlakyRetryEnabled;
                 var isAttemptToFix = testCaseMetadata.IsAttemptToFix;
@@ -259,17 +264,15 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     {
                         // Quarantined or disabled test results should not be reported to the testing framework.
                         Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Quarantined or disabled test: {DisplayName}", testRunnerState.TestRunner.DisplayName);
-                        messageBus.ClearMessages(testCaseMetadata.UniqueID);
 
                         // Let's update the summary to not have a single test run
-                        runSummary.Total = 0;
+                        runSummary.Total = 1;
                         runSummary.Failed = 0;
-                        runSummary.Skipped = 0;
+                        runSummary.Skipped = 1;
                     }
                     else
                     {
-                        messageBus.FlushMessages(testCaseMetadata.UniqueID);
-
+                        Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Flushing test: {DisplayName}", testRunnerState.TestRunner.DisplayName);
                         // Let's update the summary to have only one test run
                         var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
                         if (passed > 0)
@@ -292,6 +295,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                     }
 
+                    messageBus.FlushMessages(testCaseMetadata.UniqueID);
+
                     if (Common.Log.IsEnabled(LogEventLevel.Debug))
                     {
                         var debugMsg = $"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]";
@@ -308,7 +313,10 @@ public static class XUnitTestRunnerRunAsyncIntegration
             case { IsQuarantinedTest: true } or { IsDisabledTest: true }:
                 // Quarantined or disabled test results should be skipped.
                 Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Quarantined or disabled test: {DisplayName}", testRunnerState.TestRunner.DisplayName);
-                messageBus.ClearMessages(testCaseMetadata.UniqueID);
+                runSummary.Total = 1;
+                runSummary.Failed = 0;
+                runSummary.Skipped = 1;
+                messageBus.FlushMessages(testCaseMetadata.UniqueID);
                 break;
 
             // For everything else, we just flush the messages
