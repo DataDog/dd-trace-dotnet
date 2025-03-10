@@ -57,14 +57,14 @@ public class PopulateBasicPropertiesHeadersIntegration
         // list instead of creating a new instance that overwrites the supplied properties.
         if (returnValue is null)
         {
-            // Use the existing basic properties if possible,
-            // if not create new instance using the copy constructor on BasicProperties.
             if (state.State.DuckIs<IBasicProperties>())
             {
+                // Use the existing basic properties if possible...
                 returnValue = (TReturn)state.State!;
             }
             else if (state.State.DuckIs<IReadOnlyBasicProperties>())
             {
+                // if not create new instance using the copy constructor on BasicProperties.
                 returnValue = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
             }
             else

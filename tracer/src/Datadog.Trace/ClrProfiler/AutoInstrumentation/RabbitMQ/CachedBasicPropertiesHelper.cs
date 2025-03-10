@@ -29,10 +29,10 @@ internal static class CachedBasicPropertiesHelper<TBasicProperties>
             skipVisibility: true);
 
         var il = createBasicPropertiesMethod.GetILGenerator();
-        il.Emit(OpCodes.Ldarg_0);                  // Load first argument (object).
+        il.Emit(OpCodes.Ldarg_0);                  // Load first argument (as object).
         il.Emit(OpCodes.Castclass, parameterType); // Cast to IReadOnlyBasicProperties
-        il.Emit(OpCodes.Newobj, constructor);
-        il.Emit(OpCodes.Ret);
+        il.Emit(OpCodes.Newobj, constructor);      // Call constructor
+        il.Emit(OpCodes.Ret);                      // Return new instance
 
         // typeof(Func<object, BasicProperties>)
         var funcType = typeof(Func<,>).MakeGenericType(typeof(object), targetType);
