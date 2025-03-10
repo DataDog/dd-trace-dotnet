@@ -43,6 +43,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        public static bool IsArm64 { get => RuntimeInformation.ProcessArchitecture == Architecture.Arm64; }
+
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string LogDir
@@ -73,6 +75,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetPlatform()
         {
+            if (IsArm64)
+            {
+                return "Arm64";
+            }
+
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
