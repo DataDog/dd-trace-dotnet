@@ -6,9 +6,7 @@
 #nullable enable
 using System;
 using System.Reflection.Emit;
-using System.Runtime.InteropServices;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
@@ -35,9 +33,13 @@ internal static class CachedBasicPropertiesHelper<TBasicProperties>
         il.Emit(OpCodes.Castclass, parameterType); // Cast to IReadOnlyBasicProperties
         il.Emit(OpCodes.Newobj, constructor);
         il.Emit(OpCodes.Ret);
-        Activator = (Func<object, object>)createBasicPropertiesMethod.CreateDelegate(typeof(Func<object, object>), targetType);
+
+        // typeof(Func<object, BasicProperties>)
+        var funcType = typeof(Func<,>).MakeGenericType(typeof(object), targetType);
+
+        Activator = (Func<object, TBasicProperties>)createBasicPropertiesMethod.CreateDelegate(funcType);
     }
 
     public static TBasicProperties CreateHeaders(object readonlyBasicProperties)
-        => (TBasicProperties)Activator(readonlyBasicProperties);
+        => Activator(readonlyBasicProperties);
 }
