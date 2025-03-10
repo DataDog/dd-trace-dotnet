@@ -38,7 +38,6 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     {
         SetServiceName("xunit-tests-evp");
         SetServiceVersion("1.0.0");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
     }
 
     public static IEnumerable<object[]> GetData()

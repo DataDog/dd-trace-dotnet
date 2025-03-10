@@ -491,6 +491,12 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         }
         catch
         {
+            Output.WriteLine("Framework Version: " + new Version(FrameworkDescription.Instance.ProductVersion));
+            if (!string.IsNullOrWhiteSpace(packageVersion))
+            {
+                Output.WriteLine("Package Version: " + new Version(packageVersion));
+            }
+
             WriteSpans(executionData.Tests);
             throw;
         }
