@@ -14,8 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 
 internal static class CachedBasicPropertiesHelper<TBasicProperties>
 {
-    // ReSharper disable once StaticMemberInGenericType
-    private static readonly Func<object, object> Activator;
+    private static readonly Func<object, TBasicProperties> Activator;
 
     static CachedBasicPropertiesHelper()
     {
@@ -29,10 +28,10 @@ internal static class CachedBasicPropertiesHelper<TBasicProperties>
             targetType,
             [typeof(object)],
             typeof(DuckType).Module,
-            true);
+            skipVisibility: true);
 
         var il = createBasicPropertiesMethod.GetILGenerator();
-        il.Emit(OpCodes.Ldarg_0); // Load first argument (object).
+        il.Emit(OpCodes.Ldarg_0);                  // Load first argument (object).
         il.Emit(OpCodes.Castclass, parameterType); // Cast to IReadOnlyBasicProperties
         il.Emit(OpCodes.Newobj, constructor);
         il.Emit(OpCodes.Ret);
