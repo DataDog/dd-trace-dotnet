@@ -14,7 +14,7 @@ internal interface IXunitTestMethodRunnerBaseContextV3 : IContextBaseV3
     /// <summary>
     /// Gets the arguments to send to the test class constructor.
     /// </summary>
-    public object?[] ConstructorArguments { get; }
+    object?[] ConstructorArguments { get; }
 
     /// <summary>
     /// Gets the test method that is being executed.

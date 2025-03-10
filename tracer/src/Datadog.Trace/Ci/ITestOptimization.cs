@@ -38,6 +38,8 @@ internal interface ITestOptimization
 
     ITestOptimizationFlakyRetryFeature? FlakyRetryFeature { get; }
 
+    ITestOptimizationTestManagementFeature? TestManagementFeature { get; }
+
     void Initialize();
 
     void InitializeFromRunner(TestOptimizationSettings settings, IDiscoveryService discoveryService, bool eventPlatformProxyEnabled, bool? useLockedTracerManager = null);

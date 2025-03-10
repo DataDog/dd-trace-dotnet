@@ -129,6 +129,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     [Tag(CommonTags.GitPrBaseBranch)]
     public string? GitPrBaseBranch { get; set; }
 
+    [Tag(TestTags.TestManagementEnabled)]
+    public string? TestManagementEnabled { get; set; }
+
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
         if (environmentValues is not null)

@@ -42,4 +42,15 @@ internal interface IXunitTestMethodV3
     /// Gets the test class that this test method belongs to.
     /// </summary>
     IXunitTestClassV3 TestClass { get; }
+
+    /// <summary>
+    /// Gets the unique ID for this test method.
+    /// </summary>
+    /// <remarks>
+    /// The unique identifier for a test method should be able to discriminate among test methods in the
+    /// same test assembly. This identifier should remain stable until such time as the developer changes
+    /// some fundamental part of the identity (assembly, collection, test class, or test method).
+    /// Recompilation of the test assembly is reasonable as a stability changing event.
+    /// </remarks>
+    string UniqueID { get; }
 }

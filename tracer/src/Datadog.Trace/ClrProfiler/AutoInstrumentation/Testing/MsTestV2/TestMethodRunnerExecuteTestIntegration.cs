@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.ComponentModel;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -26,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodRunnerExecuteTestIntegration
 {
-    private static ItrSkipTestMethodExecutor? _skipTestMethodExecutor;
+    private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -47,8 +48,8 @@ public static class TestMethodRunnerExecuteTestIntegration
             // the MethodInfo of the test
             if (instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
             {
-                _skipTestMethodExecutor ??= new ItrSkipTestMethodExecutor(executor.GetType().Assembly);
-                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), _skipTestMethodExecutor);
+                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
+                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), _itrSkipTestMethodExecutor);
             }
         }
 

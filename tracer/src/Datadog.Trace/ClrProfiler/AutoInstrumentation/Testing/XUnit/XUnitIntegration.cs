@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 
@@ -120,10 +121,10 @@ internal static class XUnitIntegration
             }
         }
 
-        // Early flake detection flags
-        if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
+        if (testCaseMetadata is not null)
         {
-            if (testCaseMetadata is not null)
+            // Early flake detection flags
+            if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
             {
                 testCaseMetadata.EarlyFlakeDetectionEnabled = testIsNew;
                 if (testIsNew && testCaseMetadata.ExecutionIndex > 0)
@@ -134,17 +135,17 @@ internal static class XUnitIntegration
 
                 Common.CheckFaultyThreshold(test, Interlocked.Read(ref _newTestCases), Interlocked.Read(ref _totalTestCases));
             }
-        }
 
-        // Flaky retries
-        if (testOptimization.FlakyRetryFeature?.Enabled == true)
-        {
-            if (testCaseMetadata is { ExecutionIndex: > 0 })
-            {
-                test.SetTag(TestTags.TestIsRetry, "true");
-                testTags.TestIsRetry = "true";
-                testTags.TestRetryReason = "atr";
-            }
+            var isRetry = testCaseMetadata is { ExecutionIndex: > 0 };
+
+            // Flaky retries
+            testCaseMetadata.FlakyRetryEnabled = Common.SetFlakyRetryTags(test, isRetry);
+
+            // Test management feature
+            var testManagementData = Common.SetTestManagementFeature(test, isRetry);
+            testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
+            testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
+            testCaseMetadata.IsAttemptToFix = testManagementData.AttemptToFix;
         }
 
         // Test code and code owners
@@ -169,22 +170,27 @@ internal static class XUnitIntegration
 
     internal static void FinishTest(Test test, IExceptionAggregator? exceptionAggregator)
     {
+        var clearExceptions = false;
         try
         {
             TimeSpan? duration = null;
 
-            if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) &&
-                testCaseMetadata?.EarlyFlakeDetectionEnabled == true)
+            if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) && testCaseMetadata is not null)
             {
-                var testTags = test.GetTags();
-                if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
+                if (testCaseMetadata.EarlyFlakeDetectionEnabled == true)
                 {
-                    duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
-                    if (duration.Value.TotalMinutes >= 5)
+                    var testTags = test.GetTags();
+                    if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
                     {
-                        testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                        duration = internalSpan.Context.TraceContext.Clock.ElapsedSince(internalSpan.StartTime);
+                        if (duration.Value.TotalMinutes >= 5)
+                        {
+                            testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                        }
                     }
                 }
+
+                clearExceptions = testCaseMetadata.IsDisabledTest || testCaseMetadata.IsQuarantinedTest;
             }
 
             if (exceptionAggregator?.ToException() is { } exception)
@@ -210,6 +216,13 @@ internal static class XUnitIntegration
             TestOptimization.Instance.Log.Warning(ex, "XUnitIntegration: Error finishing test scope");
             test.Close(TestStatus.Pass);
         }
+        finally
+        {
+            if (clearExceptions)
+            {
+                exceptionAggregator?.Clear();
+            }
+        }
     }
 
     internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
@@ -229,6 +242,20 @@ internal static class XUnitIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestManagementProperties(ref TestRunnerStruct runnerInstance)
+    {
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            var testAssembly = runnerInstance.TestClass?.Assembly.GetName().Name ?? string.Empty;
+            var testClassName = runnerInstance.TestClass?.ToString() ?? string.Empty;
+            var testMethod = runnerInstance.TestMethod?.Name ?? string.Empty;
+            return testOptimization.TestManagementFeature.GetTestProperties(testAssembly, testClassName, testMethod);
+        }
+
+        return TestOptimizationClient.TestManagementResponseTestPropertiesAttributes.Default;
     }
 
     internal static void IncrementTotalTestCases()

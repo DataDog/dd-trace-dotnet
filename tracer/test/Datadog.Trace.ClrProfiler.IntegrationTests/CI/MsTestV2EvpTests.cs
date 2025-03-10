@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
@@ -43,24 +44,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
+        [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
         public static IEnumerable<object[]> GetDataForEarlyFlakeDetection()
         {
             foreach (var row in GetData())
             {
-                // settings json, efd tests json, expected spans, friendly name
+                // settings json, efd tests json, expected spans, friendlyName
 
                 // EFD for all tests
                 yield return row.Concat(
-                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true,"known_tests_enabled":true}}}""",
-                    """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{}}}}""",
+                    new MockData(
+                        GetSettingsJson("true", "true", "false", "0"),
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{}
+                                }
+                            }
+                        }
+                        """,
+                        string.Empty),
+                    1,
                     146,
                     148,
                     "all_efd");
 
                 // EFD with 1 test to bypass (TraitPassTest)
                 yield return row.Concat(
-                    """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true,"known_tests_enabled":true}}}""",
-                    """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{"Samples.MSTestTests":{"Samples.MSTestTests.TestSuite":["TraitPassTest"]}}}}}""",
+                    new MockData(
+                        GetSettingsJson("true", "true", "false", "0"),
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{
+                                        "Samples.MSTestTests":{
+                                            "Samples.MSTestTests.TestSuite":["TraitPassTest"]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """,
+                        string.Empty),
+                    1,
                     137,
                     139,
                     "efd_with_test_bypass");
@@ -363,108 +395,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
         [Trait("Category", "EarlyFlakeDetection")]
-        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
+        public async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
         {
             // TODO: Fix alpine flakiness
             Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
 
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
-            var tests = new List<MockCIVisibilityTest>();
-            var testSuites = new List<MockCIVisibilityTestSuite>();
-            var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
 
-            // Inject session
-            InjectSession(
-                out var sessionId,
-                out var sessionCommand,
-                out var sessionWorkingDirectory,
-                out var gitRepositoryUrl,
-                out var gitBranch,
-                out var gitCommitSha);
-
-            try
-            {
-                using var agent = EnvironmentHelper.GetMockAgent();
-                agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
-
-                const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
-                agent.EventPlatformProxyPayloadReceived += (sender, e) =>
-                {
-                    if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
-                    {
-                        e.Value.Response = new MockTracerResponse(settingsJson, 200);
-                        return;
-                    }
-
-                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
-                    {
-                        e.Value.Response = new MockTracerResponse(testsJson, 200);
-                        return;
-                    }
-
-                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
-                    {
-                        e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
-                        return;
-                    }
-
-                    if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
-                    {
-                        e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
-
-                        var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                        if (payload.Events?.Length > 0)
+            await ExecuteTestAsync(
+                    packageVersion,
+                    evpVersionToRemove,
+                    expectedGzip,
+                    new TestScenario(
+                        null,
+                        $"packageVersion={packageVersionDescription}_{friendlyName}",
+                        mockData,
+                        expectedExitCode,
+                        expectedSpans,
+                        true,
+                        (in ExecutionData data) =>
                         {
-                            foreach (var @event in payload.Events)
-                            {
-                                if (@event.Content.ToString() is { } eventContent)
-                                {
-                                    if (@event.Type == SpanTypes.Test)
-                                    {
-                                        tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
-                                    }
-                                    else if (@event.Type == SpanTypes.TestSuite)
-                                    {
-                                        testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
-                                    }
-                                    else if (@event.Type == SpanTypes.TestModule)
-                                    {
-                                        testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                };
-
-                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
-
-                var packageVersionDescription = expectedTestCount == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
-                var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
-                settings.UseTextForParameters($"packageVersion={packageVersionDescription}_{friendlyName}");
-                settings.DisableRequireUniquePrefix();
-                await Verifier.Verify(
-                    tests
-                       .OrderBy(s => s.Resource)
-                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Name))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsNew))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsRetry))
-                       .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
-                    settings);
-
-                // Check the tests, suites and modules count
-                Assert.Equal(expectedTestCount, tests.Count);
-                testSuites.Should().HaveCountLessThanOrEqualTo(2);
-                Assert.Single(testModules);
-            }
-            catch
-            {
-                WriteSpans(tests);
-                throw;
-            }
+                            // Check the tests, suites and modules count
+                            Assert.Single(data.TestModules);
+                        },
+                        useDotnetExec: false))
+               .ConfigureAwait(false);
         }
     }
 }

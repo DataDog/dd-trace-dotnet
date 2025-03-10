@@ -23,6 +23,7 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
         SessionId = sessionTags.SessionId;
         Command = sessionTags.Command;
         WorkingDirectory = sessionTags.WorkingDirectory;
+        TestManagementEnabled = sessionTags.TestManagementEnabled;
     }
 
     public ulong ModuleId { get; set; }

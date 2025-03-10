@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -68,6 +69,27 @@ public static class NUnitWorkItemPerformWorkIntegration
                     Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
+                }
+
+                // Getting test management properties
+                var testOptimization = TestOptimization.Instance;
+                TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties = null;
+                if (testOptimization.TestManagementFeature?.Enabled == true)
+                {
+                    if (NUnitIntegration.GetTestModuleFrom(item) is { } module &&
+                        NUnitIntegration.GetTestSuiteFrom(item) is { } suite &&
+                        item.Method?.MethodInfo?.Name is { } testMethodName)
+                    {
+                        testManagementProperties = testOptimization.TestManagementFeature?.GetTestProperties(module.Name, suite.Name, testMethodName);
+
+                        // If test is disabled we mark it as skipped and don't run it
+                        if (testManagementProperties is { Disabled: true, AttemptToFix: false })
+                        {
+                            Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test is disabled by Datadog: {Class}.{Name}", item.Method.MethodInfo?.DeclaringType?.FullName, item.Method.MethodInfo?.Name);
+                            item.RunState = RunState.Ignored;
+                            item.Properties.Set(NUnitIntegration.SkipReasonKey, "Flaky test is disabled by Datadog.");
+                        }
+                    }
                 }
 
                 break;
