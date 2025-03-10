@@ -55,7 +55,7 @@ public static class TestMethodAttributeExecuteIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         where TTestMethod : ITestMethod
     {
-        if (!MsTestIntegration.IsEnabled || instance is ItrSkipTestMethodExecutor)
+        if (!MsTestIntegration.IsEnabled || instance is SkipTestMethodExecutor)
         {
             return CallTargetState.GetDefault();
         }
