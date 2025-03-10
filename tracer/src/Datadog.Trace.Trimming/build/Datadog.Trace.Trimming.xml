@@ -48,12 +48,10 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
-      <type fullname="Microsoft.AspNetCore.Http.Features.ISessionFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IResponseCookies" />
-      <type fullname="Microsoft.AspNetCore.Http.ISession" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Identity" />
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
@@ -133,6 +131,9 @@
    <assembly fullname="StackExchange.Redis" />
    <assembly fullname="StackExchange.Redis.StrongName" />
    <assembly fullname="System" />
+   <assembly fullname="System.Buffers">
+      <type fullname="System.Buffers.ArrayPool`1" />
+   </assembly>
    <assembly fullname="System.Collections">
       <type fullname="System.Collections.BitArray" />
       <type fullname="System.Collections.Generic.Comparer`1" />
@@ -498,6 +499,7 @@
       <type fullname="System.BitConverter" />
       <type fullname="System.Boolean" />
       <type fullname="System.Buffer" />
+      <type fullname="System.Buffers.ArrayPool`1" />
       <type fullname="System.Buffers.SpanAction`2" />
       <type fullname="System.Byte" />
       <type fullname="System.Char" />

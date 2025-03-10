@@ -1,4 +1,4 @@
-﻿// <copyright file="DictionaryObjectConfigurationSource.cs" company="Datadog">
+// <copyright file="DictionaryObjectConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -153,6 +153,9 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
         return ConfigurationResult<IDictionary<string, string>>.NotFound();
     }
+
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
     public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
     {

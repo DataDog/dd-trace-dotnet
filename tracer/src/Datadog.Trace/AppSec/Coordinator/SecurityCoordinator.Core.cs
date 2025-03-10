@@ -16,7 +16,6 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 
@@ -98,12 +97,13 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal void ReportAndBlock(IResult? result)
+    internal void ReportAndBlock(IResult? result, Action telemetrySucessReport)
     {
         if (result is not null)
         {
             Reporter.TryReport(result, result.ShouldBlock);
 
+            telemetrySucessReport.Invoke();
             if (result.ShouldBlock)
             {
                 throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, true);

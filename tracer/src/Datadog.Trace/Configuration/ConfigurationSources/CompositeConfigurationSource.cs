@@ -106,6 +106,12 @@ namespace Datadog.Trace.Configuration
               .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
 
         /// <inheritdoc />
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+            => _sources
+              .Select(source => source.GetDictionary(key, telemetry, validator, parser))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+
+        /// <inheritdoc />
         public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
             => _sources
               .Select(source => source.GetAs<T>(key, telemetry, converter, validator, recordValue))

@@ -298,11 +298,31 @@ internal static class MetricTags
     [EnumExtensions]
     public enum RaspRuleType
     {
-        [Description("waf_version;rule_type:lfi")] Lfi = 0,
-        [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
-        [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
-        [Description("waf_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
-        [Description("waf_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
+        [Description("waf_version;event_rules_version;rule_type:lfi")] Lfi = 0,
+        [Description("waf_version;event_rules_version;rule_type:ssrf")] Ssrf = 1,
+        [Description("waf_version;event_rules_version;rule_type:sql_injection")] SQlI = 2,
+        [Description("waf_version;event_rules_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
+        [Description("waf_version;event_rules_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
+    }
+
+    [EnumExtensions]
+    public enum RaspRuleTypeMatch
+    {
+        [Description("waf_version;event_rules_version;block:success;rule_type:lfi")] LfiSuccess = 0,
+        [Description("waf_version;event_rules_version;block:success;rule_type:ssrf")] SsrfSuccess = 1,
+        [Description("waf_version;event_rules_version;block:success;rule_type:sql_injection")] SQlISuccess = 2,
+        [Description("waf_version;event_rules_version;block:success;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellSuccess = 3,
+        [Description("waf_version;event_rules_version;block:success;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecSuccess = 4,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:lfi")] LfiFailure = 5,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:ssrf")] SsrfFailure = 6,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:sql_injection")] SQlIFailure = 7,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellFailure = 8,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecFailure = 9,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:lfi")] LfiIrrelevant = 10,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:ssrf")] SsrfIrrelevant = 11,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:sql_injection")] SQlIIrrelevant = 12,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellIrrelevant = 13,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecIrrelevant = 14,
     }
 
     public enum TruncationReason
