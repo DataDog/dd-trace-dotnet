@@ -60,32 +60,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             // EFD for all tests
             yield return row.Concat(
                 new MockData(
-                    """
-                    {
-                       "data":{
-                           "id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f",
-                           "type":"ci_app_tracers_test_service_settings",
-                           "attributes":{
-                               "code_coverage":false,
-                               "early_flake_detection":{
-                                   "enabled":true,
-                                   "slow_test_retries":{
-                                       "10s":10,
-                                       "30s":10,
-                                       "5m":10,
-                                       "5s":10
-                                   },
-                                   "faulty_session_threshold":100
-                               },
-                               "flaky_test_retries_enabled":false,
-                               "itr_enabled":true,
-                               "require_git":false,
-                               "tests_skipping":true,
-                               "known_tests_enabled":true
-                           }
-                       }
-                    }
-                    """,
+                    GetSettingsJson("true", "true", "false", "0"),
                     """
                     {
                         "data":{
@@ -106,32 +81,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             // EFD with 1 test to bypass (TraitPassTest)
             yield return row.Concat(
                 new MockData(
-                    """
-                    {
-                        "data":{
-                            "id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f",
-                            "type":"ci_app_tracers_test_service_settings",
-                            "attributes":{
-                                "code_coverage":false,
-                                "early_flake_detection":{
-                                    "enabled":true,
-                                    "slow_test_retries":{
-                                        "10s":10,
-                                        "30s":10,
-                                        "5m":10,
-                                        "5s":10
-                                    },
-                                    "faulty_session_threshold":100
-                                },
-                                "flaky_test_retries_enabled":false,
-                                "itr_enabled":true,
-                                "require_git":false,
-                                "tests_skipping":true,
-                                "known_tests_enabled":true
-                            }
-                        }
-                    }
-                    """,
+                    GetSettingsJson("true", "true", "false", "0"),
                     """
                     {
                         "data":{
@@ -163,7 +113,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         {
             yield return row.Concat(
                 new MockData(
-                    TestManagementSettingsJson("true", "0"),
+                    GetSettingsJson("false", "false", "true", "0"),
                     string.Empty,
                     """
                     {
@@ -213,7 +163,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         {
             yield return row.Concat(
                 new MockData(
-                    TestManagementSettingsJson("true", "0"),
+                    GetSettingsJson("false", "false", "true", "0"),
                     string.Empty,
                     """
                     {
@@ -263,7 +213,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         {
             yield return row.Concat(
                 new MockData(
-                    TestManagementSettingsJson("true", "10"),
+                    GetSettingsJson("false", "false", "true", "10"),
                     string.Empty,
                     """
                     {
@@ -301,39 +251,6 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 34,
                 "quarantined_and_disabled");
         }
-    }
-
-    public static string TestManagementSettingsJson(string testManagementEnabled, string attemptToFixRetries)
-    {
-        return $@"
-        {{
-            ""data"": {{
-                ""id"": ""511938a3f19c12f8bb5e5caa695ca24f4563de3f"",
-                ""type"": ""ci_app_tracers_test_service_settings"",
-                ""attributes"": {{
-                    ""code_coverage"": false,
-                    ""early_flake_detection"": {{
-                        ""enabled"": false,
-                        ""slow_test_retries"": {{
-                            ""10s"": 10,
-                            ""30s"": 10,
-                            ""5m"": 10,
-                            ""5s"": 10
-                        }},
-                        ""faulty_session_threshold"": 100
-                    }},
-                    ""flaky_test_retries_enabled"": false,
-                    ""itr_enabled"": true,
-                    ""require_git"": false,
-                    ""tests_skipping"": false,
-                    ""known_tests_enabled"": true,
-                    ""test_management"": {{
-                        ""enabled"": {testManagementEnabled},
-                        ""attempt_to_fix_retries"": {attemptToFixRetries}
-                    }}
-                }}
-            }}
-        }}";
     }
 
     [SkippableTheory]

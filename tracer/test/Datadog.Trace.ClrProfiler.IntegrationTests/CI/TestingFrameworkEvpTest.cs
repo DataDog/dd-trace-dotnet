@@ -69,6 +69,39 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         _gacFixture.RemoveAssembliesFromGac();
     }
 
+    protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
+    {
+        return $@"
+        {{
+            ""data"": {{
+                ""id"": ""511938a3f19c12f8bb5e5caa695ca24f4563de3f"",
+                ""type"": ""ci_app_tracers_test_service_settings"",
+                ""attributes"": {{
+                    ""code_coverage"": false,
+                    ""early_flake_detection"": {{
+                        ""enabled"": {earlyFlakeDetection},
+                        ""slow_test_retries"": {{
+                            ""10s"": 10,
+                            ""30s"": 10,
+                            ""5m"": 10,
+                            ""5s"": 10
+                        }},
+                        ""faulty_session_threshold"": 100
+                    }},
+                    ""flaky_test_retries_enabled"": false,
+                    ""itr_enabled"": true,
+                    ""require_git"": false,
+                    ""tests_skipping"": {testsSkipping},
+                    ""known_tests_enabled"": {earlyFlakeDetection},
+                    ""test_management"": {{
+                        ""enabled"": {testManagementEnabled},
+                        ""attempt_to_fix_retries"": {attemptToFixRetries}
+                    }}
+                }}
+            }}
+        }}";
+    }
+
     protected virtual void WriteSpans(List<MockCIVisibilityTest>? tests)
     {
         if (tests is null || tests.Count == 0)
@@ -478,10 +511,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                 settings.UseTextForParameters(testScenario.FriendlyName);
                 settings.DisableRequireUniquePrefix();
-                settings.UseTypeName(testScenario.TypeName);
+                if (testScenario.TypeName is not null)
+                {
+                    settings.UseTypeName(testScenario.TypeName);
+                }
+
                 await Verifier.Verify(
                     executionData.Tests
                                  .OrderBy(s => s.Resource)
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.Name))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.Parameters))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsNew))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
@@ -542,7 +580,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     public readonly struct TestScenario
     {
-        public readonly string TypeName;
+        public readonly string? TypeName;
         public readonly string FriendlyName;
         public readonly MockData MockData;
         public readonly int ExpectedExitCode;
@@ -551,7 +589,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly bool UseDotnetExec;
         public readonly ExecutionData.ValidateDelegate ValidateAction;
 
-        public TestScenario(string typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true)
+        public TestScenario(string? typeName, string friendlyName, MockData mockData, int expectedExitCode, int expectedSpans, bool useSnapshot, ExecutionData.ValidateDelegate validateAction, bool useDotnetExec = true)
         {
             TypeName = typeName;
             FriendlyName = friendlyName;
