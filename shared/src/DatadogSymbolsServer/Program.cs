@@ -2,13 +2,12 @@ using System.Text.RegularExpressions;
 using DatadogSymbolsServer;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Polly;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSystemd();
 
 var services = builder.Services;
-services.AddEndpointsApiExplorer();
-services.AddSwaggerGen();
 services.AddSingleton<ISymbolsCache, DotnetApmSymbolsCache>();
 services.AddAuthorization();
 services.AddCors();
@@ -23,6 +22,7 @@ services.AddHttpClient("github", client =>
     .AddTransientHttpErrorPolicy(policyBuilder =>
         policyBuilder.CircuitBreakerAsync(5, TimeSpan.FromSeconds(20)));
 
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
@@ -30,8 +30,8 @@ var app = builder.Build();
 app.UseCors();
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseRouting();
@@ -68,7 +68,7 @@ public partial class Endpoints
         var symbolFromCache = symbolsCache.Get(guid, SymbolKind.Linux);
         if (symbolFromCache != null)
         {
-            logger.LogInformation($"Found {guid} in cache.");
+            logger.LogInformation("Found {Guid} in cache", guid);
             return TypedResults.File(symbolFromCache, "application/octet-stream", fileDownloadName: kind);
         }
 
@@ -91,7 +91,7 @@ public partial class Endpoints
         var symbolsFile = symbolsCache.Get(guidd, kind);
         if (symbolsFile != null)
         {
-            logger.LogInformation("Found {File} in cache.", file);
+            logger.LogInformation("Found {File} in cache", file);
             return TypedResults.File(symbolsFile, "application/octet-stream", fileDownloadName: file);
         }
 
