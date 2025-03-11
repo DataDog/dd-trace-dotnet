@@ -23,7 +23,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
         base.Dispose();
         foreach (var key in _keysToDelete)
         {
-            Registry.LocalMachine.DeleteSubKey(key);
+            Registry.LocalMachine.DeleteSubKey(key, throwOnMissingSubKey: false);
         }
     }
 
