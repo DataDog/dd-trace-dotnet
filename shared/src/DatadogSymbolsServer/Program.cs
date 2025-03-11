@@ -1,4 +1,5 @@
 using DatadogSymbolsServer;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSystemd();
@@ -8,7 +9,17 @@ services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 services.AddSingleton<ISymbolsCache, DotnetApmSymbolsCache>();
 services.AddControllers();
-services.AddHttpClient();
+// Add named httpclient, with resiliency policy
+services.AddHttpClient("github", client =>
+    {
+        client.BaseAddress = new Uri("https://github.com/");
+        client.Timeout = TimeSpan.FromMinutes(3);
+    })
+    .AddTransientHttpErrorPolicy(policyBuilder =>
+        policyBuilder.RetryAsync(3))
+    .AddTransientHttpErrorPolicy(policyBuilder =>
+        policyBuilder.CircuitBreakerAsync(5, TimeSpan.FromSeconds(20)));
+
 
 var app = builder.Build();
 

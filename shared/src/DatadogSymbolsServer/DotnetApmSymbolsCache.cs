@@ -12,19 +12,15 @@ namespace DatadogSymbolsServer
         private const string CacheFolderName = "symbols_cache";
 
         private readonly ILogger<DotnetApmSymbolsCache> _logger;
-        private readonly IHttpClientFactory _builder;
-        private readonly string _rootPath = AppContext.BaseDirectory;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly string _rootPath;
 
-        public DotnetApmSymbolsCache(ILogger<DotnetApmSymbolsCache> logger, IHttpClientFactory clientBuilder)
+        public DotnetApmSymbolsCache(ILogger<DotnetApmSymbolsCache> logger, IHttpClientFactory clientBuilder, IHostEnvironment environment)
         {
-            _rootPath = Path.Combine(AppContext.BaseDirectory, CacheFolderName);
+            _rootPath = Path.Combine(environment.ContentRootPath, CacheFolderName);
             Directory.CreateDirectory(_rootPath);
             _logger = logger;
-            _builder = clientBuilder;
-            _httpClient = _builder.CreateClient();
-            _httpClient.BaseAddress = new Uri("https://github.com/");
-            _httpClient.Timeout = TimeSpan.FromMinutes(3);
+            _clientFactory = clientBuilder;
         }
 
         public Stream? Get(string guid, SymbolKind kind)
@@ -37,7 +33,7 @@ namespace DatadogSymbolsServer
             };
 
             var path = Path.Combine(_rootPath, fileFolder.ToLower());
-            _logger.LogInformation($"Looking into {path}");
+            _logger.LogInformation("Looking into {Path}", path);
             if (Directory.Exists(path))
             {
                 var files = Directory.GetFiles(path);
@@ -47,31 +43,34 @@ namespace DatadogSymbolsServer
                 }
                 if (files.Length > 1)
                 {
-                    _logger.LogWarning($"There is more that one file in {path}. Skipping.");
+                    _logger.LogWarning("There is more that one file in {Path}. Skipping", path);
                 }
             }
+
             return null;
         }
 
         public async Task Ingest(string version, CancellationToken token)
         {
-            _logger.LogInformation($"Ingesting artifacts for version ${version}");
+            _logger.LogInformation("Ingesting artifacts for version {Version}", version);
             await IngestLinuxArtifacts(version, token);
             await IngestWindowsArtifacts(version, token);
         }
 
         private async Task IngestLinuxArtifacts(string version, CancellationToken cancellationToken)
         {
-            using var x = await _httpClient.GetAsync($"DataDog/dd-trace-dotnet/releases/download/v{version}/linux-native-symbols.tar.gz", cancellationToken);
+            using var httpClient = _clientFactory.CreateClient("github");
+            using var x = await httpClient.GetAsync($"DataDog/dd-trace-dotnet/releases/download/v{version}/linux-native-symbols.tar.gz", cancellationToken);
 
             if (!x.IsSuccessStatusCode)
             {
-                _logger.LogInformation($"Failed due to error {x.StatusCode}");
+                _logger.LogInformation("Failed due to error code {StatusCode}: {Reason}", x.StatusCode, x.ReasonPhrase);
                 return;
             }
 
-            _logger.LogInformation($"Saving in {_rootPath} {version}");
-            using var gzip = new GZipStream(x.Content.ReadAsStream(), CompressionMode.Decompress);
+            _logger.LogInformation("Saving in {Path} {Version}", _rootPath, version);
+            var innerStream = await x.Content.ReadAsStreamAsync(cancellationToken);
+            await using var gzip = new GZipStream(innerStream, CompressionMode.Decompress);
             var tmpPath = Path.Combine(Path.GetTempPath(), $"symbol_cache_linux_tmp_{version}");
             Directory.CreateDirectory(tmpPath);
             await TarFile.ExtractToDirectoryAsync(gzip, tmpPath, overwriteFiles: true, cancellationToken);
@@ -82,7 +81,7 @@ namespace DatadogSymbolsServer
 
                 if (string.IsNullOrEmpty(buildId))
                 {
-                    _logger.LogWarning($"Unable to get guid/build id for {file}");
+                    _logger.LogWarning("Unable to get guid/build id for {File}", file);
                     continue;
                 }
 
@@ -94,26 +93,27 @@ namespace DatadogSymbolsServer
             }
 
             Directory.Delete(tmpPath, recursive: true);
-
         }
 
         private async Task IngestWindowsArtifacts(string version, CancellationToken cancellationToken)
         {
-            using var binariesRequest = await _httpClient.GetAsync($"DataDog/dd-trace-dotnet/releases/download/v{version}/windows-tracer-home.zip", cancellationToken);
+            using var httpClient = _clientFactory.CreateClient("github");
+
+            using var binariesRequest = await httpClient.GetAsync($"DataDog/dd-trace-dotnet/releases/download/v{version}/windows-tracer-home.zip", cancellationToken);
 
             if (!binariesRequest.IsSuccessStatusCode)
             {
-                _logger.LogInformation($"Failed due to error {binariesRequest.StatusCode}");
+                _logger.LogInformation("Failed due to error {StatusCode}: {Reason}", binariesRequest.StatusCode, binariesRequest.ReasonPhrase);
                 return;
             }
 
             var tmpPath = Path.Combine(Path.GetTempPath(), $"symbol_cache_windows_tmp_{version}");
             var binariesPath = Path.Combine(tmpPath, "binaries");
 
+            await using var readAsStream = await binariesRequest.Content.ReadAsStreamAsync(cancellationToken);
+            ExtractTo(binariesPath, readAsStream);
 
-            ExtractTo(binariesPath, binariesRequest.Content.ReadAsStream());
-
-            List<(string RelativePath, Guid Guid, uint Age)> pdbFilesInfo = new();
+            List<(string RelativePath, Guid Guid, uint Age)> pdbFilesInfo = [];
 
             foreach (var image in Directory.EnumerateFiles(binariesPath, "*.dll", SearchOption.AllDirectories))
             {
@@ -124,7 +124,7 @@ namespace DatadogSymbolsServer
                 }
 
                 var peHeader = new PeNet.PeFile(image);
-                if (peHeader != null && peHeader.ImageDebugDirectory != null)
+                if (peHeader.ImageDebugDirectory != null)
                 {
                     foreach (var d in peHeader.ImageDebugDirectory)
                     {
@@ -138,9 +138,10 @@ namespace DatadogSymbolsServer
 
             var symbolsPath = Path.Combine(tmpPath, "symbols");
 
-            using var symbolsRequest = await _httpClient.GetAsync($"DataDog/dd-trace-dotnet/releases/download/v{version}/windows-native-symbols.zip", cancellationToken);
+            using var symbolsRequest = await httpClient.GetAsync($"DataDog/dd-trace-dotnet/releases/download/v{version}/windows-native-symbols.zip", cancellationToken);
 
-            ExtractTo(symbolsPath, symbolsRequest.Content.ReadAsStream());
+            await using Stream symbolsStream = await symbolsRequest.Content.ReadAsStreamAsync(cancellationToken);
+            ExtractTo(symbolsPath, symbolsStream);
 
             foreach (var fileInfo in pdbFilesInfo)
             {
