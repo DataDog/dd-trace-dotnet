@@ -1,10 +1,10 @@
-SET(LIBUNWIND_VERSION "v1.8.1-custom-2")
+SET(LIBUNWIND_VERSION "v1.8.1-custom-3")
 
 SET(LIBUNWIND_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build)
 
 ExternalProject_Add(libunwind
     GIT_REPOSITORY https://github.com/DataDog/libunwind.git
-    GIT_TAG kevin/v1.8.1-custom-2
+    GIT_TAG gleocadie/v1.8.1-custom-3
     GIT_PROGRESS true
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
