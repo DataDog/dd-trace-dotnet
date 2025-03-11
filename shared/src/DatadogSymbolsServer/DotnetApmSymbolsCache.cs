@@ -180,15 +180,16 @@ namespace DatadogSymbolsServer
             }
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public async Task Initialize(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Starting symbols cache");
 
-            var ingestionTasks = new List<Task>();
-            foreach (var version in new[] { "3.10.1", "3.8.0", "3.9.1", "3.9.0", "3.6.0", "2.61.0", "2.56.0" })
+            string[] versions = ["3.10.1", "3.8.0", "3.9.1", "3.9.0", "3.6.0", "2.61.0", "2.56.0"];
+            var ingestionTasks = new List<Task>(versions.Length);
+            foreach (var version in versions)
             {
-                _logger.LogInformation($"Downloading v{version}");
-                ingestionTasks.Add(Task.Run(async () => await Ingest(version, cancellationToken)));
+                _logger.LogInformation("Downloading v{Version}", version);
+                ingestionTasks.Add(Ingest(version, cancellationToken));
             }
 
             await Task.WhenAll(ingestionTasks);
@@ -220,31 +221,6 @@ namespace DatadogSymbolsServer
             }
 
             return null;
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task StartedAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task StartingAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task StoppedAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task StoppingAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
         }
     }
 }
