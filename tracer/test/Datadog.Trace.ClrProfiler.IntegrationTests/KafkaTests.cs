@@ -90,8 +90,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var successfulConsumerSpans = allConsumerSpans.Where(x => x.Error == 0).ToList();
             var errorConsumerSpans = allConsumerSpans.Where(x => x.Error > 0).ToList();
 
-            VerifyProducerSpanProperties(successfulProducerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Produce", topic), topic, ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
-            VerifyProducerSpanProperties(errorProducerSpans, serviceName: clientSpanServiceName, resourceName: ErrorProducerResourceName, topic, ExpectedErrorProducerSpans);
+            VerifyProducerSpanProperties(successfulProducerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Produce", topic), ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
+            VerifyProducerSpanProperties(errorProducerSpans, serviceName: clientSpanServiceName, resourceName: ErrorProducerResourceName, ExpectedErrorProducerSpans);
 
             // Only successful spans with a delivery handler will have an offset
             successfulProducerSpans
@@ -110,6 +110,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .Should()
                .OnlyContain(tag => Regex.IsMatch(tag, @"^\[[0-9]+\]$"))
                .And.HaveCount(ExpectedSuccessProducerWithHandlerSpans + ExpectedTombstoneProducerWithHandlerSpans);
+
+            successfulProducerSpans.Should().OnlyContain(span => span.Tags.ContainsKey(Tags.MessagingDestinationName) && span.Tags[Tags.MessagingDestinationName] == topic);
 
             allProducerSpans
                .Where(span => span.Tags.ContainsKey(Tags.KafkaTombstone))
@@ -170,27 +172,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.AssertIntegrationEnabled(IntegrationId.Kafka);
         }
 
-        private void VerifyProducerSpanProperties(
-            List<MockSpan> producerSpans,
-            string serviceName,
-            string resourceName,
-            string topic,
-            int expectedCount)
+        private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string serviceName, string resourceName, int expectedCount)
         {
             producerSpans.Should()
                          .HaveCount(expectedCount)
                          .And.OnlyContain(x => x.Service == serviceName)
                          .And.OnlyContain(x => x.Resource == resourceName)
-                         .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
-                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.MessagingDestinationName) && x.Tags[Tags.MessagingDestinationName] == topic);
+                         .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0);
         }
 
-        private void VerifyConsumerSpanProperties(
-            List<MockSpan> consumerSpans,
-            string serviceName,
-            string resourceName,
-            string topic,
-            int expectedCount)
+        private void VerifyConsumerSpanProperties(List<MockSpan> consumerSpans, string serviceName, string resourceName, string topic, int expectedCount)
         {
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
             consumerSpans.Should()
