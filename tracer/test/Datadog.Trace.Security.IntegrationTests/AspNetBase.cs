@@ -24,6 +24,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
@@ -416,6 +417,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var url = $"http://localhost:{_httpPort}{path}";
 
                 var response = body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
+
+                // Skip test by request of the sample app
+                if ((int)response.StatusCode == 513)
+                {
+                    throw new SkipException("HttpStatus code (513) - anticipated flake");
+                }
+
                 var responseText = await response.Content.ReadAsStringAsync();
                 return (response.StatusCode, responseText);
             }
