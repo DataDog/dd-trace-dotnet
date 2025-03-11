@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 public static class TestMethodRunnerExecuteTestIntegration
 {
     private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
+    private static SkipTestMethodExecutor? _disabledSkipTestMethodExecutor;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -41,15 +42,27 @@ public static class TestMethodRunnerExecuteTestIntegration
         where TTarget : ITestMethodRunner
         where TTestMethod : ITestMethod
     {
-        // Check if the test should be skipped by ITR
-        if (MsTestIntegration.IsEnabled && MsTestIntegration.ShouldSkip(testMethod, out _, out _))
+        // In order to skip a test we change the Executor to one that returns a valid outcome without calling
+        // the MethodInfo of the test
+        if (MsTestIntegration.IsEnabled &&
+            instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
         {
-            // In order to skip a test we change the Executor to one that returns a valid outcome without calling
-            // the MethodInfo of the test
-            if (instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
+            SkipTestMethodExecutor? newExecutor = null;
+
+            if (MsTestIntegration.ShouldSkip(testMethod, out _, out _))
             {
                 _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
-                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), _itrSkipTestMethodExecutor);
+                newExecutor = _itrSkipTestMethodExecutor;
+            }
+            else if (MsTestIntegration.GetTestProperties(testMethod) is { Disabled: true, AttemptToFix: false })
+            {
+                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                newExecutor = _disabledSkipTestMethodExecutor;
+            }
+
+            if (newExecutor is not null)
+            {
+                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), newExecutor);
             }
         }
 

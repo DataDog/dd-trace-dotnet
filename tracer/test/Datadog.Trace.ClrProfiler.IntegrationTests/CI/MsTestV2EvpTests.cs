@@ -99,6 +99,156 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
+        [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+        public static IEnumerable<object[]> GetDataForQuarantinedTests()
+        {
+            foreach (var row in GetData())
+            {
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("false", "false", "true", "0"),
+                        string.Empty,
+                        """
+                        {
+                            "data": {
+                                "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                "type": "ci_app_libraries_tests",
+                                "attributes": {
+                                    "modules": {
+                                        "Samples.MSTestTests": {
+                                            "suites": {
+                                                "Samples.MSTestTests.TestSuite": {
+                                                    "tests": {
+                                                        "TraitErrorTest": {
+                                                            "properties": {
+                                                                "quarantined": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorTest": {
+                                                            "properties": {
+                                                                "quarantined": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorParameterizedTest": {
+                                                            "properties": {
+                                                                "quarantined": true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """),
+                    1,
+                    20,
+                    22,
+                    "quarantined_tests");
+            }
+        }
+
+        [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+        public static IEnumerable<object[]> GetDataForDisabledTests()
+        {
+            foreach (var row in GetData())
+            {
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("false", "false", "true", "0"),
+                        string.Empty,
+                        """
+                        {
+                            "data": {
+                                "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                "type": "ci_app_libraries_tests",
+                                "attributes": {
+                                    "modules": {
+                                        "Samples.MSTestTests": {
+                                            "suites": {
+                                                "Samples.MSTestTests.TestSuite": {
+                                                    "tests": {
+                                                        "TraitErrorTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorParameterizedTest": {
+                                                            "properties": {
+                                                                "disabled": false
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """),
+                    1,
+                    20,
+                    22,
+                    "quarantined_tests");
+            }
+        }
+
+        [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+        public static IEnumerable<object[]> GetDataForAttemptToFixTests()
+        {
+            foreach (var row in GetData())
+            {
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("false", "false", "true", "10"),
+                        string.Empty,
+                        """
+                        {
+                            "data": {
+                                "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                "type": "ci_app_libraries_tests",
+                                "attributes": {
+                                    "modules": {
+                                        "Samples.MSTestTests": {
+                                            "suites": {
+                                                "Samples.MSTestTests.TestSuite": {
+                                                    "tests": {
+                                                        "TraitErrorTest": {
+                                                            "properties": {
+                                                                "quarantined": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorTest": {
+                                                            "properties": {
+                                                                "disabled": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """),
+                    1,
+                    38,
+                    40,
+                    "quarantined_tests");
+            }
+        }
+
         [SkippableTheory]
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
@@ -404,6 +554,105 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
             var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
 
+            await ExecuteTestAsync(
+                    packageVersion,
+                    evpVersionToRemove,
+                    expectedGzip,
+                    new TestScenario(
+                        null,
+                        $"packageVersion={packageVersionDescription}_{friendlyName}",
+                        mockData,
+                        expectedExitCode,
+                        expectedSpans,
+                        true,
+                        (in ExecutionData data) =>
+                        {
+                            // Check the tests, suites and modules count
+                            Assert.Single(data.TestModules);
+                        },
+                        useDotnetExec: false))
+               .ConfigureAwait(false);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetDataForQuarantinedTests))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        [Trait("Category", "QuarantinedTests")]
+        public async Task QuarantinedTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
+        {
+            // TODO: Fix alpine flakiness
+            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
+
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
+            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
+            await ExecuteTestAsync(
+                    packageVersion,
+                    evpVersionToRemove,
+                    expectedGzip,
+                    new TestScenario(
+                        null,
+                        $"packageVersion={packageVersionDescription}_{friendlyName}",
+                        mockData,
+                        expectedExitCode,
+                        expectedSpans,
+                        true,
+                        (in ExecutionData data) =>
+                        {
+                            // Check the tests, suites and modules count
+                            Assert.Single(data.TestModules);
+                        },
+                        useDotnetExec: false))
+               .ConfigureAwait(false);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetDataForDisabledTests))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        [Trait("Category", "DisabledTests")]
+        public async Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
+        {
+            // TODO: Fix alpine flakiness
+            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
+
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
+            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
+            await ExecuteTestAsync(
+                    packageVersion,
+                    evpVersionToRemove,
+                    expectedGzip,
+                    new TestScenario(
+                        null,
+                        $"packageVersion={packageVersionDescription}_{friendlyName}",
+                        mockData,
+                        expectedExitCode,
+                        expectedSpans,
+                        true,
+                        (in ExecutionData data) =>
+                        {
+                            // Check the tests, suites and modules count
+                            Assert.Single(data.TestModules);
+                        },
+                        useDotnetExec: false))
+               .ConfigureAwait(false);
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetDataForAttemptToFixTests))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        [Trait("Category", "AttemptToFixTests")]
+        public async Task AttemptToFixTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
+        {
+            // TODO: Fix alpine flakiness
+            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
+
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
+            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
             await ExecuteTestAsync(
                     packageVersion,
                     evpVersionToRemove,
