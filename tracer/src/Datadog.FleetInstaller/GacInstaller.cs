@@ -164,14 +164,14 @@ internal static class GacInstaller
                 retValue = Fusion.CreateAssemblyNameObject(out var gacAssemblyName, simpleName, Fusion.CREATE_ASM_NAME_OBJ_FLAGS.NONE, IntPtr.Zero);
                 if (retValue != HResult.Code.S_OK || gacAssemblyName is null)
                 {
-                    log.WriteError($"Error creating IAssemblyName object for {simpleName}. Error code {retValue} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
+                    log.WriteWarning($"Error creating IAssemblyName object for {simpleName}. Error code {retValue} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
                 }
                 else
                 {
                     retValue = Fusion.CreateAssemblyEnum(out var enumerator, IntPtr.Zero, gacAssemblyName, Fusion.ASM_CACHE_FLAGS.ASM_CACHE_GAC, IntPtr.Zero);
                     if (retValue != HResult.Code.S_OK)
                     {
-                        log.WriteError($"Error enumerating assemblies from GAC. Error code {retValue} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
+                        log.WriteWarning($"Error enumerating assemblies from GAC. Error code {retValue} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
                     }
                     else
                     {

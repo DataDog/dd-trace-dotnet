@@ -17,6 +17,8 @@ public class FleetInstallerLogger(ITestOutputHelper output) : Datadog.FleetInsta
 
     public void WriteError(string message) => _output.WriteLine("ERROR: " + message);
 
+    public void WriteWarning(string message) => _output.WriteLine("WARNING: " + message);
+
     public void WriteError(Exception ex, string message)
     {
         _output.WriteLine("ERROR: " + message + Environment.NewLine + ex);
