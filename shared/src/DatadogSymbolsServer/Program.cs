@@ -1,45 +1,36 @@
+using DatadogSymbolsServer;
 
-namespace DatadogSymbolsServer
+var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSystemd();
+
+var services = builder.Services;
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
+services.AddSingleton<ISymbolsCache, DotnetApmSymbolsCache>();
+services.AddControllers();
+services.AddHttpClient();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+app.UseCors();
+if (app.Environment.IsDevelopment())
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Run();
-        }
-
-        private static WebApplication CreateHostBuilder(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-            builder.Host.UseSystemd();
-            builder.Host.UseContentRoot(Directory.GetCurrentDirectory());
-
-            var services = builder.Services;
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
-            services.AddHostedService<DotnetApmSymbolsCache>(s => s.GetService<ISymbolsCache>() as DotnetApmSymbolsCache);
-            services.AddSingleton<ISymbolsCache, DotnetApmSymbolsCache>();
-            services.AddControllers();
-            services.AddHttpClient();
-
-            var app = builder.Build();
-
-
-            app.UseCors();
-            app.UseRouting();
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseAuthorization();
-
-            app.UseEndpoints(app2 => app2.MapControllers());
-
-            return app;
-
-        }
-    }
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseRouting();
+app.UseAuthorization();
+
+// Configure endpoints
+app.MapControllers();
+
+// prep the cache
+using (var scope = app.Services.CreateScope())
+{
+    var cache = scope.ServiceProvider.GetRequiredService<ISymbolsCache>();
+    await cache.Initialize(app.Lifetime.ApplicationStopping);
+}
+
+await app.RunAsync();

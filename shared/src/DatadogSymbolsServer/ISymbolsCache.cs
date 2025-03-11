@@ -6,9 +6,10 @@
         Windows
     };
 
-    public interface ISymbolsCache : IHostedLifecycleService
+    public interface ISymbolsCache
     {
         Stream? Get(string symbolGuid, SymbolKind kind);
         Task Ingest(string version, CancellationToken token);
+        Task Initialize(CancellationToken cancellationToken);
     }
 }
