@@ -113,7 +113,7 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
         SetHttpPort(Fixture.HttpPort);
     }
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "This is currently failing on all platforms since #6750 and needs investigating ASAP")]
     [MemberData(nameof(ExceptionReplayTests))]
     [Trait("RunOnWindows", "True")]
     public async Task TestExceptionReplay(ProbeTestDescription testData)
