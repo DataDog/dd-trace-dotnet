@@ -38,7 +38,7 @@ check_azure_pipeline:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-  when: on_success
+  when: manually
   image: $MACROBENCHMARKS_CI_IMAGE
 
   # If you have a problem with Gitlab cache, here is a fix
@@ -466,7 +466,7 @@ profiler_cpu_timer_create-arm64:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-  when: on_success
+  when: manually
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
 
   # If you have a problem with Gitlab cache, here is a fix
