@@ -255,11 +255,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task SubmitTraces(string packageVersion, string evpVersionToRemove, bool expectedGzip)
         {
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.3")) <= 0 ? 20 : 22;
+            var expectedTestCount = GetExpectedSpans(packageVersion, 20, 22, out var _);
 
             // Inject session
             InjectSession(
@@ -549,11 +548,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // TODO: Fix alpine flakiness
             Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
-
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
-            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
-            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
-
+            var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
                     evpVersionToRemove,
@@ -583,10 +578,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // TODO: Fix alpine flakiness
             Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
-
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
-            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
-            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
+            var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
                     evpVersionToRemove,
@@ -616,10 +608,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // TODO: Fix alpine flakiness
             Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
-
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
-            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
-            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
+            var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
                     evpVersionToRemove,
@@ -649,10 +638,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             // TODO: Fix alpine flakiness
             Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
-
-            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
-            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
-            var packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
+            var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
                     evpVersionToRemove,
@@ -671,6 +657,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         },
                         useDotnetExec: false))
                .ConfigureAwait(false);
+        }
+
+        private static int GetExpectedSpans(string packageVersion, int expectedSpansForPre224, int expectedSpansForPost224, out string packageVersionDescription)
+        {
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
+            var expectedSpans = version.CompareTo(new Version("2.2.3")) <= 0 ? expectedSpansForPre224 : expectedSpansForPost224;
+            packageVersionDescription = expectedSpans == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
+            return expectedSpans;
         }
     }
 }
