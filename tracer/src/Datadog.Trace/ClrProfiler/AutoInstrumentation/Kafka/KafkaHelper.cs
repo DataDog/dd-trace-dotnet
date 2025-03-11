@@ -81,6 +81,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     tags.Tombstone = "true";
                 }
+                
+                if (!string.IsNullOrEmpty(topicPartition?.Topic))
+                {
+                    tags.SetTag(Tags.MessagingDestinationName, topicPartition!.Topic);
+                }
 
                 // Producer spans should always be measured
                 span.SetMetric(Trace.Tags.Measured, 1.0);
@@ -223,6 +228,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (message is not null && message.Value is null)
                 {
                     tags.Tombstone = "true";
+                }
+                
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    span.SetTag(Tags.MessagingDestinationName, topic);
                 }
 
                 // Consumer spans should always be measured
