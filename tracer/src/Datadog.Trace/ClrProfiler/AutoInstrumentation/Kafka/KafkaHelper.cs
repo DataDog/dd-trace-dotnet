@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     tags.Tombstone = "true";
                 }
-                
+
                 if (!string.IsNullOrEmpty(topicPartition?.Topic))
                 {
                     tags.SetTag(Tags.MessagingDestinationName, topicPartition!.Topic);
@@ -229,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     tags.Tombstone = "true";
                 }
-                
+
                 if (!string.IsNullOrEmpty(topic))
                 {
                     span.SetTag(Tags.MessagingDestinationName, topic);
