@@ -58,7 +58,6 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         GitCommitCommitterName = suiteTags.GitCommitCommitterName;
         Command = suiteTags.Command;
         WorkingDirectory = suiteTags.WorkingDirectory;
-        TestManagementEnabled = suiteTags.TestManagementEnabled;
     }
 
     [Tag(TestTags.Name)]

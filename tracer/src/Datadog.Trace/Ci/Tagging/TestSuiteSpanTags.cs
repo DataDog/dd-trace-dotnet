@@ -56,7 +56,6 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         GitCommitCommitterName = moduleTags.GitCommitCommitterName;
         Command = moduleTags.Command;
         WorkingDirectory = moduleTags.WorkingDirectory;
-        TestManagementEnabled = moduleTags.TestManagementEnabled;
     }
 
     public ulong SuiteId { get; set; }

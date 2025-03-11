@@ -84,8 +84,6 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> GitPrBaseCommitBytes => new byte[] { 217, 32, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 115, 104, 97 };
         // GitPrBaseBranchBytes = MessagePack.Serialize("git.pull_request.base_branch");
         private static ReadOnlySpan<byte> GitPrBaseBranchBytes => new byte[] { 188, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104 };
-        // TestManagementEnabledBytes = MessagePack.Serialize("test.test_management.enabled");
-        private static ReadOnlySpan<byte> TestManagementEnabledBytes => new byte[] { 188, 116, 101, 115, 116, 46, 116, 101, 115, 116, 95, 109, 97, 110, 97, 103, 101, 109, 101, 110, 116, 46, 101, 110, 97, 98, 108, 101, 100 };
 
         public override string? GetTag(string key)
         {
@@ -125,7 +123,6 @@ namespace Datadog.Trace.Ci.Tagging
                 "git.commit.head_sha" => GitHeadCommit,
                 "git.pull_request.base_branch_sha" => GitPrBaseCommit,
                 "git.pull_request.base_branch" => GitPrBaseBranch,
-                "test.test_management.enabled" => TestManagementEnabled,
                 _ => base.GetTag(key),
             };
         }
@@ -232,9 +229,6 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "git.pull_request.base_branch": 
                     GitPrBaseBranch = value;
-                    break;
-                case "test.test_management.enabled": 
-                    TestManagementEnabled = value;
                     break;
                 case "library_version": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
@@ -415,11 +409,6 @@ namespace Datadog.Trace.Ci.Tagging
             if (GitPrBaseBranch is not null)
             {
                 processor.Process(new TagItem<string>("git.pull_request.base_branch", GitPrBaseBranch, GitPrBaseBranchBytes));
-            }
-
-            if (TestManagementEnabled is not null)
-            {
-                processor.Process(new TagItem<string>("test.test_management.enabled", TestManagementEnabled, TestManagementEnabledBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -662,13 +651,6 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("git.pull_request.base_branch (tag):")
                   .Append(GitPrBaseBranch)
-                  .Append(',');
-            }
-
-            if (TestManagementEnabled is not null)
-            {
-                sb.Append("test.test_management.enabled (tag):")
-                  .Append(TestManagementEnabled)
                   .Append(',');
             }
 

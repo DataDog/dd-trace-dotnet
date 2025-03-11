@@ -165,6 +165,12 @@ public sealed class TestModule
                         fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
                     }
                 }
+
+                // Check if the Test Management feature is enabled and set the flag accordingly
+                if (_testOptimization.TestManagementFeature?.Enabled == true)
+                {
+                    _fakeSession.SetTag(TestTags.TestManagementEnabled, "true");
+                }
             }
         }
 

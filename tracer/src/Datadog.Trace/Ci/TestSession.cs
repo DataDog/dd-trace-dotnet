@@ -78,6 +78,12 @@ public sealed class TestSession
 
         _span = span;
 
+        // Check if the Test Management feature is enabled and set the flag accordingly
+        if (_testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            span.SetTag(TestTags.TestManagementEnabled, "true");
+        }
+
         // Inject context to environment variables
         if (propagateEnvironmentVariables)
         {
