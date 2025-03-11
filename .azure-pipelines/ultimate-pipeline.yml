@@ -3076,18 +3076,18 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-arm64-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
-        artifact: linux-monitoring-home-arm64
+        artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux debug symbols
       inputs:
-        artifact: linux-profiler-symbols-arm64
+        artifact: linux-profiler-symbols-$(artifactSuffix)
         path: $(monitoringHome)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //

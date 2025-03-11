@@ -473,7 +473,6 @@ partial class Build
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
-        .Requires(() => !IsArm64)
         .Executes(() =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
