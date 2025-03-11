@@ -53,21 +53,25 @@ public class PopulateBasicPropertiesHeadersIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
+        TReturn? basicProperties = default;
+
         // PopulateBasicPropertiesHeaders returns null if the supplied IReadOnlyBasicProperties
         // does not have to be modified or if it's a writable instance.
         // If that is the case then we have to fetch IReadOnlyBasicProperties from the argument
         // list instead of creating a new instance that overwrites the supplied properties.
         if (returnValue is null)
         {
-            if (state.State.DuckIs<IBasicProperties>())
+            var rabbitMqClientAssembly = typeof(TReturn).Assembly;
+
+            if (state.State?.GetType() == rabbitMqClientAssembly.GetType("RabbitMQ.Client.BasicProperties", throwOnError: false))
             {
                 // Use the existing basic properties if possible...
-                returnValue = (TReturn)state.State!;
+                basicProperties = (TReturn)state.State!;
             }
-            else if (state.State.DuckIs<IReadOnlyBasicProperties>())
+            else if (state.State?.GetType() == rabbitMqClientAssembly.GetType("RabbitMQ.Client.IReadOnlyBasicProperties", throwOnError: false))
             {
                 // if not create new instance using the copy constructor on BasicProperties.
-                returnValue = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
+                basicProperties = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
             }
             else
             {
@@ -77,7 +81,7 @@ public class PopulateBasicPropertiesHeadersIntegration
             }
         }
 
-        var duckType = returnValue.DuckCast<IBasicProperties>()!;
+        var duckType = basicProperties.DuckCast<IBasicProperties>()!;
 
         // add distributed tracing headers to the message
         duckType.Headers ??= new Dictionary<string, object>();
