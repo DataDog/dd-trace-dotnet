@@ -134,4 +134,22 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(TestTags.TestAttemptToFixPassed)]
     public string? AttemptToFixPassed { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis)]
+    public string? CapabilitiesTestImpactAnalysis { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection)]
+    public string? CapabilitiesEarlyFlakeDetection { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries)]
+    public string? CapabilitiesAutoTestRetries { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine)]
+    public string? CapabilitiesTestManagementQuarantine { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable)]
+    public string? CapabilitiesTestManagementDisable { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix)]
+    public string? CapabilitiesTestManagementAttemptToFix { get; set; }
 }

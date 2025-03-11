@@ -385,6 +385,14 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 targetTest.Meta.Remove(TestTags.TestIsNew);
                 targetTest.Meta.Remove(TestTags.TestIsRetry);
 
+                // Remove capabilities
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix);
+
                 // Remove user provided service tag
                 targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
 

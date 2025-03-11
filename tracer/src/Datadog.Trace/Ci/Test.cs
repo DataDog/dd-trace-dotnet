@@ -68,6 +68,13 @@ public sealed class Test
             Coverage.CoverageReporter.Handler.StartSession(module.Framework);
         }
 
+        tags.CapabilitiesTestImpactAnalysis = _testOptimization.SkippableFeature?.Enabled == true ? "true" : "false";
+        tags.CapabilitiesEarlyFlakeDetection = _testOptimization.EarlyFlakeDetectionFeature?.Enabled == true ? "true" : "false";
+        tags.CapabilitiesAutoTestRetries = _testOptimization.FlakyRetryFeature?.Enabled == true ? "true" : "false";
+        tags.CapabilitiesTestManagementQuarantine = _testOptimization.TestManagementFeature?.Enabled == true ? "true" : "false";
+        tags.CapabilitiesTestManagementDisable = _testOptimization.TestManagementFeature?.Enabled == true ? "true" : "false";
+        tags.CapabilitiesTestManagementAttemptToFix = _testOptimization.TestManagementFeature?.Enabled == true ? "true" : "false";
+
         CurrentTest.Value = this;
         lock (OpenedTests)
         {
