@@ -473,15 +473,15 @@ profiler_cpu_timer_create-arm64:
   # https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/2836037770/FAQ+-+Benchmarking+Platform#Gitlab-uses-outdated-Docker-image-for-the-job,-even-if-I-push-new-under-same-tag.-How-do-I-prevent-caching?
 
   script:
-    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
+    # - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
     - mkdir -p ~/.aws
     - | 
       /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER \
         >> ~/.aws/config || exit $?
     - export AWS_PROFILE=$AWS_EPHEMERAL_INFRA_PROFILE_NAME
     - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
-    - cp ../build-id.txt .
-    - ./pass-artifatcs-to-windows.sh
+    # - cp ../build-id.txt .
+    # - ./pass-artifatcs-to-windows.sh
     - cd /app/infra
     - |
       ./launch.sh apm-ecosystems-perf-qa windows ephemeral-instance \
