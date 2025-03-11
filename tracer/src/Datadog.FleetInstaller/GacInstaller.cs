@@ -209,7 +209,7 @@ internal static class GacInstaller
                     {
                         var fusionInstallReference = new Fusion.FUSION_INSTALL_REFERENCE
                         {
-                            cbSize = (uint)sizeof(Fusion.FUSION_INSTALL_REFERENCE),
+                            cbSize = (uint)Marshal.SizeOf<Fusion.FUSION_INSTALL_REFERENCE>(),
                             dwFlags = Fusion.FusionInstallReferenceFlags.None,
                             guidScheme = Fusion.FUSION_INSTALL_REFERENCE.FUSION_REFCOUNT_FILEPATH_GUID,
                             szIdentifier = associatedFilepathPtr
