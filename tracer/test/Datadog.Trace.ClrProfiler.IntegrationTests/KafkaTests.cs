@@ -90,8 +90,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var successfulConsumerSpans = allConsumerSpans.Where(x => x.Error == 0).ToList();
             var errorConsumerSpans = allConsumerSpans.Where(x => x.Error > 0).ToList();
 
-            VerifyProducerSpanProperties(successfulProducerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Produce", topic), ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
-            VerifyProducerSpanProperties(errorProducerSpans, serviceName: clientSpanServiceName, resourceName: ErrorProducerResourceName, ExpectedErrorProducerSpans);
+            VerifyProducerSpanProperties(successfulProducerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Produce", topic), topic, ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
+            VerifyProducerSpanProperties(errorProducerSpans, serviceName: clientSpanServiceName, resourceName: ErrorProducerResourceName, topic, ExpectedErrorProducerSpans);
 
             // Only successful spans with a delivery handler will have an offset
             successfulProducerSpans
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OnlyHaveUniqueItems()
                                  .And.Subject.ToImmutableHashSet();
 
-            VerifyConsumerSpanProperties(successfulConsumerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Consume", topic), ExpectedConsumerSpans);
+            VerifyConsumerSpanProperties(successfulConsumerSpans, serviceName: clientSpanServiceName, resourceName: GetSuccessfulResourceName("Consume", topic), topic, ExpectedConsumerSpans);
 
             // every consumer span should be a child of a producer span.
             successfulConsumerSpans
@@ -170,16 +170,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.AssertIntegrationEnabled(IntegrationId.Kafka);
         }
 
-        private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string serviceName, string resourceName, int expectedCount)
+        private void VerifyProducerSpanProperties(
+            List<MockSpan> producerSpans,
+            string serviceName,
+            string resourceName,
+            string topic,
+            int expectedCount)
         {
             producerSpans.Should()
                          .HaveCount(expectedCount)
                          .And.OnlyContain(x => x.Service == serviceName)
                          .And.OnlyContain(x => x.Resource == resourceName)
-                         .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0);
+                         .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
+                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.MessagingDestinationName) && x.Tags[Tags.MessagingDestinationName] == topic);
         }
 
-        private void VerifyConsumerSpanProperties(List<MockSpan> consumerSpans, string serviceName, string resourceName, int expectedCount)
+        private void VerifyConsumerSpanProperties(
+            List<MockSpan> consumerSpans,
+            string serviceName,
+            string resourceName,
+            string topic,
+            int expectedCount)
         {
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
             consumerSpans.Should()
@@ -188,6 +199,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                          .And.OnlyContain(x => x.Resource == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Metrics.MessageQueueTimeMs))
+                         .And.OnlyContain(x => x.Tags.ContainsKey(Tags.MessagingDestinationName) && x.Tags[Tags.MessagingDestinationName] == topic)
                          .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaOffset) && Regex.IsMatch(x.Tags[Tags.KafkaOffset], @"^[0-9]+$"))
                          .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaPartition) && Regex.IsMatch(x.Tags[Tags.KafkaPartition], @"^\[[0-9]+\]$"));
         }
