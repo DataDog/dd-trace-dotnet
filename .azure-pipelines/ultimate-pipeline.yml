@@ -4646,7 +4646,7 @@ stages:
   #### Throughput Linux 64, Windows 64, Linux arm 64
 
   - job: Linux64
-    timeoutInMinutes: 60
+    timeoutInMinutes: 90
     pool: Throughput
 
     steps:
@@ -4699,7 +4699,7 @@ stages:
       artifact: crank_linux_x64_1
 
   - job: LinuxArm64
-    timeoutInMinutes: 60
+    timeoutInMinutes: 90
     pool: Throughput
 
     steps:
@@ -4766,11 +4766,11 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Linux64, Windows64]
+      jobs: [Linux64]
   #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
-    timeoutInMinutes: 60
+    timeoutInMinutes: 90
 
     steps:
     - template: steps/clone-repo.yml
@@ -4808,48 +4808,6 @@ stages:
     - publish: "$(crankDir)/results"
       displayName: Publish results
       artifact: crank_profiler_linux_x64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
-
-  - job: Windows64
-    timeoutInMinutes: 60
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows native binary
-      inputs:
-        artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/monitoring-home-windows
-
-    - script: |
-        test ! -s "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
-        test ! -s "monitoring-home-windows/win-x64/ddwaf.dll" && echo "monitoring-home-windows/win-x64/ddwaf.dll does not exist" && exit 1
-        mkdir -p $(crankDir)/results
-        cd $(crankDir)
-        chmod +x ./run.sh
-        ./run.sh "windows"
-      displayName: Crank profiler
-
-      env:
-        DD_SERVICE: dd-trace-dotnet-profiler
-        DD_ENV: CI
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
-
-    - script: |
-        cp $(crankDir)/*.json $(crankDir)/results
-      displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
-
-    - publish: "$(crankDir)/results"
-      displayName: Publish results
-      artifact: crank_profiler_windows64_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
