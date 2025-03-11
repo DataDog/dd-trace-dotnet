@@ -43,7 +43,7 @@ public abstract class FleetInstallerTestsBase : IDisposable
 
     protected FleetInstallerLogger Log { get; }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         if (_homeDirectory is { } list)
         {

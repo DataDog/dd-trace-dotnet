@@ -5,6 +5,7 @@
 #if NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using Datadog.FleetInstaller;
 using FluentAssertions;
 using Microsoft.Win32;
@@ -15,6 +16,17 @@ namespace Datadog.Trace.IntegrationTests.FleetInstaller;
 
 public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTestsBase(output)
 {
+    private readonly List<string> _keysToDelete = [];
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        foreach (var key in _keysToDelete)
+        {
+            Registry.LocalMachine.DeleteSubKey(key);
+        }
+    }
+
     [SkippableFact]
     public void AddCrashTrackingKey_AddsKeyIfItDoesntExist()
     {
@@ -23,7 +35,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
 
         RegistryHelper.AddCrashTrackingKey(Log, values, key)
                       .Should()
@@ -44,7 +56,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
         Registry.LocalMachine.CreateSubKey(key).Should().NotBeNull();
 
         RegistryHelper.AddCrashTrackingKey(Log, values, key)
@@ -66,7 +78,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
         var regKey = Registry.LocalMachine.CreateSubKey(key);
         regKey.Should().NotBeNull();
         regKey!.SetValue(values.NativeLoaderX64Path, 0, RegistryValueKind.DWord);
@@ -90,7 +102,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
         var otherValueName = "some-other-value";
         var otherValueValue = 0;
         var regKey = Registry.LocalMachine.CreateSubKey(key);
@@ -122,7 +134,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
         var keyValue = values.NativeLoaderX64Path;
         Registry.LocalMachine.CreateSubKey(key)
                 !.SetValue(keyValue, 0, RegistryValueKind.DWord);
@@ -143,7 +155,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
         var keyValue = values.NativeLoaderX64Path;
         Registry.LocalMachine.CreateSubKey(key).Should().NotBeNull();
 
@@ -163,7 +175,7 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         var home = CreateMonitoringHomeCopy();
         var values = new TracerValues(home);
-        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        var key = GetRegistryKey();
         Registry.LocalMachine.OpenSubKey(key).Should().BeNull();
 
         RegistryHelper.RemoveCrashTrackingKey(Log, values, key)
@@ -182,6 +194,13 @@ public class RegistryHelperTests(ITestOutputHelper output) : FleetInstallerTests
 
         // Needs to be run on a machine that has IIS installed
         RegistryHelper.TryGetIisVersion(Log, out var version).Should().BeTrue();
+    }
+
+    private string GetRegistryKey()
+    {
+        var key = $@"SOFTWARE\Datadog\Datadog .NET Tracer\{Guid.NewGuid():N}";
+        _keysToDelete.Add(key);
+        return key;
     }
 }
 
