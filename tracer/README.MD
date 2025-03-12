@@ -70,11 +70,13 @@ For example:
 
 ### Dev Containers
 
-#### Prerequisites
+#### VS Code
+
+##### Prerequisites
 
 - Install the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) in VS Code.
 
-#### Steps
+##### Steps
 
 1. Open a local VS Code window on the cloned repository.
 2. Open the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS) and select **"Dev Containers: Reopen in Container"**.
@@ -83,6 +85,19 @@ For example:
 5. Open the command palette again and select **.NET: Open Solution**. Choose the `Datadog.Trace.devcontainer.sln` solution file. Read more at [Project Management](https://code.visualstudio.com/docs/csharp/project-management).
 6. You can now build and run the tracer in the devcontainer.
 7. [Optional] Open the command palette, select `Tasks: Run Build Task`, `Tracer: Build with Target` and choose the target you want to build.
+
+#### Rider
+
+##### Prerequisites
+
+- Ensure the **Dev Containers** plugin is enabled (it comes bundled with Rider).
+
+##### Steps
+
+1. Open **Rider**, select **Remote Development**, then choose **Dev Containers**.
+2. Since we want to use the **Dev Container** from the repository, select **"From Local Project"** and choose `.devcontainer/devcontainer.json`.
+3. In the **Select a Solution to Open** window, pick `Datadog.Trace.devcontainer.sln`.
+4. You can now build and run the tracer inside the **Dev Container**.
 
 #### Tips
 
