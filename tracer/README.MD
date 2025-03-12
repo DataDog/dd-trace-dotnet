@@ -82,9 +82,9 @@ For example:
 2. Open the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS) and select **"Dev Containers: Reopen in Container"**.
 3. Choose the **Tracer**.
 4. VS Code will open a new window connected to the selected container.
-5. Open the command palette again and select **.NET: Open Solution**. Choose the `Datadog.Trace.devcontainer.sln` solution file. Read more at [Project Management](https://code.visualstudio.com/docs/csharp/project-management).
+5. Open the command palette again and select **.NET: Open Solution**. Choose the `Datadog.Trace.Minimal.slnf` solution file. Read more at [Project Management](https://code.visualstudio.com/docs/csharp/project-management).
 6. You can now build and run the tracer in the devcontainer.
-7. [Optional] Open the command palette, select `Tasks: Run Build Task`, `Tracer: Build with Target` and choose the target you want to build.
+7. [Optional] Open the command palette, select `Tasks: Run Build Task`, `Tracer: Build on {OS} with Target` and choose the target you want to build.
 
 #### Rider
 
@@ -96,14 +96,14 @@ For example:
 
 1. Open **Rider**, select **Remote Development**, then choose **Dev Containers**.
 2. Since we want to use the **Dev Container** from the repository, select **"From Local Project"** and choose `.devcontainer/devcontainer.json`.
-3. In the **Select a Solution to Open** window, pick `Datadog.Trace.devcontainer.sln`.
+3. In the **Select a Solution to Open** window, pick `Datadog.Trace.Minimal.slnf`.
 4. You can now build and run the tracer inside the **Dev Container**.
 
 #### Tips
 
 - Currently, the devcontainer is configured to use `debian.dockerfile`, but you can change it to either a local Dockerfile or a remote image as per your requirements.
 - Building Tracer can be resource-intensive and may even run out of memory (OOM) in some cases. If you encounter the error `MSB6006: "csc.dll" exited with code 137.`, increase the memory allocated to the devcontainer (16GB is recommended).
-- `Datadog.Trace.devcontainer.sln` is a minimal solution file that includes all the projects required to build the tracer. You can open other solutions as well, but they may not be fully supported in the devcontainer.
+- `Datadog.Trace.Minimal.slnf` is a minimal solution file that includes all the projects required to build the tracer. You can open other solutions as well, but they may not be fully supported in the devcontainer.
 
 ### Linux
 

@@ -2,9 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Tracer Build with Target",
+      "label": "Tracer: Build on Linux with Target",
       "type": "shell",
       "command": "${workspaceFolder}/tracer/build.sh",
+      "args": [
+        "${input:target}"
+      ],
+      "group": {
+        "kind": "build"
+      }
+    },
+    {
+      "label": "Tracer: Build on Windows with Target",
+      "type": "shell",
+      "command": "${workspaceFolder}/tracer/build.cmd",
       "args": [
         "${input:target}"
       ],
