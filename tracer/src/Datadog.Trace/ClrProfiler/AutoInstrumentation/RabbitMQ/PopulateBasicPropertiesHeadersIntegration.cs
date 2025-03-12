@@ -68,16 +68,16 @@ public class PopulateBasicPropertiesHeadersIntegration
                 // Use the existing basic properties if possible...
                 basicProperties = writable;
             }
-            else if (state.State?.GetType() == rabbitMqClientAssembly.GetType("RabbitMQ.Client.IReadOnlyBasicProperties", throwOnError: false))
-            {
-                // if not create new instance using the copy constructor on BasicProperties.
-                basicProperties = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
-            }
-            else
+            else if (state.State is null)
             {
                 // This case cannot happen as argument is not nullable.
                 Log.Warning("Invalid state: PopulateBasicPropertiesHeaders() is returning null and CallTargetState.State has type {Type}", state.State?.GetType().FullName ?? "null");
                 return new CallTargetReturn<TReturn?>(returnValue);
+            }
+            else
+            {
+                // if not create new instance using the copy constructor on BasicProperties.
+                basicProperties = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
             }
         }
 
