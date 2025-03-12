@@ -130,8 +130,8 @@ namespace Samples.RabbitMQ
 
                 if (result.BasicProperties.Headers is null ||
                     !result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue) ||
-                    receivedHeaderValue is not string receivedHeaderValueString ||
-                    receivedHeaderValueString != headerValue)
+                    receivedHeaderValue is not byte[] receivedHeaderValueString ||
+                    Encoding.UTF8.GetString(receivedHeaderValueString) != headerValue)
                 {
                     throw new Exception("Custom header was not preserved in BasicProperties");
                 }
