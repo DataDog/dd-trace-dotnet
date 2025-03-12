@@ -68,6 +68,28 @@ For example:
 .\build.cmd BuildAndRunWindowsIntegrationTests
 ```
 
+### Dev Containers
+
+#### Prerequisites
+
+- Install the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) in VS Code.
+
+#### Steps
+
+1. Open a local VS Code window on the cloned repository.
+2. Open the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS) and select **"Dev Containers: Reopen in Container"**.
+3. Choose the **Tracer**.
+4. VS Code will open a new window connected to the selected container.
+5. Open the command palette again and select **.NET: Open Solution**. Choose the `Datadog.Trace.devcontainer.sln` solution file. Read more at [Project Management](https://code.visualstudio.com/docs/csharp/project-management).
+6. You can now build and run the tracer in the devcontainer.
+7. [Optional] Open the command palette, select `Tasks: Run Build Task`, `Tracer: Build with Target` and choose the target you want to build.
+
+#### Tips
+
+- Currently, the devcontainer is configured to use `debian.dockerfile`, but you can change it to either a local Dockerfile or a remote image as per your requirements.
+- Building Tracer can be resource-intensive and may even run out of memory (OOM) in some cases. If you encounter the error `MSB6006: "csc.dll" exited with code 137.`, increase the memory allocated to the devcontainer (16GB is recommended).
+- `Datadog.Trace.devcontainer.sln` is a minimal solution file that includes all the projects required to build the tracer. You can open other solutions as well, but they may not be fully supported in the devcontainer.
+
 ### Linux
 
 The recommended approach for Linux is to build using Docker. You can use this approach for both Windows and Linux hosts. The _build_in_docker.sh_ script automates building a Docker image with the required dependencies, and running the specified Nuke targets. For example, on Linux:
