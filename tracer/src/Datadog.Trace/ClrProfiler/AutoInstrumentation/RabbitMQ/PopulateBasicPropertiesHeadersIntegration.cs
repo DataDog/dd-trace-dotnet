@@ -61,8 +61,6 @@ public class PopulateBasicPropertiesHeadersIntegration
         // list instead of creating a new instance that overwrites the supplied properties.
         if (returnValue is null)
         {
-            var rabbitMqClientAssembly = typeof(TReturn).Assembly;
-
             if (state.State is TReturn writable)
             {
                 // Use the existing basic properties if possible...
