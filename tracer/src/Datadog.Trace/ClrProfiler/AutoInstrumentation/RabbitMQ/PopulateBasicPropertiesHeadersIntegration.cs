@@ -53,6 +53,7 @@ public class PopulateBasicPropertiesHeadersIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
+        // TReturn is type RabbitMQ.Client.BasicProperties
         TReturn? basicProperties = default;
 
         // PopulateBasicPropertiesHeaders returns null if the supplied IReadOnlyBasicProperties
@@ -61,9 +62,10 @@ public class PopulateBasicPropertiesHeadersIntegration
         // list instead of creating a new instance that overwrites the supplied properties.
         if (returnValue is null)
         {
+            // state.State is of type RabbitMQ.Client.IReadOnlyBasicProperties
             if (state.State is TReturn writable)
             {
-                // Use the existing basic properties if possible...
+                // Use the existing BasicProperties if it's already of type RabbitMQ.Client.BasicProperties
                 basicProperties = writable;
             }
             else if (state.State is null)
@@ -74,11 +76,12 @@ public class PopulateBasicPropertiesHeadersIntegration
             }
             else
             {
-                // if not create new instance using the copy constructor on BasicProperties.
+                // create new BasicProperties using the BasicProperties(IReadOnlyBasicProperties) copy constructor
                 basicProperties = CachedBasicPropertiesHelper<TReturn>.CreateHeaders(state.State!);
             }
         }
 
+        // duck cast so we can access the Headers property
         var duckType = basicProperties.DuckCast<IBasicProperties>()!;
 
         // add distributed tracing headers to the message
