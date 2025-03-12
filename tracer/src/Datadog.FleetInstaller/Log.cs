@@ -18,6 +18,11 @@ internal static class Log
             Console.WriteLine($"INFO:  {message}");
         }
 
+        public void WriteWarning(string message)
+        {
+            Console.WriteLine($"WARNING:  {message}");
+        }
+
         public void WriteError(string message)
         {
             Console.WriteLine($"ERROR: {message}");
