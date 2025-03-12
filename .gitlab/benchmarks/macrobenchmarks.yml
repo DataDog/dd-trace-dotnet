@@ -22,7 +22,7 @@ test-windows-run:
       - scheduler_failure
       - api_failure
   when: manual
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet
 
   # If you have a problem with Gitlab cache, here is a fix
   # https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/2836037770/FAQ+-+Benchmarking+Platform#Gitlab-uses-outdated-Docker-image-for-the-job,-even-if-I-push-new-under-same-tag.-How-do-I-prevent-caching?
