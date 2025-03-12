@@ -128,9 +128,10 @@ namespace Samples.RabbitMQ
                     throw new Exception("MessageId was not preserved in BasicProperties");
                 }
 
-                if (!result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue)
-                    || receivedHeaderValue is not string receivedHeaderValueString
-                    || receivedHeaderValueString != headerValue)
+                if (result.BasicProperties.Headers is null ||
+                    !result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue) ||
+                    receivedHeaderValue is not string receivedHeaderValueString ||
+                    receivedHeaderValueString != headerValue)
                 {
                     throw new Exception("Custom header was not preserved in BasicProperties");
                 }
