@@ -82,9 +82,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Tombstone = "true";
                 }
 
-                if (!string.IsNullOrEmpty(topicPartition?.Topic))
+                if (topicPartition is not null && !string.IsNullOrEmpty(topicPartition.Topic))
                 {
-                    tags.SetTag(Tags.MessagingDestinationName, topicPartition!.Topic);
+                    tags.Topic = topicPartition.Topic;
                 }
 
                 // Producer spans should always be measured
@@ -232,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (!string.IsNullOrEmpty(topic))
                 {
-                    span.SetTag(Tags.MessagingDestinationName, topic);
+                    tags.Topic = topic;
                 }
 
                 // Consumer spans should always be measured
