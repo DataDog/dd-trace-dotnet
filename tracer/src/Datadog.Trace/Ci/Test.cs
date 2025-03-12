@@ -68,12 +68,13 @@ public sealed class Test
             Coverage.CoverageReporter.Handler.StartSession(module.Framework);
         }
 
-        tags.CapabilitiesTestImpactAnalysis = _testOptimization.SkippableFeature?.Enabled == true ? "true" : "false";
-        tags.CapabilitiesEarlyFlakeDetection = _testOptimization.EarlyFlakeDetectionFeature?.Enabled == true ? "true" : "false";
-        tags.CapabilitiesAutoTestRetries = _testOptimization.FlakyRetryFeature?.Enabled == true ? "true" : "false";
-        tags.CapabilitiesTestManagementQuarantine = _testOptimization.TestManagementFeature?.Enabled == true ? "true" : "false";
-        tags.CapabilitiesTestManagementDisable = _testOptimization.TestManagementFeature?.Enabled == true ? "true" : "false";
-        tags.CapabilitiesTestManagementAttemptToFix = _testOptimization.TestManagementFeature?.Enabled == true ? "true" : "false";
+        // Capabilities tags (yes they are strings, this is because previously the values were "true" or "false" and we changed the format in attempt_to_fix-v2)
+        tags.CapabilitiesTestImpactAnalysis = "1";
+        tags.CapabilitiesEarlyFlakeDetection = "1";
+        tags.CapabilitiesAutoTestRetries = "1";
+        tags.CapabilitiesTestManagementQuarantine = "1";
+        tags.CapabilitiesTestManagementDisable = "1";
+        tags.CapabilitiesTestManagementAttemptToFix = "2";
 
         CurrentTest.Value = this;
         lock (OpenedTests)

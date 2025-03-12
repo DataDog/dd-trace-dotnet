@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -28,12 +29,13 @@ internal sealed partial class TestOptimizationClient
             return new TestManagementResponse();
         }
 
+        var commitMessage = CIEnvironmentValues.Instance.Message ?? string.Empty;
         _testManagementUrl ??= GetUriFromPath(TestManagementUrlPath);
         var query = new DataEnvelope<Data<TestManagementQuery>>(
             new Data<TestManagementQuery>(
                 _commitSha,
                 TestManagementType,
-                new TestManagementQuery(_repositoryUrl, null)),
+                new TestManagementQuery(_repositoryUrl, null, commitMessage)),
             null);
 
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
@@ -117,10 +119,14 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("module")]
         public readonly string? Module;
 
-        public TestManagementQuery(string repositoryUrl, string? module)
+        [JsonProperty("commit_message")]
+        public readonly string CommitMessage;
+
+        public TestManagementQuery(string repositoryUrl, string? module, string commitMessage)
         {
             RepositoryUrl = repositoryUrl;
             Module = module;
+            CommitMessage = commitMessage;
         }
     }
 
