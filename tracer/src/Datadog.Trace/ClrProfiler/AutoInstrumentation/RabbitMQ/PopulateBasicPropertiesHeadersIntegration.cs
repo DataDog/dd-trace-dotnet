@@ -63,10 +63,10 @@ public class PopulateBasicPropertiesHeadersIntegration
         {
             var rabbitMqClientAssembly = typeof(TReturn).Assembly;
 
-            if (state.State?.GetType() == rabbitMqClientAssembly.GetType("RabbitMQ.Client.BasicProperties", throwOnError: false))
+            if (state.State is TReturn writable)
             {
                 // Use the existing basic properties if possible...
-                basicProperties = (TReturn)state.State!;
+                basicProperties = writable;
             }
             else if (state.State?.GetType() == rabbitMqClientAssembly.GetType("RabbitMQ.Client.IReadOnlyBasicProperties", throwOnError: false))
             {
