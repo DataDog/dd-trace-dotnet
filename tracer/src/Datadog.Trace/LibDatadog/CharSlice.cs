@@ -33,7 +33,6 @@ internal struct CharSlice
     /// <param name="str">The string to copy into memory.</param>
     internal CharSlice(string? str)
     {
-        // copy over str to unmanaged memory
         if (str == null)
         {
             Ptr = IntPtr.Zero;
@@ -41,6 +40,7 @@ internal struct CharSlice
         }
         else
         {
+            // copy over str to unmanaged memory
             var bytes = System.Text.Encoding.UTF8.GetBytes(str);
             Ptr = Marshal.AllocHGlobal(bytes.Length);
             Marshal.Copy(bytes, 0, Ptr, bytes.Length);
