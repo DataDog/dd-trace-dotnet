@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 TestTransports.Tcp => TracesTransportType.Default,
                 TestTransports.WindowsNamedPipe => TracesTransportType.WindowsNamedPipe,
                 TestTransports.Uds => TracesTransportType.UnixDomainSocket,
-                _ => TracesTransportType.Default,
+                _ => throw new InvalidOperationException($"Unknown transport {transport}"),
             };
         }
 
