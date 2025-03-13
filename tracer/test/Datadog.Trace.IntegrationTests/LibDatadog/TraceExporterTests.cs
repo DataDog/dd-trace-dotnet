@@ -40,7 +40,7 @@ public class TraceExporterTests
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
         {
             StatusCode = 200,
-            ContentType = "application/msgpack",
+            ContentType = "application/json",
             Response = """
                        {
                            "rate_by_service": {
@@ -52,7 +52,7 @@ public class TraceExporterTests
         };
 
         var discovery = DiscoveryService.Create(tracerSettings.Exporter);
-        var tracer = new Tracer(tracerSettings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+        var tracer = TracerHelper.Create(tracerSettings, discoveryService: discovery);
 
         using var span = tracer.StartSpan("operationName");
         span.ResourceName = "resourceName";
@@ -76,7 +76,7 @@ public class TraceExporterTests
                 { ConfigurationKeys.ServiceName, "default-service" },
                 { ConfigurationKeys.ServiceVersion, "v1" },
                 { ConfigurationKeys.Environment, "test" },
-                { ConfigurationKeys.DataPipelineEnabled, "true" },
+                { ConfigurationKeys.TraceDataPipelineEnabled, "true" },
             };
 
             switch (type)

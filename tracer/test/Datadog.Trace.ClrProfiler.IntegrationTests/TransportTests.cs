@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -99,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
             }
 
-            EnvironmentHelper.EnableDataPipeline(dataPipelineEnabled);
+            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
             using var telemetry = this.ConfigureTelemetry();

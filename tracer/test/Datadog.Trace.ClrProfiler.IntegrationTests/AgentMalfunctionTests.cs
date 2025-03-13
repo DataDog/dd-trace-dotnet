@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
                from transportType in Transports
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               from dataPipelineEnabled in new bool[] { true, false }
+               from dataPipelineEnabled in new[] { true, false }
                select new object[] { behaviour, transportType, metadataSchemaVersion, dataPipelineEnabled };
 
         [SkippableTheory]
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableTransport(transportType);
-            EnvironmentHelper.EnableDataPipeline(dataPipelineEnabled);
+            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
 
             using var agent = EnvironmentHelper.GetMockAgent();
             var customResponse = behaviour switch
