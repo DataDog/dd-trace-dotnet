@@ -104,6 +104,8 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="TracerSettings.DisabledIntegrationNames"/>
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
+        public const string EnabledMeters = "DD_TRACE_ENABLED_METERS";
+
         /// <summary>
         /// Configuration key for a list of ActivitySource names (supports globbing) that will be disabled.
         /// Default is empty (all ActivitySources will be subscribed to by default).

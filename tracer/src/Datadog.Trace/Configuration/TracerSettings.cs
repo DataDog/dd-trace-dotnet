@@ -696,6 +696,9 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
+            var enabledMeters = config.WithKeys(ConfigurationKeys.EnabledMeters).AsString();
+            EnabledMeters = !string.IsNullOrEmpty(enabledMeters) ? TrimSplitString(enabledMeters, commaSeparator) : [];
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -806,6 +809,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
         public HashSet<string> DisabledIntegrationNames { get; }
+
+        /// <summary>
+        /// Gets the names of enabled Meters.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.EnabledMeters"/>
+        internal string[] EnabledMeters { get; }
 
         /// <summary>
         /// Gets the names of disabled ActivitySources.
