@@ -45,30 +45,39 @@ namespace Datadog.Trace.IntegrationTests
                 Assert.Equal(expected: 1, spans.Count);
 
                 var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;
-                var headerMap = headers.AllKeys.ToDictionary(x => x.ToLower(), x => headers[x]);
 
                 var expectedContainedId = ContainerMetadata.GetContainerId();
-                var expectedEntitydId = ContainerMetadata.GetEntityId();
-                if (expectedContainedId is not null)
-                {
-                    expectedContainedId.Should().NotBeNullOrEmpty();
-                    headerMap.Should().ContainKey(AgentHttpHeaderNames.ContainerId.ToLower());
-                    var actualContainerId = headerMap[AgentHttpHeaderNames.ContainerId.ToLower()];
-                    actualContainerId.Should().Be(expectedContainedId);
-                }
-                else if (expectedEntitydId is not null)
-                {
-                    expectedEntitydId.Should().NotBeNullOrEmpty();
-                    headerMap.Should().ContainKey(AgentHttpHeaderNames.EntityId.ToLower());
-                    var actualEntityId = headerMap[AgentHttpHeaderNames.EntityId.ToLower()];
-                    actualEntityId.Should().Be(expectedEntitydId);
-                }
-                else
+                if (expectedContainedId == null)
                 {
                     // we don't extract the containerId in some cases, such as when running on Windows.
                     // In these cases, it should not appear in the headers at all.
-                    headerMap.Should().NotContainKey(AgentHttpHeaderNames.ContainerId.ToLower());
-                    headerMap.Should().NotContainKey(AgentHttpHeaderNames.EntityId.ToLower());
+                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.ContainerId);
+                }
+                else
+                {
+                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
+                }
+
+                var expectedEntitydId = ContainerMetadata.GetEntityId();
+                if (expectedEntitydId == null)
+                {
+                    // we don't extract the entityId in some cases, such as when running on Windows.
+                    // In these cases, it should not appear in the headers at all.
+                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.EntityId);
+                }
+                else
+                {
+                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId, expectedEntitydId);
+                }
+
+                if (expectedContainedId is not null && expectedEntitydId is not null)
+                {
+                    expectedEntitydId.Should().Be($"cid-{expectedContainedId}");
+                }
+                else if (expectedEntitydId is not null)
+                {
+                    // Note: This line hasn't been executed by CI yet
+                    expectedEntitydId.StartsWith("in-").Should().BeTrue();
                 }
             }
         }
