@@ -23,7 +23,9 @@ check_azure_pipeline:
   timeout: 1h
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
     - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
+      when: always
     - when: manual
   allow_failure: true
 
@@ -43,7 +45,9 @@ check_azure_pipeline:
       - api_failure
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+      when: always
     - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
+      when: always
     - when: manual
   image: $MACROBENCHMARKS_CI_IMAGE
 
