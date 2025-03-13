@@ -33,10 +33,12 @@ public class TraceExporterTests
             throw new SkipException("Can't use Unix Domain Sockets on non-Linux with data pipeline enabled");
         }
 
-        var settings = GetSettings(transport);
+        var pipeName = $"trace-{Guid.NewGuid()}";
+        var udsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        using var agent = GetAgent();
+        var settings = GetSettings();
         var tracerSettings = TracerSettings.Create(settings);
 
-        using var agent = GetAgent(transport, settings);
         agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse
         {
             StatusCode = 200,
@@ -68,9 +70,9 @@ public class TraceExporterTests
         Assert.Equal("resourceName", recordedSpan.Resource);
         Assert.Equal("default-service", recordedSpan.Service);
 
-        Dictionary<string, object> GetSettings(TestTransports type)
+        Dictionary<string, object> GetSettings()
         {
-            var settings = new Dictionary<string, object>
+            var settingsMap = new Dictionary<string, object>
             {
                 { ConfigurationKeys.StatsComputationEnabled, true },
                 { ConfigurationKeys.ServiceName, "default-service" },
@@ -79,34 +81,42 @@ public class TraceExporterTests
                 { ConfigurationKeys.TraceDataPipelineEnabled, "true" },
             };
 
-            switch (type)
+            switch (transport)
             {
                 case TestTransports.Tcp:
-                    settings[ConfigurationKeys.AgentPort] = TcpPortProvider.GetOpenPort();
+                    if (agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+                    {
+                        settingsMap[ConfigurationKeys.AgentPort] = tcpAgent.Port;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("Unsupported agent type " + agent.GetType());
+                    }
+
                     break;
                 case TestTransports.WindowsNamedPipe:
-                    settings[ConfigurationKeys.TracesPipeName] = $"trace-{Guid.NewGuid()}";
+                    settingsMap[ConfigurationKeys.TracesPipeName] = pipeName;
                     break;
                 case TestTransports.Uds:
-                    settings[ConfigurationKeys.TracesUnixDomainSocketPath] = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                    settingsMap[ConfigurationKeys.TracesUnixDomainSocketPath] = udsPath;
                     break;
                 default:
-                    throw new InvalidOperationException("Unsupported transport type " + type);
+                    throw new InvalidOperationException("Unsupported transport type " + transport);
             }
 
-            return settings;
+            return settingsMap;
         }
 
-        MockTracerAgent GetAgent(TestTransports type, Dictionary<string, object> settings)
-            => type switch
+        MockTracerAgent GetAgent()
+            => transport switch
             {
-                TestTransports.Tcp => MockTracerAgent.Create(null, int.Parse(settings[ConfigurationKeys.AgentPort].ToString())),
-                TestTransports.WindowsNamedPipe => MockTracerAgent.Create(null, new WindowsPipesConfig(settings[ConfigurationKeys.TracesPipeName].ToString(), null)),
+                TestTransports.Tcp => MockTracerAgent.Create(null),
+                TestTransports.WindowsNamedPipe => MockTracerAgent.Create(null, new WindowsPipesConfig(pipeName, null)),
 #if NETCOREAPP3_1_OR_GREATER
                 TestTransports.Uds
-                    => MockTracerAgent.Create(null, new UnixDomainSocketConfig(settings[ConfigurationKeys.TracesUnixDomainSocketPath].ToString(), null)),
+                    => MockTracerAgent.Create(null, new UnixDomainSocketConfig(udsPath, null)),
 #endif
-                _ => throw new InvalidOperationException("Unsupported transport type " + type),
+                _ => throw new InvalidOperationException("Unsupported transport type " + transport),
             };
     }
 }
