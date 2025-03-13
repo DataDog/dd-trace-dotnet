@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Benchmarks.Trace
 {
@@ -45,20 +45,6 @@ namespace Benchmarks.Trace
         }
     }
 
-    public class BenchmarkAgent8Attribute : AgentFilterAttribute
-    {
-        public BenchmarkAgent8Attribute() : base(Agent.BenchmarkAgent8)
-        {
-        }
-    }
-
-    public class BenchmarkAgent9Attribute : AgentFilterAttribute
-    {
-        public BenchmarkAgent9Attribute() : base(Agent.BenchmarkAgent9)
-        {
-        }
-    }
-
     public abstract class AgentFilterAttribute : Attribute
     {
         public AgentFilterAttribute(Agent agent)
@@ -77,8 +63,6 @@ namespace Benchmarks.Trace
             BenchmarkAgent5,
             BenchmarkAgent6,
             BenchmarkAgent7,
-            BenchmarkAgent8,
-            BenchmarkAgent9
         }
     }
 }
