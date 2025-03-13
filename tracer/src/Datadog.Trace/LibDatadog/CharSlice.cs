@@ -17,11 +17,6 @@ namespace Datadog.Trace.LibDatadog;
 internal struct CharSlice
 {
     /// <summary>
-    /// Represents an empty slice.
-    /// </summary>
-    internal static CharSlice Empty = new(string.Empty);
-
-    /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
     internal IntPtr Ptr;
