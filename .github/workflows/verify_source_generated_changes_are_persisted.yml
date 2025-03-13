@@ -85,4 +85,3 @@ jobs:
         if: ${{ failure() }} # only post a comment with suggestions if we found any changes
         with:
           comment: 'Please commit the suggested auto-generated changes'
-          event: 'REQUEST_CHANGES'
