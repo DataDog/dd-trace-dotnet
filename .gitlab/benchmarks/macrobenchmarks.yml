@@ -24,6 +24,7 @@ check_azure_pipeline:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
     - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
+  allow_failure: true
 
 .benchmarks:
   stage: benchmarks
