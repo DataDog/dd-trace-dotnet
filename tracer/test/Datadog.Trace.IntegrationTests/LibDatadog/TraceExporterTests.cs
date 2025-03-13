@@ -23,7 +23,6 @@ public class TraceExporterTests
     [InlineData(TestTransports.WindowsNamedPipe)]
     public async Task SendsTracesUsingDataPipeline(TestTransports transport)
     {
-        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         if (transport == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
