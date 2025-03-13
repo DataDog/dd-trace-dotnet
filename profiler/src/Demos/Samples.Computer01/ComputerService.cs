@@ -54,6 +54,7 @@ namespace Samples.Computer01
 #endif
         private ThreadSpikes _threadSpikes;
         private StringConcat _stringConcat;
+        private SyncOverAsync _syncOverAsync;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -184,6 +185,16 @@ namespace Samples.Computer01
                     StartLinuxDlIteratePhdrDeadlock();
                     break;
 #endif
+
+                case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
+                    _syncOverAsync = new SyncOverAsync(nbThreads, false);
+                    _syncOverAsync.Start();
+                    break;
+
+                case Scenario.SyncOverAsyncWithResult:
+                    _syncOverAsync = new SyncOverAsync(nbThreads, true);
+                    _syncOverAsync.Start();
+                    break;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -317,6 +328,11 @@ namespace Samples.Computer01
                     StopLinuxDlIteratePhdrDeadlock();
                     break;
 #endif
+
+                case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
+                case Scenario.SyncOverAsyncWithResult:
+                    _syncOverAsync.Stop();
+                    break;
             }
         }
 
@@ -446,6 +462,14 @@ namespace Samples.Computer01
 
                     case Scenario.StringConcat:
                         RunStringConcat(parameter);
+                        break;
+
+                    case Scenario.SyncOverAsyncWithGetAwaiterGetResult:
+                        RunSyncOverAsync(nbThreads, false);
+                        break;
+
+                    case Scenario.SyncOverAsyncWithResult:
+                        RunSyncOverAsync(nbThreads, true);
                         break;
 
                     default:
@@ -968,6 +992,12 @@ namespace Samples.Computer01
         private void RunStringConcat(int count)
         {
             var test = new StringConcat(count);
+            test.Run();
+        }
+
+        private void RunSyncOverAsync(int threadCount, bool useResultProperty)
+        {
+            var test = new SyncOverAsync(threadCount, useResultProperty);
             test.Run();
         }
 
