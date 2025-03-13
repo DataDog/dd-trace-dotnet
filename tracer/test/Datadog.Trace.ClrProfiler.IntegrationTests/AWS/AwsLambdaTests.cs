@@ -31,10 +31,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        [SkippableFact]
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
         [Trait("Category", "ArmUnsupported")]
         [Trait("Category", "Lambda")]
-        public async Task SubmitsTraces()
+        public async Task SubmitsTraces(bool enableDataPipeline)
         {
             // See documentation at docs/development/Serverless.md for examples and diagrams
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
@@ -43,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 return;
             }
 
-            EnvironmentHelper.EnableDataPipeline(true);
+            EnvironmentHelper.EnableDataPipeline(enableDataPipeline);
             using var extensionWithContext = new MockLambdaExtension(shouldSendContext: true, port: 9004, Output);
             using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
