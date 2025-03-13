@@ -97,14 +97,6 @@ namespace Datadog.Trace.Agent
             _apmTracingEnabled = apmTracingEnabled;
         }
 
-        ~AgentWriter()
-        {
-            if (_api is IDisposable disposableApi)
-            {
-                disposableApi.Dispose();
-            }
-        }
-
         internal event Action Flushed;
 
         internal SpanBuffer ActiveBuffer => _activeBuffer;
@@ -192,6 +184,11 @@ namespace Datadog.Trace.Agent
             if (_statsAggregator != null)
             {
                 await _statsAggregator.DisposeAsync().ConfigureAwait(false);
+            }
+
+            if (_api is IDisposable disposableApi)
+            {
+                disposableApi.Dispose();
             }
 
             if (!success)

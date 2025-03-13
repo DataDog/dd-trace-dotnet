@@ -297,7 +297,7 @@ namespace Datadog.Trace.Configuration
         /// Use libdatadog data pipeline to send traces.
         /// Default value is <c>false</c> (disabled).
         /// </summary>
-        public const string DataPipelineEnabled = "DD_DATA_PIPELINE_ENABLED";
+        public const string TraceDataPipelineEnabled = "DD_TRACE_DATA_PIPELINE_ENABLED";
 
         /// <summary>
         /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
