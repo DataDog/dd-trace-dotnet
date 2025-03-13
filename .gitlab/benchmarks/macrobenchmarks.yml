@@ -21,7 +21,9 @@ check_azure_pipeline:
   interruptible: true
   tags: ["arch:amd64"]
   timeout: 1h
-  when: on_success
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
 
 .benchmarks:
   stage: benchmarks
@@ -37,11 +39,10 @@ check_azure_pipeline:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-  when: manual
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
   image: $MACROBENCHMARKS_CI_IMAGE
-
-  # If you have a problem with Gitlab cache, here is a fix
-  # https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/2836037770/FAQ+-+Benchmarking+Platform#Gitlab-uses-outdated-Docker-image-for-the-job,-even-if-I-push-new-under-same-tag.-How-do-I-prevent-caching?
 
   script:
     - source build-id.txt
@@ -84,10 +85,6 @@ baseline:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 calltarget_ngen:
   extends: .benchmarks
@@ -99,10 +96,6 @@ calltarget_ngen:
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 trace_stats:
   extends: .benchmarks
@@ -115,10 +108,6 @@ trace_stats:
     DD_CLR_ENABLE_NGEN: 1
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_only:
   extends: .benchmarks
@@ -129,10 +118,6 @@ manual_only:
     CORECLR_ENABLE_PROFILING: 0
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_and_automatic:
   extends: .benchmarks
@@ -143,10 +128,6 @@ manual_and_automatic:
     CORECLR_ENABLE_PROFILING: 1
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 ddtraceenabled_false:
   extends: .benchmarks
@@ -157,10 +138,6 @@ ddtraceenabled_false:
     CORECLR_ENABLE_PROFILING: 1
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions_baseline:
   extends: .benchmarks
@@ -170,10 +147,6 @@ profiler_exceptions_baseline:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler:
   extends: .benchmarks
@@ -185,10 +158,6 @@ profiler:
     DD_PROFILING_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_walltime:
   extends: .benchmarks
@@ -202,10 +171,6 @@ profiler_walltime:
     DD_PROFILING_WALLTIME_ENABLED: 1
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions:
   extends: .benchmarks
@@ -218,10 +183,6 @@ profiler_exceptions:
     DD_PROFILING_EXCEPTION_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu:
   extends: .benchmarks
@@ -235,10 +196,6 @@ profiler_cpu:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu_timer_create:
   extends: .benchmarks
@@ -252,10 +209,6 @@ profiler_cpu_timer_create:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 baseline-arm64:
   extends: .benchmarks
@@ -266,10 +219,6 @@ baseline-arm64:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 calltarget_ngen-arm64:
   extends: .benchmarks
@@ -282,10 +231,6 @@ calltarget_ngen-arm64:
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 trace_stats-arm64:
   extends: .benchmarks
@@ -299,10 +244,6 @@ trace_stats-arm64:
     DD_CLR_ENABLE_NGEN: 1
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_only-arm64:
   extends: .benchmarks
@@ -314,10 +255,6 @@ manual_only-arm64:
     CORECLR_ENABLE_PROFILING: 0
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_and_automatic-arm64:
   extends: .benchmarks
@@ -329,10 +266,6 @@ manual_and_automatic-arm64:
     CORECLR_ENABLE_PROFILING: 1
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 ddtraceenabled_false-arm64:
   extends: .benchmarks
@@ -344,10 +277,6 @@ ddtraceenabled_false-arm64:
     CORECLR_ENABLE_PROFILING: 1
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions_baseline-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
@@ -358,10 +287,6 @@ profiler_exceptions_baseline-arm64:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
@@ -374,10 +299,6 @@ profiler-arm64:
     DD_PROFILING_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_walltime-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
@@ -392,10 +313,6 @@ profiler_walltime-arm64:
     DD_PROFILING_WALLTIME_ENABLED: 1
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
@@ -409,10 +326,6 @@ profiler_exceptions-arm64:
     DD_PROFILING_EXCEPTION_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
@@ -427,10 +340,6 @@ profiler_cpu-arm64:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu_timer_create-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
@@ -445,7 +354,3 @@ profiler_cpu_timer_create-arm64:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
