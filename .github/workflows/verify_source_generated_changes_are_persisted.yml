@@ -60,9 +60,9 @@ jobs:
       - name: "Verify no changes in generated solutions"
         if: ${{ !cancelled() }} # make sure this runs even if a previous step failed
         run: |
-          git diff --quiet
+          git diff --quiet -- *.g.sln
           if ($LASTEXITCODE -eq 1) {
-            git diff
+            git diff -- *.g.sln
             Write-Error "Found changes in generated solutions. Did you add a new sample? Regenerate the build solution locally by running the target 'RegenerateSolutions', and ensure the changed files are committed to git."
             Exit 1
           } else {
