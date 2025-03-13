@@ -22,11 +22,7 @@ check_azure_pipeline:
   tags: ["arch:amd64"]
   timeout: 1h
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
-      when: always
-    - when: manual
+    - when: on_success
   allow_failure: true
 
 .benchmarks:
@@ -44,11 +40,7 @@ check_azure_pipeline:
       - scheduler_failure
       - api_failure
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "api"'
-      when: always
-    - when: manual
+    - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
