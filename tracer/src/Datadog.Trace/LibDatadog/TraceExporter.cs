@@ -27,7 +27,7 @@ internal class TraceExporter : SafeHandle, IApi
         _configuration = configuration;
 
         _log.Debug("Creating new TraceExporter");
-        var errPtr = TraceExporterNative.ddog_trace_exporter_new(out var ptr, _configuration);
+        using var errPtr = TraceExporterNative.ddog_trace_exporter_new(out var ptr, _configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
     }
