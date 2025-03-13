@@ -18,8 +18,6 @@ check_azure_pipeline:
       - artifacts/
       - build-id.txt
     expire_in: 3 months
-  variables:
-    TEST_BRANCH: "master"
   interruptible: true
   tags: ["arch:amd64"]
   timeout: 1h
