@@ -42,7 +42,7 @@ check_azure_pipeline:
       - scheduler_failure
       - api_failure
   rules:
-    - when: on_success
+    - when: manual
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
