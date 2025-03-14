@@ -425,7 +425,8 @@ profiler_cpu_timer_create-arm64:
 
 baseline-win:
   extends: .benchmarks-win
-  ENDPOINT: "hello"
+  variables:
+    ENDPOINT: "hello"
 
 calltarget_ngen-win:
   extends: .benchmarks-win
