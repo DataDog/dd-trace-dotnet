@@ -5291,12 +5291,10 @@ stages:
             PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) > out.txt
 
             endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
-            graphql_scenarios=$(grep 'graphql_scenarios' out.txt | sed 's/.*=//g')
             parametric_scenarios=$(grep 'parametric_scenarios' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
 
             echo "Found scenarios: $endtoend_scenarios"
-            echo "Found graphql scenarios: $graphql_scenarios"
             echo "Found parametric scenarios: $parametric_scenarios"
             echo "Found weblogs: $endtoend_weblogs"
             echo "Additional manual scenarios: $(additionalScenarios)"
@@ -5307,11 +5305,10 @@ stages:
             # Inline python script to cross the data into a json
             echo "import json" > cross.py
             echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
-            echo "script_graphql_scenarios = json.loads('$graphql_scenarios')" >> cross.py
             echo "script_parametric_scenarios = json.loads('$parametric_scenarios')" >> cross.py
             echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
             echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
-            echo 'combined_scenarios = script_scenarios + script_graphql_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
+            echo 'combined_scenarios = script_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
             echo 'matrix_items = {}' >> cross.py
             echo 'for s in combined_scenarios:' >> cross.py
             echo '    for w in script_weblogs:' >> cross.py
