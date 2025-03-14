@@ -7,12 +7,6 @@
 
 using System;
 
-#if NETCOREAPP3_1_OR_GREATER
-using System.Buffers.Text;
-#else
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
-#endif
-
 namespace Datadog.Trace.HttpOverStreams;
 
 internal partial class ChunkedEncodingReadStream
