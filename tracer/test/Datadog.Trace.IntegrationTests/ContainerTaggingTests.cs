@@ -58,8 +58,8 @@ namespace Datadog.Trace.IntegrationTests
                     headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId.ToLower(), expectedContainedId);
                 }
 
-                var expectedEntitydId = ContainerMetadata.GetEntityId();
-                if (expectedEntitydId == null)
+                var expectedEntityId = ContainerMetadata.GetEntityId();
+                if (expectedEntityId == null)
                 {
                     // we don't extract the entityId in some cases, such as when running on Windows.
                     // In these cases, it should not appear in the headers at all.
@@ -67,17 +67,17 @@ namespace Datadog.Trace.IntegrationTests
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId.ToLower(), expectedEntitydId);
+                    headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId.ToLower(), expectedEntityId);
                 }
 
-                if (expectedContainedId is not null && expectedEntitydId is not null)
+                if (expectedContainedId is not null && expectedEntityId is not null)
                 {
-                    expectedEntitydId.Should().Be($"cid-{expectedContainedId}");
+                    expectedEntityId.Should().Be($"cid-{expectedContainedId}");
                 }
-                else if (expectedEntitydId is not null)
+                else if (expectedEntityId is not null)
                 {
                     // Note: This line hasn't been executed by CI yet
-                    expectedEntitydId.StartsWith("in-").Should().BeTrue();
+                    expectedEntityId.StartsWith("in-").Should().BeTrue();
                 }
             }
         }
