@@ -77,7 +77,7 @@ public static class EventTrackingSdkV2
 
     internal static void TrackUserLoginSuccess(string userLogin, UserDetails? userDetails, IDictionary<string, string>? metadata, Tracer tracer)
     {
-        TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventFailureSdkV2);
+        TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventLoginSuccessSdkV2);
 
         if (string.IsNullOrEmpty(userLogin))
         {

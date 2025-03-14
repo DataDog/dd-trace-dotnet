@@ -8,8 +8,6 @@
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
 

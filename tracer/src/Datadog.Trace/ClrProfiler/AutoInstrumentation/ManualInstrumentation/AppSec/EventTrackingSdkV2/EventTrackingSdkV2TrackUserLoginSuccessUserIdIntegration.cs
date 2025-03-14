@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -23,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     TypeName = "Datadog.Trace.AppSec.EventTrackingSdkV2",
     MethodName = "TrackUserLoginSuccess",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = [ClrNames.String, "Nullable`1[System.String]", "Nullable`1[System.Collections.Generic.IDictionary`2[System.String, System.String]]"],
-    MinimumVersion = "3.0.13",
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, "System.Collections.Generic.IDictionary`2[System.String,System.String]"],
+    MinimumVersion = "3.13.0",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]

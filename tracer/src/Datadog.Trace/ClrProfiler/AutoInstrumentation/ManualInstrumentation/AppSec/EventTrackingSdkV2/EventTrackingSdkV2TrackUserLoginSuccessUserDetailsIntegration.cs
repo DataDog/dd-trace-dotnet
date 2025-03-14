@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     TypeName = "Datadog.Trace.AppSec.EventTrackingSdkV2",
     MethodName = "TrackUserLoginSuccess",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = [ClrNames.String, "Nullable`1[Datadog.Trace.UserDetails]", "Nullable`1[System.Collections.Generic.IDictionary`2[System.String, System.String]]"],
+    ParameterTypeNames = [ClrNames.String, "Datadog.Trace.UserDetails", "System.Collections.Generic.IDictionary`2[System.String,System.String]"],
     MinimumVersion = "3.0.13",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class EventTrackingSdkV2TrackUserLoginSuccessUserDetailsIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget>(string userLogin, UserDetails? userDetails, IDictionary<string, string>? metadata)
+    internal static CallTargetState OnMethodBegin<TTarget>(string userLogin, UserDetails userDetails, IDictionary<string, string>? metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginSuccess_UserDetails);
         Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginSuccess(userLogin, userDetails, metadata, Trace.Tracer.Instance);

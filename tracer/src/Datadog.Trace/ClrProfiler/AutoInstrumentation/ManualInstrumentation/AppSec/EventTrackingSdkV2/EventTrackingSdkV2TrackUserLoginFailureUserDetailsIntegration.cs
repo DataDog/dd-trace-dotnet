@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     TypeName = "Datadog.Trace.AppSec.EventTrackingSdkV2",
     MethodName = "TrackUserLoginFailure",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = [ClrNames.String, ClrNames.Bool, "Nullable`1[Datadog.Trace.UserDetails]", "Nullable`1[System.Collections.Generic.IDictionary`2[System.String, System.String]]"],
+    ParameterTypeNames = [ClrNames.String, ClrNames.Bool, "Datadog.Trace.UserDetails", "System.Collections.Generic.IDictionary`2[System.String,System.String]"],
     MinimumVersion = "3.0.13",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
