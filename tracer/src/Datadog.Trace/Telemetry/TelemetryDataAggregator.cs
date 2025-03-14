@@ -31,6 +31,7 @@ internal class TelemetryDataAggregator
         ICollection<ConfigurationKeyValue>? configuration,
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
+        ICollection<AppEndpointData>? appEndpoints,
         in MetricResults? metrics,
         ProductsData? products)
     {
@@ -38,6 +39,7 @@ internal class TelemetryDataAggregator
             CombineWith(configuration),
             CombineWith(dependencies),
             CombineWith(integrations),
+            CombineWith(appEndpoints),
             metrics,
             CombineWith(products),
             sendAppStarted: !_appStartedSent);
@@ -65,6 +67,7 @@ internal class TelemetryDataAggregator
                 input.Configuration,
                 input.Dependencies,
                 input.Integrations,
+                input.AppEndpoints,
                 metrics: null,
                 products: input.Products,
                 input.SendAppStarted);
@@ -157,5 +160,11 @@ internal class TelemetryDataAggregator
             Profiler = newValues.Profiler ?? previous.Profiler,
             DynamicInstrumentation = newValues.DynamicInstrumentation ?? previous.DynamicInstrumentation
         };
+    }
+
+    private ICollection<AppEndpointData>? CombineWith(ICollection<AppEndpointData>? newValues)
+    {
+        // The Endpoints are set only once, so we don't need to merge them
+        return _previous?.AppEndpoints ?? newValues;
     }
 }
