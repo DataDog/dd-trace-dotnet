@@ -1,4 +1,4 @@
-﻿// <copyright file="InstallCommand.cs" company="Datadog">
+// <copyright file="EnableIisInstrumentationCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,23 +12,21 @@ using System.Threading.Tasks;
 namespace Datadog.FleetInstaller.Commands;
 
 /// <summary>
-/// Install a new version of the .NET Tracer. Could be the first version, or simply a new version
+/// Enables instrumentation of IIS for an already installed version of the .NET tracer
 /// </summary>
-internal class InstallCommand : CommandBase
+internal class EnableIisInstrumentationCommand : CommandBase
 {
+    private const string Command = "enable-iis-instrumentation";
+    private const string CommandDescription = "Enables instrumentation with the .NET library on IIS, for an already installed version of the .NET library";
+
     private readonly Option<string> _versionedPathOption = new("--home-path", () => null!)
     {
         Description = "Path to the tracer-home-directory",
         IsRequired = true,
     };
 
-    public InstallCommand()
-        : this("install")
-    {
-    }
-
-    protected InstallCommand(string command)
-        : base(command)
+    public EnableIisInstrumentationCommand()
+        : base(Command, CommandDescription)
     {
         AddOption(_versionedPathOption);
         AddValidator(Validate);
@@ -54,7 +52,7 @@ internal class InstallCommand : CommandBase
         string tracerLogDirectory,
         string registryKeyName)
     {
-        log.WriteInfo("Installing .NET tracer");
+        log.WriteInfo("Enabling IIS instrumentation for .NET tracer");
 
         bool tryIisRollback;
 
@@ -87,17 +85,6 @@ internal class InstallCommand : CommandBase
             return ReturnCode.ErrorReadingIisConfiguration;
         }
 
-        if (!FileHelper.CreateLogDirectory(log, tracerLogDirectory))
-        {
-            // This probably isn't a reason to bail out
-        }
-
-        if (!GacInstaller.TryGacInstall(log, tracerValues))
-        {
-            // definitely bail out
-            return ReturnCode.ErrorDuringGacInstallation;
-        }
-
         if (!AppHostHelper.SetAllEnvironmentVariables(log, tracerValues))
         {
             // hard to be sure exactly of the state at this point
@@ -112,12 +99,6 @@ internal class InstallCommand : CommandBase
             return ReturnCode.ErrorSettingAppPoolVariables;
         }
 
-        if (!RegistryHelper.AddCrashTrackingKey(log, tracerValues, registryKeyName))
-        {
-            // Don't need to bail out of installation just because we failed to add crash tracking
-            // The tracer itself can manage this at runtime if required
-        }
-
         return ReturnCode.Success;
     }
 
@@ -128,6 +109,7 @@ internal class InstallCommand : CommandBase
             return;
         }
 
+        // We can't enable iis instrumentation if IIS is not available or is to low a version
         if (!HasValidIIsVersion(Log.Instance, out var errorMessage))
         {
             commandResult.ErrorMessage = errorMessage;
