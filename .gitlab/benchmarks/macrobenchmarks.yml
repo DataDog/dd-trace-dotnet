@@ -394,7 +394,8 @@ profiler_cpu_timer_create-arm64:
     paths:
       - artifacts/
     expire_in: 3 months
-
+  rules:
+    - when: manual
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
     AWS_REGION: "us-east-1"
@@ -434,10 +435,6 @@ calltarget_ngen-win:
     DD_CLR_ENABLE_INLINING: 1
     DD_CLR_ENABLE_NGEN: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 trace_stats-win:
   extends: .benchmarks-win
@@ -448,10 +445,6 @@ trace_stats-win:
     DD_CLR_ENABLE_NGEN: 1
     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_only-win:
   extends: .benchmarks-win
@@ -460,10 +453,6 @@ manual_only-win:
     CORECLR_ENABLE_PROFILING: 0
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 manual_and_automatic-win:
   extends: .benchmarks-win
@@ -472,10 +461,6 @@ manual_and_automatic-win:
     CORECLR_ENABLE_PROFILING: 1
     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 ddtraceenabled_false-win:
   extends: .benchmarks-win
@@ -484,10 +469,6 @@ ddtraceenabled_false-win:
     CORECLR_ENABLE_PROFILING: 1
     DD_TRACE_ENABLED: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions_baseline-win:
   extends: .benchmarks-win
@@ -495,10 +476,6 @@ profiler_exceptions_baseline-win:
     COR_ENABLE_PROFILING: 0
     CORECLR_ENABLE_PROFILING: 0
     ENDPOINT: "hello/Exception"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler-win:
   extends: .benchmarks-win
@@ -508,10 +485,6 @@ profiler-win:
     DD_PROFILING_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_walltime-win:
   extends: .benchmarks-win
@@ -523,10 +496,6 @@ profiler_walltime-win:
     DD_PROFILING_WALLTIME_ENABLED: 1
     DD_PROFILING_CPU_ENABLED: 0
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_exceptions-win:
   extends: .benchmarks-win
@@ -537,10 +506,6 @@ profiler_exceptions-win:
     DD_PROFILING_EXCEPTION_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello/Exception"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu-win:
   extends: .benchmarks-win
@@ -552,10 +517,6 @@ profiler_cpu-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
 
 profiler_cpu_timer_create-win:
   extends: .benchmarks-win
@@ -567,7 +528,3 @@ profiler_cpu_timer_create-win:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
-  rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
