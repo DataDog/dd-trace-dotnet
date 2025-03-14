@@ -51,11 +51,11 @@ namespace Datadog.Trace.IntegrationTests
                 {
                     // we don't extract the containerId in some cases, such as when running on Windows.
                     // In these cases, it should not appear in the headers at all.
-                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.ContainerId);
+                    headers.AllKeys.Select(x => x?.ToLower()).Should().NotContain(AgentHttpHeaderNames.ContainerId.ToLower());
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
+                    headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId.ToLower(), expectedContainedId);
                 }
 
                 var expectedEntitydId = ContainerMetadata.GetEntityId();
@@ -63,11 +63,11 @@ namespace Datadog.Trace.IntegrationTests
                 {
                     // we don't extract the entityId in some cases, such as when running on Windows.
                     // In these cases, it should not appear in the headers at all.
-                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.EntityId);
+                    headers.AllKeys.Select(x => x?.ToLower()).Should().NotContain(AgentHttpHeaderNames.EntityId.ToLower());
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId, expectedEntitydId);
+                    headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId.ToLower(), expectedEntitydId);
                 }
 
                 if (expectedContainedId is not null && expectedEntitydId is not null)
