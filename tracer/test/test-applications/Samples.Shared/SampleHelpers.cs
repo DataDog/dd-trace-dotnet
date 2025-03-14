@@ -25,6 +25,7 @@ namespace Samples
         private static readonly Type ProcessHelpersType = Type.GetType("Datadog.Trace.Util.ProcessHelpers, Datadog.Trace");
         private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.UserDetails, Datadog.Trace");
         private static readonly Type EventTrackingSdk = Type.GetType("Datadog.Trace.AppSec.EventTrackingSdk, Datadog.Trace");
+        private static readonly Type EventTrackingSdkV2 = Type.GetType("Datadog.Trace.AppSec.EventTrackingSdkV2, Datadog.Trace");
         private static readonly Type SpanExtensionsType = Type.GetType("Datadog.Trace.SpanExtensions, Datadog.Trace");
         public static readonly Type IpcClientType = Type.GetType("Datadog.Trace.Ci.Ipc.IpcClient, Datadog.Trace");
         private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -54,6 +55,8 @@ namespace Samples
         private static readonly MethodInfo SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(IDictionary<string, string>) }, null);
         private static readonly MethodInfo TrackUserLoginFailureEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginFailureEvent", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(bool), typeof(IDictionary<string, string>) }, null);
+        private static readonly MethodInfo TrackUserLoginSuccessV2Method = EventTrackingSdkV2?.GetMethod("TrackUserLoginSuccess", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string), typeof(IDictionary<string, string>) }, null);
+        private static readonly MethodInfo TrackUserLoginFailureV2Method = EventTrackingSdkV2?.GetMethod("TrackUserLoginFailure", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(bool), typeof(string), typeof(IDictionary<string, string>) }, null);
 #if NETCOREAPP
         private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
 #else
@@ -412,6 +415,16 @@ namespace Samples
         public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
         {
             TrackUserLoginFailureEventMethod.Invoke(null, new object[] { userId, exists, metadata });
+        }
+        
+        public static void TrackUserLoginSuccessV2(string loginId, string userId, IDictionary<string, string> metadata)
+        {
+            TrackUserLoginSuccessV2Method.Invoke(null, new object[] { loginId, userId, metadata });
+        }
+        
+        public static void TrackUserLoginFailureV2(string loginId, string userId, bool exists, IDictionary<string, string> metadata)
+        {
+            TrackUserLoginFailureV2Method.Invoke(null, new object[] { loginId, exists, userId, metadata });
         }
 
         public static void SetUser(string userId)

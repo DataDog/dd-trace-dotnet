@@ -4617,6 +4617,112 @@
   {
     "IntegrationName": "DatadogTraceManual",
     "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.AppSec.EventTrackingSdkV2",
+    "TargetMethodName": "TrackUserLoginFailure",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.Boolean",
+      "Datadog.Trace.UserDetails",
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 13
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdkV2.EventTrackingSdkV2TrackUserLoginFailureUserDetailsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.AppSec.EventTrackingSdkV2",
+    "TargetMethodName": "TrackUserLoginFailure",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.Boolean",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 13
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdkV2.EventTrackingSdkV2TrackUserLoginFailureUserIdIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.AppSec.EventTrackingSdkV2",
+    "TargetMethodName": "TrackUserLoginSuccess",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "Datadog.Trace.UserDetails",
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 13
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdkV2.EventTrackingSdkV2TrackUserLoginSuccessUserDetailsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.AppSec.EventTrackingSdkV2",
+    "TargetMethodName": "TrackUserLoginSuccess",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 13,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdkV2.EventTrackingSdkV2TrackUserLoginSuccessUserIdIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Baggage",
     "TargetMethodName": "get_Current",
     "TargetReturnType": "System.Collections.Generic.IDictionary`2[System.String,System.String]",

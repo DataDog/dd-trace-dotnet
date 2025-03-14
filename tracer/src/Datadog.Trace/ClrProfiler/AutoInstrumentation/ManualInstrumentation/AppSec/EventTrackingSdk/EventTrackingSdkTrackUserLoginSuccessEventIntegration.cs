@@ -8,8 +8,6 @@
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
 
@@ -21,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     TypeName = "Datadog.Trace.AppSec.EventTrackingSdk",
     MethodName = "TrackUserLoginSuccessEvent",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { ClrNames.String },
+    ParameterTypeNames = [ClrNames.String],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
@@ -31,7 +29,6 @@ public class EventTrackingSdkTrackUserLoginSuccessEventIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(string userId)
     {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent);
         EventTrackingSdk.TrackUserLoginSuccessEvent(userId, null, Datadog.Trace.Tracer.Instance);
         return CallTargetState.GetDefault();
     }

@@ -172,6 +172,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountUserEventSdk(Datadog.Trace.Telemetry.Metrics.MetricTags.UserEventSdk tag, int increment = 1)
+    {
+    }
+
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastSourceType tag, int increment = 1)
     {
     }

@@ -43,14 +43,11 @@ public class SpanExtensionsSetUserIntegration
             // Not likely, but technically possible for this to happen
             realSpan = autoSpan;
         }
-        else
-        {
-            // This is a worst case, should basically never be necessary
-            // Only required if customers create a custom ISpan
-            // Should we handle it? I chose to just ignore it here because it's a pain
-            // but we could throw, or log?
-        }
 
+        // This is a worst case, should basically never be necessary
+        // Only required if customers create a custom ISpan
+        // Should we handle it? I chose to just ignore it here because it's a pain
+        // but we could throw, or log?
         realSpan?.SetUserInternal(
             new UserDetails(id)
             {
