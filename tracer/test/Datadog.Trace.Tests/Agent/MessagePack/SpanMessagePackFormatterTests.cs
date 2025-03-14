@@ -208,6 +208,33 @@ public class SpanMessagePackFormatterTests
         }
     }
 
+    [Fact]
+    public void SpanEvent_Tag_Serialization()
+    {
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        var span = new Span(new SpanContext(TraceId.CreateFromInt(1), 1, 0, null), DateTimeOffset.UtcNow);
+        
+        var eventName = "test_event";
+        var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var eventAttributes = new Dictionary<string, string> { { "key", "value" } };
+        span.AddEvent(new SpanEvent(eventName, eventTimestamp, eventAttributes));
+        span.SetDuration(TimeSpan.FromSeconds(1));
+
+        var traceChunk = new TraceChunkModel(new[] { span });
+        byte[] bytes = [];
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        result.Should().HaveCount(1);
+        var deserializedSpan = result[0];
+        deserializedSpan.SpanEvents.Should().HaveCount(1);
+        var deserializedEvent = deserializedSpan.SpanEvents[0];
+
+        deserializedEvent.Name.Should().Be(eventName);
+        deserializedEvent.Timestamp.Should().Be(eventTimestamp.ToUnixTimeNanoseconds());
+        deserializedEvent.Attributes.Should().BeEquivalentTo(eventAttributes);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
