@@ -365,7 +365,7 @@ profiler_cpu_timer_create-arm64:
 
   # If you have a problem with Gitlab cache, here is a fix
   # https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/2836037770/FAQ+-+Benchmarking+Platform#Gitlab-uses-outdated-Docker-image-for-the-job,-even-if-I-push-new-under-same-tag.-How-do-I-prevent-caching?
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-tests
 
   script:
     - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
