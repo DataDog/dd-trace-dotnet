@@ -86,3 +86,5 @@ jobs:
         with:
           comment: 'Please commit the suggested auto-generated changes'
           event: 'REQUEST_CHANGES'
+        env:
+          ACTIONS_STEP_DEBUG: true
