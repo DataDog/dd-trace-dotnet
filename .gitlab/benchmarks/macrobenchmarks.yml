@@ -42,7 +42,7 @@ check_azure_pipeline:
       - scheduler_failure
       - api_failure
   rules:
-    - when: manual
+    - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
@@ -357,7 +357,6 @@ profiler_cpu_timer_create-arm64:
 
 .benchmarks-win:
   stage: benchmarks-win
-  when: manual
   needs: ["check_azure_pipeline"]
   tags: ["runner:docker"]
   interruptible: true
@@ -395,7 +394,7 @@ profiler_cpu_timer_create-arm64:
       - artifacts/
     expire_in: 3 months
   rules:
-    - when: manual
+    - when: on_success
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
     AWS_REGION: "us-east-1"
