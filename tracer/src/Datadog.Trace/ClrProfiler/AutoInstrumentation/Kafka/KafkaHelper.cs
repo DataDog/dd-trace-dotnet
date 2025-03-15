@@ -37,9 +37,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
+                Log.Debug("Rob Producer Scope start");
+
                 var settings = tracer.Settings;
                 if (!settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
+                    Log.Debug("Rob Producer Scope disabled");
                     // integration disabled, don't create a scope/span, skip this trace
                     return null;
                 }
@@ -80,6 +83,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (isTombstone)
                 {
                     tags.Tombstone = "true";
+                }
+
+                if (!string.IsNullOrEmpty(topicPartition?.Topic))
+                {
+                    Log.Debug("Setting message.destination.name to topic {Topic}", topicPartition?.Topic);
+                    tags.SetTag(Tags.MessagingDestinationName, topicPartition!.Topic);
                 }
 
                 // Producer spans should always be measured
@@ -140,6 +149,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             try
             {
+                Log.Debug("Rob Consumer Scope start");
+
                 if (!tracer.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
                 {
                     // integration disabled, don't create a scope/span, skip this trace
@@ -223,6 +234,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (message is not null && message.Value is null)
                 {
                     tags.Tombstone = "true";
+                }
+
+                if (!string.IsNullOrEmpty(topic))
+                {
+                    span.SetTag(Tags.MessagingDestinationName, topic);
                 }
 
                 // Consumer spans should always be measured
