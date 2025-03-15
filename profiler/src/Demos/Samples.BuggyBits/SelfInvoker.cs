@@ -188,6 +188,16 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/CompanyInformation");
                 }
+
+                if ((_scenario & Scenario.GetAwaiterGetResult) == Scenario.GetAwaiterGetResult)
+                {
+                    urls.Add($"{rootUrl}/Products/GetAwaiterGetResult");
+                }
+
+                if ((_scenario & Scenario.UseResultProperty) == Scenario.UseResultProperty)
+                {
+                    urls.Add($"{rootUrl}/Products/WithResult");
+                }
             }
 
             return urls;
