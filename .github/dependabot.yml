@@ -109,8 +109,7 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    groups:
-      gh-actions-packages:
-        update-types: ["version-update:semver-patch"]
-        patterns:
-          - "*"
+    open-pull-requests-limit: 3
+    ignore: # okay I don't think this works but maybe we can find out live
+      - dependency-name: "*" # Ignore patches for all actions
+        update-types: ["version-update:semver-patch"] # this doesn't seem to work
