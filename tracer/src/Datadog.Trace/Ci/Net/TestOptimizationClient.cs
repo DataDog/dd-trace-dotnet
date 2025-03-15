@@ -468,7 +468,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                 continue;
             }
 
-            Log.Debug("TestOptimizationClient: Request was completed successfully.");
+            Log.Debug("TestOptimizationClient: Request was completed.");
             return response;
         }
     }

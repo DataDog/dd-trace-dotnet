@@ -30,4 +30,9 @@ internal interface ITestResult : IDuckType
     /// Gets or sets the duration of test execution.
     /// </summary>
     TimeSpan Duration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the display name
+    /// </summary>
+    public string? DisplayName { get; set; }
 }

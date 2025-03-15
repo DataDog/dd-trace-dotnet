@@ -27,10 +27,43 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "EarlyFlakeDetection")]
-    public override Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
+    public override Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
         EnvironmentHelper.EnableDefaultTransport();
-        return base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, settingsJson, testsJson, expectedSpans, friendlyName);
+        return base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetDataForQuarantinedTests))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    public override Task QuarantinedTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        return base.QuarantinedTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetDataForDisabledTests))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "DisabledTests")]
+    public override Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        return base.DisabledTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetDataForAttemptToFixTests))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "AttemptToFixTests")]
+    public override Task AttemptToFixTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        return base.AttemptToFixTests(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
     }
 }
 #endif

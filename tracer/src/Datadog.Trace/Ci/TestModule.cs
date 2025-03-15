@@ -165,6 +165,12 @@ public sealed class TestModule
                         fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
                     }
                 }
+
+                // Check if the Test Management feature is enabled and set the flag accordingly
+                if (_testOptimization.TestManagementFeature?.Enabled == true)
+                {
+                    _fakeSession.SetTag(TestTags.TestManagementEnabled, "true");
+                }
             }
         }
 
@@ -522,7 +528,9 @@ public sealed class TestModule
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
             TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
             MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module,
-            MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+            MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         Current = null;
         lock (OpenedTestModules)

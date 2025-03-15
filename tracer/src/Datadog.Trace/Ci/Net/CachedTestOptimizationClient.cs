@@ -18,6 +18,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     private readonly Lazy<Task<TestOptimizationClient.SearchCommitResponse>> _commits;
     private readonly Lazy<Task<TestOptimizationClient.SkippableTestsResponse>> _skippableTests;
     private readonly Lazy<Task<TestOptimizationClient.ImpactedTestsDetectionResponse>> _impactedTestsDetectionFiles;
+    private readonly Lazy<Task<TestOptimizationClient.TestManagementResponse>> _testManagementTests;
     private readonly Lazy<Task<long>> _uploadRepositoryChanges;
 
     public CachedTestOptimizationClient(ITestOptimizationClient client)
@@ -30,6 +31,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
         _skippableTests = new(_client.GetSkippableTestsAsync);
         _impactedTestsDetectionFiles = new(_client.GetImpactedTestsDetectionFilesAsync);
         _uploadRepositoryChanges = new(_client.UploadRepositoryChangesAsync);
+        _testManagementTests = new(_client.GetTestManagementTests);
     }
 
     public async Task<TestOptimizationClient.SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -59,4 +61,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
 
     public async Task<long> UploadRepositoryChangesAsync()
         => await _uploadRepositoryChanges.Value.ConfigureAwait(false);
+
+    public async Task<TestOptimizationClient.TestManagementResponse> GetTestManagementTests()
+        => await _testManagementTests.Value.ConfigureAwait(false);
 }

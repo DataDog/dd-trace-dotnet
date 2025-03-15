@@ -77,7 +77,10 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
 
                     if (unitTestResult.Outcome is UnitTestOutcome.Inconclusive or UnitTestOutcome.NotRunnable or UnitTestOutcome.Ignored)
                     {
-                        if (!MsTestIntegration.ShouldSkip(testMethod, out _, out _))
+                        var skipHandled =
+                            MsTestIntegration.ShouldSkip(testMethod, out _, out _) ||
+                            MsTestIntegration.GetTestProperties(testMethod) is { Quarantined: true } or { Disabled: true };
+                        if (!skipHandled)
                         {
                             // This instrumentation catches all tests being ignored
                             MsTestIntegration.OnMethodBegin(testMethod, instance.GetType(), isRetry: false)?.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.IgnoreReason);

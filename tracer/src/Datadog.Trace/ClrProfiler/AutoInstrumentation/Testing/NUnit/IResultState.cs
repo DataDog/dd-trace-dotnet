@@ -4,6 +4,9 @@
 // </copyright>
 #nullable enable
 
+using System.Reflection;
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 /// <summary>
@@ -11,6 +14,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 /// </summary>
 internal interface IResultState
 {
+    [DuckField(Name = "Ignored", BindingFlags = BindingFlags.Public | BindingFlags.Static)]
+    IResultState StaticIgnored { get; }
+
     /// <summary>
     /// Gets the TestStatus for the test.
     /// </summary>

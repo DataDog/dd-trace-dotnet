@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -48,6 +49,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         }
     }
 
+    [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
     public static IEnumerable<object[]> GetDataForEarlyFlakeDetection()
     {
         foreach (var row in GetData())
@@ -56,17 +58,194 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
             // EFD for all tests
             yield return row.Concat(
-                """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true,"known_tests_enabled":true}}}""",
-                """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{}}}}""",
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    """
+                    {
+                        "data":{
+                            "id":"lNemDTwOV8U",
+                            "type":"ci_app_libraries_tests",
+                            "attributes":{
+                                "tests":{}
+                            }
+                        }
+                    }
+                    """,
+                    string.Empty),
+                1,
                 124,
                 "all_efd");
 
             // EFD with 1 test to bypass (TraitPassTest)
             yield return row.Concat(
-                """{"data":{"id":"511938a3f19c12f8bb5e5caa695ca24f4563de3f","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"early_flake_detection":{"enabled":true,"slow_test_retries":{"10s":10,"30s":10,"5m":10,"5s":10},"faulty_session_threshold":100},"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true,"known_tests_enabled":true}}}""",
-                """{"data":{"id":"lNemDTwOV8U","type":"ci_app_libraries_tests","attributes":{"tests":{"Samples.XUnitTests":{"Samples.XUnitTests.TestSuite":["TraitPassTest"]}}}}}""",
+                new MockData(
+                    GetSettingsJson("true", "true", "false", "0"),
+                    """
+                    {
+                        "data":{
+                            "id":"lNemDTwOV8U",
+                            "type":"ci_app_libraries_tests",
+                            "attributes":{
+                                "tests":{
+                                    "Samples.XUnitTests":{
+                                        "Samples.XUnitTests.TestSuite":["TraitPassTest"]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    """,
+                    string.Empty),
+                1,
                 115,
                 "efd_with_test_bypass");
+        }
+    }
+
+    [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+    public static IEnumerable<object[]> GetDataForQuarantinedTests()
+    {
+        foreach (var row in GetData())
+        {
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("false", "false", "true", "0"),
+                    string.Empty,
+                    """
+                    {
+                        "data": {
+                            "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                            "type": "ci_app_libraries_tests",
+                            "attributes": {
+                                "modules": {
+                                    "Samples.XUnitTests": {
+                                        "suites": {
+                                            "Samples.XUnitTests.TestSuite": {
+                                                "tests": {
+                                                    "TraitErrorTest": {
+                                                        "properties": {
+                                                            "quarantined": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorTest": {
+                                                        "properties": {
+                                                            "quarantined": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorParameterizedTest": {
+                                                        "properties": {
+                                                            "quarantined": true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    """),
+                0,
+                16,
+                "quarantined_tests");
+        }
+    }
+
+    [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+    public static IEnumerable<object[]> GetDataForDisabledTests()
+    {
+        foreach (var row in GetData())
+        {
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("false", "false", "true", "0"),
+                    string.Empty,
+                    """
+                    {
+                        "data": {
+                            "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                            "type": "ci_app_libraries_tests",
+                            "attributes": {
+                                "modules": {
+                                    "Samples.XUnitTests": {
+                                        "suites": {
+                                            "Samples.XUnitTests.TestSuite": {
+                                                "tests": {
+                                                    "TraitErrorTest": {
+                                                        "properties": {
+                                                            "disabled": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorTest": {
+                                                        "properties": {
+                                                            "disabled": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorParameterizedTest": {
+                                                        "properties": {
+                                                            "disabled": false
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    """),
+                1,
+                16,
+                "disabled_tests");
+        }
+    }
+
+    [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
+    public static IEnumerable<object[]> GetDataForAttemptToFixTests()
+    {
+        foreach (var row in GetData())
+        {
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("false", "false", "true", "10"),
+                    string.Empty,
+                    """
+                    {
+                        "data": {
+                            "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                            "type": "ci_app_libraries_tests",
+                            "attributes": {
+                                "modules": {
+                                    "Samples.XUnitTests": {
+                                        "suites": {
+                                            "Samples.XUnitTests.TestSuite": {
+                                                "tests": {
+                                                    "TraitErrorTest": {
+                                                        "properties": {
+                                                            "quarantined": true,
+                                                            "attempt_to_fix": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorTest": {
+                                                        "properties": {
+                                                            "disabled": true,
+                                                            "attempt_to_fix": true
+                                                        }
+                                                    },
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    """),
+                1,
+                34,
+                "quarantined_and_disabled");
         }
     }
 
@@ -197,6 +376,14 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 // Remove EFD tags
                 targetTest.Meta.Remove(TestTags.TestIsNew);
                 targetTest.Meta.Remove(TestTags.TestIsRetry);
+
+                // Remove capabilities
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable);
+                targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix);
 
                 // Remove user provided service tag
                 targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
@@ -377,151 +564,100 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                        .And.OnlyContain(x => HasCorrectCompressionTag(x.Tags, expectedGzip));
     }
 
-    public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
+    public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
         // TODO: Fix alpine flakiness
         Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
-
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-
-        var tests = new List<MockCIVisibilityTest>();
-        var testSuites = new List<MockCIVisibilityTestSuite>();
-        var testModules = new List<MockCIVisibilityTestModule>();
-
-        // Inject session
-        InjectSession(
-            out var sessionId,
-            out var sessionCommand,
-            out var sessionWorkingDirectory,
-            out var gitRepositoryUrl,
-            out var gitBranch,
-            out var gitCommitSha);
-
-        try
-        {
-            using var logsIntake = new MockLogsIntakeForCiVisibility();
-            EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
-
-            const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
-            agent.EventPlatformProxyPayloadReceived += (sender, e) =>
-            {
-                if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
-                {
-                    e.Value.Response = new MockTracerResponse(settingsJson, 200);
-                    return;
-                }
-
-                if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
-                {
-                    e.Value.Response = new MockTracerResponse(testsJson, 200);
-                    return;
-                }
-
-                if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
-                {
-                    e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
-                    return;
-                }
-
-                if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
-                {
-                    e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
-
-                    var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                    if (payload.Events?.Length > 0)
+        await ExecuteTestAsync(
+                packageVersion,
+                evpVersionToRemove,
+                expectedGzip,
+                new TestScenario(
+                    nameof(XUnitEvpTests),
+                    friendlyName,
+                    mockData,
+                    expectedExitCode,
+                    expectedSpans,
+                    true,
+                    (in ExecutionData data) =>
                     {
-                        foreach (var @event in payload.Events)
-                        {
-                            if (@event.Content.ToString() is { } eventContent)
-                            {
-                                if (@event.Type == SpanTypes.Test)
-                                {
-                                    tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
-                                }
-                                else if (@event.Type == SpanTypes.TestSuite)
-                                {
-                                    testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
-                                }
-                                else if (@event.Type == SpanTypes.TestModule)
-                                {
-                                    testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
-                                }
-                            }
-                        }
-                    }
-                }
-            };
+                        // Check the tests, suites and modules count
+                        Assert.Equal(2, data.TestSuites.Count);
+                        Assert.Single(data.TestModules);
+                    },
+                    useDotnetExec: false))
+           .ConfigureAwait(false);
+    }
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
+    public virtual async Task QuarantinedTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+    {
+        await ExecuteTestAsync(
+                packageVersion,
+                evpVersionToRemove,
+                expectedGzip,
+                new TestScenario(
+                    nameof(XUnitEvpTests),
+                    friendlyName,
+                    mockData,
+                    expectedExitCode,
+                    expectedSpans,
+                    true,
+                    (in ExecutionData data) =>
+                    {
+                        // Check the tests, suites and modules count
+                        Assert.Equal(2, data.TestSuites.Count);
+                        Assert.Single(data.TestModules);
+                    },
+                    useDotnetExec: false))
+           .ConfigureAwait(false);
+    }
 
-            // Check the tests, suites and modules count
-            Assert.Equal(expectedSpans, tests.Count);
-            Assert.Equal(2, testSuites.Count);
-            Assert.Single(testModules);
+    public virtual async Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+    {
+        await ExecuteTestAsync(
+                packageVersion,
+                evpVersionToRemove,
+                expectedGzip,
+                new TestScenario(
+                    nameof(XUnitEvpTests),
+                    friendlyName,
+                    mockData,
+                    expectedExitCode,
+                    expectedSpans,
+                    true,
+                    (in ExecutionData data) =>
+                    {
+                        // Check the tests, suites and modules count
+                        Assert.Equal(2, data.TestSuites.Count);
+                        Assert.Single(data.TestModules);
+                    },
+                    useDotnetExec: false))
+           .ConfigureAwait(false);
+    }
 
-            // Snapshot testing
-            var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
-            settings.UseTextForParameters(friendlyName);
-            settings.DisableRequireUniquePrefix();
-            settings.UseTypeName(nameof(XUnitEvpTests));
-            await Verifier.Verify(
-                tests
-                   .OrderBy(s => s.Resource)
-                   .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.Parameters))
-                   .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsNew))
-                   .ThenBy(s => s.Meta.GetValueOrDefault(TestTags.TestIsRetry))
-                   .ThenBy(s => s.Meta.GetValueOrDefault(EarlyFlakeDetectionTags.AbortReason)),
-                settings);
-        }
-        catch
-        {
-            WriteSpans(tests);
-            throw;
-        }
+    public virtual async Task AttemptToFixTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
+    {
+        await ExecuteTestAsync(
+                packageVersion,
+                evpVersionToRemove,
+                expectedGzip,
+                new TestScenario(
+                    nameof(XUnitEvpTests),
+                    friendlyName,
+                    mockData,
+                    expectedExitCode,
+                    expectedSpans,
+                    true,
+                    (in ExecutionData data) =>
+                    {
+                        // Check the tests, suites and modules count
+                        Assert.Equal(2, data.TestSuites.Count);
+                        Assert.Single(data.TestModules);
+                    },
+                    useDotnetExec: false))
+           .ConfigureAwait(false);
     }
 
     private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)
         => isGzipped ? tags.Contains("rq_compressed:true") : !tags.Contains("rq_compressed:true");
-
-    private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
-    {
-        public class Log
-        {
-            [JsonProperty("ddsource")]
-            public string Source { get; set; }
-
-            [JsonProperty("hostname")]
-            public string Hostname { get; set; }
-
-            [JsonProperty("timestamp")]
-            public long Timestamp { get; set; }
-
-            [JsonProperty("message")]
-            public string Message { get; set; }
-
-            [JsonProperty("status")]
-            public string Status { get; set; }
-
-            [JsonProperty("service")]
-            public string Service { get; set; }
-
-            [JsonProperty("dd.trace_id")]
-            public string TraceId { get; set; }
-
-            [JsonProperty(TestTags.Suite)]
-            public string TestSuite { get; set; }
-
-            [JsonProperty(TestTags.Name)]
-            public string TestName { get; set; }
-
-            [JsonProperty(TestTags.Bundle)]
-            public string TestBundle { get; set; }
-
-            [JsonProperty("ddtags")]
-            public string Tags { get; set; }
-        }
-    }
 }
