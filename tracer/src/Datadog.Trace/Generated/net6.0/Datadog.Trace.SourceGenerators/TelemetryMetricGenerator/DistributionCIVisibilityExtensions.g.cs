@@ -12,7 +12,7 @@ internal static partial class DistributionCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 19;
+    public const int Length = 22;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -41,6 +41,9 @@ internal static partial class DistributionCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ImpactedTestsDetectionRequestMs => "impacted_tests_detection.request_ms",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ImpactedTestsDetectionResponseBytes => "impacted_tests_detection.response_bytes",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ImpactedTestsDetectionResponseFiles => "impacted_tests_detection.response_files",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.TestManagementTestsRequestMs => "test_management_tests.request_ms",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.TestManagementTestsResponseBytes => "test_management_tests.response_bytes",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.TestManagementTestsResponseTests => "test_management_tests.response_tests",
             _ => null!,
         };
 
@@ -82,6 +85,9 @@ internal static partial class DistributionCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ImpactedTestsDetectionRequestMs => "civisibility",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ImpactedTestsDetectionResponseBytes => "civisibility",
             Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.ImpactedTestsDetectionResponseFiles => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.TestManagementTestsRequestMs => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.TestManagementTestsResponseBytes => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility.TestManagementTestsResponseTests => "civisibility",
             _ => null,
         };
 }

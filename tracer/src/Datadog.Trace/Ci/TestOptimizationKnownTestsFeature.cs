@@ -19,16 +19,6 @@ internal class TestOptimizationKnownTestsFeature : ITestOptimizationKnownTestsFe
 
     private TestOptimizationKnownTestsFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
-        if (testOptimizationClient is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
-        }
-
         if (settings.KnownTestsEnabled == true || clientSettingsResponse.KnownTestsEnabled == true)
         {
             Log.Information("TestOptimizationKnownTestsFeature: Known tests is enabled.");

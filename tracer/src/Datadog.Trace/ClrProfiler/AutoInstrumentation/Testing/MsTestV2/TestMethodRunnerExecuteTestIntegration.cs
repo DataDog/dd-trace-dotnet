@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.ComponentModel;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -26,7 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodRunnerExecuteTestIntegration
 {
-    private static ItrSkipTestMethodExecutor? _skipTestMethodExecutor;
+    private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
+    private static SkipTestMethodExecutor? _disabledSkipTestMethodExecutor;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -40,15 +42,27 @@ public static class TestMethodRunnerExecuteTestIntegration
         where TTarget : ITestMethodRunner
         where TTestMethod : ITestMethod
     {
-        // Check if the test should be skipped by ITR
-        if (MsTestIntegration.IsEnabled && MsTestIntegration.ShouldSkip(testMethod, out _, out _))
+        // In order to skip a test we change the Executor to one that returns a valid outcome without calling
+        // the MethodInfo of the test
+        if (MsTestIntegration.IsEnabled &&
+            instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
         {
-            // In order to skip a test we change the Executor to one that returns a valid outcome without calling
-            // the MethodInfo of the test
-            if (instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
+            SkipTestMethodExecutor? newExecutor = null;
+
+            if (MsTestIntegration.ShouldSkip(testMethod, out _, out _))
             {
-                _skipTestMethodExecutor ??= new ItrSkipTestMethodExecutor(executor.GetType().Assembly);
-                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), _skipTestMethodExecutor);
+                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
+                newExecutor = _itrSkipTestMethodExecutor;
+            }
+            else if (MsTestIntegration.GetTestProperties(testMethod) is { Disabled: true, AttemptToFix: false })
+            {
+                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                newExecutor = _disabledSkipTestMethodExecutor;
+            }
+
+            if (newExecutor is not null)
+            {
+                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), newExecutor);
             }
         }
 
