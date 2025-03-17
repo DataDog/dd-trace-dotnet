@@ -207,8 +207,58 @@ profiler_cpu_timer_create:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
+.benchmarks-arm64:
+  stage: benchmarks
+  tags: ["runner:apm-k8s-same-cpu"]
+  needs: ["check_azure_pipeline"]
+  interruptible: true
+  timeout: 1h
+  retry:
+    max: 2
+    when:
+      - unknown_failure
+      - data_integrity_failure
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+  rules:
+    - when: manual
+  image: $MACROBENCHMARKS_CI_IMAGE
+
+  script:
+    - source build-id.txt
+    - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - bp-runner bp-runner.arm.yml --debug
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  variables:
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+
+    K6_OPTIONS_WARMUP_RATE: 30
+    K6_OPTIONS_WARMUP_DURATION: 3m
+    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
+    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_WARMUP_MAX_VUS: 4
+
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 400
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+
+    K6_OPTIONS_HIGH_LOAD_RATE: 600
+    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
+    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+
 baseline-arm64:
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
@@ -218,7 +268,7 @@ baseline-arm64:
     ENDPOINT: "hello"
 
 calltarget_ngen-arm64:
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
@@ -230,7 +280,7 @@ calltarget_ngen-arm64:
     ENDPOINT: "hello"
 
 trace_stats-arm64:
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
@@ -243,7 +293,7 @@ trace_stats-arm64:
     ENDPOINT: "hello"
 
 manual_only-arm64:
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
@@ -254,7 +304,7 @@ manual_only-arm64:
     ENDPOINT: "hello"
 
 manual_and_automatic-arm64:
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
@@ -265,7 +315,7 @@ manual_and_automatic-arm64:
     ENDPOINT: "hello"
 
 ddtraceenabled_false-arm64:
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   tags: ["runner:apm-k8s-arm-metal"]
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
@@ -277,7 +327,7 @@ ddtraceenabled_false-arm64:
 
 profiler_exceptions_baseline-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
@@ -287,7 +337,7 @@ profiler_exceptions_baseline-arm64:
 
 profiler-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
@@ -299,7 +349,7 @@ profiler-arm64:
 
 profiler_walltime-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
@@ -313,7 +363,7 @@ profiler_walltime-arm64:
 
 profiler_exceptions-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
@@ -326,7 +376,7 @@ profiler_exceptions-arm64:
 
 profiler_cpu-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
@@ -340,7 +390,7 @@ profiler_cpu-arm64:
 
 profiler_cpu_timer_create-arm64:
   tags: ["runner:apm-k8s-arm-metal"]
-  extends: .benchmarks
+  extends: .benchmarks-arm64
   variables:
     NATIVE_PROFILER_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
     TRACER_HOME_PATH: "dd-trace-dotnet/tracer/tracer-home-linux-arm64"
