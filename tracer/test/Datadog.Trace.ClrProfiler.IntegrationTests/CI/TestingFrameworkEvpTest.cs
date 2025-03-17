@@ -71,35 +71,36 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
     {
-        return $@"
-        {{
-            ""data"": {{
-                ""id"": ""511938a3f19c12f8bb5e5caa695ca24f4563de3f"",
-                ""type"": ""ci_app_tracers_test_service_settings"",
-                ""attributes"": {{
-                    ""code_coverage"": false,
-                    ""early_flake_detection"": {{
-                        ""enabled"": {earlyFlakeDetection},
-                        ""slow_test_retries"": {{
-                            ""10s"": 10,
-                            ""30s"": 10,
-                            ""5m"": 10,
-                            ""5s"": 10
-                        }},
-                        ""faulty_session_threshold"": 100
-                    }},
-                    ""flaky_test_retries_enabled"": false,
-                    ""itr_enabled"": true,
-                    ""require_git"": false,
-                    ""tests_skipping"": {testsSkipping},
-                    ""known_tests_enabled"": {earlyFlakeDetection},
-                    ""test_management"": {{
-                        ""enabled"": {testManagementEnabled},
-                        ""attempt_to_fix_retries"": {attemptToFixRetries}
-                    }}
-                }}
-            }}
-        }}";
+        return $$"""
+                 {
+                     "data": {
+                         "id": "511938a3f19c12f8bb5e5caa695ca24f4563de3f",
+                         "type": "ci_app_tracers_test_service_settings",
+                         "attributes": {
+                             "code_coverage": false,
+                             "early_flake_detection": {
+                                 "enabled": {{earlyFlakeDetection}},
+                                 "slow_test_retries": {
+                                     "10s": 10,
+                                     "30s": 10,
+                                     "5m": 10,
+                                     "5s": 10
+                                 },
+                                 "faulty_session_threshold": 100
+                             },
+                             "flaky_test_retries_enabled": false,
+                             "itr_enabled": true,
+                             "require_git": false,
+                             "tests_skipping": {{testsSkipping}},
+                             "known_tests_enabled": {{earlyFlakeDetection}},
+                             "test_management": {
+                                 "enabled": {{testManagementEnabled}},
+                                 "attempt_to_fix_retries": {{attemptToFixRetries}}
+                             }
+                         }
+                     }
+                 }
+                 """;
     }
 
     protected virtual void WriteSpans(List<MockCIVisibilityTest>? tests)
