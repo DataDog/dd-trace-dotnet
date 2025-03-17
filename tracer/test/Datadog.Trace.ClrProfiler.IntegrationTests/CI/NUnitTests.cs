@@ -98,6 +98,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(TestTags.TestIsNew);
                             targetSpan.Tags.Remove(TestTags.TestIsRetry);
 
+                            // Remove capabilities
+                            targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
+                            targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
+                            targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection);
+                            targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis);
+                            targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable);
+                            targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix);
+
                             // Remove user provided service tag
                             targetSpan.Tags.Remove(CommonTags.UserProvidedTestServiceTag);
 

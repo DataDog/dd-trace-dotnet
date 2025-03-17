@@ -446,6 +446,20 @@ internal static class MetricTags
         [Description("retry_reason:atr")] AutomaticTestRetry,
     }
 
+    public enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
+    {
+        [Description("")] None,
+        [Description("is_quarantined:true")] IsQuarantined,
+        [Description("is_disabled:true")] IsDisabled,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
+    {
+        [Description("")] None,
+        [Description("is_attempt_to_fix:true")] IsAttemptToFix,
+        [Description("is_attempt_to_fix:true;has_failed_all_retries:true")] AttemptToFixHasFailedAllRetries,
+    }
+
     public enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
@@ -543,6 +557,12 @@ internal static class MetricTags
     {
         [Description("known_tests_enabled:true")] Enabled,
         [Description("known_tests_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_TestManagementFeature
+    {
+        [Description("test_management_enabled:true")] Enabled,
+        [Description("test_management_enabled:false")] Disabled,
     }
 
     public enum CIVisibilityRequestCompressed
