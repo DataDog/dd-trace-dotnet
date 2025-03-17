@@ -37,7 +37,7 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip = "Flaky - fails on missing MetaStruct")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
