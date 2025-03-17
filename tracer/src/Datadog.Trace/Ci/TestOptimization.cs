@@ -37,15 +37,16 @@ internal class TestOptimization : ITestOptimization
     private ITestOptimizationFlakyRetryFeature? _flakyRetryFeature;
     private ITestOptimizationTestManagementFeature? _testManagementFeature;
 
-    public TestOptimization()
+    public TestOptimization(CIEnvironmentValues ciValues)
     {
+        CIValues = ciValues;
         _enabledLazy = new Lazy<bool>(InternalEnabled, true);
         Log = DatadogLogging.GetLoggerFor<TestOptimization>();
     }
 
     public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization())!;
+        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization(CIEnvironmentValues.Instance))!;
         internal set => _instance = value;
     }
 
@@ -73,12 +74,25 @@ internal class TestOptimization : ITestOptimization
     public TestOptimizationSettings Settings
     {
         get => LazyInitializer.EnsureInitialized(ref _settings, () => TestOptimizationSettings.FromDefaultSources())!;
-        private set => _settings = value;
+        private set
+        {
+            _settings = value;
+            _client = null;
+            _firstInitialization = 1;
+            _enabledLazy = new(InternalEnabled, true);
+            _additionalFeaturesTask = null;
+            _tracerManagement = null;
+            _hostInfo = null;
+            _earlyFlakeDetectionFeature = null;
+            _skippableFeature = null;
+            _impactedTestsDetectionFeature = null;
+            _flakyRetryFeature = null;
+        }
     }
 
     public ITestOptimizationClient Client
     {
-        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(Environment.CurrentDirectory, Settings))!;
+        get => LazyInitializer.EnsureInitialized(ref _client, () => TestOptimizationClient.CreateCached(Environment.CurrentDirectory, this))!;
         private set => _client = value;
     }
 
@@ -194,6 +208,8 @@ internal class TestOptimization : ITestOptimization
         private set => _testManagementFeature = value;
     }
 
+    public CIEnvironmentValues CIValues { get; }
+
     public void Initialize()
     {
         if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -240,9 +256,6 @@ internal class TestOptimization : ITestOptimization
 
         // Initialize FrameworkDescription
         _ = FrameworkDescription.Instance;
-
-        // Initialize CIEnvironment
-        _ = CIEnvironmentValues.Instance;
 
         // If we are running in agentless mode or the agent support the event platform proxy endpoint.
         // We can use the intelligent test runner
@@ -298,9 +311,6 @@ internal class TestOptimization : ITestOptimization
 
         // Initialize FrameworkDescription
         _ = FrameworkDescription.Instance;
-
-        // Initialize CIEnvironment
-        _ = CIEnvironmentValues.Instance;
 
         // Initialize features
         Client = new NoopTestOptimizationClient();

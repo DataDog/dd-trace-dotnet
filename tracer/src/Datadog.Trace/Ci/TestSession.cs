@@ -36,8 +36,8 @@ public sealed class TestSession
 
     private readonly ITestOptimization _testOptimization;
     private readonly Span _span;
-    private readonly Dictionary<string, string?>? _environmentVariablesToRestore = null;
-    private IpcServer? _ipcServer = null;
+    private readonly Dictionary<string, string?>? _environmentVariablesToRestore;
+    private IpcServer? _ipcServer;
     private int _finished;
 
     private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables)
@@ -46,13 +46,13 @@ public sealed class TestSession
         _testOptimization = TestOptimization.Instance;
         _testOptimization.InitializeFromManualInstrumentation();
 
-        var environment = CIEnvironmentValues.Instance;
+        var ciValues = _testOptimization.CIValues;
 
         Command = command;
         WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
         Framework = framework;
 
-        WorkingDirectory = environment.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
+        WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
 
         var tags = new TestSessionSpanTags
         {
@@ -61,7 +61,7 @@ public sealed class TestSession
             IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
         };
 
-        tags.SetCIEnvironmentValues(environment);
+        tags.SetCIEnvironmentValues(ciValues);
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",

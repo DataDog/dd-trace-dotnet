@@ -205,16 +205,18 @@ public sealed class Test
                 startLine -= 2;
             }
 
+            var ciValues = TestOptimization.Instance.CIValues;
+
             var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.SourceFile = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
+            tags.SourceFile = ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
             ImpactedTestsModule.Analyze(this);
 
-            if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+            if (ciValues.CodeOwners is { } codeOwners)
             {
-                var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                var match = codeOwners.Match("/" + ciValues.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
                 if (match is not null)
                 {
                     tags.CodeOwners = match.Value.GetOwnersString();

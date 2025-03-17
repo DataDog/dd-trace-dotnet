@@ -29,7 +29,7 @@ internal sealed partial class TestOptimizationClient
             return new TestManagementResponse();
         }
 
-        var commitMessage = CIEnvironmentValues.Instance.Message ?? string.Empty;
+        var commitMessage = _testOptimization.CIValues.Message ?? string.Empty;
         _testManagementUrl ??= GetUriFromPath(TestManagementUrlPath);
         var query = new DataEnvelope<Data<TestManagementQuery>>(
             new Data<TestManagementQuery>(

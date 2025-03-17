@@ -39,26 +39,22 @@ internal static class CiUtils
         // Define the arguments
         var lstArguments = new List<string>(args.Length > 1 ? args.Skip(1) : []);
 
-        // Test optimization instance.
-        var testOptimization = TestOptimization.Instance;
-
-        // Test optimization mode is enabled.
-        var testOptimizationSettings = testOptimization.Settings;
-
         // Get profiler environment variables
         if (!RunHelper.TryGetEnvironmentVariables(
                 applicationContext,
                 context,
                 commonTracerSettings,
-                new Utils.CIVisibilityOptions(testOptimizationSettings.InstallDatadogTraceInGac, true, reducePathLength),
+                new Utils.CIVisibilityOptions(TestOptimizationSettings.FromDefaultSources().InstallDatadogTraceInGac, true, reducePathLength),
                 out var profilerEnvironmentVariables))
         {
             context.ExitCode = 1;
             return new InitResults(false, lstArguments, null, false, false, Task.CompletedTask);
         }
 
-        // Reload the Test optimization settings (in case they were changed by the environment variables using the `--set-env` option)
-        testOptimizationSettings = TestOptimizationSettings.FromDefaultSources();
+        // Reload Test optimization instance and settings  (in case they were changed by the environment variables using the `--set-env` option)
+        var testOptimization = new TestOptimization(CIEnvironmentValues.Instance);
+        var testOptimizationSettings = testOptimization.Settings;
+        TestOptimization.Instance = testOptimization;
 
         // We force Test optimization mode on child process
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
@@ -135,7 +131,7 @@ internal static class CiUtils
             Log.Debug("RunCiCommand: Uploading repository changes.");
 
             // Change the .git search folder to the CurrentDirectory or WorkingFolder
-            var ciValues = CIEnvironmentValues.Instance;
+            var ciValues = testOptimization.CIValues;
             ciValues.GitSearchFolder = Environment.CurrentDirectory;
             if (string.IsNullOrEmpty(ciValues.WorkspacePath))
             {
@@ -143,7 +139,7 @@ internal static class CiUtils
                 ciValues.GitSearchFolder = null;
             }
 
-            var client = TestOptimizationClient.Create(ciValues.WorkspacePath, testOptimizationSettings);
+            var client = TestOptimizationClient.Create(ciValues.WorkspacePath ?? Environment.CurrentDirectory, testOptimization);
             if (testOptimizationSettings.GitUploadEnabled != false || testOptimizationSettings.IntelligentTestRunnerEnabled)
             {
                 // If we are in git upload only then we can defer the await until the child command exits.
