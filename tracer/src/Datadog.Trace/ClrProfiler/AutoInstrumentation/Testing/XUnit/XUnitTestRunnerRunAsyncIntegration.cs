@@ -307,11 +307,10 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 break;
             }
 
-            // We don't report the result of a test to the testing framework if:
+            // We report the result of a test as skipped to the testing framework if:
             // - Is a quarantined test, or
             // - Is a disabled test
             case { IsQuarantinedTest: true } or { IsDisabledTest: true }:
-                // Quarantined or disabled test results should be skipped.
                 Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Quarantined or disabled test: {DisplayName}", testRunnerState.TestRunner.DisplayName);
                 runSummary.Total = 1;
                 runSummary.Failed = 0;

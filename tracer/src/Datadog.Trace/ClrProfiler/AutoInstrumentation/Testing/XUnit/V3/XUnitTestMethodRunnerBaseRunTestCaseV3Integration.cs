@@ -294,15 +294,14 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 break;
             }
 
-            // We don't report the result of a test to the testing framework if:
+            // We report the result of a test as skipped to the testing framework if:
             // - Is a quarantined test, or
             // - Is a disabled test
             case { IsQuarantinedTest: true } or { IsDisabledTest: true }:
-                // Quarantined or disabled test results should be skipped.
                 Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
                 runSummaryUnsafe.Total = 1;
                 runSummaryUnsafe.Failed = 0;
-                runSummaryUnsafe.Skipped = 0;
+                runSummaryUnsafe.Skipped = 1;
                 runSummaryUnsafe.NotRun = 0;
                 messageBus.FlushMessages(testcase.TestMethod.UniqueID);
                 break;
