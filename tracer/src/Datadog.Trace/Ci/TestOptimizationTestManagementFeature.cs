@@ -13,6 +13,8 @@ namespace Datadog.Trace.Ci;
 
 internal class TestOptimizationTestManagementFeature : ITestOptimizationTestManagementFeature
 {
+    public const int TestManagementAttemptToFixRetryCountDefault = 10;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationTestManagementFeature));
     private readonly bool _enabled;
     private readonly Task<TestOptimizationClient.TestManagementResponse> _testManagementTask;
@@ -25,7 +27,7 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
             settings.SetTestManagementEnabled(true);
             _testManagementTask = Task.Run(() => InternalGetTestManagementTestsAsync(testOptimizationClient));
             _enabled = true;
-            TestManagementAttemptToFixRetryCount = settings.TestManagementAttemptToFixRetryCount ?? clientSettingsResponse.TestManagement.AttemptToFixRetries ?? 10;
+            TestManagementAttemptToFixRetryCount = settings.TestManagementAttemptToFixRetryCount ?? clientSettingsResponse.TestManagement.AttemptToFixRetries ?? TestManagementAttemptToFixRetryCountDefault;
         }
         else
         {
@@ -33,7 +35,7 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
             settings.SetTestManagementEnabled(false);
             _testManagementTask = Task.FromResult(new TestOptimizationClient.TestManagementResponse());
             _enabled = false;
-            TestManagementAttemptToFixRetryCount = settings.TestManagementAttemptToFixRetryCount ?? 10;
+            TestManagementAttemptToFixRetryCount = settings.TestManagementAttemptToFixRetryCount ?? TestManagementAttemptToFixRetryCountDefault;
         }
 
         return;

@@ -99,7 +99,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         // If the flaky retry feature is enabled, we need to set the total retries to the total flaky retry count
         if (isFlakyRetryEnabled)
         {
-            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
+            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
         }
 
         // If we have a RetryMessageBus means that we are in a retry context
@@ -157,11 +157,11 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                     // Let's make decisions regarding slow tests, retry failed test feature or an attempt to fix
                     if (isFlakyRetryEnabled)
                     {
-                        testCaseMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0) + 1;
+                        testCaseMetadata.TotalExecutions = (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1;
                     }
                     else if (isAttemptToFix)
                     {
-                        testCaseMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? 1;
+                        testCaseMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
                     }
                     else
                     {

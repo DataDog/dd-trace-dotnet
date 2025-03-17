@@ -12,6 +12,9 @@ namespace Datadog.Trace.Ci;
 
 internal class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFeature
 {
+    public const int FlakyRetryCountDefault = 0;
+    public const int TotalFlakyRetryCountDefault = 0;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationFlakyRetryFeature));
 
     private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)

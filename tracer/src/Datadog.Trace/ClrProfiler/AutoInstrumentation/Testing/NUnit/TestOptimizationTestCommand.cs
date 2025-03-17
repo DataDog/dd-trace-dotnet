@@ -51,7 +51,7 @@ internal class TestOptimizationTestCommand
             }
 
             context.CurrentResult = result;
-            return result.Instance!;
+            return result.Instance;
         }
 
         // Execute test
@@ -69,7 +69,7 @@ internal class TestOptimizationTestCommand
         if (resultStatus is TestStatus.Skipped or TestStatus.Inconclusive)
         {
             context.CurrentResult = result;
-            return result.Instance!;
+            return result.Instance;
         }
 
         // Apply retries
@@ -87,7 +87,7 @@ internal class TestOptimizationTestCommand
         }
 
         context.CurrentResult = result;
-        return result.Instance!;
+        return result.Instance;
     }
 
     private static void AgregateResults(ITestResult result, ITestResult retryResult)

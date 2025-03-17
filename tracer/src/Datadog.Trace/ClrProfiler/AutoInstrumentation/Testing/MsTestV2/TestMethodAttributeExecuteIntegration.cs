@@ -144,7 +144,7 @@ public static class TestMethodAttributeExecuteIntegration
                 }
                 else if (isAttemptToFix)
                 {
-                    remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? 0;
+                    remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
                     retryReason = "Attempt to fix";
                 }
 
@@ -166,8 +166,8 @@ public static class TestMethodAttributeExecuteIntegration
             else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
             {
                 // Flaky retry is enabled and the test failed
-                Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature!.TotalFlakyRetryCount, -1);
-                var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0;
+                Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
+                var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
                 if (remainingRetries > 0)
                 {
                     // Handle retries

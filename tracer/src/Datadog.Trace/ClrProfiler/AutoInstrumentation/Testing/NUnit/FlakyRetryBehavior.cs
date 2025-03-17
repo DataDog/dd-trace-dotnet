@@ -15,8 +15,8 @@ internal readonly struct FlakyRetryBehavior : IRetryBehavior
 
     public FlakyRetryBehavior(ITestOptimization testOptimization)
     {
-        RemainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? 0;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? 0, -1);
+        RemainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
+        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
     }
 
     public int RemainingRetries { get; }
