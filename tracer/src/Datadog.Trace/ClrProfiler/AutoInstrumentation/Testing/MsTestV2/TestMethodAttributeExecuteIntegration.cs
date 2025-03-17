@@ -144,7 +144,7 @@ public static class TestMethodAttributeExecuteIntegration
                 }
                 else if (isAttemptToFix)
                 {
-                    remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetries - 1 ?? 0;
+                    remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? 0;
                     retryReason = "Attempt to fix";
                 }
 

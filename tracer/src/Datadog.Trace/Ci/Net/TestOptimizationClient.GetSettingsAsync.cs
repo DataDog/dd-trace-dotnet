@@ -59,7 +59,7 @@ internal sealed partial class TestOptimizationClient
             knownTestsEnabled: settings.KnownTestsEnabled,
             testManagement: new TestManagementSettingsResponse(
                 enabled: settings.TestManagementEnabled,
-                attemptToFixRetries: settings.TestManagementAttemptToFixRetries));
+                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount));
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)

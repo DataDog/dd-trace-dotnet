@@ -131,7 +131,7 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Test Management enablement
             TestManagementEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementEnabled).AsBool();
-            TestManagementAttemptToFixRetries = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementAttemptToFixRetries).AsInt32();
+            TestManagementAttemptToFixRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TestManagementAttemptToFixRetries).AsInt32();
         }
 
         /// <summary>
@@ -277,7 +277,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating the number of retries to fix a test management issue.
         /// </summary>
-        public int? TestManagementAttemptToFixRetries { get; private set; }
+        public int? TestManagementAttemptToFixRetryCount { get; private set; }
 
         /// <summary>
         /// Gets the tracer settings

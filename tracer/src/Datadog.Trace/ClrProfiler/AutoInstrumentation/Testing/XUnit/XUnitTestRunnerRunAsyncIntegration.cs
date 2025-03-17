@@ -188,7 +188,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     }
                     else if (isAttemptToFix)
                     {
-                        testCaseMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetries ?? 1;
+                        testCaseMetadata.TotalExecutions = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? 1;
                     }
                     else
                     {
