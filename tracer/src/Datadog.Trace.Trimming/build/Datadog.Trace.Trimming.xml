@@ -236,7 +236,6 @@
    <assembly fullname="System.Diagnostics.DiagnosticSource">
       <type fullname="System.Diagnostics.DiagnosticListener" />
       <type fullname="System.Diagnostics.DistributedContextPropagator" />
-      <type fullname="System.Diagnostics.Metrics.Counter`1" />
       <type fullname="System.Diagnostics.Metrics.Instrument" />
       <type fullname="System.Diagnostics.Metrics.MeasurementCallback`1" />
       <type fullname="System.Diagnostics.Metrics.Meter" />

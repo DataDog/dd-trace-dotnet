@@ -31,21 +31,6 @@ namespace Datadog.Trace.OTelMetrics
             }
         }
 
-        public static void OnInstrumentPublishedProxy<TInstrument, TMeterListener>(TInstrument instrument, TMeterListener listener)
-            where TInstrument : IInstrument
-            where TMeterListener : IMeterListener
-        {
-            var meterName = instrument.Meter.Name;
-            if (meterName is not null && EnabledMeters.Contains(meterName))
-            {
-                listener.EnableMeasurementEvents(instrument, state: null);
-            }
-            else
-            {
-                Log.Warning("MeterListenerHandler: The instrument will not be handled by the InstrumentPublished event. [Meter={MeterName}] [Instrument={InstrumentName}]", meterName, instrument.Name);
-            }
-        }
-
         public static void OnInstrumentPublished(System.Diagnostics.Metrics.Instrument instrument, System.Diagnostics.Metrics.MeterListener listener)
         {
             var meterName = instrument.Meter.Name;
@@ -61,6 +46,40 @@ namespace Datadog.Trace.OTelMetrics
 
         public static void OnMeasurementRecordedDouble(System.Diagnostics.Metrics.Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags, object? state)
         {
+            var tagsArray = new string[tags.Length];
+            for (int i = 0; i < tags.Length; i++)
+            {
+                tagsArray[i] = tags[i].Key + ":" + tags[i].Value;
+            }
+
+            var fullName = instrument.GetType().FullName;
+            if (fullName is null)
+            {
+                throw new Exception("Unable to get the full name of the instrument type.");
+            }
+
+            // Do type comparison via type name, so we can capture types like Gauge and UpDownCounter which are introduced in .NET 7 or later
+            if (fullName.StartsWith("System.Diagnostics.Metrics.Counter`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1"))
+            {
+                _dogstatsd.Counter(statName: instrument.Name + ".dd", value: value, tags: tagsArray);
+            }
+            else if (fullName.StartsWith("System.Diagnostics.Metrics.Gauge`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1"))
+            {
+                _dogstatsd.Gauge(statName: instrument.Name + ".dd", value: value, tags: tagsArray);
+            }
+            else if (fullName.StartsWith("System.Diagnostics.Metrics.Histogram"))
+            {
+                _dogstatsd.Distribution(statName: instrument.Name + ".dd", value: value, tags: tagsArray);
+            }
+            else
+            {
+                Log.Warning("MeterListenerHandler: The instrument will not be handled by the MeasurementRecorded event. [Instrument={InstrumentName}]", instrument.Name);
+            }
+
             Console.WriteLine($"{instrument.Name} recorded measurement {value} with tags {string.Join(",", tags.ToArray())}");
         }
 
@@ -72,23 +91,33 @@ namespace Datadog.Trace.OTelMetrics
                 tagsArray[i] = tags[i].Key + ":" + tags[i].Value;
             }
 
-            if (instrument is System.Diagnostics.Metrics.Counter<byte>
-                || instrument is System.Diagnostics.Metrics.Counter<short>
-                || instrument is System.Diagnostics.Metrics.Counter<int>
-                || instrument is System.Diagnostics.Metrics.Counter<long>)
+            var fullName = instrument.GetType().FullName;
+            if (fullName is null)
+            {
+                throw new Exception("Unable to get the full name of the instrument type.");
+            }
+
+            // Do type comparison via type name, so we can capture types like Gauge and UpDownCounter which are introduced in .NET 7 or later
+            if (fullName.StartsWith("System.Diagnostics.Metrics.Counter`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.ObservableCounter`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.UpDownCounter`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.ObservableUpDownCounter`1"))
             {
                 _dogstatsd.Counter(statName: instrument.Name + ".dd", value: value, tags: tagsArray);
+            }
+            else if (fullName.StartsWith("System.Diagnostics.Metrics.Gauge`1")
+                || fullName.StartsWith("System.Diagnostics.Metrics.ObservableGauge`1"))
+            {
+                _dogstatsd.Gauge(statName: instrument.Name + ".dd", value: value, tags: tagsArray);
+            }
+            else if (fullName.StartsWith("System.Diagnostics.Metrics.Histogram"))
+            {
+                _dogstatsd.Distribution(statName: instrument.Name + ".dd", value: value, tags: tagsArray);
             }
             else
             {
                 Log.Warning("MeterListenerHandler: The instrument will not be handled by the MeasurementRecorded event. [Instrument={InstrumentName}]", instrument.Name);
             }
-
-            // else if (instrument is System.Diagnostics.Metrics.Gauge<byte>
-            //          || instrument is System.Diagnostics.Metrics.Measure<short>)
-            // {
-            //     _dogstatsd.Gauge(statName: instrument.Name, value: value, tags: tagsArray);
-            // }
 
             Console.WriteLine($"{instrument.Name} recorded measurement {value} with tags {string.Join(",", tags.ToArray())}");
         }

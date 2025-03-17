@@ -109,6 +109,7 @@ namespace Datadog.Trace.OTelMetrics
 
             meterListener.SetMeasurementEventCallback<double>(MeterListenerHandler.OnMeasurementRecordedDouble);
             meterListener.SetMeasurementEventCallback<float>(static (instrument, value, tags, state) => MeterListenerHandler.OnMeasurementRecordedDouble(instrument, value, tags, state));
+            // Does not cover decimal, but neither does OpenTelemetry. Maybe this is fine
 
             meterListener.SetMeasurementEventCallback<long>(MeterListenerHandler.OnMeasurementRecordedLong);
             meterListener.SetMeasurementEventCallback<int>(static (instrument, value, tags, state) => MeterListenerHandler.OnMeasurementRecordedLong(instrument, value, tags, state));
