@@ -5,9 +5,11 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -38,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <param name="request">The request for the DynamoDB operation</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TDeleteItemRequest>(TTarget instance, TDeleteItemRequest request)
-            where TDeleteItemRequest : IAmazonDynamoDbRequestWithTableName, IDuckType
+            where TDeleteItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType
         {
             if (request.Instance is null)
             {
@@ -47,6 +49,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
             AwsDynamoDbCommon.TagTableNameAndResourceName(request.TableName, tags, scope);
+
+            if (!Tracer.Instance.Settings.SpanPointersEnabled)
+            {
+                return new CallTargetState(scope);
+            }
+
+            var tableName = request.TableName;
+            try
+            {
+                var keys = request.Keys.DuckCast<IDynamoDbKeysObject>();
+                SpanPointers.AddDynamoDbSpanPointer(scope.Span, tableName, keys);
+            }
+            catch (Exception exception)
+            {
+                Log.Debug("Unable to add span pointer: " + exception.Message);
+            }
 
             return new CallTargetState(scope);
         }
