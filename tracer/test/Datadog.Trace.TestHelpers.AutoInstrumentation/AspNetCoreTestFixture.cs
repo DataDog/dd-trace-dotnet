@@ -229,13 +229,21 @@ namespace Datadog.Trace.TestHelpers
 
         private bool IsNotServerLifeCheck(MockSpan span)
         {
-            span.Tags.TryGetValue(Tags.HttpUrl, out var url);
-            if (url == null)
+            var resource = span.Resource;
+
+            if (resource != null && (resource.Contains("alive-check") || resource.Contains("shutdown")))
             {
-                return true;
+                return false;
             }
 
-            return !url.Contains("alive-check") && !url.Contains("shutdown");
+            span.Tags.TryGetValue(Tags.HttpUrl, out var url);
+
+            if (url != null && (url.Contains("alive-check") || url.Contains("shutdown")))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private async Task<HttpStatusCode> SubmitRequest(string path, bool post = false)
