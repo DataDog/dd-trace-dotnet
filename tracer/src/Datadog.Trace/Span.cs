@@ -568,7 +568,7 @@ namespace Datadog.Trace
         /// Adds a SpanEvent to the current Span if the Span is active.
         /// </summary>
         /// <param name="spanEvent">The SpanEvent to add</param>
-        internal void AddEvent( spanEvent)
+        internal void AddEvent(SpanEvent spanEvent)
         {
             if (IsFinished)
             {

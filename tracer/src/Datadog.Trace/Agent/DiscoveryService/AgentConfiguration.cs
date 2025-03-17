@@ -22,7 +22,7 @@ internal record AgentConfiguration
         bool clientDropP0,
         string? diagnosticsEndpoint,
         bool spanMetaStructs,
-        bool spanEvents)
+        bool? spanEvents)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -36,7 +36,7 @@ internal record AgentConfiguration
         TracerFlareEndpoint = tracerFlareEndpoint;
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
-        SpanEvents = spanEvents;
+        SpanEvents = spanEvents ?? false;
     }
 
     public string? ConfigurationEndpoint { get; }

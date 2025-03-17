@@ -212,27 +212,51 @@ public class SpanMessagePackFormatterTests
     public void SpanEvent_Tag_Serialization()
     {
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
-        var span = new Span(new SpanContext(TraceId.CreateFromInt(1), 1, 0, null), DateTimeOffset.UtcNow);
-        
+
+        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+        var span = new Span(parentContext, DateTimeOffset.UtcNow);
+
         var eventName = "test_event";
         var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        var eventAttributes = new Dictionary<string, string> { { "key", "value" } };
+        var eventAttributes = new List<KeyValuePair<string, string>>
+        {
+            new("event.type", "test"),
+            new("event.value", "123")
+        };
+
+        // Add first event
         span.AddEvent(new SpanEvent(eventName, eventTimestamp, eventAttributes));
+
+        // Add second event with different attributes
+        var secondEventAttributes = new List<KeyValuePair<string, string>>
+        {
+            new("event.type", "different"),
+            new("event.value", "456")
+        };
+        span.AddEvent(new SpanEvent("another_event", eventTimestamp.AddSeconds(1), secondEventAttributes));
+
         span.SetDuration(TimeSpan.FromSeconds(1));
 
-        var traceChunk = new TraceChunkModel(new[] { span });
+        var traceChunk = new TraceChunkModel(new([span]));
         byte[] bytes = [];
         var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
         var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
 
         result.Should().HaveCount(1);
         var deserializedSpan = result[0];
-        deserializedSpan.SpanEvents.Should().HaveCount(1);
-        var deserializedEvent = deserializedSpan.SpanEvents[0];
+        deserializedSpan.SpanEvents.Should().HaveCount(2);
 
-        deserializedEvent.Name.Should().Be(eventName);
-        deserializedEvent.Timestamp.Should().Be(eventTimestamp.ToUnixTimeNanoseconds());
-        deserializedEvent.Attributes.Should().BeEquivalentTo(eventAttributes);
+        // Verify first event
+        var firstEvent = deserializedSpan.SpanEvents[0];
+        firstEvent.Name.Should().Be(eventName);
+        firstEvent.Timestamp.Should().Be(eventTimestamp.ToUnixTimeNanoseconds());
+        firstEvent.Attributes.Should().BeEquivalentTo(eventAttributes);
+
+        // Verify second event
+        var secondEvent = deserializedSpan.SpanEvents[1];
+        secondEvent.Name.Should().Be("another_event");
+        secondEvent.Timestamp.Should().Be(eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds());
+        secondEvent.Attributes.Should().BeEquivalentTo(secondEventAttributes);
     }
 
     [Theory]

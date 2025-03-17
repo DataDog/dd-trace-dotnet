@@ -42,11 +42,12 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
         private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
 
-        // span links metadata
+        // span links and span events metadata
         private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
-        private readonly byte[] _spanEventBytes = StringEncoding.UTF8.GetBytes("span_events");
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
+        private readonly byte[] _spanEventBytes = StringEncoding.UTF8.GetBytes("span_events");
+        private readonly byte[] _timeUnixNanoBytes = StringEncoding.UTF8.GetBytes("time_unix_nano");
         private readonly byte[] _attributesBytes = StringEncoding.UTF8.GetBytes("attributes");
 
         // string tags
@@ -341,8 +342,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteString(ref bytes, offset, spanEvent.Name);
 
                 // Write timestamp
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _startBytes);
-                offset += MessagePackBinary.WriteInt64(ref bytes, offset, spanEvent.Timestamp.ToUnixTimeNanoseconds());
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _timeUnixNanoBytes);
+                offset += MessagePackBinary.WriteInt64(ref bytes, offset, TimeExtensions.ToUnixTimeNanoseconds(spanEvent.Timestamp ?? DateTimeOffset.UtcNow));
 
                 // Write attributes if any
                 if (spanEvent.Attributes is { Count: > 0 })

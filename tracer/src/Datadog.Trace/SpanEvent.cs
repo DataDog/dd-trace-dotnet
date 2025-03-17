@@ -25,14 +25,16 @@ internal class SpanEvent
     /// <param name="name">The name of the event</param>
     /// <param name="timestamp">The timestamp when the event occurred</param>
     /// <param name="attributes">Optional dictionary of attributes for the event</param>
-    public SpanEvent(string name, DateTimeOffset timestamp, List<KeyValuePair<string, string>>? attributes = null)
+    public SpanEvent(string name, DateTimeOffset? timestamp,  List<KeyValuePair<string, string>>? attributes = null)
     {
         Name = name;
-        Timestamp = timestamp;
+        Timestamp = timestamp ?? DateTimeOffset.UtcNow;
         Attributes = attributes;
     }
 
     public string Name { get; }
-    public DateTimeOffset Timestamp { get; }
-    public List<KeyValuePair<string, string>>? Attributes { get; private set; }
-} 
+
+    public DateTimeOffset? Timestamp { get; }
+
+    public List<KeyValuePair<string, string>>? Attributes { get; }
+}

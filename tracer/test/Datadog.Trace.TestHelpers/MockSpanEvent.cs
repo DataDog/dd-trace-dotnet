@@ -14,10 +14,10 @@ namespace Datadog.Trace.TestHelpers
         [Key("name")]
         public string Name { get; set; }
 
-        [Key("timestamp")]
+        [Key("time_unix_nano")]
         public long Timestamp { get; set; }
 
         [Key("attributes")]
-        public Dictionary<string, string> Attributes { get; set; }
+        public Dictionary<string, string>  Attributes { get; set; }
     }
 }

@@ -264,7 +264,8 @@ public class DiscoveryServiceTests
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
             tracerFlareEndpoint: "tracerFlareEndpoint",
             clientDropP0: false,
-            spanMetaStructs: true);
+            spanMetaStructs: true,
+            spanEvents: false);
 
         // same config
         var config2 = new AgentConfiguration(
@@ -279,7 +280,8 @@ public class DiscoveryServiceTests
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
             tracerFlareEndpoint: "tracerFlareEndpoint",
             clientDropP0: false,
-            spanMetaStructs: true);
+            spanMetaStructs: true,
+            spanEvents: false);
 
         // different
         var config3 = new AgentConfiguration(
@@ -294,7 +296,8 @@ public class DiscoveryServiceTests
             telemetryProxyEndpoint: "telemetryProxyEndpoint",
             tracerFlareEndpoint: "tracerFlareEndpoint",
             clientDropP0: false,
-            spanMetaStructs: true);
+            spanMetaStructs: true,
+            spanEvents: false);
 
         config1.Equals(config2).Should().BeTrue();
         config1.Equals(config3).Should().BeFalse();
