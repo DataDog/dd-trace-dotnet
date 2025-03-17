@@ -462,24 +462,24 @@ public sealed class Test
                 !string.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
-#pragma warning disable SA1118
+            var retryReasonTag = tags.TestRetryReason switch
+            {
+                "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
+                "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
+                _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
+            };
+
+            var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
+                                        tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
+                                                                    MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None;
+            var attemptToFix = tags.IsAttemptToFix == "true" ? (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None;
+
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
                 TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
                 eventTypeWithMetadata,
-                tags.TestRetryReason switch
-                {
-                    "efd" => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
-                    "atr" => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
-                    _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
-                },
-                tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
-                    tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
-                                                MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
-                tags.IsAttemptToFix == "true" ?
-                    (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries :
-                         MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) :
-                    MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
-#pragma warning restore SA1118
+                retryReasonTag,
+                quarantinedOrDisabled,
+                attemptToFix);
         }
 
         Current = null;
