@@ -457,7 +457,7 @@ namespace Datadog.Trace.Tests.Agent
                              tracerFlareEndpoint: "tracerFlareEndpoint",
                              clientDropP0: true,
                              spanMetaStructs: true,
-                             spanEvents: false));
+                             spanEvents: true));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

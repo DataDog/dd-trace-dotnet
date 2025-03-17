@@ -98,7 +98,7 @@ public class LiveDebuggerTests
                     tracerFlareEndpoint: "tracerFlareEndpoint",
                     clientDropP0: false,
                     spanMetaStructs: true,
-                    spanEvents: false));
+                    spanEvents: true));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)

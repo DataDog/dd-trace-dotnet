@@ -343,7 +343,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 // Write timestamp
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _timeUnixNanoBytes);
-                offset += MessagePackBinary.WriteInt64(ref bytes, offset, TimeExtensions.ToUnixTimeNanoseconds(spanEvent.Timestamp ?? DateTimeOffset.UtcNow));
+                offset += MessagePackBinary.WriteInt64(ref bytes, offset, spanEvent.Timestamp.ToUnixTimeNanoseconds());
 
                 // Write attributes if any
                 if (spanEvent.Attributes is { Count: > 0 })
