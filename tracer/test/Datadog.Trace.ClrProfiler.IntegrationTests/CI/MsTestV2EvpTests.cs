@@ -584,8 +584,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "QuarantinedTests")]
         public async Task QuarantinedTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
         {
-            // TODO: Fix alpine flakiness
-            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
             var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
@@ -614,8 +612,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "DisabledTests")]
         public async Task DisabledTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
         {
-            // TODO: Fix alpine flakiness
-            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
             var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
@@ -644,8 +640,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "AttemptToFixTests")]
         public async Task AttemptToFixTests(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpansForPre224, int expectedSpansForPost224, string friendlyName)
         {
-            // TODO: Fix alpine flakiness
-            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine, an issue has been opened to investigate the root cause. Meanwhile we are skipping it.");
             var expectedSpans = GetExpectedSpans(packageVersion, expectedSpansForPre224, expectedSpansForPost224, out var packageVersionDescription);
             await ExecuteTestAsync(
                     packageVersion,
