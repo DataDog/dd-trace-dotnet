@@ -332,7 +332,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void CheckUnboundProbes(object sender, AssemblyLoadEventArgs args)
+        private void CheckUnboundProbes(object? sender, AssemblyLoadEventArgs args)
         {
             // A new assembly was loaded, so re-examine whether the probe can now be resolved.
             lock (_instanceLock)
