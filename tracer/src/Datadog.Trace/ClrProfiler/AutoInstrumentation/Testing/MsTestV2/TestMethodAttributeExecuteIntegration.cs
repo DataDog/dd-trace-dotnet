@@ -151,7 +151,7 @@ public static class TestMethodAttributeExecuteIntegration
                 if (remainingRetries > 0)
                 {
                     // Handle retries
-                    var results = new List<IList> { returnValueList };
+                    List<IList> results = [returnValueList];
                     Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: We need to retry {Times} times", retryReason, remainingRetries);
                     for (var i = 0; i < remainingRetries; i++)
                     {
@@ -246,7 +246,9 @@ public static class TestMethodAttributeExecuteIntegration
         }
     }
 
-    private static TestStatus HandleTestResult(Test test, ITestMethod testMethod, ITestResult testResult, Exception? exception)
+    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception)
+        where TTestMethod : ITestMethod
+        where TTestResult : ITestResult
     {
         var testException = testResult.TestFailureException?.InnerException ??
                             testResult.TestFailureException ??
