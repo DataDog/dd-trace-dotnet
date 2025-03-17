@@ -16,16 +16,6 @@ internal class TestOptimizationFlakyRetryFeature : ITestOptimizationFlakyRetryFe
 
     private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
-        if (testOptimizationClient is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
-        }
-
         if (settings.FlakyRetryEnabled == null && clientSettingsResponse.FlakyTestRetries.HasValue)
         {
             Log.Information("TestOptimizationFlakyRetryFeature: Flaky retries has been changed to {Value} by the settings api.", clientSettingsResponse.FlakyTestRetries.Value);

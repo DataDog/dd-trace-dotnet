@@ -19,16 +19,6 @@ internal class TestOptimizationTestManagementFeature : ITestOptimizationTestMana
 
     private TestOptimizationTestManagementFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
-        if (testOptimizationClient is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
-        }
-
         if (settings.TestManagementEnabled == true || clientSettingsResponse.TestManagement.Enabled == true)
         {
             Log.Information("TestOptimizationTestManagementFeature: Test management is enabled.");
