@@ -110,9 +110,13 @@ public sealed class TestSession
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
         }
 
+        var sessionTypeTag = EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ?
+                                 MetricTags.CIVisibilityTestSessionType.AutoInjected :
+                                 MetricTags.CIVisibilityTestSessionType.NotAutoInjected;
+
         TelemetryFactory.Metrics.RecordCountCIVisibilityTestSession(
             _testOptimization.CIValues.MetricTag,
-            EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ? MetricTags.CIVisibilityTestSessionType.AutoInjected : MetricTags.CIVisibilityTestSessionType.NotAutoInjected,
+            sessionTypeTag,
             _testOptimization.Settings.Logs ? MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.Enabled : MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.NotEnabled);
 
         _testOptimization.Log.Debug("### Test Session Created: {Command}", command);
