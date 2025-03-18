@@ -24,7 +24,7 @@ public class SourceCodeIntegrationGitMetadataTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ManualAndAutomatic()
     {
-        const int expectedSpans = 37;
+        const int expectedSpans = 47;
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using var assert = new AssertionScope();
