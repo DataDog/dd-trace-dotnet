@@ -25,7 +25,7 @@ namespace Datadog.Trace.ContinuousProfiler
             var fd = FrameworkDescription.Instance;
             var isSupported =
                 (fd.OSPlatform == OSPlatformName.Windows && (fd.ProcessArchitecture == ProcessArchitecture.X64 || fd.ProcessArchitecture == ProcessArchitecture.X86)) ||
-                (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.X64);
+                (fd.OSPlatform == OSPlatformName.Linux && (fd.ProcessArchitecture == ProcessArchitecture.X64 || fd.ProcessArchitecture == ProcessArchitecture.Arm64));
 
             _isProfilingEnabled = false;
 
