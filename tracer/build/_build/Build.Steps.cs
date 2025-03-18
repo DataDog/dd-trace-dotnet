@@ -552,6 +552,22 @@ partial class Build
             }
         });
 
+    Target InstallLibDatadog => _ => _
+                .Unlisted()
+                .DependsOn(SetupVcpkg)
+                .Executes(async () =>
+                {
+
+                })
+
+    Target CopyLibDatadog => _ => _
+                .Unlisted()
+                .After(InstallLibDatadog)
+                .Executes(async () =>
+                {
+
+                })
+
     Target CopyNativeFilesForAppSecUnitTests => _ => _
                 .Unlisted()
                 .After(Clean)
