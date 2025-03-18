@@ -102,20 +102,25 @@ public sealed class TestSession
             OpenedTestSessions.Add(this);
         }
 
-        _testOptimization.Log.Debug("### Test Session Created: {Command}", command);
-
-        if (startDate is null)
-        {
-            // If a module doesn't have a fixed start time we reset it before running code
-            span.ResetStartTime();
-        }
-
         // Record EventCreate telemetry metric
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
                 MetricTags.CIVisibilityTestingEventType.Session,
                 framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
+        }
+
+        TelemetryFactory.Metrics.RecordCountCIVisibilityTestSession(
+            _testOptimization.CIValues.MetricTag,
+            EnvironmentHelpers.GetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionAutoInjectedEnvironmentVariable)?.ToBoolean() is true ? MetricTags.CIVisibilityTestSessionType.AutoInjected : MetricTags.CIVisibilityTestSessionType.NotAutoInjected,
+            _testOptimization.Settings.Logs ? MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.Enabled : MetricTags.CIVisibilityTestSessionAgentlessLogSubmission.NotEnabled);
+
+        _testOptimization.Log.Debug("### Test Session Created: {Command}", command);
+
+        if (startDate is null)
+        {
+            // If a module doesn't have a fixed start time we reset it before running code
+            span.ResetStartTime();
         }
     }
 

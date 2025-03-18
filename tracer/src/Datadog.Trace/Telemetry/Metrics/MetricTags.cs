@@ -576,4 +576,35 @@ internal static class MetricTags
         [Description("")] Uncompressed,
         [Description("rs_compressed:true")] Compressed,
     }
+
+    public enum CIVisibilityTestSessionProvider
+    {
+        [Description("provider:unsupported")] Unsupported,
+        [Description("provider:appveyor")] AppVeyor,
+        [Description("provider:azp")] AzurePipelines,
+        [Description("provider:bitbucket")] BitBucket,
+        [Description("provider:bitrise")] Bitrise,
+        [Description("provider:buildkite")] BuildKite,
+        [Description("provider:circleci")] CircleCI,
+        [Description("provider:codefresh")] Codefresh,
+        [Description("provider:githubactions")] GithubActions,
+        [Description("provider:gitlab")] Gitlab,
+        [Description("provider:jenkins")] Jenkins,
+        [Description("provider:teamcity")] Teamcity,
+        [Description("provider:travisci")] TravisCi,
+        [Description("provider:buddyci")] BuddyCi,
+        [Description("provider:aws")] AwsCodePipeline,
+    }
+
+    public enum CIVisibilityTestSessionType
+    {
+        [Description("")] NotAutoInjected,
+        [Description("auto_injected:true")] AutoInjected,
+    }
+
+    public enum CIVisibilityTestSessionAgentlessLogSubmission
+    {
+        [Description("")] NotEnabled,
+        [Description("agentless_log_submission_enabled:true")] Enabled,
+    }
 }

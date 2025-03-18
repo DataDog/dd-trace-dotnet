@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -18,6 +19,7 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
 
         IsCI = true;
         Provider = "jenkins";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Jenkins;
         Repository = ValueProvider.GetValue(Constants.JenkinsGitUrl);
         if (string.IsNullOrEmpty(Repository))
         {
