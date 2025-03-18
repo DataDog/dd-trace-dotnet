@@ -922,7 +922,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     {
         var filename = IastEnabled ? "Iast.Ldap.AspNetCore5.IastEnabled" : "Iast.Ldap.AspNetCore5.IastDisabled";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/Ldap?userName=Babs Jensen";
+        var url = "/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -930,7 +930,10 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
+        settings.AddIastScrubbing()
+            .AddRegexScrubber((new Regex("\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController\\+.*"), "\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController+\""))
+            .AddRegexScrubber((new Regex("\"hash\": .*"), "\"hash\": 9515978"))
+            .AddRegexScrubber((new Regex("\"method\": \"<Ldap>g__PerformLdapQuery\\|.\""), "\"method\": \"<Ldap>g__PerformLdapQuery|0\""));
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();

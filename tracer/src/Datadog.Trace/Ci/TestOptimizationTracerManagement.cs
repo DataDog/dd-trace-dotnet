@@ -28,11 +28,6 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
         Func<TestOptimizationSettings, IDiscoveryService>? getDiscoveryServiceFunc,
         bool? useLockedTracerManager)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
         _settings = settings;
         DiscoveryService = NullDiscoveryService.Instance;
         if (!settings.Agentless)
@@ -73,11 +68,6 @@ internal class TestOptimizationTracerManagement : ITestOptimizationTracerManagem
         EventPlatformProxySupport eventPlatformProxySupport = EventPlatformProxySupport.None,
         bool useLockedTracerManager = true)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
         _settings = settings;
         DiscoveryService = NullDiscoveryService.Instance;
         EventPlatformProxySupport =

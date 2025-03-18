@@ -19,7 +19,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry.Metrics;
@@ -46,9 +45,10 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     private static readonly Regex ShaRegex;
     private static readonly JsonSerializerSettings SerializerSettings;
 
+    private readonly string _workingDirectory;
+    private readonly ITestOptimization _testOptimization;
+
     private readonly string _id;
-    private readonly TestOptimizationSettings _settings;
-    private readonly string? _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
     private readonly Dictionary<string, string>? _customConfigurations;
@@ -65,35 +65,35 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
     }
 
-    private TestOptimizationClient(string? workingDirectory, TestOptimizationSettings? settings = null)
+    private TestOptimizationClient(string workingDirectory, ITestOptimization testOptimization)
     {
         _id = RandomIdGenerator.Shared.NextSpanId().ToString(CultureInfo.InvariantCulture);
-        var ciVisibility = TestOptimization.Instance;
-        _settings = settings ?? ciVisibility.Settings;
+        _testOptimization = testOptimization;
+        var settings = _testOptimization.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
-        _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
+        _environment = TraceUtil.NormalizeTag(settings.TracerSettings.Environment ?? "none") ?? "none";
+        _serviceName = NormalizerTraceProcessor.NormalizeService(settings.TracerSettings.ServiceName) ?? string.Empty;
 
         // Extract custom tests configurations from DD_TAGS
-        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
+        _customConfigurations = GetCustomTestsConfigurations(settings.TracerSettings.GlobalTags);
 
-        _apiRequestFactory = ciVisibility.TracerManagement!.GetRequestFactory(_settings.TracerSettings, TimeSpan.FromSeconds(45));
-        _eventPlatformProxySupport = _settings.Agentless ? EventPlatformProxySupport.None : ciVisibility.TracerManagement.EventPlatformProxySupport;
+        _apiRequestFactory = _testOptimization.TracerManagement!.GetRequestFactory(settings.TracerSettings, TimeSpan.FromSeconds(45));
+        _eventPlatformProxySupport = settings.Agentless ? EventPlatformProxySupport.None : _testOptimization.TracerManagement.EventPlatformProxySupport;
 
         _repositoryUrl = GetRepositoryUrl();
         _commitSha = GetCommitSha();
         _branchName = GetBranchName();
     }
 
-    public static ITestOptimizationClient Create(string? workingDirectory, TestOptimizationSettings? settings = null)
+    public static ITestOptimizationClient Create(string workingDirectory, ITestOptimization testOptimization)
     {
-        return new TestOptimizationClient(workingDirectory, settings);
+        return new TestOptimizationClient(workingDirectory, testOptimization);
     }
 
-    public static ITestOptimizationClient CreateCached(string? workingDirectory, TestOptimizationSettings? settings = null)
+    public static ITestOptimizationClient CreateCached(string workingDirectory, ITestOptimization testOptimization)
     {
-        return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, settings));
+        return new CachedTestOptimizationClient(new TestOptimizationClient(workingDirectory, testOptimization));
     }
 
     internal static Dictionary<string, string>? GetCustomTestsConfigurations(IReadOnlyDictionary<string, string> globalTags)
@@ -126,7 +126,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private string GetRepositoryUrl()
     {
-        if (CIEnvironmentValues.Instance.Repository is { Length: > 0 } repository)
+        if (_testOptimization.CIValues.Repository is { Length: > 0 } repository)
         {
             return repository;
         }
@@ -137,7 +137,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private string GetBranchName()
     {
-        if (CIEnvironmentValues.Instance.Branch is { Length: > 0 } branch)
+        if (_testOptimization.CIValues.Branch is { Length: > 0 } branch)
         {
             return branch;
         }
@@ -158,7 +158,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     {
         var gitOutput = GitCommandHelper.RunGitCommand(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead);
         var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
-        if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
+        if (string.IsNullOrEmpty(gitSha) && _testOptimization.CIValues.Commit is { Length: > 0 } commitSha)
         {
             return commitSha;
         }
@@ -204,7 +204,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         var framework = FrameworkDescription.Instance;
         return new TestsConfigurations(
             framework.OSPlatform,
-            TestOptimization.Instance.HostInfo.GetOperatingSystemVersion() ?? string.Empty,
+            _testOptimization.HostInfo.GetOperatingSystemVersion(),
             framework.OSArchitecture,
             skipFrameworkInfo ? null : framework.Name,
             skipFrameworkInfo ? null : framework.ProductVersion,
@@ -214,9 +214,10 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private Uri GetUriFromPath(string uriPath)
     {
-        if (_settings.Agentless)
+        var settings = _testOptimization.Settings;
+        if (settings.Agentless)
         {
-            var agentlessUrl = _settings.AgentlessUrl;
+            var agentlessUrl = settings.AgentlessUrl;
             if (!string.IsNullOrWhiteSpace(agentlessUrl))
             {
                 return new UriBuilder(agentlessUrl) { Path = uriPath }.Uri;
@@ -224,7 +225,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
             return new UriBuilder(
                 scheme: "https",
-                host: "api." + _settings.Site,
+                host: "api." + settings.Site,
                 port: 443,
                 pathValue: uriPath).Uri;
         }
@@ -366,7 +367,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         }
         else
         {
-            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            request.AddHeader(ApiKeyHeader, _testOptimization.Settings.ApiKey);
         }
     }
 
@@ -468,7 +469,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
                 continue;
             }
 
-            Log.Debug("TestOptimizationClient: Request was completed successfully.");
+            Log.Debug("TestOptimizationClient: Request was completed.");
             return response;
         }
     }

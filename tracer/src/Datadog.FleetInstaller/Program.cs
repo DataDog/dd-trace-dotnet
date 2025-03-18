@@ -23,21 +23,21 @@ var builder = new CommandLineBuilder(rootCommand)
     .CancelOnProcessTermination();
 
 rootCommand.AddExample("""
-                       install --home-path "C:\datadog\versions\3.9.0"
-                       """);
-rootCommand.AddExample("""
-                       reinstall --home-path "C:\datadog\versions\3.9.0"
+                       install-version --home-path "C:\datadog\versions\3.9.0"
                        """);
 rootCommand.AddExample("""
                        uninstall-version --home-path "C:\datadog\versions\3.9.0"
                        """);
 rootCommand.AddExample("""
-                       uninstall-product"
+                       enable-iis-instrumentation --home-path "C:\datadog\versions\3.9.0"
+                       """);
+rootCommand.AddExample("""
+                       remove-iis-instrumentation"
                        """);
 
-rootCommand.AddCommand(new InstallCommand());
-rootCommand.AddCommand(new ReinstallCommand());
+rootCommand.AddCommand(new InstallVersionCommand());
 rootCommand.AddCommand(new UninstallVersionCommand());
-rootCommand.AddCommand(new UninstallProductCommand());
+rootCommand.AddCommand(new EnableIisInstrumentationCommand());
+rootCommand.AddCommand(new RemoveIisInstrumentation());
 
 return builder.Build().Invoke(args);

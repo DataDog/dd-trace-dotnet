@@ -15,7 +15,7 @@
       http.request.headers.host: localhost:00000,
       http.route: iast/ldap,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/Ldap?userName=Babs%20Jensen,
+      http.url: http://localhost:00000/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,

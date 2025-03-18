@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Remoting;
 using System.Security.Permissions;
+using System.Text;
 using PInvoke;
 
 namespace Datadog.FleetInstaller;
@@ -147,43 +148,102 @@ internal static class GacInstaller
 
             foreach (var (gacAssemblyPath, associatedFilepath) in filesToRemove)
             {
-                var gacName = Path.GetFileNameWithoutExtension(gacAssemblyPath);
-                if (string.IsNullOrEmpty(gacName))
+                var simpleName = Path.GetFileNameWithoutExtension(gacAssemblyPath);
+                if (string.IsNullOrEmpty(simpleName))
                 {
                     log.WriteError($"Error uninstalling '{gacAssemblyPath}' from GAC: could not determine GAC name.");
                 }
 
-                Fusion.UninstallDisposition disposition = 0;
-                fixed (char* associatedFilepathPtr = associatedFilepath)
+                // We need the full version of the assembly we're uninstalling, but we only have the name
+                // (the file might not exist on disk anymore, so we can't try to read it either). We can't use
+                // the simple name, as if there are multiple versions of the Datadog.Trace (for example)
+                // assembly installed, then the fusion API returns
+                // IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND if we try to use the simple name,
+                // even if they have different filepath references.
+                List<string>? assemblyNamesToTry = null;
+                retValue = Fusion.CreateAssemblyNameObject(out var gacAssemblyName, simpleName, Fusion.CREATE_ASM_NAME_OBJ_FLAGS.NONE, IntPtr.Zero);
+                if (retValue != HResult.Code.S_OK || gacAssemblyName is null)
                 {
-                    var fusionInstallReference = new Fusion.FUSION_INSTALL_REFERENCE
-                    {
-                        cbSize = (uint)sizeof(Fusion.FUSION_INSTALL_REFERENCE),
-                        dwFlags = Fusion.FusionInstallReferenceFlags.None,
-                        guidScheme = Fusion.FUSION_INSTALL_REFERENCE.FUSION_REFCOUNT_FILEPATH_GUID,
-                        szIdentifier = associatedFilepathPtr
-                    };
-                    retValue = ppAsmCache.UninstallAssembly(0U, gacName, &fusionInstallReference, &disposition);
-                }
-
-                if (disposition is Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED
-                    or Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND)
-                {
-                    log.WriteInfo($"Assembly '{gacAssemblyPath}' was already uninstalled from the GAC.");
-                }
-                else if (disposition is Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_HAS_INSTALL_REFERENCES)
-                {
-                    log.WriteInfo($"Assembly '{gacAssemblyPath}' has additional install references. It was not removed from the GAC, but will be removed when all references are removed.");
-                }
-                else if (retValue == HResult.Code.S_OK)
-                {
-                    log.WriteInfo($"Successfully uninstalled assembly '{gacAssemblyPath}' from the GAC.");
+                    log.WriteWarning($"Error creating IAssemblyName object for {simpleName}. Error code {retValue} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
                 }
                 else
                 {
+                    retValue = Fusion.CreateAssemblyEnum(out var enumerator, IntPtr.Zero, gacAssemblyName, Fusion.ASM_CACHE_FLAGS.ASM_CACHE_GAC, IntPtr.Zero);
+                    if (retValue != HResult.Code.S_OK)
+                    {
+                        log.WriteWarning($"Error enumerating assemblies from GAC. Error code {retValue} returned from CreateAssemblyEnum. Continuing with simple assembly name {simpleName}");
+                    }
+                    else
+                    {
+                        var bufferSize = 256;
+                        var sb = new StringBuilder(bufferSize);
+
+                        while (retValue == HResult.Code.S_OK)
+                        {
+                            retValue = enumerator.GetNextAssembly(IntPtr.Zero, out var assemblyName, 0);
+                            if (retValue == HResult.Code.S_OK && assemblyName is not null)
+                            {
+                                sb.Clear();
+                                retValue = assemblyName.GetDisplayName(sb, ref bufferSize, Fusion.ASM_DISPLAY_FLAGS.ASM_DISPLAYF_FULL);
+                                if (retValue == HResult.Code.S_OK)
+                                {
+                                    var name = sb.ToString();
+                                    log.WriteError($"Found assembly {name}");
+                                    assemblyNamesToTry ??= new();
+                                    assemblyNamesToTry.Add(name);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                assemblyNamesToTry ??= [simpleName];
+
+                // Loop through all the assembly names we found. Only one of them
+                // should match the associatedFilepath, so this should be safe.
+                var success = false;
+                foreach (var gacName in assemblyNamesToTry)
+                {
+                    Fusion.UninstallDisposition disposition = 0;
+                    fixed (char* associatedFilepathPtr = associatedFilepath)
+                    {
+                        var fusionInstallReference = new Fusion.FUSION_INSTALL_REFERENCE
+                        {
+                            cbSize = (uint)Marshal.SizeOf<Fusion.FUSION_INSTALL_REFERENCE>(),
+                            dwFlags = Fusion.FusionInstallReferenceFlags.None,
+                            guidScheme = Fusion.FUSION_INSTALL_REFERENCE.FUSION_REFCOUNT_FILEPATH_GUID,
+                            szIdentifier = associatedFilepathPtr
+                        };
+                        retValue = ppAsmCache.UninstallAssembly(0U, gacName, &fusionInstallReference, &disposition);
+                    }
+
+                    if (disposition is Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_ALREADY_UNINSTALLED
+                        or Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_REFERENCE_NOT_FOUND)
+                    {
+                        log.WriteInfo($"Assembly '{gacAssemblyPath}' with name '{gacName}' was already uninstalled from the GAC or does not match associated reference.");
+                        success = true;
+                    }
+                    else if (disposition is Fusion.UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_HAS_INSTALL_REFERENCES)
+                    {
+                        log.WriteInfo($"Assembly '{gacAssemblyPath}' with name '{gacName}' has additional install references. It was not removed from the GAC, but will be removed when all references are removed.");
+                        success = true;
+                    }
+                    else if (retValue == HResult.Code.S_OK)
+                    {
+                        log.WriteInfo($"Successfully uninstalled assembly '{gacAssemblyPath}' with name '{gacName}' from the GAC.");
+                        success = true;
+                    }
+                    else
+                    {
+                        log.WriteError(
+                            $"Error uninstalling assembly '{gacAssemblyPath}' with name '{gacName}' from GAC. Error code {retValue} returned from UninstallAssembly, with uninstall value {disposition}.");
+                    }
+                }
+
+                if (!success)
+                {
                     log.WriteError(
-                        $"Error uninstalling assembly '{gacAssemblyPath}' from GAC. Error code {retValue} returned from UninstallAssembly, with uninstall value {disposition}.");
-                    return false;
+                        $"Error uninstalling assembly '{gacAssemblyPath}' from GAC - no successful or implicit uninstalls.");
                 }
             }
 

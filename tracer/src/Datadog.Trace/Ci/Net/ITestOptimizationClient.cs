@@ -23,4 +23,6 @@ internal interface ITestOptimizationClient
     Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude);
 
     Task<long> UploadRepositoryChangesAsync();
+
+    Task<TestOptimizationClient.TestManagementResponse> GetTestManagementTests();
 }
