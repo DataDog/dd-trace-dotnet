@@ -7,7 +7,7 @@ namespace Datadog.Trace.Headers;
 
 internal static class HeadersCollectionExtensions
 {
-    public static HeadersCollectionAccesor<TCarrier> GetAccesor<TCarrier>(this TCarrier carrier)
+    public static HeadersCollectionAccesor<TCarrier> GetAccessor<TCarrier>(this TCarrier carrier)
         where TCarrier : IHeadersCollection
     {
         return new HeadersCollectionAccesor<TCarrier>();

@@ -32,6 +32,6 @@ internal static class InferredProxySpanHelper
         PropagationContext propagationContext)
         where THeadersCollection : struct, IHeadersCollection
     {
-        return Coordinator.ExtractAndCreateScope(tracer, carrier, carrier.GetAccesor(), propagationContext);
+        return Coordinator.ExtractAndCreateScope(tracer, carrier, carrier.GetAccessor(), propagationContext);
     }
 }
