@@ -12,7 +12,6 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.AppSec.Coordinator;
@@ -106,7 +105,7 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static void CheckPathParamsFromAction(this Security security, HttpContext context, Span span, IList<ParameterDescriptor>? actionPathParams, RouteValueDictionary routeValues)
+    internal static void CheckPathParamsFromAction(this Security security, HttpContext context, Span span, System.Collections.IList actionPathParams, RouteValueDictionary routeValues)
     {
         if (security.AppsecEnabled && actionPathParams != null)
         {
@@ -117,10 +116,13 @@ internal static class SecurityCoordinatorHelpers
                 var pathParams = new Dictionary<string, object>(actionPathParams.Count);
                 for (var i = 0; i < actionPathParams.Count; i++)
                 {
-                    var p = actionPathParams[i];
-                    if (routeValues.TryGetValue(p.Name, out var value))
+                    if (actionPathParams[i].TryDuckCast<ParameterDescriptorStruct>(out var parameter))
                     {
-                        pathParams.Add(p.Name, value);
+                        var name = parameter.Name;
+                        if (routeValues.TryGetValue(name, out var value))
+                        {
+                            pathParams.Add(name, value);
+                        }
                     }
                 }
 
@@ -154,6 +156,13 @@ internal static class SecurityCoordinatorHelpers
         }
 
         return null;
+    }
+
+    [DuckCopy]
+    internal struct ParameterDescriptorStruct
+    {
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+        public string Name;
     }
 }
 #endif

@@ -26,7 +26,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
 
@@ -281,7 +281,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static string GetLegacyResourceName(BeforeActionStruct typedArg)
         {
-            ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
+            var actionDescriptor = typedArg.ActionDescriptor;
             HttpRequest request = typedArg.HttpContext.Request;
 
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
@@ -329,7 +329,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
             }
 
-            ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
+            var actionDescriptor = typedArg.ActionDescriptor;
             IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
 
             string controllerName = routeValues.TryGetValue("controller", out controllerName)
@@ -610,7 +610,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (span is not null)
                 {
-                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor.Parameters, typedArg.RouteData.Values);
                 }
 
                 if (shouldUseIast)
@@ -729,10 +729,23 @@ namespace Datadog.Trace.DiagnosticListeners
             public HttpContext HttpContext;
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
-            public ActionDescriptor ActionDescriptor;
+            public ActionDescriptorStruct ActionDescriptor;
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public RouteData RouteData;
+        }
+
+        [DuckCopy]
+        internal struct ActionDescriptorStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public IList Parameters;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public IDictionary<string, string> RouteValues;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public AttributeRouteInfo AttributeRouteInfo;
         }
 
         [DuckCopy]
