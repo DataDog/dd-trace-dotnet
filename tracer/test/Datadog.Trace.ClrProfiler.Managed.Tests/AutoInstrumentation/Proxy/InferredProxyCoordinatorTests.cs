@@ -44,7 +44,7 @@ public class InferredProxyCoordinatorTests
         var result = _coordinator.ExtractAndCreateScope(
             _tracer,
             headers,
-            headers.GetAccesor(),
+            headers.GetAccessor(),
             new PropagationContext());
 
         result.Should().BeNull();
@@ -67,7 +67,7 @@ public class InferredProxyCoordinatorTests
         // and then fail creating the span within the factory (for some reason)
         _factory.Setup(f => f.CreateSpan(It.IsAny<Tracer>(), It.IsAny<InferredProxyData>(), It.IsAny<ISpanContext>())).Returns((Scope?)null);
 
-        var result = _coordinator.ExtractAndCreateScope(_tracer, headers, headers.GetAccesor(), new PropagationContext());
+        var result = _coordinator.ExtractAndCreateScope(_tracer, headers, headers.GetAccessor(), new PropagationContext());
 
         result.Should().BeNull();
     }
@@ -113,7 +113,7 @@ public class InferredProxyCoordinatorTests
         var result = _coordinator.ExtractAndCreateScope(
             _tracer,
             headers,
-            headers.GetAccesor(),
+            headers.GetAccessor(),
             new PropagationContext())!;
 
         result.Should().NotBeNull();

@@ -48,7 +48,7 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier>(PropagationContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, headers.GetAccesor());
+            Inject(context, headers, headers.GetAccessor());
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Propagators
         public PropagationContext Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            return Extract(headers, headers.GetAccesor());
+            return Extract(headers, headers.GetAccessor());
         }
 
         /// <summary>
