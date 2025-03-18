@@ -788,6 +788,17 @@
       "description": "The library was unable to obtain a user login as part of the login success, login failure or signup event.",
       "send_to_user": false,
       "user_tags": []
+    },
+    "sdk.event": {
+      "tags": [
+        "event_type",
+        "sdk_version"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "This metric count should be sent whenever either the new or old SDK methods are invoked",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "iast": {
