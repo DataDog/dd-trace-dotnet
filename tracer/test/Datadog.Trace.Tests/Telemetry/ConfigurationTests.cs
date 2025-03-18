@@ -46,6 +46,7 @@ public class ConfigurationTests
         "DD_TESTSESSION_COMMAND",
         "DD_TESTSESSION_WORKINGDIRECTORY",
         "DD_CIVISIBILITY_CODE_COVERAGE_MODE",
+        "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER",
         // Internal env vars that we only ever read from environment
         "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
         "DD_DOTNET_TRACER_HOME",

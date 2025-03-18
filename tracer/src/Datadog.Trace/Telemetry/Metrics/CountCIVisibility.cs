@@ -36,6 +36,15 @@ internal enum CountCIVisibility
         ("event_finished", isCommon: true, NS.CIVisibility)] EventFinished,
 
     /// <summary>
+    /// Test session by CI Visibility
+    /// </summary>
+    [TelemetryMetric<
+            MetricTags.CIVisibilityTestSessionProvider,
+            MetricTags.CIVisibilityTestSessionType,
+            MetricTags.CIVisibilityTestSessionAgentlessLogSubmission>
+        ("test_session", isCommon: true, NS.CIVisibility)] TestSession,
+
+    /// <summary>
     /// The number of code coverage start calls by CI Visibility
     /// </summary>
     [TelemetryMetric<
