@@ -12,7 +12,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdk;
 
 /// <summary>
 /// System.Void Datadog.Trace.AppSec.EventTrackingSdk::TrackUserLoginFailureEvent(System.String,System.Boolean,System.Collections.Generic.IDictionary`2[System.String,System.String]) calltarget instrumentation
@@ -33,7 +33,7 @@ public class EventTrackingSdkTrackUserLoginFailureEventMetadataIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userId, bool exists, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
-        EventTrackingSdk.TrackUserLoginFailureEvent(userId, exists, metadata, Datadog.Trace.Tracer.Instance);
+        Datadog.Trace.AppSec.EventTrackingSdk.TrackUserLoginFailureEvent(userId, exists, metadata, Datadog.Trace.Tracer.Instance);
         return CallTargetState.GetDefault();
     }
 }
