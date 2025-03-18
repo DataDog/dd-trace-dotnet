@@ -61,7 +61,8 @@ bool DynamicLibraryBase::Load()
     _logger->Debug("Load: ", _filePath);
 
 #if _WIN32
-    _instance = LoadLibrary(::shared::ToWSTRING(_filePath).c_str());
+    _instance = LoadLibraryEx(::shared::ToWSTRING(_filePath).c_str(),
+                              NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
     if (_instance == NULL)
     {
         LPVOID msgBuffer;

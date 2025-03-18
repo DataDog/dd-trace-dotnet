@@ -56,7 +56,7 @@ public static class XUnitTestRunnerV3Integration
         var state = Tuple.Create(
             XUnitIntegration.CreateTest(
                 ref runnerInstance,
-                testCaseMetadata: ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(context.Test.TestCase.UniqueID)),
+                testCaseMetadata: ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(context.Test.TestMethod.UniqueID)),
             (object)context);
         return new CallTargetState(null, state);
     }

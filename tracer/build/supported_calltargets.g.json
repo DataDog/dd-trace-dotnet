@@ -8430,6 +8430,39 @@
       "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Diagnostics.Enrichment.ILogEnricher]",
       "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Diagnostics.Enrichment.IStaticLogEnricher]",
       "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerFilterOptions]",
+      "Microsoft.Extensions.Logging.LoggingSampler",
+      "Microsoft.Extensions.Options.IOptions`1[Microsoft.Extensions.Logging.LoggerFactoryOptions]",
+      "Microsoft.Extensions.Logging.IExternalScopeProvider",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerEnrichmentOptions]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerRedactionOptions]",
+      "Microsoft.Extensions.Compliance.Redaction.IRedactorProvider"
+    ],
+    "MinimumVersion": {
+      "Item1": 9,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 9,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "ILogger",
+    "AssemblyName": "Microsoft.Extensions.Telemetry",
+    "TargetTypeName": "Microsoft.Extensions.Logging.ExtendedLoggerFactory",
+    "TargetMethodName": ".ctor",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Logging.ILoggerProvider]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Diagnostics.Enrichment.ILogEnricher]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Diagnostics.Enrichment.IStaticLogEnricher]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerFilterOptions]",
       "Microsoft.Extensions.Options.IOptions`1[Microsoft.Extensions.Logging.LoggerFactoryOptions]",
       "Microsoft.Extensions.Logging.IExternalScopeProvider",
       "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerEnrichmentOptions]",
@@ -8443,10 +8476,10 @@
     },
     "MaximumVersion": {
       "Item1": 9,
-      "Item2": 65535,
-      "Item3": 65535
+      "Item2": 3,
+      "Item3": 0
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration_8xx",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

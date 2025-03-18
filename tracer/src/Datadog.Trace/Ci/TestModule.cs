@@ -56,8 +56,8 @@ public sealed class TestModule
         // First we make sure that CI Visibility is initialized.
         _testOptimization = TestOptimization.Instance;
         _testOptimization.InitializeFromManualInstrumentation();
+        var ciValues = _testOptimization.CIValues;
 
-        var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
         _suites = new Dictionary<string, TestSuite>();
 
@@ -129,7 +129,7 @@ public sealed class TestModule
                 IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
             };
 
-            tags.SetCIEnvironmentValues(environment);
+            tags.SetCIEnvironmentValues(ciValues);
 
             // Extract session variables (from out of process sessions)
             var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
@@ -164,6 +164,12 @@ public sealed class TestModule
                     {
                         fakeSessionTags.EarlyFlakeDetectionTestEnabled = "true";
                     }
+                }
+
+                // Check if the Test Management feature is enabled and set the flag accordingly
+                if (_testOptimization.TestManagementFeature?.Enabled == true)
+                {
+                    _fakeSession.SetTag(TestTags.TestManagementEnabled, "true");
                 }
             }
         }
@@ -522,7 +528,9 @@ public sealed class TestModule
         TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
             TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework),
             MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module,
-            MetricTags.CIVisibilityTestingEventTypeRetryReason.None);
+            MetricTags.CIVisibilityTestingEventTypeRetryReason.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None,
+            MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         Current = null;
         lock (OpenedTestModules)
