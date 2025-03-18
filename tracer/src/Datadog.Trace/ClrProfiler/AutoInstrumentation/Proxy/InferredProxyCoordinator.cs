@@ -33,11 +33,6 @@ internal class InferredProxyCoordinator
     }
 
     /// <summary>
-    /// Gets the factory used to create proxy spans.
-    /// </summary>
-    public IInferredSpanFactory SpanFactory => _spanFactory;
-
-    /// <summary>
     /// Extracts proxy metadata from headers and creates a corresponding span.
     /// </summary>
     /// <returns>
