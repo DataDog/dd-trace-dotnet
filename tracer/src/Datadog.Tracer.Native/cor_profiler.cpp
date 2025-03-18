@@ -763,6 +763,23 @@ std::string GetNativeLoaderFilePath()
     return native_loader_file_path.string();
 }
 
+std::string GetLibDatadogFilePath()
+{
+    auto libdatadog_filename =
+#ifdef LINUX
+        "libdatadog_profiling.so";
+#elif MACOS
+        "libdatadog_profiling.dylib";
+#else
+        "datadog_profiling_ffi.dll";
+#endif
+
+    auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
+
+    auto libdatadog_file_path = module_file_path.parent_path() / libdatadog_filename;
+    return libdatadog_file_path.string();
+}
+
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
@@ -945,6 +962,18 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
+
+        auto libdatadog_filepath = GetLibDatadogFilePath();
+        std::error_code ec;
+        if (fs::exists(libdatadog_filepath, ec))
+        {
+            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_exporter"), libdatadog_exporter_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_config"), libdatadog_config_nativemethods_type, libdatadog_filepath);
+        }
+        else
+        {
+            Logger::Debug("Libdatadog library does not exist: ", libdatadog_filepath);
+        }
 
         mdTypeDef bubbleUpTypeDef;
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
