@@ -193,6 +193,18 @@ internal class Program
                 using var s2 = Tracer.Instance.StartActive($"Manual-{count}.EventSdk.Success.Inner");
                 EventTrackingSdk.TrackUserLoginSuccessEvent("my-id");
                 EventTrackingSdk.TrackUserLoginSuccessEvent("my-id", new Dictionary<string, string> { { "key-1", "val-1" }, { "key-2", "val-2" }, });
+                EventTrackingSdkV2.TrackUserLoginSuccess("my-login", "my-id", new Dictionary<string, string>
+                {
+                    { "metadata01", "metadata01value" },
+                    { "metadata02", "metadata02value" }
+                });
+                await SendHttpRequest("Ext");
+            }
+            
+            using (Tracer.Instance.StartActive($"Manual-{++count}.EventSdkV2.Success.Outer"))
+            {
+                using var s2 = Tracer.Instance.StartActive($"Manual-{count}.EventSdkV2.Success.Inner");
+                EventTrackingSdkV2.TrackUserLoginSuccess("my-login");
                 await SendHttpRequest("Ext");
             }
 

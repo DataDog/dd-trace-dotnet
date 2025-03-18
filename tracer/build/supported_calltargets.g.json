@@ -4612,6 +4612,32 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdkTrackUserLoginSuccessEventMetadataIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
+     "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.AppSec.EventTrackingSdkV2",
+    "TargetMethodName": "TrackUserLoginSuccess",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.Collections.Generic.IDictionary`2[System.String, System.String]"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 13,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec.EventTrackingSdkV2TrackUserLoginSuccessUserIdIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },
   {
