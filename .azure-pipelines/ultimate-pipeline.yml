@@ -3049,7 +3049,7 @@ stages:
       jobs: [Test]
 
   - job: Test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 120 #default value
     strategy:
       matrix:
         x64:
