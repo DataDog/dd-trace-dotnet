@@ -13,6 +13,8 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeRetryReason tag3, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled tag4, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix tag5, int increment = 1);
 
+    public void RecordCountCIVisibilityTestSession(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestSessionProvider tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestSessionType tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestSessionAgentlessLogSubmission tag3, int increment = 1);
+
     public void RecordCountCIVisibilityCodeCoverageStarted(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1);
 
     public void RecordCountCIVisibilityCodeCoverageFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1);

@@ -12,7 +12,7 @@ internal static partial class CountCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 34;
+    public const int Length = 35;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -24,6 +24,7 @@ internal static partial class CountCIVisibilityExtensions
         {
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventCreated => "event_created",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventFinished => "event_finished",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestSession => "test_session",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "code_coverage_started",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "code_coverage_finished",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "manual_api_events",
@@ -80,6 +81,7 @@ internal static partial class CountCIVisibilityExtensions
         {
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventCreated => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventFinished => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestSession => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "civisibility",
