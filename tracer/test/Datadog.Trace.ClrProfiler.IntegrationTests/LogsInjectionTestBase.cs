@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string packageVersion = "",
             bool disableLogCorrelation = false,
             Func<string, bool> additionalInjectedLogFilter = null,
-            bool use128Bits = false)
+            bool use128Bits = true)
         {
             foreach (var test in logFileTestCases)
             {
