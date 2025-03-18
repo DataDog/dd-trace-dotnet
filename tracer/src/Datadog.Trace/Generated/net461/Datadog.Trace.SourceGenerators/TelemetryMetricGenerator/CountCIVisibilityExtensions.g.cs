@@ -12,7 +12,7 @@ internal static partial class CountCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 32;
+    public const int Length = 35;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -24,6 +24,7 @@ internal static partial class CountCIVisibilityExtensions
         {
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventCreated => "event_created",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventFinished => "event_finished",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestSession => "test_session",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "code_coverage_started",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "code_coverage_finished",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "manual_api_events",
@@ -54,6 +55,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequest => "impacted_tests_detection.request",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequestErrors => "impacted_tests_detection.request_errors",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "impacted_tests_detection.is_modified",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequest => "test_management_tests.request",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequestErrors => "test_management_tests.request_errors",
             _ => null!,
         };
 
@@ -78,6 +81,7 @@ internal static partial class CountCIVisibilityExtensions
         {
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventCreated => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventFinished => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestSession => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageStarted => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageFinished => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ManualApiEvent => "civisibility",
@@ -108,6 +112,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequest => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequestErrors => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequest => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequestErrors => "civisibility",
             _ => null,
         };
 }

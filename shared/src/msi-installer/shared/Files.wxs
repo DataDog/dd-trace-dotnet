@@ -37,5 +37,27 @@
       </Component>
     </ComponentGroup>
 
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="Shared.Files.Libdatadog.64" Directory="INSTALLFOLDER.win_x64">
+      <Component Win64="yes">
+        <File Id="libdatadog"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\datadog_profiling_ffi.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <?endif ?>
+
+    <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
+    <ComponentGroup Id="Shared.Files.Libdatadog.32" Directory="INSTALLFOLDER.win_x86">
+      <Component Win64="$(var.Win64)">
+        <File Id="libdatadog.32"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\datadog_profiling_ffi.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
   </Fragment>
 </Wix>

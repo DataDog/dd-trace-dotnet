@@ -18,16 +18,6 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
 
     private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
     {
-        if (settings is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(settings));
-        }
-
-        if (testOptimizationClient is null)
-        {
-            ThrowHelper.ThrowArgumentNullException(nameof(testOptimizationClient));
-        }
-
         if (settings.ImpactedTestsDetectionEnabled == null && clientSettingsResponse.ImpactedTestsEnabled.HasValue)
         {
             Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);

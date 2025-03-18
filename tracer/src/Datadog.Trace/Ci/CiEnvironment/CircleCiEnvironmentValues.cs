@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -17,6 +18,7 @@ internal sealed class CircleCiEnvironmentValues<TValueProvider>(TValueProvider v
 
         IsCI = true;
         Provider = "circleci";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.CircleCI;
         Repository = ValueProvider.GetValue(Constants.CircleCIRepositoryUrl);
         Commit = ValueProvider.GetValue(Constants.CircleCISha);
         Tag = ValueProvider.GetValue(Constants.CircleCITag);

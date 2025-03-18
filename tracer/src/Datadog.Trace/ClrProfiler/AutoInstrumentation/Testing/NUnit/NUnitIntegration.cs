@@ -80,11 +80,11 @@ internal static class NUnitIntegration
         }
     }
 
-    internal static TTestCommand WrapWithRetryCommand<TTestCommand>(TTestCommand testCommand)
+    internal static TTestCommand CreateTestOptimizationTestCommand<TTestCommand>(TTestCommand testCommand)
     {
         if (testCommand.TryDuckCast<ITestCommand>(out var duckTypedTestCommand))
         {
-            var retryTestCommand = new CIVisibilityTestCommand(duckTypedTestCommand);
+            var retryTestCommand = new TestOptimizationTestCommand(duckTypedTestCommand);
             return (TTestCommand)retryTestCommand.DuckImplement(typeof(TTestCommand));
         }
 
@@ -303,6 +303,9 @@ internal static class NUnitIntegration
 
         // Flaky Retry
         Common.SetFlakyRetryTags(test, isRetry);
+
+        // Test management feature
+        Common.SetTestManagementFeature(test, isRetry);
 
         // Test code and code owners
         test.SetTestMethodInfo(testMethod);

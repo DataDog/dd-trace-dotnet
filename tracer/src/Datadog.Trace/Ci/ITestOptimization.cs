@@ -6,6 +6,7 @@
 #nullable enable
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Logging;
@@ -37,6 +38,10 @@ internal interface ITestOptimization
     ITestOptimizationImpactedTestsDetectionFeature? ImpactedTestsDetectionFeature { get; }
 
     ITestOptimizationFlakyRetryFeature? FlakyRetryFeature { get; }
+
+    ITestOptimizationTestManagementFeature? TestManagementFeature { get; }
+
+    CIEnvironmentValues CIValues { get; }
 
     void Initialize();
 

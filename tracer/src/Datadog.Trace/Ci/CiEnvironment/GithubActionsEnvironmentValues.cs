@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -20,6 +21,7 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
 
         IsCI = true;
         Provider = "github";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.GithubActions;
 
         var serverUrl = ValueProvider.GetValue(Constants.GitHubServerUrl);
         if (string.IsNullOrWhiteSpace(serverUrl))
