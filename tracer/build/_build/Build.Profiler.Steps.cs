@@ -20,6 +20,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using DiffMatchPatch;
 using Logger = Serilog.Log;
+using System.Runtime.CompilerServices;
 
 partial class Build
 {
@@ -390,7 +391,7 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so" };
+            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
@@ -426,16 +427,20 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatformForProfiler)
+            var files = new[] { "Datadog.Profiler.Native", "datadog_profiling_ffi" };
+            foreach (var file in files)
             {
-                var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
-                var source = sourceDir / "Datadog.Profiler.Native.dll";
-                var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                foreach (var architecture in ArchitecturesForPlatformForProfiler)
+                {
+                    var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
+                    var source = sourceDir / $"{file}.dll";
+                    var dest = MonitoringHomeDirectory / $"win-{architecture}";
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = sourceDir / "Datadog.Profiler.Native.pdb";
-                dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
-                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    source = sourceDir / $"{file}.pdb";
+                    dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                }
             }
         });
 
@@ -953,22 +958,31 @@ partial class Build
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
-            var dest = ProfilerDeployDirectory / arch / $"{FileNames.NativeProfiler}.{extension}";
 
-            // The profiler has a different minimum glibc version to the tracer.
-            // The _overall_ minimum is the highest of the two, but as we don't
-            // currently enable the profiler on ARM64, we take the .NET runtime's minimum
-            // glibc as our actual minimum in practice. Before we can enable the profiler
-            // on arm64 we must first ensure we bring this glibc version down to 2.23.
+            // If we need to increase this version on arm64 later, that is ok as long
+            // as it doesn't go above 2.23. Just update the version below. We must
+            // NOT increase it beyond 2.23, or increase the version on x64.
             //
             // See also the ValidateNativeTracerGlibcCompatibility Nuke task and the checks
             // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
-            var expectedGlibcVersion = IsArm64
-                ? new Version(2, 28)
-                : new Version(2, 17);
 
-            ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+            // On Alpine/aarch64, libdatadog requires those two symbols (they are defined as weak with no implementation).
+            // Since the CLR requires them too, it seems safe to accept them.
+            // For information, those symbols comes from libgcc and are exposed for compatibility
+            var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
+            var filesAndVersion = new List<Tuple<string, Version, IEnumerable<string>>>
+            {
+                new(FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null),
+                new("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols)
+            };
+
+            foreach (var (file, expectedGlibcVersion, allowedSymbols) in filesAndVersion)
+            {
+                var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
+                ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion, allowedSymbols);
+            }
         });
+
     enum SanitizerKind
     {
         None,

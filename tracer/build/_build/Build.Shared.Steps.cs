@@ -278,12 +278,6 @@ partial class Build
             var (arch, extension) = GetUnixArchitectureAndExtension();
             var dest = MonitoringHomeDirectory / arch / $"{NativeTracerProject.Name}.{extension}";
 
-            // The profiler has a different minimum glibc version to the tracer.
-            // The _overall_ minimum is the highest of the two, but as we don't
-            // currently enable the profiler on ARM64, we take the .NET runtime's minimum
-            // glibc as our actual minimum in practice. Before we can enable the profiler
-            // on arm64 we must first ensure we bring this glibc version down to 2.23.
-            //
             // If we need to increase this version on arm64 later, that is ok as long
             // as it doesn't go above 2.23. Just update the version below. We must
             // NOT increase it beyond 2.23, or increase the version on x64.
@@ -297,12 +291,12 @@ partial class Build
             ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
         });
 
-    void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion)
+    void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion, IEnumerable<string> allowedSymbols = null)
     {
         var filename = Path.GetFileNameWithoutExtension(libraryPath);
-        var glibcVersion = FindMinimumGlibcVersion(libraryPath);
+        var glibcVersion = FindMaxGlibcVersion(libraryPath, allowedSymbols);
 
-        Logger.Information("Minimum required glibc version for {Filename} is {GlibcVersion}", filename, glibcVersion);
+        Logger.Information("Maximum required glibc version for {Filename} is {GlibcVersion}", filename, glibcVersion);
 
         if (IsAlpine && glibcVersion is not null)
         {
@@ -310,11 +304,11 @@ partial class Build
         }
         else if (!IsAlpine && glibcVersion != expectedGlibcVersion)
         {
-            throw new Exception($"{filename} should have a minimum required glibc version of {expectedGlibcVersion} but has {glibcVersion}");
+            throw new Exception($"{filename} should have a maximum required glibc version of {expectedGlibcVersion} but has {glibcVersion}");
         }
     }
 
-    Version FindMinimumGlibcVersion(AbsolutePath libraryPath)
+    Version FindMaxGlibcVersion(AbsolutePath libraryPath, IEnumerable<string> allowedSymbols)
     {
         var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
 
@@ -336,11 +330,11 @@ partial class Build
         //                  U __newlocale@GLIBC_2.17
         //
         // We only care about the Undefined symbols that are in glibc
+        // In this example, we will return 2.18
 
         return output
-              .Where(x=>x.Contains("@GLIBC_"))
-              .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
-              .OrderDescending()
-              .FirstOrDefault();
+              .Where(x => x.Contains("@GLIBC_") && allowedSymbols?.Any(y => x.Contains(y)) != true)
+              .Select(x => System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
+              .Max();
     }
 }
