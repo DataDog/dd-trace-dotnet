@@ -60,15 +60,15 @@ internal static class SpanPointers
     // DynamoDB hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/DynamoDB/Item/README.md
     public static void AddDynamoDbSpanPointer(Span span, string tableName, IDynamoDbKeysObject keys)
     {
-        var sortedKeys = keys.KeyNames.OrderBy(k => k, StringComparer.Ordinal).ToArray();
-        string key1 = string.Empty, value1 = string.Empty;
-        string key2 = string.Empty, value2 = string.Empty;
-
-        if (sortedKeys.Length > 0)
+        if (!keys.KeyNames.Any())
         {
-            key1 = sortedKeys[0];
-            value1 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key1]);
+            return;
         }
+
+        var sortedKeys = keys.KeyNames.OrderBy(k => k, StringComparer.Ordinal).ToArray();
+        var key1 = sortedKeys[0];
+        var value1 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key1]);
+        string key2 = string.Empty, value2 = string.Empty;
 
         if (sortedKeys.Length > 1)
         {
