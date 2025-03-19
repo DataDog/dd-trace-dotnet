@@ -27,10 +27,10 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly SnapshotSlicer _snapshotSlicer;
         private readonly ProbeReportWriter _reportWriter;
 
-        internal SnapshotExplorationTestSink(string reportFilePath, SnapshotSlicer snapshotSlicer)
+        internal SnapshotExplorationTestSink(string reportFolderPath, SnapshotSlicer snapshotSlicer)
         {
             _snapshotSlicer = snapshotSlicer;
-            _reportWriter = new ProbeReportWriter(reportFilePath);
+            _reportWriter = new ProbeReportWriter(reportFolderPath);
         }
 
         public void Add(string probeId, string snapshot)
@@ -56,16 +56,17 @@ namespace Datadog.Trace.Debugger.Sink
 
         private sealed class ProbeReportWriter : IDisposable
         {
-            private readonly string _filePath;
+            private const string _fileName = "SnapshotExplorationTestReport.csv";
+            private readonly string _folderPath;
             private readonly BlockingCollection<IdAndSnapshot> _writeQueue;
             private readonly Task _writerTask;
             private readonly CancellationTokenSource _cts;
             private readonly int _bufferSize;
             private bool _disposed;
 
-            public ProbeReportWriter(string filePath, int bufferSize = 4096)
+            public ProbeReportWriter(string folderPath, int bufferSize = 4096)
             {
-                _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+                _folderPath = folderPath ?? throw new ArgumentNullException(nameof(folderPath));
                 _bufferSize = bufferSize;
                 _writeQueue = new BlockingCollection<IdAndSnapshot>();
                 _cts = new CancellationTokenSource();
@@ -93,9 +94,8 @@ namespace Datadog.Trace.Debugger.Sink
             {
                 var failures = 0;
                 const int maxFailures = 10;
-                var fileName = Path.GetFileName(this._filePath);
-                fileName = Process.GetCurrentProcess().Id + "_" + fileName;
-                var fullPath = Path.Combine(new FileInfo(this._filePath).Directory!.FullName, fileName);
+                var fileName = Process.GetCurrentProcess().Id + "_" + _fileName;
+                var fullPath = Path.Combine(_folderPath, fileName);
                 using var writer = new StreamWriter(fullPath, true, Encoding.UTF8, _bufferSize);
                 writer.AutoFlush = false;
                 await writer.WriteLineAsync("Probe ID,Type,Method,Is valid").ConfigureAwait(false);

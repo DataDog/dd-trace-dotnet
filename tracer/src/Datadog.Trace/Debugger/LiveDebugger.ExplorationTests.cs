@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger
 
         internal void WithProbesFromFile()
         {
-            var probes = ReadProbesFromCsv(Settings.SnapshotExplorationTestProbesPath);
+            var probes = ReadProbesFromCsv(Settings.SnapshotExplorationTestProbesFilePath);
             UpdateAddedProbeInstrumentations(probes);
         }
 

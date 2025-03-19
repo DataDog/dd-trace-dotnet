@@ -6,15 +6,17 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Nuke.Common.IO;
 using Logger = Serilog.Log;
 
 partial class Build
 {
+    const string SnapshotExplorationTestFolderName = "SnapshotExplorationTestProbes";
     const string SnapshotExplorationTestProbesFileName = "SnapshotExplorationTestProbes.csv";
-    const string SnapshotExplorationTestReportFileName = "SnapshotExplorationTestReport.csv";
+    const string SnapshotExplorationTestReportFolderName = "SnapshotExplorationTestReport";
     const string SnapshotExplorationEnabledKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
-    const string SnapshotExplorationProbesPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_PATH";
-    const string SnapshotExplorationReportPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_PATH";
+    const string SnapshotExplorationProbesFilePathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_FILE_PATH";
+    const string SnapshotExplorationReportFolderPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_FOLDER_PATH";
     const char SpecialSeparator = '#';
 
     void RunSnapshotExplorationTestsInternal()
@@ -56,8 +58,10 @@ partial class Build
 
             testDescription.IsSnapshotScenario = true;
             var envVariables = GetEnvironmentVariables(testDescription, framework);
+            var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestReportFolderName));
             Test(testDescription, framework, envVariables);
-            VerifySnapshotExplorationTestResults(envVariables[SnapshotExplorationProbesPathKey], envVariables[SnapshotExplorationReportPathKey]);
+            VerifySnapshotExplorationTestResults(envVariables[SnapshotExplorationProbesFilePathKey], envVariables[SnapshotExplorationReportFolderPathKey]);
         }
     }
 
@@ -88,6 +92,7 @@ partial class Build
         foreach (var framework in frameworks)
         {
             var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName));
             var tracerAssemblyPath = GetTracerAssemblyPath(framework);
             var tracer = Assembly.LoadFile(tracerAssemblyPath);
             var extractorType = tracer.GetType("Datadog.Trace.Debugger.Symbols.SymbolExtractor");
@@ -125,7 +130,7 @@ partial class Build
                 }
             }
 
-            File.WriteAllText(Path.Combine(testRootPath, SnapshotExplorationTestProbesFileName), csvBuilder.ToString());
+            File.WriteAllText(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestProbesFileName), csvBuilder.ToString());
         }
 
         return;
@@ -203,9 +208,9 @@ partial class Build
         }
     }
 
-    public void VerifySnapshotExplorationTestResults(string probesPath, string reportPath)
+    public void VerifySnapshotExplorationTestResults(string probesFilePath, string reportFolderPath)
     {
-        var definedProbes = ReadDefinedProbes(probesPath);
+        var definedProbes = ReadDefinedProbes(probesFilePath);
         if (definedProbes == null || definedProbes.Count == 0)
         {
             throw new Exception("Snapshot exploration test failed. Could not read probes file");
@@ -217,7 +222,7 @@ partial class Build
             throw new Exception("Snapshot exploration test failed. Could not read installed probes file");
         }
 
-        var probesReport = ReadReportedSnapshotProbesIds(reportPath);
+        var probesReport = ReadReportedSnapshotProbesIds(reportFolderPath);
         if (probesReport == null || definedProbes.Count == 0)
         {
             throw new Exception("Snapshot exploration test failed. Could not read report file");
@@ -272,22 +277,30 @@ partial class Build
                     );
     }
 
-    List<ProbeReportInfo> ReadReportedSnapshotProbesIds(string reportPath)
+    List<ProbeReportInfo> ReadReportedSnapshotProbesIds(string reportFolderPath)
     {
-        if (string.IsNullOrEmpty(reportPath))
+        if (string.IsNullOrEmpty(reportFolderPath))
         {
-            throw new ArgumentException("Report path cannot be null or empty", nameof(reportPath));
+            throw new ArgumentException("Report path cannot be null or empty", nameof(reportFolderPath));
         }
 
-        if (!File.Exists(reportPath))
+        if (!Directory.Exists(reportFolderPath))
         {
-            throw new FileNotFoundException("The specified report file does not exist", reportPath);
+            throw new FileNotFoundException("The specified report path does not exist", reportFolderPath);
         }
 
-        return File.ReadLines(reportPath)
-                   .Skip(1) // Skip the header row
-                   .Select(ParseCsvLine)
-                   .ToList();
+        var reportInfo = new List<ProbeReportInfo>();
+
+        foreach (var file in Directory.EnumerateFiles(reportFolderPath))
+        {
+            reportInfo.AddRange(
+            File.ReadLines(file)
+                .Skip(1) // Skip the header row
+                .Select(ParseCsvLine)
+                .ToList());
+        }
+
+        return reportInfo;
     }
 
     ProbeReportInfo ParseCsvLine(string line)

@@ -30,7 +30,7 @@ namespace Datadog.Trace.Debugger.Sink
         {
             if (settings.IsSnapshotExplorationTestEnabled)
             {
-                return new SnapshotExplorationTestSink(settings.SnapshotExplorationTestReportPath, snapshotSlicer);
+                return new SnapshotExplorationTestSink(settings.SnapshotExplorationTestReportFolderPath, snapshotSlicer);
             }
             else
             {
