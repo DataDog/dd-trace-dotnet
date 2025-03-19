@@ -108,6 +108,8 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
+    readonly Lazy<Tool> Vcpkg => GetVcpk();
+
     bool IsGitlab => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI_JOB_ID"));
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForTracer
@@ -554,10 +556,18 @@ partial class Build
 
     Target InstallLibDatadog => _ => _
                 .Unlisted()
-                .DependsOn(SetupVcpkg)
                 .Executes(async () =>
                 {
-
+                    if (IsLinux || IsOsx)
+                    {
+                        CMake.Value(
+                            arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                    }
+                    else if (IsWin)
+                    {
+                        Vcpkg.Value($"install --x-wait-for-lock --triplet \"x64-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root=${RootDirectory}\" \"--x-install-root=${BuildArtifactsDirectory}\deps\vcpkg\x64-windows\" --downloads-root ${BuildArtifactsDirectory}\obj\vcpkg\downloads --x-packages-root ${BuildArtifactsDirectory}\obj\vcpkg\packages --x-buildtrees-root ${BuildArtifactsDirectory}\obj\vcpkg/buildtrees  --clean-after-build");
+                        Vcpkg.Value($"install --x-wait-for-lock --triplet \"x86-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root=${RootDirectory}\" \"--x-install-root=${BuildArtifactsDirectory}\deps\vcpkg\x64-windows\" --downloads-root ${BuildArtifactsDirectory}\obj\vcpkg\downloads --x-packages-root ${BuildArtifactsDirectory}\obj\vcpkg\packages --x-buildtrees-root ${BuildArtifactsDirectory}\obj\vcpkg/buildtrees  --clean-after-build");
+                    }
                 })
 
     Target CopyLibDatadog => _ => _
@@ -565,7 +575,36 @@ partial class Build
                 .After(InstallLibDatadog)
                 .Executes(async () =>
                 {
+                    if (IsWin)
+                    {
+                        var vcpkgDepsFolder = BuildArtifactsDirectory / "deps" / "vcpkg";
+                        foreach (var architecture in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
+                        {
+                            var source = vcpkgDepsFolder / $"{architecture}-windows" / $"{architecture}-windows";
+                            if (BuildConfiguration == Configuration.Debug)
+                            {
+                                source \= "debug";
+                            }
 
+                            var dllFile = source / "datadog_profiling_ffi.dll";
+                            var dest = MonitoringHomeDirectory / $"win-{architecture}";
+                            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                            
+                            var pdbFile = source / "datadog_profiling_ffi.pdb";
+                            dest = SymbolsDirectory / $"win-{architecture}";
+                            CopyFileToDirectory(pdbFile, dest);
+                        }
+                    }
+                    else if (IsLinux || IsOsx)
+                    {
+                        var (destArch, ext) = GetUnixArchitectureAndExtension();
+
+                        var libdatadogFileName = $"libdatadog_profiling.{ext}";
+
+                        var source = NativeBuildDirectory / "libdatadog-install" / "lib" / libdatadogFileName;
+                        var dest = MonitoringHomeDirectory / destArch;
+                        CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                    }
                 })
 
     Target CopyNativeFilesForAppSecUnitTests => _ => _
@@ -2761,5 +2800,72 @@ partial class Build
             .SetNoWarnDotNetCore3()
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
+    }
+
+    
+    private static async Task<Tool> GetVcpkg()
+    {
+        var vcpkgFilePath = string.Empty;
+
+        try
+        {
+            vcpkgFilePath = ToolPathResolver.GetPathExecutable("vcpkg.exe");
+        }
+        catch (ArgumentException)
+        { }
+
+        if (File.Exists(vcpkgFilePath))
+        {
+            return ToolResolver.GetLocalTool(vcpkgFilePath);
+        }
+
+        // Check if already downloaded
+        var vcpkgRoot = RootDirectory / "artifacts" / "bin" / "vcpkg";
+        var vcpkgExecPath = vcpkgRoot / "vcpkg.exe";
+
+        if (File.Exists(vcpkgExecPath))
+        {
+            return ToolResolver.GetLocalTool($"{vcpkgExecPath}");
+        }
+
+        await DownloadAndExtractVcpkg(vcpkgRoot);
+        Cmd.Value(arguments: $"cmd /c {vcpkgRoot / "bootstrap-vcpkg.bat"}");
+        return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
+    }
+
+    private static async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
+    {
+        var nbTries = 0;
+        var keepTrying = true;
+        var vcpkgZip = TempDirectory / "vcpkg.zip";
+        using var client = new HttpClient();
+        const string vcpkgVersion = "2024.11.16";
+        while (keepTrying)
+        {
+            nbTries++;
+            try
+            {
+                var response = await client.GetAsync($"https://github.com/microsoft/vcpkg/archive/refs/tags/{vcpkgVersion}.zip");
+                response.EnsureSuccessStatusCode();
+                await using var stream = await response.Content.ReadAsStreamAsync();
+                await using var file = File.Create(vcpkgZip);
+                await stream.CopyToAsync(file);
+                keepTrying = false;
+            }
+            catch (HttpRequestException)
+            {
+                if (nbTries > 3)
+                {
+                    throw;
+                }
+            }
+        }
+
+        EnsureExistingParentDirectory(destinationFolder);
+        var parentFolder = destinationFolder.Parent;
+
+        CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
+
+        RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
     }
 }
