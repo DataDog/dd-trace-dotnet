@@ -55,7 +55,12 @@ namespace Samples.RabbitMQ
             var sendTask = Task.Run(() => Send(consumerType.ToString()));
             var receiveTask = Task.Run(() => Receive(useQueue, consumerType, isAsyncConsumer));
 
-            await Task.WhenAll(sendTask, receiveTask);
+            var allTasks = Task.WhenAll(sendTask, receiveTask);
+            var completed = await Task.WhenAny(allTasks, Task.Delay(TimeSpan.FromMinutes(3))); // Intentionally very big
+            if (completed != allTasks)
+            {
+                throw new TimeoutException("Timeout waiting for the Send and receive tasks to complete");
+            }
 
             _sendFinished.Reset();
         }
