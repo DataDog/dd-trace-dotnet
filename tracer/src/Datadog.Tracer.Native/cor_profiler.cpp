@@ -963,16 +963,17 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
-        auto libdatadog_filepath = GetLibDatadogFilePath();
+        auto libdatadog_library_path = GetLibDatadogFilePath();
         std::error_code ec;
-        if (fs::exists(libdatadog_filepath, ec))
+        if (fs::exists(libdatadog_library_path, ec))
         {
+            auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
             RewritingPInvokeMaps(module_metadata, WStr("libdatadog_exporter"), libdatadog_exporter_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, WStr("libdatadog_config"), libdatadog_config_nativemethods_type, libdatadog_filepath);
         }
         else
         {
-            Logger::Debug("Libdatadog library does not exist: ", libdatadog_filepath);
+            Logger::Debug("Libdatadog library does not exist: ", libdatadog_library_path);
         }
 
         mdTypeDef bubbleUpTypeDef;
