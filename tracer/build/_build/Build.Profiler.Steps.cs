@@ -45,74 +45,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(async () =>
         {
-            var vcpkg = await GetVcpkg();
-            vcpkg("integrate install");
-
-            async Task<Tool> GetVcpkg()
-            {
-                var vcpkgFilePath = string.Empty;
-
-                try
-                {
-                    vcpkgFilePath = ToolPathResolver.GetPathExecutable("vcpkg.exe");
-                }
-                catch (ArgumentException)
-                { }
-
-                if (File.Exists(vcpkgFilePath))
-                {
-                    return ToolResolver.GetLocalTool(vcpkgFilePath);
-                }
-
-                // Check if already downloaded
-                var vcpkgRoot = RootDirectory / "artifacts" / "bin" / "vcpkg";
-                var vcpkgExecPath = vcpkgRoot / "vcpkg.exe";
-
-                if (File.Exists(vcpkgExecPath))
-                {
-                    return ToolResolver.GetLocalTool($"{vcpkgExecPath}");
-                }
-
-                await DownloadAndExtractVcpkg(vcpkgRoot);
-                Cmd.Value(arguments: $"cmd /c {vcpkgRoot / "bootstrap-vcpkg.bat"}");
-                return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
-            }
-
-            async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
-            {
-                var nbTries = 0;
-                var keepTrying = true;
-                var vcpkgZip = TempDirectory / "vcpkg.zip";
-                using var client = new HttpClient();
-                const string vcpkgVersion = "2024.11.16";
-                while (keepTrying)
-                {
-                    nbTries++;
-                    try
-                    {
-                        var response = await client.GetAsync($"https://github.com/microsoft/vcpkg/archive/refs/tags/{vcpkgVersion}.zip");
-                        response.EnsureSuccessStatusCode();
-                        await using var stream = await response.Content.ReadAsStreamAsync();
-                        await using var file = File.Create(vcpkgZip);
-                        await stream.CopyToAsync(file);
-                        keepTrying = false;
-                    }
-                    catch (HttpRequestException)
-                    {
-                        if (nbTries > 3)
-                        {
-                            throw;
-                        }
-                    }
-                }
-
-                EnsureExistingParentDirectory(destinationFolder);
-                var parentFolder = destinationFolder.Parent;
-
-                CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
-
-                RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
-            }
+            Vcpkg.Value("integrate install");
         });
 
     Target CompileProfilerNativeSrcWindows => _ => _

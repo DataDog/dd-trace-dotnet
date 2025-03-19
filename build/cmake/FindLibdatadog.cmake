@@ -6,7 +6,16 @@ include(FetchContent)
 
 set(LIBDATADOG_VERSION "v16.0.3" CACHE STRING "libdatadog version")
 
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
+SET(OSX_ARCH ${CMAKE_OSX_ARCHITECTURES})
+SET(PROCESSOR ${CMAKE_SYSTEM_PROCESSOR})
+
+if (OSX_ARCH STREQUAL arm64)
+        set(SHA256_LIBDATADOG "668a3f8b66b8112ff2658736c2ee62125a8bfbfcbb3f73961d95abccaea40691" CACHE STRING "libdatadog sha256")
+        set(FILE_TO_DOWNLOAD libdatadog-aarch64-apple-darwin.tar.gz)
+elseif (OSX_ARCH STREQUAL x86_64)
+        set(SHA256_LIBDATADOG "c1d243581f92ca4fa75b6eed51c3d0c630b224a7980fbf497db1fedf75919dd6" CACHE STRING "libdatadog sha256")
+        set(FILE_TO_DOWNLOAD libdatadog-x86_64-apple-darwin.tar.gz)
+elseif (PROCESSOR STREQUAL aarch64 OR PROCESSOR STREQUAL arm64)
     if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
         set(SHA256_LIBDATADOG "dd08d3a4dbbd765392121d27b790d7818e80dd28500b554db16e9186b1025ba9" CACHE STRING "libdatadog sha256")
         set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
@@ -24,16 +33,16 @@ else()
     endif()
 endif()
 
-FetchContent_Declare(libdatadog-${LIBDATADOG_VERSION}
+FetchContent_Declare(libdatadog-install
     URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
     URL_HASH SHA256=${SHA256_LIBDATADOG}
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-${LIBDATADOG_VERSION}
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
 )
-if(NOT libdatadog-${LIBDATADOG_VERSION}_POPULATED)
-    FetchContent_Populate(libdatadog-${LIBDATADOG_VERSION})
+if(NOT libdatadog-install_POPULATED)
+    FetchContent_Populate(libdatadog-install)
 endif()
 
-set(LIBDATADOG_BASE_DIR ${libdatadog-${LIBDATADOG_VERSION}_SOURCE_DIR})
+set(LIBDATADOG_BASE_DIR ${libdatadog-install_SOURCE_DIR})
 
 add_library(libdatadog-lib SHARED IMPORTED)
 
@@ -42,7 +51,7 @@ set_target_properties(libdatadog-lib PROPERTIES
     IMPORTED_LOCATION ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.so
 )
 
-add_dependencies(libdatadog-lib libdatadog-${LIBDATADOG_VERSION})
+add_dependencies(libdatadog-lib libdatadog-install)
 
 # Override target_link_libraries
 function(target_link_libraries target)
