@@ -49,10 +49,10 @@ namespace Samples.RabbitMQ
 
         private static async Task RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
-            await PublishAndGet(useDefaultQueue: false);
-            await PublishAndGet(useDefaultQueue: true);
+            await PublishAndGet(consumerType.ToString(), useDefaultQueue: false);
+            await PublishAndGet(consumerType.ToString(), useDefaultQueue: true);
 
-            var sendTask = Task.Run(Send);
+            var sendTask = Task.Run(() => Send(consumerType.ToString()));
             var receiveTask = Task.Run(() => Receive(useQueue, consumerType, isAsyncConsumer));
 
             await Task.WhenAll(sendTask, receiveTask);
@@ -60,9 +60,9 @@ namespace Samples.RabbitMQ
             _sendFinished.Reset();
         }
 
-        private static async Task PublishAndGet(bool useDefaultQueue)
+        private static async Task PublishAndGet(string consumerType, bool useDefaultQueue)
         {
-            string messagePrefix = $"Program.PublishAndGetDefault(useDefaultQueue: {useDefaultQueue})";
+            string messagePrefix = $"Program.PublishAndGetDefault({consumerType}, useDefaultQueue: {useDefaultQueue})";
 
             // Configure and send to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
@@ -121,7 +121,7 @@ namespace Samples.RabbitMQ
             }
         }
 
-        private static async Task Send()
+        private static async Task Send(string consumerType)
         {
             // Configure and send to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
@@ -133,7 +133,7 @@ namespace Samples.RabbitMQ
 
                 for (int i = 0; i < 3; i++)
                 {
-                    using (SampleHelpers.CreateScope("PublishToConsumer()"))
+                    using (SampleHelpers.CreateScope($"PublishToConsumer({consumerType}, i: {i})"))
                     {
                         string message = $"Send - Message #{i}";
                         var body = Encoding.UTF8.GetBytes(message);
