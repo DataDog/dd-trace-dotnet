@@ -365,7 +365,41 @@ namespace Datadog.Trace.Agent
                             Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
                         }
 
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
+                        var bufferData = buffer.Data;
+                        var jsonOutputPath = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_SAVE_TRACE_TO_JSON_PATH");
+                        var messagePackOutputPath = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_SAVE_TRACE_TO_MESSAGEPACK_PATH");
+
+                        if (buffer.SpanCount > 0 && (!string.IsNullOrEmpty(jsonOutputPath) || !string.IsNullOrEmpty(messagePackOutputPath)))
+                        {
+                            var timestamp = $"{DateTimeOffset.UtcNow:yyyy-MM-dd_HH-mm-ss-fff}_{Guid.NewGuid():N}";
+
+                            if (!string.IsNullOrEmpty(jsonOutputPath))
+                            {
+                                System.IO.Directory.CreateDirectory(jsonOutputPath);
+                                var jsonFileName = System.IO.Path.Combine(jsonOutputPath, $"trace_payload_{timestamp}.json");
+
+                                // copy the MessagePack bytes from ArraySegment<byte> buffer.Data into a byte[]
+                                // and convert to JSON
+                                var bytes = new byte[bufferData.Count];
+                                Buffer.BlockCopy(bufferData.Array!, bufferData.Offset, bytes, 0, bufferData.Count);
+                                var json = Vendors.MessagePack.MessagePackSerializer.ToJson(bytes);
+#if NETCOREAPP
+                                await System.IO.File.WriteAllTextAsync(jsonFileName, json, Vendors.MessagePack.StringEncoding.UTF8).ConfigureAwait(false);
+#else
+                                System.IO.File.WriteAllText(jsonFileName, json, Vendors.MessagePack.StringEncoding.UTF8);
+#endif
+                            }
+
+                            if (!string.IsNullOrEmpty(messagePackOutputPath))
+                            {
+                                System.IO.Directory.CreateDirectory(messagePackOutputPath);
+                                var msgPackFileName = System.IO.Path.Combine(messagePackOutputPath, $"trace_payload_{timestamp}.msgpack");
+                                using var msgPackFileStream = System.IO.File.Open(msgPackFileName, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read);
+                                msgPackFileStream.Write(bufferData.Array!, bufferData.Offset, bufferData.Count);
+                            }
+                        }
+
+                        var success = await _api.SendTracesAsync(bufferData, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
 
                         TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
                         if (success)
