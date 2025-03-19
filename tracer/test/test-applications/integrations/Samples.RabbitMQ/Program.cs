@@ -11,9 +11,11 @@ using RabbitMQ.Client.Events;
 #if RABBITMQ_7_0
 using IRabbitChannel = RabbitMQ.Client.IChannel;
 using IRabbitConsumer = RabbitMQ.Client.IAsyncBasicConsumer;
+using RabbitProperties = RabbitMQ.Client.BasicProperties;
 #else
 using IRabbitChannel = RabbitMQ.Client.IModel;
 using IRabbitConsumer = RabbitMQ.Client.IBasicConsumer;
+using RabbitProperties = RabbitMQ.Client.IBasicProperties;
 #endif
 
 namespace Samples.RabbitMQ
@@ -26,6 +28,7 @@ namespace Samples.RabbitMQ
         private static readonly string exchangeName = "test-exchange-name";
         private static readonly string routingKey = "test-routing-key";
         private static readonly string queueName = "test-queue-name";
+        private static readonly string customHeaderName = "x-custom-header";
 
         private static string Host()
         {
@@ -77,6 +80,8 @@ namespace Samples.RabbitMQ
                 string publishExchangeName;
                 string publishQueueName;
                 string publishRoutingKey;
+                string messageId = Guid.NewGuid().ToString();
+                string headerValue = Guid.NewGuid().ToString();
 
                 using (SampleHelpers.CreateScope(messagePrefix))
                 {
@@ -103,13 +108,20 @@ namespace Samples.RabbitMQ
                     // Test an empty BasicGetResult
                     await Helper.BasicGetAsync(channel, publishQueueName);
 
+                    // Setup basic properties to verify instrumentation preserves properties and headers.
+                    var properties = Helper.CreateBasicProperties(channel);
+                    properties.MessageId = messageId;
+                    properties.Headers = new Dictionary<string, object>
+                    {
+                        { customHeaderName, headerValue }
+                    };
+
                     // Send message to the default exchange and use new queue as the routingKey
                     string message = $"{messagePrefix} - Message";
                     var body = Encoding.UTF8.GetBytes(message);
 
-                    await Helper.BasicPublishAsync(channel, exchange: publishExchangeName,
-                                                   routingKey: publishRoutingKey,
-                                                   body: body);
+                    await Helper.BasicPublishAsync(channel, publishExchangeName, publishRoutingKey, body, properties);
+
                     Console.WriteLine($"BasicPublish - Sent message: {message}");
                 }
 
@@ -123,6 +135,19 @@ namespace Samples.RabbitMQ
                 var resultMessage = Encoding.UTF8.GetString(result.Body);
 #endif
                 Console.WriteLine($"[Program.PublishAndGetDefault] BasicGet - Received message: {resultMessage}");
+
+                if (result.BasicProperties.MessageId != messageId)
+                {
+                    throw new Exception("MessageId was not preserved in BasicProperties");
+                }
+
+                if (result.BasicProperties.Headers is null ||
+                    !result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue) ||
+                    receivedHeaderValue is not byte[] receivedHeaderValueString ||
+                    Encoding.UTF8.GetString(receivedHeaderValueString) != headerValue)
+                {
+                    throw new Exception("Custom header was not preserved in BasicProperties");
+                }
             }
         }
 
@@ -466,6 +491,29 @@ namespace Samples.RabbitMQ
 #endif
         }
 
+#if RABBITMQ_6_0 || RABBITMQ_7_0
+        public static Task BasicPublishAsync(IRabbitChannel channel, string exchange, string routingKey, ReadOnlyMemory<byte> body, RabbitProperties basicProperties = null)
+#else
+        public static Task BasicPublishAsync(IRabbitChannel channel, string exchange, string routingKey, byte[] body, RabbitProperties basicProperties = null)
+#endif
+        {
+#if RABBITMQ_7_0
+            return channel.BasicPublishAsync(
+                               exchange: exchange,
+                               routingKey: routingKey,
+                               mandatory: false,
+                               basicProperties: basicProperties,
+                               body: body)
+                          .AsTask();
+#else
+            channel.BasicPublish(exchange: exchange,
+                                 routingKey: routingKey,
+                                 basicProperties: basicProperties,
+                                 body: body);
+            return Task.CompletedTask;
+#endif
+        }
+
         public static Task BasicConsumeAsync(IRabbitChannel channel, string queue, IRabbitConsumer consumer)
         {
 #if RABBITMQ_7_0
@@ -473,6 +521,15 @@ namespace Samples.RabbitMQ
 #else
             channel.BasicConsume(queue, true, consumer);
             return Task.CompletedTask;
+#endif
+        }
+
+        public static RabbitProperties CreateBasicProperties(IRabbitChannel channel)
+        {
+#if RABBITMQ_7_0
+            return new BasicProperties();
+#else
+            return channel.CreateBasicProperties();
 #endif
         }
     }
