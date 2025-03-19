@@ -34,7 +34,7 @@ public class AwsApiGatewaySpanFactoryTests
         scope.Should().NotBeNull();
         var span = scope!.Span;
         span.Should().NotBeNull();
-        span.OperationName.Should().Be("aws.api-gateway");
+        span.OperationName.Should().Be("aws.apigateway");
         span.ResourceName.Should().Be("GET /api/test"); // TODO obfuscation and quantization
         span.Type.Should().Be("web");
         span.StartTime.Should().Be(startTime);

@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 /// </summary>
 internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
 {
-    private const string OperationName = "aws.api-gateway";
+    private const string OperationName = "aws.apigateway";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AwsApiGatewaySpanFactory>();
 
     public Scope? CreateSpan(Tracer tracer, InferredProxyData data, ISpanContext? parent = null)
