@@ -560,7 +560,7 @@ partial class Build
                     if (IsLinux || IsOsx)
                     {
                         CMake.Value(
-                            arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                            arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory}");
                     }
                     else if (IsWin)
                     {
