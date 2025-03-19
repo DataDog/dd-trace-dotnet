@@ -559,8 +559,15 @@ partial class Build
                 {
                     if (IsLinux || IsOsx)
                     {
-                        CMake.Value(
-                            arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory}");
+                        if (!Directory.Exists(NativeBuildDirectory))
+                        {
+                            CMake.Value(
+                                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory}");
+                        }
+                        // In CI, the folder might already exist. Which means that CMake was already configured
+                        // and libdatadog artifact (correct one) was already downloaded.
+                        // So just reuse it.
+
                     }
                     else if (IsWin)
                     {
