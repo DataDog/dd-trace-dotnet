@@ -15,16 +15,6 @@ namespace Datadog.Trace.LibDatadog;
 /// </summary>
 internal class TraceExporterConfiguration : SafeHandle
 {
-    private string? _url;
-    private string? _traceVersion;
-    private string? _language;
-    private string? _languageVersion;
-    private string? _languageInterpreter;
-    private string? _hostname;
-    private string? _env;
-    private string? _version;
-    private string? _service;
-
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
     {
@@ -34,100 +24,82 @@ internal class TraceExporterConfiguration : SafeHandle
 
     public override bool IsInvalid => handle == IntPtr.Zero;
 
-    public string? Url
+    public string Url
     {
-        get => _url;
-        set
+        init
         {
-            _url = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_url(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? TraceVersion
+    public string TraceVersion
     {
-        get => _traceVersion;
-        set
+        init
         {
-            _traceVersion = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_tracer_version(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? Language
+    public string Language
     {
-        get => _language;
-        set
+        init
         {
-            _language = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_language(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? LanguageVersion
+    public string LanguageVersion
     {
-        get => _languageVersion;
-        set
+        init
         {
-            _languageVersion = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_lang_version(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? LanguageInterpreter
+    public string LanguageInterpreter
     {
-        get => _languageInterpreter;
-        set
+        init
         {
-            _languageInterpreter = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_lang_interpreter(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? Hostname
+    public string Hostname
     {
-        get => _hostname;
-        set
+        init
         {
-            _hostname = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_hostname(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? Env
+    public string Env
     {
-        get => _env;
-        set
+        init
         {
-            _env = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_env(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? Version
+    public string Version
     {
-        get => _version;
-        set
+        init
         {
-            _version = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_version(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
-    public string? Service
+    public string Service
     {
-        get => _service;
-        set
+        init
         {
-            _service = value;
             using var error = TraceExporterNative.ddog_trace_exporter_config_set_service(this, new CharSlice(value));
             error.ThrowIfError();
         }
