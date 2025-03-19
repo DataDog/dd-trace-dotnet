@@ -83,6 +83,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             }
         }
 
+        [SkippableFact]
+        [Trait("Category", "ArmUnsupported")]
+        [Trait("Category", "Lambda")]
+        public async Task IntegrationDisabled()
+        {
+            // See documentation at docs/development/Serverless.md for examples and diagrams
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
+            {
+                Output.WriteLine("Skipping");
+                return;
+            }
+
+            const string expectedOperationName = "lambda.invocation";
+
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.AwsLambda)}_ENABLED", "false");
+
+            using var extensionWithContext = new MockLambdaExtension(shouldSendContext: true, port: 9004, Output);
+            using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
+            using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
+            agent.Output = Output;
+            using (await RunSampleAndWaitForExit(agent))
+            {
+                // we manually instrument each request + we have http client spans
+                var expectedSpans = ExpectedRequests * 2;
+
+                var agentSpans = agent.WaitForSpans(expectedSpans, 15_000).ToArray();
+
+                using var s = new AssertionScope();
+                var allExtensionSpans = GetExtensionSpans(extensionWithContext, extensionNoContext);
+
+                // Create the complete traces
+                var allSpans = allExtensionSpans.Concat(agentSpans).ToList();
+
+                allSpans.Should().NotContain(x => x.Name == expectedOperationName);
+            }
+        }
+
         private static IEnumerable<MockSpan> GetExtensionSpans(MockLambdaExtension extensionWithContext, MockLambdaExtension extensionNoContext)
         {
             var startWithContext = extensionWithContext.StartInvocations.ToList();
