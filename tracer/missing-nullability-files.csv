@@ -404,7 +404,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionIn
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AsyncControllerActionInvoker_EndInvokeAction_Integration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ControllerContextStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ExceptionHandlerExtensions_HandleAsync_Integration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpConfigurationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpContextHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpHeadersCollection.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/HttpMethodStruct.cs

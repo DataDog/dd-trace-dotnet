@@ -61,7 +61,6 @@
       <type fullname="Microsoft.AspNetCore.Mvc.Filters.IActionFilter" />
       <type fullname="Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata" />
       <type fullname="Microsoft.AspNetCore.Mvc.IActionResult" />
-      <type fullname="Microsoft.AspNetCore.Mvc.Routing.AttributeRouteInfo" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Mvc.Core" />
    <assembly fullname="Microsoft.AspNetCore.Routing">
