@@ -3,12 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-
 #nullable enable
 
 using System;
-using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.LibDatadog;
@@ -19,8 +16,8 @@ internal class NativeInterop
 
     internal static class Exporter
     {
-        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_new")]
-        internal static extern ErrorHandle Create(out IntPtr outHandle, SafeHandle config);
+        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_new")]
+        // internal static extern ErrorHandle Create(out IntPtr outHandle, SafeHandle config);
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_error_free")]
         internal static extern void ReleaseError(IntPtr error);
@@ -32,8 +29,8 @@ internal class NativeInterop
         // internal static extern ErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
     }
 
-    internal static class Config {
-
+    internal static class Config
+    {
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_new")]
         internal static extern void Create(out IntPtr outHandle);
 
@@ -46,8 +43,8 @@ internal class NativeInterop
         // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_tracer_version")]
         // internal static extern ErrorHandle SetTracerVersion(SafeHandle config, CharSlice version);
 
-        //[DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_language")]
-        //internal static extern ErrorHandle SetLanguage(SafeHandle config, CharSlice lang);
+        // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_language")]
+        // internal static extern ErrorHandle SetLanguage(SafeHandle config, CharSlice lang);
 
         // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_lang_version")]
         // internal static extern ErrorHandle SetLanguageVersion(SafeHandle config, CharSlice version);
@@ -66,5 +63,5 @@ internal class NativeInterop
 
         // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
         // internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
-    } 
+    }
 }
