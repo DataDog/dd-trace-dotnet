@@ -121,7 +121,13 @@ namespace Samples.AWS.Lambda
             // Toplevel Statements
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TOPLEVEL_STATEMENT"));
-            
+
+            // Disabled
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_NO_PARAM_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_TOPLEVEL_STATEMENT"));
+
             static async Task Post(string url)
             {
                 HttpClient client = new HttpClient();

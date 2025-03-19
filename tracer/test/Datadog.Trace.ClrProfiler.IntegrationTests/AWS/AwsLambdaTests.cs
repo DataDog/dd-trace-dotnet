@@ -56,7 +56,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                                   + 3 // throwing (manual only)
                                   + 3 // throwing with context
                                   + 8 // Generic types
-                                  + 1; // Toplevel Statement
+                                  + 1 // Toplevel Statement
+                                  + 2; // Disabled
 
                 var expectedSpans = requests * 2; // we manually instrument each request too
 
