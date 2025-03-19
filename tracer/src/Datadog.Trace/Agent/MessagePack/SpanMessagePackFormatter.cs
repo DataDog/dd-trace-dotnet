@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Activity;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -172,9 +173,14 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             var hasSpanEvents = span.SpanEvents is { Count: > 0 };
+            var spanEventsManager = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager;
+
             if (hasSpanEvents)
             {
-                len++;
+                if (spanEventsManager?.NativeSpanEventsEnabled == true)
+                {
+                    len++;
+                }
             }
 
             len += 2; // Tags and metrics
@@ -241,7 +247,14 @@ namespace Datadog.Trace.Agent.MessagePack
 
             if (hasSpanEvents)
             {
-                offset += WriteSpanEvent(ref bytes, offset, in spanModel);
+                if (spanEventsManager?.NativeSpanEventsEnabled == true)
+                {
+                    offset += WriteSpanEvent(ref bytes, offset, in spanModel);
+                }
+                else
+                {
+                    OtlpHelpers.SerializeEventsToJson(span, spanModel.Span.SpanEvents);
+                }
             }
 
             return offset - originalOffset;

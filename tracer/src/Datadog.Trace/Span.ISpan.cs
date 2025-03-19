@@ -76,5 +76,8 @@ namespace Datadog.Trace
 
         /// <inheritdoc />
         string ISpan.GetTag(string key) => GetTag(key);
+
+        /// <inheritdoc />
+        void ISpan.AddEvent(SpanEvent spanEvent) => AddEvent(spanEvent);
     }
 }

@@ -14,7 +14,7 @@ namespace Datadog.Trace;
 /// A SpanEvent represents an event that occurred during the execution of a Span.
 /// A Span may have multiple SpanEvents, each with a name, timestamp, and optional attributes.
 /// </summary>
-public class SpanEvent
+public sealed class SpanEvent
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SpanEvent"/> class.
@@ -32,15 +32,15 @@ public class SpanEvent
     /// <summary>
     /// Gets the name of the event.
     /// </summary>
-    public string Name { get; }
+    internal string Name { get; }
 
     /// <summary>
     /// Gets the timestamp when the event occurred.
     /// </summary>
-    public DateTimeOffset Timestamp { get; }
+    internal DateTimeOffset Timestamp { get; }
 
     /// <summary>
     /// Gets the attributes associated with the event.
     /// </summary>
-    public List<KeyValuePair<string, string>>? Attributes { get; }
+    internal List<KeyValuePair<string, string>>? Attributes { get; }
 }

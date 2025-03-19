@@ -733,6 +733,10 @@ namespace Datadog.Trace.Tests
                 _tags[key] = value;
                 return this;
             }
+
+            public void AddEvent(SpanEvent spanEvent)
+            {
+            }
         }
     }
 }
