@@ -333,7 +333,18 @@ namespace Datadog.Trace.Agent
                             Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
                         }
 
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
+                        var bufferData = buffer.Data;
+                        var outputPath = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_SAVE_TRACE_PATH");
+
+                        if (!string.IsNullOrEmpty(outputPath))
+                        {
+                            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+                            var fileName = System.IO.Path.Combine(outputPath, $"trace_{timestamp}.msgpack");
+                            using var fileStream = System.IO.File.OpenWrite(fileName);
+                            fileStream.Write(bufferData.Array!, bufferData.Offset, bufferData.Count);
+                        }
+
+                        var success = await _api.SendTracesAsync(bufferData, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
 
                         TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
                         if (success)
