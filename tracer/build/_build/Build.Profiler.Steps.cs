@@ -45,7 +45,8 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(async () =>
         {
-            Vcpkg.Value("integrate install");
+            var vcpkg = await Vcpkg.Value;
+            vcpkg("integrate install");
         });
 
     Target CompileProfilerNativeSrcWindows => _ => _

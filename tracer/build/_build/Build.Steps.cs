@@ -108,7 +108,7 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
-    Lazy<Tool> Vcpkg => new(() => ToolResolver.GetLocalTool(GetVcpkg().Result));
+    Lazy<Task<Tool>> Vcpkg => new(() => GetVcpkg());
 
     bool IsGitlab => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI_JOB_ID"));
 
@@ -557,7 +557,7 @@ partial class Build
     Target DownloadLibDatadog => _ => _
                 .Unlisted()
                 .After(CreateRequiredDirectories)
-                .Executes(() =>
+                .Executes(async () =>
                 {
                     if (IsLinux || IsOsx)
                     {
@@ -566,9 +566,10 @@ partial class Build
                     }
                     else if (IsWin)
                     {
+                        var vcpkg = await Vcpkg.Value;
                         foreach (var arch in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
                         {
-                            Vcpkg.Value($"install --x-wait-for-lock --triplet \"{arch}-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root={RootDirectory}\" \"--x-install-root={BuildArtifactsDirectory}\\deps\\vcpkg\\{arch}-windows\" --downloads-root {BuildArtifactsDirectory}\\obj\\vcpkg\\downloads --x-packages-root {BuildArtifactsDirectory}\\obj\\vcpkg\\packages --x-buildtrees-root {BuildArtifactsDirectory}\\obj\\vcpkg/buildtrees  --clean-after-build");
+                            vcpkg($"install --x-wait-for-lock --triplet \"{arch}-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root={RootDirectory}\" \"--x-install-root={BuildArtifactsDirectory}\\deps\\vcpkg\\{arch}-windows\" --downloads-root {BuildArtifactsDirectory}\\obj\\vcpkg\\downloads --x-packages-root {BuildArtifactsDirectory}\\obj\\vcpkg\\packages --x-buildtrees-root {BuildArtifactsDirectory}\\obj\\vcpkg/buildtrees  --clean-after-build");
                         }
                     }
                 });
@@ -2806,7 +2807,7 @@ partial class Build
     }
 
     
-    private async Task<string> GetVcpkg()
+    private async Task<Tool> GetVcpkg()
     {
         var vcpkgFilePath = string.Empty;
 
@@ -2819,7 +2820,7 @@ partial class Build
 
         if (File.Exists(vcpkgFilePath))
         {
-            return vcpkgFilePath;
+            return ToolResolver.GetLocalTool(vcpkgFilePath);
         }
 
         // Check if already downloaded
@@ -2828,12 +2829,12 @@ partial class Build
 
         if (File.Exists(vcpkgExecPath))
         {
-            return $"{vcpkgExecPath}";
+            return ToolResolver.GetLocalTool($"{vcpkgExecPath}");
         }
 
         await DownloadAndExtractVcpkg(vcpkgRoot);
         Cmd.Value(arguments: $"cmd /c {vcpkgRoot / "bootstrap-vcpkg.bat"}");
-        return $"{vcpkgRoot / "vcpkg.exe"}";
+        return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
     }
 
     private async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
