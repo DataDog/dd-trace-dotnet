@@ -25,7 +25,7 @@ namespace Datadog.Trace.TestHelpers
             ITraceSampler sampler = null,
             IScopeManager scopeManager = null,
             IDogStatsd statsd = null,
-            DiscoveryService discoveryService = null)
+            IDiscoveryService discoveryService = null)
         {
             return new ScopedTracer(settings, agentWriter, sampler, scopeManager, statsd, discoveryService);
         }
@@ -47,7 +47,7 @@ namespace Datadog.Trace.TestHelpers
                 ITraceSampler sampler = null,
                 IScopeManager scopeManager = null,
                 IDogStatsd statsd = null,
-                DiscoveryService discoveryService = null)
+                IDiscoveryService discoveryService = null)
                 : base(settings, agentWriter, sampler, scopeManager, statsd, discoveryService: discoveryService)
             {
             }
