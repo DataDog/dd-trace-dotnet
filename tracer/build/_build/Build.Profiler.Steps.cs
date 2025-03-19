@@ -45,7 +45,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(async () =>
         {
-            var vcpkg = await Vcpkg.Value;
+            var vcpkg = ToolResolver.GetLocalTool(await GetVcpkg());
             vcpkg("integrate install");
         });
 
