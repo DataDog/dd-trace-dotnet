@@ -19,6 +19,7 @@ using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -362,7 +363,7 @@ namespace Datadog.Trace
                     Env = settings.Environment,
                     Version = settings.ServiceVersion,
                     Service = settings.ServiceName,
-                    Hostname = settings.Exporter.AgentUri.ToString(),
+                    Hostname = HostMetadata.Instance.Hostname,
                     Language = ".NET",
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                     LanguageInterpreter = ".NET"

@@ -69,7 +69,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Hostname
+    public string? Hostname
     {
         init
         {
@@ -78,7 +78,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Env
+    public string? Env
     {
         init
         {
@@ -87,7 +87,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Version
+    public string? Version
     {
         init
         {
@@ -96,7 +96,7 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
-    public string Service
+    public string? Service
     {
         init
         {
