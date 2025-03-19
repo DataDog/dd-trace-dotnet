@@ -191,15 +191,15 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for snapshot exploration test probe path.
             /// Default value is empty.
             /// </summary>
-            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestProbesPath"/>
-            public const string SnapshotExplorationTestProbesPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_PATH";
+            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestProbesFilePath"/>
+            public const string SnapshotExplorationTestProbesFilePath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_FILE_PATH";
 
             /// <summary>
             /// Configuration key for snapshot exploration test report path.
             /// Default value is empty.
             /// </summary>
-            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestReportPath"/>
-            public const string SnapshotExplorationTestReportPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_PATH";
+            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestReportFolderPath"/>
+            public const string SnapshotExplorationTestReportFolderPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_FOLDER_PATH";
         }
     }
 }

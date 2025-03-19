@@ -21,8 +21,8 @@ partial class Build
         {
             envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            envVars.Add(SnapshotExplorationProbesPathKey, Path.Combine(testRootPath, SnapshotExplorationTestProbesFileName));
-            envVars.Add(SnapshotExplorationReportPathKey, Path.Combine(testRootPath, SnapshotExplorationTestReportFileName));
+            envVars.Add(SnapshotExplorationProbesFilePathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestProbesFileName));
+            envVars.Add(SnapshotExplorationReportFolderPathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestReportFolderName));
         }
         else if (description.LineProbesEnabled)
         {

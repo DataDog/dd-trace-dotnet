@@ -141,8 +141,8 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
             IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
-            SnapshotExplorationTestProbesPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesPath).AsString(string.Empty);
-            SnapshotExplorationTestReportPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportPath).AsString(string.Empty);
+            SnapshotExplorationTestProbesFilePath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesFilePath).AsString(string.Empty);
+            SnapshotExplorationTestReportFolderPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportFolderPath).AsString(string.Empty);
         }
 
         public bool Enabled { get; }
@@ -183,9 +183,9 @@ namespace Datadog.Trace.Debugger
 
         public bool IsSnapshotExplorationTestEnabled { get; }
 
-        public string SnapshotExplorationTestProbesPath { get; }
+        public string SnapshotExplorationTestProbesFilePath { get; }
 
-        public string SnapshotExplorationTestReportPath { get; }
+        public string SnapshotExplorationTestReportFolderPath { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
