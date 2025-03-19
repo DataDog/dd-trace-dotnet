@@ -106,7 +106,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => packageVersion switch
             {
                 null or "" => "6_x", // the default version in the csproj
-                _ when new Version(packageVersion) >= new Version("7.0.0") => "7_x",
                 _ when new Version(packageVersion) >= new Version("6.0.0") => "6_x",
                 _ when new Version(packageVersion) >= new Version("5.0.0") => "5_x",
                 _ => "3_x",
