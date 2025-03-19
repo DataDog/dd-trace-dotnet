@@ -108,7 +108,7 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
-    readonly Lazy<Tool> Vcpkg => GetVcpk();
+    Lazy<Tool> Vcpkg => new(() => ToolResolver.GetLocalTool(GetVcpkg().Result));
 
     bool IsGitlab => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI_JOB_ID"));
 
@@ -554,9 +554,10 @@ partial class Build
             }
         });
 
-    Target InstallLibDatadog => _ => _
+    Target DownloadLibDatadog => _ => _
                 .Unlisted()
-                .Executes(async () =>
+                .After(CreateRequiredDirectories)
+                .Executes(() =>
                 {
                     if (IsLinux || IsOsx)
                     {
@@ -565,15 +566,17 @@ partial class Build
                     }
                     else if (IsWin)
                     {
-                        Vcpkg.Value($"install --x-wait-for-lock --triplet \"x64-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root=${RootDirectory}\" \"--x-install-root=${BuildArtifactsDirectory}\deps\vcpkg\x64-windows\" --downloads-root ${BuildArtifactsDirectory}\obj\vcpkg\downloads --x-packages-root ${BuildArtifactsDirectory}\obj\vcpkg\packages --x-buildtrees-root ${BuildArtifactsDirectory}\obj\vcpkg/buildtrees  --clean-after-build");
-                        Vcpkg.Value($"install --x-wait-for-lock --triplet \"x86-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root=${RootDirectory}\" \"--x-install-root=${BuildArtifactsDirectory}\deps\vcpkg\x64-windows\" --downloads-root ${BuildArtifactsDirectory}\obj\vcpkg\downloads --x-packages-root ${BuildArtifactsDirectory}\obj\vcpkg\packages --x-buildtrees-root ${BuildArtifactsDirectory}\obj\vcpkg/buildtrees  --clean-after-build");
+                        foreach (var arch in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
+                        {
+                            Vcpkg.Value($"install --x-wait-for-lock --triplet \"{arch}-windows\" --vcpkg-root \"{BuildArtifactsDirectory}\\bin\\vcpkg\" \"--x-manifest-root={RootDirectory}\" \"--x-install-root={BuildArtifactsDirectory}\\deps\\vcpkg\\{arch}-windows\" --downloads-root {BuildArtifactsDirectory}\\obj\\vcpkg\\downloads --x-packages-root {BuildArtifactsDirectory}\\obj\\vcpkg\\packages --x-buildtrees-root {BuildArtifactsDirectory}\\obj\\vcpkg/buildtrees  --clean-after-build");
+                        }
                     }
-                })
+                });
 
     Target CopyLibDatadog => _ => _
                 .Unlisted()
-                .After(InstallLibDatadog)
-                .Executes(async () =>
+                .After(DownloadLibDatadog)
+                .Executes(() =>
                 {
                     if (IsWin)
                     {
@@ -583,16 +586,16 @@ partial class Build
                             var source = vcpkgDepsFolder / $"{architecture}-windows" / $"{architecture}-windows";
                             if (BuildConfiguration == Configuration.Debug)
                             {
-                                source \= "debug";
+                                source /= "debug";
                             }
 
-                            var dllFile = source / "datadog_profiling_ffi.dll";
+                            var dllFile = source / "bin" / "datadog_profiling_ffi.dll";
                             var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                            
-                            var pdbFile = source / "datadog_profiling_ffi.pdb";
+                            CopyFileToDirectory(dllFile, dest, FileExistsPolicy.Overwrite);
+
+                            var pdbFile = source / "bin" / "datadog_profiling_ffi.pdb";
                             dest = SymbolsDirectory / $"win-{architecture}";
-                            CopyFileToDirectory(pdbFile, dest);
+                            CopyFileToDirectory(pdbFile, dest, FileExistsPolicy.Overwrite);
                         }
                     }
                     else if (IsLinux || IsOsx)
@@ -605,7 +608,7 @@ partial class Build
                         var dest = MonitoringHomeDirectory / destArch;
                         CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                     }
-                })
+                });
 
     Target CopyNativeFilesForAppSecUnitTests => _ => _
                 .Unlisted()
@@ -2803,7 +2806,7 @@ partial class Build
     }
 
     
-    private static async Task<Tool> GetVcpkg()
+    private async Task<string> GetVcpkg()
     {
         var vcpkgFilePath = string.Empty;
 
@@ -2816,7 +2819,7 @@ partial class Build
 
         if (File.Exists(vcpkgFilePath))
         {
-            return ToolResolver.GetLocalTool(vcpkgFilePath);
+            return vcpkgFilePath;
         }
 
         // Check if already downloaded
@@ -2825,15 +2828,15 @@ partial class Build
 
         if (File.Exists(vcpkgExecPath))
         {
-            return ToolResolver.GetLocalTool($"{vcpkgExecPath}");
+            return $"{vcpkgExecPath}";
         }
 
         await DownloadAndExtractVcpkg(vcpkgRoot);
         Cmd.Value(arguments: $"cmd /c {vcpkgRoot / "bootstrap-vcpkg.bat"}");
-        return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
+        return $"{vcpkgRoot / "vcpkg.exe"}";
     }
 
-    private static async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
+    private async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
     {
         var nbTries = 0;
         var keepTrying = true;
