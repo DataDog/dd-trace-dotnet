@@ -205,7 +205,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
-        .DependsOn(InstallLibDatadog)
+        .DependsOn(DownloadLibDatadog)
         .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
@@ -221,7 +221,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracerR2R)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
-        .DependsOn(InstallLibDatadog)
+        .DependsOn(DownloadLibDatadog)
         .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile);
