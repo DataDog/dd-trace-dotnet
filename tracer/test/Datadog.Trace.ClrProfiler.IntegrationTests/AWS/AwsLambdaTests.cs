@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -23,6 +24,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [Trait("RequiresDockerDependency", "true")]
     public class AwsLambdaTests : TestHelper
     {
+        private const int ExpectedRequests =
+            9 // param tests
+          + 3 // param with context
+          + 5 // base instrumentation
+          + 6 // other parameter types
+          + 3 // throwing (manual only)
+          + 3 // throwing with context
+          + 8 // Generic types
+          + 1; // Toplevel Statement
+
         private static readonly Regex StackRegex = new(@"(      error.stack:)(?:\n|\r){1,2}(?:[^,]*(?:\n|\r){1,2})+.*(,(?:\r|\n){1,2})");
         private static readonly Regex ErrorMsgRegex = new(@"(      error.msg:).*(,(\r|\n){1,2})");
 
@@ -49,39 +60,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             agent.Output = Output;
             using (await RunSampleAndWaitForExit(agent))
             {
-                var requests = 9 // param tests
-                                  + 3 // param with context
-                                  + 5 // base instrumentation
-                                  + 6 // other parameter types
-                                  + 3 // throwing (manual only)
-                                  + 3 // throwing with context
-                                  + 8 // Generic types
-                                  + 1; // Toplevel Statement
-
-                var expectedSpans = requests * 2; // we manually instrument each request too
+                // we manually instrument each request too
+                var expectedSpans = ExpectedRequests * 2;
 
                 var spans = agent.WaitForSpans(expectedSpans, 15_000).ToArray();
 
                 // Verify all the "with context" end invocations have a corresponding start context
                 using var s = new AssertionScope();
-                var startWithContext = extensionWithContext.StartInvocations.ToList();
-                var endWithContext = extensionWithContext.EndInvocations.ToList();
-                startWithContext.Should().OnlyContain(x => x.TraceId.HasValue);
-                endWithContext.Should().OnlyContain(x => x.TraceId.HasValue);
-                var contextPairs = extensionWithContext.EndInvocations
-                                                       .Select(x => (start: startWithContext.SingleOrDefault(y => y.TraceId == x.TraceId), end: x))
-                                                       .ToList();
-                contextPairs.Should().OnlyContain(x => x.start != null);
-                var withContextSpans = contextPairs.Select(x => ToMockSpan(x.end, x.start.Created));
-
-                // We can't match no-context start invocations with the end invocations, so just use the end ones
-                var noContextSpans = extensionNoContext.EndInvocations.Select(x => ToMockSpan(x, startTime: null));
+                var allExtensionSpans = GetExtensionSpans(extensionWithContext, extensionNoContext);
 
                 // Create the complete traces
-                var allSpans = withContextSpans
-                              .Concat(noContextSpans)
-                              .Concat(spans)
-                              .ToList();
+                var allSpans = allExtensionSpans.Concat(spans).ToList();
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -92,6 +81,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(allSpans, settings)
                                   .UseFileName(nameof(AwsLambdaTests));
             }
+        }
+
+        private static IEnumerable<MockSpan> GetExtensionSpans(MockLambdaExtension extensionWithContext, MockLambdaExtension extensionNoContext)
+        {
+            var startWithContext = extensionWithContext.StartInvocations.ToList();
+            var endWithContext = extensionWithContext.EndInvocations.ToList();
+            startWithContext.Should().OnlyContain(x => x.TraceId.HasValue);
+            endWithContext.Should().OnlyContain(x => x.TraceId.HasValue);
+            var contextPairs = extensionWithContext.EndInvocations
+                                                   .Select(x => (start: startWithContext.SingleOrDefault(y => y.TraceId == x.TraceId), end: x))
+                                                   .ToList();
+            contextPairs.Should().OnlyContain(x => x.start != null);
+            var withContextSpans = contextPairs.Select(x => ToMockSpan(x.end, x.start.Created));
+
+            // We can't match no-context start invocations with the end invocations, so just use the end ones
+            var noContextSpans = extensionNoContext.EndInvocations.Select(x => ToMockSpan(x, startTime: null));
+
+            var allExtensionSpans = withContextSpans.Concat(noContextSpans);
+            return allExtensionSpans;
         }
 
         private static MockSpan ToMockSpan(MockLambdaExtension.EndExtensionRequest endInvocation, DateTimeOffset? startTime)
