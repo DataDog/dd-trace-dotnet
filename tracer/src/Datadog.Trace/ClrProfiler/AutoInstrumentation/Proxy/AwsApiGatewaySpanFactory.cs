@@ -30,7 +30,7 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
             var tags = new InferredProxyTags
             {
                 HttpMethod = data.HttpMethod,
-                InstrumentationName = data.ProxyName, // TODO: check to make sure this is really what we want for the component tag
+                InstrumentationName = data.ProxyName,
                 HttpUrl = httpUrl,
                 HttpRoute = data.Path,
                 Stage = data.Stage
@@ -41,7 +41,6 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
             scope.Span.ResourceName = resourceName;
             scope.Span.Type = SpanTypes.Web;
 
-            // TODO RFC said to copy over all Errors - do we do this here or outside of this function as we do with the current spans
             return scope;
         }
         catch (Exception ex)
