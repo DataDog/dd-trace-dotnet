@@ -48,62 +48,67 @@ internal enum ErrorCode
     HttpClient = 6,
 
     /// <summary>
+    /// HTTP empty body
+    /// </summary>
+    HttpEmptyBody = 7,
+
+    /// <summary>
     /// Error while parsing HTTP message
     /// </summary>
-    HttpParse = 7,
+    HttpParse = 8,
 
     /// <summary>
     /// HTTP error originated by server
     /// </summary>
-    HttpServer = 8,
+    HttpServer = 9,
 
     /// <summary>
     /// HTTP unknown error
     /// </summary>
-    HttpUnknown = 9,
+    HttpUnknown = 10,
 
     /// <summary>
     /// HTTP wrong status number
     /// </summary>
-    HttpWrongStatus = 10,
+    HttpWrongStatus = 11,
 
     /// <summary>
     /// Invalid argument provided
     /// </summary>
-    InvalidArgument = 11,
+    InvalidArgument = 12,
 
     /// <summary>
     /// Invalid data payload
     /// </summary>
-    InvalidData = 12,
+    InvalidData = 13,
 
     /// <summary>
     /// Invalid input
     /// </summary>
-    InvalidInput = 13,
+    InvalidInput = 14,
 
     /// <summary>
     /// Invalid URL
     /// </summary>
-    InvalidUrl = 14,
+    InvalidUrl = 15,
 
     /// <summary>
     /// Input/Output error
     /// </summary>
-    IoError = 15,
+    IoError = 16,
 
     /// <summary>
     /// Unknown network error
     /// </summary>
-    NetworkUnknown = 16,
+    NetworkUnknown = 17,
 
     /// <summary>
     /// Serialization/Deserialization error
     /// </summary>
-    Serde = 17,
+    Serde = 18,
 
     /// <summary>
     /// Operation timed out
     /// </summary>
-    TimedOut = 18,
+    TimedOut = 19,
 }
