@@ -2587,6 +2587,9 @@ stages:
         net8:
           publishTargetFramework: "net8.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8"
+        net9:
+          publishTargetFramework: "net9.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
     pool:
       name: azure-linux-scale-set
 
