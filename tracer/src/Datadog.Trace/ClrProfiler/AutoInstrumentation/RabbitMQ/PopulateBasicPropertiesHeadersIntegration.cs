@@ -97,6 +97,6 @@ public class PopulateBasicPropertiesHeadersIntegration
             duckType.Headers,
             int.TryParse(tags.MessageSize, out var bodyLength) ? bodyLength : 0);
 
-        return new CallTargetReturn<TReturn?>(returnValue);
+        return new CallTargetReturn<TReturn?>(basicProperties);
     }
 }
