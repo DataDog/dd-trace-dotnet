@@ -114,6 +114,6 @@ updates:
       interval: "monthly"
     groups:
       gh-actions-packages:
-        update-types: ["version-update:semver-patch"]
+        update-types: ["minor"]
         patterns:
           - "*"
