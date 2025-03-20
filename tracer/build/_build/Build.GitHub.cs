@@ -22,7 +22,6 @@ using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
-using ThroughputComparison;
 using YamlDotNet.Serialization.NamingConventions;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
