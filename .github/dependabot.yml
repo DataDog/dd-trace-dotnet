@@ -106,7 +106,10 @@ updates:
       ### End Datadog.Trace.csproj ignored dependencies
 
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/*"
+      - "/.github/actions/*/*"
     schedule:
       interval: "monthly"
     groups:
