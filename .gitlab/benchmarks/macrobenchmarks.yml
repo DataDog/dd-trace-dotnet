@@ -401,3 +401,175 @@ profiler_cpu_timer_create-arm64:
     DD_PROFILING_CPU_ENABLED: 1
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
+
+.benchmarks-win:
+  stage: benchmarks-win
+  needs: ["check_azure_pipeline"]
+  tags: ["runner:docker"]
+  interruptible: true
+  timeout: 1h
+  # Image based on earlier version of tooling
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-tests
+
+  script:
+    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
+    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
+    - mkdir -p ~/.aws
+    - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER \
+        >> ~/.aws/config || exit $?
+    - |
+      aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-pair-name" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-name.txt
+      aws ssm get-parameter --region "$AWS_REGION" --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-private-key" --with-decryption --query "Parameter.Value" --out text >> ~/.aws/key-pair-private-key.pem
+    - export AWS_PROFILE=ephemeral-infra-ci
+    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
+    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
+    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - ./platform/pass-artifatcs-to-windows.sh
+    - cd /app
+    - |
+      ./infra/launch.sh --provision infra/src/provisions/dotnet-ssh/ephemeral-instance.yaml \
+        --region "${AWS_REGION}" \
+        $CLEANUP_ARG
+    
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  rules:
+    - when: on_success
+  variables:
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+    AWS_REGION: "us-east-1"
+    CLEANUP: "false"
+    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
+    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
+    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
+    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
+
+    K6_OPTIONS_WARMUP_RATE: 30
+    K6_OPTIONS_WARMUP_DURATION: 3m
+    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
+    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_WARMUP_MAX_VUS: 4
+
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 400
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+
+    K6_OPTIONS_HIGH_LOAD_RATE: 600
+    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
+    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+
+baseline-win:
+  extends: .benchmarks-win
+  variables:
+    ENDPOINT: "hello"
+
+calltarget_ngen-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_CLR_ENABLE_INLINING: 1
+    DD_CLR_ENABLE_NGEN: 1
+    ENDPOINT: "hello"
+
+trace_stats-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_CLR_ENABLE_INLINING: 1
+    DD_CLR_ENABLE_NGEN: 1
+    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
+    ENDPOINT: "hello"
+
+manual_only-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
+    ENDPOINT: "hello"
+
+manual_and_automatic-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
+    ENDPOINT: "hello"
+
+ddtraceenabled_false-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_TRACE_ENABLED: 0
+    ENDPOINT: "hello"
+
+profiler_exceptions_baseline-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 0
+    CORECLR_ENABLE_PROFILING: 0
+    ENDPOINT: "hello/Exception"
+
+profiler-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_PROFILING_ENABLED: 1
+    COMPlus_EnableDiagnostics: 1
+    ENDPOINT: "hello"
+
+profiler_walltime-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_PROFILING_ENABLED: 1
+    COMPlus_EnableDiagnostics: 1
+    DD_PROFILING_WALLTIME_ENABLED: 1
+    DD_PROFILING_CPU_ENABLED: 0
+    ENDPOINT: "hello"
+
+profiler_exceptions-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_PROFILING_ENABLED: 1
+    DD_PROFILING_EXCEPTION_ENABLED: 1
+    COMPlus_EnableDiagnostics: 1
+    ENDPOINT: "hello/Exception"
+
+profiler_cpu-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_PROFILING_ENABLED: 1
+    DD_PROFILING_WALLTIME_ENABLED: 0
+    DD_PROFILING_CPU_ENABLED: 1
+    COMPlus_EnableDiagnostics: 1
+    ENDPOINT: "hello"
+
+profiler_cpu_timer_create-win:
+  extends: .benchmarks-win
+  variables:
+    COR_ENABLE_PROFILING: 1
+    CORECLR_ENABLE_PROFILING: 1
+    DD_PROFILING_ENABLED: 1
+    DD_PROFILING_WALLTIME_ENABLED: 0
+    DD_PROFILING_CPU_ENABLED: 1
+    COMPlus_EnableDiagnostics: 1
+    ENDPOINT: "hello"
