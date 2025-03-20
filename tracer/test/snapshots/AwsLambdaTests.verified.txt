@@ -1978,5 +1978,45 @@
     Metrics: {
       _dd.top_level: 1.0
     }
+  },
+  {
+    TraceId: Id_153,
+    SpanId: Id_154,
+    Name: manual.HandlerNoParamSync,
+    Resource: manual.HandlerNoParamSync,
+    Service: Samples.AWS.Lambda,
+    Tags: {
+      language: dotnet,
+      runtime-id: Guid_39
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_153,
+    SpanId: Id_155,
+    Name: http.request,
+    Resource: GET serverless-dummy-api:9005/function/HandlerNoParamSync,
+    Service: Samples.AWS.Lambda-http-client,
+    Type: http,
+    ParentId: Id_154,
+    Tags: {
+      component: WebRequest,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://serverless-dummy-api:9005/function/HandlerNoParamSync,
+      language: dotnet,
+      out.host: serverless-dummy-api,
+      runtime-id: Guid_39,
+      span.kind: client,
+      _dd.base_service: Samples.AWS.Lambda
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
   }
 ]
