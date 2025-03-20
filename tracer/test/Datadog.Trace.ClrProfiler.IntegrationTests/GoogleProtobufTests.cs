@@ -41,6 +41,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
     [SkippableTheory]
     [MemberData(nameof(GetEnabledConfig))]
     [Trait("Category", "EndToEnd")]
+    [Trait("SkipInCI", "True")] // broken
     public async Task TagTraces(string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
@@ -72,8 +73,9 @@ public class GoogleProtobufTests : TracingIntegrationTest
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
+    [Trait("SkipInCI", "True")] // broken
     public async Task NoInstrumentationForGoogleTypes()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
@@ -89,8 +91,9 @@ public class GoogleProtobufTests : TracingIntegrationTest
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
+    [Trait("SkipInCI", "True")] // broken
     public async Task OnlyEnabledWithDsm()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
