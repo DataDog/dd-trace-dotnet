@@ -1072,7 +1072,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./artifacts/build_data/logs/serverless-lambda-no-param-sync:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-disabled-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-disabled-toplevel-statement:
     build:
@@ -1097,7 +1097,7 @@ services:
       - "8080"
     volumes:
       - ./:/project
-      - ./artifacts/build_data/logs/serverless-lambda-toplevel-statement:/var/log/datadog/dotnet
+      - ./artifacts/build_data/logs/serverless-lambda-disabled-toplevel-statement:/var/log/datadog/dotnet
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:

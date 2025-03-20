@@ -40,7 +40,7 @@ namespace Samples.AWS.Lambda
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_TOPLEVEL_STATEMENT"));
 
-            // Standard handlers
+            // Param tests
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC"));
