@@ -83,14 +83,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instrumentation", "instrume
 	ProjectSection(SolutionItems) = preProject
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "crank", "crank", "{E3FB283A-B766-4887-95E1-329667671921}"
-	ProjectSection(SolutionItems) = preProject
-		tracer\build\crank\os.profiles.yml = tracer\build\crank\os.profiles.yml
-		tracer\build\crank\run.sh = tracer\build\crank\run.sh
-		tracer\build\crank\Samples.AspNetCoreSimpleController.yml = tracer\build\crank\Samples.AspNetCoreSimpleController.yml
-		tracer\build\crank\Security.Samples.AspNetCoreSimpleController.yml = tracer\build\crank\Security.Samples.AspNetCoreSimpleController.yml
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{550362BF-A3A7-4F20-9590-24F4F8C380FF}"
 	ProjectSection(SolutionItems) = preProject
 	EndProjectSection
@@ -1068,7 +1060,6 @@ Global
 		{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{E5439139-6F94-44FA-9590-C32FCC1C7A93} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{933F1D4B-1216-4BC1-956E-8C30818BAA0F} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
-		{E3FB283A-B766-4887-95E1-329667671921} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 		{550362BF-A3A7-4F20-9590-24F4F8C380FF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{7D231B65-AA8E-4917-85FF-BBBF7992B6FC} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{0972AD57-B16B-494F-AE0A-091DD6F3B42B} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
