@@ -563,8 +563,14 @@ void* dd_pthread_entry(void* arg)
 {
     struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
     void* result;
+#ifndef ARM64
     pthread_cleanup_push(dd_pthread_cleanup_routine, new_arg);
+#endif
     result = new_arg->func(new_arg->orig_arg);
+#ifdef ARM64
+    free(new_arg);
+    __dd_on_thread_routine_finished();
+#else
     // This dd_pthread_cleanup_routine will be executed whenever we stop the thread
     // either pthread_exit, either pthread_cancel.
     // But also when `func` routine finishes.
@@ -573,6 +579,7 @@ void* dd_pthread_entry(void* arg)
     // (arg '1'is to explicitly execute the __dd_on_thread_routine_finished)
     // `new_arg` will be freed in the cleanup routine
     pthread_cleanup_pop(1);
+#endif
     return result;
 }
 

@@ -1,6 +1,4 @@
 __errno_location
-_pthread_cleanup_pop
-_pthread_cleanup_push
 access
 asprintf
 free
