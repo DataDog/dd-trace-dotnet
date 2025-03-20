@@ -59,7 +59,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                                   + 1 // Toplevel Statement
                                   + 2; // Disabled
 
-                var expectedSpans = requests * 2; // we manually instrument each request too
+                // We have HTTP Request + Manual span + Lambda span for each request
+                // -2 for the "lambda integration disabled" cases
+                var expectedSpans = (requests * 2) - 2;
 
                 var spans = agent.WaitForSpans(expectedSpans, 15_000).ToArray();
 
