@@ -11,6 +11,7 @@
       aspnet.action: transientfailure,
       aspnet.controller: conventions,
       aspnet.route: api2/{action}/{value},
+      component: aspnet,
       env: integration_tests,
       error.msg: Passed in value was not 'true': false,
       error.stack:

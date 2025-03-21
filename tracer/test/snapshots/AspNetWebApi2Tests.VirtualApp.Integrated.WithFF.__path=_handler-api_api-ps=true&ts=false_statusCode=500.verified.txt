@@ -22,6 +22,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value,
       error.stack:
