@@ -23,8 +23,9 @@
     SpanId: Id_4,
     Name: aws.apigateway,
     Resource: GET /api/test,
-    Service: Samples.AspNetCoreMvc31,
+    Service: test.api.com,
     Type: web,
+    ParentId: Id_5,
     Tags: {
       component: aws-apigateway,
       env: integration_tests,
@@ -35,15 +36,11 @@
       http.status_code: 200,
       http.url: test.api.com/api/test,
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: internal,
       stage: prod,
-      version: 1.0.0
+      _dd.base_service: Samples.AspNetCoreMvc31
     },
     Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -71,8 +68,12 @@
       http.url: http://localhost:00000/,
       http.useragent: testhelper,
       language: dotnet,
+      runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   }
 ]
