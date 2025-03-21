@@ -3252,15 +3252,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-        - script: |
-            # Attempting to copy somewhere else to see what the errors are and avoid permissions issues
-            mkdir -p $(Agent.TempDirectory)/build_data
-            cp -r artifacts/build_data $(Agent.TempDirectory)/build_data
-          displayName: Copy data
-          condition: always()
-          continueOnError: true
-
-        - publish: $(Agent.TempDirectory)/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
           continueOnError: true
@@ -3356,15 +3348,7 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
-        - script: |
-            # Attempting to copy somewhere else to see what the errors are and avoid permissions issues
-            mkdir -p $(Agent.TempDirectory)/build_data
-            cp -r artifacts/build_data $(Agent.TempDirectory)/build_data
-          displayName: Copy data
-          condition: always()
-          continueOnError: true
-
-        - publish: $(Agent.TempDirectory)/build_data
+        - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
           continueOnError: true
