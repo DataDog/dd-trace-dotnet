@@ -148,7 +148,7 @@ partial class Build
                         _ => "(Category!=LinuxUnsupported)&(SkipInCI!=True)",
                     };
 
-                    return Filter is null ? filter : $"{Filter}&{filter}";
+                    return string.IsNullOrEmpty(Filter) ? filter : $"{Filter}&{filter}";
                 }
             }
             finally
