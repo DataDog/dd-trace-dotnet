@@ -63,12 +63,12 @@ internal class InferredProxyCoordinator
                 return null;
             }
 
-            var updatedContext = new PropagationContext(scope.Span.Context, propagationContext.Baggage); // TODO is this correct?
+            var updatedContext = new PropagationContext(scope.Span.Context, propagationContext.Baggage);
             return new InferredProxyScopePropagationContext(scope, updatedContext);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error processing inferred proxy span."); // TODO, we have too many Log.Errors, we should consider removing this one as the other two log errors
+            Log.Error(ex, "Error processing inferred proxy span.");
             return null;
         }
     }
