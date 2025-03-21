@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading;
 
 namespace Datadog.Trace.Configuration;
@@ -27,7 +26,8 @@ internal class ExtraServicesProvider
     {
         // Several threads entering simultaneously can cause MaxExtraService to be exceeded.
         // As long as the list doesn't grow much beyond MaxExtraService we don't care.
-        if (_serviceCount >= MaxExtraServices ||
+        if (serviceName == null! ||
+            _serviceCount >= MaxExtraServices ||
             _extraServices.ContainsKey(serviceName))
         {
             return;
