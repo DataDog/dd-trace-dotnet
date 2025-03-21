@@ -64,10 +64,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public static new TheoryData<string, int> Data() => new()
         {
             { "/", 200 },
-            // { "/not-found", 404 },
-            // { "/status-code/203", 203 },
-            // { "/bad-request", 500 },
-            // { "/handled-exception", 500 },
+            { "/not-found", 404 },
+            { "/status-code/203", 203 },
+            { "/bad-request", 500 },
+            { "/handled-exception", 500 },
         };
 
         [SkippableTheory]
