@@ -973,7 +973,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         }
         else
         {
-            Logger::Debug("Libdatadog library does not exist: ", libdatadog_library_path);
+            Logger::Info("Libdatadog library does not exist: ", libdatadog_library_path);
         }
 
         mdTypeDef bubbleUpTypeDef;
