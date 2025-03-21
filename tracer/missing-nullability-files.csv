@@ -128,7 +128,6 @@ src/Datadog.Trace/FaultTolerant/FaultTolerantInvoker.cs
 src/Datadog.Trace/FaultTolerant/FaultTolerantNativeMethods.cs
 src/Datadog.Trace/FaultTolerant/InstrumentingProducts.cs
 src/Datadog.Trace/Headers/HeadersCollectionAdapter.cs
-src/Datadog.Trace/Headers/HeadersCollectionExtensions.cs
 src/Datadog.Trace/Headers/IHeadersCollection.cs
 src/Datadog.Trace/Headers/NameValueHeadersCollection.cs
 src/Datadog.Trace/Headers/WebHeadersCollection.cs
