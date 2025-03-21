@@ -3253,7 +3253,7 @@ stages:
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
         - script: |
-            sudo chmod -R 644 artifacts/build_data/* || true
+            sudo chmod -R 755 artifacts/build_data/* || true
           displayName: Make build_data uploadable to AzDo
           condition: succeededOrFailed()
 
@@ -3360,6 +3360,11 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
           continueOnError: true
+
+        - script: |
+            sudo chmod -R 755 artifacts/build_data/* || true
+          displayName: Make build_data uploadable to AzDo
+          condition: succeededOrFailed()
 
         - script: |
             # Attempting to copy somewhere else to see what the errors are and avoid permissions issues
