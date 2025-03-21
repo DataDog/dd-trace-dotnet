@@ -1298,6 +1298,25 @@ partial class Build
         .DependsOn(RunProfilerNativeUnitTestsLinux)
         .After(CompileProfilerNativeTests);
 
+    Target CompileSecurityIntegrationTests => _ => _
+    .Unlisted()
+    .After(CompileManagedSrc)
+    .After(CompileManagedTestHelpers)
+    .After(PublishIisSamples)
+    .After(BuildRunnerTool)
+    .Requires(() => Framework)
+    .Requires(() => MonitoringHomeDirectory != null)
+    .Executes(() =>
+    {
+        var projects = TracerDirectory
+                .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
+                .Where(path => ((string)path).Contains(Projects.AppSecIntegrationTests))
+                .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
+            ;
+
+        DotnetBuild(projects, framework: Framework);
+    });
+
     Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
@@ -1318,6 +1337,7 @@ partial class Build
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
+                    .Where(path => !((string)path).Contains(Projects.AppSecIntegrationTests))
                     .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
                 ;
 

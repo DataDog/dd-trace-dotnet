@@ -274,6 +274,7 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CompileSecurityIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -282,7 +283,8 @@ partial class Build : NukeBuild
         .Description("Builds the ASP.NET integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(PublishIisSamples)
-        .DependsOn(CompileIntegrationTests);
+        .DependsOn(CompileIntegrationTests)
+        .DependsOn(CompileSecurityIntegrationTests);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
