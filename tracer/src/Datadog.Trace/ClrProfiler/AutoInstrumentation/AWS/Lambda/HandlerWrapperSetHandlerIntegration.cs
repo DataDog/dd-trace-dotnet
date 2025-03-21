@@ -109,7 +109,9 @@ public class HandlerWrapperSetHandlerIntegration
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AwsLambda))
             {
-                // integration disabled, don't create a scope, skip this trace
+                // integration disabled, don't create a scope, skip this trace,
+                // but we still need to make sure we flush any traces
+                await LambdaCommon.FlushTracesAsync().ConfigureAwait(false);
                 return returnValue;
             }
 
