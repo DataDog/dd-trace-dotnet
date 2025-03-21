@@ -9,6 +9,8 @@ services:
       - DEFAULT_REGION=us-east-1
     ports:
       - "4566:4566"
+    volumes:
+      - "./artifacts/build_data/localstack:/tmp"
 
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1
