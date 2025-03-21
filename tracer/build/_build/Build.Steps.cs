@@ -1776,7 +1776,7 @@ partial class Build
 
     Target RunWindowsSecurityIisIntegrationTests => _ => _
         .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
+        .After(CompileSecurityIntegrationTests)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
