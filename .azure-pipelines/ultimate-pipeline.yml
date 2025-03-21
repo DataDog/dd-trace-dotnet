@@ -1489,6 +1489,7 @@ stages:
         command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -1538,6 +1539,7 @@ stages:
             command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -2432,11 +2434,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2538,11 +2536,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2727,11 +2721,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2821,11 +2811,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -3252,6 +3238,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3348,6 +3335,7 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3434,6 +3422,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3614,6 +3603,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -4136,6 +4126,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       displayName: Uploading tool_artifacts_tests_windows logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -4260,11 +4251,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
