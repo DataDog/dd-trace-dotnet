@@ -807,7 +807,7 @@ namespace Datadog.Trace.Configuration
             /// always injected as decimal strings, regardless of this setting.
             /// If unset, this configuration will take the value of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
             /// which is <c>true</c> by default.
-            /// Note: This configuration can be still be set independently of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// Note: This configuration can be set independently of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
             /// so it's possible to inject 128-bit trace ids into logs even if the application is only generating 64-bit trace ids, since distributed traces from upstream
             /// services may contain 128-bit trace ids.
             /// </summary>
