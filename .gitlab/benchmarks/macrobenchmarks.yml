@@ -424,7 +424,7 @@ profiler_cpu_timer_create-arm64:
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
     - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - ./platform/pass-artifatcs-to-windows.sh
+    - ./platform/pass-artifacts-to-windows.sh
     - cd /app
     - |
       ./infra/launch.sh --provision infra/src/provisions/dotnet-ssh/ephemeral-instance.yaml \
