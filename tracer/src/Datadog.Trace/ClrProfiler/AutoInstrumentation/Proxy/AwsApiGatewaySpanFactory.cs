@@ -36,7 +36,7 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
                 Stage = data.Stage
             };
 
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags);
+            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
 
             scope.Span.ResourceName = resourceName;
             scope.Span.Type = SpanTypes.Web;
