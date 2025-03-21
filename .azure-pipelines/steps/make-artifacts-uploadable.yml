@@ -5,7 +5,7 @@ parameters:
 
 steps:
   - script: |
-      sudo chmod -R 755 ${{ parameters.artifact }} || true
-    displayName: Make ${{ parameters.artifact }} uploadable to AzDo
+      sudo chmod -R 755 ${{ parameters.path }} || true
+    displayName: Make ${{ parameters.path }} uploadable to AzDo
     condition: always()
 
