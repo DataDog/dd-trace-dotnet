@@ -1,0 +1,70 @@
+// <copyright file="ImmutableDynamicDebuggerSettings.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+
+#nullable enable
+
+namespace Datadog.Trace.Debugger.Configurations
+{
+    internal class ImmutableDynamicDebuggerSettings : IEquatable<ImmutableDynamicDebuggerSettings>
+    {
+        public bool? DynamicInstrumentationEnabled { get; init; }
+
+        public bool? ExceptionReplayEnabled { get; init; }
+
+        public bool? CodeOriginEnabled { get; init; }
+
+        public bool? DebuggerEnabled { get; init; }
+
+        public bool Equals(ImmutableDynamicDebuggerSettings? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return
+                DynamicInstrumentationEnabled == other.DynamicInstrumentationEnabled
+             && ExceptionReplayEnabled == other.ExceptionReplayEnabled
+             && CodeOriginEnabled == other.CodeOriginEnabled
+             && DebuggerEnabled == other.DebuggerEnabled;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != GetType())
+            {
+                return false;
+            }
+
+            return Equals((ImmutableDynamicDebuggerSettings)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(
+                DynamicInstrumentationEnabled,
+                ExceptionReplayEnabled,
+                CodeOriginEnabled,
+                DebuggerEnabled);
+        }
+    }
+}
