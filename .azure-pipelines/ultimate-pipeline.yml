@@ -2711,7 +2711,9 @@ stages:
           serverless-lambda-generic-abstract-async \
           serverless-lambda-generic-complex \
           serverless-lambda-generic-complex-nested \
-          serverless-lambda-toplevel-statement
+          serverless-lambda-toplevel-statement \
+          serverless-lambda-disabled-no-param-sync \
+          serverless-lambda-disabled-toplevel-statement
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
