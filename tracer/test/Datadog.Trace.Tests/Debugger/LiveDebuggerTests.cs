@@ -97,7 +97,8 @@ public class LiveDebuggerTests
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
                     tracerFlareEndpoint: "tracerFlareEndpoint",
                     clientDropP0: false,
-                    spanMetaStructs: true));
+                    spanMetaStructs: true,
+                    spanEvents: true));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)

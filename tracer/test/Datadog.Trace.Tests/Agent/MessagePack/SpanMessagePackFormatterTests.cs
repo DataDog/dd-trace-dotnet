@@ -211,6 +211,79 @@ public class SpanMessagePackFormatterTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public void SpanEvent_Tag_Serialization(bool nativeSpanEventsEnabled)
+    {
+        var discoveryService = new DiscoveryServiceMock();
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new());
+        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
+        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, discoveryService);
+
+        tracer.TracerManager.Start();
+        discoveryService.TriggerChange(spanEvents: nativeSpanEventsEnabled);
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+
+        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+        var traceContext = new TraceContext(tracer);
+        var spanContext = new SpanContext(parentContext, traceContext, "ServiceName1");
+        var span = new Span(spanContext, DateTimeOffset.UtcNow);
+
+        var eventName = "test_event";
+        var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var eventAttributes = new List<KeyValuePair<string, string>>
+        {
+            new("event.type", "test"),
+            new("event.value", "123")
+        };
+
+        // Add first event
+        span.AddEvent(new SpanEvent(eventName, eventTimestamp, eventAttributes));
+
+        // Add second event with different attributes
+        var secondEventAttributes = new List<KeyValuePair<string, string>>
+        {
+            new("event.type", "different"),
+            new("event.value", "456")
+        };
+        span.AddEvent(new SpanEvent("another_event", eventTimestamp.AddSeconds(1), secondEventAttributes));
+
+        span.SetDuration(TimeSpan.FromSeconds(1));
+
+        var traceChunk = new TraceChunkModel(new([span]));
+        byte[] bytes = [];
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        result.Should().HaveCount(1);
+        var deserializedSpan = result[0];
+
+        if (nativeSpanEventsEnabled)
+        {
+            deserializedSpan.SpanEvents.Should().HaveCount(2);
+
+            var firstEvent = deserializedSpan.SpanEvents[0];
+            firstEvent.Name.Should().Be(eventName);
+            firstEvent.Timestamp.Should().Be(eventTimestamp.ToUnixTimeNanoseconds());
+            firstEvent.Attributes.Should().BeEquivalentTo(eventAttributes);
+
+            var secondEvent = deserializedSpan.SpanEvents[1];
+            secondEvent.Name.Should().Be("another_event");
+            secondEvent.Timestamp.Should().Be(eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds());
+            secondEvent.Attributes.Should().BeEquivalentTo(secondEventAttributes);
+        }
+        else
+        {
+            deserializedSpan.SpanEvents.Should().BeNullOrEmpty();
+            deserializedSpan.Tags.Should().ContainKey("events");
+            var eventsJson = deserializedSpan.Tags["events"];
+            eventsJson.Should().Contain(eventName);
+            eventsJson.Should().Contain("another_event");
+        }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public async Task TraceId128_PropagatedTag(bool generate128BitTraceId)
     {
         var mockApi = new MockApi();

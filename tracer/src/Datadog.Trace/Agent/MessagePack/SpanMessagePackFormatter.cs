@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Activity;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -42,10 +43,12 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
         private readonly byte[] _metaStructBytes = StringEncoding.UTF8.GetBytes("meta_struct");
 
-        // span links metadata
+        // span links and span events metadata
         private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
+        private readonly byte[] _spanEventBytes = StringEncoding.UTF8.GetBytes("span_events");
+        private readonly byte[] _timeUnixNanoBytes = StringEncoding.UTF8.GetBytes("time_unix_nano");
         private readonly byte[] _attributesBytes = StringEncoding.UTF8.GetBytes("attributes");
 
         // string tags
@@ -169,6 +172,17 @@ namespace Datadog.Trace.Agent.MessagePack
                 len++;
             }
 
+            var hasSpanEvents = span.SpanEvents is { Count: > 0 };
+            var spanEventsManager = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager;
+
+            if (hasSpanEvents)
+            {
+                if (spanEventsManager?.NativeSpanEventsEnabled == true)
+                {
+                    len++;
+                }
+            }
+
             len += 2; // Tags and metrics
 
             int originalOffset = offset;
@@ -229,6 +243,18 @@ namespace Datadog.Trace.Agent.MessagePack
             if (hasSpanLinks)
             {
                 offset += WriteSpanLink(ref bytes, offset, in spanModel);
+            }
+
+            if (hasSpanEvents)
+            {
+                if (spanEventsManager?.NativeSpanEventsEnabled == true)
+                {
+                    offset += WriteSpanEvent(ref bytes, offset, in spanModel);
+                }
+                else
+                {
+                    OtlpHelpers.SerializeEventsToJson(span, spanModel.Span.SpanEvents);
+                }
             }
 
             return offset - originalOffset;
@@ -306,6 +332,42 @@ namespace Datadog.Trace.Agent.MessagePack
                 {
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceFlagBytes);
                     offset += MessagePackBinary.WriteUInt32(ref bytes, offset, traceFlags);
+                }
+            }
+
+            return offset - originalOffset;
+        }
+
+        private int WriteSpanEvent(ref byte[] bytes, int offset, in SpanModel spanModel)
+        {
+            int originalOffset = offset;
+
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanEventBytes);
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanEvents.Count);
+
+            foreach (var spanEvent in spanModel.Span.SpanEvents)
+            {
+                var len = 3; // name, timestamp, and attributes
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
+
+                // Write name
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, spanEvent.Name);
+
+                // Write timestamp
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _timeUnixNanoBytes);
+                offset += MessagePackBinary.WriteInt64(ref bytes, offset, spanEvent.Timestamp.ToUnixTimeNanoseconds());
+
+                // Write attributes if any
+                if (spanEvent.Attributes is { Count: > 0 })
+                {
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributesBytes);
+                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanEvent.Attributes.Count);
+                    foreach (var attribute in spanEvent.Attributes)
+                    {
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Value);
+                    }
                 }
             }
 

@@ -71,4 +71,8 @@ internal class NullSpan : ISpan
     }
 
     public string? GetTag(string key) => null;
+
+    public void AddEvent(SpanEvent spanEvent)
+    {
+    }
 }
