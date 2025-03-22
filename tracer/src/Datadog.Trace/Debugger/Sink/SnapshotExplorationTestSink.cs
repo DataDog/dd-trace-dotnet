@@ -59,6 +59,7 @@ namespace Datadog.Trace.Debugger.Sink
             private const string _fileName = "SnapshotExplorationTestReport.csv";
             private readonly string _folderPath;
             private readonly BlockingCollection<IdAndSnapshot> _writeQueue;
+            private readonly HashSet<string> _probesIds;
             private readonly Task _writerTask;
             private readonly CancellationTokenSource _cts;
             private readonly int _bufferSize;
@@ -69,6 +70,7 @@ namespace Datadog.Trace.Debugger.Sink
                 _folderPath = folderPath ?? throw new ArgumentNullException(nameof(folderPath));
                 _bufferSize = bufferSize;
                 _writeQueue = new BlockingCollection<IdAndSnapshot>();
+                _probesIds = new HashSet<string>();
                 _cts = new CancellationTokenSource();
                 _writerTask = Task.Run(WriteProcess, _cts.Token);
             }
@@ -106,6 +108,12 @@ namespace Datadog.Trace.Debugger.Sink
                     {
                         if (!_writeQueue.TryTake(out var info, 200, _cts.Token))
                         {
+                            continue;
+                        }
+
+                        if (!_probesIds.Add(info.Id))
+                        {
+                            // we have already got snapshot for this probe ID
                             continue;
                         }
 
