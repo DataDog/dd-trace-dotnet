@@ -5,6 +5,8 @@
 
 using System;
 using System.Data;
+using System.Data.Common;
+using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -105,7 +107,55 @@ namespace Datadog.Trace.DatabaseMonitoring
             // modify the command to add the comment
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
-            if (ShouldAppend(integrationId, commandText))
+            if (command.CommandType == CommandType.StoredProcedure)
+            {
+                // Save the original stored procedure name
+                string procName = command.CommandText ?? string.Empty;
+
+                if (string.IsNullOrEmpty(procName))
+                {
+                    return false;
+                }
+
+                // Build parameter list for EXEC statement
+                StringBuilder paramList = new StringBuilder();
+                foreach (DbParameter? param in command.Parameters)
+                {
+                    if (param == null)
+                    {
+                        continue;
+                    }
+
+                    // Skip return value parameters
+                    if (param.Direction == ParameterDirection.ReturnValue)
+                    {
+                        continue;
+                    }
+
+                    if (paramList.Length > 0)
+                    {
+                        paramList.Append(", ");
+                    }
+
+                    paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
+                }
+
+                // Change command type to Text
+                command.CommandType = CommandType.Text;
+
+                // Create EXEC statement with parameters
+                if (paramList.Length > 0)
+                {
+                    command.CommandText = $"EXEC {procName} {paramList} {propagationComment}";
+                }
+                else
+                {
+                    command.CommandText = $"EXEC {procName} {propagationComment}";
+                }
+
+                Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
+            }
+            else if (ShouldAppend(integrationId, commandText))
             {
                 command.CommandText = $"{commandText} {propagationComment}";
             }

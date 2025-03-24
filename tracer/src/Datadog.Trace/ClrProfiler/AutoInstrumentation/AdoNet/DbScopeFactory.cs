@@ -103,10 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     {
                         bool traceParentInjectedInContext = false; // creates and executes a special command
                         bool traceParentInjectedInComment = false; // this just adds it asa comment
-                        if (command.CommandType != CommandType.StoredProcedure)
-                        {
-                            DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
-                        }
+                        DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
 
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
