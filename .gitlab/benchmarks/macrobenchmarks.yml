@@ -225,7 +225,7 @@ profiler_cpu_timer_create:
       - scheduler_failure
       - api_failure
   rules:
-    - when: manual
+    - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
