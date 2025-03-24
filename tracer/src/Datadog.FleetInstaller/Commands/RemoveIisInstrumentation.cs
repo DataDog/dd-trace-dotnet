@@ -1,4 +1,4 @@
-﻿// <copyright file="UninstallProductCommand.cs" company="Datadog">
+﻿// <copyright file="RemoveIisInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,12 +11,15 @@ using System.Threading.Tasks;
 namespace Datadog.FleetInstaller.Commands;
 
 /// <summary>
-/// Perform the final uninstall for the product
+/// Remove IIS instrumentation completely
 /// </summary>
-internal class UninstallProductCommand : CommandBase
+internal class RemoveIisInstrumentation : CommandBase
 {
-    public UninstallProductCommand()
-        : base("uninstall-product")
+    private const string Command = "remove-iis-instrumentation";
+    private const string CommandDescription = "Removes instrumentation with the .NET library from IIS";
+
+    public RemoveIisInstrumentation()
+        : base(Command, CommandDescription)
     {
         AddValidator(Validate);
         this.SetHandler(ExecuteAsync);
@@ -35,11 +38,11 @@ internal class UninstallProductCommand : CommandBase
     // Internal for testing
     internal ReturnCode Execute(ILogger log)
     {
-        log.WriteInfo("Uninstalling .NET tracer product");
+        log.WriteInfo("Removing IIS instrumentation for .NET tracer");
 
         if (!HasValidIIsVersion(log, out var errorMessage))
         {
-            // IIS isn't available, weird because it means they removed it _after_ installing the product
+            // IIS isn't available, weird because it means they removed it _after_ successfully installing the product
             // but whatever, there's no variables there if that's the case!
             Log.Instance.WriteInfo(errorMessage);
             Log.Instance.WriteInfo("Unable to uninstall from IIS, skipping IIS removal and continuing");

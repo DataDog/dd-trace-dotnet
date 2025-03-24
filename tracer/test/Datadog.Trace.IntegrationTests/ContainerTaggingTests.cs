@@ -72,7 +72,7 @@ namespace Datadog.Trace.IntegrationTests
 
                 if (expectedContainedId is not null && expectedEntityId is not null)
                 {
-                    expectedEntityId.Should().Be($"cid-{expectedContainedId}");
+                    expectedEntityId.Should().Be($"ci-{expectedContainedId}");
                 }
                 else if (expectedEntityId is not null)
                 {

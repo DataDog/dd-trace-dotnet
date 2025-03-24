@@ -446,6 +446,20 @@ internal static class MetricTags
         [Description("retry_reason:atr")] AutomaticTestRetry,
     }
 
+    public enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
+    {
+        [Description("")] None,
+        [Description("is_quarantined:true")] IsQuarantined,
+        [Description("is_disabled:true")] IsDisabled,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
+    {
+        [Description("")] None,
+        [Description("is_attempt_to_fix:true")] IsAttemptToFix,
+        [Description("is_attempt_to_fix:true;has_failed_all_retries:true")] AttemptToFixHasFailedAllRetries,
+    }
+
     public enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
@@ -545,6 +559,12 @@ internal static class MetricTags
         [Description("known_tests_enabled:false")] Disabled,
     }
 
+    public enum CIVisibilitySettingsResponse_TestManagementFeature
+    {
+        [Description("test_management_enabled:true")] Enabled,
+        [Description("test_management_enabled:false")] Disabled,
+    }
+
     public enum CIVisibilityRequestCompressed
     {
         [Description("")] Uncompressed,
@@ -555,5 +575,36 @@ internal static class MetricTags
     {
         [Description("")] Uncompressed,
         [Description("rs_compressed:true")] Compressed,
+    }
+
+    public enum CIVisibilityTestSessionProvider
+    {
+        [Description("provider:unsupported")] Unsupported,
+        [Description("provider:appveyor")] AppVeyor,
+        [Description("provider:azp")] AzurePipelines,
+        [Description("provider:bitbucket")] BitBucket,
+        [Description("provider:bitrise")] Bitrise,
+        [Description("provider:buildkite")] BuildKite,
+        [Description("provider:circleci")] CircleCI,
+        [Description("provider:codefresh")] Codefresh,
+        [Description("provider:githubactions")] GithubActions,
+        [Description("provider:gitlab")] Gitlab,
+        [Description("provider:jenkins")] Jenkins,
+        [Description("provider:teamcity")] Teamcity,
+        [Description("provider:travisci")] TravisCi,
+        [Description("provider:buddyci")] BuddyCi,
+        [Description("provider:aws")] AwsCodePipeline,
+    }
+
+    public enum CIVisibilityTestSessionType
+    {
+        [Description("")] NotAutoInjected,
+        [Description("auto_injected:true")] AutoInjected,
+    }
+
+    public enum CIVisibilityTestSessionAgentlessLogSubmission
+    {
+        [Description("")] NotEnabled,
+        [Description("agentless_log_submission_enabled:true")] Enabled,
     }
 }

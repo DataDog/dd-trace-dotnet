@@ -23,7 +23,7 @@ public class MetricTests
 {
     private static readonly Dictionary<string, string[]> IgnoredTagsByMetricName = new()
     {
-        { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+        { "spans_finished", ["integration_name"] }, // this is technically difficult for us, so we don't tag it
         { "trace_chunks_dropped", ["src_library"] }, // this is optional, only added by the rust library
         { "trace_chunks_sent", ["src_library"] }, // this is optional, only added by the rust library
         { "trace_api.requests", ["src_library"] }, // this is optional, only added by the rust library
@@ -34,14 +34,15 @@ public class MetricTests
 
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
     {
-        { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
-        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled", "retry_reason", string.Empty } },
+        { "event_created", ["has_codeowner", "is_unsupported_ci", "is_benchmark"] },
+        { "event_finished", ["has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum", "agentless_log_submission_enabled", "retry_reason", "is_quarantined", "is_disabled", "is_attempt_to_fix", "has_failed_all_retries", string.Empty] },
         { "endpoint_payload.requests_errors", ["status_code"] },
         { "git_requests.search_commits_errors", ["status_code"] },
         { "git_requests.objects_pack_errors", ["status_code"] },
         { "git_requests.settings_errors", ["status_code"] },
         { "itr_skippable_tests.request_errors", ["status_code"] },
         { "known_tests.request_errors", ["status_code"] },
+        { "test_management_tests.request_errors", ["status_code"] },
         { "impacted_tests_detection.request_errors", ["status_code"] },
         { "endpoint_payload.requests", ["rq_compressed"] },
         { "git_requests.search_commits", ["rq_compressed"] },
@@ -49,10 +50,12 @@ public class MetricTests
         { "git_requests.settings", ["rq_compressed"] },
         { "itr_skippable_tests.request", ["rq_compressed"] },
         { "known_tests.request", ["rq_compressed"] },
+        { "test_management_tests.request", ["rq_compressed"] },
         { "impacted_tests_detection.request", ["rq_compressed"] },
         { "git_requests.search_commits_ms", ["rs_compressed"] },
         { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
         { "known_tests.response_bytes", ["rs_compressed"] },
+        { "test_management_tests.response_bytes", ["rs_compressed"] },
         { "impacted_tests_detection.response_bytes", ["rs_compressed"] },
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },

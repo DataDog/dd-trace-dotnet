@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -89,6 +90,7 @@ internal static class MsTestIntegration
     internal static Test? OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
     {
+        Common.Log.Debug("{Value}", Environment.StackTrace);
         var testMethod = testMethodInstance.MethodInfo;
         var testName = testMethodInstance.TestMethodName ?? string.Empty;
 
@@ -139,6 +141,9 @@ internal static class MsTestIntegration
 
         // Flaky retry
         Common.SetFlakyRetryTags(test, isRetry);
+
+        // Test management feature
+        Common.SetTestManagementFeature(test, isRetry);
 
         // Set test method
         if (testMethod is not null)
@@ -284,6 +289,21 @@ internal static class MsTestIntegration
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = itrShouldSkip && isUnskippable;
         return itrShouldSkip && !isUnskippable;
+    }
+
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties<TTestMethod>(TTestMethod testMethodInfo)
+        where TTestMethod : ITestMethod
+    {
+        var testManagementFeature = TestOptimization.Instance.TestManagementFeature;
+        if (testManagementFeature?.Enabled != true)
+        {
+            return new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes();
+        }
+
+        var testModule = testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
+        var testClass = testMethodInfo.TestClassName ?? string.Empty;
+        var testMethod = testMethodInfo.MethodInfo?.Name ?? string.Empty;
+        return testManagementFeature.GetTestProperties(testModule, testClass, testMethod);
     }
 
     internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)
