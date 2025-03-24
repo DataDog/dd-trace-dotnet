@@ -456,7 +456,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   # TODO: Revert
   needs: ["check_azure_pipeline"]
-  tags: ["runner:docker"]
+  tags: ["arch:amd64"]
   interruptible: true
   timeout: 1h
   retry:
