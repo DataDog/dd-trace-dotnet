@@ -9,6 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -59,6 +60,15 @@ public class TraceExporterTests
         using var span = tracer.StartSpan("operationName");
         span.ResourceName = "resourceName";
         span.Type = "test";
+
+        var testMetaStruct = new TestMetaStruct
+        {
+            Foo = "foo",
+            Bar = 1,
+        };
+
+        var metaStructBytes = MetaStructHelper.ObjectToByteArray(testMetaStruct.ToDictionary());
+        span.SetMetaStruct("test-meta-struct", metaStructBytes);
         span.Finish();
 
         await tracer.TracerManager.ShutdownAsync();
@@ -69,6 +79,10 @@ public class TraceExporterTests
         Assert.Equal("operationName", recordedSpan.Name);
         Assert.Equal("resourceName", recordedSpan.Resource);
         Assert.Equal("default-service", recordedSpan.Service);
+
+        Assert.Single(recordedSpan.MetaStruct);
+        var recordedMetaStructBytes  = recordedSpan.MetaStruct["test-meta-struct"];
+        Assert.Equal(metaStructBytes, recordedMetaStructBytes);
 
         Dictionary<string, object> GetSettings()
         {
@@ -118,5 +132,25 @@ public class TraceExporterTests
 #endif
                 _ => throw new InvalidOperationException("Unsupported transport type " + transport),
             };
+    }
+
+    internal class TestMetaStruct
+    {
+        public string Foo { get; set; }
+
+        public int Bar { get; set; }
+
+        public Dictionary<string, object> ToDictionary()
+        {
+            return new Dictionary<string, object>
+            {
+                {
+                    "foo", Foo
+                },
+                {
+                    "bar", Bar
+                }
+            };
+        }
     }
 }
