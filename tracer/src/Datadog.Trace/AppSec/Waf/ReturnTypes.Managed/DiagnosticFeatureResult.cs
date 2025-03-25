@@ -1,4 +1,4 @@
-﻿// <copyright file="DiagnosticFeatureResult.cs" company="Datadog">
+// <copyright file="DiagnosticFeatureResult.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,18 +13,24 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal class DiagnosticFeatureResult
 {
-    private DiagnosticFeatureResult(IReadOnlyList<string> loaded, IReadOnlyList<string> failed, IReadOnlyDictionary<string, object> errors)
+    private DiagnosticFeatureResult(IReadOnlyList<string> loaded, IReadOnlyList<string> failed, IReadOnlyList<string> skipped, IReadOnlyDictionary<string, object> errors, IReadOnlyDictionary<string, object> warnings)
     {
         Loaded = loaded;
         Failed = failed;
+        Skipped = skipped;
         Errors = errors;
+        Warnings = warnings;
     }
 
     public IReadOnlyList<string> Loaded { get; }
 
     public IReadOnlyList<string> Failed { get; }
 
+    public IReadOnlyList<string> Skipped { get; }
+
     public IReadOnlyDictionary<string, object> Errors { get; }
+
+    public IReadOnlyDictionary<string, object> Warnings { get; }
 
     public static DiagnosticFeatureResult? From(string key, Dictionary<string, object?> diagObject)
     {
@@ -32,8 +38,10 @@ internal class DiagnosticFeatureResult
         {
             var loaded = GetListKey(subKeys, "loaded");
             var failed = GetListKey(subKeys, "failed");
+            var skipped = GetListKey(subKeys, "skipped");
             var errors = GetDictionaryKey(subKeys, "errors");
-            return new DiagnosticFeatureResult(loaded, failed, errors);
+            var warnings = GetDictionaryKey(subKeys, "warnings");
+            return new DiagnosticFeatureResult(loaded, failed, skipped, errors, warnings);
         }
 
         return null;

@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Rcm.Models.AsmData;
 
@@ -13,18 +14,9 @@ internal class Data
     /// <summary>
     /// Gets or sets an integer representing a UNIX timestamp. Past this timestamp, the entry is ignored. Without a timestamp a value never expires.
     /// </summary>
+    [JsonProperty("expiration")]
     public ulong? Expiration { get; set; }
 
+    [JsonProperty("value")]
     public string? Value { get; set; }
-
-    public List<KeyValuePair<string, object?>> ToKeyValuePair()
-    {
-        List<KeyValuePair<string, object?>> data = new() { new("value", Value) };
-        if (Expiration.HasValue)
-        {
-            data.Add(new("expiration", Expiration));
-        }
-
-        return data;
-    }
 }

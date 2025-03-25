@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitResult));
 
-        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null, IEncoder? encoder = null, bool shouldEnableWaf = true, bool incompatibleWaf = false)
+        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, bool unusableRuleFile = false, IntPtr wafBuilderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? wafLibraryInvoker = null, IEncoder? encoder = null, bool shouldEnableWaf = true, bool incompatibleWaf = false)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -32,10 +32,10 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
                 ErrorMessage = JsonConvert.SerializeObject(errors);
             }
 
-            shouldEnableWaf &= !incompatibleWaf && !unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero;
+            shouldEnableWaf &= !incompatibleWaf && !unusableRuleFile && wafBuilderHandle != IntPtr.Zero && wafHandle != IntPtr.Zero;
             if (shouldEnableWaf)
             {
-                Waf = new Waf(wafHandle!.Value, wafLibraryInvoker!, encoder!);
+                Waf = new Waf(wafBuilderHandle, wafHandle, wafLibraryInvoker!, encoder!);
                 Success = true;
             }
         }
@@ -69,11 +69,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal static InitResult FromIncompatibleWaf() => new(0, 0, string.Empty, new Dictionary<string, object>(), incompatibleWaf: true);
 
-        internal static InitResult From(DdwafObjectStruct diagObject, IntPtr? wafHandle, WafLibraryInvoker? wafLibraryInvoker, IEncoder encoder)
+        internal static InitResult From(ref DdwafObjectStruct diagObject, IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker? wafLibraryInvoker, IEncoder encoder)
         {
             var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject, true);
 
-            return new(reportedDiag.FailedCount, reportedDiag.LoadedCount, reportedDiag.RulesetVersion, reportedDiag.Errors ?? new Dictionary<string, object>(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, encoder: encoder);
+            return new(reportedDiag.FailedCount, reportedDiag.LoadedCount, reportedDiag.RulesetVersion, reportedDiag.Errors ?? new Dictionary<string, object>(), wafBuilderHandle: wafBuilderHandle, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, encoder: encoder);
+        }
+
+        internal static InitResult From(ref UpdateResult result)
+        {
+            return new(result.FailedToLoadRules ?? 0, result.LoadedRules ?? 0, result.RuleFileVersion ?? string.Empty, result.Errors ?? new Dictionary<string, object>(), result.UnusableRules, result.WafBuilderHandle, result.WafHandle, result.WafLibraryInvoker, result.Encoder);
         }
     }
 }
