@@ -108,7 +108,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
 
-            if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient) // only supported for Microsoft SQL Server
+            if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient)
             {
                 /*
                 * For CommandType.StoredProcedure, we need to modify the command text to use an EXEC statement and swap it to a CommandType.Text.
