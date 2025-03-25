@@ -6,7 +6,7 @@ init_environment:
   BP_REPO_FETCHER_KEY_SSM_PARAMETER: "/windows-benchmarking/bp-repo-fetcher-key"
   BP_REPO_FETCHER_CLIENT_ID: "Iv23liYOxTI8nIatGymV"
   DD_API_KEY_SSM_PARAMETER: "/windows-benchmarking/dd-api-key"
-  BENCHMARKING_PLATFORM_BRANCH: "igoragoli/dd-trace-dotnet/macro"
+  BENCHMARKING_PLATFORM_BRANCH: "igoragoli/dd-trace-dotnet/macro_without-cpu-affinities"
 
 user_data_path: provisions/windows/user_data/setup-benchmarking-platform-module.ps1
 
