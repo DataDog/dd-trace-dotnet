@@ -547,15 +547,39 @@ struct pthread_wrapped_arg
     void* orig_arg;
 };
 
+static void dd_pthread_cleanup_routine(void* routineArg)
+{
+    // Call into the profiler to do extra cleanup.
+    // This is *useful* at shutdown time to avoid crashing.
+    if (routineArg != NULL)
+    {
+        free(routineArg);
+    }
+    __dd_on_thread_routine_finished();
+}
+
 // This symbol must be public for crashtracking filtering mechanism
 void* dd_pthread_entry(void* arg)
 {
     struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
-    void* result = new_arg->func(new_arg->orig_arg);
+    void* result;
+#ifndef ARM64
+    pthread_cleanup_push(dd_pthread_cleanup_routine, new_arg);
+#endif
+    result = new_arg->func(new_arg->orig_arg);
+#ifdef ARM64
     free(new_arg);
-    // Call into the profiler to do extra cleanup.
-    // This is *useful* at shutdown time to avoid crashing.
     __dd_on_thread_routine_finished();
+#else
+    // This dd_pthread_cleanup_routine will be executed whenever we stop the thread
+    // either pthread_exit, either pthread_cancel.
+    // But also when `func` routine finishes.
+    // The first two cases will be executed thanks to pthread_cleanup_push
+    // The last case will be executed thanks to pthread_cleanup_pop(1)
+    // (arg '1'is to explicitly execute the __dd_on_thread_routine_finished)
+    // `new_arg` will be freed in the cleanup routine
+    pthread_cleanup_pop(1);
+#endif
     return result;
 }
 
