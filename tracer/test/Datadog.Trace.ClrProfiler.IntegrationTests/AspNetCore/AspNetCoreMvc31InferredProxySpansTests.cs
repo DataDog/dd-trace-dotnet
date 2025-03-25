@@ -60,25 +60,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, inferredProxySpansEnabled ? "true" : "false");
         }
 
-        // ReSharper disable once ArrangeModifiersOrder
-        public static new TheoryData<string, int> Data() => new()
-        {
-            { "/", 200 },
-            { "/not-found", 404 },
-            { "/status-code/203", 203 },
-            { "/bad-request", 500 },
-            { "/handled-exception", 500 },
-        };
-
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(Data))]
-        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
+        [InlineData("/", 200, 2)]
+        [InlineData("/not-found", 404, 1)] // 404 does not create "aspnet_core_mvc.request" span
+        [InlineData("/status-code/203", 203, 2)]
+        [InlineData("/bad-request", 500, 2)]
+        [InlineData("/handled-exception", 500, 2)]
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode, int spanCount)
         {
             var start = DateTimeOffset.UtcNow;
-            var expectedSpanCount = _inferredProxySpansEnabled ? 3 : 2;
-
             await Fixture.TryStartApp(this);
 
             // get the http request so we can add the api gateway headers
@@ -86,21 +78,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             if (_inferredProxySpansEnabled)
             {
+                // expect an additional span for the inferred proxy span
+                spanCount++;
+
                 var headers = request.Headers;
                 headers.Add("x-dd-proxy", "aws-apigateway");
                 headers.Add("x-dd-proxy-request-time-ms", start.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
                 headers.Add("x-dd-proxy-domain-name", "test.api.com");
                 headers.Add("x-dd-proxy-httpmethod", "GET");
-                headers.Add("x-dd-proxy-path", "/api/test");
+                headers.Add("x-dd-proxy-path", "/api/test/1");
                 headers.Add("x-dd-proxy-stage", "prod");
             }
 
             // don't call Fixture.WaitForSpans() directly so we can override span count and start date
             await Fixture.SendHttpRequest(request);
-            var spans = Fixture.Agent.WaitForSpans(count: expectedSpanCount, minDateTime: start, returnAllOperations: true);
+            var spans = Fixture.Agent.WaitForSpans(count: spanCount, minDateTime: start, returnAllOperations: true);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode, spanCount);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
