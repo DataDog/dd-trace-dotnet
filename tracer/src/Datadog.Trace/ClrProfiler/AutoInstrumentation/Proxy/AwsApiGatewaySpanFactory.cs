@@ -40,6 +40,7 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
 
             scope.Span.ResourceName = resourceName;
             scope.Span.Type = SpanTypes.Web;
+            scope.Span.SetMetric("_dd.inferred_span", 1);
 
             return scope;
         }
