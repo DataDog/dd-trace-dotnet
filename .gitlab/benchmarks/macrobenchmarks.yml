@@ -364,7 +364,7 @@ profiler_cpu_timer_create-arm64:
 
   # If you have a problem with Gitlab cache, here is a fix
   # https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/2836037770/FAQ+-+Benchmarking+Platform#Gitlab-uses-outdated-Docker-image-for-the-job,-even-if-I-push-new-under-same-tag.-How-do-I-prevent-caching?
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-tests
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
 
   script:
     - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
@@ -379,11 +379,10 @@ profiler_cpu_timer_create-arm64:
     - export AWS_PROFILE=ephemeral-infra-ci
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-    - git clone --branch fayssal/migrate-macros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - git clone --branch igoragoli/dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/pass-artifatcs-to-windows.sh
-    - cd /app
     - |
-      ./infra/launch.sh --provision infra/src/provisions/dotnet-ssh/ephemeral-instance.yaml \
+      /app/infra/launch.sh --provision .gitlab/benchmarks/provisions/ephemeral-instance.yaml \
         --region "${AWS_REGION}" \
         $CLEANUP_ARG
     
