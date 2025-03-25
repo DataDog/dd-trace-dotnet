@@ -139,6 +139,10 @@ namespace Datadog.Trace.Debugger
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
+
+            IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
+            SnapshotExplorationTestProbesFilePath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesFilePath).AsString(string.Empty);
+            SnapshotExplorationTestReportFolderPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportFolderPath).AsString(string.Empty);
         }
 
         public bool Enabled { get; }
@@ -176,6 +180,12 @@ namespace Datadog.Trace.Debugger
         public bool CodeOriginForSpansEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
+
+        public bool IsSnapshotExplorationTestEnabled { get; }
+
+        public string SnapshotExplorationTestProbesFilePath { get; }
+
+        public string SnapshotExplorationTestReportFolderPath { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
