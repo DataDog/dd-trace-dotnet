@@ -8,6 +8,7 @@
 using System;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
@@ -23,23 +24,20 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
     {
         try
         {
-            // TODO RFC didn't specify obfuscation or quantization but I think we should
-            var resourceName = $"{data.HttpMethod} {data.Path}";
-            var httpUrl = $"{data.DomainName}{data.Path}";
+            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
                 HttpMethod = data.HttpMethod,
                 InstrumentationName = data.ProxyName,
-                HttpUrl = httpUrl,
+                HttpUrl = $"{data.DomainName}{data.Path}",
                 HttpRoute = resourceUrl,
                 Stage = data.Stage,
                 InferredSpan = 1,
             };
 
             var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
-
-            scope.Span.ResourceName = resourceName;
+            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod.ToUpperInvariant()} {resourceUrl}";
             scope.Span.Type = SpanTypes.Web;
 
             return scope;
