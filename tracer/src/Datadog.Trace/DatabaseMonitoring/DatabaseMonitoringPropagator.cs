@@ -138,6 +138,12 @@ namespace Datadog.Trace.DatabaseMonitoring
                     }
 
                     paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
+
+                    if (param.Direction == ParameterDirection.InputOutput || param.Direction == ParameterDirection.Output)
+                    {
+                        // For OUTPUT parameters, we need to add the OUTPUT keyword
+                        paramList.Append(" OUTPUT");
+                    }
                 }
 
                 // Change command type to Text
