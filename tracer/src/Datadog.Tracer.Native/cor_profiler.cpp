@@ -970,6 +970,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
             RewritingPInvokeMaps(module_metadata, WStr("libdatadog_exporter"), libdatadog_exporter_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, WStr("libdatadog_config"), libdatadog_config_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_ddcommon"), libdatadog_ddcommon_nativemethods_type, libdatadog_filepath);
         }
         else
         {
