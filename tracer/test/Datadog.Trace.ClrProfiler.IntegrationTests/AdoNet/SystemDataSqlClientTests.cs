@@ -48,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // - DbCommand:  42 spans (6 groups * 7 spans)
             // - IDbCommand: 14 spans (2 groups * 7 spans)
             // - SqlCommandVb: 21 spans (3 groups * 7 spans)
+            // - StoredProcedures: 10 spans (1 group * 10 spans)
             //
             // NETSTANDARD: +56 spans
             // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
@@ -62,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 
-            const int expectedSpanCount = 168;
+            const int expectedSpanCount = 178;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
