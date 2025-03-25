@@ -421,7 +421,7 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
 
-baseline-win:
+baseline-win-igoragoli_without-cpu-affinities:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
