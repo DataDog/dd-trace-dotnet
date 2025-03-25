@@ -107,8 +107,25 @@ namespace Datadog.Trace.DatabaseMonitoring
             // modify the command to add the comment
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
+
             if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient) // only supported for Microsoft SQL Server
             {
+                /*
+                * For CommandType.StoredProcedure, we need to modify the command text to use an EXEC statement and swap it to a CommandType.Text.
+                * Without doing this we _cannot_ inject the comment as it will be taken as part of the stored procedure name.
+                *    in SqlCommand.cs we have: rpc.rpcName = this.CommandText; // just get the raw command text
+                * Injecting the comment in the CommandText would result in getting an exception that the StoredProcedure name wasn't found (and would look like an empty string).
+                *
+                * What this function does is:
+                *   - Swap to EXEC statement (which is a text command executing a stored procedure).
+                *   - Build a parameter list for the EXEC statement, so that we can pass all the parameters to it.
+                *   - These are the Input and Output parameters, but they may not be present
+                *   - We don't modify the parameters on the Command itself, this will still be handled fine by SQL Server from testing
+                * Some helpful links:
+                * reference RPC for stored procedure: https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L5548
+                * reference text SQL (with params): https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L4488
+                * reference text SQL (no params): https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L4437
+                */
                 // Save the original stored procedure name
                 string procName = command.CommandText ?? string.Empty;
 
@@ -118,7 +135,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 }
 
                 // Build parameter list for EXEC statement
-                StringBuilder paramList = new StringBuilder();
+                var paramList = new StringBuilder();
                 foreach (DbParameter? param in command.Parameters)
                 {
                     if (param == null)
@@ -129,11 +146,13 @@ namespace Datadog.Trace.DatabaseMonitoring
                     // Skip return value parameters
                     if (param.Direction == ParameterDirection.ReturnValue)
                     {
+                        // we don't need to include this in the command text, it is handled in the SQLCommand
                         continue;
                     }
 
                     if (paramList.Length > 0)
                     {
+                        // e.g. @Input=@Input, @Input2=@Input2 OUTPUT
                         paramList.Append(", ");
                     }
 
@@ -142,14 +161,17 @@ namespace Datadog.Trace.DatabaseMonitoring
                     if (param.Direction == ParameterDirection.InputOutput || param.Direction == ParameterDirection.Output)
                     {
                         // For OUTPUT parameters, we need to add the OUTPUT keyword
+                        // example: @Input=@Input, @Output1=@Output1 OUTPUT,
                         paramList.Append(" OUTPUT");
                     }
                 }
 
-                // Change command type to Text
+                // Change command type to Text, this allows us to use the EXEC statement
+                // This shouldn't have any real impact though, it is still a stored procedure
                 command.CommandType = CommandType.Text;
 
                 // Create EXEC statement with parameters
+                // NOTE: EXECUTE is the exact same as EXEC, I chose EXEC arbitrarily
                 if (paramList.Length > 0)
                 {
                     command.CommandText = $"EXEC {procName} {paramList} {propagationComment}";
@@ -159,7 +181,11 @@ namespace Datadog.Trace.DatabaseMonitoring
                     command.CommandText = $"EXEC {procName} {propagationComment}";
                 }
 
-                Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    // Log the command text for debugging purposes
+                    Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
+                }
             }
             else if (ShouldAppend(integrationId, commandText))
             {
