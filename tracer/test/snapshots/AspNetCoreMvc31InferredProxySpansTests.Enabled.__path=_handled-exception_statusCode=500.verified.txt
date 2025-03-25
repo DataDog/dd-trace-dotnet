@@ -49,6 +49,7 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       _dd.base_service: Samples.AspNetCoreMvc31
     },
     Metrics: {
+      _dd.inferred_span: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
