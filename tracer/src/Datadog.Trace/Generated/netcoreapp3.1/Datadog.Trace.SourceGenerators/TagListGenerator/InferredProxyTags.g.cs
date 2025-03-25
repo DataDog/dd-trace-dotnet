@@ -14,6 +14,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class InferredProxyTags
     {
+        // InferredSpanBytes = MessagePack.Serialize("_dd.inferred_span");
+        private static ReadOnlySpan<byte> InferredSpanBytes => new byte[] { 177, 95, 100, 100, 46, 105, 110, 102, 101, 114, 114, 101, 100, 95, 115, 112, 97, 110 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = MessagePack.Serialize("component");
@@ -167,6 +169,49 @@ namespace Datadog.Trace.Tagging
             }
 
             base.WriteAdditionalTags(sb);
+        }
+        public override double? GetMetric(string key)
+        {
+            return key switch
+            {
+                "_dd.inferred_span" => InferredSpan,
+                _ => base.GetMetric(key),
+            };
+        }
+
+        public override void SetMetric(string key, double? value)
+        {
+            switch(key)
+            {
+                case "_dd.inferred_span": 
+                    InferredSpan = value;
+                    break;
+                default: 
+                    base.SetMetric(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+        {
+            if (InferredSpan is not null)
+            {
+                processor.Process(new TagItem<double>("_dd.inferred_span", InferredSpan.Value, InferredSpanBytes));
+            }
+
+            base.EnumerateMetrics(ref processor);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (InferredSpan is not null)
+            {
+                sb.Append("_dd.inferred_span (metric):")
+                  .Append(InferredSpan.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }

@@ -32,15 +32,15 @@ internal class AwsApiGatewaySpanFactory : IInferredSpanFactory
                 HttpMethod = data.HttpMethod,
                 InstrumentationName = data.ProxyName,
                 HttpUrl = httpUrl,
-                HttpRoute = data.Path,
-                Stage = data.Stage
+                HttpRoute = resourceUrl,
+                Stage = data.Stage,
+                InferredSpan = 1,
             };
 
             var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
 
             scope.Span.ResourceName = resourceName;
             scope.Span.Type = SpanTypes.Web;
-            scope.Span.SetMetric("_dd.inferred_span", 1);
 
             return scope;
         }

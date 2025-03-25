@@ -31,4 +31,7 @@ internal partial class InferredProxyTags : InstrumentationTags, IHasStatusCode
 
     [Tag(Trace.Tags.ProxyStage)]
     public string? Stage { get; set; }
+
+    [Metric(Metrics.InferredSpan)]
+    public double? InferredSpan { get; set; }
 }
