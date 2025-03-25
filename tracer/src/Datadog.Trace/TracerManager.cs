@@ -20,6 +20,7 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -50,6 +51,7 @@ namespace Datadog.Trace
         private static TracerManager _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
+        private static LibdatadogUtils.TracerMemfdHandle _handle;
 
         private volatile bool _isClosing = false;
 
@@ -590,6 +592,8 @@ namespace Datadog.Trace
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
+                _handle = LibdatadogUtils.StoreTracerMetadata(1, "10", "dotnet", "something", "something", "something", "something", "something");
+
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
 
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
@@ -731,7 +735,7 @@ namespace Datadog.Trace
                     Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
 #endif
-
+                    LibdatadogUtils.CloseTracerMemfdHandle(_handle);
                     Log.Debug("Finished waiting for disposals.");
                 }
             }
