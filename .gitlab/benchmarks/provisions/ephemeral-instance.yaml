@@ -8,7 +8,7 @@ init_environment:
   DD_API_KEY_SSM_PARAMETER: "/windows-benchmarking/dd-api-key"
   BENCHMARKING_PLATFORM_BRANCH: "igoragoli/dd-trace-dotnet/macro_without-cpu-affinities"
 
-user_data_path: provisions/windows/user_data/setup-benchmarking-platform-module.ps1
+user_data_path: user_data/setup-benchmarking-platform-module.ps1
 
 source_ami:
   ami_id_ssm_parameter: "/windows-benchmarking/windows-base-instance-without-tweaks-ami-id"
