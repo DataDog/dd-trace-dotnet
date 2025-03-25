@@ -107,7 +107,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             // modify the command to add the comment
             var commandText = command.CommandText ?? string.Empty;
             var propagationComment = StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
-            if (command.CommandType == CommandType.StoredProcedure)
+            if (command.CommandType == CommandType.StoredProcedure && integrationId == IntegrationId.SqlClient) // only supported for Microsoft SQL Server
             {
                 // Save the original stored procedure name
                 string procName = command.CommandText ?? string.Empty;
