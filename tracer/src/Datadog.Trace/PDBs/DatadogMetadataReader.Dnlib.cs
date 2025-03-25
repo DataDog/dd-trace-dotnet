@@ -92,6 +92,11 @@ namespace Datadog.Trace.Pdb
         private SymbolMethod? GetSymbolMethodDnlib(uint methodRid, bool searchMoveNext)
         {
             var mdMethod = GetMethodDefDnlib(methodRid);
+            if (mdMethod == null)
+            {
+                return null;
+            }
+
             return searchMoveNext ? (GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1)) : DnlibPdbReader?.GetMethod(mdMethod, version: 1);
         }
 
