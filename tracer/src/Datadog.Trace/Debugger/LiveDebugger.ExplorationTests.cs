@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 
 #nullable enable
@@ -14,16 +14,10 @@ namespace Datadog.Trace.Debugger
 {
     internal partial class LiveDebugger
     {
-        internal async Task<LiveDebugger> InitializeSync()
-        {
-            await InitializeAsync().ConfigureAwait(false);
-            return this;
-        }
-
         internal void WithProbesFromFile()
         {
             var probes = ReadProbesFromCsv(Settings.SnapshotExplorationTestProbesFilePath);
-            UpdateAddedProbeInstrumentations(probes);
+            UpdateAddedProbeInstrumentations(probes.Skip(700).Take(30).ToList());
         }
 
         private List<ProbeDefinition> ReadProbesFromCsv(string filePath)
