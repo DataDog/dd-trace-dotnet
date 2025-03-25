@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,7 +38,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             var ruleSet = RuleSet.From(result!);
             ruleSet.Should().NotBeNull();
             var configurationState = UpdateConfigurationState(ruleSet: new() { ["test"] = ruleSet });
-            configurationState.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
             var res = waf!.Update(configurationState);
             res.Success.Should().BeTrue();
             res.LoadedRules.Should().Be(1);
@@ -65,7 +65,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             var ruleOverride = new RuleOverride { Enabled = false, Id = attackParts1[2] };
             ruleOverrides.Add(ruleOverride);
             var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides!] });
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
             var result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
@@ -73,7 +72,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             Execute(waf, attackParts2, true);
 
             ruleOverrides.Add(new RuleOverride { Enabled = false, Id = attackParts2[2] });
-            configurationStatus.RulesOverridesByFile["test"] = [.. ruleOverrides];
+            // configurationStatus.RulesOverridesByFile["test"] = [.. ruleOverrides];
             result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
@@ -82,7 +81,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             ruleOverrides.RemoveAt(1);
             ruleOverrides.Add(new RuleOverride { Enabled = true, Id = attackParts2[2] });
-            configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
+            // configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
@@ -91,7 +90,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             ruleOverrides.RemoveAt(0);
             ruleOverrides.Add(new RuleOverride { Enabled = true, Id = attackParts1[2] });
-            configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
+            // configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
@@ -120,7 +119,6 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var ruleOverride = new RuleOverride { OnMatch = ["block"], Id = attackParts1[2] };
                 ruleOverrides.Add(ruleOverride);
                 var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides!] });
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
                 var result = waf!.Update(configurationStatus);
                 result.Success.Should().BeTrue();
                 result.HasErrors.Should().BeFalse();

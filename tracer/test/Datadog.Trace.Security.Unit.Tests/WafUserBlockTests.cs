@@ -27,9 +27,13 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var waf = initResult.Waf!;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
+
+            var configurationStatus = UpdateConfigurationState();
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
-            var configurationStatus = UpdateConfigurationState(rulesData: new() { ["test"] = rulesData!.ToArray() });
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
+            var payload = new Payload { RulesData = rulesData!.ToArray() };
+            AddAsmDataRemoteConfig(configurationStatus, payload, "001");
+            configurationStatus.ApplyStoredFiles();
+            // var configurationStatus = UpdateConfigurationState(rulesData: new() { ["test"] = rulesData!.ToArray() });
             var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasErrors.Should().BeFalse();

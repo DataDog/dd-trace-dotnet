@@ -1,4 +1,4 @@
-﻿// <copyright file="DiagnosticResultUtils.cs" company="Datadog">
+// <copyright file="DiagnosticResultUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,9 +18,11 @@ internal static class DiagnosticResultUtils
     internal static ReportedDiagnostics ExtractReportedDiagnostics(DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {
         ushort failedCount = 0;
+        ushort skippedCount = 0;
         ushort loadedCount = 0;
         var rulesetVersion = string.Empty;
         IReadOnlyDictionary<string, object>? errors = null;
+        IReadOnlyDictionary<string, object>? warnings = null;
         try
         {
             if (diagObject.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID)
@@ -30,7 +32,6 @@ internal static class DiagnosticResultUtils
             }
 
             var diagResult = new DiagnosticResult(diagObject);
-
             var rules = diagResult.Rules;
             if (rules == null)
             {
@@ -44,7 +45,9 @@ internal static class DiagnosticResultUtils
 
             failedCount = (ushort)rules.Failed.Count;
             loadedCount = (ushort)rules.Loaded.Count;
+            skippedCount = (ushort)rules.Skipped.Count;
             errors = rules.Errors;
+            warnings = rules.Warnings;
             rulesetVersion = diagResult.RulesVersion ?? string.Empty;
         }
         catch (Exception err)
@@ -55,7 +58,7 @@ internal static class DiagnosticResultUtils
             errors = localErrors;
         }
 
-        return new ReportedDiagnostics { FailedCount = failedCount, LoadedCount = loadedCount, RulesetVersion = rulesetVersion, Errors = errors };
+        return new ReportedDiagnostics { FailedCount = failedCount, SkippedCount = skippedCount, LoadedCount = loadedCount, RulesetVersion = rulesetVersion, Errors = errors, Warnings = warnings };
     }
 }
 
@@ -65,6 +68,8 @@ internal struct ReportedDiagnostics
 {
     public ushort FailedCount;
     public ushort LoadedCount;
+    public ushort SkippedCount;
     public string RulesetVersion;
     public IReadOnlyDictionary<string, object>? Errors;
+    public IReadOnlyDictionary<string, object>? Warnings;
 }

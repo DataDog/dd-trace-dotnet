@@ -22,7 +22,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 #endif
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
-        private readonly InitDelegate _initField;
+
+        private readonly BuilderInitDelegate _builderInitField;
+        private readonly BuilderAddOrUpdateConfigDelegate _builderAddOrUpdateConfigField;
+        private readonly BuilderRemoveConfigDelegate _builderRemoveConfigDelegate;
+        private readonly BuilderBuildInstanceDelegate _builderBuildInstanceDelegate;
+
+        // private readonly InitDelegate _initField;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
@@ -44,7 +50,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly FreeObjectDelegate _freeObjectField;
         private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
-        private readonly UpdateDelegate _updateField;
         private readonly GetKnownAddressesDelegate _getKnownAddresses;
         private string _version;
         private bool _isKnownAddressesSuported;
@@ -52,11 +57,17 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private WafLibraryInvoker(IntPtr libraryHandle, string libVersion = null)
         {
             ExportErrorHappened = false;
-            _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
+
+            _builderInitField = GetDelegateForNativeFunction<BuilderInitDelegate>(libraryHandle, "ddwaf_builder_init");
+            _builderAddOrUpdateConfigField = GetDelegateForNativeFunction<BuilderAddOrUpdateConfigDelegate>(libraryHandle, "ddwaf_builder_add_or_update_config");
+            _builderRemoveConfigDelegate = GetDelegateForNativeFunction<BuilderRemoveConfigDelegate>(libraryHandle, "ddwaf_builder_remove_config");
+            _builderBuildInstanceDelegate = GetDelegateForNativeFunction<BuilderBuildInstanceDelegate>(libraryHandle, "ddwaf_builder_build_instance");
+
+            // _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
+
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
             _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
             _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
-            _updateField = GetDelegateForNativeFunction<UpdateDelegate>(libraryHandle, "ddwaf_update");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(libraryHandle, "ddwaf_context_destroy");
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(libraryHandle, "ddwaf_object_invalid");
             _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(libraryHandle, "ddwaf_object_stringl");
@@ -92,9 +103,17 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
-        private delegate IntPtr InitDelegate(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics);
+        // private delegate IntPtr InitDelegate(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics);
 
-        private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, ref DdwafObjectStruct wafRule, ref DdwafObjectStruct diagnostics);
+        // private delegate IntPtr UpdateDelegate(IntPtr oldWafHandle, ref DdwafObjectStruct wafRule, ref DdwafObjectStruct diagnostics);
+
+        private delegate IntPtr BuilderInitDelegate(ref DdwafConfigStruct config);
+
+        private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, string path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
+
+        private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, string path, uint pathLen);
+
+        private delegate IntPtr BuilderBuildInstanceDelegate(IntPtr builder);
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
 
@@ -299,16 +318,26 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr Init(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics) => _initField(ref wafRule, ref config, ref diagnostics);
+        internal IntPtr InitBuilder(ref DdwafConfigStruct config) => _builderInitField(ref config);
 
-        /// <summary>
-        /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
-        /// </summary>
-        /// <param name="oldWafHandle">current waf handle</param>
-        /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
-        /// <param name="diagnostics">errors and diagnostics of the update, only for valid for new rules</param>
-        /// <returns>the new waf handle, if error, will be a nullptr</returns>
-        internal IntPtr Update(IntPtr oldWafHandle, ref DdwafObjectStruct wafData, ref DdwafObjectStruct diagnostics) => _updateField(oldWafHandle, ref wafData, ref diagnostics);
+        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics) => _builderAddOrUpdateConfigField(builder, path, (uint)path.Length, ref config, ref diagnostics);
+
+        internal bool BuilderRemoveConfig(IntPtr builder, string path) => _builderRemoveConfigDelegate(builder, path, (uint)path.Length);
+
+        /*
+                internal IntPtr Init(ref DdwafObjectStruct wafRule, ref DdwafConfigStruct config, ref DdwafObjectStruct diagnostics) => _initField(ref wafRule, ref config, ref diagnostics);
+
+                /// <summary>
+                /// Only give a non null ruleSetInfo when updating rules. When updating rules overrides, rules datas, the ruleSetInfo will return no error and no diagnostics, even if there are, it's misleading, so give null in this case.
+                /// </summary>
+                /// <param name="oldWafHandle">current waf handle</param>
+                /// <param name="wafData">a pointer to the new waf data (rules or overrides or other)</param>
+                /// <param name="diagnostics">errors and diagnostics of the update, only for valid for new rules</param>
+                /// <returns>the new waf handle, if error, will be a nullptr</returns>
+                internal IntPtr Update(IntPtr oldWafHandle, ref DdwafObjectStruct wafData, ref DdwafObjectStruct diagnostics) => _updateField(oldWafHandle, ref wafData, ref diagnostics);
+        */
+
+        internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 

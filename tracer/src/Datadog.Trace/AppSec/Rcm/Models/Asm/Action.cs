@@ -11,6 +11,7 @@ namespace Datadog.Trace.AppSec.Rcm.Models.Asm;
 
 internal class Action
 {
+    [JsonProperty("id")]
     public string? Id { get; set; }
 
     [JsonProperty("type")]
@@ -18,6 +19,4 @@ internal class Action
 
     [JsonProperty("parameters")]
     public Parameter? Parameters { get; set; }
-
-    public List<KeyValuePair<string, object?>> ToKeyValuePair() => [new("type", Type), new("id", Id), new("parameters", Parameters?.ToKeyValuePair())];
 }

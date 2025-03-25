@@ -4,9 +4,11 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
@@ -16,42 +18,24 @@ internal class AsmDataProduct : IAsmConfigUpdater
     {
         foreach (var file in files)
         {
-            var rawFile = new NamedRawFile(file.Path, file.Contents);
-            var asmDataConfig = rawFile.Deserialize<Payload>();
-            var rulesData = asmDataConfig.TypedFile?.RulesData;
-            if (rulesData != null)
+            var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<JToken>();
+            if (payload.TypedFile == null)
             {
-                configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
+                continue;
             }
 
-            var exclusionsData = asmDataConfig.TypedFile?.ExclusionsData;
-            if (exclusionsData != null)
-            {
-                configurationStatus.ExclusionsDataByFile[rawFile.Path.Path] = exclusionsData;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsDataKey);
-            }
+            var asmConfig = payload.TypedFile;
+            var asmConfigName = payload.Name;
+
+            configurationStatus.AsmDataConfigs[asmConfigName] = asmConfig;
         }
     }
 
     public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var removedRulesData = false;
-        var removedExclusionsData = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
-            removedRulesData |= configurationStatus.RulesDataByFile.Remove(configurationPath.Path);
-            removedExclusionsData |= configurationStatus.ExclusionsDataByFile.Remove(configurationPath.Path);
-        }
-
-        if (removedRulesData)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
-        }
-
-        if (removedExclusionsData)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsDataKey);
+            configurationStatus.AsmDataConfigs.Remove(configurationPath.Path);
         }
     }
 }

@@ -31,11 +31,13 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly IEncoder _encoder;
+        private IntPtr _wafBuilderHandle;
         private IntPtr _wafHandle;
 
-        internal Waf(IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
+        internal Waf(IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
         {
             _wafLibraryInvoker = wafLibraryInvoker;
+            _wafBuilderHandle = wafBuilderHandle;
             _wafHandle = wafHandle;
             _encoder = encoder;
         }
@@ -63,30 +65,20 @@ namespace Datadog.Trace.AppSec.Waf
             bool useUnsafeEncoder = false,
             bool wafDebugEnabled = false)
         {
-            var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
-
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(wafDebugEnabled);
-            var configurationToEncode = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
-            if (configurationToEncode is null)
-            {
-                return InitResult.FromUnusableRuleFile();
-            }
-
+            IEncoder encoder = useUnsafeEncoder ? new Encoder() : new EncoderLegacy(wafLibraryInvoker);
             DdwafConfigStruct configWafStruct = default;
             var keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
             var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
             configWafStruct.KeyRegex = keyRegex;
             configWafStruct.ValueRegex = valueRegex;
-            IEncoder encoder = useUnsafeEncoder ? new Encoder() : new EncoderLegacy(wafLibraryInvoker);
-            var result = encoder.Encode(configurationToEncode, applySafetyLimits: false);
-            var rulesObj = result.ResultDdwafObject;
 
             var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
-
+            var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             try
             {
-                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, configurationStatus.RuleSetTitle);
+                var initResult = wafConfigurator.Configure(configurationStatus, encoder, ref configWafStruct, ref diagnostics, configurationStatus.RuleSetTitle);
                 return initResult;
             }
             finally
@@ -102,7 +94,6 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 wafLibraryInvoker.ObjectFree(ref diagnostics);
-                result.Dispose();
             }
         }
 
@@ -142,69 +133,64 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
+        public UpdateResult Update(ConfigurationState configurationStatus)
         {
-            UpdateResult? res = null;
-            var diagnosticsValue = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+            if (Disposed)
+            {
+                // Early bail out with no lock
+                return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
+            }
+
+            var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+            var wafConfigurator = new WafConfigurator(_wafLibraryInvoker);
             try
             {
-                var updateObject = updateData.ResultDdwafObject;
-                // test if not disposed as iis might recycle the pool and cause shutdown tasks (dispose) to happen on another thread
-                if (_wafLocker.EnterWriteLock())
+                var updateResult = wafConfigurator.Update(_wafBuilderHandle, configurationStatus, _encoder, ref diagnostics, configurationStatus.RuleSetTitle);
+                if (!updateResult.Success || updateResult.WafHandle == _wafHandle || updateResult.WafHandle == IntPtr.Zero)
                 {
-                    if (!Disposed)
+                    Log.Warning("A waf update came from remote configuration but final merged dictionary for waf is empty, no update will be performed.");
+                }
+                else
+                {
+                    if (_wafLocker.EnterWriteLock())
                     {
-                        // update within the lock as iis can recycle and cause dispose to happen at the same time
-                        var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateObject, ref diagnosticsValue);
-                        if (newHandle != IntPtr.Zero)
+                        if (!Disposed)
                         {
+                            // update within the lock as iis can recycle and cause dispose to happen at the same time
+                            var newHandle = updateResult.WafHandle;
                             var oldHandle = _wafHandle;
                             _wafHandle = newHandle;
                             _wafLocker.ExitWriteLock();
                             _wafLibraryInvoker.Destroy(oldHandle);
-                            return UpdateResult.FromSuccess(diagnosticsValue);
                         }
+                        else
+                        {
+                            _wafLocker.ExitWriteLock();
+                            return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
+                        }
+                    }
+                }
 
-                        _wafLocker.ExitWriteLock();
-                        _wafLibraryInvoker.Destroy(newHandle);
-                    }
-                    else
-                    {
-                        _wafLocker.ExitWriteLock();
-                        res = UpdateResult.FromFailed("Waf is already disposed and can't be updated");
-                    }
+                if (updateResult.Success)
+                {
+                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Success);
                 }
                 else
                 {
-                    res = UpdateResult.FromFailed("Couldn't acquire lock to update waf");
+                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
                 }
+
+                return updateResult;
             }
-            catch (Exception e)
+            catch
             {
-                res = UpdateResult.FromException(e);
-                _wafLocker.ExitWriteLock();
-                Log.Error(e, "An exception occurred while trying to update waf with new data");
+                TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
+                return UpdateResult.FromUnusableRules();
             }
             finally
             {
-                res ??= UpdateResult.FromFailed(diagnosticsValue);
-                _wafLibraryInvoker.ObjectFree(ref diagnosticsValue);
-                updateData.Dispose();
+                _wafLibraryInvoker.ObjectFree(ref diagnostics);
             }
-
-            return res;
-        }
-
-        public UpdateResult Update(ConfigurationState configurationStatus)
-        {
-            var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
-            if (dic is null)
-            {
-                Log.Warning("A waf update came from remote configuration but final merged dictionary for waf is empty, no update will be performed.");
-                return UpdateResult.FromNothingToUpdate();
-            }
-
-            return Update(dic!);
         }
 
         /// <summary>
@@ -239,37 +225,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
-        }
-
-        private UpdateResult Update(object arguments)
-        {
-            UpdateResult updated;
-            try
-            {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Updating WAF with new configuration: {Arguments}", JsonConvert.SerializeObject(arguments));
-                }
-
-                var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
-                updated = UpdateWafAndDispose(encodedArgs);
-
-                if (updated.Success)
-                {
-                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Success);
-                }
-                else
-                {
-                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
-                }
-            }
-            catch
-            {
-                TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
-                updated = UpdateResult.FromUnusableRules();
-            }
-
-            return updated;
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)

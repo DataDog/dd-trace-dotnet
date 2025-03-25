@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
@@ -123,21 +124,84 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult Configure(ref DdwafObjectStruct rulesObj, IEncoder encoder, DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal InitResult Configure(ConfigurationState configurationState, IEncoder encoder, ref DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
-            var wafHandle = _wafLibraryInvoker.Init(ref rulesObj, ref configStruct, ref diagnostics);
-            if (wafHandle == IntPtr.Zero)
+            var updateResult = Update(_wafLibraryInvoker.InitBuilder(ref configStruct), configurationState, encoder, ref diagnostics, rulesFile, false);
+            return InitResult.From(ref updateResult);
+        }
+
+        internal UpdateResult Update(IntPtr wafBuilderHandle, ConfigurationState configurationState, IEncoder encoder, ref DdwafObjectStruct diagnostics, string? rulesFile = null, bool updating = true)
+        {
+            var wafHandle = IntPtr.Zero;
+            if (wafBuilderHandle == IntPtr.Zero)
             {
-                Log.Warning("DDAS-0005-00: WAF initialization failed.");
+                Log.Warning("DDAS-0005-00: WAF builder initialization failed."); // Check were all these error codes are defined
+            }
+            else
+            {
+                // Apply the stored configuration
+                var configs = configurationState.GetWafConfigurations(updating);
+
+                if (configs.HasData)
+                {
+                    if (configs.Removes != null)
+                    {
+                        foreach (var path in configs.Removes)
+                        {
+                            if (!_wafLibraryInvoker.BuilderRemoveConfig(wafBuilderHandle, path))
+                            {
+                                Log.Warning("DDAS-0005-00: WAF builder initialization failed. Config failed to load"); // Check were all these error codes are defined
+                            }
+                        }
+                    }
+
+                    if (configs.Updates != null)
+                    {
+                        foreach (var config in configs.Updates)
+                        {
+                            using (var encoded = encoder.Encode(config.Value, applySafetyLimits: config.Key != AsmDdProduct.DefaultConfigKey))
+                            {
+                                var configObj = encoded.ResultDdwafObject;
+                                var path = config.Key;
+                                if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref diagnostics))
+                                {
+                                    Log.Warning("DDAS-0005-00: WAF builder initialization failed. Config failed to load"); // Check were all these error codes are defined
+                                }
+                            }
+                        }
+                    }
+
+                    wafHandle = _wafLibraryInvoker.BuilderBuildInstance(wafBuilderHandle);
+                    if (wafHandle == IntPtr.Zero)
+                    {
+                        Log.Warning("DDAS-0005-00: WAF initialization failed.");
+                    }
+                }
+                else if (!updating)
+                {
+                    Log.Warning("DDAS-0005-00: WAF initialization failed. No valid rules found.");
+                    return UpdateResult.FromUnusableRules();
+                }
             }
 
-            var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker, encoder);
-            if (initResult.HasErrors)
+            var result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
+            if (result.Errors is { Count: > 0 } || result.Warnings is { Count: > 0 })
             {
                 var sb = StringBuilderCache.Acquire();
-                foreach (var item in initResult.Errors)
+                if (result.Errors is { Count: > 0 })
                 {
-                    sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");
+                    foreach (var item in result.Errors)
+                    {
+                        sb.Append($"ERR: {item.Key}: [{string.Join(", ", item.Value)}] ");
+                    }
+                }
+
+                if (result.Warnings is { Count: > 0 })
+                {
+                    foreach (var item in result.Warnings!)
+                    {
+                        sb.Append($"WRN: {item.Key}: [{string.Join(", ", item.Value)}] ");
+                    }
                 }
 
                 var errorMess = StringBuilderCache.GetStringAndRelease(sb);
@@ -145,16 +209,16 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
 
             // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
-            if (initResult.LoadedRules == 0)
+            if (result.LoadedRules == 0)
             {
                 Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
             }
             else
             {
-                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
+                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", result.LoadedRules, rulesFile);
             }
 
-            return initResult;
+            return result;
         }
     }
 }

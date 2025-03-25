@@ -5,9 +5,11 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
@@ -17,7 +19,7 @@ internal class AsmProduct : IAsmConfigUpdater
     {
         foreach (var file in files)
         {
-            var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
+            var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<JToken>();
             if (payload.TypedFile == null)
             {
                 continue;
@@ -26,64 +28,15 @@ internal class AsmProduct : IAsmConfigUpdater
             var asmConfig = payload.TypedFile;
             var asmConfigName = payload.Name;
 
-            if (asmConfig.RuleOverrides != null)
-            {
-                configurationStatus.RulesOverridesByFile[asmConfigName] = asmConfig.RuleOverrides;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
-            }
-
-            if (asmConfig.Exclusions != null)
-            {
-                configurationStatus.ExclusionsByFile[asmConfigName] = asmConfig.Exclusions;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsKey);
-            }
-
-            if (asmConfig.CustomRules != null)
-            {
-                configurationStatus.CustomRulesByFile[asmConfigName] = asmConfig.CustomRules;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafCustomRulesKey);
-            }
-
-            if (asmConfig.Actions != null)
-            {
-                configurationStatus.ActionsByFile[asmConfigName] = asmConfig.Actions;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
-            }
+            configurationStatus.AsmConfigs[asmConfigName] = asmConfig;
         }
     }
 
     public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var removedRulesOverride = false;
-        var removedExclusions = false;
-        var removedCustomRules = false;
-        var removedActions = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
-            removedRulesOverride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
-            removedExclusions |= configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
-            removedCustomRules |= configurationStatus.CustomRulesByFile.Remove(configurationPath.Path);
-            removedActions |= configurationStatus.ActionsByFile.Remove(configurationPath.Path);
-        }
-
-        if (removedRulesOverride)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
-        }
-
-        if (removedExclusions)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsKey);
-        }
-
-        if (removedCustomRules)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafCustomRulesKey);
-        }
-
-        if (removedActions)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
+            configurationStatus.AsmConfigs.Remove(configurationPath.Path);
         }
     }
 }
