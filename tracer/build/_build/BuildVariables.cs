@@ -19,10 +19,11 @@ partial class Build
 
         if (description.IsSnapshotScenario)
         {
+            envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
             envVars.Add(SnapshotExplorationEnabledKey, "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            envVars.Add(SnapshotExplorationProbesFilePathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestProbesFileName));
-            envVars.Add(SnapshotExplorationReportFolderPathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestReportFolderName));
+            envVars.Add(SnapshotExplorationProbesFilePathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestProbesFileName));
+            envVars.Add(SnapshotExplorationReportFolderPathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestReportFolderName));
         }
         else if (description.LineProbesEnabled)
         {
@@ -34,7 +35,7 @@ partial class Build
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
         envVars.Add("COMPlus_EnableCrashReport", "1");
-        envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
+        // envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
 
         if (EnableFaultTolerantInstrumentation)
         {
