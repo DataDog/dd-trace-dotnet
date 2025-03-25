@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using Nuke.Common.IO;
 using Logger = Serilog.Log;
+#nullable enable
 
 partial class Build
 {
@@ -18,6 +20,23 @@ partial class Build
     const string SnapshotExplorationProbesFilePathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_FILE_PATH";
     const string SnapshotExplorationReportFolderPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_FOLDER_PATH";
     const char SpecialSeparator = '#';
+
+    readonly List<string> IgnoredNamespaces = new()
+    {
+        "nunit",
+        "xunit",
+        "testcentric",
+        "system",
+        "microsoft",
+        "nuget",
+        "newtonsoft",
+        "mono.",
+        "mscorlib",
+        "netstandard",
+        "datadog",
+        "_build",
+        "testhost"
+    };
 
     void RunSnapshotExplorationTestsInternal()
     {
@@ -46,6 +65,7 @@ partial class Build
         }
 
         Logger.Information($"Running exploration test: {testDescription.Name}.");
+        FileSystemTasks.EnsureCleanDirectory(Path.Combine(BuildDataDirectory, "logs"));
 
         var frameworks = Framework == null ? testDescription.SupportedFrameworks : new[] { Framework };
         foreach (var framework in frameworks)
@@ -59,7 +79,8 @@ partial class Build
             testDescription.IsSnapshotScenario = true;
             var envVariables = GetEnvironmentVariables(testDescription, framework);
             var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestReportFolderName));
+            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestReportFolderName));
+
             Test(testDescription, framework, envVariables);
             VerifySnapshotExplorationTestResults(envVariables[SnapshotExplorationProbesFilePathKey], envVariables[SnapshotExplorationReportFolderPathKey]);
         }
@@ -85,14 +106,11 @@ partial class Build
 
     void CreateSnapshotExplorationTestCsv(ExplorationTestDescription testDescription)
     {
-        var csvBuilder = new StringBuilder();
-        csvBuilder.AppendLine("Probe ID,Type,Method,Signature,Is instance method");
         var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
-
         foreach (var framework in frameworks)
         {
             var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
-            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName));
+            FileSystemTasks.EnsureCleanDirectory(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework));
             var tracerAssemblyPath = GetTracerAssemblyPath(framework);
             var tracer = Assembly.LoadFile(tracerAssemblyPath);
             var extractorType = tracer.GetType("Datadog.Trace.Debugger.Symbols.SymbolExtractor");
@@ -100,12 +118,15 @@ partial class Build
             var getClassSymbols = extractorType?.GetMethod("GetClassSymbols", BindingFlags.Instance | BindingFlags.NonPublic, Type.EmptyTypes);
             var testAssembliesPaths = GetAllTestAssemblies(testRootPath);
 
+            var csvBuilder = new StringBuilder();
+            csvBuilder.AppendLine("Probe ID,Type,Method,Signature,Is instance method");
+
             foreach (var testAssemblyPath in testAssembliesPaths)
             {
                 var assembly = Assembly.LoadFile(testAssemblyPath);
                 if (assembly.IsDynamic
                  || assembly.ManifestModule.IsResource()
-                 || new[] { "mscorlib", "system", "microsoft", "nunit", "xunit", "datadog", "_build" }.Any(name => assembly.ManifestModule.Name.ToLower().StartsWith(name)))
+                 || IgnoredNamespaces.Any(name => assembly.ManifestModule.Name.ToLower().StartsWith(name)))
                 {
                     continue;
                 }
@@ -130,28 +151,37 @@ partial class Build
                 }
             }
 
-            File.WriteAllText(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, SnapshotExplorationTestProbesFileName), csvBuilder.ToString());
+            File.WriteAllText(Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestProbesFileName), csvBuilder.ToString());
         }
 
         return;
 
-        void ProcessNestedScopes(List<IDictionary<string, object>> scopes, string typeName, StringBuilder csvBuilder)
+        void ProcessNestedScopes(List<IDictionary<string, object>>? scopes, string? typeName, StringBuilder csvBuilder)
         {
-            if (scopes == null)
+            if (scopes == null || string.IsNullOrEmpty(typeName))
+            {
+                return;
+            }
+
+            if (IgnoredNamespaces.Any(ns => typeName.StartsWith(ns, StringComparison.OrdinalIgnoreCase)))
             {
                 return;
             }
 
             foreach (var scope in scopes)
             {
-                if (scope["ScopeType"].ToString() == "Class")
+                if (scope["ScopeType"].ToString() == "Closure")
                 {
-                    var nestedTypeName = scope["Name"].ToString();
-                    ProcessNestedScopes((List<IDictionary<string, object>>)scope["Scopes"], nestedTypeName, csvBuilder);
+                    var closureName = scope["Name"].ToString();
+                    if (!string.IsNullOrEmpty(closureName))
+                    {
+                        Logger.Debug($"Skipping closure: {closureName}");
+                    }
+
                     continue;
                 }
 
-                if (scope["ScopeType"].ToString() == "Method") // todo: closure
+                if (scope["ScopeType"].ToString() == "Method")
                 {
                     var isStatic = false;
                     var ls = scope["LanguageSpecifics"];
@@ -160,8 +190,20 @@ partial class Build
                         isStatic = (int.Parse(annotations[0], NumberStyles.HexNumber) & 0x0010) > 0;
                     }
 
+                    var methodName = scope["Name"].ToString();
+                    if (string.IsNullOrEmpty(methodName))
+                    {
+                        continue;
+                    }
+
+                    if (methodName.Equals(".ctor", StringComparison.OrdinalIgnoreCase) ||
+                        methodName.Equals(".cctor", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     var returnType = ls?.GetType().GetProperty("ReturnType", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ls)?.ToString();
-                    if (TryGetLine(typeName, scope["Name"].ToString(), returnType, (List<IDictionary<string, object>>)scope["Symbols"], Guid.NewGuid(), isStatic, out var line))
+                    if (TryGetLine(typeName, methodName, returnType, (List<IDictionary<string, object>>)scope["Symbols"], isStatic, out var line))
                     {
                         csvBuilder.AppendLine(line);
                     }
@@ -174,15 +216,31 @@ partial class Build
         }
     }
 
-    bool TryGetLine(string type, string method, string returnType, List<IDictionary<string, object>> methodParameters, Guid guid, bool isStatic, out string line)
+    bool TryGetLine(string type, string method, string? returnType, List<IDictionary<string, object>>? methodParameters, bool isStatic, [NotNullWhen(true)] out string? line)
     {
+        line = null;
         try
         {
             var typeName = SanitiseName(type);
+            if (string.IsNullOrEmpty(typeName))
+            {
+                return false;
+            }
+
             var methodName = SanitiseName(method);
+            if (string.IsNullOrEmpty(methodName))
+            {
+                return false;
+            }
+
             var methodSignature = GetMethodSignature(returnType, methodParameters);
+            if (string.IsNullOrEmpty(methodSignature))
+            {
+                return false;
+            }
+
             line = $"{Guid.NewGuid()},{typeName},{methodName},{SanitiseName(methodSignature)},{isStatic}";
-            return !string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(methodName) && !string.IsNullOrEmpty(returnType);
+            return true;
         }
         catch (Exception)
         {
@@ -190,13 +248,18 @@ partial class Build
             return false;
         }
 
-        string SanitiseName(string name) => name == null ? string.Empty : name.Replace(',', SpecialSeparator);
+        string? SanitiseName(string? name) => name?.Replace(',', SpecialSeparator);
 
-        string GetMethodSignature(string returnType, List<IDictionary<string, object>> symbols)
+        string? GetMethodSignature(string? returnType, List<IDictionary<string, object>>? symbols)
         {
+            if (returnType == null)
+            {
+                return null;
+            }
+
             if (symbols == null)
             {
-                return string.Empty;
+                return $"{returnType} ()";
             }
 
             var parameterTypes =
@@ -204,6 +267,7 @@ partial class Build
                  where symbol["SymbolType"].ToString() == "Arg"
                  select symbol["Type"].ToString())
                .ToList();
+
             return $"{returnType} ({string.Join(SpecialSeparator, parameterTypes)})";
         }
     }
@@ -232,9 +296,9 @@ partial class Build
         var missingFromReport = installedProbeIds.Except(probesReport.ToDictionary(info => info.ProbeId, info => info.Name)).ToList();
         var notInstalled = definedProbes.Except(installedProbeIds).ToList();
 
-        LogProbeCollection("Invalid or error probes", invalidOrErrorProbes.ToDictionary(info => info.ProbeId, info => info.Name).ToList());
-        LogProbeCollection("Probes missing from report", missingFromReport);
-        LogProbeCollection("Defined probes not installed", notInstalled);
+        LogProbeCollection("Invalid or error probe", invalidOrErrorProbes.ToDictionary(info => info.ProbeId, info => info.Name).ToList());
+        LogProbeCollection("Probe missing from report", missingFromReport);
+        LogProbeCollection("Defined probe not installed", notInstalled);
 
         var successfullyCollectedCount = installedProbeIds.Intersect(definedProbes).Count();
         var successPercentage = (double)successfullyCollectedCount / definedProbes.Count * 100;
@@ -249,6 +313,8 @@ partial class Build
 
     void LogProbeCollection(string collectionName, List<KeyValuePair<string, string>> probes)
     {
+        Logger.Error($"{collectionName} errors: {probes.Count}");
+        return;
         foreach (var probe in probes)
         {
             Logger.Error($"{collectionName}: ID: {probe.Key}, Name: {probe.Value ?? string.Empty}");
@@ -273,7 +339,7 @@ partial class Build
                    .Where(parts => parts.Length == 5)
                    .ToDictionary(
                         parts => parts[0].Trim(), // Probe ID as key
-                        parts => $"{parts[2].Trim()} {parts[3].Trim()}" // method name + signature as value
+                        parts => $"{parts[1].Trim()}.{parts[2].Trim()}({parts[3]?.Trim()})" // type name + method name + signature as value
                     );
     }
 
@@ -319,9 +385,51 @@ partial class Build
         return new ProbeReportInfo(parts[0].Trim(), parts[1].Trim() + "." + parts[2].Trim(), isValid, false);
     }
 
-    Dictionary<string, string> ReadInstalledProbeIdsFromNativeLogs()
+    private Dictionary<string, string> ReadInstalledProbeIdsFromNativeLogs()
     {
-        return new Dictionary<string, string> { { "id", "method name" } };
+        var result = new Dictionary<string, string>();
+        var logDirectory = BuildDataDirectory / "logs";
+
+        if (!Directory.Exists(logDirectory))
+        {
+            throw new Exception($"Log folder does not exist in path: {logDirectory}");
+        }
+
+        var logFiles = Directory.GetFiles(logDirectory, "dotnet-tracer-native-*.log");
+        const string marker = "*** DebuggerMethodRewriter::Rewrite() Finished. ProbeID: ";
+
+        foreach (var logFile in logFiles)
+        {
+            var logLines = File.ReadAllLines(logFile);
+
+            foreach (var line in logLines)
+            {
+                if (!line.Contains(marker))
+                {
+                    continue;
+                }
+
+                var probeIdStart = line.IndexOf(marker) + marker.Length;
+                var probeIdEnd = line.IndexOf(" Method: ", probeIdStart);
+                if (probeIdEnd == -1) continue;
+
+                var probeId = line.Substring(probeIdStart, probeIdEnd - probeIdStart).Trim();
+                if (probeId == "null" || string.IsNullOrEmpty(probeId))
+                {
+                    continue;
+                }
+
+                var methodStart = probeIdEnd + " Method: ".Length;
+                var methodEnd = line.IndexOf("() [IsVoid=", methodStart);
+                if (methodEnd == -1) continue;
+
+                var methodName = line.Substring(methodStart, methodEnd - methodStart).Trim();
+
+                result.TryAdd(probeId, methodName);
+            }
+        }
+
+        return result;
     }
 
     record ProbeReportInfo(string ProbeId, string Name, bool IsValid, bool HasError)
