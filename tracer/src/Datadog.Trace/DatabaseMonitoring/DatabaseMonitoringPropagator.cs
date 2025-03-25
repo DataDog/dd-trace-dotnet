@@ -221,7 +221,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// <summary>
         /// Uses a sql instruction to set a context for the current connection, bearing the span ID and trace ID.
         /// This is meant to circumvent cache invalidation issues that occur when those values are injected in comment.
-        /// Currently only working for MSSQL (uses an instruction that is specific to it)
+        /// Currently only working for Microsoft SQL Server (uses an instruction that is specific to it)
         /// </summary>
         /// <returns>True if the traceparent information was set</returns>
         internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
