@@ -77,8 +77,6 @@ namespace Datadog.Trace.Activity
                 {
                     OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
                 }
-
-                OtlpHelpers.SerializeEventsToJson(span, activity5.Events);
             }
             else
             {
@@ -193,8 +191,9 @@ namespace Datadog.Trace.Activity
                 span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
 
-            // extract any ActivityLinks
+            // extract any ActivityLinks and ActivityEvents
             ExtractActivityLinks<TInner>(span, activity5);
+            ExtractActivityEvents<TInner>(span, activity5);
         }
 
         private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
@@ -283,6 +282,49 @@ namespace Datadog.Trace.Activity
                 }
 
                 span.AddLink(new SpanLink(spanContext, attributes));
+            }
+        }
+
+        private static void ExtractActivityEvents<TInner>(Span span, IActivity5? activity5)
+            where TInner : IActivity
+        {
+            if (activity5 is null)
+            {
+                return;
+            }
+
+            foreach (var activityEvent in activity5.Events)
+            {
+                if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
+                {
+                    continue;
+                }
+
+                var eventAttributes = new List<KeyValuePair<string, object>>();
+                foreach (var kvp in duckEvent.Tags)
+                {
+                    if (!string.IsNullOrEmpty(kvp.Key) && IsAllowedAtributeType(kvp.Value))
+                    {
+                        if (kvp.Value is Array array)
+                        {
+                            int index = 0;
+                            foreach (var item in array)
+                            {
+                                if (item?.ToString() is { } value)
+                                {
+                                    eventAttributes.Add(new($"{kvp.Key}.{index}", value));
+                                    index++;
+                                }
+                            }
+                        }
+                        else if (kvp.Value?.ToString() is { } tagValue)
+                        {
+                            eventAttributes.Add(new(kvp.Key, tagValue));
+                        }
+                    }
+                }
+
+                span.AddEvent(new SpanEvent(duckEvent.Name, duckEvent.Timestamp, eventAttributes));
             }
         }
 
@@ -532,28 +574,6 @@ namespace Datadog.Trace.Activity
                 SetTagObject(span, Tags.ErrorMsg, errorMsg);
                 SetTagObject(span, Tags.ErrorStack, errorStack);
             }
-        }
-
-        internal static void SerializeEventsToJson(Span span, IEnumerable events)
-        {
-            var eventsList = new List<ActivityEvent>();
-
-            foreach (var activityEvent in events)
-            {
-                if (activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
-                {
-                    eventsList.Add(duckEvent);
-                }
-            }
-
-            if (eventsList.Count <= 0)
-            {
-                return;
-            }
-
-            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityEventConverter() }, Formatting = Formatting.None };
-            var eventsJson = JsonConvert.SerializeObject(eventsList, settings);
-            span.SetTag("events", eventsJson);
         }
 
         // See trace agent func spanKind2Type: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L621

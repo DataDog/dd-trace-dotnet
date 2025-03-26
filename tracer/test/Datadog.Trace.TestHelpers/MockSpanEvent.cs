@@ -18,6 +18,6 @@ namespace Datadog.Trace.TestHelpers
         public long Timestamp { get; set; }
 
         [Key("attributes")]
-        public Dictionary<string, string>  Attributes { get; set; }
+        public Dictionary<string, MockAttributeAnyValue> Attributes { get; set; }
     }
 }

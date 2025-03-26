@@ -6,15 +6,14 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Activity;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
@@ -50,6 +49,12 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _spanEventBytes = StringEncoding.UTF8.GetBytes("span_events");
         private readonly byte[] _timeUnixNanoBytes = StringEncoding.UTF8.GetBytes("time_unix_nano");
         private readonly byte[] _attributesBytes = StringEncoding.UTF8.GetBytes("attributes");
+        private readonly byte[] _typeFieldBytes = StringEncoding.UTF8.GetBytes("type");
+        private readonly byte[] _stringValueFieldBytes = StringEncoding.UTF8.GetBytes("string_value");
+        private readonly byte[] _boolValueFieldBytes = StringEncoding.UTF8.GetBytes("bool_value");
+        private readonly byte[] _intValueFieldBytes = StringEncoding.UTF8.GetBytes("int_value");
+        private readonly byte[] _doubleValueFieldBytes = StringEncoding.UTF8.GetBytes("double_value");
+        private readonly byte[] _arrayValueFieldBytes = StringEncoding.UTF8.GetBytes("array_value");
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
@@ -175,12 +180,9 @@ namespace Datadog.Trace.Agent.MessagePack
             var hasSpanEvents = span.SpanEvents is { Count: > 0 };
             var spanEventsManager = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager;
 
-            if (hasSpanEvents)
+            if (hasSpanEvents && spanEventsManager?.NativeSpanEventsEnabled == true)
             {
-                if (spanEventsManager?.NativeSpanEventsEnabled == true)
-                {
-                    len++;
-                }
+                len++;
             }
 
             len += 2; // Tags and metrics
@@ -245,16 +247,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += WriteSpanLink(ref bytes, offset, in spanModel);
             }
 
-            if (hasSpanEvents)
+            if (hasSpanEvents && spanEventsManager?.NativeSpanEventsEnabled == true)
             {
-                if (spanEventsManager?.NativeSpanEventsEnabled == true)
-                {
-                    offset += WriteSpanEvent(ref bytes, offset, in spanModel);
-                }
-                else
-                {
-                    OtlpHelpers.SerializeEventsToJson(span, spanModel.Span.SpanEvents);
-                }
+                offset += WriteSpanEvent(ref bytes, offset, in spanModel);
             }
 
             return offset - originalOffset;
@@ -347,28 +342,126 @@ namespace Datadog.Trace.Agent.MessagePack
 
             foreach (var spanEvent in spanModel.Span.SpanEvents)
             {
-                var len = 3; // name, timestamp, and attributes
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
+                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanEvent.Attributes?.Count > 0 ? 3 : 2);
 
-                // Write name
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, spanEvent.Name);
-
-                // Write timestamp
+                // time_unix_nano
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _timeUnixNanoBytes);
                 offset += MessagePackBinary.WriteInt64(ref bytes, offset, spanEvent.Timestamp.ToUnixTimeNanoseconds());
 
-                // Write attributes if any
-                if (spanEvent.Attributes is { Count: > 0 })
+                // name
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, spanEvent.Name);
+
+                // attributes (strings only)
+                if (spanEvent.Attributes?.Count > 0)
                 {
+                    // Reserve space to patch the correct map header count later
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributesBytes);
-                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanEvent.Attributes.Count);
+                    int attributeCountOffset = offset;
+                    offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0); // placeholder
+
+                    int attrCount = 0;
                     foreach (var attribute in spanEvent.Attributes)
                     {
+                        if (string.IsNullOrEmpty(attribute.Key) || attribute.Value is null)
+                        {
+                            continue;
+                        }
+
+                        int entryOffset = offset;
+
                         offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Value);
+                        offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+
+                        if (attribute.Value is string stringVal)
+                        {
+                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 0);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _stringValueFieldBytes);
+                            offset += MessagePackBinary.WriteString(ref bytes, offset, stringVal);
+                            attrCount++;
+                        }
+                        else if (attribute.Value is bool boolVal)
+                        {
+                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _boolValueFieldBytes);
+                            offset += MessagePackBinary.WriteBoolean(ref bytes, offset, boolVal);
+                            attrCount++;
+                        }
+                        else if (attribute.Value is int intValue)
+                        {
+                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _intValueFieldBytes);
+                            offset += MessagePackBinary.WriteInt64(ref bytes, offset, intValue);
+                            attrCount++;
+                        }
+                        else if (attribute.Value is double doubleVal)
+                        {
+                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _doubleValueFieldBytes);
+                            offset += MessagePackBinary.WriteDouble(ref bytes, offset, doubleVal);
+                            attrCount++;
+                        }
+                    }
+
+                    // Back-patch actual count
+                    if (attrCount > 0)
+                    {
+                        MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, attributeCountOffset, (uint)attrCount);
+                    }
+                    else
+                    {
+                        // No valid attrs? Rewind offset to remove empty map
+                        offset = attributeCountOffset - _attributesBytes.Length;
                     }
                 }
+            }
+
+            return offset - originalOffset;
+        }
+
+        private int WriteJsonEvents(ref byte[] bytes, int offset, in SpanModel spanModel)
+        {
+            int originalOffset = offset;
+
+            if (spanModel.Span.SpanEvents is { Count: > 0 })
+            {
+                var eventList = new List<Dictionary<string, object>>();
+
+                foreach (var spanEvent in spanModel.Span.SpanEvents)
+                {
+                    var eventData = new Dictionary<string, object>
+                    {
+                        { "name", spanEvent.Name },
+                        { "time_unix_nano", spanEvent.Timestamp.ToUnixTimeNanoseconds() }
+                    };
+
+                    if (spanEvent.Attributes is { Count: > 0 })
+                    {
+                        var attributes = new Dictionary<string, object>();
+
+                        foreach (var attr in spanEvent.Attributes)
+                        {
+                            if (IsAllowedAttributeType(attr.Value))
+                            {
+                                attributes[attr.Key] = attr.Value;
+                            }
+                        }
+
+                        if (attributes.Count > 0)
+                        {
+                            eventData["attributes"] = attributes;
+                        }
+                    }
+
+                    eventList.Add(eventData);
+                }
+
+                // Convert event list to JSON
+                var eventsJson = JsonConvert.SerializeObject(eventList);
+
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes("events"));
+                offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
             }
 
             return offset - originalOffset;
@@ -422,6 +515,13 @@ namespace Datadog.Trace.Agent.MessagePack
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
+
+            var spanEventsManager = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager;
+            if (span.SpanEvents is { Count: > 0 } && spanEventsManager?.NativeSpanEventsEnabled != true)
+            {
+                count++;
+                offset += WriteJsonEvents(ref bytes, offset, in model);
+            }
 
             // Write trace tags
             if (model is { TraceChunk.Tags: { Count: > 0 } traceTags })
@@ -827,6 +927,53 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
                 _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
             }
+        }
+
+        private bool IsAllowedAttributeType(object value)
+        {
+            if (value is null)
+            {
+                return false;
+            }
+
+            if (value is Array array)
+            {
+                if (array.Length == 0 ||
+                    array.Rank > 1)
+                {
+                    // Newtonsoft doesn't seem to support multidimensional arrays (e.g., [,]), but does support jagged (e.g., [][])
+                    return false;
+                }
+
+                if (value.GetType() is { } type
+                 && type.IsArray
+                 && type.GetElementType() == typeof(object))
+                {
+                    // Arrays may only have a primitive type, not 'object'
+                    return false;
+                }
+
+                value = array.GetValue(0);
+
+                if (value is null)
+                {
+                    return false;
+                }
+            }
+
+            return (value is string or bool ||
+                    value is char ||
+                    value is sbyte ||
+                    value is byte ||
+                    value is ushort ||
+                    value is short ||
+                    value is uint ||
+                    value is int ||
+                    value is ulong ||
+                    value is long ||
+                    value is float ||
+                    value is double ||
+                    value is decimal);
         }
 
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>

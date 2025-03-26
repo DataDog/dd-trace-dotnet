@@ -396,7 +396,7 @@ namespace Datadog.Trace.Tests
             var span = _tracer.StartSpan("Operation");
             var eventName = "test_event";
             var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
-            var eventAttributes = new List<KeyValuePair<string, string>> { new("key", "value") };
+            var eventAttributes = new List<KeyValuePair<string, object>> { new("key", "value") };
             var spanEvent = new SpanEvent(eventName, eventTimestamp, eventAttributes);
 
             span.AddEvent(spanEvent);
@@ -416,7 +416,7 @@ namespace Datadog.Trace.Tests
 
             var eventName = "test_event";
             var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
-            var eventAttributes = new List<KeyValuePair<string, string>> { new("key", "value") };
+            var eventAttributes = new List<KeyValuePair<string, object>> { new("key", "value") };
             var spanEvent = new SpanEvent(eventName, eventTimestamp, eventAttributes);
 
             span.AddEvent(spanEvent);
