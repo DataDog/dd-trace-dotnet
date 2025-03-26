@@ -245,7 +245,7 @@ public class SpanMessagePackFormatterTests
             new("object_array", new object[] { "string", 42, true }),
             new("bool_array", new[] { true, false, true }),
             new("int_array", new[] { 123, 1234, 12345 }),
-            new("double_array", new[] { 1.2, 1.30000, 200000.1 }),
+            new("double_array", new[] { 1.2, 1.3210, 200000.1 }),
             new(null, "empty_key"),
             new("string_key", "hello"),
         };
@@ -286,34 +286,75 @@ public class SpanMessagePackFormatterTests
 
             var arrayAttr = attributes["string_array"];
             arrayAttr.Type.Should().Be(4);
-            arrayAttr.ArrayValue.Should().HaveCount(3);
+            arrayAttr.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(0)); // string type
             arrayAttr.ArrayValue[0].StringValue.Should().Be("item1");
             arrayAttr.ArrayValue[1].StringValue.Should().Be("item2");
             arrayAttr.ArrayValue[2].StringValue.Should().Be("item3");
 
             var secondEvent = deserializedSpan.SpanEvents[1];
+            secondEvent.Name.Should().Be("another_event");
+            secondEvent.Timestamp.Should().Be(eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds());
+
             var attributes2 = secondEvent.Attributes;
+            attributes2.Should().HaveCount(4);
 
             attributes2["string_key"].Type.Should().Be(0);
             attributes2["string_key"].StringValue.Should().Be("hello");
 
-            var arrayAttr2 = attributes2["string_array"];
-            arrayAttr.ArrayValue.Should().HaveCount(3);
-            arrayAttr.ArrayValue[0].StringValue.Should().Be("item1");
-            arrayAttr.ArrayValue[1].StringValue.Should().Be("item2");
-            arrayAttr.ArrayValue[2].StringValue.Should().Be("item3");
+            var boolArray = attributes2["bool_array"];
+            boolArray.Type.Should().Be(4);
+            boolArray.ArrayValue.Should().HaveCount(3);
+            boolArray.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(1)); // bool type
+            boolArray.ArrayValue[0].BoolValue.Should().Be(true);
+            boolArray.ArrayValue[1].BoolValue.Should().Be(false);
+            boolArray.ArrayValue[2].BoolValue.Should().Be(true);
 
-            secondEvent.Name.Should().Be("another_event");
-            secondEvent.Timestamp.Should().Be(eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds());
-            secondEvent.Attributes.Should().BeNullOrEmpty();
+            var intArray = attributes2["int_array"];
+            intArray.Type.Should().Be(4);
+            intArray.ArrayValue.Should().HaveCount(3);
+            intArray.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(2)); // int type
+            intArray.ArrayValue[0].IntValue.Should().Be(123);
+            intArray.ArrayValue[1].IntValue.Should().Be(1234);
+            intArray.ArrayValue[2].IntValue.Should().Be(12345);
+
+            var doubleArray = attributes2["double_array"];
+            doubleArray.Type.Should().Be(4);
+            doubleArray.ArrayValue.Should().HaveCount(3);
+            doubleArray.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(3)); // double type
+            doubleArray.ArrayValue[0].DoubleValue.Should().Be(1.2);
+            doubleArray.ArrayValue[1].DoubleValue.Should().Be(1.321);
+            doubleArray.ArrayValue[2].DoubleValue.Should().Be(200000.1);
         }
         else
         {
             deserializedSpan.SpanEvents.Should().BeNullOrEmpty();
             deserializedSpan.Tags.Should().ContainKey("events");
             var eventsJson = deserializedSpan.Tags["events"];
-            eventsJson.Should().Contain(eventName);
-            eventsJson.Should().Contain("another_event");
+
+            eventsJson.Should().Contain($"\"name\":\"{eventName}\"");
+            eventsJson.Should().Contain($"\"time_unix_nano\":{eventTimestamp.ToUnixTimeNanoseconds()}");
+
+            var firstEventExpectedAttributes = new[]
+            {
+                "\"string_key\":\"hello\"",
+                "\"bool_key\":true",
+                "\"int_key\":42",
+                "\"double_key\":3.14",
+                "\"string_array\":[\"item1\",\"item2\",\"item3\"]"
+            };
+            firstEventExpectedAttributes.Should().AllSatisfy(attr => eventsJson.Should().Contain(attr));
+
+            eventsJson.Should().Contain("\"name\":\"another_event\"");
+            eventsJson.Should().Contain($"\"time_unix_nano\":{eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds()}");
+
+            var secondEventExpectedAttributes = new[]
+            {
+                "\"bool_array\":[true,false,true]",
+                "\"int_array\":[123,1234,12345]",
+                "\"double_array\":[1.2,1.321,200000.1]",
+                "\"string_key\":\"hello\""
+            };
+            secondEventExpectedAttributes.Should().AllSatisfy(attr => eventsJson.Should().Contain(attr));
         }
     }
 

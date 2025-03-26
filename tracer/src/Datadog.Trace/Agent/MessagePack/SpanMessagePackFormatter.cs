@@ -368,19 +368,17 @@ namespace Datadog.Trace.Agent.MessagePack
                             continue;
                         }
 
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                        offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+
                         if (attribute.Value is not Array)
                         {
-                            offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
                             offset += WriteEventAttribute(ref bytes, offset, attribute.Value);
                             attrCount++;
                         }
                         else if (attribute.Value is Array arrayVal && IsAllowedAttributeType(arrayVal))
                         {
-                            offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
                             offset += MessagePackBinary.WriteInt32(ref bytes, offset, 4);
                             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _arrayValueFieldBytes);
                             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, arrayVal.Length);
@@ -466,7 +464,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                         foreach (var attr in spanEvent.Attributes)
                         {
-                            if (IsAllowedAttributeType(attr.Value))
+                            if (IsAllowedAttributeType(attr.Value) && attr.Key is not null)
                             {
                                 attributes[attr.Key] = attr.Value;
                             }
