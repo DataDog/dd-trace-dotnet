@@ -232,15 +232,26 @@ public class SpanMessagePackFormatterTests
         var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var eventAttributes = new List<KeyValuePair<string, object>>
         {
-            new("empty_key", null),
             new("string_key", "hello"),
+            new("empty_value", null),
             new("bool_key", true),
             new("int_key", 42),
             new("double_key", 3.14),
+            new("string_array", new[] { "item1", "item2", "item3" }),
+        };
+
+        var eventAttributes2 = new List<KeyValuePair<string, object>>
+        {
+            new("object_array", new object[] { "string", 42, true }),
+            new("bool_array", new[] { true, false, true }),
+            new("int_array", new[] { 123, 1234, 12345 }),
+            new("double_array", new[] { 1.2, 1.30000, 200000.1 }),
+            new(null, "empty_key"),
+            new("string_key", "hello"),
         };
 
         span.AddEvent(new SpanEvent(eventName, eventTimestamp, eventAttributes));
-        span.AddEvent(new SpanEvent("another_event", eventTimestamp.AddSeconds(1)));
+        span.AddEvent(new SpanEvent("another_event", eventTimestamp.AddSeconds(1), eventAttributes2));
         span.SetDuration(TimeSpan.FromSeconds(1));
 
         var traceChunk = new TraceChunkModel(new([span]));
@@ -260,25 +271,20 @@ public class SpanMessagePackFormatterTests
             firstEvent.Timestamp.Should().Be(eventTimestamp.ToUnixTimeNanoseconds());
 
             var attributes = firstEvent.Attributes;
-            attributes.Should().HaveCount(4);
 
-            var stringAttr = attributes["string_key"];
-            stringAttr.Type.Should().Be(0);
-            stringAttr.StringValue.Should().Be("hello");
+            attributes["string_key"].Type.Should().Be(0);
+            attributes["string_key"].StringValue.Should().Be("hello");
 
-            var boolAttr = attributes["bool_key"];
-            boolAttr.Type.Should().Be(1);
-            boolAttr.BoolValue.Should().Be(true);
+            attributes["bool_key"].Type.Should().Be(1);
+            attributes["bool_key"].BoolValue.Should().Be(true);
 
-            var intAttr = attributes["int_key"];
-            intAttr.Type.Should().Be(2);
-            intAttr.IntValue.Should().Be(42);
+            attributes["int_key"].Type.Should().Be(2);
+            attributes["int_key"].IntValue.Should().Be(42);
 
-            var doubleAttr = attributes["double_key"];
-            doubleAttr.Type.Should().Be(3);
-            doubleAttr.DoubleValue.Should().Be(3.14);
+            attributes["double_key"].Type.Should().Be(3);
+            attributes["double_key"].DoubleValue.Should().Be(3.14);
 
-            var arrayAttr = attributes["array_key"];
+            var arrayAttr = attributes["string_array"];
             arrayAttr.Type.Should().Be(4);
             arrayAttr.ArrayValue.Should().HaveCount(3);
             arrayAttr.ArrayValue[0].StringValue.Should().Be("item1");
@@ -286,6 +292,17 @@ public class SpanMessagePackFormatterTests
             arrayAttr.ArrayValue[2].StringValue.Should().Be("item3");
 
             var secondEvent = deserializedSpan.SpanEvents[1];
+            var attributes2 = secondEvent.Attributes;
+
+            attributes2["string_key"].Type.Should().Be(0);
+            attributes2["string_key"].StringValue.Should().Be("hello");
+
+            var arrayAttr2 = attributes2["string_array"];
+            arrayAttr.ArrayValue.Should().HaveCount(3);
+            arrayAttr.ArrayValue[0].StringValue.Should().Be("item1");
+            arrayAttr.ArrayValue[1].StringValue.Should().Be("item2");
+            arrayAttr.ArrayValue[2].StringValue.Should().Be("item3");
+
             secondEvent.Name.Should().Be("another_event");
             secondEvent.Timestamp.Should().Be(eventTimestamp.AddSeconds(1).ToUnixTimeNanoseconds());
             secondEvent.Attributes.Should().BeNullOrEmpty();

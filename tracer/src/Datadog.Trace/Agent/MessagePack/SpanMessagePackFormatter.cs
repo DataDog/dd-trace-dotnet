@@ -368,38 +368,30 @@ namespace Datadog.Trace.Agent.MessagePack
                             continue;
                         }
 
-                        int entryOffset = offset;
+                        if (attribute.Value is not Array)
+                        {
+                            offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+                            offset += WriteEventAttribute(ref bytes, offset, attribute.Value);
+                            attrCount++;
+                        }
+                        else if (attribute.Value is Array arrayVal && IsAllowedAttributeType(arrayVal))
+                        {
+                            offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 4);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _arrayValueFieldBytes);
+                            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, arrayVal.Length);
 
-                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                        offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+                            foreach (var item in arrayVal)
+                            {
+                                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+                                offset += WriteEventAttribute(ref bytes, offset, item);
+                            }
 
-                        if (attribute.Value is string stringVal)
-                        {
-                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 0);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _stringValueFieldBytes);
-                            offset += MessagePackBinary.WriteString(ref bytes, offset, stringVal);
-                            attrCount++;
-                        }
-                        else if (attribute.Value is bool boolVal)
-                        {
-                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _boolValueFieldBytes);
-                            offset += MessagePackBinary.WriteBoolean(ref bytes, offset, boolVal);
-                            attrCount++;
-                        }
-                        else if (attribute.Value is int intValue)
-                        {
-                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _intValueFieldBytes);
-                            offset += MessagePackBinary.WriteInt64(ref bytes, offset, intValue);
-                            attrCount++;
-                        }
-                        else if (attribute.Value is double doubleVal)
-                        {
-                            offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _doubleValueFieldBytes);
-                            offset += MessagePackBinary.WriteDouble(ref bytes, offset, doubleVal);
                             attrCount++;
                         }
                     }
@@ -415,6 +407,38 @@ namespace Datadog.Trace.Agent.MessagePack
                         offset = attributeCountOffset - _attributesBytes.Length;
                     }
                 }
+            }
+
+            return offset - originalOffset;
+        }
+
+        private int WriteEventAttribute(ref byte[] bytes, int offset, object value)
+        {
+            var originalOffset = offset;
+
+            if (value is string stringVal)
+            {
+                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 0);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _stringValueFieldBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, stringVal);
+            }
+            else if (value is bool boolVal)
+            {
+                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _boolValueFieldBytes);
+                offset += MessagePackBinary.WriteBoolean(ref bytes, offset, boolVal);
+            }
+            else if (value is int intValue)
+            {
+                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _intValueFieldBytes);
+                offset += MessagePackBinary.WriteInt64(ref bytes, offset, intValue);
+            }
+            else if (value is double doubleVal)
+            {
+                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _doubleValueFieldBytes);
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, doubleVal);
             }
 
             return offset - originalOffset;
