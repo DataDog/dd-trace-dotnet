@@ -103,6 +103,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             if (value.B != null)
             {
+#if NETCOREAPP3_1_OR_GREATER
+                if (value.B.TryGetBuffer(out var buffer))
+                {
+                    return Encoding.UTF8.GetString(buffer.AsSpan());
+                }
+#endif
+                // fallback always copies bytes into a new array
                 return Encoding.UTF8.GetString(value.B.ToArray());
             }
 

@@ -68,7 +68,8 @@ internal static class SpanPointers
         var sortedKeys = keys.KeyNames.OrderBy(k => k, StringComparer.Ordinal).ToArray();
         var key1 = sortedKeys[0];
         var value1 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key1]);
-        string key2 = string.Empty, value2 = string.Empty;
+        var key2 = string.Empty;
+        var value2 = string.Empty;
 
         if (sortedKeys.Length > 1)
         {
@@ -118,18 +119,7 @@ internal static class SpanPointers
 
     internal static string ConcatenateComponents(string tableName, string key1, string value1, string key2, string value2)
     {
-        var builder = StringBuilderCache.Acquire();
-        builder.Append(tableName);
-        builder.Append('|');
-        builder.Append(key1);
-        builder.Append('|');
-        builder.Append(value1);
-        builder.Append('|');
-        builder.Append(key2);
-        builder.Append('|');
-        builder.Append(value2);
-
-        return StringBuilderCache.GetStringAndRelease(builder);
+        return $"{tableName}|{key1}|{value1}|{key2}|{value2}";
     }
 
     // Hashing rules: https://github.com/DataDog/dd-span-pointer-rules/tree/main?tab=readme-ov-file#general-hashing-rules

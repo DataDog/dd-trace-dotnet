@@ -55,16 +55,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <summary>
         /// Gets the string value, if present
         /// </summary>
-        string S { get; }
+        string? S { get; }
 
         /// <summary>
         /// Gets the numeric value as a string, if present
         /// </summary>
-        string N { get; }
+        string? N { get; }
 
         /// <summary>
         /// Gets the binary value, if present
         /// </summary>
-        MemoryStream B { get; }
+        MemoryStream? B { get; }
     }
 }
