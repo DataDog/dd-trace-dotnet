@@ -454,7 +454,6 @@ profiler_cpu_timer_create-arm64:
 
 micro-test:
   stage: benchmarks-win
-  needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   interruptible: true
   timeout: 1h
@@ -463,7 +462,7 @@ micro-test:
 
   script:
     - git clone --branch fayssal/migrate-micros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - ./platform/launch-windows-instances.sh
+    - ./platform/launch-instance.sh
     
   artifacts:
     name: "artifacts"
