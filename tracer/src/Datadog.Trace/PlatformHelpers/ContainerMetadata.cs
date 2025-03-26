@@ -54,7 +54,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// Gets the unique identifier of the container executing the code.
         /// Return values may be:
         /// <list type="bullet">
-        /// <item>"cid-&lt;containerID&gt;" if the container id is available.</item>
+        /// <item>"ci-&lt;containerID&gt;" if the container id is available.</item>
         /// <item>"in-&lt;inode&gt;" if the cgroup node controller's inode is available.
         ///        We use the memory controller on cgroupv1 and the root cgroup on cgroupv2.</item>
         /// <item><c>null</c> if neither are available.</item>
@@ -65,7 +65,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             if (ContainerId.Value is string containerId)
             {
-                return $"cid-{containerId}";
+                return $"ci-{containerId}";
             }
             else if (CgroupInode.Value is string cgroupInode)
             {

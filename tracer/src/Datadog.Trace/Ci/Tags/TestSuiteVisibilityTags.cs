@@ -32,4 +32,9 @@ internal static class TestSuiteVisibilityTags
     /// Test session working directory environment variable
     /// </summary>
     public const string TestSessionWorkingDirectoryEnvironmentVariable = "DD_TESTSESSION_WORKINGDIRECTORY";
+
+    /// <summary>
+    /// Test session auto injected environment variable
+    /// </summary>
+    public const string TestSessionAutoInjectedEnvironmentVariable = "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER";
 }

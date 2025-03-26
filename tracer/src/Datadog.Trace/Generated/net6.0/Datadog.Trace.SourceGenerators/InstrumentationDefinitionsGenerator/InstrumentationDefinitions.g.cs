@@ -401,6 +401,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerExternalScopeProviderForEachScopeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration_8xx"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.ILogger,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"
@@ -493,11 +494,6 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalMergeFromIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalWriteToIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageMergeFromIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.Protobuf,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
