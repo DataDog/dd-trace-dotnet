@@ -957,7 +957,7 @@ partial class Build
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
 
-             EnsureCleanDirectory(masterDir);
+            // EnsureCleanDirectory(masterDir);
 
              // Connect to Azure DevOps Services
             //  var connection = new VssConnection(
