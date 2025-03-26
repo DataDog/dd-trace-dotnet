@@ -14,13 +14,9 @@ namespace Samples.SqlServer
             using var connection = new SqlConnection(connectionString += ";Pooling=false");
             await connection.OpenAsync(token);
             Console.WriteLine("Starting SQL Server Stored Procedure Calls");
-
-            // TODO this is bad, but I need to this to offset the start time of spans to they order consistently in snapshots
-            await Task.Delay(1_500);
-
             // all the SQL here is based on DbCommandFactory
 
-            var tableName = $"[System-Data-SqlClient-Test-{Guid.NewGuid():N}]";
+            var tableName = $"[Stored-Proc-System-Data-SqlClient-Test-{Guid.NewGuid():N}]";
 
             using (var command = connection.CreateCommand())
             {
