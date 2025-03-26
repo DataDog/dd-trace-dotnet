@@ -124,10 +124,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal InitResult Configure(ConfigurationState configurationState, IEncoder encoder, ref DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal UpdateResult Configure(ConfigurationState configurationState, IEncoder encoder, ref DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
-            var updateResult = Update(_wafLibraryInvoker.InitBuilder(ref configStruct), configurationState, encoder, ref diagnostics, rulesFile, false);
-            return InitResult.From(ref updateResult);
+            return Update(_wafLibraryInvoker.InitBuilder(ref configStruct), configurationState, encoder, ref diagnostics, rulesFile, false);
         }
 
         internal UpdateResult Update(IntPtr wafBuilderHandle, ConfigurationState configurationState, IEncoder encoder, ref DdwafObjectStruct diagnostics, string? rulesFile = null, bool updating = true)
@@ -180,7 +179,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 else if (!updating)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed. No valid rules found.");
-                    return UpdateResult.FromUnusableRules();
+                    return UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.");
                 }
             }
 
@@ -205,17 +204,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
 
                 var errorMess = StringBuilderCache.GetStringAndRelease(sb);
-                Log.Warning("Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
-            }
-
-            // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
-            if (result.LoadedRules == 0)
-            {
-                Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
-            }
-            else
-            {
-                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", result.LoadedRules, rulesFile);
+                Log.Warning("Some issues were found while applying waf configuration (RulesFile: {RulesFile}): {ErroringRules}", rulesFile, errorMess);
             }
 
             return result;

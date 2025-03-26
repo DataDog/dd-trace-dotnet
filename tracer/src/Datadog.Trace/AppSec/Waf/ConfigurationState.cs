@@ -128,36 +128,6 @@ internal record ConfigurationState
         return [.. subscriptionsKeys];
     }
 
-    internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
-    {
-        if (res == null)
-        {
-            throw new ArgumentNullException(nameof(res));
-        }
-
-        var finalRuleData = new List<RuleData>();
-        var groups = res.GroupBy(r => r.Id + r.Type);
-        foreach (var rulesData in groups)
-        {
-            var dataByValue = rulesData.SelectMany(d => d.Data!).GroupBy(d => d.Value);
-            var mergedData = new List<Data>();
-            foreach (var data in dataByValue)
-            {
-                var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
-                mergedData.Add(longestLastingIp);
-            }
-
-            var ruleData = rulesData.FirstOrDefault();
-            if (ruleData != null && !string.IsNullOrEmpty(ruleData.Type) && !string.IsNullOrEmpty(ruleData.Id))
-            {
-                ruleData.Data = mergedData.ToArray();
-                finalRuleData.Add(ruleData);
-            }
-        }
-
-        return finalRuleData;
-    }
-
     internal RemoteConfigWafFiles GetWafConfigurations(bool updating = false)
     {
         updating &= !IncomingUpdateState.ShouldInitAppsec; // If we need to init AppSec we don't want to skip any config

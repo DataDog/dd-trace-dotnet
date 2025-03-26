@@ -19,6 +19,7 @@ internal class DiagnosticResult
     private readonly DiagnosticFeatureResult? _rules;
     private readonly DiagnosticFeatureResult? _rulesData;
     private readonly DiagnosticFeatureResult? _rulesOverride;
+    private readonly string _rulesetVersion = string.Empty;
 
     public DiagnosticResult(DdwafObjectStruct diagObject)
     {
@@ -29,6 +30,10 @@ internal class DiagnosticResult
         _rules = DiagnosticFeatureResult.From("rules", _diagnosticsData);
         _rulesData = DiagnosticFeatureResult.From("rules_data", _diagnosticsData);
         _rulesOverride = DiagnosticFeatureResult.From("rules_override", _diagnosticsData);
+        if (_diagnosticsData.TryGetValue("ruleset_version", out var value))
+        {
+            _rulesetVersion = value as string ?? string.Empty;
+        }
     }
 
     public DiagnosticFeatureResult? Actions => _actions;
@@ -43,5 +48,5 @@ internal class DiagnosticResult
 
     public DiagnosticFeatureResult? RulesOverride => _rulesOverride;
 
-    public string? RulesVersion => _diagnosticsData["ruleset_version"] as string;
+    public string RulesetVersion => _rulesetVersion;
 }

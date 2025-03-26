@@ -82,6 +82,21 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         return initResult;
     }
 
+    internal UpdateResult UpdateWaf(ConfigurationState configurationState, Waf waf)
+    {
+        configurationState.ApplyStoredFiles();
+        var updateRes = waf.Update(configurationState);
+        return updateRes;
+    }
+
+    internal UpdateResult UpdateWaf(ConfigurationState configurationState, Waf waf, ref IContext? context)
+    {
+        var res = UpdateWaf(configurationState, waf);
+        context?.Dispose();
+        context = waf.CreateContext();
+        return res;
+    }
+
     internal void AddAsmRemoteConfig(ConfigurationState configurationState, AppSec.Rcm.Models.Asm.Payload payload, string id, params string[] removeIds)
     {
         var binPayload = SerializePayload(payload);
@@ -89,25 +104,15 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         var rcPath = RemoteConfigurationPath.FromPath(rcPathTxt);
         var rc = new RemoteConfiguration(rcPath, binPayload, binPayload.Length, new(), 1);
         var product = RcmProducts.Asm;
-        var remoteConfigsByProduct = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
-
-        Dictionary<string, List<RemoteConfigurationPath>>? remoteRemovedConfigsByProduct = null;
-        if (removeIds is { Length: > 0 })
-        {
-            var list = removeIds.Select(i => RemoteConfigurationPath.FromPath($"datadog/00/ASM/{i}/config")).ToList();
-            remoteRemovedConfigsByProduct = new Dictionary<string, List<RemoteConfigurationPath>> { { product, list } };
-        }
-
-        configurationState.ReceivedNewConfig(remoteConfigsByProduct, remoteRemovedConfigsByProduct);
+        var remoteConfigs = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
+        var removeList = CreateRemoteRemovedConfigsByProduct(product, removeIds);
+        configurationState.ReceivedNewConfig(remoteConfigs, removeList);
     }
 
-    internal UpdateResult UpdateWaf(ConfigurationState configurationStatus, Waf waf, ref IContext? context)
+    internal void RemoveAsmRemoteConfig(ConfigurationState configurationState, params string[] removeIds)
     {
-        configurationStatus.ApplyStoredFiles();
-        var updateRes = waf.Update(configurationStatus);
-        context?.Dispose();
-        context = waf.CreateContext();
-        return updateRes;
+        var removeList = CreateRemoteRemovedConfigsByProduct(RcmProducts.Asm, removeIds);
+        configurationState.ReceivedNewConfig(new(), removeList);
     }
 
     internal void AddAsmDataRemoteConfig(ConfigurationState configurationState, AppSec.Rcm.Models.AsmData.Payload payload, string id, params string[] removeIds)
@@ -117,28 +122,44 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         var rcPath = RemoteConfigurationPath.FromPath(rcPathTxt);
         var rc = new RemoteConfiguration(rcPath, binPayload, binPayload.Length, new(), 1);
         var product = RcmProducts.AsmData;
-        var remoteConfigsByProduct = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
-
-        Dictionary<string, List<RemoteConfigurationPath>>? remoteRemovedConfigsByProduct = null;
-        if (removeIds is { Length: > 0 })
-        {
-            var list = removeIds.Select(i => RemoteConfigurationPath.FromPath($"datadog/00/ASM_DATA/{i}/config")).ToList();
-            remoteRemovedConfigsByProduct = new Dictionary<string, List<RemoteConfigurationPath>> { { product, list } };
-        }
-
-        configurationState.ReceivedNewConfig(remoteConfigsByProduct, null);
+        var remoteConfigs = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
+        var removeList = CreateRemoteRemovedConfigsByProduct(product, removeIds);
+        configurationState.ReceivedNewConfig(remoteConfigs, removeList);
     }
 
-    internal void RemoveDefaultRemoteConfig(ConfigurationState configurationState, bool apply = true)
+    internal void RemoveAsmDataRemoteConfig(ConfigurationState configurationState, params string[] removeIds)
     {
-        var remoteConfigsByProduct = new Dictionary<string, List<RemoteConfiguration>>();
-        var remoteRemovedConfigsByProduct = new Dictionary<string, List<RemoteConfigurationPath>> { { RcmProducts.AsmDd, new List<RemoteConfigurationPath> { RemoteConfigurationPath.FromPath(AsmDdProduct.DefaultConfigKey) } } };
+        var removeList = CreateRemoteRemovedConfigsByProduct(RcmProducts.AsmData, removeIds);
+        configurationState.ReceivedNewConfig(new(), removeList);
+    }
 
-        configurationState.ReceivedNewConfig(remoteConfigsByProduct, remoteRemovedConfigsByProduct);
-        if (apply)
+    internal void AddAsmDDRemoteConfig(ConfigurationState configurationState, RuleSet payload, string id, params string[] removeIds)
+    {
+        var binPayload = SerializePayload(payload);
+        var rcPathTxt = $"datadog/00/ASM_DD/{id}/config";
+        var rcPath = RemoteConfigurationPath.FromPath(rcPathTxt);
+        var rc = new RemoteConfiguration(rcPath, binPayload, binPayload.Length, new(), 1);
+        var product = RcmProducts.AsmDd;
+        var remoteConfigs = new Dictionary<string, List<RemoteConfiguration>> { { product, new List<RemoteConfiguration> { rc } } };
+        var removeList = CreateRemoteRemovedConfigsByProduct(product, removeIds);
+        configurationState.ReceivedNewConfig(remoteConfigs, removeList);
+    }
+
+    internal void RemoveDefaultRemoteConfig(ConfigurationState configurationState)
+    {
+        var removeList = new Dictionary<string, List<RemoteConfigurationPath>> { { RcmProducts.AsmDd, new List<RemoteConfigurationPath> { RemoteConfigurationPath.FromPath(AsmDdProduct.DefaultConfigKey) } } };
+        configurationState.ReceivedNewConfig(new(), removeList);
+    }
+
+    private static Dictionary<string, List<RemoteConfigurationPath>>? CreateRemoteRemovedConfigsByProduct(string product, params string[] removeIds)
+    {
+        if (removeIds.Length == 0)
         {
-            configurationState.ApplyStoredFiles();
+            return null;
         }
+
+        var list = removeIds.Select(i => RemoteConfigurationPath.FromPath($"datadog/00/{product}/{i}/config")).ToList();
+        return new Dictionary<string, List<RemoteConfigurationPath>> { { product, list } };
     }
 
     private static byte[] SerializePayload(object payload)

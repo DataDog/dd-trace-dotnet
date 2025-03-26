@@ -215,7 +215,7 @@ namespace Datadog.Trace.AppSec
                         InitWafAndInstrumentations();
                         UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
-                        if (_wafInitResult?.RuleFileVersion is not null)
+                        if (_wafInitResult?.RuleFileVersion is { Length: > 0 })
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                             TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);

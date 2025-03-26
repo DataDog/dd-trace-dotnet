@@ -12,40 +12,32 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
-    internal class UpdateResult
+    internal record UpdateResult
     {
-        private UpdateResult(DdwafObjectStruct? diagObject, bool success, bool unusableRules = false, bool nothingToUpdate = false, IntPtr builderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
+        private UpdateResult(DdwafObjectStruct? diagObject, bool success, IntPtr builderHandle = default(IntPtr), IntPtr wafHandle = default(IntPtr), WafLibraryInvoker? invoker = null, IEncoder? encoder = null)
         {
+            WafLibraryInvoker = invoker;
+            Encoder = encoder;
+            WafBuilderHandle = builderHandle;
+            WafHandle = wafHandle;
+
             if (diagObject != null)
             {
-                var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject.Value, false);
+                ReportedDiagnostics = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject.Value, false);
 
-                FailedToLoadRules = reportedDiag.FailedCount;
-                SkippedRules = reportedDiag.SkippedCount;
-                LoadedRules = reportedDiag.LoadedCount;
-                Errors = reportedDiag.Errors;
-                Warnings = reportedDiag.Warnings;
-                RuleFileVersion = reportedDiag.RulesetVersion;
-
-                if (Errors is { Count: > 0 })
+                if (ReportedDiagnostics.Errors is { Count: > 0 })
                 {
                     HasErrors = true;
-                    ErrorMessage = JsonConvert.SerializeObject(Errors);
+                    ErrorMessage = JsonConvert.SerializeObject(ReportedDiagnostics.Errors);
                 }
 
-                if (Warnings is { Count: > 0 })
+                if (ReportedDiagnostics.Warnings is { Count: > 0 })
                 {
                     HasWarnings = true;
                 }
             }
 
             Success = success;
-            UnusableRules = unusableRules;
-            NothingToUpdate = nothingToUpdate;
-            WafLibraryInvoker = invoker;
-            Encoder = encoder;
-            WafBuilderHandle = builderHandle;
-            WafHandle = wafHandle;
         }
 
         private UpdateResult(string errorMessage)
@@ -63,40 +55,25 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal IntPtr WafHandle { get; }
 
-        internal bool UnusableRules { get; }
+        internal ReportedDiagnostics ReportedDiagnostics { get; } = new();
 
-        public bool NothingToUpdate { get; }
-
-        internal ushort? FailedToLoadRules { get; }
-
-        internal ushort? SkippedRules { get; }
-
-        /// <summary>
-        /// Gets the number of rules successfully loaded
-        /// </summary>
-        internal ushort? LoadedRules { get; }
-
-        internal IReadOnlyDictionary<string, object>? Errors { get; }
-
-        internal IReadOnlyDictionary<string, object>? Warnings { get; }
-
-        internal string? ErrorMessage { get; }
+        internal string ErrorMessage { get; } = string.Empty;
 
         internal bool HasErrors { get; }
 
         internal bool HasWarnings { get; }
 
-        internal string? RuleFileVersion { get; }
+        internal string RuleFileVersion => ReportedDiagnostics.RulesetVersion;
 
-        public static UpdateResult FromUnusableRules() => new(null, false, true);
+        internal IReadOnlyDictionary<string, object>? Errors => ReportedDiagnostics.Errors;
 
-        public static UpdateResult FromNothingToUpdate() => new(null, true, nothingToUpdate: true);
+        internal IReadOnlyDictionary<string, object>? Warnings => ReportedDiagnostics.Warnings;
 
         public static UpdateResult FromFailed() => new(null, false);
 
         public static UpdateResult FromFailed(DdwafObjectStruct diagObj) => new(diagObj, false);
 
-        public static UpdateResult FromSuccess(DdwafObjectStruct diagObj, IntPtr builderHandle, IntPtr wafHandle, WafLibraryInvoker invoker, IEncoder encoder) => new(diagObj, true, false, false, builderHandle, wafHandle, invoker, encoder);
+        public static UpdateResult FromSuccess(DdwafObjectStruct diagObj, IntPtr builderHandle, IntPtr wafHandle, WafLibraryInvoker invoker, IEncoder encoder) => new(diagObj, true, builderHandle, wafHandle, invoker, encoder);
 
         internal static UpdateResult FromException(Exception e) => new(e.Message);
 
