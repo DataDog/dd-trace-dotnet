@@ -38,11 +38,17 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
 
-        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span)
+        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
             if (integrationId is not (IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle) ||
                 propagationLevel is not (DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
+                return false;
+            }
+
+            if (!injectStoredProcedure && command.CommandType == CommandType.StoredProcedure)
+            {
+                // we don't want to inject the comment for stored procedures if it has been disabled explicitly
                 return false;
             }
 

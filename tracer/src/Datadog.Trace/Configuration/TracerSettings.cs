@@ -673,6 +673,9 @@ namespace Datadog.Trace.Configuration
             BypassHttpRequestUrlCachingEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled)
                                                        .AsBool(false);
 
+            InjectContextIntoStoredProceduresEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled)
+                                                       .AsBool(true);
+
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
             var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
 
@@ -1176,6 +1179,13 @@ namespace Datadog.Trace.Configuration
         /// HttpRequestUrl caching when HttpRequest.Url is accessed.
         /// </summary>
         internal bool BypassHttpRequestUrlCachingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will inject context into
+        /// StoredProcedure commands for Microsoft SQL Server.
+        /// Requires the <see cref="DbmPropagationMode"/> to be set to either <see cref="DbmPropagationLevel.Service"/> or <see cref="DbmPropagationLevel.Full"/>.
+        /// </summary>
+        internal bool InjectContextIntoStoredProceduresEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings
