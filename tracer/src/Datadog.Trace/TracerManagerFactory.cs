@@ -32,6 +32,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
+using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Datadog.Trace
