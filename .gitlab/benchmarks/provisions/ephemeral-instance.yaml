@@ -1,4 +1,4 @@
-name: &provision_name "dd-trace-dotnet-ephemeral-instance-without-tweaks"
+name: &provision_name "dd-trace-dotnet-ephemeral-instance-improve-representativeness"
 
 # We are reusing some provision files from windows instances
 init_environment:
@@ -11,7 +11,7 @@ init_environment:
 user_data_path: user_data/setup-benchmarking-platform-module.ps1
 
 source_ami:
-  ami_id_ssm_parameter: "/windows-benchmarking/windows-base-instance-without-tweaks-ami-id"
+  ami_id_ssm_parameter: "/windows-benchmarking/windows-base-instance-ami-id"
 
 tags:
   Name: *provision_name
