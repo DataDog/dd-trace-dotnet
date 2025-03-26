@@ -1,10 +1,40 @@
 stages:
+  - test
   - check-azure-pipeline
   - benchmarks
   - benchmarks-win
 
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-2
+
+micro-test:
+  stage: test
+  tags: ["arch:amd64"]
+  interruptible: true
+  timeout: 1h
+  # Image based on earlier version of tooling
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet0
+
+  script:
+    - git clone --branch fayssal/migrate-micros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    - ./platform/launch-instance.sh
+    
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
+  rules:
+    - when: manual
+  variables:
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+    AWS_REGION: "us-east-1"
+    CLEANUP: "false"
+    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
+    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
+    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
+    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -451,35 +481,6 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
-
-micro-test:
-  stage: benchmarks-win
-  tags: ["arch:amd64"]
-  interruptible: true
-  timeout: 1h
-  # Image based on earlier version of tooling
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet0
-
-  script:
-    - git clone --branch fayssal/migrate-micros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - ./platform/launch-instance.sh
-    
-  artifacts:
-    name: "artifacts"
-    when: always
-    paths:
-      - artifacts/
-    expire_in: 3 months
-  rules:
-    - when: manual
-  variables:
-    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-    AWS_REGION: "us-east-1"
-    CLEANUP: "false"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
-    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
-    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
-    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
 baseline-win:
   extends: .benchmarks-win
