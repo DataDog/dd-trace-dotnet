@@ -363,24 +363,22 @@ namespace Datadog.Trace.Agent.MessagePack
                     int attrCount = 0;
                     foreach (var attribute in spanEvent.Attributes)
                     {
-                        if (string.IsNullOrEmpty(attribute.Key) || attribute.Value is null)
+                        if (string.IsNullOrEmpty(attribute.Key) || !IsAllowedAttributeType(attribute.Value))
                         {
                             continue;
                         }
 
-                        if (attribute.Value is not Array && IsAllowedAttributeType(attribute.Value))
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
+                        offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
+
+                        if (attribute.Value is not Array)
                         {
-                            offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
                             offset += WriteEventAttribute(ref bytes, offset, attribute.Value);
                             attrCount++;
                         }
-                        else if (attribute.Value is Array arrayVal && IsAllowedAttributeType(arrayVal))
+                        else if (attribute.Value is Array arrayVal)
                         {
-                            offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeFieldBytes);
                             offset += MessagePackBinary.WriteInt32(ref bytes, offset, 4);
                             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _arrayValueFieldBytes);
                             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, arrayVal.Length);
@@ -396,14 +394,12 @@ namespace Datadog.Trace.Agent.MessagePack
                         }
                     }
 
-                    // Back-patch actual count
                     if (attrCount > 0)
                     {
                         MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, attributeCountOffset, (uint)attrCount);
                     }
                     else
                     {
-                        // No valid attrs? Rewind offset to remove empty map
                         offset = attributeCountOffset - _attributesBytes.Length;
                     }
                 }
