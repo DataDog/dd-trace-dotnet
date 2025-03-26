@@ -78,8 +78,8 @@ namespace Datadog.Trace.AppSec.Waf
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             try
             {
-                var initResult = wafConfigurator.Configure(configurationStatus, encoder, ref configWafStruct, ref diagnostics, configurationStatus.RuleSetTitle);
-                return initResult;
+                var result = wafConfigurator.Configure(configurationStatus, encoder, ref configWafStruct, ref diagnostics, configurationStatus.RuleSetTitle);
+                return InitResult.From(ref result);
             }
             finally
             {
@@ -94,42 +94,6 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 wafLibraryInvoker.ObjectFree(ref diagnostics);
-            }
-        }
-
-        public bool IsKnowAddressesSuported()
-        {
-            return _wafLibraryInvoker.IsKnowAddressesSuported();
-        }
-
-        public string[] GetKnownAddresses()
-        {
-            bool lockAcquired = false;
-            try
-            {
-                if (_wafLocker.EnterWriteLock())
-                {
-                    lockAcquired = true;
-
-                    var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
-                    return result;
-                }
-                else
-                {
-                    return Array.Empty<string>();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while getting known addresses");
-                return Array.Empty<string>();
-            }
-            finally
-            {
-                if (lockAcquired)
-                {
-                    _wafLocker.ExitWriteLock();
-                }
             }
         }
 
@@ -182,14 +146,50 @@ namespace Datadog.Trace.AppSec.Waf
 
                 return updateResult;
             }
-            catch
+            catch (Exception e)
             {
                 TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
-                return UpdateResult.FromUnusableRules();
+                return UpdateResult.FromException(e);
             }
             finally
             {
                 _wafLibraryInvoker.ObjectFree(ref diagnostics);
+            }
+        }
+
+        public bool IsKnowAddressesSuported()
+        {
+            return _wafLibraryInvoker.IsKnowAddressesSuported();
+        }
+
+        public string[] GetKnownAddresses()
+        {
+            bool lockAcquired = false;
+            try
+            {
+                if (_wafLocker.EnterWriteLock())
+                {
+                    lockAcquired = true;
+
+                    var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+                    return result;
+                }
+                else
+                {
+                    return Array.Empty<string>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while getting known addresses");
+                return Array.Empty<string>();
+            }
+            finally
+            {
+                if (lockAcquired)
+                {
+                    _wafLocker.ExitWriteLock();
+                }
             }
         }
 
