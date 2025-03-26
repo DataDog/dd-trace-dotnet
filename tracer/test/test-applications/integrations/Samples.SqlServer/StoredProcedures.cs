@@ -115,15 +115,16 @@ END";
                 command.CommandText = "dbo.sp_UpdateRowWithOutput";
 
                 // Input parameters - should be added to EXEC command
-                command.Parameters.Add("@Id", SqlDbType.Int).Value = 1;
-                command.Parameters.Add("@NewName", SqlDbType.VarChar, 100).Value = "UpdatedName1";
+                command.Parameters.AddWithValue("@Id", 1);
+                command.Parameters.AddWithValue("@NewName", "UpdatedName1");
 
                 // Output parameter - shoudl be added to EXEC command
-                var oldNameParam = command.Parameters.Add("@OldName", SqlDbType.VarChar, 100);
+                var oldNameParam = command.Parameters.AddWithValue("@OldName", DBNull.Value);
                 oldNameParam.Direction = ParameterDirection.Output;
+                oldNameParam.Size = 100;
 
                 // Return value parameter - should not be added to EXEC command
-                var returnParam = command.Parameters.Add("@ReturnValue", SqlDbType.Int);
+                var returnParam = command.Parameters.AddWithValue("@ReturnValue", DBNull.Value);
                 returnParam.Direction = ParameterDirection.ReturnValue;
 
                 await command.ExecuteNonQueryAsync(token);
@@ -167,10 +168,10 @@ END";
                         command.CommandType = CommandType.StoredProcedure;
                         command.CommandText = "dbo.sp_BatchUpdate";
 
-                        command.Parameters.Add("@Id", SqlDbType.Int).Value = 2;
-                        command.Parameters.Add("@NewName", SqlDbType.VarChar, 100).Value = "UpdatedInTransaction1";
+                        command.Parameters.AddWithValue("@Id", DbType.Int32).Value = 2;
+                        command.Parameters.AddWithValue("@NewName", DbType.String).Value = "UpdatedInTransaction1";
 
-                        var returnParam = command.Parameters.Add("@ReturnValue", SqlDbType.Int);
+                        var returnParam = command.Parameters.AddWithValue("@ReturnValue", DBNull.Value);
                         returnParam.Direction = ParameterDirection.ReturnValue;
 
                         await command.ExecuteNonQueryAsync(token);
@@ -183,10 +184,10 @@ END";
                         command.CommandType = CommandType.StoredProcedure;
                         command.CommandText = "dbo.sp_BatchUpdate";
 
-                        command.Parameters.Add("@Id", SqlDbType.Int).Value = 3;
-                        command.Parameters.Add("@NewName", SqlDbType.VarChar, 100).Value = "UpdatedInTransaction2";
+                        command.Parameters.AddWithValue("@Id", DbType.Int32).Value = 3;
+                        command.Parameters.AddWithValue("@NewName", DbType.Int32).Value = "UpdatedInTransaction2";
 
-                        var returnParam = command.Parameters.Add("@ReturnValue", SqlDbType.Int);
+                        var returnParam = command.Parameters.AddWithValue("@ReturnValue", DBNull.Value);
                         returnParam.Direction = ParameterDirection.ReturnValue;
 
                         await command.ExecuteNonQueryAsync(token);
