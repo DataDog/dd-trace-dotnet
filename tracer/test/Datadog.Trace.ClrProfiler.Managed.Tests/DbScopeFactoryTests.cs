@@ -7,10 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
+using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
@@ -289,6 +291,236 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             // should not have injected data - command text should not change
             command.CommandText.Should().Be(DbmCommandText);
+        }
+
+        // TODO; can probably clean these Stored Procedures up at some point, I just copy pasted
+        [Theory]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_Parameterless_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.Parameterless";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC dbo.Parameterless ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_SingleInputParameter_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.SingleParameter";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC dbo.SingleParameter @Id=@Id ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_MultipleInputParameters_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.MultiParameter";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Value = 55
+            };
+            command.Parameters.Add(parameter2);
+
+            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC dbo.MultiParameter @Id=@Id, @SomeOtherId=@SomeOtherId ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_OutputParameter_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.OutputParameter";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Direction = ParameterDirection.Output
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new MockDbParameter
+            {
+                ParameterName = "@SomeOtherIdFoo",
+                Direction = ParameterDirection.InputOutput,
+                Value = 10
+            };
+            command.Parameters.Add(parameter3);
+
+            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC dbo.OutputParameter @Id=@Id, @SomeOtherId=@SomeOtherId OUTPUT, @SomeOtherIdFoo=@SomeOtherIdFoo OUTPUT ");
+            command.CommandText.Should().Contain("/*dddbs=");
+        }
+
+        [Theory]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_ReturnParameter_CorrectlyTransformedIntoExec(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "dbo.ReturnParam";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var parameter = new MockDbParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@ReturnValue",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter2);
+
+            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC dbo.ReturnParam @Id=@Id");
+            command.CommandText.Should().Contain("/*dddbs=");
+            command.CommandText.Should().NotContain("@ReturnValue"); // ReturnValue should not be included in the command text
+            command.Parameters[0].Should().Be(parameter);
+            command.Parameters[1].Should().Be(parameter2);
+        }
+
+        [Theory]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        public async Task StoredProc_ComplexCase_MultipleParamsOfVariousTypes_CorrectlyTransformed(Type commandType)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = "dbo.ComplexProcedure";
+            command.CommandType = CommandType.StoredProcedure;
+
+            // Add various parameters
+            var parameter1 = new MockDbParameter
+            {
+                ParameterName = "@InputParam",
+                Value = "Input Value"
+            };
+            command.Parameters.Add(parameter1);
+
+            var parameter2 = new MockDbParameter
+            {
+                ParameterName = "@OutputParam",
+                Direction = ParameterDirection.Output,
+                Size = 100
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new MockDbParameter
+            {
+                ParameterName = "@InOutParam",
+                Direction = ParameterDirection.InputOutput,
+                Value = "Initial Value",
+                Size = 100
+            };
+            command.Parameters.Add(parameter3);
+
+            var parameter4 = new MockDbParameter
+            {
+                ParameterName = "@RetVal",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter4);
+
+            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            // Should transform correctly with all appropriate parameters in correct format
+            command.CommandType.Should().Be(CommandType.Text);
+            command.CommandText.Should().StartWith("EXEC dbo.ComplexProcedure");
+            command.CommandText.Should().Contain("@InputParam=@InputParam");
+            command.CommandText.Should().Contain("@OutputParam=@OutputParam OUTPUT");
+            command.CommandText.Should().Contain("@InOutParam=@InOutParam OUTPUT");
+            command.CommandText.Should().NotContain("@RetVal=@RetVal");
+            command.CommandText.Should().Contain("/*dddbs=");
         }
 
         [Theory]
