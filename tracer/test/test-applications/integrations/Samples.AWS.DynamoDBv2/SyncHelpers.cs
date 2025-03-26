@@ -15,7 +15,7 @@ namespace Samples.AWS.DynamoDBv2
 
         public static void StartDynamoDBTasks(AmazonDynamoDBClient dynamoDBClient)
         {
-            Console.WriteLine("Beginning Sync methods");
+            Console.WriteLine("[SyncHelpers] Beginning Sync methods");
             using (var scope = SampleHelpers.CreateScope("sync-methods"))
             {
                 CreateTable(dynamoDBClient);
@@ -23,9 +23,13 @@ namespace Samples.AWS.DynamoDBv2
                 // Needed in order to allow DynamoDB Table to be in
                 // Ready status.
                 Thread.Sleep(1000);
+                Console.WriteLine("[SyncHelpers] PutItem()");
                 PutItem(dynamoDBClient);
+                Console.WriteLine("[SyncHelpers] GetItem()");
                 GetItem(dynamoDBClient);
+                Console.WriteLine("[SyncHelpers] UpdateItem()");
                 UpdateItem(dynamoDBClient);
+                Console.WriteLine("[SyncHelpers] DeleteItem()");
                 DeleteItem(dynamoDBClient);
                 
                 BatchWriteItem(dynamoDBClient);

@@ -5,6 +5,8 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <TargetFrameworks>net462;net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,5 +14,4 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
   </ItemGroup>
-
 </Project>
