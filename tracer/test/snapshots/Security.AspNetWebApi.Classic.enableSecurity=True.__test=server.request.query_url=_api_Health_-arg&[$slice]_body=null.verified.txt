@@ -10,6 +10,7 @@
     Tags: {
       aspnet.controller: health,
       aspnet.route: api/{controller}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -28,6 +29,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -61,6 +63,7 @@
     Tags: {
       aspnet.controller: health,
       aspnet.route: api/{controller}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -79,6 +82,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -112,6 +116,7 @@
     Tags: {
       aspnet.controller: health,
       aspnet.route: api/{controller}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -130,6 +135,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -163,6 +169,7 @@
     Tags: {
       aspnet.controller: health,
       aspnet.route: api/{controller}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -181,6 +188,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -214,6 +222,7 @@
     Tags: {
       aspnet.controller: health,
       aspnet.route: api/{controller}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -232,6 +241,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
