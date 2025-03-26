@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
@@ -254,8 +255,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            // Should not have injected the data
-            command.CommandText.Should().Be(DbmCommandText);
+            if (commandType == typeof(System.Data.SqlClient.SqlCommand) || commandType == typeof(Microsoft.Data.SqlClient.SqlCommand))
+            {
+                // should have injected data
+                // command text shoudl be exec
+                command.CommandText.Should().NotBe(DbmCommandText).And.Contain($"EXEC {DbmCommandText}");
+                command.CommandText.Should().Contain("/*dddbs"); // check for the dbm comment this isn't all of it but good enough
+            }
+            else
+            {
+                // should not have injected data - command text should not change
+                command.CommandText.Should().Be(DbmCommandText);
+            }
         }
 
         [Theory]
@@ -276,7 +287,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            // Should not have injected the data
+            // should not have injected data - command text should not change
             command.CommandText.Should().Be(DbmCommandText);
         }
 

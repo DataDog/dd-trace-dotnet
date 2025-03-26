@@ -46,6 +46,12 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
+            if (command.CommandType == CommandType.StoredProcedure && integrationId != IntegrationId.SqlClient)
+            {
+                // we only support stored procedures for SqlClient
+                return false;
+            }
+
             var propagatorStringBuilder = StringBuilderCache.Acquire();
             var dddbs = span.Context.ServiceName;
             propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(dddbs)).Append('\'');
@@ -136,33 +142,36 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 // Build parameter list for EXEC statement
                 var paramList = new StringBuilder();
-                foreach (DbParameter? param in command.Parameters)
+                if (command.Parameters != null)
                 {
-                    if (param == null)
+                    foreach (DbParameter? param in command.Parameters)
                     {
-                        continue;
-                    }
+                        if (param == null)
+                        {
+                            continue;
+                        }
 
-                    // Skip return value parameters
-                    if (param.Direction == ParameterDirection.ReturnValue)
-                    {
-                        // we don't need to include this in the command text, it is handled in the SQLCommand
-                        continue;
-                    }
+                        // Skip return value parameters
+                        if (param.Direction == ParameterDirection.ReturnValue)
+                        {
+                            // we don't need to include this in the command text, it is handled in the SQLCommand
+                            continue;
+                        }
 
-                    if (paramList.Length > 0)
-                    {
-                        // e.g. @Input=@Input, @Input2=@Input2 OUTPUT
-                        paramList.Append(", ");
-                    }
+                        if (paramList.Length > 0)
+                        {
+                            // e.g. @Input=@Input, @Input2=@Input2 OUTPUT
+                            paramList.Append(", ");
+                        }
 
-                    paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
+                        paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
 
-                    if (param.Direction == ParameterDirection.InputOutput || param.Direction == ParameterDirection.Output)
-                    {
-                        // For OUTPUT parameters, we need to add the OUTPUT keyword
-                        // example: @Input=@Input, @Output1=@Output1 OUTPUT,
-                        paramList.Append(" OUTPUT");
+                        if (param.Direction == ParameterDirection.InputOutput || param.Direction == ParameterDirection.Output)
+                        {
+                            // For OUTPUT parameters, we need to add the OUTPUT keyword
+                            // example: @Input=@Input, @Output1=@Output1 OUTPUT,
+                            paramList.Append(" OUTPUT");
+                        }
                     }
                 }
 
