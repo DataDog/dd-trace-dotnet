@@ -404,132 +404,28 @@ check_azure_pipeline:
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
     K6_OPTIONS_WARMUP_RATE: 30
-    K6_OPTIONS_WARMUP_DURATION: 10m
-    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 30s
+    K6_OPTIONS_WARMUP_DURATION: 1m
+    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 0s
     K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_WARMUP_MAX_VUS: 100
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 400
-    K6_OPTIONS_NORMAL_OPERATION_DURATION: 15m
-    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 30s
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 5m
+    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 0s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 100
 
     K6_OPTIONS_HIGH_LOAD_RATE: 800
-    K6_OPTIONS_HIGH_LOAD_DURATION: 15m
-    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 30s
+    K6_OPTIONS_HIGH_LOAD_DURATION: 5m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 0s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 100
-
-baseline-6400-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 2500
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 3200
-    K6_OPTIONS_HIGH_LOAD_RATE: 6400
-  
-baseline-7000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 2800
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 3500
-    K6_OPTIONS_HIGH_LOAD_RATE: 7000
-
-baseline-7500-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 3000
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 3750
-    K6_OPTIONS_HIGH_LOAD_RATE: 7500
-
-baseline-8000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 3200
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 4000
-    K6_OPTIONS_HIGH_LOAD_RATE: 8000
-
-baseline-8500-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 3400
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 4250
-    K6_OPTIONS_HIGH_LOAD_RATE: 8500 
-
-baseline-9000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 3600
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 4500
-    K6_OPTIONS_HIGH_LOAD_RATE: 9000 
-
-baseline-9500-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 3800
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 4750  
-    K6_OPTIONS_HIGH_LOAD_RATE: 9500
-
-baseline-10000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 4000
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 5000
-    K6_OPTIONS_HIGH_LOAD_RATE: 10000
-
-baseline-11000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 4400
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 5500
-    K6_OPTIONS_HIGH_LOAD_RATE: 11000
-
-baseline-12000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 4800
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 6000
-    K6_OPTIONS_HIGH_LOAD_RATE: 12000
-
-baseline-13000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 5200
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 6500
-    K6_OPTIONS_HIGH_LOAD_RATE: 13000
-
-baseline-14000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 5600
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 7000
-    K6_OPTIONS_HIGH_LOAD_RATE: 14000
-
-baseline-15000-win-igoragoli_improve-representativeness:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 6000  
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 7500
-    K6_OPTIONS_HIGH_LOAD_RATE: 15000
 
 baseline-16000-win-igoragoli_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 6400
+    K6_OPTIONS_WARMUP_RATE: 8000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 8000
     K6_OPTIONS_HIGH_LOAD_RATE: 16000
 
@@ -537,7 +433,7 @@ baseline-17000-win-igoragoli_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 6800
+    K6_OPTIONS_WARMUP_RATE: 8500
     K6_OPTIONS_NORMAL_OPERATION_RATE: 8500
     K6_OPTIONS_HIGH_LOAD_RATE: 17000
 
@@ -545,7 +441,7 @@ baseline-18000-win-igoragoli_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 7200
+    K6_OPTIONS_WARMUP_RATE: 9000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 9000
     K6_OPTIONS_HIGH_LOAD_RATE: 18000
 
@@ -553,7 +449,7 @@ baseline-19000-win-igoragoli_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 7600
+    K6_OPTIONS_WARMUP_RATE: 9500
     K6_OPTIONS_NORMAL_OPERATION_RATE: 9500
     K6_OPTIONS_HIGH_LOAD_RATE: 19000
 
@@ -561,7 +457,7 @@ baseline-20000-win-igoragoli_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 8000
+    K6_OPTIONS_WARMUP_RATE: 10000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 10000
     K6_OPTIONS_HIGH_LOAD_RATE: 20000
 
