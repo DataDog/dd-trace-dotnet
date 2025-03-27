@@ -674,7 +674,7 @@ namespace Datadog.Trace.Configuration
                                                        .AsBool(false);
 
             InjectContextIntoStoredProceduresEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled)
-                                                       .AsBool(true);
+                                                       .AsBool(false);
 
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
             var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();

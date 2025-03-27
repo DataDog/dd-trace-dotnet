@@ -60,7 +60,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public static IEnumerable<object[]> GetEnabledDbmData()
             => from command in GetDbmCommands()
                from dbm in new[] { "service", "full" }
-               select new[] { command[0], dbm };
+               from storedProcInject in new[] { false, true }
+               select new[] { command[0], dbm, storedProcInject };
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
@@ -151,14 +152,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public async Task CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_InjectsDbmWhenEnabled(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+                {
+                    ConfigurationKeys.DbmPropagationMode, dbmMode
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, storedProcInject.ToString()
+                }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
@@ -173,14 +180,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public async Task CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_OnlyInjectsDbmOnceWhenCommandIsReused(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+                {
+                    ConfigurationKeys.DbmPropagationMode, dbmMode
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, storedProcInject.ToString()
+                }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
@@ -240,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
-        public async Task CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
+        public async Task CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures_ExceptForSqlCommand(Type commandType, string dbmMode, bool storedProcInject)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
@@ -248,7 +261,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+                {
+                    ConfigurationKeys.DbmPropagationMode, dbmMode
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, storedProcInject.ToString()
+                }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
@@ -257,7 +276,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            if (commandType == typeof(System.Data.SqlClient.SqlCommand) || commandType == typeof(Microsoft.Data.SqlClient.SqlCommand))
+            if (storedProcInject && (commandType == typeof(System.Data.SqlClient.SqlCommand) || commandType == typeof(Microsoft.Data.SqlClient.SqlCommand)))
             {
                 // should have injected data
                 // command text shoudl be exec
@@ -304,7 +323,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             command.CommandText = "dbo.Parameterless";
             command.CommandType = CommandType.StoredProcedure;
 
-            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
@@ -341,7 +369,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 #endif
             command.Parameters.Add(parameter);
 
-            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
@@ -357,7 +394,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Theory]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
-        public async Task StoredProc_MultipleInputParameters_CorrectlyTransformedIntoExec(Type commandType)
+        public async Task StoredProc_MultipleInputParameters_IsNotModified(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             command.CommandText = "dbo.MultiParameter";
@@ -392,7 +429,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 #endif
             command.Parameters.Add(parameter2);
 
-            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
@@ -459,7 +505,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             command.Parameters.Add(parameter3);
 #endif
 
-            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
@@ -509,7 +564,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             command.Parameters.Add(parameter2);
 #endif
 
-            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
@@ -595,7 +659,16 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             command.Parameters.Add(parameter4);
 #endif
 
-            var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
+            var collection = new NameValueCollection
+            {
+                {
+                    ConfigurationKeys.DbmPropagationMode, "full"
+                },
+                {
+                    // these aren't stored proc so no changes expected
+                    ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled, "true"
+                }
+            };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
