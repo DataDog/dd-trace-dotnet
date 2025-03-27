@@ -25,7 +25,8 @@ public class LibdatadogTests
     }
 
     [Fact]
-    public void TestExporter() {
+    public void TestExporter()
+    {
         try
         {
             NativeInterop.Exporter.Release(IntPtr.Zero);
