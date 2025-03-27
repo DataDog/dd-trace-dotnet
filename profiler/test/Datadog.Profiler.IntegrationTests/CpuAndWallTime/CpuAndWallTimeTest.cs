@@ -101,7 +101,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             // --> could be flacky otherwise
             var totalDuration = runner.TotalTestDurationInMilliseconds * 1000000L;
             Assert.True(cpuDuration <= totalDuration);
-            
+
             var cpuSamples = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 1);
             cpuSamples.Should().BeGreaterThan(0);
         }

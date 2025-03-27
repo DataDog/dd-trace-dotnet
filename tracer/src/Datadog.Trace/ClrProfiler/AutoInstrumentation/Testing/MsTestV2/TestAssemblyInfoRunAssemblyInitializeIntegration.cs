@@ -49,17 +49,29 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (!testContext.TryDuckCast<TestContextStruct>(out var context))
-        {
-            return CallTargetState.GetDefault();
-        }
-
         lock (instance.Instance!)
         {
             instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
         }
 
-        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, context.TestMethod?.AssemblyName));
+        string? assemblyName = null;
+        if (testContext.TryDuckCast<TestContextStruct>(out var context) && context.TestMethod is { AssemblyName: { } contextAssemblyName })
+        {
+            assemblyName = contextAssemblyName;
+        }
+
+        if (string.IsNullOrEmpty(assemblyName) && instance.Instance?.TryDuckCast<ITestAssemblyInfoWithAssembly>(out var instanceWithAssembly) == true)
+        {
+            assemblyName = instanceWithAssembly.Assembly.GetName().Name;
+        }
+
+        if (string.IsNullOrEmpty(assemblyName))
+        {
+            Common.Log.Warning("Module name cannot be extracted!");
+            return CallTargetState.GetDefault();
+        }
+
+        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, assemblyName));
     }
 
     /// <summary>
@@ -82,5 +94,12 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
 
     private static void EmptyCleanUpMethod()
     {
+    }
+
+#pragma warning disable SA1201
+    internal interface ITestAssemblyInfoWithAssembly
+#pragma warning restore SA1201
+    {
+        Assembly Assembly { get; }
     }
 }

@@ -56,5 +56,15 @@ internal enum UnitTestOutcome : int
     /// <summary>
     /// Test cannot be executed.
     /// </summary>
-    NotRunnable
+    NotRunnable,
+
+    /// <summary>
+    /// The specific test cannot be found.
+    /// </summary>
+    NotFound,
+
+    /// <summary>
+    /// Test is marked as ignored.
+    /// </summary>
+    Ignored,
 }

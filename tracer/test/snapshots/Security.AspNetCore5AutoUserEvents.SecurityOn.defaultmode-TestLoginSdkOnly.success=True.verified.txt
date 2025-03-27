@@ -1,0 +1,46 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: GET /user/trackloginsdk,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      appsec.events.users.login.success.some-key: some-value,
+      appsec.events.users.login.success.track: true,
+      appsec.events.users.login.success.usr.login: user-dog,
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.UserController.TrackLoginSdk (Samples.Security.AspNetCore5),
+      aspnet_core.route: {controller=home}/{action=index}/{id?},
+      component: aspnet_core,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.route: {controller=home}/{action=index}/{id?},
+      http.status_code: 200,
+      http.url: http://localhost:00000/User/TrackLoginSdk?success=True,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      usr.id: user-dog,
+      _dd.appsec.events.users.login.success.sdk: true,
+      _dd.appsec.fp.http.endpoint: http-get-6dad8221-aee40884-,
+      _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-1-4740ae63,
+      _dd.appsec.fp.http.network: net-1-1000000000,
+      _dd.appsec.fp.session: ssn-0f71a057---<SessionFp>,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

@@ -42,9 +42,9 @@ namespace Datadog.Trace.Telemetry
         public void RecordProfilerSettings(Profiler profiler);
 
         /// <summary>
-        /// Called to record ci-vis-related telemetry
+        /// Called to record test-optimization-related telemetry
         /// </summary>
-        public void RecordCiVisibilitySettings(CIVisibilitySettings settings);
+        public void RecordTestOptimizationSettings(TestOptimizationSettings settings);
 
         /// <summary>
         /// Dispose resources for sending telemetry

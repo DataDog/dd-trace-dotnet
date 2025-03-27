@@ -26,6 +26,9 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Samples.Security.AspNetCore5.Helpers;
+using System.Threading.Tasks;
+
 #if NET5_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
@@ -849,7 +852,32 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("LDAP")]
         public ActionResult Ldap(string path, string userName)
         {
+            string resultString = string.Empty;
+
             try
+            {
+                var task = Task.Factory.StartNew(() =>
+                {
+                    PerformLdapQuery();
+                });
+
+                if (!task.Wait(5000))
+                {
+                    // Custom code to signal the client to skip the test
+                    Response.StatusCode = 513;
+                    return Content($"Skip due to timeout (513)");
+                }
+            }
+            catch (System.AggregateException err) when (err.InnerExceptions[0] is System.Runtime.InteropServices.COMException)
+            {
+                // Custom code to signal the client to skip the test
+                Response.StatusCode = 513;
+                return Content($"Skip due to timeout (513)");
+            }
+
+            return Content($"Result: " + resultString);
+
+            void PerformLdapQuery()
             {
                 DirectoryEntry entry = null;
                 try
@@ -868,18 +896,10 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
                 var result = search.FindAll();
 
-                string resultString = string.Empty;
-
                 for (int i = 0; i < result.Count; i++)
                 {
                     resultString += result[i].Path + Environment.NewLine;
                 }
-
-                return Content($"Result: " + resultString);
-            }
-            catch
-            {
-                return Content($"Result: Not connected");
             }
         }
 
@@ -1280,64 +1300,30 @@ namespace Samples.Security.AspNetCore5.Controllers
         [HttpGet("SendEmailSmtpData")]
         [Route("SendEmailSmtpData")]
         public IActionResult SendEmailSmtpData(string email, string name, string lastname,
-            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
-            int smtpPort = 587)
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = null,
+            int smtpPort = 587, string library = "System.Net.Mail")
         {
-            return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
+            EmailData data = new()
+            {
+                Email = email,
+                FirstName = name,
+                LastName = lastname,
+                SmtpUsername = smtpUsername,
+                SmtpPassword = smtpPassword,
+                SmtpServer = smtpserver,
+                SmtpPort = smtpPort
+            };
+
+            return EmailHelper.SendMail(data, library) ? Content("Email sent") : StatusCode(200, "Mail message was not sent");
         }
 
         [HttpGet("SendEmail")]
         [Route("SendEmail")]
         public IActionResult SendEmail(string email, string name, string lastname)
         {
-            return SendMailAux(name, lastname, email);
+            return SendEmailSmtpData(email, name, lastname);
         }
 
-        private IActionResult SendMailAux(string firstName, string lastName, string email,
-            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
-            int smtpPort = 587, bool escape = false)
-        {
-            var contentHtml = $"Hi " + firstName + " " + lastName + ", <br />" +
-                "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
-                "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
-
-            if (escape)
-            {
-                contentHtml = WebUtility.HtmlEncode(contentHtml);
-            }
-
-            var subject = firstName + " welcome!";
-
-            if (string.IsNullOrEmpty(smtpUsername))
-            {
-                smtpUsername = email;
-            }
-
-            try
-            {
-
-                var mailMessage = new MailMessage();
-                mailMessage.From = new MailAddress(smtpUsername);
-                mailMessage.To.Add(email);
-                mailMessage.Subject = subject;
-                mailMessage.Body = contentHtml;
-                mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
-
-                var client = new SmtpClient(smtpserver, smtpPort)
-                {
-                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
-                    EnableSsl = true,
-                    Timeout = 1000
-                };
-                client.Send(mailMessage);
-            }
-            catch (SmtpException)
-            {
-                return StatusCode(200, "Mail message was not sent");
-            }
-
-            return Content("Email sent");
-        }
 
         static string CopyStringAvoidTainting(string original)
         {

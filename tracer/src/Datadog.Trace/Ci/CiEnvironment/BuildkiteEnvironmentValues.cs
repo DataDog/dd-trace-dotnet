@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -19,6 +20,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
 
         IsCI = true;
         Provider = "buildkite";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.BuildKite;
         Repository = ValueProvider.GetValue(Constants.BuildKiteRepo);
         Commit = ValueProvider.GetValue(Constants.BuildKiteCommit);
         Branch = ValueProvider.GetValue(Constants.BuildKiteBranch);

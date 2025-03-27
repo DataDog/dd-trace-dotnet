@@ -96,6 +96,11 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
         sample->AddFrame(frame);
     }
 
+    for (auto const& label : GetLabels())
+    {
+        sample->AddLabel(Label{label.first,label.second});
+    }
+
     enumerator->Set(sample);
 
     return enumerator;

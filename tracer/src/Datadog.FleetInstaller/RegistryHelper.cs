@@ -26,7 +26,7 @@ internal class RegistryHelper
                 key = Registry.LocalMachine.CreateSubKey(registryKeyName, writable: true);
                 if (key is null)
                 {
-                    log.WriteError($"Registry key '{registryKeyName}' did not ");
+                    log.WriteError($"Registry key '{registryKeyName}' could not be created ");
                     return false;
                 }
             }
@@ -51,7 +51,7 @@ internal class RegistryHelper
         try
         {
             var key = Registry.LocalMachine.OpenSubKey(registryKeyName, writable: true);
-            key?.DeleteValue(crashHandlerPath);
+            key?.DeleteValue(crashHandlerPath, throwOnMissingValue: false);
             log.WriteInfo($"Crash tracking handler path '{crashHandlerPath}' removed from '{registryKeyName}'");
 
             return true;
@@ -83,6 +83,8 @@ internal class RegistryHelper
             var minor = key.GetValue("MinorVersion") as int? ?? 0;
 
             version = new(major: major, minor: minor);
+
+            log.WriteInfo($"Found IIS version: '{major}.{minor}'");
             return true;
         }
         catch (Exception ex)

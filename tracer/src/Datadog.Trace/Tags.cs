@@ -615,6 +615,16 @@ namespace Datadog.Trace
         internal const string AppSecWafVersion = "_dd.appsec.waf.version";
 
         /// <summary>
+        /// The most relevant WAF error code during a request
+        /// </summary>
+        public const string WafError = "_dd.appsec.waf.error";
+
+        /// <summary>
+        /// The most relevant WAF error code during a request when using RASP
+        /// </summary>
+        public const string RaspWafError = "_dd.appsec.rasp.error";
+
+        /// <summary>
         ///  String-serialized JSON array, each item being a map containing:
         ///  Error(e) - the error string.
         ///  Rules(r) - an array of rules which failed to load with this error.
@@ -732,6 +742,15 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
+        // Data Streams Monitoring
+        internal const string SchemaDefinition = "schema.definition";
+        internal const string SchemaWeight = "schema.weight";
+        internal const string SchemaType = "schema.type";
+        internal const string SchemaId = "schema.id";
+        internal const string SchemaTopic = "schema.topic";
+        internal const string SchemaOperation = "schema.operation";
+        internal const string SchemaName = "schema.name";
+
         /// <summary>
         /// Holds the original value for Service when Service is overriden after span creation
         /// </summary>
@@ -772,10 +791,9 @@ namespace Datadog.Trace
             internal const string TraceIdUpper = "_dd.p.tid";
 
             /// <summary>
-            /// A boolean allowing the propagation to downstream services the information that the current distributed trace
-            /// is containing at least one ASM security event, no matter its type (threats, business logic events, IAST, etc.).
+            /// A two char hex string with the product being the trace source
             /// </summary>
-            internal const string AppSec = "_dd.p.appsec";
+            internal const string TraceSource = "_dd.p.ts";
         }
     }
 }

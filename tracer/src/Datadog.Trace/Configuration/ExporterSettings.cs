@@ -361,7 +361,6 @@ namespace Datadog.Trace.Configuration
             }
 
 #if NETCOREAPP3_1_OR_GREATER
-            [MemberNotNull(nameof(MetricsHostname))]
             bool SetUds(string unixSocket, string original, string absoluteUri, string? source, out MetricsTransportSettings settings)
             {
                 // Only called in the constructor;
@@ -385,7 +384,6 @@ namespace Datadog.Trace.Configuration
                 return probablyValid;
             }
 #endif
-            [MemberNotNull(nameof(MetricsHostname))]
             bool SetUdp(string hostname, string? hostnameSource, int port, string? portSource, out MetricsTransportSettings settings)
             {
                 var probablyValid = true;

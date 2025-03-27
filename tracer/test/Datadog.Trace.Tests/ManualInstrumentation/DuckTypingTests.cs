@@ -3,8 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1516
 extern alias DatadogTraceManual;
-
+#pragma warning restore SA1516
 using System;
 using System.Linq;
 using System.Reflection;
@@ -146,8 +147,8 @@ public class DuckTypingTests
         }
         finally
         {
-            CIVisibility.Close();
-            CIVisibility.Reset();
+            TestOptimization.Instance.Close();
+            TestOptimization.Instance.Reset();
         }
     }
 

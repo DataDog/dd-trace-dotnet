@@ -30,11 +30,11 @@ internal static partial class RaspRuleTypeExtensions
     public static string ToStringFast(this Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType value)
         => value switch
         {
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi => "waf_version;rule_type:lfi",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf => "waf_version;rule_type:ssrf",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.SQlI => "waf_version;rule_type:sql_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionShell => "waf_version;rule_type:command_injection;rule_variant:shell",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionExec => "waf_version;rule_type:command_injection;rule_variant:exec",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi => "waf_version;event_rules_version;rule_type:lfi",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf => "waf_version;event_rules_version;rule_type:ssrf",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.SQlI => "waf_version;event_rules_version;rule_type:sql_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionShell => "waf_version;event_rules_version;rule_type:command_injection;rule_variant:shell",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionExec => "waf_version;event_rules_version;rule_type:command_injection;rule_variant:exec",
             _ => value.ToString(),
         };
 
@@ -84,10 +84,10 @@ internal static partial class RaspRuleTypeExtensions
     public static string[] GetDescriptions()
         => new []
         {
-            "waf_version;rule_type:lfi",
-            "waf_version;rule_type:ssrf",
-            "waf_version;rule_type:sql_injection",
-            "waf_version;rule_type:command_injection;rule_variant:shell",
-            "waf_version;rule_type:command_injection;rule_variant:exec",
+            "waf_version;event_rules_version;rule_type:lfi",
+            "waf_version;event_rules_version;rule_type:ssrf",
+            "waf_version;event_rules_version;rule_type:sql_injection",
+            "waf_version;event_rules_version;rule_type:command_injection;rule_variant:shell",
+            "waf_version;event_rules_version;rule_type:command_injection;rule_variant:exec",
         };
 }

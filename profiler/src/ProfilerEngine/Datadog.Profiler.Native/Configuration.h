@@ -98,7 +98,7 @@ private:
     static std::chrono::seconds GetDefaultUploadInterval();
     static bool GetDefaultDebugLogEnabled();
     template <typename T>
-    static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
+    static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue, bool shouldLog = false);
     template <typename T>
     static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
     static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);

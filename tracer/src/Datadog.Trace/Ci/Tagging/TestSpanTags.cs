@@ -93,11 +93,14 @@ internal partial class TestSpanTags : TestSuiteSpanTags
     [Tag(IntelligentTestRunnerTags.ForcedRunTag)]
     public string? ForcedRun { get; set; }
 
-    [Tag(EarlyFlakeDetectionTags.TestIsNew)]
-    public string? EarlyFlakeDetectionTestIsNew { get; set; }
+    [Tag(TestTags.TestIsNew)]
+    public string? TestIsNew { get; set; }
 
-    [Tag(EarlyFlakeDetectionTags.TestIsRetry)]
-    public string? EarlyFlakeDetectionTestIsRetry { get; set; }
+    [Tag(TestTags.TestIsRetry)]
+    public string? TestIsRetry { get; set; }
+
+    [Tag(TestTags.TestRetryReason)]
+    public string? TestRetryReason { get; set; }
 
     [Tag(BrowserTags.BrowserDriver)]
     public string? BrowserDriver { get; set; }
@@ -116,4 +119,37 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(BrowserTags.IsModified)]
     public string? IsModified { get; set; }
+
+    [Tag(TestTags.TestIsQuarantined)]
+    public string? IsQuarantined { get; set; }
+
+    [Tag(TestTags.TestIsDisabled)]
+    public string? IsDisabled { get; set; }
+
+    [Tag(TestTags.TestIsAttemptToFix)]
+    public string? IsAttemptToFix { get; set; }
+
+    [Tag(TestTags.TestHasFailedAllRetries)]
+    public string? HasFailedAllRetries { get; set; }
+
+    [Tag(TestTags.TestAttemptToFixPassed)]
+    public string? AttemptToFixPassed { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis)]
+    public string? CapabilitiesTestImpactAnalysis { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection)]
+    public string? CapabilitiesEarlyFlakeDetection { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries)]
+    public string? CapabilitiesAutoTestRetries { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine)]
+    public string? CapabilitiesTestManagementQuarantine { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable)]
+    public string? CapabilitiesTestManagementDisable { get; set; }
+
+    [Tag(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix)]
+    public string? CapabilitiesTestManagementAttemptToFix { get; set; }
 }

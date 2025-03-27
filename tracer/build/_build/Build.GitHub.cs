@@ -1419,6 +1419,8 @@ partial class Build
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work due to 'Redirect' response status.
         // instead of downloading resources from https://dev.azure.com/ resource url starts with https://artprodcus3.artifacts.visualstudio.com
         var temporary = new HttpClient();
+        // some of these files are _huge_ so give a long time to download them
+        temporary.Timeout = TimeSpan.FromMinutes(10);
         temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
 
         var resourceDownloadUrl = artifact.Resource.DownloadUrl;
@@ -1466,6 +1468,7 @@ partial class Build
         // We don't actually need the file now, we just need to make sure it's available, so that we can
         // use it in GitLab later to build the OCI image.
         var tempDir = TempDirectory / Path.GetRandomFileName();
+        Directory.CreateDirectory(tempDir);
         await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
 
         return;

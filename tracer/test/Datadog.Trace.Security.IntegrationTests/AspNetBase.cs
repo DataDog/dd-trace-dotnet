@@ -24,6 +24,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
@@ -83,6 +84,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             _clearMetaStruct = clearMetaStruct;
             SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
+            // without this, the developer exception page intercepts our blocking middleware and doesn't let us write the proper response
+            SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -114,10 +117,26 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.Remove("user-agent");
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
+        /// <summary>
+        /// Will call verify for this type of request and add the right scrubbers and right serialization methods
+        /// </summary>
+        /// <param name="agent">agent</param>
+        /// <param name="url">url</param>
+        /// <param name="body">body</param>
+        /// <param name="expectedSpans">expected spans</param>
+        /// <param name="spansPerRequest">spans per request</param>
+        /// <param name="settings">settings</param>
+        /// <param name="contentType">content type</param>
+        /// <param name="testInit">are we testing first spans at app start</param>
+        /// <param name="userAgent">user agent</param>
+        /// <param name="methodNameOverride">override the method name</param>
+        /// <param name="fileNameOverride">override the file name</param>
+        /// <param name="scrubCookiesFingerprint">only scrub session fingerprint part that changes every request. in some conditions we might want to scrub cookies fields and values, as an authenticated user/login might generate changing values at each request</param>
+        /// <returns>when it's finished</returns>
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null, bool scrubCookiesFingerprint = false)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
-            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride);
+            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride, scrubCookiesFingerprint: scrubCookiesFingerprint);
         }
 
         public void ScrubFingerprintHeaders(VerifySettings settings)
@@ -126,7 +145,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false, bool scrubCookiesFingerprint = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -189,6 +208,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecRaspWafDuration, "_dd.appsec.rasp.duration: 0.0");
             settings.AddRegexScrubber(AppSecRaspWafDurationWithBindings, "_dd.appsec.rasp.duration_ext: 0.0");
             settings.AddRegexScrubber(AppSecSpanIdRegex, "\"span_id\": XXX");
+            settings.ScrubSessionFingerprint(scrubCookiesFingerprint);
+
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
@@ -396,6 +417,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var url = $"http://localhost:{_httpPort}{path}";
 
                 var response = body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
+
+                // Skip test by request of the sample app
+                if ((int)response.StatusCode == 513)
+                {
+                    throw new SkipException("HttpStatus code (513) - anticipated flake");
+                }
+
                 var responseText = await response.Content.ReadAsStringAsync();
                 return (response.StatusCode, responseText);
             }

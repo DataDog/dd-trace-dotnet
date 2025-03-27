@@ -13,12 +13,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
 /// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo.RunClassCleanup() calltarget instrumentation
+/// or
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo.ExecuteClassCleanup()
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
     MethodName = "RunClassCleanup",
     ReturnTypeName = ClrNames.String,
+    ParameterTypeNames = [ClrNames.Ignore],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "ExecuteClassCleanup",
+    ReturnTypeName = ClrNames.Ignore,
     ParameterTypeNames = [ClrNames.Ignore],
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",

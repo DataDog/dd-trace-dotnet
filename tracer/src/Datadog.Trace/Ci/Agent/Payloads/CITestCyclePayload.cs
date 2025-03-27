@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads;
 
 internal class CITestCyclePayload : CIVisibilityProtocolPayload
 {
-    public CITestCyclePayload(CIVisibilitySettings settings, IFormatterResolver? formatterResolver = null)
+    public CITestCyclePayload(TestOptimizationSettings settings, IFormatterResolver? formatterResolver = null)
         : base(settings, formatterResolver)
     {
     }

@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Net.Mail;
 using System.Net;
 using Xunit;
@@ -11,80 +10,38 @@ using System.Web;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class EmailHtmlInjectionTests : InstrumentationTestsBase
+public class EmailHtmlInjectionTests : EmailInjectionBaseTests
 { 
-    private static string taintedName = "Alice<h1>Hi</h1>";
-    private static string untaintedName = "Peter";
-    private static string taintedLastName = "Stevens";
-    private static string untaintedLastName = "Smith";
-    protected static string emailHtmlInjectionType = "EMAIL_HTML_INJECTION";
-
-    public EmailHtmlInjectionTests()
-    {
-        AddTainted(taintedName);
-        AddTainted(taintedLastName);
-    }
-
     // Tests for method Send(MailMessage message);
 
     [Fact]
     public void GivenAnEmail_WhenSendMailMessageTaintedVaulesHtml_ThenIsVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
-        TestEmailSendCall(() => Send(mailMessage));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, taintedName, taintedLastName)), true);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => Send(mailMessage));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName))), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
     {
-        var mailMessage = BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => Send(mailMessage));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName))), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailMessageNotTaintedVaulesHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, untaintedName, untaintedLastName);
-        TestEmailSendCall(() => Send(mailMessage));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(true, untaintedName, untaintedLastName)), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailMessageTaintedVaulesNoHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(false, taintedName, taintedLastName);
-        TestEmailSendCall(() => Send(mailMessage));
-        AssertNotVulnerable();
-    }
-
-    [Fact]
-    public void GivenAnEmail_WhenSendMailMessageNull_ThenIsNotVulnerable()
-    {
-        try
-        {
-            Send(null);
-        }
-        catch (ArgumentNullException) { }
-        
-        AssertNotVulnerable();
-    }
-
-    private void Send(MailMessage mailMessage)
-    {
-        using (var client = new SmtpClient())
-        {
-            client.Send(mailMessage);
-        }
+        TestMailCall(() => new SmtpClient().Send(BuildMailMessage(false, taintedName, taintedLastName)), false);
     }
 
     // Tests for method SendMailAsync(MailMessage message);
@@ -92,49 +49,31 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageTaintedVaulesHtml_ThenIsVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
-        TestEmailSendCall(() => SendMailAsync(mailMessage));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, taintedName, taintedLastName)), true);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => SendMailAsync(mailMessage));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName))), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
     {
-        var mailMessage = BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => SendMailAsync(mailMessage));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName))), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenMailSendAsyncMailMessageNotTaintedVaulesHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, untaintedName, untaintedLastName);
-        TestEmailSendCall(() => SendMailAsync(mailMessage));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, untaintedName, untaintedLastName)), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenMailSendAsyncMailMessageTaintedVaulesNoHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(false, taintedName, taintedLastName);
-        TestEmailSendCall(() => SendMailAsync(mailMessage));
-        AssertNotVulnerable();
-    }
-
-    private void SendMailAsync(MailMessage mailMessage)
-    {
-        using (var client = new SmtpClient())
-        {
-            client.SendMailAsync(mailMessage);
-        }
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(false, taintedName, taintedLastName)), false);
     }
 
     // Test SendAsync(MailMessage message, object userToken);
@@ -142,49 +81,31 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnEmail_WhenSendAsyncMailMessageTaintedVaulesHtml_ThenIsVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
-        TestEmailSendCall(() => SendAsync(mailMessage, null));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, taintedName, taintedLastName), null), true);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendAsyncMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => SendAsync(mailMessage, null));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), null), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendAsyncMailMessageTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
     {
-        var mailMessage = BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => SendAsync(mailMessage, null));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), null), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendAsyncMailMessageNotTaintedVaulesHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, untaintedName, untaintedLastName);
-        TestEmailSendCall(() => SendAsync(mailMessage, null));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(true, untaintedName, untaintedLastName), null), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendAsyncMailMessageTaintedVaulesNoHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(false, taintedName, taintedLastName);
-        TestEmailSendCall(() => SendAsync(mailMessage, null));
-        AssertNotVulnerable();
-    }
-
-    private void SendAsync(MailMessage mailMessage, object token)
-    {
-        using (var client = new SmtpClient())
-        {
-            client.SendAsync(mailMessage, token);
-        }
+        TestMailCall(() => new SmtpClient().SendAsync(BuildMailMessage(false, taintedName, taintedLastName), null), false);
     }
 
     // Test public Task SendMailAsync(MailMessage message, CancellationToken cancellationToken)
@@ -194,49 +115,31 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageCancellationTaintedVaulesHtml_ThenIsVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
-        TestEmailSendCall(() => SendMailAsync(mailMessage, new System.Threading.CancellationToken()));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, taintedName, taintedLastName), default), true);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageCancellationTaintedVaulesHtmlEscaped_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => SendMailAsync(mailMessage, new System.Threading.CancellationToken()));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, WebUtility.HtmlEncode(taintedName), WebUtility.HtmlEncode(taintedLastName)), default), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageCancellationTaintedVaulesHtmlEscaped_ThenIsNotVulnerable2()
     {
-        var mailMessage = BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName));
-        TestEmailSendCall(() => SendMailAsync(mailMessage, new System.Threading.CancellationToken()));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, HttpUtility.HtmlEncode(taintedName), HttpUtility.HtmlEncode(taintedLastName)), default), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageCancellationNotTaintedVaulesHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(true, untaintedName, untaintedLastName);
-        TestEmailSendCall(() => SendMailAsync(mailMessage, new System.Threading.CancellationToken()));
-        AssertNotVulnerable();
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(true, untaintedName, untaintedLastName), default), false);
     }
 
     [Fact]
     public void GivenAnEmail_WhenSendMailAsyncMailMessageCancellationTaintedVaulesNoHtml_ThenIsNotVulnerable()
     {
-        var mailMessage = BuildMailMessage(false, taintedName, taintedLastName);
-        TestEmailSendCall(() => SendMailAsync(mailMessage, new System.Threading.CancellationToken()));
-        AssertNotVulnerable();
-    }
-
-    private void SendMailAsync(MailMessage mailMessage, System.Threading.CancellationToken cancellationToken)
-    {
-        using (var client = new SmtpClient())
-        {
-            client.SendMailAsync(mailMessage, cancellationToken);
-        }
+        TestMailCall(() => new SmtpClient().SendMailAsync(BuildMailMessage(false, taintedName, taintedLastName), default), false);
     }
 
 #endif
@@ -252,20 +155,5 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
         mailMessage.Body = contentHtml;
         mailMessage.IsBodyHtml = isHtml;
         return mailMessage;
-    }
-
-    private string GetContent(string name, string lastName)
-    {
-        return "Hi " + name + " " + lastName + "!";
-    }
-
-    private void TestEmailSendCall(Action expression)
-    {
-        try
-        {
-            expression.Invoke();
-        }
-        catch (SmtpException) { }
-        catch (InvalidOperationException) { }
     }
 }

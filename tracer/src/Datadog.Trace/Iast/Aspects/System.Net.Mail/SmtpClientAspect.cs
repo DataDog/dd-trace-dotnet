@@ -33,7 +33,7 @@ public class SmtpClientAspect
     {
         try
         {
-            IastModule.OnEmailHtmlInjection(message);
+            IastModule.OnEmailHtmlInjection(message, EmailInjectionType.SystemNetMail);
             return message;
         }
         catch (Exception ex) when (ex is not BlockException)

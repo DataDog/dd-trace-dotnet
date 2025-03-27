@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogLoggingScopeTests.cs" company="Datadog">
+// <copyright file="DatadogLoggingScopeTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
 
             var actual = scope.ToString();
 
-            var expected = @$"dd_service:""TestService"", dd_env:""test"", dd_version:""1.2.3"", dd_trace_id:""{spanScope.Span.TraceId}"", dd_span_id:""{spanScope.Span.SpanId}""";
+            var expected = @$"dd_service:""TestService"", dd_env:""test"", dd_version:""1.2.3"", dd_trace_id:""{((Span)spanScope.Span).TraceId128}"", dd_span_id:""{spanScope.Span.SpanId}""";
             actual.Should().Be(expected);
         }
     }

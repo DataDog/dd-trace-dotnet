@@ -47,6 +47,12 @@ namespace Datadog.Trace.Configuration
         {
         }
 
+        internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string? filename)
+            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+        {
+            JsonConfigurationFilePath = filename;
+        }
+
         private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
         {
             if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
@@ -56,6 +62,8 @@ namespace Datadog.Trace.Configuration
             _configuration = deserialize(json);
             _origin = origin;
         }
+
+        internal string? JsonConfigurationFilePath { get; }
 
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
@@ -69,7 +77,7 @@ namespace Datadog.Trace.Configuration
         internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
         {
             var json = File.ReadAllText(filename);
-            return new JsonConfigurationSource(json, origin);
+            return new JsonConfigurationSource(json, origin, filename);
         }
 
         /// <summary>
@@ -307,6 +315,68 @@ namespace Datadog.Trace.Configuration
                 }
 
                 var result = StringConfigurationSource.ParseCustomKeyValues(tokenAsString, allowOptionalMappings, separator);
+                return Validate(result);
+            }
+            catch (InvalidCastException)
+            {
+                telemetry.Record(key, tokenAsString, recordValue: true, _origin, TelemetryErrorCode.JsonStringError);
+                throw; // Exising behaviour
+            }
+
+            ConfigurationResult<IDictionary<string, string>> Validate(IDictionary<string, string> dictionary)
+            {
+                if (validator is null || validator(dictionary))
+                {
+                    telemetry.Record(key, tokenAsString, recordValue: true, _origin);
+                    return ConfigurationResult<IDictionary<string, string>>.Valid(dictionary);
+                }
+
+                telemetry.Record(key, tokenAsString, recordValue: true, _origin, TelemetryErrorCode.FailedValidation);
+                return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
+            }
+        }
+
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, Func<string, IDictionary<string, string>> parser)
+        {
+            var token = SelectToken(key);
+            if (token == null)
+            {
+                return ConfigurationResult<IDictionary<string, string>>.NotFound();
+            }
+
+            if (!TreatNullDictionaryAsEmpty && !token.HasValues)
+            {
+                return ConfigurationResult<IDictionary<string, string>>.NotFound();
+            }
+
+            var tokenAsString = token.ToString();
+
+            try
+            {
+                if (token.Type == JTokenType.Object || token.Type == JTokenType.Array)
+                {
+                    try
+                    {
+                        var dictionary = ConvertToDictionary(key, token);
+                        if (dictionary is null)
+                        {
+                            // AFAICT this should never return null in practice - we
+                            // already checked the token is not null, and it will throw
+                            // if parsing fails, so using parsing failure here for safety
+                            return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
+                        }
+
+                        return Validate(dictionary);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
+                        telemetry.Record(key, tokenAsString, recordValue: true, _origin, TelemetryErrorCode.JsonStringError);
+                        return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
+                    }
+                }
+
+                var result = parser(tokenAsString);
                 return Validate(result);
             }
             catch (InvalidCastException)

@@ -86,7 +86,7 @@ namespace Datadog.Trace
 
             if (spanClass != null)
             {
-                RunBlockingCheck(spanClass, userDetails.Id);
+                RunBlockingCheck(spanClass, userDetails.Id, userDetails.SessionId);
             }
         }
 

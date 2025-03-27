@@ -24,6 +24,10 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             _output = output;
         }
 
+        // NOTE: now that .NET Framework is supported by default, the profiler tries to connect
+        //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
+        //       the ETW support is disabled in the tests for .NET Framework.
+
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
@@ -33,6 +37,10 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
                 "failed ddog_prof_Exporter_send: operation was canceled"
             };
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
+            if (framework == "net462")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
             runner.RunAndCheckWithRetries(RetryCount, errorExceptions);
         }
 

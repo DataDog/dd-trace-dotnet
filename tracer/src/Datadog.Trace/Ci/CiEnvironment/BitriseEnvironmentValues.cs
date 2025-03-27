@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class BitriseEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
@@ -15,6 +17,7 @@ internal sealed class BitriseEnvironmentValues<TValueProvider>(TValueProvider va
 
         IsCI = true;
         Provider = "bitrise";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Bitrise;
         Repository = ValueProvider.GetValue(Constants.BitriseGitRepositoryUrl);
 
         var prCommit = ValueProvider.GetValue(Constants.BitriseGitCommit);

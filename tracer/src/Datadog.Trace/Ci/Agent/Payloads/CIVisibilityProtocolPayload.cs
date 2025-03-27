@@ -19,7 +19,7 @@ internal abstract class CIVisibilityProtocolPayload : EventPlatformPayload
     private readonly IFormatterResolver _formatterResolver;
     private readonly Stopwatch _serializationWatch;
 
-    public CIVisibilityProtocolPayload(CIVisibilitySettings settings, IFormatterResolver? formatterResolver = null)
+    public CIVisibilityProtocolPayload(TestOptimizationSettings settings, IFormatterResolver? formatterResolver = null)
         : base(settings)
     {
         _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;

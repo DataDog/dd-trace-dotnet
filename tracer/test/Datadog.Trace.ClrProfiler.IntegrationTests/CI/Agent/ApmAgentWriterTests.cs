@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         {
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
-            _settings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources().TracerSettings;
+            _settings = Ci.Configuration.TestOptimizationSettings.FromDefaultSources().TracerSettings;
 
             _api = new Mock<IApi>();
             _ciAgentWriter = new ApmAgentWriter(_api.Object);

@@ -1,0 +1,105 @@
+name: Scheduled Code Freeze
+
+on:
+  schedule:
+    - cron: '3 21 * * FRI'  # Every Friday at 9:03 PM UTC
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: '[TESTING] Force run even if not alternating Friday'
+        type: boolean
+        default: false
+      override_week:
+        description: '[TESTING] Override week number (empty = use current week, even number = freeze)'
+        required: false
+        type: string
+
+jobs:
+  check_week_and_freeze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: write
+      statuses: write
+    
+    steps:
+      - name: Calculate week number
+        id: week
+        run: |
+          if [ ! -z "${{ inputs.override_week }}" ]; then
+            echo "Using override week: ${{ inputs.override_week }}"
+            WEEK_NUM="${{ inputs.override_week }}"
+          else
+            WEEK_NUM=$(date +%V)
+          fi
+          WEEK_NUM=$((10#$WEEK_NUM)) # Convert to decimal to handle leading zeros
+          echo "Week number being used: $WEEK_NUM"
+          echo "week_number=$WEEK_NUM" >> $GITHUB_OUTPUT
+
+      - name: Check if we should run
+        id: should_run
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.force_run }}" == "true" ]]; then
+            echo "should_proceed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if week number is even (proceeding with freeze)
+          if (( ${{ steps.week.outputs.week_number }} % 2 == 0 )); then
+            echo "should_proceed=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_proceed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Check skip milestone
+      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+        if: steps.should_run.outputs.should_proceed == 'true'
+        name: 'Check Skip Milestone'
+        id: skip_milestone
+        with:
+          route: GET /repos/{owner}/{repo}/milestones/183 # Skip Scheduled Code Freeze milestone ID
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Process skip state
+        if: steps.should_run.outputs.should_proceed == 'true'
+        id: check_skip
+        run: |
+          state=$(echo '${{ steps.skip_milestone.outputs.data }}' | jq -r '.state')
+          echo "Milestone state: $state"
+          if [ "$state" == "open" ]; then
+            echo "Skip milestone is open - will skip code freeze"
+            echo "should_proceed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Skip milestone is closed - will proceed with code freeze"
+            echo "should_proceed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # Open code freeze milestone
+      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+        if: steps.check_skip.outputs.should_proceed == 'true'
+        name: 'Open Code Freeze Milestone'
+        id: open_freeze
+        with:
+          route: PATCH /repos/{owner}/{repo}/milestones/115 # Code Freeze milestone ID
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
+          state: open
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout for PR updates
+        if: steps.check_skip.outputs.should_proceed == 'true' && success()
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+
+      # Update PR statuses
+      - uses: ./.github/actions/pr-status-updater
+        if: steps.check_skip.outputs.should_proceed == 'true' && success()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          state: failure
+          workflow_name: scheduled_code_freeze.yml

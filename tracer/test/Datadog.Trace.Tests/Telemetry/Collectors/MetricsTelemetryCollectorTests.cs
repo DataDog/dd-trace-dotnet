@@ -104,10 +104,10 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
-        collector.RecordCountWafInit(4);
+        collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
-        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleType.Lfi, 3);
+        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleTypeMatch.LfiSuccess, 3);
         collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
@@ -128,7 +128,7 @@ public class MetricsTelemetryCollectorTests
         // These aren't applicable in non-ci visibility
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test, MetricTags.CIVisibilityTestingEventTypeRetryReason.None, MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None, MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         collector.AggregateMetrics();
 
@@ -243,7 +243,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafInit.GetName(),
                 Points = new[] { new { Value = 4 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, expectedRulesetTag },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "success:true" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -261,7 +261,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleEval.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -270,7 +270,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleMatch.GetName(),
                 Points = new[] { new { Value = 3 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "block:success", "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -279,7 +279,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspTimeout.GetName(),
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -521,7 +521,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
-        collector.RecordCountWafInit(4);
+        collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
@@ -531,7 +531,7 @@ public class MetricsTelemetryCollectorTests
         // these ones are
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test, MetricTags.CIVisibilityTestingEventTypeRetryReason.None, MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None, MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         collector.AggregateMetrics();
 

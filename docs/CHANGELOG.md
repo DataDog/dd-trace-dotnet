@@ -13,6 +13,221 @@
 
 
 
+
+
+
+## [Release 3.13.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.13.0)
+
+## Summary
+
+- Fix RabbitMQ V7+ headers being overwritten (thanks @johang88)!
+- Update the default value of `DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED` to `true`
+- Fix `Microsoft.Extensions.Telemetry` logging integration in `9.3.0`
+- [Test Optimization] Flaky Test Management feature 
+- Temporarily remove instrumentation for Protobuf Schema tagging
+
+## Changes
+
+### Tracer
+* [Tracing] Update the default value of DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED to true  (#6751)
+* [Tracer] Fix Rabbitmq7 header injection overwrites user supplied basic properties [from external PR #6730] (#6753)
+* Fix Microsoft.Extensions.Telemetry logging integration in 9.3.0 (#6773)
+* Refactor RabbitMQ test sample (#6778)
+* Clarify doc comment for DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED (#6791)
+* fix: container ID prefix in metadata and related tests (#6793)
+
+### CI Visibility
+* [Test Optimization] Flaky Test Management feature (#6740)
+* [Test Optimization] Add missing `test_session` metric (#6776)
+
+### ASM
+* [ASM] Fix IAST Grpc DotNet flaky test (#6772)
+
+### Continuous Profiler
+* [Profiler] Change profiler to use the libdatadog dynamic library instead (#6301)
+
+### Debugger
+* Skip the failing debugger tests (#6755)
+
+### Serverless
+* Add AWS Lamda testing for .NET 9 (#6779)
+
+### Fixes
+* [BUG]: RabbitMQ Basic Properties overwritten to default values (#6723)
+* Fix: Rabbitmq7 header injection overwrites user supplied basic properties (#6730)
+* Remove instrumentation for Protobuf Schema tagging (#6792)
+
+### Build / Test
+* Fix dependabot configuration for gh-actions-packages group (#6696)
+* [IAST] LDAP flakiness fix (#6706)
+* [fleet installer] Add some integration tests (#6714)
+* [Test Package Versions Bump] Updating package versions (#6732)
+* [CI] Stop running windows throughput tests (#6752)
+* Remove profiler throughput tests and bump timeouts (#6757)
+* feat: add dev container for consistent development environment (#6761)
+* [Benchmarks] Migrate linux throughput tests (#6765)
+* ssi tests onepipeline (#6767)
+* Remove graphql scenarios from CI system tests (#6768)
+* Pin github actions to sha (#6774)
+* Disable the merge queue (#6780)
+* Update dependabot to scan composite actions (#6784)
+
+### Miscellaneous
+* [fleet installer] Try to fix Gac Installer issue when older versions are already installed (#6715)
+* add kafka topic to messaging.destination.name tag (#6758)
+* [fleet installer] Split the `install` command in two (#6766)
+* [fleet installer] Update logging for fleet installer (#6782)
+
+
+[Changes since 3.12.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.12.0...v3.13.0)
+
+## [Release 3.12.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.12.0)
+
+## Summary
+
+* Fix `NoWarn` overriding in Datadog.Trace and Datadog.Trace.Trimming NuGet packages
+* [Tracer] Add support for S3 tracing using span links
+* [Test Optimization] Add support to xUnit v3 2.x.x
+* [ASM] Add support for standalone billing 
+* [ASM] Add support for email injection detection in MimeKit and SimpleEmail
+* [Continuous Profiler] Enable ETW support by default for .NET Framework
+
+## Changes
+
+### Tracer
+* Adding datadog.json filepath to tracer startup logs  (#6307)
+* [tracing] add null checks when iterating headers in propagators (#6460)
+* S3 Span Pointers (#6655)
+* don't propagate baggage when http client integration is disabled (#6692)
+* Fix: Ensure baggage properties are not interpreted as baggage values (#6693)
+* HTTP over streams: use vendored `Utf8Parser.TryParse()` (#6720)
+* [Tracing] Add configuration key DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED (#6727)
+* [Tracing] Update DD_TAGS behavior through a feature flag to better align with Datadog Agent tags parsing logic (#6728)
+* Ignore entire `baggage` header if malformed (#6743)
+
+
+### CI Visibility
+* [Test Optimization] - Code refactor (#6709)
+* [Test Optimization] Add missing impacted test code in runner (#6722)
+* [Test Optimization] Add known tests feature (#6725)
+* [Test Optimization] Add support to xUnit v3 2.0.0 (#6738)
+
+### ASM
+* [ASM] Standalone billing V2 migration (#6663)
+* [ASM] Dont store additive context in httpcontext (#6609)
+* [ASM] Email injection: MimeKit and SimpleEmail (#6614)
+* [ASM] Add new RASP telemetry tags (#6685)
+* [ASM][ATO]Add business logic event address to the waf (#6701)
+* [ASM] Add new WAF events success telemetry tags. (#6707)
+* [ASM] WAF error span tags (#6729)
+* [ASM][ATO] Fix : remove ISession for trimming file, and ducktype (#6737)
+
+### Continuous Profiler
+* [Profiler] Properly initialize appDomainId (#6630)
+* [Profiler] Add Export project in Demo for datadog-ci tests (#6708)
+* [Profiler] Enable ETW support by default for .NET Framework (#6724)
+* [Profiler] Add logs for the different profilers configuration (#6739)
+* [Profiler] Add tag GC CPU samples (#6746)
+
+### Dynamic Instrumentation
+* [Dynamic Instrumentation] DEBUG-3572 Check for valid gzip content (#6687)
+
+### Serverless
+* Send sampling priority to lambda extension (#6719)
+
+### Data Streams Monitoring
+* [Data Streams Monitoring] Perf optimization for protobuf instrumentation (#6694)
+* [Data Streams Monitoring] use full name for protobuf schema.name tag (#6721)
+
+### Miscellaneous
+* [Crashtracking] Fix crashtracking in single-file apps (#6677)
+
+* Add `DD_INSTRUMENTATION_INSTALL_TYPE` variables for known install methods (#6695)
+* [Fleet installer] Add additional pre-verification check for IIS variables (#6697)
+* [Fleet installer] Don't fail uninstall if the GAC lib has additional references (#6698)
+* [fleet installer] Add additional logging for app pool modifications (#6700)
+* [fleet installer] Update (and fix) return code (#6712)
+
+### Build / Test
+* [Test Package Versions Bump] Updating package versions (#6703)
+* Add fixes for release process (#6704)
+* [Test Package Versions Bump] Updating package versions (#6711)
+* Fix "auto bump test package versions" workflow  (#6713)
+* Add notification channel for build pipeline (#6717)
+* Fix HttpListener.GetContext leak in tests (#6750)
+
+
+[Changes since 3.11.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.11.1...v3.12.0)
+
+## [Release 3.11.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.11.0)
+
+## Summary
+
+- [Tracer] Add support for HotChocolate v15.x.x
+- [Tracer] Add trimming support to Datadog.Trace, instead of requireing Datadog.Trace.Trimming
+- [Tracer] Add support 128-bit trace ids in logs injection 
+- [Tracer] Add ability to disable `ActivitySource`s from being listened to 
+- [Test Optimization] Add support for MSTest v3.8.x
+- [Serverless] Add support for AWS SDK Step Functions
+- [Continuous Profiler] Include CPU samples in profile
+- [ASM] Always collect session ID
+- [Data streams management] Add profobuf schema as OpenAPI json as tags
+
+## Changes
+
+### Tracer
+* [Tracer] support 128-bit trace ids in logs injection (#5363)
+* Add ability to disable `ActivitySource`s from being listened to (#5795)
+* [Dynamic Instrumentation] DEBUG-3132 Add Memoization Cache for Redaction Logic (#6292)
+* Fix W3CTraceContextPropagator for non-standard array types (#6654)
+* Remove unused method (#6659)
+* Fix `DisabledIntegrationNames` not correctly disabling the integration (#6664)
+* Pack trimming file in Datadog.Trace NuGet, and add trimming smoke tests for the NuGet packages (#6678)
+* only enable protobuf instrumentation when DSM is enabled (#6691)
+* Add support for HotChocolate v15.x.x (#6648)
+
+### CI Visibility
+* [Test Optimization] Support for MSTest v3.8.x (#6686)
+
+### ASM
+* [ASM][ATO] Collect session id at all times (#6623)
+
+### Continuous Profiler
+* [Profiler/Crashtracker] Bump libdatadog 16.0.3 (#6589)
+* [Profiler] Add number of CPU samples to the profile (#6646)
+* [Profiler] Fix Profiler execution benchmark tests (#6652)
+
+### Serverless
+* [SVLS-5559] Inject trace context into AWS Step Functions input attribute (#6171)
+* fix: dispose HttpWebResponses to avoid leaking FDs (#6661)
+
+### Build / Test
+* [CI] Sending CI Vis Data to HQ (#6621)
+* Build the FleetInstaller executable and include in Windows OCI image (#6644)
+* Add smoke tests for fleet installer (#6645)
+* Tack on apm-idm-dotnet reviewers to auto-bump PRs (#6665)
+* Make sure we upload hotfix artifacts to Azure (#6667)
+* Restrict dependabot github actions to patch version bumps (#6669)
+* [Test Package Versions Bump] Updating package versions (#6670)
+* Reduce flake in Fleet installer tests (#6671)
+* Minor refactor in `ThreadAbortCodeFixProvider` (#6673)
+* speed up external CI artifact fetching (#6674)
+* Try to catch memory dump for instrumentation telemetry tests (#6675)
+* Add workflows for scheduled code freeze and AAS deployment (#6681)
+* Add NuGet API verification check (#6690)
+* Remove `MemberNotNull` to fix build (#6699)
+
+### Miscellaneous
+* Create an "installer" executable for use with the Datadog installer   (#6643)
+* Reapply "Add Google Protobuf Instrumentation" (#6647)
+* Update `CONTRIBUTING` with external PR policies (#6650)
+* [Fleet Installer] Don't throw when deleting registry value if it's already deleted (#6672)
+* [Fleet Installer] Don't block uninstall if IIS isn't available (#6676)
+* Update Azure Functions doc (#6682)
+
+
+[Changes since 3.10.2](https://github.com/DataDog/dd-trace-dotnet/compare/v3.10.2...v3.11.0)
+
 ## [Release 3.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.10.0)
 
 ## Summary

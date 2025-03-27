@@ -25,7 +25,7 @@ public class TelemetryControllerLogTagBuilderTests
     public void TagBuilder_UpdateCiVisTag()
     {
         var builder = new TelemetryController.TagBuilder();
-        builder.Update(new CIVisibilitySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
+        builder.Update(new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
         builder.GetLogTags().Should().Be("ci:1,asm:0,prof:0,dyn:0");
     }
 
@@ -56,7 +56,7 @@ public class TelemetryControllerLogTagBuilderTests
         builder.Update(TelemetryProductType.Profiler, enabled: true);
         builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
         builder.Update(TelemetryProductType.AppSec, enabled: true);
-        builder.Update(new CIVisibilitySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
+        builder.Update(new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
         builder.GetLogTags().Should().Be("ci:1,asm:1,prof:1,dyn:1,azf");
     }
 
@@ -68,7 +68,7 @@ public class TelemetryControllerLogTagBuilderTests
         builder.Update(TelemetryProductType.Profiler, enabled: true);
         builder.Update(TelemetryProductType.DynamicInstrumentation, enabled: true);
         builder.Update(TelemetryProductType.AppSec, enabled: true);
-        builder.Update(new CIVisibilitySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
+        builder.Update(new TestOptimizationSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance), enabled: true);
         builder.GetLogTags().Should().Be("ci:1,asm:1,prof:1,dyn:1,azf");
     }
 }

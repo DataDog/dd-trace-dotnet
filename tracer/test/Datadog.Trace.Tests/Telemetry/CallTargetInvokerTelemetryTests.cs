@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Telemetry
             {
             }
 
-            public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
+            public void RecordTestOptimizationSettings(TestOptimizationSettings settings)
             {
             }
 

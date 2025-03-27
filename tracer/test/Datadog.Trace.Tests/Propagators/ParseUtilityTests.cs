@@ -14,86 +14,96 @@ namespace Datadog.Trace.Tests.Propagators
 {
     public class ParseUtilityTests
     {
+        public static TheoryData<IEnumerable<string>, ulong?> UInt64
+            => new()
+            {
+                { new[] { "42" }, 42 },
+                { new[] { "4x" }, null },
+                { new[] { "4x", "42" }, 42 }, // return first valid value
+                { new[] { string.Empty }, null },
+                { new[] { (string)null }, null },
+                { new List<string> { "42" }, 42 },
+                { new List<string> { "4x" }, null },
+                { new List<string> { string.Empty }, null },
+                { new List<string> { null }, null },
+                { null, null }, // null collection returns null
+            };
+
+        public static TheoryData<IEnumerable<string>, int?> Int32
+            => new()
+            {
+                { new[] { "42" }, 42 },
+                { new[] { "4x" }, null },
+                { new[] { "4x", "42" }, 42 }, // return first valid value
+                { new[] { string.Empty }, null },
+                { new[] { (string)null }, null },
+                { new List<string> { "42" }, 42 },
+                { new List<string> { "4x" }, null },
+                { new List<string> { string.Empty }, null },
+                { new List<string> { null }, null },
+                { null, null }, // null collection returns null
+            };
+
+        public static TheoryData<IEnumerable<string>, string> String
+            => new()
+            {
+                { new[] { "42" }, "42" },
+                { new[] { "4x" }, "4x" },
+                { new[] { "4x", "42" }, "4x" },   // return first valid value
+                { new[] { string.Empty }, null }, // null or empty returns null
+                { new[] { (string)null }, null }, // null or empty returns null
+                { new List<string> { "42" }, "42" },
+                { new List<string> { "4x" }, "4x" },
+                { new List<string> { string.Empty }, null }, // null or empty returns null
+                { new List<string> { null }, null },         // null or empty returns null
+                { null, null },                              // null collection returns null
+            };
+
         [Theory]
-        [InlineData("42", 42UL)]
-        [InlineData("4x", null)]
-        public void ParseUInt64Test(string actual, object expected)
+        [MemberData(nameof(UInt64))]
+        public void ParseUInt64Test(IEnumerable<string> values, ulong? expected)
         {
-            var actualResult = ParseUtility.ParseUInt64(
+            var result = ParseUtility.ParseUInt64(
                 (object)null,
-                new FuncGetter<object>((carrier, name) => new[] { actual }),
+                new FuncGetter<object>((_, _) => values),
                 string.Empty);
 
-            actualResult.Should().Be((ulong?)expected);
-
-            actualResult = ParseUtility.ParseUInt64(
-                (object)null,
-                new FuncGetter<object>((carrier, name) => new List<string> { actual }),
-                string.Empty);
-
-            actualResult.Should().Be((ulong?)expected);
+            result.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("42", 42)]
-        [InlineData("4x", null)]
-        public void ParseInt32Test(string actual, object expected)
+        [MemberData(nameof(Int32))]
+        public void ParseInt32Test(IEnumerable<string> values, int? expected)
         {
-            var actualResult = ParseUtility.ParseInt32(
+            var result = ParseUtility.ParseInt32(
                 (object)null,
-                new FuncGetter<object>((carrier, name) => new[] { actual }),
+                new FuncGetter<object>((_, _) => values),
                 string.Empty);
 
-            actualResult.Should().Be((int?)expected);
-
-            actualResult = ParseUtility.ParseInt32(
-                (object)null,
-                new FuncGetter<object>((carrier, name) => new List<string> { actual }),
-                string.Empty);
-
-            actualResult.Should().Be((int?)expected);
+            result.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("42", "42")]
-        [InlineData("4x", "4x")]
-        [InlineData("", null)]
-        [InlineData(null, null)]
-        public void ParseString(string actual, string expected)
+        [MemberData(nameof(String))]
+        public void ParseStringTest(IEnumerable<string> values, string expected)
         {
-            var actualResult = ParseUtility.ParseString(
+            var result = ParseUtility.ParseString(
                 (object)null,
-                new FuncGetter<object>((carrier, name) => new[] { actual }),
+                new FuncGetter<object>((_, _) => values),
                 string.Empty);
 
-            actualResult.Should().Be(expected);
-
-            actualResult = ParseUtility.ParseString(
-                (object)null,
-                new FuncGetter<object>((carrier, name) => new List<string> { actual }),
-                string.Empty);
-
-            actualResult.Should().Be(expected);
+            result.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("42", "42")]
-        [InlineData("4x", "4x")]
-        [InlineData("", null)]
-        [InlineData(null, null)]
-        public void ParseStringWithHeaders(string actual, string expected)
+        [MemberData(nameof(String))]
+        public void ParseStringWithHeaders(IEnumerable<string> values, string expected)
         {
-            var actualResult = ParseUtility.ParseString(
-                new HeaderStruct(() => new[] { actual }),
+            var result = ParseUtility.ParseString(
+                new HeaderStruct(() => values),
                 string.Empty);
 
-            actualResult.Should().Be(expected);
-
-            actualResult = ParseUtility.ParseString(
-                new HeaderStruct(() => new List<string> { actual }),
-                string.Empty);
-
-            actualResult.Should().Be(expected);
+            result.Should().Be(expected);
         }
 
         private readonly struct FuncGetter<TCarrier> : ICarrierGetter<TCarrier>

@@ -31,6 +31,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-010","name":"No teapot","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"418","parameters":[{"address":"server.response.status","highlight":["418"],"key_path":[],"value":"418"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -77,6 +78,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-010","name":"No teapot","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"418","parameters":[{"address":"server.response.status","highlight":["418"],"key_path":[],"value":"418"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -123,6 +125,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-010","name":"No teapot","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"418","parameters":[{"address":"server.response.status","highlight":["418"],"key_path":[],"value":"418"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -169,6 +172,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-010","name":"No teapot","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"418","parameters":[{"address":"server.response.status","highlight":["418"],"key_path":[],"value":"418"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -215,6 +219,7 @@
       span.kind: server,
       _dd.appsec.fp.http.header: <HeaderPrint>
       _dd.appsec.fp.http.network: <NetworkPrint>,
+      _dd.appsec.fp.session: ssn----<SessionFp>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-010","name":"No teapot","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"418","parameters":[{"address":"server.response.status","highlight":["418"],"key_path":[],"value":"418"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet

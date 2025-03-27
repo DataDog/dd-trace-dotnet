@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
     ParameterTypeNames = ["_"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[System.TimeSpan]",
     MinimumVersion = "1.0.0",
-    MaximumVersion = "1.*.*",
+    MaximumVersion = "2.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -56,7 +56,7 @@ public static class XUnitTestRunnerV3Integration
         var state = Tuple.Create(
             XUnitIntegration.CreateTest(
                 ref runnerInstance,
-                testCaseMetadata: ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(context.Test.TestCase.UniqueID)),
+                testCaseMetadata: ((context.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(context.Test.TestMethod.UniqueID)),
             (object)context);
         return new CallTargetState(null, state);
     }

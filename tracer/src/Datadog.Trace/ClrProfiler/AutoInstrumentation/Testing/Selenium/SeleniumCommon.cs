@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -25,6 +26,7 @@ internal static class SeleniumCommon
     internal const string CommandClose = "close";
     internal const string CommandQuit = "quit";
     private const string CookieName = "datadog-ci-visibility-test-execution-id";
+
     private const string RumStopSessionScript = """
                                                 if (window.DD_RUM && window.DD_RUM.stopSession) {
                                                    window.DD_RUM.stopSession();
@@ -34,11 +36,11 @@ internal static class SeleniumCommon
                                                 }
                                                 """;
 
-    internal static readonly IDatadogLogger Log = CIVisibility.Log;
+    internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
     private static Type? _seleniumCookieType;
     private static long _openPageCount;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static void OnBeforePageLoad<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
         where TTarget : IWebDriverProxy => PreClose(instance);
@@ -72,7 +74,7 @@ internal static class SeleniumCommon
         {
             var span = test.GetInternalSpan();
             var tags = test.GetTags();
-            var traceId = span.Context.TraceId;
+            var traceId = span.TraceId128.Lower;
 
             // Create a cookie with the traceId to be used by the RUM library
             if (Activator.CreateInstance(_seleniumCookieType, CookieName, traceId.ToString()) is { } cookieInstance)
@@ -155,8 +157,8 @@ internal static class SeleniumCommon
             if (instance.ExecuteScript(RumStopSessionScript, null) is true)
             {
                 test.GetTags().IsRumActive = "true";
-                Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", CIVisibility.Settings.RumFlushWaitMillis);
-                Thread.Sleep(CIVisibility.Settings.RumFlushWaitMillis);
+                Log.Information<int>("RUM flush script has been called, waiting for {RumFlushWaitMillis}ms.", TestOptimization.Instance.Settings.RumFlushWaitMillis);
+                Thread.Sleep(TestOptimization.Instance.Settings.RumFlushWaitMillis);
             }
 
             // Delete injected RUM session cookie

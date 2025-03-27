@@ -25,7 +25,7 @@ internal abstract class MultipartPayload : EventPlatformPayload
     private readonly int _maxItemsPerPayload;
     private readonly int _maxBytesPerPayload;
 
-    public MultipartPayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
+    public MultipartPayload(TestOptimizationSettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver? formatterResolver = null)
         : base(settings)
     {
         if (maxBytesPerPayload < HeaderSize)

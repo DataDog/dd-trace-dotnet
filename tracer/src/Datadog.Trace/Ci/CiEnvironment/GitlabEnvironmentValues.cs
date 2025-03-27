@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -18,6 +19,7 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
 
         IsCI = true;
         Provider = "gitlab";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Gitlab;
         Repository = ValueProvider.GetValue(Constants.GitlabRepositoryUrl);
         Commit = ValueProvider.GetValue(Constants.GitlabCommitSha);
         Branch = ValueProvider.GetValue(Constants.GitlabCommitBranch);

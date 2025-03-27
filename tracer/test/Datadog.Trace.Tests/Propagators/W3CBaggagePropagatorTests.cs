@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CBaggagePropagatorTests.cs" company="Datadog">
+// <copyright file="W3CBaggagePropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -46,26 +46,47 @@ public class W3CBaggagePropagatorTests
         => new()
         {
             // input header ➡️ expected key/value pairs after decoding
+            // empty
             { null, null },
             { string.Empty, null },
             { " ", null },
+            // invalid
             { "invalid", null },
+            { "invalid;", null },
             { "invalid=", null },
             { "invalid= ", null },
+            { "invalid= ;", null },
             { " =invalid", null },
+            { " ;=invalid", null },
             { "=", null },
             { " = ", null },
+            { ";", null },
+            // valid + invalid
+            { "key1=value1,", null },
+            { "key1=value1,key2", null },
+            { "key1=value1,key2=", null },
+            { "key1=value1,=value", null },
+            { "key1=value1,=", null },
+            { "key1=value1,key2;a=value2", null },
+            // invalid + valid
+            { ",key2=value2", null },
+            { "key1,key2=value2", null },
+            { "key1=,key2=value2", null },
+            { "=value1,key2=value2", null },
+            { "=,key2=value2", null },
+            { "key1;a=value1,key2=value2", null },
+            // valid
             { "valid=%20", [("valid", " ")] },
             { "%20=valid", [(" ", "valid")] },
             { "%20=%20", [(" ", " ")] },
             { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
-            { "key1=value1,invalid", [("key1", "value1")] },
+            { "key1=value1, key2 = value2;property1;property2, key3=value3; propertyKey=propertyValue", [("key1", "value1"), ("key2", "value2"), ("key3", "value3")] }, // W3C metadata/property not currently supported so the values are discarded
             { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
             { "key1=value1=valid", [("key1", "value1=valid")] },
             { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },                          // encoded whitespace
             { "key1 = value1, key2 = value\t2 ", [("key1", "value1"), ("key2", "value\t2")] }, // whitespace not encoded
-            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] },                      // encoded unicode
-            { "key🐶=value我", [("key🐶", "value我")] },                                       // unicode not encoded
+            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] },                       // encoded unicode
+            { "key🐶=value我", [("key🐶", "value我")] },                                         // unicode not encoded
         };
 
     [Theory]
@@ -157,16 +178,16 @@ public class W3CBaggagePropagatorTests
     [MemberData(nameof(ExtractBaggageData))]
     public void ParseHeader(string inputHeader, (string Key, string Value)[] expectedPairs)
     {
-        var baggage = W3CBaggagePropagator.ParseHeader(inputHeader);
+        var baggage = W3CBaggagePropagator.ParseHeader(inputHeader)!;
 
-        if (expectedPairs is null || expectedPairs.Length == 0)
+        if (expectedPairs is null)
         {
             baggage.Should().BeNull();
             return;
         }
 
         baggage.Should().NotBeNull();
-        baggage!.Count.Should().Be(expectedPairs.Length);
+        baggage.Should().HaveCount(expectedPairs.Length);
 
         foreach (var pair in expectedPairs)
         {
@@ -258,6 +279,20 @@ public class W3CBaggagePropagatorTests
     [InlineData("")]
     [InlineData("  ")]
     [InlineData(null)]
+    // valid + invalid
+    [InlineData("key1=value1,")]
+    [InlineData("key1=value1,key2")]
+    [InlineData("key1=value1,key2=")]
+    [InlineData("key1=value1,=value2")]
+    [InlineData("key1=value1,=")]
+    [InlineData("key1=value1,key2;a=value2")]
+    // invalid + valid
+    [InlineData(",key2=value2")]
+    [InlineData("key1,key2=value2")]
+    [InlineData("key1=,key2=value2")]
+    [InlineData("=value1,key2=value2")]
+    [InlineData("=,key2=value2")]
+    [InlineData("key1;a=value1,key2=value2")]
     public void Extract_InvalidFormat(string header)
     {
         var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);

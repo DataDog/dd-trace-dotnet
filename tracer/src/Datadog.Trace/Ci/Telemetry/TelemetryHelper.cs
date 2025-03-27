@@ -174,7 +174,7 @@ internal static class TelemetryHelper
                 return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Module;
             case MetricTags.CIVisibilityTestingEventType.Session:
             {
-                var settings = CIVisibility.Settings;
+                var settings = TestOptimization.Instance.Settings;
                 if (settings.Logs)
                 {
                     return CIEnvironmentValues.Instance switch

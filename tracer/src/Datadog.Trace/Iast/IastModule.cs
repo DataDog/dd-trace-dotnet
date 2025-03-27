@@ -25,6 +25,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.VendoredMicrosoftCode.System;
 using static Datadog.Trace.Configuration.ConfigurationKeys;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
@@ -588,7 +589,7 @@ internal static partial class IastModule
         {
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            traceContext.Tags.SetTag(Tags.Propagated.AppSec, "1");
+            traceContext.Tags.EnableTraceSources(TraceSources.Asm);
 
             return IastModuleResponse.Vulnerable;
         }
@@ -681,7 +682,7 @@ internal static partial class IastModule
             if (isRequest)
             {
                 traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
+                traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
 
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
                 vulnerability.Location?.ReportStack(currentSpan);
@@ -754,7 +755,7 @@ internal static partial class IastModule
         span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-        traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
+        traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
         vulnerability.Location?.ReportStack(span);
 
         if (closeAfterCreation)
@@ -850,7 +851,25 @@ internal static partial class IastModule
         }
     }
 
-    internal static void OnEmailHtmlInjection(object? message)
+    internal static void OnEmailHtmlInjection(string text)
+    {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return;
+        }
+
+        OnExecutedSinkTelemetry(IastVulnerabilityType.EmailHtmlInjection);
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        // We use the same secure marks as XSS, but excluding db sources
+        GetScope(text, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+    }
+
+    internal static void OnEmailHtmlInjection(object? message, EmailInjectionType type)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -864,15 +883,37 @@ internal static partial class IastModule
             return;
         }
 
-        var messageDuck = message.DuckCast<IMailMessage>();
+        ExtractProperties(message, type, out var body, out var isHtml);
 
-        if (messageDuck?.IsBodyHtml is not true || string.IsNullOrEmpty(messageDuck.Body))
+        if (!isHtml || string.IsNullOrEmpty(body))
         {
             return;
         }
 
         // We use the same secure marks as XSS, but excluding db sources
-        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(body!, IntegrationId.EmailHtmlInjection, VulnerabilityTypeUtils.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+    }
+
+    private static void ExtractProperties(object mail, EmailInjectionType type, out string? body, out bool isHtml)
+    {
+        switch (type)
+        {
+            case EmailInjectionType.SystemNetMail:
+                var mailMessage = mail.DuckCast<IMailMessage>();
+                body = mailMessage.Body;
+                isHtml = mailMessage.IsBodyHtml;
+                break;
+            case EmailInjectionType.AmazonSimpleEmail:
+                var sendEmailRequest = mail.DuckCast<ISendEmailRequest>();
+                body = sendEmailRequest.Message?.Body?.Html?.Data;
+                isHtml = !string.IsNullOrEmpty(body);
+                break;
+            default:
+                Log.Error("Error while checking for email injection type.");
+                body = string.Empty;
+                isHtml = false;
+                break;
+        }
     }
 
     public static void LogAspectException(Exception ex, string aspectInfo)

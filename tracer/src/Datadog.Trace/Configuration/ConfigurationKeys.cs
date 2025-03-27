@@ -15,6 +15,11 @@ namespace Datadog.Trace.Configuration
     internal static partial class ConfigurationKeys
     {
         /// <summary>
+        /// Configuration key to enable experimental features.
+        /// </summary>
+        public const string ExperimentalFeaturesEnabled = "DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED";
+
+        /// <summary>
         /// Configuration key for the path to the configuration file.
         /// Can only be set with an environment variable
         /// or in the <c>app.config</c>/<c>web.config</c> file.
@@ -68,16 +73,16 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling Standalone ASM, thus disabling APM tracing and its billing.
-        /// Default is value is false (disabled).
-        /// </summary>
-        public const string AppsecStandaloneEnabled = "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED";
-
-        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
         public const string DebugEnabled = "DD_TRACE_DEBUG";
+
+        /// <summary>
+        /// Configuration key for enabling or disabling the generation of APM traces.
+        /// Default is value is true (enabled).
+        /// </summary>
+        public const string ApmTracingEnabled = "DD_APM_TRACING_ENABLED";
 
         /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debugger mode.
@@ -98,6 +103,41 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.DisabledIntegrationNames"/>
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
+
+        /// <summary>
+        /// Configuration key for a list of ActivitySource names (supports globbing) that will be disabled.
+        /// Default is empty (all ActivitySources will be subscribed to by default).
+        /// <para><b>Disabling ActivitySources may break distributed tracing if those Activities are used to propagate trace context.</b></para>
+        /// <para>
+        /// Supports multiple values separated with commas.
+        /// For example: "SomeGlob.*.PatternSource,Some.Specific.Source"
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// When the tracer doesn't subscribe to an ActivitySource, we will <em>NOT</em> propagate the trace context from those Activities (we don't see them anymore).
+        /// <br/><b>This means that distributed tracing flows that rely on these Activities for context propagation
+        /// will break and cause disconnected traces.</b>
+        /// </para>
+        /// <para>
+        /// Potential impact on distributed tracing:
+        /// <list type="bullet">
+        /// <item>
+        ///   <description>
+        ///     Service A -> Ignored Activity -> Service B
+        ///     <para>Creates a single trace with Service A as root and Service B as child</para>
+        ///   </description>
+        /// </item>
+        /// <item>
+        ///   <description>
+        ///     Service A -> Disabled Activity -> Service B
+        ///     <para>Creates TWO separate traces with Service A and Service B each as root spans</para>
+        ///   </description>
+        /// </item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        public const string DisabledActivitySources = "DD_TRACE_DISABLED_ACTIVITY_SOURCES";
 
         /// <summary>
         /// Configuration key for enabling or disabling default Analytics.
@@ -500,6 +540,12 @@ namespace Datadog.Trace.Configuration
         public const string DisabledAdoNetCommandTypes = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
 
         /// <summary>
+        /// Configuration key for toggling span pointers on AWS requests.
+        /// Default value is true
+        /// </summary>
+        public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -595,6 +641,11 @@ namespace Datadog.Trace.Configuration
             public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
 
             /// <summary>
+            /// Configuration key for enabling or disabling the known tests feature in CI Visibility
+            /// </summary>
+            public const string KnownTestsEnabled = "DD_CIVISIBILITY_KNOWN_TESTS_ENABLED";
+
+            /// <summary>
             /// Configuration key for setting the code coverage collector path
             /// </summary>
             public const string CodeCoverageCollectorPath = "DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH";
@@ -628,6 +679,16 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling Impacted Tests Detection.
             /// </summary>
             public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the Test Management feature.
+            /// </summary>
+            public const string TestManagementEnabled = "DD_TEST_MANAGEMENT_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the number of retries to fix a flaky test.
+            /// </summary>
+            public const string TestManagementAttemptToFixRetries = "DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES";
         }
 
         /// <summary>
@@ -735,15 +796,20 @@ namespace Datadog.Trace.Configuration
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.
             /// Note that a 128-bit trace id may be received from an upstream service or from
             /// an Activity even if we are not generating them ourselves.
-            /// Default value is <c>false</c> (disabled).
+            /// Default value is <c>true</c> (enabled).
             /// </summary>
             public const string TraceId128BitGenerationEnabled = "DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED";
 
             /// <summary>
             /// Enables injecting 128-bit trace ids into logs as a hexadecimal string.
             /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
-            /// and all trace ids will be injected as decimal strings
-            /// Default value is <c>false</c> (disabled).
+            /// and injected as decimal strings. 64-bit trace ids are
+            /// always injected as decimal strings, regardless of this setting.
+            /// If unset, this configuration will take the value of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// which is <c>true</c> by default.
+            /// Note: This configuration can be set independently of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// so it's possible to inject 128-bit trace ids into logs even if the application is only generating 64-bit trace ids, since distributed traces from upstream
+            /// services may contain 128-bit trace ids.
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
 

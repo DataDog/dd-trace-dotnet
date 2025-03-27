@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 using System;
 using System.ComponentModel;
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 #pragma warning restore SA1118
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "1.0.0",
-    MaximumVersion = "1.*.*",
+    MaximumVersion = "2.*.*",
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -50,14 +51,24 @@ public static class XunitTestMethodRunnerContextCtorV3Integration
         TExceptionAggregator aggregator,
         CancellationTokenSource cancellationTokenSource,
         object?[] constructorArguments)
-        where TIXunitTestMethod : IXunitTestMethodV3
     {
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
-            CIVisibility.Settings.FlakyRetryEnabled != true)
+        var testOptimization = TestOptimization.Instance;
+
+        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
+        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
+
+        // If there's no...
+        // - EarlyFlakeDetectionFeature enabled
+        // - FlakyRetryFeature enabled
+        // - TestManagementFeature enabled
+        // then we don't need to handle any retry, so we just skip the retry logic.
+        if (!isEarlyFlakeDetectionEnabled && !isFlakyRetryEnabled && !isTestManagementEnabled)
         {
             return CallTargetState.GetDefault();
         }
 
+        // If the message bus is null, or it's a duck type, we don't do anything with it
         if (messageBus is null || messageBus is IDuckType)
         {
             return CallTargetState.GetDefault();

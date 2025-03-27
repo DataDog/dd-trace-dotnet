@@ -265,7 +265,8 @@ internal static class MetricTags
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
-        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection
+        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
+        [Description("integration_name:protobuf")] Protobuf
     }
 
     public enum InstrumentationError
@@ -288,14 +289,40 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
+    public enum WafStatus
+    {
+        [Description("waf_version;event_rules_version;success:true")] Success,
+        [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
     [EnumExtensions]
     public enum RaspRuleType
     {
-        [Description("waf_version;rule_type:lfi")] Lfi = 0,
-        [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
-        [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
-        [Description("waf_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
-        [Description("waf_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
+        [Description("waf_version;event_rules_version;rule_type:lfi")] Lfi = 0,
+        [Description("waf_version;event_rules_version;rule_type:ssrf")] Ssrf = 1,
+        [Description("waf_version;event_rules_version;rule_type:sql_injection")] SQlI = 2,
+        [Description("waf_version;event_rules_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
+        [Description("waf_version;event_rules_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
+    }
+
+    [EnumExtensions]
+    public enum RaspRuleTypeMatch
+    {
+        [Description("waf_version;event_rules_version;block:success;rule_type:lfi")] LfiSuccess = 0,
+        [Description("waf_version;event_rules_version;block:success;rule_type:ssrf")] SsrfSuccess = 1,
+        [Description("waf_version;event_rules_version;block:success;rule_type:sql_injection")] SQlISuccess = 2,
+        [Description("waf_version;event_rules_version;block:success;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellSuccess = 3,
+        [Description("waf_version;event_rules_version;block:success;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecSuccess = 4,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:lfi")] LfiFailure = 5,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:ssrf")] SsrfFailure = 6,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:sql_injection")] SQlIFailure = 7,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellFailure = 8,
+        [Description("waf_version;event_rules_version;block:failure;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecFailure = 9,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:lfi")] LfiIrrelevant = 10,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:ssrf")] SsrfIrrelevant = 11,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:sql_injection")] SQlIIrrelevant = 12,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellIrrelevant = 13,
+        [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecIrrelevant = 14,
     }
 
     public enum TruncationReason
@@ -412,6 +439,27 @@ internal static class MetricTags
         [Description("event_type:test;is_new:true;early_flake_detection_abort_reason:slow;browser_driver:selenium;is_rum:true")] Test_EFDTestIsNew_EFDTestAbortSlow_BrowserDriverSelenium_IsRum,
     }
 
+    public enum CIVisibilityTestingEventTypeRetryReason
+    {
+        [Description("")] None,
+        [Description("retry_reason:efd")] EarlyFlakeDetection,
+        [Description("retry_reason:atr")] AutomaticTestRetry,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled
+    {
+        [Description("")] None,
+        [Description("is_quarantined:true")] IsQuarantined,
+        [Description("is_disabled:true")] IsDisabled,
+    }
+
+    public enum CIVisibilityTestingEventTypeTestManagementAttemptToFix
+    {
+        [Description("")] None,
+        [Description("is_attempt_to_fix:true")] IsAttemptToFix,
+        [Description("is_attempt_to_fix:true;has_failed_all_retries:true")] AttemptToFixHasFailedAllRetries,
+    }
+
     public enum CIVisibilityCoverageLibrary
     {
         [Description("library:custom")] Custom,
@@ -481,25 +529,40 @@ internal static class MetricTags
         [Description("exit_code:129")] EC129,
     }
 
-    public enum CIVisibilityITRSettingsResponse
+    public enum CIVisibilitySettingsResponse_CoverageFeature
     {
-        [Description("")] CoverageDisabled_ItrSkipDisabled_AtrDisabled,
-        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled_AtrDisabled,
-        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled_AtrDisabled,
-        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled_AtrDisabled,
-        [Description("early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
-        // ...
-        [Description("flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipDisabled_AtrEnabled,
-        [Description("coverage_enabled;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipDisabled_AtrEnabled,
-        [Description("itrskip_enabled;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipEnabled_AtrEnabled,
-        [Description("coverage_enabled;itrskip_enabled;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipEnabled_AtrEnabled,
-        [Description("early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-        [Description("coverage_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
-        [Description("itrskip_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
-        [Description("coverage_enabled;itrskip_enabled;early_flake_detection_enabled:true;flaky_test_retries_enabled:true")] CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+        [Description("coverage_enabled:true")] Enabled,
+        [Description("coverage_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_ItrSkippingFeature
+    {
+        [Description("itrskip_enabled:true")] Enabled,
+        [Description("itrskip_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature
+    {
+        [Description("early_flake_detection_enabled:true")] Enabled,
+        [Description("early_flake_detection_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_FlakyTestRetriesFeature
+    {
+        [Description("flaky_test_retries_enabled:true")] Enabled,
+        [Description("flaky_test_retries_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_KnownTestsFeature
+    {
+        [Description("known_tests_enabled:true")] Enabled,
+        [Description("known_tests_enabled:false")] Disabled,
+    }
+
+    public enum CIVisibilitySettingsResponse_TestManagementFeature
+    {
+        [Description("test_management_enabled:true")] Enabled,
+        [Description("test_management_enabled:false")] Disabled,
     }
 
     public enum CIVisibilityRequestCompressed
@@ -512,5 +575,36 @@ internal static class MetricTags
     {
         [Description("")] Uncompressed,
         [Description("rs_compressed:true")] Compressed,
+    }
+
+    public enum CIVisibilityTestSessionProvider
+    {
+        [Description("provider:unsupported")] Unsupported,
+        [Description("provider:appveyor")] AppVeyor,
+        [Description("provider:azp")] AzurePipelines,
+        [Description("provider:bitbucket")] BitBucket,
+        [Description("provider:bitrise")] Bitrise,
+        [Description("provider:buildkite")] BuildKite,
+        [Description("provider:circleci")] CircleCI,
+        [Description("provider:codefresh")] Codefresh,
+        [Description("provider:githubactions")] GithubActions,
+        [Description("provider:gitlab")] Gitlab,
+        [Description("provider:jenkins")] Jenkins,
+        [Description("provider:teamcity")] Teamcity,
+        [Description("provider:travisci")] TravisCi,
+        [Description("provider:buddyci")] BuddyCi,
+        [Description("provider:aws")] AwsCodePipeline,
+    }
+
+    public enum CIVisibilityTestSessionType
+    {
+        [Description("")] NotAutoInjected,
+        [Description("auto_injected:true")] AutoInjected,
+    }
+
+    public enum CIVisibilityTestSessionAgentlessLogSubmission
+    {
+        [Description("")] NotEnabled,
+        [Description("agentless_log_submission_enabled:true")] Enabled,
     }
 }

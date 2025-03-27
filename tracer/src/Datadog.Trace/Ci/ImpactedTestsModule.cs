@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
@@ -32,7 +33,7 @@ internal static class ImpactedTestsModule
 
     private static FileCoverageInfo[]? modifiedFiles = null;
 
-    public static bool IsEnabled => CIVisibility.Settings.ImpactedTestsDetectionEnabled ?? false;
+    public static bool IsEnabled => TestOptimization.Instance.ImpactedTestsDetectionFeature?.Enabled ?? false;
 
     private static string? CurrentCommit => CIEnvironmentValues.Instance.HeadCommit ?? CIEnvironmentValues.Instance.Commit;
 
@@ -162,7 +163,7 @@ internal static class ImpactedTestsModule
     {
         Log.Debug("Retrieving diff files from backend...");
 
-        if (CIVisibility.ImpactedTestsDetectionResponse is { } response && response.Files is { Length: > 0 } files)
+        if (TestOptimization.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { Files: { Length: > 0 } files })
         {
             var res = new FileCoverageInfo[files.Length];
             for (int x = 0; x < files.Length; x++)
@@ -178,7 +179,7 @@ internal static class ImpactedTestsModule
 
     private static string? GetBaseCommitFromBackend()
     {
-        if (CIVisibility.ImpactedTestsDetectionResponse is { } response && response.BaseSha is { Length: > 0 } baseSha)
+        if (TestOptimization.Instance.ImpactedTestsDetectionFeature?.ImpactedTestsDetectionResponse is { BaseSha: { Length: > 0 } baseSha })
         {
             return baseSha;
         }

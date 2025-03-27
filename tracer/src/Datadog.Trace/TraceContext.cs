@@ -119,9 +119,7 @@ namespace Datadog.Trace
         internal bool WafExecuted { get; set; }
 
         internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
-            spans.Count > 0 ?
-                spans.Array![spans.Offset].Context.TraceContext :
-                null;
+            spans.Count > 0 ? spans.Array![spans.Offset].Context.TraceContext : null;
 
         internal void EnableIastInRequest()
         {
@@ -152,25 +150,32 @@ namespace Datadog.Trace
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
+            if (span.IsRootSpan)
             {
-                Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
-
-                var iastInstance = Iast.Iast.Instance;
-                if (iastInstance.Settings.Enabled)
+                if (span.Type == SpanTypes.Web)
                 {
-                    if (_iastRequestContext is { } iastRequestContext)
+                    Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
+
+                    var iastInstance = Iast.Iast.Instance;
+                    if (iastInstance.Settings.Enabled)
                     {
-                        iastRequestContext.AddIastVulnerabilitiesToSpan(span);
-                        iastInstance.OverheadController.ReleaseRequest();
+                        if (_iastRequestContext is { } iastRequestContext)
+                        {
+                            iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                            iastInstance.OverheadController.ReleaseRequest();
+                        }
+                        else
+                        {
+                            IastRequestContext.AddIastDisabledFlagToSpan(span);
+                        }
                     }
-                    else
+
+                    if (_appSecRequestContext is not null)
                     {
-                        IastRequestContext.AddIastDisabledFlagToSpan(span);
+                        _appSecRequestContext.CloseWebSpan(Tags, span);
+                        _appSecRequestContext.DisposeAdditiveContext();
                     }
                 }
-
-                _appSecRequestContext?.CloseWebSpan(Tags, span);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -189,7 +194,7 @@ namespace Datadog.Trace
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
-                else if (CIVisibility.IsRunning && span.IsCiVisibilitySpan())
+                else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
                 {
                     // TestSession, TestModule, TestSuite, Test and Browser spans are part of CI Visibility
                     // all of them are known to be Root spans, so we can flush them as soon as they are closed
@@ -252,12 +257,12 @@ namespace Datadog.Trace
                 return samplingPriority;
             }
 
-            return GetOrMakeSamplingDecisionSlow();
+            return GetOrMakeSamplingDecision(_rootSpan);
         }
 
-        private int GetOrMakeSamplingDecisionSlow()
+        public int GetOrMakeSamplingDecision(Span? span)
         {
-            if (_rootSpan is null)
+            if (span is null)
             {
                 // we can't make a sampling decision without a root span because:
                 // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
@@ -269,7 +274,7 @@ namespace Datadog.Trace
             }
 
             var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
-                                       ? sampler.MakeSamplingDecision(_rootSpan)
+                                       ? sampler.MakeSamplingDecision(span)
                                        : SamplingDecision.Default;
 
             SetSamplingPriority(samplingDecision.Priority, samplingDecision.Mechanism);

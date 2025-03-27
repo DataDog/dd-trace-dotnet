@@ -20,14 +20,4 @@ internal static class EarlyFlakeDetectionTags
     /// Early Flake Detection abort reason flag
     /// </summary>
     public const string AbortReason = "test.early_flake.abort_reason";
-
-    /// <summary>
-    /// Early Flake Detection test is new flag
-    /// </summary>
-    public const string TestIsNew = "test.is_new";
-
-    /// <summary>
-    /// Early Flake Detection test is retry flag
-    /// </summary>
-    public const string TestIsRetry = "test.is_retry";
 }

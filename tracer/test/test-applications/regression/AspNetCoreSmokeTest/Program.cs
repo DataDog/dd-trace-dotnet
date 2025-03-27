@@ -43,6 +43,17 @@ namespace AspNetCoreSmokeTest
 
             File.WriteAllText(completedPath, DateTimeOffset.UtcNow.ToString());
 
+#if PUBLISH_TRIMMED
+            // this is a hacky way of simply making sure the controller isn't trimmed
+            try
+            {
+                _ = new ValuesController(null).Get();
+            }
+            catch
+            {
+                // this will throw, but we don't care
+            }
+#endif
             return ExitCode;
         }
 

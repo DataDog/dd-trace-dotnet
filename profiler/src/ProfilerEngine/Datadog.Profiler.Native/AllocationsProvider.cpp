@@ -232,7 +232,7 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
 
         // TODO: we need to check that threads are not jumping from one AppDomain to the other too frequently
         // because we might be receiving this event 1 second after it has been emitted
-        // It this is the case, we should simply set the AppDomainId to -1 all the time.
+        // It this is the case, we should simply set the AppDomainId to 0 all the time.
         AppDomainID appDomainId;
         if (SUCCEEDED(_pCorProfilerInfo->GetThreadAppDomain(threadInfo->GetClrThreadId(), &appDomainId)))
         {
@@ -240,15 +240,13 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
         }
         else
         {
-            rawSample.AppDomainId = -1;
+            rawSample.AppDomainId = 0;
         }
     }
     else // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
     {
         rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
-
-        // TODO: do we need to set to -1?
-        // rawSample.AppDomainId = -1;
+        rawSample.AppDomainId = 0;
     }
 
     // rawSample.AllocationSize = objectSize;

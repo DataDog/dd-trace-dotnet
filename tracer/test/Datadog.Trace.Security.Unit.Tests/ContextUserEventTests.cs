@@ -26,19 +26,19 @@ public class ContextUserEventTests
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
         var userId = "toto";
-        var addresses = context!.ShouldRunWith(security.Object, userId: userId);
+        var addresses = context!.FilterAddresses(security.Object, userId: userId);
         addresses.Should().HaveCount(1);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         context.CommitUserRuns(addresses, false);
         userId = "tata";
         // should run with a different value
-        addresses = context!.ShouldRunWith(security.Object, userId: userId);
+        addresses = context!.FilterAddresses(security.Object, userId: userId);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         addresses.Should().HaveCount(1);
         context.CommitUserRuns(addresses, false);
 
         // should not run with same value
-        addresses = context!.ShouldRunWith(security.Object, userId: userId);
+        addresses = context!.FilterAddresses(security.Object, userId: userId);
         addresses.Should().HaveCount(0);
     }
 
@@ -53,24 +53,24 @@ public class ContextUserEventTests
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserSessionId)).Returns(true);
 
         var userId = "toto";
-        var addresses = context!.ShouldRunWith(security.Object, userId: userId, fromSdk: true);
+        var addresses = context!.FilterAddresses(security.Object, userId: userId, fromSdk: true);
         addresses.Should().HaveCount(1);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         context.CommitUserRuns(addresses, true);
         var ssessionId = "234";
-        addresses = context!.ShouldRunWith(security.Object, userSessionId: ssessionId);
+        addresses = context!.FilterAddresses(security.Object, userSessionId: ssessionId);
         addresses.Should().HaveCount(1);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserSessionId, ssessionId));
         context.CommitUserRuns(addresses, false);
         ssessionId = "tata";
         // should run with a different value
-        addresses = context!.ShouldRunWith(security.Object, userSessionId: ssessionId);
+        addresses = context!.FilterAddresses(security.Object, userSessionId: ssessionId);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserSessionId, ssessionId));
         addresses.Should().HaveCount(1);
         context.CommitUserRuns(addresses, false);
 
         // should not run with same value
-        addresses = context!.ShouldRunWith(security.Object, userSessionId: ssessionId);
+        addresses = context!.FilterAddresses(security.Object, userSessionId: ssessionId);
         addresses.Should().HaveCount(0);
     }
 
@@ -85,13 +85,13 @@ public class ContextUserEventTests
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserSessionId)).Returns(true);
         var userId = "toto";
         var userSessionId = "123";
-        var addresses = context!.ShouldRunWith(security.Object, userId: userId);
+        var addresses = context!.FilterAddresses(security.Object, userId: userId);
         // waf shouldn't run with a disabled address
         addresses.Should().HaveCount(0);
         context.CommitUserRuns(addresses, false);
 
         // should run with a different value
-        addresses = context!.ShouldRunWith(security.Object, userId: userId, userSessionId: userSessionId);
+        addresses = context!.FilterAddresses(security.Object, userId: userId, userSessionId: userSessionId);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserSessionId, userSessionId));
         addresses.Should().HaveCount(1);
         context.CommitUserRuns(addresses, false);
@@ -105,7 +105,7 @@ public class ContextUserEventTests
         var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
-        var addresses = context!.ShouldRunWith(security.Object, userId: null);
+        var addresses = context!.FilterAddresses(security.Object, userId: null);
         // waf shouldn't run with a disabled address
         addresses.Should().HaveCount(0);
         context.CommitUserRuns(addresses, false);
@@ -120,11 +120,11 @@ public class ContextUserEventTests
         var security = new Mock<IDatadogSecurity>();
         security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
         var userId = "toto";
-        var addresses = context!.ShouldRunWith(security.Object, userId: userId);
+        var addresses = context!.FilterAddresses(security.Object, userId: userId);
         addresses.Should().HaveCount(1);
         addresses.Should().Contain(new KeyValuePair<string, object>(AddressesConstants.UserId, userId));
         context.CommitUserRuns(addresses, true);
-        addresses = context!.ShouldRunWith(security.Object, userId: "other");
+        addresses = context!.FilterAddresses(security.Object, userId: "other");
         addresses.Should().HaveCount(0);
     }
 }

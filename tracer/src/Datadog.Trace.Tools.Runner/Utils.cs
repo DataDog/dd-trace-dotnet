@@ -161,7 +161,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             var environment = options.Environment.GetValue(context);
 
-            // Settings back DD_ENV to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_ENV to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(environment))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, environment);
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var service = options.Service.GetValue(context);
 
-            // Settings back DD_SERVICE to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_SERVICE to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(service))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, service);
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var version = options.Version.GetValue(context);
 
-            // Settings back DD_VERSION to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_VERSION to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(version))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, version);
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var agentUrl = options.AgentUrl.GetValue(context);
 
-            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(agentUrl))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, agentUrl);
@@ -607,6 +607,12 @@ namespace Datadog.Trace.Tools.Runner
             {
                 envVars["CORECLR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
                 envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
+            }
+
+            const string installTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
+            if (string.IsNullOrEmpty(GetEnvironmentVariable(installTypeKey)))
+            {
+                envVars[installTypeKey] = "dd_trace_tool";
             }
 
             if (!string.IsNullOrEmpty(devPath))

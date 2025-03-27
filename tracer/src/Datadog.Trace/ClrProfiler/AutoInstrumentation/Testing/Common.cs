@@ -2,12 +2,14 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -16,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 
 internal static class Common
 {
-    internal static readonly IDatadogLogger Log = CIVisibility.Log;
+    internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
 
     internal static string GetParametersValueData(object? paramValue)
     {
@@ -58,7 +60,7 @@ internal static class Common
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            var skippableTests = AsyncUtil.RunSync(() => CIVisibility.GetSkippableTestsFromSuiteAndNameAsync(testSuite, testName));
+            var skippableTests = TestOptimization.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName) ?? [];
             if (skippableTests.Count > 0)
             {
                 foreach (var skippableTest in skippableTests)
@@ -121,69 +123,140 @@ internal static class Common
 
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
     {
+        var earlyFlakeDetectionFeature = TestOptimization.Instance.EarlyFlakeDetectionFeature;
+        if (earlyFlakeDetectionFeature?.Enabled != true)
+        {
+            return 1;
+        }
+
         int numberOfExecutions;
-        var slowRetriesSettings = CIVisibility.EarlyFlakeDetectionSettings.SlowTestRetries;
+        var slowRetriesSettings = earlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
         if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
         {
             numberOfExecutions = slowRetriesSettings.FiveSeconds.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", numberOfExecutions);
         }
         else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
         {
             numberOfExecutions = slowRetriesSettings.TenSeconds.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", numberOfExecutions);
         }
         else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
         {
             numberOfExecutions = slowRetriesSettings.ThirtySeconds.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", numberOfExecutions);
         }
         else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
         {
             numberOfExecutions = slowRetriesSettings.FiveMinutes.Value;
-            Log.Information<int>("EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", numberOfExecutions);
         }
         else
         {
             numberOfExecutions = 1;
-            Log.Information("EFD: Number of executions has been set to 1 (No retries). Current test duration is {Value}", duration);
+            Log.Information("Common: EFD: Number of executions has been set to 1 (No retries). Current test duration is {Value}", duration);
         }
 
         return numberOfExecutions;
     }
 
-    internal static void SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
+    internal static void SetKnownTestsFeatureTags(Test test)
     {
-        // Early flake detection flags
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled == true)
+        // Known tests feature
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.KnownTestsFeature?.Enabled == true)
         {
-            var isTestNew = !CIVisibility.IsAnEarlyFlakeDetectionTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            var isTestNew = !testOptimization.KnownTestsFeature.IsAKnownTest(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
             if (isTestNew)
             {
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, "true");
+                var testTags = test.GetTags();
+                testTags.TestIsNew = "true";
+            }
+        }
+    }
+
+    internal static bool SetEarlyFlakeDetectionTestTagsAndAbortReason(Test test, bool isRetry, ref long newTestCases, ref long totalTestCases)
+    {
+        // Early flake detection flags
+        var testOptimization = TestOptimization.Instance;
+        var earlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        if (earlyFlakeDetectionEnabled)
+        {
+            var testTags = test.GetTags();
+            if (testTags.TestIsNew == "true")
+            {
                 if (isRetry)
                 {
-                    test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+                    testTags.TestIsRetry = "true";
+                    testTags.TestRetryReason = "efd";
                 }
                 else
                 {
                     CheckFaultyThreshold(test, Interlocked.Increment(ref newTestCases), Interlocked.Read(ref totalTestCases));
                 }
             }
+            else
+            {
+                earlyFlakeDetectionEnabled = false;
+            }
         }
+
+        return earlyFlakeDetectionEnabled;
     }
 
-    internal static void SetFlakyRetryTags(Test test, bool isRetry)
+    internal static bool SetFlakyRetryTags(Test test, bool isRetry)
     {
-        if (CIVisibility.Settings.FlakyRetryEnabled == true && isRetry)
+        var flakyRetryFeature = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
+        if (flakyRetryFeature && isRetry)
         {
-            test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            var testTags = test.GetTags();
+            testTags.TestIsRetry = "true";
+            testTags.TestRetryReason = "atr";
         }
+
+        return flakyRetryFeature;
+    }
+
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes SetTestManagementFeature(Test test, bool isRetry)
+    {
+        // Test management feature
+        var testOptimization = TestOptimization.Instance;
+        if (testOptimization.TestManagementFeature?.Enabled == true)
+        {
+            var testTags = test.GetTags();
+            var testManagementProperties = testOptimization.TestManagementFeature.GetTestProperties(test.Suite.Module.Name, test.Suite.Name, test.Name ?? string.Empty);
+            if (testManagementProperties.Quarantined)
+            {
+                Log.Debug("Common: Test is quarantined. [Suite: {SuiteName}, Test: {TestName}]", test.Suite.Name, test.Name);
+                testTags.IsQuarantined = "true";
+            }
+
+            if (testManagementProperties.Disabled)
+            {
+                Log.Debug("Common: Test is disabled. [Suite: {SuiteName}, Test: {TestName}]", test.Suite.Name, test.Name);
+                testTags.IsDisabled = "true";
+            }
+
+            if (testManagementProperties.AttemptToFix)
+            {
+                Log.Debug("Common: Test is an attempt to fix. [Suite: {SuiteName}, Test: {TestName}, IsRetry: {IsRetry}]", test.Suite.Name, test.Name, isRetry);
+                testTags.IsAttemptToFix = "true";
+                if (isRetry)
+                {
+                    testTags.TestIsRetry = "true";
+                    testTags.TestRetryReason = "attempt_to_fix";
+                }
+            }
+
+            return testManagementProperties;
+        }
+
+        return TestOptimizationClient.TestManagementResponseTestPropertiesAttributes.Default;
     }
 
     internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)
     {
-        if (tTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
+        if (tTestCases > 0 && TestOptimization.Instance.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)
         {
             if (((double)nTestCases * 100 / (double)tTestCases) > faultySessionThreshold)
             {
@@ -194,7 +267,7 @@ internal static class Common
 
                 // We need to stop the EFD feature off and set the session as a faulty.
                 // But session object is not available from the test host
-                test.SetTag(EarlyFlakeDetectionTags.TestIsNew, (string?)null);
+                test.SetTag(TestTags.TestIsNew, (string?)null);
                 test.Suite?.Module?.TrySetSessionTag(EarlyFlakeDetectionTags.AbortReason, "faulty");
                 Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
             }

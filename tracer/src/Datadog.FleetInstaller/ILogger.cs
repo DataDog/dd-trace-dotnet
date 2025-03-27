@@ -11,6 +11,8 @@ internal interface ILogger
 {
     void WriteInfo(string message);
 
+    void WriteWarning(string message);
+
     void WriteError(string message);
 
     void WriteError(Exception ex, string message);

@@ -476,6 +476,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsPresent("messaging.destination.name")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
@@ -494,6 +495,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsPresent("messaging.destination.name")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "producer"));
@@ -591,6 +593,15 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("cmd.component", "process")
                 .Matches("span.kind", "internal"));
+
+        public static Result IsProtobufV0(this MockSpan span) => Result.FromSpan(span)
+            .Tags(s => s
+                .Matches(Tags.SchemaType, "protobuf")
+                .IsPresent(Tags.SchemaName)
+                .IsPresent(Tags.SchemaOperation)
+                .IsPresent(Tags.SchemaId)
+                .IsPresent(Tags.SchemaDefinition)
+                .IsPresent(Tags.SchemaWeight));
 
         public static Result IsRabbitMQV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

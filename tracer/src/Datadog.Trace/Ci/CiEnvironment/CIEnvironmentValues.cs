@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -94,6 +95,8 @@ internal abstract class CIEnvironmentValues
     public CodeOwners? CodeOwners { get; protected set; }
 
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
+
+    public MetricTags.CIVisibilityTestSessionProvider MetricTag { get; protected set; } = MetricTags.CIVisibilityTestSessionProvider.Unsupported;
 
     public static CIEnvironmentValues Create()
     {

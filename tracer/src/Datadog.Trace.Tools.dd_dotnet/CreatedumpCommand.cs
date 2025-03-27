@@ -522,7 +522,7 @@ internal class CreatedumpCommand : Command
 
             try
             {
-                crashReport.AddTag(0x1, 0x1);
+                crashReport.Panic();
             }
             catch
             {

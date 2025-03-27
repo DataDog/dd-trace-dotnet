@@ -1054,6 +1054,31 @@ services:
     depends_on:
       - test-agent
 
+  trimming-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.trimming.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - INSTALL_CMD=
+        # - TOOL_VERSION=
+        # - PACKAGE_NAME=
+        # - RUNTIME_IDENTIFIER=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-trimming-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
+    volumes:
+      - ./:/project
+      - ./artifacts/build_data/logs:/var/log/datadog/dotnet
+      - ./artifacts/build_data/dumps:/dumps
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
   StartDependencies.OSXARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:

@@ -186,12 +186,12 @@ internal enum Count
     /// <summary>
     /// The number of times the waf is initialized
     /// </summary>
-    [TelemetryMetric("waf.init", isCommon: true, NS.ASM)] WafInit,
+    [TelemetryMetric<MetricTags.WafStatus>("waf.init", isCommon: true, NS.ASM)] WafInit,
 
     /// <summary>
     /// The number of times we reload the rules (startup + Remote Configuration)
     /// </summary>
-    [TelemetryMetric("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
+    [TelemetryMetric<MetricTags.WafStatus>("waf.updates", isCommon: true, NS.ASM)] WafUpdates,
 
     /// <summary>
     /// Requests analyzed by ddwaf
@@ -211,7 +211,7 @@ internal enum Count
     /// <summary>
     /// Counts the number of times a rule type has a match. Note that this can be inferred through the events sent to the backend.
     /// </summary>
-    [TelemetryMetric<RaspRuleType>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
+    [TelemetryMetric<RaspRuleTypeMatch>("rasp.rule.match", isCommon: true, NS.ASM)] RaspRuleMatch,
 
     /// <summary>
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.

@@ -852,10 +852,16 @@ TEST_F(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSetTo0)
     ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
 }
 
-TEST_F(ConfigurationTest, CheckEtwIsDisabledByDefault)
+TEST_F(ConfigurationTest, CheckEtwIsEnabledByDefault)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsEtwEnabled(), false);
+    auto expectedValue =
+#ifdef LINUX
+        false;
+#else
+        true;
+#endif
+    ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
 }
 
 TEST_F(ConfigurationTest, CheckEtwIsEnabledIfEnvVarSetToTrue)

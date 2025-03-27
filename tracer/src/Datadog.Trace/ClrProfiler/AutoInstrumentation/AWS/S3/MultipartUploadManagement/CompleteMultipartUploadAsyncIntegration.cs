@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement;
@@ -40,11 +41,20 @@ public class CompleteMultipartUploadAsyncIntegration
         var scope = AwsS3Common.CreateScope(Tracer.Instance, Operation, out var tags);
         AwsS3Common.SetTags(tags, request.BucketName, request.ObjectKey);
 
-        return new CallTargetState(scope);
+        return new CallTargetState(scope, request);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
+        where TReturn : IS3EtagResponse
     {
+        if (Tracer.Instance.Settings.SpanPointersEnabled && state.Scope is not null && state.State is ICompleteMultipartUploadRequest request && returnValue is not null)
+        {
+            var bucketName = request.BucketName;
+            var key = request.ObjectKey;
+            var eTag = returnValue.ETag;
+            SpanPointers.AddS3SpanPointer(state.Scope.Span, bucketName, key, eTag);
+        }
+
         state.Scope.DisposeWithException(exception);
         return returnValue;
     }

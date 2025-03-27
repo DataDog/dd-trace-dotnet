@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int DistributionCIVisibilityLength = 36;
+    private const int DistributionCIVisibilityLength = 40;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionCIVisibility" /> values.
@@ -60,12 +60,12 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "rs_compressed:true" }),
             // code_coverage.files, index = 27
             new(null),
-            // early_flake_detection.request_ms, index = 28
+            // known_tests.request_ms, index = 28
             new(null),
-            // early_flake_detection.response_bytes, index = 29
+            // known_tests.response_bytes, index = 29
             new(null),
             new(new[] { "rs_compressed:true" }),
-            // early_flake_detection.response_tests, index = 31
+            // known_tests.response_tests, index = 31
             new(null),
             // impacted_tests_detection.request_ms, index = 32
             new(null),
@@ -73,6 +73,13 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(null),
             new(new[] { "rs_compressed:true" }),
             // impacted_tests_detection.response_files, index = 35
+            new(null),
+            // test_management_tests.request_ms, index = 36
+            new(null),
+            // test_management_tests.response_bytes, index = 37
+            new(null),
+            new(new[] { "rs_compressed:true" }),
+            // test_management_tests.response_tests, index = 39
             new(null),
         };
 
@@ -82,7 +89,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionCIVisibilityEntryCounts { get; }
-        = new int[]{ 2, 2, 2, 2, 10, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, };
+        = new int[]{ 2, 2, 2, 2, 10, 2, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, };
 
     public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value)
     {
@@ -156,18 +163,18 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         _buffer.DistributionCIVisibility[27].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value)
+    public void RecordDistributionCIVisibilityKnownTestsRequestMs(double value)
     {
         _buffer.DistributionCIVisibility[28].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    public void RecordDistributionCIVisibilityKnownTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
     {
         var index = 29 + (int)tag;
         _buffer.DistributionCIVisibility[index].TryEnqueue(value);
     }
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value)
+    public void RecordDistributionCIVisibilityKnownTestsResponseTests(double value)
     {
         _buffer.DistributionCIVisibility[31].TryEnqueue(value);
     }
@@ -186,5 +193,21 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(double value)
     {
         _buffer.DistributionCIVisibility[35].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityTestManagementTestsRequestMs(double value)
+    {
+        _buffer.DistributionCIVisibility[36].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityTestManagementTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    {
+        var index = 37 + (int)tag;
+        _buffer.DistributionCIVisibility[index].TryEnqueue(value);
+    }
+
+    public void RecordDistributionCIVisibilityTestManagementTestsResponseTests(double value)
+    {
+        _buffer.DistributionCIVisibility[39].TryEnqueue(value);
     }
 }

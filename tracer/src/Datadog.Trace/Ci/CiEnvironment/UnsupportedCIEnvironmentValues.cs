@@ -7,6 +7,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -16,6 +17,7 @@ internal sealed class UnsupportedCIEnvironmentValues<TValueProvider>(TValueProvi
     protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: CI could not be detected, using the git folder: {GitFolder}", gitInfo.SourceRoot);
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Unsupported;
         Branch = gitInfo.Branch;
         Commit = gitInfo.Commit;
         Repository = gitInfo.Repository;

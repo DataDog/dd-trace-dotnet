@@ -43,7 +43,7 @@ public static class UnitTestRunnerRunCleanupIntegration
             module.Close();
 
             // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
-            CIVisibility.Close();
+            TestOptimization.Instance.Close();
         }
 
         return new CallTargetReturn<TReturn?>(returnValue);
