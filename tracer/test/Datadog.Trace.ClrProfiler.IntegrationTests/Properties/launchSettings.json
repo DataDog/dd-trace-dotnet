@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Datadog.Trace.ClrProfiler.IntegrationTests": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

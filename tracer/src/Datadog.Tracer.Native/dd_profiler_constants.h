@@ -101,6 +101,8 @@ const shared::WSTRING skip_traceattribute_assembly_prefixes[]{
 const shared::WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("netstandard"),
                                 WStr("System.Configuration"),
+                                WStr("System.Security.AccessControl"),
+                                WStr("System.Security.Principal.Windows"),
                                 WStr("Microsoft.AspNetCore.Razor.Language"),
                                 WStr("Microsoft.AspNetCore.Mvc.RazorPages"),
                                 WStr("Anonymously Hosted DynamicMethods Assembly"),
