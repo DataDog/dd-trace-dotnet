@@ -19,6 +19,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.LibDatadog;
 using Datadog.Trace.LibDatadog.ServiceDiscovery;
@@ -497,6 +498,8 @@ namespace Datadog.Trace
                     writer.WritePropertyName("iast_weak_cipher_algorithms");
                     writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakCipherAlgorithms);
 
+                    WriteDebuggerInfo(writer);
+
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
 
@@ -657,6 +660,19 @@ namespace Datadog.Trace
                 writer.WritePropertyName("appsec_libddwaf_export_errors");
                 writer.WriteValue(security.WafExportsErrorHappened);
             }
+        }
+
+        private static void WriteDebuggerInfo(JsonTextWriter writer)
+        {
+            var debuggerSettings = DebuggerManager.Instance.DebuggerSettings;
+            writer.WritePropertyName("dynamic_instrumentation_enabled");
+            writer.WriteValue(debuggerSettings.DynamicInstrumentationEnabled);
+            writer.WritePropertyName("symbol_database_upload_enabled");
+            writer.WriteValue(debuggerSettings.SymbolDatabaseUploadEnabled);
+            writer.WritePropertyName("code_origin_for_spans_enabled");
+            writer.WriteValue(debuggerSettings.CodeOriginForSpansEnabled);
+            writer.WritePropertyName("exception_replay_enabled");
+            writer.WriteValue(DebuggerManager.Instance.ExceptionReplaySettings.Enabled);
         }
 
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
