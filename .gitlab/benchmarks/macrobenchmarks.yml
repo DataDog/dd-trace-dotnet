@@ -413,7 +413,7 @@ check_azure_pipeline:
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 5m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 10000
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 100000
 
     K6_OPTIONS_HIGH_LOAD_RATE: 800
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
@@ -421,35 +421,47 @@ check_azure_pipeline:
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 100
 
-baseline-35k-win-igoragoli_improve-representativeness:
+baseline-35k-win-igoragoli_improve-representativeness_1019:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 35000
 
-baseline-40k-win-igoragoli_improve-representativeness:
+baseline-40k-win-igoragoli_improve-representativeness_1019:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 40000
 
-baseline-45k-win-igoragoli_improve-representativeness:
+baseline-45k-win-igoragoli_improve-representativeness_1019:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 45000
 
-baseline-50k-win-igoragoli_improve-representativeness:
+baseline-50k-win-igoragoli_improve-representativeness_1019:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 50000
 
-baseline-55k-win-igoragoli_improve-representativeness:
+baseline-55k-win-igoragoli_improve-representativeness_1019:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
     K6_OPTIONS_NORMAL_OPERATION_RATE: 55000
+
+baseline-60k-win-igoragoli_improve-representativeness_1019:
+  extends: .benchmarks-win
+  variables:
+    ENDPOINT: "hello"
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 60000
+
+baseline-90k-win-igoragoli_improve-representativeness_1019:
+  extends: .benchmarks-win
+  variables:
+    ENDPOINT: "hello"
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 90000
 
 # calltarget_ngen-win:
 #   extends: .benchmarks-win
