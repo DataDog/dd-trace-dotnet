@@ -1,4 +1,4 @@
-name: &provision_name "dd-trace-dotnet-ephemeral-instance-improve-representativeness"
+name: &provision_name "dd-trace-dotnet-ephemeral-instance-improve-representativeness_start-process"
 
 # We are reusing some provision files from windows instances
 init_environment:
@@ -6,7 +6,7 @@ init_environment:
   BP_REPO_FETCHER_KEY_SSM_PARAMETER: "/windows-benchmarking/bp-repo-fetcher-key"
   BP_REPO_FETCHER_CLIENT_ID: "Iv23liYOxTI8nIatGymV"
   DD_API_KEY_SSM_PARAMETER: "/windows-benchmarking/dd-api-key"
-  BENCHMARKING_PLATFORM_BRANCH: "igoragoli/dd-trace-dotnet/macro_improve-representativeness"
+  BENCHMARKING_PLATFORM_BRANCH: "igoragoli/dd-trace-dotnet/macro_improve-representativeness_start-process"
 
 user_data_path: user_data/setup-benchmarking-platform-module.ps1
 
