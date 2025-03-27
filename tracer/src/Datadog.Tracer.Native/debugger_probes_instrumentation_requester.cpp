@@ -330,7 +330,17 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    is_debugger_or_exception_debugging_enabled = IsDebuggerEnabled() || IsExceptionReplayEnabled();
+    if (IsDynamicInstrumentationDisabled())
+    {
+        Logger::Info("Dynamic Instrumentation is explicitly disabled");
+    }
+
+    if (IsExceptionReplayDisabled())
+    {
+        Logger::Info("Exception Replay is explicitly disabled");
+    }
+
+    is_debugger_and_exception_debugging_disabled = IsDynamicInstrumentationDisabled() && IsExceptionReplayDisabled();
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -1015,7 +1025,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
 HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
 {
-    if (!is_debugger_or_exception_debugging_enabled)
+    if (is_debugger_and_exception_debugging_disabled)
     {
         return S_OK;
     }
