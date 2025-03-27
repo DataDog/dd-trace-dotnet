@@ -139,7 +139,7 @@ internal struct WafStats
     {
     }
 
-    public uint TotalCount => (uint)(FailedCount + LoadedCount + SkippedCount);
+    public int TotalCount => (FailedCount + LoadedCount + SkippedCount);
 }
 
 #pragma warning restore SA1402 // File may only contain a single type

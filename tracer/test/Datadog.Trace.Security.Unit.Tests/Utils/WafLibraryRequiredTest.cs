@@ -57,10 +57,10 @@ public class WafLibraryRequiredTest : SettingsTestsBase
     internal InitResult CreateWaf(bool useUnsafeEncoder = false, string? ruleFile = null, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false, bool wafDebugEnabled = false)
     {
         var configurationState = CreateConfigurationState(ruleFile);
-        return CreateWaf(configurationState, useUnsafeEncoder, ruleFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, expectWafNull, wafDebugEnabled);
+        return CreateWaf(configurationState, useUnsafeEncoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, expectWafNull, wafDebugEnabled);
     }
 
-    internal InitResult CreateWaf(ConfigurationState configurationState, bool useUnsafeEncoder = false, string? ruleFile = null, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false, bool wafDebugEnabled = false)
+    internal InitResult CreateWaf(ConfigurationState configurationState, bool useUnsafeEncoder = false, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false, bool wafDebugEnabled = false)
     {
         var initResult = Waf.Create(
             WafLibraryInvoker!,

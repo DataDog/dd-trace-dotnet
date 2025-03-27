@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -36,7 +37,6 @@ internal class AsmDdProduct : IAsmConfigUpdater
             }
 
             configurationStatus.RulesetConfigs[firstFile.Path.Path] = ruleSet;
-            configurationStatus.RulesetConfigs.Remove(DefaultConfigKey);
         }
     }
 

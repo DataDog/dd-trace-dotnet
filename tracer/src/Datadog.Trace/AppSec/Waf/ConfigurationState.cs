@@ -39,20 +39,23 @@ internal record ConfigurationState
     internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
 
-    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
-    {
-        { RcmProducts.Asm, new AsmProduct() },
-        { RcmProducts.AsmDd, new AsmDdProduct() },
-        { RcmProducts.AsmData, new AsmDataProduct() }
-    };
+    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;
 
     private readonly string? _rulesPath;
     private readonly bool _canBeToggled;
     private readonly Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
     private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
+    private bool _defaultRulesetApplied = false;
 
     public ConfigurationState(SecuritySettings settings, bool wafIsNull)
     {
+        _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
+        {
+            { RcmProducts.AsmDd, new AsmDdProduct() },
+            { RcmProducts.Asm, new AsmGenericProduct(() => AsmConfigs) },
+            { RcmProducts.AsmData, new AsmGenericProduct(() => AsmDataConfigs) }
+        };
+
         _rulesPath = settings.Rules;
         _canBeToggled = settings.CanBeToggled;
         if (settings.AppsecEnabled && wafIsNull)
@@ -134,6 +137,11 @@ internal record ConfigurationState
         var configurations = new Dictionary<string, object>();
         List<string>? removes = null;
 
+        if (updating && _fileRemoves is { Count: > 0 })
+        {
+            removes = _fileRemoves.SelectMany(p => p.Value).Where(p => p.Product != RcmProducts.AsmFeatures).Select(v => v.Path).ToList();
+        }
+
         if (AsmConfigs is { Count: > 0 })
         {
             foreach (var config in AsmConfigs)
@@ -153,7 +161,7 @@ internal record ConfigurationState
         }
 
         // if there's incoming rules or empty rules, or if asm is to be activated, we also want the rules key in waf arguments
-        if (IncomingUpdateState.ShouldInitAppsec)
+        if (!_defaultRulesetApplied && RulesetConfigs.Count == 0)
         {
             // Deserialize from LocalRuleFile
             var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(RulesPath);
@@ -163,11 +171,12 @@ internal record ConfigurationState
                 var ruleSet = RuleSet.From(deserializedFromLocalRules);
                 ruleSet.AddToDictionaryAtRoot(configuration);
                 configurations[AsmDdProduct.DefaultConfigKey] = configuration;
+                _defaultRulesetApplied = true;
             }
         }
         else if (RulesetConfigs.Count > 0)
         {
-            // Use incomeing RC rules
+            // Use incoming RC rules
             foreach (var config in RulesetConfigs)
             {
                 if (updating && !IsNewUpdate(config.Key)) { continue; }
@@ -176,11 +185,13 @@ internal record ConfigurationState
                 config.Value?.AddToDictionaryAtRoot(configuration);
                 configurations[config.Key] = configuration;
             }
-        }
 
-        if (updating && _fileRemoves is { Count: > 0 })
-        {
-            removes = _fileRemoves.SelectMany(p => p.Value).Select(v => v.Path).ToList();
+            if (_defaultRulesetApplied)
+            {
+                if (removes is null) { removes = [AsmDdProduct.DefaultConfigKey]; }
+                else { removes.Add(AsmDdProduct.DefaultConfigKey); }
+                _defaultRulesetApplied = false;
+            }
         }
 
         return new(configurations.Count > 0 ? configurations : null, removes);
@@ -238,23 +249,6 @@ internal record ConfigurationState
         var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
         if (anyChange)
         {
-            foreach (var configByProduct in configsByProduct)
-            {
-                if (configByProduct.Key != RcmProducts.AsmFeatures)
-                {
-                    hasUpdateConfigurations = true;
-                }
-
-                if (_fileUpdates.ContainsKey(configByProduct.Key))
-                {
-                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
-                }
-                else
-                {
-                    _fileUpdates[configByProduct.Key] = configByProduct.Value;
-                }
-            }
-
             if (removedConfigs != null)
             {
                 foreach (var configByProductToRemove in removedConfigs)
@@ -275,6 +269,23 @@ internal record ConfigurationState
                 }
             }
 
+            foreach (var configByProduct in configsByProduct)
+            {
+                if (configByProduct.Key != RcmProducts.AsmFeatures)
+                {
+                    hasUpdateConfigurations = true;
+                }
+
+                if (_fileUpdates.ContainsKey(configByProduct.Key))
+                {
+                    _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
+                }
+                else
+                {
+                    _fileUpdates[configByProduct.Key] = configByProduct.Value;
+                }
+            }
+
             ApplyAsmFeatures(AppsecEnabled);
             IncomingUpdateState.ShouldUpdateAppsec = !IncomingUpdateState.ShouldInitAppsec && AppsecEnabled && hasUpdateConfigurations;
 
@@ -290,15 +301,15 @@ internal record ConfigurationState
         var change = false;
         // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
         // (the enable of auto user instrumentation as added to asm_features)
-        if (_fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates))
-        {
-            _asmFeatureProduct.ProcessUpdates(this, updates);
-            change = true;
-        }
-
         if (_fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals))
         {
             _asmFeatureProduct.ProcessRemovals(this, removals);
+            change = true;
+        }
+
+        if (_fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates))
+        {
+            _asmFeatureProduct.ProcessUpdates(this, updates);
             change = true;
         }
 
@@ -311,6 +322,7 @@ internal record ConfigurationState
             if (!appsecCurrentlyEnabled)
             {
                 IncomingUpdateState.ShouldInitAppsec = rcmEnable;
+                _defaultRulesetApplied = false;
             }
             else if (!rcmEnable)
             {
