@@ -279,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             if (storedProcInject && (commandType == typeof(System.Data.SqlClient.SqlCommand) || commandType == typeof(Microsoft.Data.SqlClient.SqlCommand)))
             {
                 // should have injected data
-                // command text shoudl be exec
+                // command text should be exec
                 command.CommandText.Should().NotBe(DbmCommandText).And.Contain($"EXEC [{DbmCommandText}]");
                 command.CommandText.Should().Contain("/*dddbs"); // check for the dbm comment this isn't all of it but good enough
             }

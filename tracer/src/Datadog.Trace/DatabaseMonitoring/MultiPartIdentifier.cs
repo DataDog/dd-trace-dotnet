@@ -5,7 +5,9 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
+// https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/Common/MultipartIdentifier.cs#L9
 
+// Things I modified: throw Exceptions -> return []
 using System.Text;
 
 namespace Datadog.Trace.DatabaseMonitoring

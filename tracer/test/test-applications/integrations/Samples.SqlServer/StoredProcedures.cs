@@ -74,7 +74,7 @@ END";
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandTimeout = 5; // running into issues where something is hanging
+                command.CommandTimeout = 5;
                 command.CommandType = CommandType.StoredProcedure;
                 command.CommandText = "dbo.sp_GetTableRow";
 
@@ -120,7 +120,7 @@ END";
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandTimeout = 5; // running into issues where something is hanging
+                command.CommandTimeout = 5;
 
                 command.CommandType = CommandType.StoredProcedure;
                 command.CommandText = "dbo.sp_UpdateRowWithOutput";
@@ -198,7 +198,7 @@ END";
 
             // Test with transaction transactionScope - we had issues where the set context_info wasn't being
             // added to the transaction transactionScope and causing issues, so make sure we test it here too
-            // a transaction si multiple commands that all must succeed or none at all
+            // a transaction is multiple commands that all must succeed or none at all
             try
             {
                 using var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
@@ -208,7 +208,7 @@ END";
                 {
                     using (var command = connection.CreateCommand())
                     {
-                        command.CommandTimeout = 5; // running into issues where something is hanging
+                        command.CommandTimeout = 5;
 
                         command.CommandType = CommandType.StoredProcedure;
                         command.CommandText = "dbo.sp_BatchUpdate";
@@ -226,7 +226,7 @@ END";
 
                     using (var command = connection.CreateCommand())
                     {
-                        command.CommandTimeout = 5; // running into issues where something is hanging
+                        command.CommandTimeout = 5;
 
                         command.CommandType = CommandType.StoredProcedure;
                         command.CommandText = "dbo.sp_BatchUpdate";
