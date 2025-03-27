@@ -169,6 +169,11 @@ namespace Datadog.Trace.DatabaseMonitoring
                 try
                 {
                     quotedName = ParseAndQuoteIdentifier(procName, isUdtTypeName: false);
+                    if (string.IsNullOrEmpty(quotedName))
+                    {
+                        // if we can't parse the identifier, return false
+                        return false;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -369,9 +374,9 @@ namespace Datadog.Trace.DatabaseMonitoring
                 string errorMsg = string.Empty;
                 return MultipartIdentifier.ParseMultipartIdentifier(typeName, "[\"", "]\"", '.', 3, true, errorMsg, true);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
-                throw new Exception();
+                return []; // return empty array if we can't parse the typeName
             }
         }
 
@@ -381,6 +386,13 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static string ParseAndQuoteIdentifier(string identifier, bool isUdtTypeName)
         {
             string[] strings = ParseTypeName(identifier, isUdtTypeName);
+
+            if (strings.Length == 0)
+            {
+                // if we can't parse the identifier, return it as an empty string, we'll check this and not propagate if so
+                return string.Empty;
+            }
+
             return QuoteIdentifier(strings);
         }
 

@@ -75,12 +75,12 @@ namespace Datadog.Trace.DatabaseMonitoring
         {
             if (limit <= 0)
             {
-                throw new System.Exception();
+                return [];
             }
 
             if (-1 != leftQuote.IndexOf(separator) || -1 != rightQuote.IndexOf(separator) || leftQuote.Length != rightQuote.Length)
             {
-                throw new System.Exception();
+                return [];
             }
 
             string[] parsedNames = new string[limit];   // return string array
@@ -124,7 +124,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                             else
                             if (-1 != rightQuote.IndexOf(testchar))
                             { // If we shouldn't see a right quote
-                                throw new System.Exception();
+                                return [];
                             }
                             else
                             {
@@ -147,12 +147,12 @@ namespace Datadog.Trace.DatabaseMonitoring
                             else // Quotes are not valid inside a non-quoted name
                             if (-1 != rightQuote.IndexOf(testchar))
                             {
-                                throw new System.Exception();
+                                return [];
                             }
                             else
                             if (-1 != leftQuote.IndexOf(testchar))
                             {
-                                throw new System.Exception();
+                                return [];
                             }
                             else
                             if (IsWhitespace(testchar))
@@ -236,7 +236,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                             else
                             if (!IsWhitespace(testchar))
                             { // If it is not whitespace we got problems
-                                throw new System.Exception();
+                                return [];
                             }
                             else
                             { // It is a whitespace character so the following char should be whitespace, separator, or end of string anything else is bad
@@ -258,7 +258,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                                 }
                                 else
                                 { // Otherwise not a separator
-                                    throw new System.Exception();
+                                    return [];
                                 }
                             }
 
@@ -282,14 +282,14 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                 case MPIState.MPI_ParseQuote: // Invalid Ending States
                 default:
-                    throw new System.Exception();
+                    return [];
             }
 
             if (parsedNames[0] == null)
             {
                 if (ThrowOnEmptyMultipartName)
                 {
-                    throw new System.Exception(); // Name is entirely made up of whitespace
+                    return []; // Name is entirely made up of whitespace
                 }
             }
             else
