@@ -7,7 +7,10 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
+using System.Globalization;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -118,6 +121,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsInferredProxySpans : AspNetMvc5Tests
+    {
+        public AspNetMvc5TestsInferredProxySpans(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableRouteTemplateResourceNames: true, enableInferredProxySpans: true)
+        {
+        }
+
+        /// <summary>
+        /// Override <see cref="CreateHttpRequestMessage"/> to add proxy headers to the request.
+        /// </summary>
+        protected override HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string path, DateTimeOffset testStart)
+        {
+            var request = base.CreateHttpRequestMessage(method, path, testStart);
+            var headers = request.Headers;
+
+            headers.Add("x-dd-proxy", "aws-apigateway");
+            headers.Add("x-dd-proxy-request-time-ms", testStart.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture));
+            headers.Add("x-dd-proxy-domain-name", "test.api.com");
+            headers.Add("x-dd-proxy-httpmethod", "GET");
+            headers.Add("x-dd-proxy-path", "/api/test/1");
+            headers.Add("x-dd-proxy-stage", "prod");
+
+            return request;
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>, IAsyncLifetime
     {
@@ -132,13 +162,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             bool enableRouteTemplateResourceNames,
             bool enableRouteTemplateExpansion = false,
             bool virtualApp = false,
-            bool enable128BitTraceIds = false)
+            bool enable128BitTraceIds = false,
+            bool enableInferredProxySpans = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, enable128BitTraceIds ? "true" : "false");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, enable128BitTraceIds.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, enableInferredProxySpans.ToString());
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;
@@ -153,7 +185,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion     ? ".WithExpansion" :
                          enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF")
-                      + (enable128BitTraceIds ? ".128bit" : string.Empty);
+                      + (enable128BitTraceIds ? ".128bit" : string.Empty)
+                      + (enableInferredProxySpans ? ".Proxy" : string.Empty);
         }
 
         public static TheoryData<string, int> Data => new()
