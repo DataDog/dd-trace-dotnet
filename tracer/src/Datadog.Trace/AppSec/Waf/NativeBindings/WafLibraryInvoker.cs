@@ -195,13 +195,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 var paths = LibraryLocationHelper.GetDatadogNativeFolders(fd, runtimeIds);
                 if (!LibraryLocationHelper.TryLoadLibraryFromPaths(libName, paths, out libraryHandle))
                 {
-                    return LibraryInitializationResult.FromLibraryLoadError();
+                    return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.LibraryLoad);
                 }
             }
             else
             {
                 Log.Error("Lib name or runtime ids is null, current platform {Fd} is likely not supported", fd.ToString());
-                return LibraryInitializationResult.FromPlatformNotSupported();
+                return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.PaltformNotSupported);
             }
 
             var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle, libVersion);
@@ -209,7 +209,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
                 NativeLibrary.CloseLibrary(libraryHandle);
-                return LibraryInitializationResult.FromExportErrorHappened();
+                return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.ExportError);
             }
 
             var isCompatible = CheckVersionCompatibility(wafLibraryInvoker);
@@ -217,10 +217,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 // no log because CheckVersionCompatibility writes logs in error cases
                 NativeLibrary.CloseLibrary(libraryHandle);
-                return LibraryInitializationResult.FromVersionNotCompatible();
+                return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.VersionNotCompatible);
             }
 
-            return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+            return new LibraryInitializationResult(wafLibraryInvoker);
         }
 
         private static bool CheckVersionCompatibility(WafLibraryInvoker wafLibraryInvoker)

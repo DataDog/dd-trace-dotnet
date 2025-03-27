@@ -4,15 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -64,12 +61,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             var assembly = typeof(Waf).Assembly;
             return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
-        }
-
-        private static Stream? GetSchemaExtractionConfigStream()
-        {
-            var assembly = typeof(Waf).Assembly;
-            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.apisecurity-config.json");
         }
 
         private static Stream? GetRulesFileStream(string rulesFile)
@@ -147,9 +138,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     {
                         foreach (var path in configs.Removes)
                         {
+                            Log.Information("WAF: Removing config: {Path}", path);
+
                             if (!_wafLibraryInvoker.BuilderRemoveConfig(wafBuilderHandle, path))
                             {
-                                Log.Warning("DDAS-0005-00: WAF builder initialization failed. Config failed to load"); // Check were all these error codes are defined
+                                Log.Warning("DDAS-0005-00: WAF builder: Config failed to be removed : {0}", path); // Check were all these error codes are defined
                             }
                         }
                     }
@@ -158,13 +151,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     {
                         foreach (var config in configs.Updates)
                         {
+                            Log.Information("WAF: Applying config: {Path}", config.Key);
+
                             using (var encoded = encoder.Encode(config.Value, applySafetyLimits: config.Key != AsmDdProduct.DefaultConfigKey))
                             {
                                 var configObj = encoded.ResultDdwafObject;
                                 var path = config.Key;
                                 if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref diagnostics))
                                 {
-                                    Log.Warning("DDAS-0005-00: WAF builder initialization failed. Config failed to load"); // Check were all these error codes are defined
+                                    Log.Warning("DDAS-0005-00: WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
                                 }
                             }
                         }
@@ -205,6 +200,12 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                 var errorMess = StringBuilderCache.GetStringAndRelease(sb);
                 Log.Warning("Some issues were found while applying waf configuration (RulesFile: {RulesFile}): {ErroringRules}", rulesFile, errorMess);
+            }
+
+            if (result.Success && !updating)
+            {
+                Log.Information("DDAS-0005-01: WAF initialized successfully: {0} rules loaded out of {1} from {2}", result.ReportedDiagnostics.Rules.LoadedCount, result.ReportedDiagnostics.Rules.TotalCount, rulesFile ?? "Embedded rules file");
+                Log.Debug("                          WAF config stats: {0} loaded, {1} skipped, {2} failed items", result.ReportedDiagnostics.Total.LoadedCount, result.ReportedDiagnostics.Total.SkippedCount, result.ReportedDiagnostics.Total.FailedCount);
             }
 
             return result;

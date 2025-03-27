@@ -1,21 +1,30 @@
-// <copyright file="AsmDataProduct.cs" company="Datadog">
+// <copyright file="AsmGenericProduct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
 
-internal class AsmDataProduct : IAsmConfigUpdater
+internal class AsmGenericProduct : IAsmConfigUpdater
 {
+    private Func<Dictionary<string, JToken>> _getCollection;
+
+    public AsmGenericProduct(Func<Dictionary<string, JToken>> getCollection)
+    {
+        _getCollection = getCollection;
+    }
+
     public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
+        var collection = _getCollection();
         foreach (var file in files)
         {
             var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<JToken>();
@@ -27,15 +36,16 @@ internal class AsmDataProduct : IAsmConfigUpdater
             var asmConfig = payload.TypedFile;
             var asmConfigName = payload.Name;
 
-            configurationStatus.AsmDataConfigs[asmConfigName] = asmConfig;
+            collection[asmConfigName] = asmConfig;
         }
     }
 
     public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
+        var collection = _getCollection();
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
-            configurationStatus.AsmDataConfigs.Remove(configurationPath.Path);
+            collection.Remove(configurationPath.Path);
         }
     }
 }

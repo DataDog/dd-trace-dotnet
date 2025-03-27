@@ -59,8 +59,8 @@ public class RaspWafTests : WafLibraryRequiredTest
     public void GivenALfiRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string value, string paramValue, string rule, string ruleFile, string action, string actionType)
     {
         var args = CreateArgs(paramValue);
-        var context = InitWaf(true, ruleFile, args, out var waf);
-        var configurationStatus = UpdateConfigurationState();
+        var configurationState = CreateConfigurationState(ruleFile);
+        var context = InitWaf(configurationState, true, args, out var waf);
 
         // Default config does not block
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
@@ -74,8 +74,8 @@ public class RaspWafTests : WafLibraryRequiredTest
         // New action bloking with 500 (and remove previous one)
         var newAction1 = CreateNewStatusAction(action, actionType, 500);
         var ruleOverride = new RuleOverride { OnMatch = new[] { action }, Id = rule };
-        AddAsmRemoteConfig(configurationStatus, new Payload { Actions = [newAction1], RuleOverrides = [ruleOverride] }, "update1");
-        var updateRes1 = UpdateWaf(configurationStatus, waf, ref context);
+        AddAsmRemoteConfig(configurationState, new Payload { Actions = [newAction1], RuleOverrides = [ruleOverride] }, "update1");
+        var updateRes1 = UpdateWaf(configurationState, waf, ref context);
         updateRes1.Success.Should().BeTrue();
         context.Run(args, TimeoutMicroSeconds);
         var resultEph1 = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
@@ -157,7 +157,13 @@ public class RaspWafTests : WafLibraryRequiredTest
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
-        var initResult = CreateWaf(newEncoder, ruleFile, wafDebugEnabled: enableDebug);
+        var configurationState = CreateConfigurationState(ruleFile);
+        return InitWaf(configurationState, newEncoder, args, out waf);
+    }
+
+    private IContext InitWaf(ConfigurationState configurationState, bool newEncoder, Dictionary<string, object> args, out Waf waf)
+    {
+        var initResult = CreateWaf(configurationState, newEncoder, wafDebugEnabled: enableDebug);
         waf = initResult.Waf;
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
