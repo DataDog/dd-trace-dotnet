@@ -76,8 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
-                    && command.CommandType != CommandType.StoredProcedure)
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
                 {
                     var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
                                           // if we appended the comment, we need to look for a potential DBM comment in the whole string.
@@ -102,10 +101,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
-
+                        // PropagateDataViaComment (service) - this injects varius trace information as a comment in the query
+                        // PropagateDataViaContext (full)    - this makes a special set context_info for Microsoft SQL Server (nothing else supported)
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, tracer.Settings.InjectContextIntoStoredProceduresEnabled);
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
                         var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+
                         if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
                             tags.DbmTraceInjected = "true";

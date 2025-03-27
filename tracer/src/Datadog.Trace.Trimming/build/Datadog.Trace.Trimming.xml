@@ -211,6 +211,7 @@
       <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
+      <type fullname="System.Data.Common.DbParameter" />
       <type fullname="System.Data.ConnectionState" />
       <type fullname="System.Data.DbType" />
       <type fullname="System.Data.IDataParameter" />
@@ -220,6 +221,7 @@
       <type fullname="System.Data.IDbConnection" />
       <type fullname="System.Data.IDbDataParameter" />
       <type fullname="System.Data.IDbTransaction" />
+      <type fullname="System.Data.ParameterDirection" />
    </assembly>
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />

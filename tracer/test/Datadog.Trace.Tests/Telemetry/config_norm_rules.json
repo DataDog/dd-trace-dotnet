@@ -665,5 +665,6 @@
   "debug_stack_enabled": "debug_stack_enabled",
   "DD_TRACE_BAGGAGE_MAX_ITEMS": "trace_baggage_max_items",
   "DD_TRACE_BAGGAGE_MAX_BYTES": "trace_baggage_max_bytes",
-  "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED": "trace_bypass_http_request_url_caching_enabled"
+  "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED": "trace_bypass_http_request_url_caching_enabled",
+  "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED": "trace_inject_context_into_stored_procedures_enabled"
 }

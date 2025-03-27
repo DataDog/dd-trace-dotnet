@@ -13,6 +13,7 @@
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <Reference Include="System.Data" />
+    <Reference Include="System.Transactions" />
   </ItemGroup>
 
   <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
