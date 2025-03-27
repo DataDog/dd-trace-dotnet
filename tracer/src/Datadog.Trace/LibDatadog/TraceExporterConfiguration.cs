@@ -18,7 +18,7 @@ internal class TraceExporterConfiguration : SafeHandle
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
     {
-        TraceExporterNative.ddog_trace_exporter_config_new(out var ptr);
+        NativeInterop.TraceExporterConfig.New(out var ptr);
         SetHandle(ptr);
     }
 
@@ -28,7 +28,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_url(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetUrl(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -37,7 +37,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_tracer_version(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetTracerVersion(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -46,7 +46,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_language(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetLanguage(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -55,7 +55,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_lang_version(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetLanguageVersion(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -64,7 +64,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_lang_interpreter(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetInterpreter(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -73,7 +73,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_hostname(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetHostname(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -82,7 +82,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_env(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetEnv(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -91,7 +91,7 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_version(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetVersion(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
@@ -100,14 +100,14 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = TraceExporterNative.ddog_trace_exporter_config_set_service(this, new CharSlice(value));
+            using var error = NativeInterop.TraceExporterConfig.SetService(this, new CharSlice(value));
             error.ThrowIfError();
         }
     }
 
     protected override bool ReleaseHandle()
     {
-        TraceExporterNative.ddog_trace_exporter_config_free(handle);
+        NativeInterop.TraceExporterConfig.Free(handle);
         return true;
     }
 }

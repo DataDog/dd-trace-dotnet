@@ -27,7 +27,7 @@ internal class TraceExporter : SafeHandle, IApi
         _configuration = configuration;
 
         _log.Debug("Creating new TraceExporter");
-        using var errPtr = TraceExporterNative.ddog_trace_exporter_new(out var ptr, _configuration);
+        using var errPtr = NativeInterop.TraceExporter.New(out var ptr, _configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
     }
@@ -49,7 +49,7 @@ internal class TraceExporter : SafeHandle, IApi
                 };
 
                 var responsePtr = IntPtr.Zero;
-                using var error = TraceExporterNative.ddog_trace_exporter_send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                using var error = NativeInterop.TraceExporter.Send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
                 error.ThrowIfError();
             }
         }
@@ -65,7 +65,7 @@ internal class TraceExporter : SafeHandle, IApi
 
     protected override bool ReleaseHandle()
     {
-        TraceExporterNative.ddog_trace_exporter_free(handle);
+        NativeInterop.TraceExporter.Free(handle);
         return true;
     }
 }

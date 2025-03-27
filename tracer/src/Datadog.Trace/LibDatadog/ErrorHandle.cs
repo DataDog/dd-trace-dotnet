@@ -27,7 +27,7 @@ internal class ErrorHandle : SafeHandle
 
     protected override bool ReleaseHandle()
     {
-        TraceExporterNative.ddog_trace_exporter_error_free(handle);
+        NativeInterop.TraceExporter.FreeError(handle);
         return true;
     }
 
