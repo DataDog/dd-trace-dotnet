@@ -407,52 +407,53 @@ check_azure_pipeline:
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
     K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_WARMUP_MAX_VUS: 100000
+    K6_OPTIONS_WARMUP_MAX_VUS: 4
 
     K6_OPTIONS_NORMAL_OPERATION_RATE: 400
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 5m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 100000
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
 
     K6_OPTIONS_HIGH_LOAD_RATE: 800
     K6_OPTIONS_HIGH_LOAD_DURATION: 5m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 100
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
 
-baseline-16k-win-igoragoli_improve-representativeness_1054:
+# baseline-16k-win-igoragoli_improve-representativeness_1054:
+#   extends: .benchmarks-win
+#   variables:
+#     ENDPOINT: "hello"
+#     K6_OPTIONS_WARMUP_RATE: 15000
+#     K6_OPTIONS_NORMAL_OPERATION_RATE: 15000
+
+# baseline-18k-win-igoragoli_improve-representativeness_1054:
+#   extends: .benchmarks-win
+#   variables:
+#     ENDPOINT: "hello"
+#     K6_OPTIONS_WARMUP_RATE: 18000
+#     K6_OPTIONS_NORMAL_OPERATION_RATE: 18000
+
+# baseline-22k-win-igoragoli_improve-representativeness_1054:
+#   extends: .benchmarks-win
+#   variables:
+#     ENDPOINT: "hello"
+#     K6_OPTIONS_WARMUP_RATE: 22000
+#     K6_OPTIONS_NORMAL_OPERATION_RATE: 22000
+
+# baseline-26k-win-igoragoli_improve-representativeness_1054:
+#   extends: .benchmarks-win
+#   variables:
+#     ENDPOINT: "hello"
+#     K6_OPTIONS_WARMUP_RATE: 26000
+#     K6_OPTIONS_NORMAL_OPERATION_RATE: 26000
+
+baseline-30k-win-igoragoli_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 15000
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 15000
-
-baseline-18k-win-igoragoli_improve-representativeness_1054:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 18000
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 18000
-
-baseline-22k-win-igoragoli_improve-representativeness_1054:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 22000
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 22000
-
-baseline-26k-win-igoragoli_improve-representativeness_1054:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
-    K6_OPTIONS_WARMUP_RATE: 26000
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 26000
-
-baseline-30k-win-igoragoli_improve-representativeness_1054:
-  extends: .benchmarks-win
-  variables:
-    ENDPOINT: "hello"
+    CLEANUP: "false"
     K6_OPTIONS_WARMUP_RATE: 30000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 30000
 
