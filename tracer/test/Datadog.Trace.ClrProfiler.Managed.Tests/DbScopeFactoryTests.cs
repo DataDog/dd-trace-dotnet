@@ -261,7 +261,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             {
                 // should have injected data
                 // command text shoudl be exec
-                command.CommandText.Should().NotBe(DbmCommandText).And.Contain($"EXEC {DbmCommandText}");
+                command.CommandText.Should().NotBe(DbmCommandText).And.Contain($"EXEC [{DbmCommandText}]");
                 command.CommandText.Should().Contain("/*dddbs"); // check for the dbm comment this isn't all of it but good enough
             }
             else
@@ -294,9 +294,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         // TODO; can probably clean these Stored Procedures up at some point, I just copy pasted
+        // TODO: can't get [InlineData(typeof(System.Data.SqlClient.SqlCommand))] to work with the MockParameters
         [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         public async Task StoredProc_Parameterless_CorrectlyTransformedIntoExec(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
@@ -312,24 +313,32 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             command.CommandType.Should().Be(CommandType.Text);
-            command.CommandText.Should().StartWith("EXEC dbo.Parameterless ");
+            command.CommandText.Should().StartWith("EXEC [dbo].[Parameterless] ");
             command.CommandText.Should().Contain("/*dddbs=");
         }
 
         [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         public async Task StoredProc_SingleInputParameter_CorrectlyTransformedIntoExec(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             command.CommandText = "dbo.SingleParameter";
             command.CommandType = CommandType.StoredProcedure;
 
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+#else
             var parameter = new MockDbParameter
             {
                 ParameterName = "@Id",
                 Value = 5
             };
+#endif
             command.Parameters.Add(parameter);
 
             var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
@@ -341,19 +350,33 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             command.CommandType.Should().Be(CommandType.Text);
-            command.CommandText.Should().StartWith("EXEC dbo.SingleParameter @Id=@Id ");
+            command.CommandText.Should().StartWith("EXEC [dbo].[SingleParameter] @Id=@Id ");
             command.CommandText.Should().Contain("/*dddbs=");
         }
 
         [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
+        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         public async Task StoredProc_MultipleInputParameters_CorrectlyTransformedIntoExec(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             command.CommandText = "dbo.MultiParameter";
             command.CommandType = CommandType.StoredProcedure;
 
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Value = 55
+            };
+#else
             var parameter = new MockDbParameter
             {
                 ParameterName = "@Id",
@@ -366,6 +389,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 ParameterName = "@SomeOtherId",
                 Value = 55
             };
+#endif
             command.Parameters.Add(parameter2);
 
             var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
@@ -377,19 +401,41 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             command.CommandType.Should().Be(CommandType.Text);
-            command.CommandText.Should().StartWith("EXEC dbo.MultiParameter @Id=@Id, @SomeOtherId=@SomeOtherId ");
+            command.CommandText.Should().StartWith("EXEC [dbo].[MultiParameter] @Id=@Id, @SomeOtherId=@SomeOtherId ");
             command.CommandText.Should().Contain("/*dddbs=");
         }
 
         [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
-        public async Task StoredProc_OutputParameter_CorrectlyTransformedIntoExec(Type commandType)
+        public async Task StoredProc_OutputParameter_IsNotModified(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             command.CommandText = "dbo.OutputParameter";
             command.CommandType = CommandType.StoredProcedure;
 
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@SomeOtherId",
+                Direction = ParameterDirection.Output
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@SomeOtherIdFoo",
+                Direction = ParameterDirection.InputOutput,
+                Value = 10
+            };
+            command.Parameters.Add(parameter3);
+#else
             var parameter = new MockDbParameter
             {
                 ParameterName = "@Id",
@@ -411,6 +457,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 Value = 10
             };
             command.Parameters.Add(parameter3);
+#endif
 
             var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -420,20 +467,33 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            command.CommandType.Should().Be(CommandType.Text);
-            command.CommandText.Should().StartWith("EXEC dbo.OutputParameter @Id=@Id, @SomeOtherId=@SomeOtherId OUTPUT, @SomeOtherIdFoo=@SomeOtherIdFoo OUTPUT ");
-            command.CommandText.Should().Contain("/*dddbs=");
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.OutputParameter");
         }
 
         [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
-        public async Task StoredProc_ReturnParameter_CorrectlyTransformedIntoExec(Type commandType)
+        public async Task StoredProc_ReturnParameter_IsNotModified(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
             command.CommandText = "dbo.ReturnParam";
             command.CommandType = CommandType.StoredProcedure;
 
+#if NETFRAMEWORK
+            var parameter = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@Id",
+                Value = 5
+            };
+            command.Parameters.Add(parameter);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@ReturnValue",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter2);
+#else
             var parameter = new MockDbParameter
             {
                 ParameterName = "@Id",
@@ -447,6 +507,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 Direction = ParameterDirection.ReturnValue
             };
             command.Parameters.Add(parameter2);
+#endif
 
             var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -456,23 +517,51 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             using var scope = CreateDbCommandScope(tracer, command);
             scope.Should().NotBeNull();
 
-            command.CommandType.Should().Be(CommandType.Text);
-            command.CommandText.Should().StartWith("EXEC dbo.ReturnParam @Id=@Id");
-            command.CommandText.Should().Contain("/*dddbs=");
-            command.CommandText.Should().NotContain("@ReturnValue"); // ReturnValue should not be included in the command text
-            command.Parameters[0].Should().Be(parameter);
-            command.Parameters[1].Should().Be(parameter2);
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.ReturnParam");
         }
 
         [Theory]
-        [InlineData(typeof(System.Data.SqlClient.SqlCommand))]
         [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand))]
-        public async Task StoredProc_ComplexCase_MultipleParamsOfVariousTypes_CorrectlyTransformed(Type commandType)
+        public async Task StoredProc_ComplexCase_MultipleParamsOfVariousTypes_IsNotModified(Type commandType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = "dbo.ComplexProcedure";
             command.CommandType = CommandType.StoredProcedure;
 
+#if NETFRAMEWORK
+            // Add various parameters
+            var parameter1 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@InputParam",
+                Value = "Input Value"
+            };
+            command.Parameters.Add(parameter1);
+
+            var parameter2 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@OutputParam",
+                Direction = ParameterDirection.Output,
+                Size = 100
+            };
+            command.Parameters.Add(parameter2);
+
+            var parameter3 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@InOutParam",
+                Direction = ParameterDirection.InputOutput,
+                Value = "Initial Value",
+                Size = 100
+            };
+            command.Parameters.Add(parameter3);
+
+            var parameter4 = new System.Data.SqlClient.SqlParameter
+            {
+                ParameterName = "@RetVal",
+                Direction = ParameterDirection.ReturnValue
+            };
+            command.Parameters.Add(parameter4);
+#else
             // Add various parameters
             var parameter1 = new MockDbParameter
             {
@@ -504,6 +593,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 Direction = ParameterDirection.ReturnValue
             };
             command.Parameters.Add(parameter4);
+#endif
 
             var collection = new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -514,13 +604,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             scope.Should().NotBeNull();
 
             // Should transform correctly with all appropriate parameters in correct format
-            command.CommandType.Should().Be(CommandType.Text);
-            command.CommandText.Should().StartWith("EXEC dbo.ComplexProcedure");
-            command.CommandText.Should().Contain("@InputParam=@InputParam");
-            command.CommandText.Should().Contain("@OutputParam=@OutputParam OUTPUT");
-            command.CommandText.Should().Contain("@InOutParam=@InOutParam OUTPUT");
-            command.CommandText.Should().NotContain("@RetVal=@RetVal");
-            command.CommandText.Should().Contain("/*dddbs=");
+            command.CommandType.Should().Be(CommandType.StoredProcedure);
+            command.CommandText.Should().Be("dbo.ComplexProcedure");
         }
 
         [Theory]

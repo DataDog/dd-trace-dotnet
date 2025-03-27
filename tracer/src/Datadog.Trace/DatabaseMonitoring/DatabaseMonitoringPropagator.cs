@@ -138,11 +138,41 @@ namespace Datadog.Trace.DatabaseMonitoring
                 * reference text SQL (with params): https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L4488
                 * reference text SQL (no params): https://github.com/microsoft/referencesource/blob/51cf7850defa8a17d815b4700b67116e3fa283c2/System.Data/System/Data/SqlClient/SqlCommand.cs#L4437
                 */
+
+                // check to see if we have any Return/InputOutput/Output parameters
+                if (command.Parameters != null)
+                {
+                    foreach (DbParameter? param in command.Parameters)
+                    {
+                        if (param == null)
+                        {
+                            continue;
+                        }
+
+                        if (param.Direction != ParameterDirection.Input)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
                 // Save the original stored procedure name
                 string procName = command.CommandText ?? string.Empty;
 
                 if (string.IsNullOrEmpty(procName))
                 {
+                    return false;
+                }
+
+                string quotedName = string.Empty;
+
+                try
+                {
+                    quotedName = ParseAndQuoteIdentifier(procName, isUdtTypeName: false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to parse/quote stored procedure, no DBM data will be propagated");
                     return false;
                 }
 
@@ -157,43 +187,37 @@ namespace Datadog.Trace.DatabaseMonitoring
                             continue;
                         }
 
-                        // Skip return value parameters
-                        if (param.Direction == ParameterDirection.ReturnValue)
+                        // If we have any parameters that are not Input we can't do this safely as T-SQL vs RPC calls don't honor the parameters
+                        if (param.Direction != ParameterDirection.Input)
                         {
-                            // we don't need to include this in the command text, it is handled in the SQLCommand
-                            continue;
+                            // NOTE: we shouldn't hit this as we check above
+                            paramList.Clear();
+                            return false;
                         }
 
                         if (paramList.Length > 0)
                         {
-                            // e.g. @Input=@Input, @Input2=@Input2 OUTPUT
+                            // e.g. @Input=@Input, @Input2=@Input2
                             paramList.Append(", ");
                         }
 
                         paramList.Append(param.ParameterName).Append('=').Append(param.ParameterName);
-
-                        if (param.Direction == ParameterDirection.InputOutput || param.Direction == ParameterDirection.Output)
-                        {
-                            // For OUTPUT parameters, we need to add the OUTPUT keyword
-                            // example: @Input=@Input, @Output1=@Output1 OUTPUT,
-                            paramList.Append(" OUTPUT");
-                        }
                     }
                 }
 
                 // Change command type to Text, this allows us to use the EXEC statement
-                // This shouldn't have any real impact though, it is still a stored procedure
+                // This changes how the SQL command is executed, but since we are only supporting INPUT parameters we should be fine
                 command.CommandType = CommandType.Text;
 
                 // Create EXEC statement with parameters
                 // NOTE: EXECUTE is the exact same as EXEC, I chose EXEC arbitrarily
                 if (paramList.Length > 0)
                 {
-                    command.CommandText = $"EXEC {procName} {paramList} {propagationComment}";
+                    command.CommandText = $"EXEC {quotedName} {paramList} {propagationComment}";
                 }
                 else
                 {
-                    command.CommandText = $"EXEC {procName} {propagationComment}";
+                    command.CommandText = $"EXEC {quotedName} {propagationComment}";
                 }
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
@@ -327,6 +351,86 @@ namespace Datadog.Trace.DatabaseMonitoring
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong) + sizeof(ulong)), traceId.Lower);
 
             return contextBytes;
+        }
+
+        // parse an string of the form db.schema.name where any of the three components
+        // might have "[" "]" and dots within it.
+        // returns:
+        //   [0] dbname (or null)
+        //   [1] schema (or null)
+        //   [2] name
+        // NOTE: if perf/space implications of Regex is not a problem, we can get rid
+        // of this and use a simple regex to do the parsing
+        // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/SqlClient/SqlParameter.cs#L2433
+        internal static string[] ParseTypeName(string typeName, bool isUdtTypeName)
+        {
+            try
+            {
+                string errorMsg = string.Empty;
+                return MultipartIdentifier.ParseMultipartIdentifier(typeName, "[\"", "]\"", '.', 3, true, errorMsg, true);
+            }
+            catch (ArgumentException)
+            {
+                throw new Exception();
+            }
+        }
+
+        // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/netcore/src/Microsoft/Data/SqlClient/SqlCommand.cs#L6496
+        // Adds quotes to each part of a SQL identifier that may be multi-part, while leaving
+        //  the result as a single composite name.
+        private static string ParseAndQuoteIdentifier(string identifier, bool isUdtTypeName)
+        {
+            string[] strings = ParseTypeName(identifier, isUdtTypeName);
+            return QuoteIdentifier(strings);
+        }
+
+        // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/netcore/src/Microsoft/Data/SqlClient/SqlCommand.cs#L6502
+        private static string QuoteIdentifier(ReadOnlySpan<string> strings)
+        {
+            StringBuilder bld = new StringBuilder();
+
+            // Stitching back together is a little tricky. Assume we want to build a full multi-part name
+            //  with all parts except trimming separators for leading empty names (null or empty strings,
+            //  but not whitespace). Separators in the middle should be added, even if the name part is
+            //  null/empty, to maintain proper location of the parts.
+            for (int i = 0; i < strings.Length; i++)
+            {
+                if (0 < bld.Length)
+                {
+                    bld.Append('.');
+                }
+
+                if (strings[i] != null && 0 != strings[i].Length)
+                {
+                    AppendQuotedString(bld, "[", "]", strings[i]);
+                }
+            }
+
+            return bld.ToString();
+        }
+
+        // https://github.com/dotnet/SqlClient/blob/414f016540932d339054c61abc5ae838401cdb06/src/Microsoft.Data.SqlClient/src/Microsoft/Data/Common/AdapterUtil.cs#L547
+        internal static string AppendQuotedString(StringBuilder buffer, string quotePrefix, string quoteSuffix, string unQuotedString)
+        {
+            if (!string.IsNullOrEmpty(quotePrefix))
+            {
+                buffer.Append(quotePrefix);
+            }
+
+            // Assuming that the suffix is escaped by doubling it. i.e. foo"bar becomes "foo""bar".
+            if (!string.IsNullOrEmpty(quoteSuffix))
+            {
+                int start = buffer.Length;
+                buffer.Append(unQuotedString);
+                buffer.Replace(quoteSuffix, quoteSuffix + quoteSuffix, start, unQuotedString.Length);
+                buffer.Append(quoteSuffix);
+            }
+            else
+            {
+                buffer.Append(unQuotedString);
+            }
+
+            return buffer.ToString();
         }
     }
 }
