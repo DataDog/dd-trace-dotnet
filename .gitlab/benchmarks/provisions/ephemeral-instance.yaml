@@ -15,7 +15,7 @@ source_ami:
 
 tags:
   Name: *provision_name
-  protect: true
+  protect: false
   igoragoli: true
 
 provision_steps:
