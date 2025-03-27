@@ -404,7 +404,7 @@ check_azure_pipeline:
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
     K6_OPTIONS_WARMUP_RATE: 30
-    K6_OPTIONS_WARMUP_DURATION: 1m
+    K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
     K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_WARMUP_MAX_VUS: 100
@@ -425,30 +425,35 @@ baseline-16k-win-igoragoli_improve-representativeness_1054:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
+    K6_OPTIONS_WARMUP_RATE: 15000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 15000
 
 baseline-18k-win-igoragoli_improve-representativeness_1054:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
+    K6_OPTIONS_WARMUP_RATE: 18000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 18000
 
 baseline-22k-win-igoragoli_improve-representativeness_1054:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
+    K6_OPTIONS_WARMUP_RATE: 22000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 22000
 
 baseline-26k-win-igoragoli_improve-representativeness_1054:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
+    K6_OPTIONS_WARMUP_RATE: 26000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 26000
 
 baseline-30k-win-igoragoli_improve-representativeness_1054:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
+    K6_OPTIONS_WARMUP_RATE: 30000
     K6_OPTIONS_NORMAL_OPERATION_RATE: 30000
 
 # calltarget_ngen-win:
