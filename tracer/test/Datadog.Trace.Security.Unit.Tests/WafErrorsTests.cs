@@ -17,8 +17,8 @@ namespace Datadog.Trace.Security.Unit.Tests
     public class WafErrorsTests : WafLibraryRequiredTest
     {
         [SkippableTheory]
-        [InlineData("{\"rule: missing key 'name'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\"],\"rule: missing key 'tags'\":[\"crs-921-110\",\"crs-921-140\"],\"rules: missing key 'name'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\"],\"rules: missing key 'tags'\":[\"crs-921-110\",\"crs-921-140\"]}", "wrong-tags-name-rule-set.json", 5)]
-        [InlineData("{\"rule: missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"],\"rules: missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
+        [InlineData("{\"missing key 'name'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\"],\"missing key 'tags'\":[\"crs-921-110\",\"crs-921-140\"]}", "wrong-tags-name-rule-set.json", 5)]
+        [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
         public void HasErrors(string errorMessage, string filename, ushort failedtoLoadRules)
         {
             var initResult = CreateWaf(false, filename);

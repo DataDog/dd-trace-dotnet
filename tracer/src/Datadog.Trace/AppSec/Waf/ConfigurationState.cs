@@ -69,7 +69,7 @@ internal record ConfigurationState
     {
         if (rulesetConfigs is not null)
         {
-            RulesetConfigs = rulesetConfigs;
+            RulesetConfigs = rulesetConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
         }
 
         if (asmConfigs is not null)
@@ -99,7 +99,7 @@ internal record ConfigurationState
     internal Dictionary<string, JToken> AsmDataConfigs { get; } = new();
 
     // RC Product: ASM_DD
-    internal Dictionary<string, RuleSet> RulesetConfigs { get; } = new();
+    internal Dictionary<string, JToken> RulesetConfigs { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -167,10 +167,7 @@ internal record ConfigurationState
             var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(RulesPath);
             if (deserializedFromLocalRules is not null)
             {
-                var configuration = new Dictionary<string, object>();
-                var ruleSet = RuleSet.From(deserializedFromLocalRules);
-                ruleSet.AddToDictionaryAtRoot(configuration);
-                configurations[AsmDdProduct.DefaultConfigKey] = configuration;
+                configurations[AsmDdProduct.DefaultConfigKey] = deserializedFromLocalRules;
                 _defaultRulesetApplied = true;
             }
         }
@@ -179,11 +176,8 @@ internal record ConfigurationState
             // Use incoming RC rules
             foreach (var config in RulesetConfigs)
             {
-                if (updating && !IsNewUpdate(config.Key)) { continue; }
-
-                var configuration = new Dictionary<string, object>();
-                config.Value?.AddToDictionaryAtRoot(configuration);
-                configurations[config.Key] = configuration;
+                if (config.Value is null || (updating && !IsNewUpdate(config.Key))) { continue; }
+                configurations[config.Key] = config.Value;
             }
 
             if (_defaultRulesetApplied)

@@ -251,7 +251,7 @@ namespace Datadog.Trace.AppSec
                     productsCount += config.Value.Count;
                 }
 
-                var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
+                var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.RuleErrors);
                 var applyDetails = new ApplyDetails[productsCount];
                 var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 

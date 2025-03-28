@@ -20,7 +20,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         private InitResult(ref UpdateResult updateResult)
         {
             UpdateResult = updateResult;
-            if (updateResult.WafBuilderHandle != IntPtr.Zero && updateResult.WafHandle != IntPtr.Zero && updateResult.Success && updateResult.ReportedDiagnostics.Rules.LoadedCount > 0)
+            if (updateResult.WafBuilderHandle != IntPtr.Zero && updateResult.WafHandle != IntPtr.Zero && updateResult.Success && updateResult.ReportedDiagnostics.Rules.Loaded > 0)
             {
                 Waf = new Waf(updateResult.WafBuilderHandle, updateResult.WafHandle, updateResult.WafLibraryInvoker!, updateResult.Encoder!);
             }
@@ -35,17 +35,17 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         /// <summary>
         /// Gets the number of rules successfully loaded
         /// </summary>
-        internal ushort LoadedRules => UpdateResult.ReportedDiagnostics.Rules.LoadedCount;
+        internal ushort LoadedRules => UpdateResult.ReportedDiagnostics.Rules.Loaded;
 
-        internal ushort FailedToLoadRules => UpdateResult.ReportedDiagnostics.Rules.FailedCount;
+        internal ushort FailedToLoadRules => UpdateResult.ReportedDiagnostics.Rules.Failed;
 
-        internal IReadOnlyDictionary<string, object>? Errors => UpdateResult.Errors;
+        internal IReadOnlyDictionary<string, object>? Errors => UpdateResult.RuleErrors;
 
         internal string ErrorMessage => UpdateResult.ErrorMessage;
 
-        internal bool HasErrors => UpdateResult.HasErrors;
+        internal bool HasErrors => UpdateResult.HasRuleErrors;
 
-        internal bool UnusableRuleFile => UpdateResult.ReportedDiagnostics.Total.TotalCount == 0;
+        internal bool UnusableRuleFile => UpdateResult.ReportedDiagnostics.Rest.Total == 0;
 
         // internal bool IncompatibleWaf { get; }
 

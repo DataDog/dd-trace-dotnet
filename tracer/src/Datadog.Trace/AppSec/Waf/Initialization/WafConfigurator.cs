@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Rcm;
@@ -179,22 +180,30 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
 
             var result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
-            if (result.Errors is { Count: > 0 } || result.Warnings is { Count: > 0 })
+            if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||
+                result.ReportedDiagnostics.Rules.Warnings is { Count: > 0 } ||
+                result.ReportedDiagnostics.Rest.Errors is { Count: > 0 } ||
+                result.ReportedDiagnostics.Rest.Warnings is { Count: > 0 })
             {
+                var diags = result.ReportedDiagnostics;
                 var sb = StringBuilderCache.Acquire();
-                if (result.Errors is { Count: > 0 })
+                DumpStatsMessages(ref diags.Rules);
+                DumpStatsMessages(ref diags.Rest);
+
+                void DumpStatsMessages(ref WafStats stats)
                 {
-                    foreach (var item in result.Errors)
-                    {
-                        sb.Append($"ERR: {item.Key}: [{string.Join(", ", item.Value)}] ");
-                    }
+                    DumpMessages(stats.Errors, "ERR: ");
+                    DumpMessages(stats.Warnings, "WRN: ");
                 }
 
-                if (result.Warnings is { Count: > 0 })
+                void DumpMessages(IReadOnlyDictionary<string, object>? messages, string prefix)
                 {
-                    foreach (var item in result.Warnings!)
+                    if (messages is { Count: > 0 })
                     {
-                        sb.Append($"WRN: {item.Key}: [{string.Join(", ", item.Value)}] ");
+                        foreach (var item in messages)
+                        {
+                            sb.Append($"${prefix}{item.Key}: [{string.Join(", ", item.Value)}] ");
+                        }
                     }
                 }
 
@@ -204,8 +213,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             if (result.Success && !updating)
             {
-                Log.Information("DDAS-0005-01: WAF initialized successfully: {0} rules loaded out of {1} from {2}", result.ReportedDiagnostics.Rules.LoadedCount, result.ReportedDiagnostics.Rules.TotalCount, rulesFile ?? "Embedded rules file");
-                Log.Debug("                          WAF config stats: {0} loaded, {1} skipped, {2} failed items", result.ReportedDiagnostics.Total.LoadedCount, result.ReportedDiagnostics.Total.SkippedCount, result.ReportedDiagnostics.Total.FailedCount);
+                Log.Information("DDAS-0005-01: WAF initialized successfully: {0} rules loaded out of {1} from {2}", result.ReportedDiagnostics.Rules.Loaded, result.ReportedDiagnostics.Rules.Total, rulesFile ?? "Embedded rules file");
+                Log.Debug("                          WAF config stats: {0} loaded, {1} skipped, {2} failed items", result.ReportedDiagnostics.Rest.Loaded, result.ReportedDiagnostics.Rest.Skipped, result.ReportedDiagnostics.Rest.Failed);
             }
 
             return result;
