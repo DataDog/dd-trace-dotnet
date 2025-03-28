@@ -418,6 +418,8 @@ check_azure_pipeline:
     # Variables prefixed by 'BP_INFRA_' are automatically used by launch.sh
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
+    # Necessary for pass-artifacts-to-windows.sh to work
+    - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.$CI_PROJECT_NAME.dd_api_key --with-decryption --query "Parameter.Value" --out text)
 
 .benchmarks-win:
   stage: benchmarks-win
