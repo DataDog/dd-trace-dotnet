@@ -46,6 +46,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _spanLinkBytes = StringEncoding.UTF8.GetBytes("span_links");
         private readonly byte[] _traceStateBytes = StringEncoding.UTF8.GetBytes("tracestate");
         private readonly byte[] _traceFlagBytes = StringEncoding.UTF8.GetBytes("flags");
+        private readonly byte[] _eventBytes = StringEncoding.UTF8.GetBytes("events");
         private readonly byte[] _spanEventBytes = StringEncoding.UTF8.GetBytes("span_events");
         private readonly byte[] _timeUnixNanoBytes = StringEncoding.UTF8.GetBytes("time_unix_nano");
         private readonly byte[] _attributesBytes = StringEncoding.UTF8.GetBytes("attributes");
@@ -364,7 +365,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     int attrCount = 0;
                     foreach (var attribute in spanEvent.Attributes)
                     {
-                        if (string.IsNullOrEmpty(attribute.Key) || !IsAllowedAttributeType(attribute.Value))
+                        if (string.IsNullOrEmpty(attribute.Key) || !SpanEventConverter.IsAllowedType(attribute.Value))
                         {
                             continue;
                         }
@@ -415,29 +416,32 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             var originalOffset = offset;
 
-            if (value is string stringVal)
+            switch (value)
             {
-                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 0);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _stringValueFieldBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, stringVal);
-            }
-            else if (value is bool boolVal)
-            {
-                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _boolValueFieldBytes);
-                offset += MessagePackBinary.WriteBoolean(ref bytes, offset, boolVal);
-            }
-            else if (value is int intValue)
-            {
-                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _intValueFieldBytes);
-                offset += MessagePackBinary.WriteInt64(ref bytes, offset, intValue);
-            }
-            else if (value is double doubleVal)
-            {
-                offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _doubleValueFieldBytes);
-                offset += MessagePackBinary.WriteDouble(ref bytes, offset, doubleVal);
+                case string stringVal:
+                case char charVal:
+                    offset += MessagePackBinary.WriteInt32(ref bytes, offset, 0);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _stringValueFieldBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, value.ToString());
+                    break;
+
+                case bool boolVal:
+                    offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _boolValueFieldBytes);
+                    offset += MessagePackBinary.WriteBoolean(ref bytes, offset, boolVal);
+                    break;
+
+                case sbyte or byte or short or ushort or int or uint or long:
+                    offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _intValueFieldBytes);
+                    offset += MessagePackBinary.WriteInt64(ref bytes, offset, Convert.ToInt64(value));
+                    break;
+
+                case float or double:
+                    offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _doubleValueFieldBytes);
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, Convert.ToDouble(value));
+                    break;
             }
 
             return offset - originalOffset;
@@ -449,41 +453,10 @@ namespace Datadog.Trace.Agent.MessagePack
 
             if (spanModel.Span.SpanEvents is { Count: > 0 })
             {
-                var eventList = new List<Dictionary<string, object>>();
+                var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
+                var eventsJson = JsonConvert.SerializeObject(spanModel.Span.SpanEvents, settings);
 
-                foreach (var spanEvent in spanModel.Span.SpanEvents)
-                {
-                    var eventData = new Dictionary<string, object>
-                    {
-                        { "name", spanEvent.Name },
-                        { "time_unix_nano", spanEvent.Timestamp.ToUnixTimeNanoseconds() }
-                    };
-
-                    if (spanEvent.Attributes is { Count: > 0 })
-                    {
-                        var attributes = new Dictionary<string, object>();
-
-                        foreach (var attr in spanEvent.Attributes)
-                        {
-                            if (IsAllowedAttributeType(attr.Value) && attr.Key is not null)
-                            {
-                                attributes[attr.Key] = attr.Value;
-                            }
-                        }
-
-                        if (attributes.Count > 0)
-                        {
-                            eventData["attributes"] = attributes;
-                        }
-                    }
-
-                    eventList.Add(eventData);
-                }
-
-                // Convert event list to JSON
-                var eventsJson = JsonConvert.SerializeObject(eventList);
-
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringEncoding.UTF8.GetBytes("events"));
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
             }
 
@@ -950,53 +923,6 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasRuntimeTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesRuntime);
                 _aasExtensionVersionTagNameBytes = StringEncoding.UTF8.GetBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion);
             }
-        }
-
-        private bool IsAllowedAttributeType(object value)
-        {
-            if (value is null)
-            {
-                return false;
-            }
-
-            if (value is Array array)
-            {
-                if (array.Length == 0 ||
-                    array.Rank > 1)
-                {
-                    // Newtonsoft doesn't seem to support multidimensional arrays (e.g., [,]), but does support jagged (e.g., [][])
-                    return false;
-                }
-
-                if (value.GetType() is { } type
-                 && type.IsArray
-                 && type.GetElementType() == typeof(object))
-                {
-                    // Arrays may only have a primitive type, not 'object'
-                    return false;
-                }
-
-                value = array.GetValue(0);
-
-                if (value is null)
-                {
-                    return false;
-                }
-            }
-
-            return (value is string or bool ||
-                    value is char ||
-                    value is sbyte ||
-                    value is byte ||
-                    value is ushort ||
-                    value is short ||
-                    value is uint ||
-                    value is int ||
-                    value is ulong ||
-                    value is long ||
-                    value is float ||
-                    value is double ||
-                    value is decimal);
         }
 
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>

@@ -303,24 +303,9 @@ namespace Datadog.Trace.Activity
                 var eventAttributes = new List<KeyValuePair<string, object>>();
                 foreach (var kvp in duckEvent.Tags)
                 {
-                    if (!string.IsNullOrEmpty(kvp.Key) && IsAllowedAtributeType(kvp.Value))
+                    if (!string.IsNullOrEmpty(kvp.Key) && kvp.Value is not null)
                     {
-                        if (kvp.Value is Array array)
-                        {
-                            int index = 0;
-                            foreach (var item in array)
-                            {
-                                if (item?.ToString() is { } value)
-                                {
-                                    eventAttributes.Add(new($"{kvp.Key}.{index}", value));
-                                    index++;
-                                }
-                            }
-                        }
-                        else if (kvp.Value?.ToString() is { } tagValue)
-                        {
-                            eventAttributes.Add(new(kvp.Key, tagValue));
-                        }
+                        eventAttributes.Add(new(kvp.Key, kvp.Value));
                     }
                 }
 

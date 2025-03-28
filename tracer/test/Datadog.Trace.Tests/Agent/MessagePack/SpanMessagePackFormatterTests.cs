@@ -220,7 +220,9 @@ public class SpanMessagePackFormatterTests
         var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, discoveryService);
 
         tracer.TracerManager.Start();
+
         discoveryService.TriggerChange(spanEvents: nativeSpanEventsEnabled);
+
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
 
         var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
@@ -233,10 +235,19 @@ public class SpanMessagePackFormatterTests
         var eventAttributes = new List<KeyValuePair<string, object>>
         {
             new("string_key", "hello"),
-            new("empty_value", null),
+            new("char_key", 'c'),
             new("bool_key", true),
             new("int_key", 42),
+            new("uint_key", 420U),
+            new("byte_key", (byte)7),
+            new("sbyte_key", (sbyte)-7),
+            new("short_key", (short)30000),
+            new("ushort_key", (ushort)60000),
+            new("float_key", 1.23f),
             new("double_key", 3.14),
+            new("decimal_key", 1.23m),
+            new("ulong_key", 12345678901234567890),
+            new("empty_value", null),
             new("string_array", new[] { "item1", "item2", "item3" }),
         };
 
@@ -272,6 +283,10 @@ public class SpanMessagePackFormatterTests
 
             var attributes = firstEvent.Attributes;
 
+            attributes.Should().NotContainKey("decimal_key");
+            attributes.Should().NotContainKey("ulong_key");
+            attributes.Should().NotContainKey("empty_value");
+
             attributes["string_key"].Type.Should().Be(0);
             attributes["string_key"].StringValue.Should().Be("hello");
             attributes["string_key"].BoolValue.Should().BeNull();
@@ -296,6 +311,27 @@ public class SpanMessagePackFormatterTests
             attributes["double_key"].BoolValue.Should().BeNull();
             attributes["double_key"].IntValue.Should().BeNull();
 
+            attributes["char_key"].Type.Should().Be(0);
+            attributes["char_key"].StringValue.Should().Be("c");
+
+            attributes["uint_key"].Type.Should().Be(2);
+            attributes["uint_key"].IntValue.Should().Be(420);
+
+            attributes["byte_key"].Type.Should().Be(2);
+            attributes["byte_key"].IntValue.Should().Be(7);
+
+            attributes["sbyte_key"].Type.Should().Be(2);
+            attributes["sbyte_key"].IntValue.Should().Be(-7);
+
+            attributes["short_key"].Type.Should().Be(2);
+            attributes["short_key"].IntValue.Should().Be(30000);
+
+            attributes["ushort_key"].Type.Should().Be(2);
+            attributes["ushort_key"].IntValue.Should().Be(60000);
+
+            attributes["float_key"].Type.Should().Be(3);
+            attributes["float_key"].DoubleValue.Should().BeApproximately(1.23, 0.001);
+
             var arrayAttr = attributes["string_array"];
             arrayAttr.Type.Should().Be(4);
             arrayAttr.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(0)); // string type
@@ -313,6 +349,9 @@ public class SpanMessagePackFormatterTests
 
             var attributes2 = secondEvent.Attributes;
             attributes2.Should().HaveCount(4);
+
+            attributes2.Should().NotContainNulls();
+            attributes2.Should().NotContainKey("object_array");
 
             attributes2["string_key"].Type.Should().Be(0);
             attributes2["string_key"].StringValue.Should().Be("hello");
