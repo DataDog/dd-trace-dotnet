@@ -1,6 +1,6 @@
 stages:
   - check-azure-pipeline
-  - benchmarks
+  # - benchmarks
   - benchmarks-win
 
 variables:
@@ -435,109 +435,109 @@ profiler_cpu_timer_create-arm64:
     AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
-baseline-win:
+baseline-win_improve-representativeness:
   extends: .benchmarks-win
   variables:
     ENDPOINT: "hello"
 
-calltarget_ngen-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_CLR_ENABLE_INLINING: 1
-    DD_CLR_ENABLE_NGEN: 1
-    ENDPOINT: "hello"
+# calltarget_ngen-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_CLR_ENABLE_INLINING: 1
+#     DD_CLR_ENABLE_NGEN: 1
+#     ENDPOINT: "hello"
 
-trace_stats-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_CLR_ENABLE_INLINING: 1
-    DD_CLR_ENABLE_NGEN: 1
-    DD_TRACE_STATS_COMPUTATION_ENABLED: 1
-    ENDPOINT: "hello"
+# trace_stats-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_CLR_ENABLE_INLINING: 1
+#     DD_CLR_ENABLE_NGEN: 1
+#     DD_TRACE_STATS_COMPUTATION_ENABLED: 1
+#     ENDPOINT: "hello"
 
-manual_only-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 0
-    CORECLR_ENABLE_PROFILING: 0
-    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
-    ENDPOINT: "hello"
+# manual_only-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 0
+#     CORECLR_ENABLE_PROFILING: 0
+#     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true /p:MANUAL_ONLY_INSTRUMENTATION=true"
+#     ENDPOINT: "hello"
 
-manual_and_automatic-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
-    ENDPOINT: "hello"
+# manual_and_automatic-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DOTNET_BUILD_ARGS: "/p:MANUAL_INSTRUMENTATION=true"
+#     ENDPOINT: "hello"
 
-ddtraceenabled_false-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_TRACE_ENABLED: 0
-    ENDPOINT: "hello"
+# ddtraceenabled_false-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_TRACE_ENABLED: 0
+#     ENDPOINT: "hello"
 
-profiler_exceptions_baseline-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 0
-    CORECLR_ENABLE_PROFILING: 0
-    ENDPOINT: "hello/Exception"
+# profiler_exceptions_baseline-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 0
+#     CORECLR_ENABLE_PROFILING: 0
+#     ENDPOINT: "hello/Exception"
 
-profiler-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello"
+# profiler-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_PROFILING_ENABLED: 1
+#     COMPlus_EnableDiagnostics: 1
+#     ENDPOINT: "hello"
 
-profiler_walltime-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    DD_PROFILING_WALLTIME_ENABLED: 1
-    DD_PROFILING_CPU_ENABLED: 0
-    ENDPOINT: "hello"
+# profiler_walltime-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_PROFILING_ENABLED: 1
+#     COMPlus_EnableDiagnostics: 1
+#     DD_PROFILING_WALLTIME_ENABLED: 1
+#     DD_PROFILING_CPU_ENABLED: 0
+#     ENDPOINT: "hello"
 
-profiler_exceptions-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_EXCEPTION_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello/Exception"
+# profiler_exceptions-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_PROFILING_ENABLED: 1
+#     DD_PROFILING_EXCEPTION_ENABLED: 1
+#     COMPlus_EnableDiagnostics: 1
+#     ENDPOINT: "hello/Exception"
 
-profiler_cpu-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_WALLTIME_ENABLED: 0
-    DD_PROFILING_CPU_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello"
+# profiler_cpu-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_PROFILING_ENABLED: 1
+#     DD_PROFILING_WALLTIME_ENABLED: 0
+#     DD_PROFILING_CPU_ENABLED: 1
+#     COMPlus_EnableDiagnostics: 1
+#     ENDPOINT: "hello"
 
-profiler_cpu_timer_create-win:
-  extends: .benchmarks-win
-  variables:
-    COR_ENABLE_PROFILING: 1
-    CORECLR_ENABLE_PROFILING: 1
-    DD_PROFILING_ENABLED: 1
-    DD_PROFILING_WALLTIME_ENABLED: 0
-    DD_PROFILING_CPU_ENABLED: 1
-    COMPlus_EnableDiagnostics: 1
-    ENDPOINT: "hello"
+# profiler_cpu_timer_create-win:
+#   extends: .benchmarks-win
+#   variables:
+#     COR_ENABLE_PROFILING: 1
+#     CORECLR_ENABLE_PROFILING: 1
+#     DD_PROFILING_ENABLED: 1
+#     DD_PROFILING_WALLTIME_ENABLED: 0
+#     DD_PROFILING_CPU_ENABLED: 1
+#     COMPlus_EnableDiagnostics: 1
+#     ENDPOINT: "hello"
