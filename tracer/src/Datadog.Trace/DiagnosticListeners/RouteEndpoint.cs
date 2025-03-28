@@ -22,5 +22,10 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Delegates to Endpoint.DisplayName;
         /// </summary>
         public string DisplayName;
+
+        /// <summary>
+        /// Delegates to Endpoint.RequestDelegate;
+        /// </summary>
+        public RequestDelegate? RequestDelegate;
     }
 }
