@@ -526,9 +526,17 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 var isCodeOriginEnabled = CurrentLiveDebugger?.Settings.CodeOriginForSpansEnabled ?? false;
-                if (isCodeOriginEnabled && routeEndpoint?.RequestDelegate?.Target is { Handler: { } handler })
+                if (isCodeOriginEnabled)
                 {
-                    CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                    var method = routeEndpoint?.RequestDelegate?.Method;
+                    if (method != null)
+                    {
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
+                    }
+                    else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
+                    {
+                        CurrentCodeOriginManager.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                    }
                 }
 
                 if (isFirstExecution)

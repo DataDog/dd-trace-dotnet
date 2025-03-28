@@ -17,7 +17,12 @@ namespace Datadog.Trace.DiagnosticListeners;
 internal struct RequestDelegate
 {
     /// <summary>
+    /// Delegate to RequestDelegate.Method
+    /// </summary>
+    public System.Reflection.MethodInfo? Method;
+
+    /// <summary>
     /// Delegate to RequestDelegate.Target
     /// </summary>
-    public Target? Target;
+    public object? Target;
 }
