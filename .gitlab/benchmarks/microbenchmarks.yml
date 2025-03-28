@@ -6,8 +6,8 @@ run-benchmarks:
   tags: ["arch:amd64"]
   interruptible: true
   timeout: 1h
-  # Image based on earlier version of tooling
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet0
+  # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks
 
   script:
     - git clone --branch fayssal/migrate-micros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
