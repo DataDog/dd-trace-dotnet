@@ -57,7 +57,7 @@ check_env_vars:
       "BP_REPO_FETCHER_KEY_SSM_PARAMETER", 
       "BP_REPO_FETCHER_CLIENT_ID", 
       "DD_API_KEY_SSM_PARAMETER", 
-      "BENCHMARKING_PLATFORM_BRANCH"
+      "BP_INFRA_BENCHMARKING_PLATFORM_BRANCH"
     )
     $optionalEnvVars = @(
       "CI_PROJECT_NAME", 
