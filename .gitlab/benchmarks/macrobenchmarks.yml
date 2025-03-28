@@ -419,10 +419,9 @@ check_azure_pipeline:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     # NOTE: Not actually launches instances, just passing artifacts to the ephemeral instances. We need to source it to get its variables, though
     - source platform/launch-windows-instances.sh
-    - /app/infra/launch.sh --provision .gitlab/benchmarks/provisions/ephemeral-instance.yaml \
-      --region "${AWS_REGION}" \
-      $CLEANUP_ARG
-        
+    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
+    - /app/infra/launch.sh --region "${AWS_REGION}" --provision .gitlab/benchmarks/provisions/ephemeral-instance.yaml $CLEANUP_ARG
+
   artifacts:
     name: "artifacts"
     when: always
