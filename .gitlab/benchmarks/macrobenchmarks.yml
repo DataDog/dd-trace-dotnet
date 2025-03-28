@@ -419,8 +419,7 @@ check_azure_pipeline:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     # NOTE: Not actually launches instances, just passing artifacts to the ephemeral instances. We need to source it to get its variables, though
     - source platform/launch-windows-instances.sh
-    - /app/infra/launch.sh --region "$AWS_REGION"
-    - ./infra/launch.sh --provision infra/src/provisions/dotnet-ssh/ephemeral-instance.yaml \
+    - ./infra/launch.sh --provision .gitlab/benchmarks/provisions/ephemeral-instance.yaml \
       --region "${AWS_REGION}" \
       $CLEANUP_ARG
         
@@ -449,7 +448,7 @@ check_azure_pipeline:
     K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_WARMUP_MAX_VUS: 4
 
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 20000
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 10000
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 3m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
@@ -459,7 +458,7 @@ check_azure_pipeline:
     K6_OPTIONS_HIGH_LOAD_DURATION: 3m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 12
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 8
 
 baseline-win:
   extends: .benchmarks-win
