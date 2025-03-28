@@ -274,22 +274,38 @@ public class SpanMessagePackFormatterTests
 
             attributes["string_key"].Type.Should().Be(0);
             attributes["string_key"].StringValue.Should().Be("hello");
+            attributes["string_key"].BoolValue.Should().BeNull();
+            attributes["string_key"].IntValue.Should().BeNull();
+            attributes["string_key"].DoubleValue.Should().BeNull();
 
             attributes["bool_key"].Type.Should().Be(1);
             attributes["bool_key"].BoolValue.Should().Be(true);
+            attributes["bool_key"].StringValue.Should().BeNull();
+            attributes["bool_key"].IntValue.Should().BeNull();
+            attributes["bool_key"].DoubleValue.Should().BeNull();
 
             attributes["int_key"].Type.Should().Be(2);
             attributes["int_key"].IntValue.Should().Be(42);
+            attributes["int_key"].StringValue.Should().BeNull();
+            attributes["int_key"].BoolValue.Should().BeNull();
+            attributes["int_key"].DoubleValue.Should().BeNull();
 
             attributes["double_key"].Type.Should().Be(3);
             attributes["double_key"].DoubleValue.Should().Be(3.14);
+            attributes["double_key"].StringValue.Should().BeNull();
+            attributes["double_key"].BoolValue.Should().BeNull();
+            attributes["double_key"].IntValue.Should().BeNull();
 
             var arrayAttr = attributes["string_array"];
             arrayAttr.Type.Should().Be(4);
-            arrayAttr.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(0)); // string type
-            arrayAttr.ArrayValue[0].StringValue.Should().Be("item1");
-            arrayAttr.ArrayValue[1].StringValue.Should().Be("item2");
-            arrayAttr.ArrayValue[2].StringValue.Should().Be("item3");
+            arrayAttr.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(0)); // string type
+            arrayAttr.ArrayValue.Values[0].StringValue.Should().Be("item1");
+            arrayAttr.ArrayValue.Values[1].StringValue.Should().Be("item2");
+            arrayAttr.ArrayValue.Values[2].StringValue.Should().Be("item3");
+            arrayAttr.StringValue.Should().BeNull();
+            arrayAttr.BoolValue.Should().BeNull();
+            arrayAttr.IntValue.Should().BeNull();
+            arrayAttr.DoubleValue.Should().BeNull();
 
             var secondEvent = deserializedSpan.SpanEvents[1];
             secondEvent.Name.Should().Be("another_event");
@@ -300,30 +316,45 @@ public class SpanMessagePackFormatterTests
 
             attributes2["string_key"].Type.Should().Be(0);
             attributes2["string_key"].StringValue.Should().Be("hello");
+            attributes2["string_key"].BoolValue.Should().BeNull();
+            attributes2["string_key"].IntValue.Should().BeNull();
+            attributes2["string_key"].DoubleValue.Should().BeNull();
 
             var boolArray = attributes2["bool_array"];
             boolArray.Type.Should().Be(4);
-            boolArray.ArrayValue.Should().HaveCount(3);
-            boolArray.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(1)); // bool type
-            boolArray.ArrayValue[0].BoolValue.Should().Be(true);
-            boolArray.ArrayValue[1].BoolValue.Should().Be(false);
-            boolArray.ArrayValue[2].BoolValue.Should().Be(true);
+            boolArray.ArrayValue.Values.Should().HaveCount(3);
+            boolArray.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(1)); // bool type
+            boolArray.ArrayValue.Values[0].BoolValue.Should().Be(true);
+            boolArray.ArrayValue.Values[1].BoolValue.Should().Be(false);
+            boolArray.ArrayValue.Values[2].BoolValue.Should().Be(true);
+            boolArray.StringValue.Should().BeNull();
+            boolArray.BoolValue.Should().BeNull();
+            boolArray.IntValue.Should().BeNull();
+            boolArray.DoubleValue.Should().BeNull();
 
             var intArray = attributes2["int_array"];
             intArray.Type.Should().Be(4);
-            intArray.ArrayValue.Should().HaveCount(3);
-            intArray.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(2)); // int type
-            intArray.ArrayValue[0].IntValue.Should().Be(123);
-            intArray.ArrayValue[1].IntValue.Should().Be(1234);
-            intArray.ArrayValue[2].IntValue.Should().Be(12345);
+            intArray.ArrayValue.Values.Should().HaveCount(3);
+            intArray.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(2)); // int type
+            intArray.ArrayValue.Values[0].IntValue.Should().Be(123);
+            intArray.ArrayValue.Values[1].IntValue.Should().Be(1234);
+            intArray.ArrayValue.Values[2].IntValue.Should().Be(12345);
+            intArray.StringValue.Should().BeNull();
+            intArray.BoolValue.Should().BeNull();
+            intArray.IntValue.Should().BeNull();
+            intArray.DoubleValue.Should().BeNull();
 
             var doubleArray = attributes2["double_array"];
             doubleArray.Type.Should().Be(4);
-            doubleArray.ArrayValue.Should().HaveCount(3);
-            doubleArray.ArrayValue.Should().AllSatisfy(item => item.Type.Should().Be(3)); // double type
-            doubleArray.ArrayValue[0].DoubleValue.Should().Be(1.2);
-            doubleArray.ArrayValue[1].DoubleValue.Should().Be(1.321);
-            doubleArray.ArrayValue[2].DoubleValue.Should().Be(200000.1);
+            doubleArray.ArrayValue.Values.Should().HaveCount(3);
+            doubleArray.ArrayValue.Values.Should().AllSatisfy(item => item.Type.Should().Be(3)); // double type
+            doubleArray.ArrayValue.Values[0].DoubleValue.Should().Be(1.2);
+            doubleArray.ArrayValue.Values[1].DoubleValue.Should().Be(1.321);
+            doubleArray.ArrayValue.Values[2].DoubleValue.Should().Be(200000.1);
+            doubleArray.StringValue.Should().BeNull();
+            doubleArray.BoolValue.Should().BeNull();
+            doubleArray.IntValue.Should().BeNull();
+            doubleArray.DoubleValue.Should().BeNull();
         }
         else
         {

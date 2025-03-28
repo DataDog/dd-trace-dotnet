@@ -27,6 +27,6 @@ namespace Datadog.Trace.TestHelpers
         public double? DoubleValue { get; set; }
 
         [Key("array_value")]
-        public List<MockAttributeArrayValue> ArrayValue { get; set; }
+        public MockAttributeArray ArrayValue { get; set; }
     }
 }

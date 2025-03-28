@@ -55,6 +55,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _intValueFieldBytes = StringEncoding.UTF8.GetBytes("int_value");
         private readonly byte[] _doubleValueFieldBytes = StringEncoding.UTF8.GetBytes("double_value");
         private readonly byte[] _arrayValueFieldBytes = StringEncoding.UTF8.GetBytes("array_value");
+        private readonly byte[] _valuesFieldBytes = StringEncoding.UTF8.GetBytes("values");
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
@@ -381,6 +382,8 @@ namespace Datadog.Trace.Agent.MessagePack
                         {
                             offset += MessagePackBinary.WriteInt32(ref bytes, offset, 4);
                             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _arrayValueFieldBytes);
+                            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
+                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _valuesFieldBytes);
                             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, arrayVal.Length);
 
                             foreach (var item in arrayVal)
