@@ -407,7 +407,8 @@ check_azure_pipeline:
 
 .bp-infra-setup:
   script:
-    - mkdir -p ~/.aws && cp ./infra/.gitlab/profiles ~/.aws/config
+    - mkdir -p ~/.aws && /app/infra/tools/fetch-ssm-parameter.sh "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.${CI_PROJECT_NAME}-profile" \
+      >> ~/.aws/config || exit $?
     - |
       (
       unset AWS_PROFILE
