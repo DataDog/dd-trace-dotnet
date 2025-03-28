@@ -27,7 +27,7 @@ internal class ErrorHandle : SafeHandle
 
     protected override bool ReleaseHandle()
     {
-        NativeInterop.TraceExporter.FreeError(handle);
+        NativeInterop.Exporter.FreeError(handle);
         return true;
     }
 

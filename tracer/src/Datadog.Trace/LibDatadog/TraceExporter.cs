@@ -27,7 +27,7 @@ internal class TraceExporter : SafeHandle, IApi
         _configuration = configuration;
 
         _log.Debug("Creating new TraceExporter");
-        using var errPtr = NativeInterop.TraceExporter.New(out var ptr, _configuration);
+        using var errPtr = NativeInterop.Exporter.New(out var ptr, _configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
     }
@@ -49,7 +49,7 @@ internal class TraceExporter : SafeHandle, IApi
                 };
 
                 var responsePtr = IntPtr.Zero;
-                using var error = NativeInterop.TraceExporter.Send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                using var error = NativeInterop.Exporter.Send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
                 error.ThrowIfError();
             }
         }
@@ -65,7 +65,7 @@ internal class TraceExporter : SafeHandle, IApi
 
     protected override bool ReleaseHandle()
     {
-        NativeInterop.TraceExporter.Free(handle);
+        NativeInterop.Exporter.Free(handle);
         return true;
     }
 }

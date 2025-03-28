@@ -14,7 +14,7 @@ internal class NativeInterop
 {
     private const string DllName = "LibDatadog";
 
-    internal static class TraceExporter
+    internal static class Exporter
     {
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_new")]
         internal static extern ErrorHandle New(out IntPtr outHandle, SafeHandle config);
@@ -29,7 +29,7 @@ internal class NativeInterop
         internal static extern ErrorHandle Send(SafeHandle handle, ByteSlice trace, UIntPtr traceCount, ref IntPtr response);
     }
 
-    internal static class TraceExporterConfig
+    internal static class Config
     {
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_new")]
         internal static extern void New(out IntPtr outHandle);
