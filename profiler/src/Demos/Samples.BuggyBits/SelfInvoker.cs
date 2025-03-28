@@ -198,6 +198,11 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/Products/WithResult");
                 }
+
+                if ((_scenario & Scenario.ShortLived) == Scenario.ShortLived)
+                {
+                    urls.Add($"{rootUrl}/CompanyInformation?ShortLived=true");
+                }
             }
 
             return urls;
