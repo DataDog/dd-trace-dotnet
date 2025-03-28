@@ -31,7 +31,10 @@ namespace Samples.AWS.DynamoDBv2
             else
             {
                 var awsCredentials = new BasicAWSCredentials("x", "x");
-                var dynamoDBConfig = new AmazonDynamoDBConfig { ServiceURL = "http://" + Host() };
+                var dynamoDBConfig = new AmazonDynamoDBConfig { 
+                    ServiceURL = "http://" + Host(),
+                    UseHttp = true,
+                };
                 return new AmazonDynamoDBClient(awsCredentials, dynamoDBConfig);
             }
         }
