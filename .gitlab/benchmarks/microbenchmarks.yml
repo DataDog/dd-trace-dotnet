@@ -13,6 +13,7 @@ run-benchmarks:
     - git clone --branch fayssal/migrate-micros-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
     - ./platform/launch-instance.sh
     - ./platform/post-pr-comment.sh
+    # Temporarely commented out pending issue resolution with sending files to backend
     # - ./platform/steps/upload-to-bp-ui.sh
     
   artifacts:
