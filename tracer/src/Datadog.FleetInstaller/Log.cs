@@ -25,7 +25,7 @@ internal static class Log
 
         public void WriteError(string message)
         {
-            Console.WriteLine($"ERROR: {message}");
+            Console.Error.WriteLine($"ERROR: {message}");
         }
 
         public void WriteError(Exception ex, string message)

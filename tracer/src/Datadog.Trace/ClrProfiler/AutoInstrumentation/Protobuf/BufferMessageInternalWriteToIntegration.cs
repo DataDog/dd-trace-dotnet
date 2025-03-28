@@ -15,16 +15,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 /// <summary>
 /// System.Void Google.Protobuf.IBufferMessage::InternalWriteTo(Google.Protobuf.WriteContext) calltarget instrumentation
 /// </summary>
-[InstrumentMethod(
-    AssemblyName = "Google.Protobuf",
-    TypeName = "Google.Protobuf.IBufferMessage",
-    MethodName = "InternalWriteTo",
-    ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = ["Google.Protobuf.WriteContext&"],
-    MinimumVersion = "3.15.0",
-    MaximumVersion = "3.*.*",
-    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
-    CallTargetIntegrationKind = CallTargetKind.Interface)]
+// FIXME: Commenting out due to throwing errors.
+// [InstrumentMethod(
+//    AssemblyName = "Google.Protobuf",
+//    TypeName = "Google.Protobuf.IBufferMessage",
+//    MethodName = "InternalWriteTo",
+//    ReturnTypeName = ClrNames.Void,
+//    ParameterTypeNames = ["Google.Protobuf.WriteContext&"],
+//    MinimumVersion = "3.15.0",
+//    MaximumVersion = "3.*.*",
+//    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
+//    CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class BufferMessageInternalWriteToIntegration

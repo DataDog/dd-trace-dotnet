@@ -15,16 +15,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 /// <summary>
 /// System.Void Google.Protobuf.IMessage::WriteTo(Google.Protobuf.CodedOutputStream) calltarget instrumentation
 /// </summary>
-[InstrumentMethod(
-    AssemblyName = "Google.Protobuf",
-    TypeName = "Google.Protobuf.IMessage",
-    MethodName = "WriteTo",
-    ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
-    MinimumVersion = "3.0.0",
-    MaximumVersion = "3.*.*",
-    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
-    CallTargetIntegrationKind = CallTargetKind.Interface)]
+// FIXME: Commenting out due to throwing errors.
+// [InstrumentMethod(
+//    AssemblyName = "Google.Protobuf",
+//    TypeName = "Google.Protobuf.IMessage",
+//    MethodName = "WriteTo",
+//    ReturnTypeName = ClrNames.Void,
+//    ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
+//    MinimumVersion = "3.0.0",
+//    MaximumVersion = "3.*.*",
+//    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
+//    CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MessageWriteToIntegration
