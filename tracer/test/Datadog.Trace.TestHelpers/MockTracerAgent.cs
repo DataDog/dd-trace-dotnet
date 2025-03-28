@@ -1044,6 +1044,9 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("span_meta_structs")]
             public bool SpanMetaStructs { get; set; } = true;
+
+            [JsonProperty("span_events")]
+            public bool SpanEvents { get; set; } = false;
         }
 
         public class TcpUdpAgent : MockTracerAgent

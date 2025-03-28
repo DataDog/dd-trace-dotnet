@@ -131,7 +131,7 @@ namespace Datadog.Trace.Ci
                     testEvent.Content = content;
                 }
             }
-            else if (@event is SpanEvent { Content: { } span } spanEvent)
+            else if (@event is EventModel.SpanEvent { Content: { } span } spanEvent)
             {
                 if (ProcessSpan(span) is { } content)
                 {

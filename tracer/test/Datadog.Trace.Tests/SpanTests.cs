@@ -389,5 +389,39 @@ namespace Datadog.Trace.Tests
             span.GetTag(stringKey).Should().Be(stringValue);
             span.GetTag(numericKey).Should().BeNull();
         }
-    }
+
+        [Fact]
+        public void AddEvent_BeforeSpanFinished_IsSuccessful()
+        {
+            var span = _tracer.StartSpan("Operation");
+            var eventName = "test_event";
+            var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var eventAttributes = new List<KeyValuePair<string, object>> { new("key", "value") };
+            var spanEvent = new SpanEvent(eventName, eventTimestamp, eventAttributes);
+
+            span.AddEvent(spanEvent);
+            span.Finish();
+
+            span.SpanEvents.Should().ContainSingle().Which.Should().Match<SpanEvent>(e =>
+                e.Name == eventName &&
+                e.Timestamp == eventTimestamp &&
+                e.Attributes == eventAttributes);
+        }
+
+        [Fact]
+        public void AddEvent_AfterSpanFinished_IsNoOp()
+        {
+            var span = _tracer.StartSpan("Operation");
+            span.Finish();
+
+            var eventName = "test_event";
+            var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var eventAttributes = new List<KeyValuePair<string, object>> { new("key", "value") };
+            var spanEvent = new SpanEvent(eventName, eventTimestamp, eventAttributes);
+
+            span.AddEvent(spanEvent);
+
+            span.SpanEvents.Should().BeNullOrEmpty();
+        }
+  }
 }
