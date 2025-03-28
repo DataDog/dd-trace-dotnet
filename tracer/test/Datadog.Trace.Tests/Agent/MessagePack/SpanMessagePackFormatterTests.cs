@@ -209,9 +209,10 @@ public class SpanMessagePackFormatterTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void SpanEvent_Tag_Serialization(bool nativeSpanEventsEnabled)
+    [InlineData("true")]
+    [InlineData("false")]
+    [InlineData("null")]
+    public void SpanEvent_Tag_Serialization(string nativeSpanEventsEnabled)
     {
         var discoveryService = new DiscoveryServiceMock();
         var mockApi = new MockApi();
@@ -221,7 +222,10 @@ public class SpanMessagePackFormatterTests
 
         tracer.TracerManager.Start();
 
-        discoveryService.TriggerChange(spanEvents: nativeSpanEventsEnabled);
+        if (nativeSpanEventsEnabled is not "null")
+        {
+            discoveryService.TriggerChange(spanEvents: nativeSpanEventsEnabled == "true");
+        }
 
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
 
@@ -273,7 +277,7 @@ public class SpanMessagePackFormatterTests
         result.Should().HaveCount(1);
         var deserializedSpan = result[0];
 
-        if (nativeSpanEventsEnabled)
+        if (nativeSpanEventsEnabled == "true")
         {
             deserializedSpan.SpanEvents.Should().HaveCount(2);
 
