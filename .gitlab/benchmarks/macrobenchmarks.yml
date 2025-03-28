@@ -412,12 +412,18 @@ check_azure_pipeline:
   interruptible: true
   timeout: 1h
   # Image based on earlier version of tooling
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-tests
+  # NOTE: I've changed the image to be the latest version
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
 
   script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - ./platform/launch-windows-instances.sh
-    
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
+    # NOTE: Not actually launches instances, just passing artifacts to the ephemeral instances. We need to source it to get its variables, though
+    - source platform/launch-windows-instances.sh
+    - /app/infra/launch.sh --region "$AWS_REGION"
+    - ./infra/launch.sh --provision infra/src/provisions/dotnet-ssh/ephemeral-instance.yaml \
+      --region "${AWS_REGION}" \
+      $CLEANUP_ARG
+        
   artifacts:
     name: "artifacts"
     when: always
@@ -434,6 +440,9 @@ check_azure_pipeline:
     AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
     AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
+
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "igoragoli/improve-representativeness"
+
     K6_OPTIONS_WARMUP_RATE: 8000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s

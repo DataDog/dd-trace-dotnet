@@ -1,0 +1,156 @@
+name: &provision_name "dd-trace-dotnet-ephemeral-instance"
+
+# We are reusing some provision files from windows instances
+init_environment:
+  ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results"
+  BP_REPO_FETCHER_KEY_SSM_PARAMETER: "/windows-benchmarking/bp-repo-fetcher-key"
+  BP_REPO_FETCHER_CLIENT_ID: "Iv23liYOxTI8nIatGymV"
+  DD_API_KEY_SSM_PARAMETER: "/windows-benchmarking/dd-api-key"
+  # Note: I've removed the BENCHMARKING_PLATFORM_BRANCH variable as it's not needed, it will be included with BP_INFRA_BENCHMARKING_PLATFORM_BRANCH
+
+user_data_path: user_data/setup-benchmarking-platform-module.ps1
+
+source_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/windows-base-instance-ami-id"
+
+tags:
+  Name: *provision_name
+  igoragoli: true
+
+provision_steps:
+  - check_cpu_model
+  - check_user_data_setup_complete
+  - check_env_vars
+  - clone_bp
+  - run_benchmarks
+  - upload_artifacts_to_s3
+
+check_cpu_model:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $cpuModel = (Get-WmiObject -Class Win32_Processor).Name
+    if ($cpuModel -notlike "*8259CL CPU*") {
+        Write-Error "CPU model is not Intel(R) Xeon(R) Platinum 8259CL"
+    }
+    Write-Output "CPU model is Intel(R) Xeon(R) Platinum 8259CL"
+
+check_user_data_setup_complete:
+  remote_command: |
+    $setupCompleteFlag = "C:\UserDataArtifacts\State\setup_complete"
+    $timeout = (Get-Date).AddMinutes(10)
+    Write-Output "Waiting for $setupCompleteFlag..."
+    while (-not (Test-Path $setupCompleteFlag)) {
+        if ((Get-Date) -gt $timeout) {
+            Write-Error "Timed out waiting for $setupCompleteFlag"
+            exit 1
+        }
+        Start-Sleep -Seconds 60
+    }
+    Write-Output "User data setup complete!"
+
+check_env_vars:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $requiredEnvVars = @(
+      "ARTIFACTS_BUCKET_NAME",
+      "BP_REPO_FETCHER_KEY_SSM_PARAMETER",
+      "BP_REPO_FETCHER_CLIENT_ID",
+      "DD_API_KEY_SSM_PARAMETER",
+      "BP_INFRA_BENCHMARKING_PLATFORM_BRANCH"
+    )
+    $optionalEnvVars = @(
+      "CI_PROJECT_NAME",
+      "CI_JOB_ID",
+      "CI_JOB_NAME",
+      "CI_PIPELINE_ID",
+      "CI_COMMIT_REF_NAME",
+      "CI_COMMIT_SHA",
+      "CI_COMMIT_SHORT_SHA",
+      "CI_COMMIT_TIMESTAMP"
+    )
+    foreach ($var in $requiredEnvVars) {
+        if ([string]::IsNullOrEmpty((Invoke-Expression "`$env:$var"))) {
+            Write-Error "Required environment variable $var is not set"
+        }
+    }
+    foreach ($var in $optionalEnvVars) {
+        if ([string]::IsNullOrEmpty((Invoke-Expression "`$env:$var"))) {
+            Write-Output "Optional environment variable $var is not set"
+        }
+    }
+
+clone_bp:
+  populate_env: true
+  remote_command: |
+    $moduleFile = "C:\BenchmarkingPlatformModule.psm1"
+    $timeout = (Get-Date).AddMinutes(5)
+
+    while (-not (Test-Path $moduleFile)) {
+        if ((Get-Date) -gt $timeout) {
+            Write-Error "Timed out waiting for $moduleFile"
+            exit 1
+        }
+        Write-Output "Waiting for $moduleFile..."
+        Start-Sleep -Seconds 5
+    }
+
+    Import-Module $moduleFile
+
+    $installationAccessToken = Generate-GitHubInstallationAccessToken `
+        -privateKeySSMParameterName "$env:BP_REPO_FETCHER_KEY_SSM_PARAMETER" `
+        -clientId "$env:BP_REPO_FETCHER_CLIENT_ID"
+
+    if (Test-Path "C:\benchmarking-platform") {
+        Remove-Item -Recurse -Force "C:\benchmarking-platform"
+    }
+    git clone "https://x-access-token:$installationAccessToken@github.com/DataDog/benchmarking-platform.git" "C:\benchmarking-platform"
+    Push-Location "C:\benchmarking-platform"
+    git checkout $env:BP_INFRA_BENCHMARKING_PLATFORM_BRANCH
+    Pop-Location
+
+run_benchmarks:
+  populate_env: true
+  remote_command: |
+    Push-Location "C:\benchmarking-platform"
+    .\run-benchmarks.ps1
+    Pop-Location
+
+upload_artifacts_to_s3:
+  populate_env: true
+  remote_command: |
+    # Adds user data outputs, errors and logs to artifacts directory
+    $artifactsDir = "C:\UserDataArtifacts"
+    $EC2LaunchArtifactsDir = "$artifactsDir\EC2LaunchArtifactsEphemeralInstance"
+    $EC2LaunchTempDir = (Get-Content "C:\ProgramData\Amazon\EC2Launch\log\agent.log" | Select-String "Output file is created at: (.+output\.tmp)" | ForEach-Object { $_.Matches.Groups[1].Value } | Select-Object -Last 1) -replace "\\output\.tmp$"
+    $EC2LaunchTempFiles = @("$EC2LaunchTempDir\UserScript.ps1", "$EC2LaunchTempDir\err.tmp", "$EC2LaunchTempDir\output.tmp")
+    foreach ($file in $EC2LaunchTempFiles) {
+        Copy-Item $file $EC2LaunchArtifactsDir
+    }
+
+    $s3Prefix =
+    if ($env:CI_PROJECT_NAME -and
+        $env:CI_COMMIT_REF_NAME -and
+        $env:CI_JOB_ID) {
+        "$env:CI_PROJECT_NAME/$env:CI_COMMIT_REF_NAME/$env:CI_JOB_ID/"
+    }
+    else {
+        # See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+        $instanceId = try {
+            $instanceMetadataLinkLocalAddress = "http://169.254.169.254/latest/meta-data"
+
+            Invoke-RestMethod -Uri "$instanceMetadataLinkLocalAddress/instance-id" -ErrorAction Stop
+        } catch {
+            "unknown-instance"
+        }
+        "manual/ephemeral-instance/$instanceId/"
+    }
+
+    Write-S3Object `
+        -BucketName $env:ARTIFACTS_BUCKET_NAME `
+        -KeyPrefix $s3Prefix `
+        -Folder $artifactsDir `
+        -CannedACLName "bucket-owner-full-control" `
+        -Recurse
+
+    Write-Output "Successfully uploaded artifacts to s3://$($env:ARTIFACTS_BUCKET_NAME)/$s3Prefix!"
