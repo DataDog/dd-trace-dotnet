@@ -122,9 +122,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5TestsInferredProxySpans : AspNetMvc5Tests
+    public abstract class AspNetMvc5TestsInferredProxySpans : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsInferredProxySpans(IisFixture iisFixture, ITestOutputHelper output)
+        protected AspNetMvc5TestsInferredProxySpans(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableRouteTemplateResourceNames: true, enableInferredProxySpans: true)
         {
         }
@@ -145,6 +145,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             headers.Add("x-dd-proxy-stage", "prod");
 
             return request;
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsInferredProxySpansEnabled : AspNetMvc5Tests
+    {
+        public AspNetMvc5TestsInferredProxySpansEnabled(IisFixture iisFixture, ITestOutputHelper output)
+            : base(
+                iisFixture,
+                output,
+                classicMode: false,
+                enableRouteTemplateResourceNames: true,
+                enableInferredProxySpans: true,
+                testName: $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Enabled")
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsInferredProxySpansDisabled : AspNetMvc5Tests
+    {
+        public AspNetMvc5TestsInferredProxySpansDisabled(IisFixture iisFixture, ITestOutputHelper output)
+            : base(
+                iisFixture,
+                output,
+                classicMode: false,
+                enableRouteTemplateResourceNames: true,
+                enableInferredProxySpans: false,
+                testName: $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Disabled")
+        {
         }
     }
 
