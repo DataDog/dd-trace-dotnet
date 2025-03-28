@@ -160,6 +160,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ITestOutputHelper output,
             bool classicMode,
             bool enableRouteTemplateResourceNames,
+            string testName = null,
             bool enableRouteTemplateExpansion = false,
             bool virtualApp = false,
             bool enable128BitTraceIds = false,
@@ -180,13 +181,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _iisFixture.VirtualApplicationPath = "/my-app";
             }
 
-            _testName = nameof(AspNetMvc5Tests)
+            _testName = testName ??
+                        nameof(AspNetMvc5Tests)
                       + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion     ? ".WithExpansion" :
                          enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF")
-                      + (enable128BitTraceIds ? ".128bit" : string.Empty)
-                      + (enableInferredProxySpans ? ".Proxy" : string.Empty);
+                      + (enable128BitTraceIds ? ".128bit" : string.Empty);
         }
 
         public static TheoryData<string, int> Data => new()
