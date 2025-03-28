@@ -25,18 +25,7 @@ internal class AsmDdProduct : IAsmConfigUpdater
 
         if (result.TypedFile != null)
         {
-            RuleSet ruleSet;
-            if (!result.TypedFile.HasValues)
-            {
-                var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
-                ruleSet = RuleSet.From(o);
-            }
-            else
-            {
-                ruleSet = RuleSet.From(result.TypedFile);
-            }
-
-            configurationStatus.RulesetConfigs[firstFile.Path.Path] = ruleSet;
+            configurationStatus.RulesetConfigs[firstFile.Path.Path] = result.TypedFile;
         }
     }
 

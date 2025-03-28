@@ -23,9 +23,9 @@ internal static class DiagnosticResultUtils
 {
     internal static ReportedDiagnostics ExtractReportedDiagnostics(DdwafObjectStruct diagObject, bool noRuleDiagnoticsIsError)
     {
-        WafStats total = new();
-        WafStats rules = new();
+        WafStats rules = new(); // Rules only stats
         var rulesetVersion = string.Empty;
+        WafStats rest = new(); // Rest of the ites stats
         Dictionary<string, object>? errors = null;
         Dictionary<string, object>? warnings = null;
         try
@@ -33,33 +33,32 @@ internal static class DiagnosticResultUtils
             if (diagObject.Type == DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID)
             {
                 errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
-                return new ReportedDiagnostics { Errors = errors };
+                return new ReportedDiagnostics(errors);
             }
 
             var diagResult = new DiagnosticResult(diagObject);
             if (diagResult.Rules is not null)
             {
-                total.LoadedCount = (ushort)(diagResult.Rules.Loaded?.Count ?? 0);
-                total.SkippedCount = (ushort)(diagResult.Rules.Skipped?.Count ?? 0);
-                total.FailedCount = (ushort)(diagResult.Rules.Failed?.Count ?? 0);
+                rules.Loaded = (ushort)(diagResult.Rules.Loaded?.Count ?? 0);
+                rules.Skipped = (ushort)(diagResult.Rules.Skipped?.Count ?? 0);
+                rules.Failed = (ushort)(diagResult.Rules.Failed?.Count ?? 0);
 
-                if (diagResult.Rules.Errors is { Count: > 0 })
-                {
-                    if (errors is null) { errors = new Dictionary<string, object>(); }
-                    errors = diagResult.Rules.Errors.ToDictionary(p => "rule: " + p.Key, p => p.Value);
-                }
+                rules.Errors = diagResult.Rules.Errors;
+                rules.Warnings = diagResult.Rules.Warnings;
             }
 
-            rules = UpdateStats(diagResult.Rules, "rules");
             UpdateStats(diagResult.RulesData, "rules_data");
             UpdateStats(diagResult.Actions, "actions");
             UpdateStats(diagResult.RulesOverride, "rules_override");
             UpdateStats(diagResult.Exclusions, "exclusions");
             UpdateStats(diagResult.CustomRules, "custom_rules");
 
-            if (noRuleDiagnoticsIsError && rules.TotalCount == 0)
+            rest.Errors = errors;
+            rest.Warnings = warnings;
+
+            if (noRuleDiagnoticsIsError && rules.Total == 0)
             {
-                errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules or diagnostic format is incorrect" } };
+                rules.Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules or diagnostic format is incorrect" } };
             }
 
             rulesetVersion = diagResult.RulesetVersion;
@@ -72,20 +71,20 @@ internal static class DiagnosticResultUtils
             errors = localErrors;
         }
 
-        return new ReportedDiagnostics { Rules = rules, Total = total, RulesetVersion = rulesetVersion, Errors = errors, Warnings = warnings };
+        return new ReportedDiagnostics { Rules = rules, RulesetVersion = rulesetVersion, Rest = rest };
 
         WafStats UpdateStats(DiagnosticFeatureResult? feature, string name)
         {
             WafStats res = new();
             if (feature is not null)
             {
-                res.LoadedCount = (ushort)(feature.Loaded?.Count ?? 0);
-                res.SkippedCount = (ushort)(feature.Skipped?.Count ?? 0);
-                res.FailedCount = (ushort)(feature.Failed?.Count ?? 0);
+                res.Loaded = (ushort)(feature.Loaded?.Count ?? 0);
+                res.Skipped = (ushort)(feature.Skipped?.Count ?? 0);
+                res.Failed = (ushort)(feature.Failed?.Count ?? 0);
 
-                total.LoadedCount += res.LoadedCount;
-                total.SkippedCount += res.SkippedCount;
-                total.FailedCount += res.FailedCount;
+                rest.Loaded += res.Loaded;
+                rest.Skipped += res.Skipped;
+                rest.Failed += res.Failed;
 
                 if (feature.Errors is { Count: > 0 })
                 {
@@ -118,28 +117,34 @@ internal static class DiagnosticResultUtils
 
 internal struct ReportedDiagnostics
 {
-    public WafStats Total = new();
-    public WafStats Rules = new();
     public string RulesetVersion = string.Empty;
-    public IReadOnlyDictionary<string, object>? Errors = null;
-    public IReadOnlyDictionary<string, object>? Warnings = null;
+    public WafStats Rules = new();
+    public WafStats Rest = new();
 
     public ReportedDiagnostics()
     {
+    }
+
+    public ReportedDiagnostics(IReadOnlyDictionary<string, object> errors)
+    {
+        Rules.Errors = errors;
     }
 }
 
 internal struct WafStats
 {
-    public ushort FailedCount = 0;
-    public ushort LoadedCount = 0;
-    public ushort SkippedCount = 0;
+    public ushort Failed = 0;
+    public ushort Loaded = 0;
+    public ushort Skipped = 0;
+
+    public IReadOnlyDictionary<string, object>? Errors = null;
+    public IReadOnlyDictionary<string, object>? Warnings = null;
 
     public WafStats()
     {
     }
 
-    public int TotalCount => (FailedCount + LoadedCount + SkippedCount);
+    public int Total => (Failed + Loaded + Skipped);
 }
 
 #pragma warning restore SA1402 // File may only contain a single type

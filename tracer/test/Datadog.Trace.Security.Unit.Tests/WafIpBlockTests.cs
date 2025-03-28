@@ -40,7 +40,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             AddAsmDataRemoteConfig(configurationState, payload, "update1");
             var updateRes1 = UpdateWaf(configurationState, waf);
             updateRes1.Success.Should().BeTrue();
-            updateRes1.HasErrors.Should().BeFalse();
+            updateRes1.HasRuleErrors.Should().BeFalse();
             using var context = waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");

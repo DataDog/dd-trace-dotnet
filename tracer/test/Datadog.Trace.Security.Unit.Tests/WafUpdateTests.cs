@@ -41,8 +41,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             AddAsmDDRemoteConfig(configurationState, ruleSet, "update1");
             var res = UpdateWaf(configurationState, waf);
             res.Success.Should().BeTrue();
-            res.ReportedDiagnostics.Rules.LoadedCount.Should().Be(1);
-            res.Errors.Should().BeNullOrEmpty();
+            res.ReportedDiagnostics.Rules.Loaded.Should().Be(1);
+            res.RuleErrors.Should().BeNullOrEmpty();
             Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, BlockingAction.BlockRequestType);
         }
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             AddAsmRemoteConfig(configurationState, new Payload { RuleOverrides = [ruleOverride1] }, "update1");
             var result1 = UpdateWaf(configurationState, waf);
             result1.Success.Should().BeTrue();
-            result1.HasErrors.Should().BeFalse();
+            result1.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
@@ -75,21 +75,21 @@ namespace Datadog.Trace.Security.Unit.Tests
             AddAsmRemoteConfig(configurationState, new Payload { RuleOverrides = [ruleOverride2] }, "update2");
             var result2 = UpdateWaf(configurationState, waf);
             result2.Success.Should().BeTrue();
-            result2.HasErrors.Should().BeFalse();
+            result2.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, false);
 
             RemoveAsmRemoteConfig(configurationState, "update2");
             var result3 = UpdateWaf(configurationState, waf);
             result3.Success.Should().BeTrue();
-            result3.HasErrors.Should().BeFalse();
+            result3.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
             RemoveAsmRemoteConfig(configurationState, "update1");
             var result4 = UpdateWaf(configurationState, waf);
             result4.Success.Should().BeTrue();
-            result4.HasErrors.Should().BeFalse();
+            result4.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
         }
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 AddAsmRemoteConfig(configurationState, new Payload { RuleOverrides = [ruleOverride] }, "update1");
                 var result = UpdateWaf(configurationState, waf);
                 result.Success.Should().BeTrue();
-                result.HasErrors.Should().BeFalse();
+                result.HasRuleErrors.Should().BeFalse();
                 Execute(waf, attackParts1, true, BlockingAction.BlockRequestType);
                 Execute(waf, attackParts2, true);
             }
