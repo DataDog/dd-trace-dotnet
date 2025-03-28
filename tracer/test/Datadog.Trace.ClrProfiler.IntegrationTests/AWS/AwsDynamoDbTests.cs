@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);

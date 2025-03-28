@@ -5,9 +5,11 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -38,15 +40,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <param name="request">The request for the DynamoDB operation</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TUpdateItemRequest>(TTarget instance, TUpdateItemRequest request)
-            where TUpdateItemRequest : IAmazonDynamoDbRequestWithTableName, IDuckType
+            where TUpdateItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType
         {
+            Console.WriteLine("[tracer] UpdateItemIntegration.OnMethodBegin()");
             if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
+            Console.WriteLine("[tracer] creating scope");
             var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
+            Console.WriteLine("[tracer] tagging table name and resource name");
             AwsDynamoDbCommon.TagTableNameAndResourceName(request.TableName, tags, scope);
+
+            if (!Tracer.Instance.Settings.SpanPointersEnabled)
+            {
+                Console.WriteLine("[tracer] span pointers disabled");
+                return new CallTargetState(scope);
+            }
+
+            var tableName = request.TableName;
+            Console.WriteLine("[tracer] table name: " + request.TableName);
+            try
+            {
+                Console.WriteLine("[tracer] trying to get keys...");
+                var keys = request.Keys.DuckCast<IDynamoDbKeysObject>();
+                Console.WriteLine("[tracer] adding dynamodb span pointer...");
+                SpanPointers.AddDynamoDbSpanPointer(scope.Span, tableName, keys);
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine("[tracer] unable to add span pointer: " + exception.Message);
+                Log.Debug("Unable to add span pointer: " + exception.Message);
+            }
 
             return new CallTargetState(scope);
         }
