@@ -32,6 +32,9 @@ namespace BuggyBits
         EndpointsCount = 128, // Specific test with '.' in endpoint name
         Spin = 256, // Requests that take a long time
         Redirect = 512, // triggers HTTP redirect
+        GetAwaiterGetResult = 1024, // using GetAwaiter().GetResult() instead of await
+        UseResultProperty = 2048, // using Result property instead of GetAwaiter().GetResult()
+        ShortLived = 4096,      // short lived threads
     }
 
     public class Program
