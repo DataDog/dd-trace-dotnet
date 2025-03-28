@@ -16,6 +16,9 @@ internal class RuleSet
 
     internal JToken? Metadata { get; set; }
 
+    [JsonProperty("rules_data")]
+    internal JToken? RulesData { get; set; }
+
     [JsonProperty("rules")]
     internal JToken? Rules { get; set; }
 
@@ -42,6 +45,7 @@ internal class RuleSet
         {
             Version = result["version"]?.ToString(),
             Metadata = result["metadata"],
+            RulesData = result["rules_data"],
             Rules = result["rules"],
             Processors = result["processors"],
             Scanners = result["scanners"],
@@ -58,6 +62,11 @@ internal class RuleSet
     /// <param name="dictionary">dictionary</param>
     public void AddToDictionaryAtRoot(Dictionary<string, object> dictionary)
     {
+        if (RulesData != null)
+        {
+            dictionary["rules_data"] = RulesData;
+        }
+
         if (Rules != null)
         {
             dictionary["rules"] = Rules;
