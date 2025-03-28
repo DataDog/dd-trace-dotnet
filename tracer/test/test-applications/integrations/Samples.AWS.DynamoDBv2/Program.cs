@@ -10,6 +10,18 @@ namespace Samples.AWS.DynamoDBv2
     {
         private static async Task Main(string[] args)
         {
+            // TODO temp debug
+            Console.WriteLine($"Checking if host is reachable: {Host()}");
+            try {
+                // Try a basic HTTP request to check connectivity
+                var httpClient = new System.Net.Http.HttpClient();
+                var result = httpClient.GetAsync($"http://{Host()}").Result;
+                Console.WriteLine($"HTTP connection test result: {result.StatusCode}");
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"Connection test failed: {ex.Message}");
+            }
+
             // Set up AmazonDynamoDBConfig and redirect to the local message queue instance
             var dynamoDBClient = GetAmazonDynamoDBClient();
 

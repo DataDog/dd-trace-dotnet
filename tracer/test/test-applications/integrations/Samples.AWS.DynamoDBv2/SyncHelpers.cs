@@ -45,31 +45,44 @@ namespace Samples.AWS.DynamoDBv2
 
         public static void CreateTable(AmazonDynamoDBClient dynamoDBClient)
         {
-            var schema = new List<KeySchemaElement>
-            {
-                new() { AttributeName = "id", KeyType = "HASH" },
-                new() { AttributeName = "name", KeyType = "RANGE" }
-            };
-            var definitions = new List<AttributeDefinition>
-            {
-                new() { AttributeName = "id", AttributeType = "S" },
-                new() { AttributeName = "name", AttributeType = "S" }
-            };
-            var throughput = new ProvisionedThroughput
-            {
-                ReadCapacityUnits = 20,
-                WriteCapacityUnits = 50
-            };
-            var createTableRequest = new CreateTableRequest
-            {
-                TableName = TableName,
-                KeySchema = schema,
-                ProvisionedThroughput = throughput,
-                AttributeDefinitions = definitions
-            };
+            try {
+                var schema = new List<KeySchemaElement>
+                {
+                    new() { AttributeName = "id", KeyType = "HASH" },
+                    new() { AttributeName = "name", KeyType = "RANGE" }
+                };
+                var definitions = new List<AttributeDefinition>
+                {
+                    new() { AttributeName = "id", AttributeType = "S" },
+                    new() { AttributeName = "name", AttributeType = "S" }
+                };
+                var throughput = new ProvisionedThroughput
+                {
+                    ReadCapacityUnits = 20,
+                    WriteCapacityUnits = 50
+                };
+                var createTableRequest = new CreateTableRequest
+                {
+                    TableName = TableName,
+                    KeySchema = schema,
+                    ProvisionedThroughput = throughput,
+                    AttributeDefinitions = definitions
+                };
 
-            var response = dynamoDBClient.CreateTable(createTableRequest);
-            Console.WriteLine($"CreateTable(CreateTableRequest) HTTP status code: {response.HttpStatusCode}");
+                // TODO temp
+                Console.WriteLine($"Attempting to connect to DynamoDB at: {dynamoDBClient.Config.ServiceURL}");
+                var response = dynamoDBClient.CreateTable(createTableRequest);
+                Console.WriteLine($"CreateTable(CreateTableRequest) HTTP status code: {response.HttpStatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: {ex.GetType().Name}: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"INNER: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+                }
+                throw;
+            }
         }
 
         public static void DeleteTable(AmazonDynamoDBClient dynamoDBClient)
