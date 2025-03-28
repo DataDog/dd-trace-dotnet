@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -23,9 +24,10 @@ namespace Datadog.Trace.TestHelpers
             IAgentWriter agentWriter = null,
             ITraceSampler sampler = null,
             IScopeManager scopeManager = null,
-            IDogStatsd statsd = null)
+            IDogStatsd statsd = null,
+            IDiscoveryService discoveryService = null)
         {
-            return new ScopedTracer(settings, agentWriter, sampler, scopeManager, statsd);
+            return new ScopedTracer(settings, agentWriter, sampler, scopeManager, statsd, discoveryService);
         }
 
         /// <summary>
@@ -39,8 +41,14 @@ namespace Datadog.Trace.TestHelpers
 
         public class ScopedTracer : Tracer, IAsyncDisposable
         {
-            public ScopedTracer(TracerSettings settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null)
-                : base(settings, agentWriter, sampler, scopeManager, statsd)
+            public ScopedTracer(
+                TracerSettings settings = null,
+                IAgentWriter agentWriter = null,
+                ITraceSampler sampler = null,
+                IScopeManager scopeManager = null,
+                IDogStatsd statsd = null,
+                IDiscoveryService discoveryService = null)
+                : base(settings, agentWriter, sampler, scopeManager, statsd, discoveryService: discoveryService)
             {
             }
 
