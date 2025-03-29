@@ -19,20 +19,4 @@ internal class Parameter
 
     [JsonProperty("location")]
     public string? Location { get; set; }
-
-    public List<KeyValuePair<string, string?>> ToKeyValuePair()
-    {
-        List<KeyValuePair<string, string?>> data = new() { new("status_code", StatusCode.ToString()) };
-        if (!string.IsNullOrEmpty(Type))
-        {
-            data.Add(new("type", Type));
-        }
-
-        if (!string.IsNullOrEmpty(Location))
-        {
-            data.Add(new("location", Location));
-        }
-
-        return data;
-    }
 }

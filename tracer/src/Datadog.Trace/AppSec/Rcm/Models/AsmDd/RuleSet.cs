@@ -16,6 +16,9 @@ internal class RuleSet
 
     internal JToken? Metadata { get; set; }
 
+    [JsonProperty("rules_data")]
+    internal JToken? RulesData { get; set; }
+
     [JsonProperty("rules")]
     internal JToken? Rules { get; set; }
 
@@ -42,6 +45,7 @@ internal class RuleSet
         {
             Version = result["version"]?.ToString(),
             Metadata = result["metadata"],
+            RulesData = result["rules_data"],
             Rules = result["rules"],
             Processors = result["processors"],
             Scanners = result["scanners"],
@@ -50,52 +54,5 @@ internal class RuleSet
             CustomRules = result["custom_rules"]
         };
         return ruleset;
-    }
-
-    /// <summary>
-    /// on the contrary to other data, this one should be added at the root because it's shaped as {"version": "2.2","metadata": {"rules_version": "1.3.2"},"rules": []}
-    /// </summary>
-    /// <param name="dictionary">dictionary</param>
-    public void AddToDictionaryAtRoot(Dictionary<string, object> dictionary)
-    {
-        if (Rules != null)
-        {
-            dictionary["rules"] = Rules;
-        }
-
-        if (Metadata != null)
-        {
-            dictionary["metadata"] = Metadata;
-        }
-
-        if (Version != null)
-        {
-            dictionary["version"] = Version;
-        }
-
-        if (Processors != null)
-        {
-            dictionary["processors"] = Processors;
-        }
-
-        if (Scanners != null)
-        {
-            dictionary["scanners"] = Scanners;
-        }
-
-        if (Exclusions is not null)
-        {
-            dictionary["exclusions"] = Exclusions;
-        }
-
-        if (CustomRules is not null)
-        {
-            dictionary["custom_rules"] = CustomRules;
-        }
-
-        if (Actions is not null)
-        {
-            dictionary["actions"] = Actions;
-        }
     }
 }

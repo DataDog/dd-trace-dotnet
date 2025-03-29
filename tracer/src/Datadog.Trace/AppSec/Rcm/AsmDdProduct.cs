@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -14,6 +15,8 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDdProduct : IAsmConfigUpdater
 {
+    internal const string DefaultConfigKey = "datadog/00/ASM_DD/default/config";
+
     public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         var firstFile = files.First();
@@ -22,19 +25,7 @@ internal class AsmDdProduct : IAsmConfigUpdater
 
         if (result.TypedFile != null)
         {
-            RuleSet ruleSet;
-            if (!result.TypedFile.HasValues)
-            {
-                var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
-                ruleSet = RuleSet.From(o);
-            }
-            else
-            {
-                ruleSet = RuleSet.From(result.TypedFile);
-            }
-
-            configurationStatus.RulesByFile[firstFile.Path.Path] = ruleSet;
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
+            configurationStatus.RulesetConfigs[firstFile.Path.Path] = result.TypedFile;
         }
     }
 
@@ -42,8 +33,7 @@ internal class AsmDdProduct : IAsmConfigUpdater
     {
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
-            configurationStatus.RulesByFile.Remove(removedConfig.Path);
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
+            configurationStatus.RulesetConfigs.Remove(removedConfig.Path);
         }
     }
 }

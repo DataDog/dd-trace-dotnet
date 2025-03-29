@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.Unit.Tests
     public class WafErrorsTests : WafLibraryRequiredTest
     {
         [SkippableTheory]
-        [InlineData(@"{""missing key 'name'"":[""crs-913-110"",""crs-913-120"",""crs-920-260""],""missing key 'tags'"":[""crs-921-110"",""crs-921-140""]}", "wrong-tags-name-rule-set.json", 5)]
+        [InlineData("{\"missing key 'name'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\"],\"missing key 'tags'\":[\"crs-921-110\",\"crs-921-140\"]}", "wrong-tags-name-rule-set.json", 5)]
         [InlineData("{\"missing key 'tags'\":[\"crs-913-110\",\"crs-913-120\",\"crs-920-260\",\"crs-921-110\",\"crs-921-140\",\"crs-941-300\"]}", "wrong-tags-rule-set.json", 6)]
         public void HasErrors(string errorMessage, string filename, ushort failedtoLoadRules)
         {
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             initResult.Success.Should().BeTrue();
             initResult.FailedToLoadRules.Should().Be(0);
             initResult.LoadedRules.Should().Be(159);
-            initResult.Errors.Should().BeEmpty();
+            initResult.Errors.Should().BeNullOrEmpty();
             initResult.HasErrors.Should().BeFalse();
             initResult.ErrorMessage.Should().BeNullOrEmpty();
         }
