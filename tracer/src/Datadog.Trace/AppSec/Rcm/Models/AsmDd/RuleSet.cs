@@ -55,4 +55,56 @@ internal class RuleSet
         };
         return ruleset;
     }
+
+    /// <summary>
+    /// on the contrary to other data, this one should be added at the root because it's shaped as {"version": "2.2","metadata": {"rules_version": "1.3.2"},"rules": []}
+    /// </summary>
+    /// <param name="dictionary">dictionary</param>
+    public void AddToDictionaryAtRoot(Dictionary<string, object> dictionary)
+    {
+        if (RulesData != null)
+        {
+            dictionary["rules_data"] = RulesData;
+        }
+
+        if (Rules != null)
+        {
+            dictionary["rules"] = Rules;
+        }
+
+        if (Metadata != null)
+        {
+            dictionary["metadata"] = Metadata;
+        }
+
+        if (Version != null)
+        {
+            dictionary["version"] = Version;
+        }
+
+        if (Processors != null)
+        {
+            dictionary["processors"] = Processors;
+        }
+
+        if (Scanners != null)
+        {
+            dictionary["scanners"] = Scanners;
+        }
+
+        if (Exclusions is not null)
+        {
+            dictionary["exclusions"] = Exclusions;
+        }
+
+        if (CustomRules is not null)
+        {
+            dictionary["custom_rules"] = CustomRules;
+        }
+
+        if (Actions is not null)
+        {
+            dictionary["actions"] = Actions;
+        }
+    }
 }

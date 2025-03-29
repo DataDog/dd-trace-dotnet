@@ -69,7 +69,7 @@ internal record ConfigurationState
     {
         if (rulesetConfigs is not null)
         {
-            RulesetConfigs = rulesetConfigs.ToDictionary(p => p.Key, p => JToken.FromObject(p.Value));
+            RulesetConfigs = rulesetConfigs;
         }
 
         if (asmConfigs is not null)
@@ -99,7 +99,7 @@ internal record ConfigurationState
     internal Dictionary<string, JToken> AsmDataConfigs { get; } = new();
 
     // RC Product: ASM_DD
-    internal Dictionary<string, JToken> RulesetConfigs { get; } = new();
+    internal Dictionary<string, RuleSet> RulesetConfigs { get; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -176,8 +176,11 @@ internal record ConfigurationState
             // Use incoming RC rules
             foreach (var config in RulesetConfigs)
             {
-                if (config.Value is null || (updating && !IsNewUpdate(config.Key))) { continue; }
-                configurations[config.Key] = config.Value;
+                if (updating && !IsNewUpdate(config.Key)) { continue; }
+
+                var configuration = new Dictionary<string, object>();
+                config.Value?.AddToDictionaryAtRoot(configuration);
+                configurations[config.Key] = configuration;
             }
 
             if (_defaultRulesetApplied)
