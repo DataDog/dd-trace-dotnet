@@ -1032,11 +1032,37 @@
     "TargetParameterTypes": [
       "Microsoft.AspNetCore.Builder.IApplicationBuilder",
       "Microsoft.AspNetCore.Http.PathString",
-      "System.Boolean",
       "System.Action`1[Microsoft.AspNetCore.Builder.IApplicationBuilder]"
     ],
     "MinimumVersion": {
       "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegrationV2V3",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 2
+  },
+  {
+    "IntegrationName": "AspNetCore",
+    "AssemblyName": "Microsoft.AspNetCore.Http.Abstractions",
+    "TargetTypeName": "Microsoft.AspNetCore.Builder.MapExtensions",
+    "TargetMethodName": "Map",
+    "TargetReturnType": "Microsoft.AspNetCore.Builder.IApplicationBuilder",
+    "TargetParameterTypes": [
+      "Microsoft.AspNetCore.Builder.IApplicationBuilder",
+      "Microsoft.AspNetCore.Http.PathString",
+      "System.Boolean",
+      "System.Action`1[Microsoft.AspNetCore.Builder.IApplicationBuilder]"
+    ],
+    "MinimumVersion": {
+      "Item1": 5,
       "Item2": 0,
       "Item3": 0
     },
@@ -1045,10 +1071,10 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegrationV5Plus",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 2
   },
   {
     "IntegrationName": "AspNetCore",
@@ -1062,7 +1088,7 @@
     ],
     "MinimumVersion": {
       "Item1": 2,
-      "Item2": 0,
+      "Item2": 2,
       "Item3": 0
     },
     "MaximumVersion": {
@@ -1073,7 +1099,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.RunExtensionsRunIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 2
   },
   {
     "IntegrationName": "AspNetCore",
@@ -1300,6 +1326,31 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Server.Kestrel.Core",
+    "TargetTypeName": "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer",
+    "TargetMethodName": "StartAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "Microsoft.AspNetCore.Hosting.Server.IHttpApplication`1[!!0]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.KestrelServerImplStartAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 2
+  },
+  {
+    "IntegrationName": "AspNetCore",
+    "AssemblyName": "Microsoft.AspNetCore.Server.Kestrel.Core",
     "TargetTypeName": "Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl",
     "TargetMethodName": "StartAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
@@ -1320,7 +1371,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.KestrelServerImplStartAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 2
   },
   {
     "IntegrationName": "AspNetCore",

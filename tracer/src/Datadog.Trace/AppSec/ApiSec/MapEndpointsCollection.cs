@@ -26,7 +26,10 @@ internal static class MapEndpointsCollection
 
     public static void EndMapEndpoint()
     {
-        _buildingMapEndpoints?.Pop();
+        if (_buildingMapEndpoints?.Count > 0)
+        {
+            _buildingMapEndpoints.Pop();
+        }
     }
 
     public static void DetectedAvailableEndpoint()
