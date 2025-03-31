@@ -113,7 +113,12 @@ internal class ApiSecurity
         }
     }
 
-    public bool CanCollectEndpoints() => _enabled && _endpointsCollectionEnabled;
+    /// <summary>
+    /// Checks if the Endpoints collection is enabled.
+    /// Note that this feature can be run on its own without Appsec nor API Security being enabled.
+    /// </summary>
+    /// <returns> bool value </returns>
+    public bool CanCollectEndpoints() => _endpointsCollectionEnabled;
 
     public int GetEndpointsCollectionMessageLimit() => _endpointsCollectionMessageLimit;
 
