@@ -33,7 +33,9 @@ public abstract class AspNetCoreEndpoints : AspNetBase, IClassFixture<AspNetCore
         _fixture = fixture;
         _fixture.SetOutput(outputHelper);
 
-        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "1");
+        // Endpoints collection is a feature independent of AppSec and the main API Security feature
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEndpointCollectionEnabled, enableEndpointsCollection.ToString());
 
         _collectionEnabled = enableEndpointsCollection;

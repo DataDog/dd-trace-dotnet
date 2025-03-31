@@ -24,7 +24,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsColl
     ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Http.RequestDelegate"],
     MinimumVersion = "2.2.0",
     MaximumVersion = SupportedVersions.LatestDotNet,
-    InstrumentationCategory = InstrumentationCategory.AppSec,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

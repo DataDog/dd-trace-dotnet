@@ -1047,7 +1047,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegrationV2V3",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 2
+    "InstrumentationCategory": 1
   },
   {
     "IntegrationName": "AspNetCore",
@@ -1074,7 +1074,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegrationV5Plus",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 2
+    "InstrumentationCategory": 1
   },
   {
     "IntegrationName": "AspNetCore",
@@ -1099,7 +1099,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.RunExtensionsRunIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 2
+    "InstrumentationCategory": 1
   },
   {
     "IntegrationName": "AspNetCore",
@@ -1346,7 +1346,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.KestrelServerImplStartAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 2
+    "InstrumentationCategory": 1
   },
   {
     "IntegrationName": "AspNetCore",
@@ -1371,7 +1371,7 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.KestrelServerImplStartAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 2
+    "InstrumentationCategory": 1
   },
   {
     "IntegrationName": "AspNetCore",
