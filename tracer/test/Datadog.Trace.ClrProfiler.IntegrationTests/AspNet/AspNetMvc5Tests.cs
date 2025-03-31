@@ -9,10 +9,12 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -121,11 +123,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    [Collection("IisTests")]
     public abstract class AspNetMvc5TestsInferredProxySpans : AspNetMvc5Tests
     {
-        protected AspNetMvc5TestsInferredProxySpans(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableRouteTemplateResourceNames: true, enableInferredProxySpans: true)
+        protected AspNetMvc5TestsInferredProxySpans(IisFixture iisFixture, ITestOutputHelper output, bool enableInferredProxySpans)
+            : base(
+                iisFixture,
+                output,
+                classicMode: false,
+                enableRouteTemplateResourceNames: true,
+                enableInferredProxySpans: enableInferredProxySpans,
+                testName: enableInferredProxySpans ? $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Enabled" : $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Disabled")
         {
         }
 
@@ -149,31 +156,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5TestsInferredProxySpansEnabled : AspNetMvc5Tests
+    public class AspNetMvc5TestsInferredProxySpansEnabled : AspNetMvc5TestsInferredProxySpans
     {
         public AspNetMvc5TestsInferredProxySpansEnabled(IisFixture iisFixture, ITestOutputHelper output)
-            : base(
-                iisFixture,
-                output,
-                classicMode: false,
-                enableRouteTemplateResourceNames: true,
-                enableInferredProxySpans: true,
-                testName: $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Enabled")
+            : base(iisFixture, output, enableInferredProxySpans: true)
         {
         }
     }
 
     [Collection("IisTests")]
-    public class AspNetMvc5TestsInferredProxySpansDisabled : AspNetMvc5Tests
+    public class AspNetMvc5TestsInferredProxySpansDisabled : AspNetMvc5TestsInferredProxySpans
     {
         public AspNetMvc5TestsInferredProxySpansDisabled(IisFixture iisFixture, ITestOutputHelper output)
-            : base(
-                iisFixture,
-                output,
-                classicMode: false,
-                enableRouteTemplateResourceNames: true,
-                enableInferredProxySpans: false,
-                testName: $"{nameof(AspNetMvc5Tests)}.InferredProxySpans_Disabled")
+            : base(iisFixture, output, enableInferredProxySpans: false)
         {
         }
     }
@@ -184,6 +179,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
         private readonly bool _classicMode;
+        private readonly bool _enableInferredProxySpans;
 
         protected AspNetMvc5Tests(
             IisFixture iisFixture,
@@ -204,6 +200,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, enableInferredProxySpans.ToString());
 
             _classicMode = classicMode;
+            _enableInferredProxySpans = enableInferredProxySpans;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -267,9 +264,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 statusCode = (HttpStatusCode)500;
             }
 
-            // Append virtual directory to the actual request
-            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+            var expectedSpanCount = _enableInferredProxySpans ? 3 : 2;
+
+            var spans = await GetWebServerSpans(
+                path: _iisFixture.VirtualApplicationPath + path, // Append virtual directory to the actual request
+                agent: _iisFixture.Agent,
+                httpPort: _iisFixture.HttpPort,
+                expectedHttpStatusCode: statusCode,
+                expectedSpanCount: expectedSpanCount,
+                filterServerSpans: !_enableInferredProxySpans);
+
+            var server = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
+            ValidateIntegrationSpans(server, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
