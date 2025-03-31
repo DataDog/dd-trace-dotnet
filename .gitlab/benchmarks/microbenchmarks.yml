@@ -27,7 +27,7 @@ run-benchmarks:
     AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
     AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
 
-upload-tp-bp-ui:
+upload-to-bp-ui:
   stage: benchmarks
   tags: ["arch:amd64"]
   interruptible: true
@@ -41,6 +41,13 @@ upload-tp-bp-ui:
     # - ./platform/steps/post-pr-comment.sh
     # Temporarely commented out pending issue resolution with sending files to backend
     - ./platform/steps/upload-to-bp-ui.sh
+
+  artifacts:
+    name: "artifacts"
+    when: always
+    paths:
+      - artifacts/
+    expire_in: 3 months
     
   rules:
     - when: manual
