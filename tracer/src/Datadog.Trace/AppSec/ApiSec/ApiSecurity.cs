@@ -8,17 +8,18 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.AppSec;
 
 internal class ApiSecurity
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiSecurity>();
+    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiSecurity>();
+
     private readonly int _maxRoutesSize;
     private readonly bool _enabled;
+    private readonly bool _endpointsCollectionEnabled;
+    private readonly int _endpointsCollectionMessageLimit;
     private readonly TimeSpan _minTimeBetweenReprocessTimeSpan;
     private readonly OrderedDictionary _processedRoutes = new();
     private readonly Dictionary<string, bool> _apiSecurityAddress = new() { { "extract-schema", true } };
@@ -29,6 +30,8 @@ internal class ApiSecurity
         _enabled = securitySettings.ApiSecurityEnabled;
         _minTimeBetweenReprocessTimeSpan = TimeSpan.FromSeconds(securitySettings.ApiSecuritySampleDelay);
         _maxRoutesSize = maxRouteSize;
+        _endpointsCollectionEnabled = securitySettings.ApiSecurityEndpointCollectionEnabled;
+        _endpointsCollectionMessageLimit = securitySettings.ApiSecurityEndpointCollectionMessageLimit;
     }
 
     public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, string? statusCode, IDictionary<string, object>? routeValues)
@@ -109,6 +112,15 @@ internal class ApiSecurity
             return false;
         }
     }
+
+    /// <summary>
+    /// Checks if the Endpoints collection is enabled.
+    /// Note that this feature can be run on its own without Appsec nor API Security being enabled.
+    /// </summary>
+    /// <returns> bool value </returns>
+    public bool CanCollectEndpoints() => _endpointsCollectionEnabled;
+
+    public int GetEndpointsCollectionMessageLimit() => _endpointsCollectionMessageLimit;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int CombineHashes(string httpRouteTag, string httpMethod, string statusCode) => HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode.GetHashCode());
