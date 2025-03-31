@@ -213,8 +213,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             if (result.Success && !updating)
             {
-                Log.Information("DDAS-0005-01: WAF initialized successfully: {0} rules loaded out of {1} from {2}", result.ReportedDiagnostics.Rules.Loaded, result.ReportedDiagnostics.Rules.Total, rulesFile ?? "Embedded rules file");
-                Log.Debug("                          WAF config stats: {0} loaded, {1} skipped, {2} failed items", result.ReportedDiagnostics.Rest.Loaded, result.ReportedDiagnostics.Rest.Skipped, result.ReportedDiagnostics.Rest.Failed);
+                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", result.ReportedDiagnostics.Rules.Loaded, rulesFile ?? "Embedded rules file");
+                Log.Debug("                          WAF config stats: {LoadedRules} loaded, {SkippedRules} skipped, {FailedRules} failed items", result.ReportedDiagnostics.Rest.Loaded, result.ReportedDiagnostics.Rest.Skipped, result.ReportedDiagnostics.Rest.Failed);
             }
 
             return result;

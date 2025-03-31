@@ -171,9 +171,9 @@ internal record ConfigurationState
                 _defaultRulesetApplied = true;
             }
         }
-        else if (RulesetConfigs.Count > 0)
+        else if (RulesetConfigs.Count > 0 && string.IsNullOrEmpty(RulesPath))
         {
-            // Use incoming RC rules
+            // Use incoming RC rules if no external rules path has been defined
             foreach (var config in RulesetConfigs)
             {
                 if (updating && !IsNewUpdate(config.Key)) { continue; }
