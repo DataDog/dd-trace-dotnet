@@ -14,60 +14,71 @@ namespace Datadog.Trace.AppSec;
 
 internal static class MapEndpointsCollection
 {
+    private static readonly object Lock = new();
     private static Stack<string>? _buildingMapEndpoints = [];
-
-    // HashSet because a same endpoint could have been registered multiple times
     private static HashSet<string>? _mapEndpoints = [];
 
     public static void BeggingMapEndpoint(string path)
     {
-        _buildingMapEndpoints?.Push(path);
+        lock (Lock)
+        {
+            _buildingMapEndpoints?.Push(path);
+        }
     }
 
     public static void EndMapEndpoint()
     {
-        if (_buildingMapEndpoints?.Count > 0)
+        lock (Lock)
         {
-            _buildingMapEndpoints.Pop();
+            if (_buildingMapEndpoints?.Count > 0)
+            {
+                _buildingMapEndpoints.Pop();
+            }
         }
     }
 
     public static void DetectedAvailableEndpoint()
     {
-        if (_buildingMapEndpoints is null)
+        lock (Lock)
         {
-            return;
-        }
-
-        var sb = new StringBuilder();
-
-        for (var i = _buildingMapEndpoints.Count - 1; i >= 0; i--)
-        {
-            try
+            if (_buildingMapEndpoints is null)
             {
-                sb.Append(_buildingMapEndpoints.ElementAt(i));
+                return;
             }
-            catch (Exception e)
-            {
-                ApiSecurity.Log.Debug(e, "Error while building map endpoint");
-            }
-        }
 
-        _mapEndpoints?.Add(sb.ToString());
+            var sb = new StringBuilder();
+
+            for (var i = _buildingMapEndpoints.Count - 1; i >= 0; i--)
+            {
+                try
+                {
+                    sb.Append(_buildingMapEndpoints.ElementAt(i));
+                }
+                catch (Exception e)
+                {
+                    ApiSecurity.Log.Debug(e, "Error while building map endpoint");
+                }
+            }
+
+            _mapEndpoints?.Add(sb.ToString());
+        }
     }
 
     public static List<string> GetMapEndpointsAndClean()
     {
-        if (_mapEndpoints is null)
+        lock (Lock)
         {
-            return [];
+            if (_mapEndpoints is null)
+            {
+                return [];
+            }
+
+            var endpoints = _mapEndpoints.ToList();
+
+            _buildingMapEndpoints = null;
+            _mapEndpoints = null;
+
+            return endpoints;
         }
-
-        var endpoints = _mapEndpoints.ToList();
-
-        _buildingMapEndpoints = null;
-        _mapEndpoints = null;
-
-        return endpoints;
     }
 }
