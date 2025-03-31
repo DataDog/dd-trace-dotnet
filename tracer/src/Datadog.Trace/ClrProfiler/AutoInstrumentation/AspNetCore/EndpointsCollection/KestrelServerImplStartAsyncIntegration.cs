@@ -48,6 +48,7 @@ public class KestrelServerImplStartAsyncIntegration
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<KestrelServerImplStartAsyncIntegration>();
 
     internal static CallTargetState OnMethodBegin<TTarget, TApplication>(TTarget instance, ref TApplication? application, ref CancellationToken cancellationToken)
+        where TTarget : IKestrelServer
     {
         try
         {
@@ -64,20 +65,8 @@ public class KestrelServerImplStartAsyncIntegration
         return CallTargetState.GetDefault();
     }
 
-    private static void GatherEndpoints(object? instance)
+    private static void GatherEndpoints(IKestrelServer kestrelServer)
     {
-        if (instance == null)
-        {
-            Log.Warning("API Security: Endpoints collection: No Instance.");
-            return;
-        }
-
-        if (!instance.TryDuckCast<IKestrelServer>(out var kestrelServer))
-        {
-            Log.Warning("API Security: Endpoints collection: Failed to duck the Kestrel Server.");
-            return;
-        }
-
         if (!kestrelServer.Options.TryDuckCast<IKestrelServerOptions>(out var serviceProvider))
         {
             Log.Warning("API Security: Endpoints collection: Failed to duck the Server Options.");
