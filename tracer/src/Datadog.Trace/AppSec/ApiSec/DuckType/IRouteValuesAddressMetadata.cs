@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP2_2
+#if !NETFRAMEWORK
 
 #nullable enable
 
@@ -11,7 +11,7 @@ namespace Datadog.Trace.AppSec.ApiSec.DuckType;
 
 internal interface IRouteValuesAddressMetadata
 {
-    public System.Collections.Generic.IReadOnlyDictionary<string,object> RequiredValues { get; }
+    public System.Collections.Generic.IReadOnlyDictionary<string, object?> RequiredValues { get; }
 }
 
 #endif

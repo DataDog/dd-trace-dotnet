@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP2_2_OR_GREATER
+#if !NETFRAMEWORK
 
 #nullable enable
 
@@ -55,26 +55,20 @@ internal class EndpointsCollection
             return;
         }
 
-        var endpointMetadataCollection = routeEndpoint.Metadata.DuckCast<IEndpointMetadataCollection>();
         string? path;
 
-#if NETCOREAPP3_0_OR_GREATER
-        // >= 3.0
         if (routeEndpoint.RoutePattern.TryDuckCast<RoutePatternRequiredValues>(out var routePatternV3))
         {
+            // >= 3.0
             var areaName = routePatternV3.RequiredValues.TryGetValue("area", out var area) ? area as string : null;
             var controllerName = routePatternV3.RequiredValues.TryGetValue("controller", out var controller) ? controller as string : null;
             var actionName = routePatternV3.RequiredValues.TryGetValue("action", out var action) ? action as string : null;
             path = AspNetCoreResourceNameHelper.SimplifyRoutePattern(routePattern, routePatternV3.RequiredValues, areaName, controllerName, actionName, false);
         }
-        else
+        else if (routeEndpoint.Metadata.TryDuckCast<IEndpointMetadataCollectionRouteValuesAddressMetadata>(out var endpointMetadataCollectionRouteValuesAddressMetadata)
+              && endpointMetadataCollectionRouteValuesAddressMetadata.GetRouteValuesAddressMetadata() is { RequiredValues: { } address })
         {
-            path = routePattern.RawText;
-        }
-#elif NETCOREAPP2_2_OR_GREATER
-        // Only 2.2
-        if (endpointMetadataCollection.GetRouteValuesAddressMetadata() is { RequiredValues: { } address })
-        {
+            // Only 2.2
             var areaName = address.TryGetValue("area", out var area) ? area as string : null;
             var controllerName = address.TryGetValue("controller", out var controller) ? controller as string : null;
             var actionName = address.TryGetValue("action", out var action) ? action as string : null;
@@ -84,14 +78,15 @@ internal class EndpointsCollection
         {
             path = routePattern.RawText;
         }
-#endif
+
         if (path is null)
         {
             return;
         }
 
         // Check if the endpoint have constrained HTTP methods inside the metadata
-        if (endpointMetadataCollection.GetHttpMethodMetadata() is { HttpMethods: { } httpMethods })
+        if (routeEndpoint.Metadata.TryDuckCast<IEndpointMetadataCollectionHttpMethodMetadata>(out var endpointMetadataCollectionHttpMethodMetadata)
+            && endpointMetadataCollectionHttpMethodMetadata.GetHttpMethodMetadata() is { HttpMethods: { } httpMethods })
         {
             for (var i = 0; i < httpMethods.Count && discoveredEndpoints.Count < maxEndpoints; i++)
             {
