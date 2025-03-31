@@ -1359,8 +1359,8 @@
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
-      "Item1": 2,
-      "Item2": 2,
+      "Item1": 5,
+      "Item2": 0,
       "Item3": 0
     },
     "MaximumVersion": {

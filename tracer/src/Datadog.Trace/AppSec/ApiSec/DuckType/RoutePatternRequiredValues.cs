@@ -5,7 +5,7 @@
 
 #nullable enable
 
-#if NETCOREAPP3_0_OR_GREATER
+#if !NETFRAMEWORK
 
 using Datadog.Trace.DuckTyping;
 
