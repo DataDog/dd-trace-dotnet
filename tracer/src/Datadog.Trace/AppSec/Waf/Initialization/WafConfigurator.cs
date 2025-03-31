@@ -154,7 +154,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                         {
                             Log.Information("WAF: Applying config: {Path}", config.Key);
 
-                            using (var encoded = encoder.Encode(config.Value, applySafetyLimits: config.Key != AsmDdProduct.DefaultConfigKey))
+                            using (var encoded = encoder.Encode(config.Value, applySafetyLimits: false))
                             {
                                 var configObj = encoded.ResultDdwafObject;
                                 var path = config.Key;
