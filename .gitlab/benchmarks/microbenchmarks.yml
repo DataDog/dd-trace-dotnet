@@ -16,12 +16,6 @@ run-benchmarks:
     # Temporarely commented out pending issue resolution with sending files to backend
     # - ./platform/steps/upload-to-bp-ui.sh
     
-  artifacts:
-    name: "artifacts"
-    when: always
-    paths:
-      - artifacts/
-    expire_in: 3 months
   rules:
     - when: manual
   variables:
