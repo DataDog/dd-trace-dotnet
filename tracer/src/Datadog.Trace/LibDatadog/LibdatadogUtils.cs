@@ -14,6 +14,12 @@ internal class LibdatadogUtils
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LibdatadogUtils>();
 
+    public enum ResultTag
+    {
+        Ok,
+        Err
+    }
+
     internal static CharSlice CreateCharSlice(string str)
     {
         if (string.IsNullOrEmpty(str))
@@ -35,7 +41,7 @@ internal class LibdatadogUtils
         }
     }
 
-    public static TracerMemfdHandle StoreTracerMetadata(
+    public static TracerMemfdHandleResult StoreTracerMetadata(
         byte schemaVersion,
         string runtimeId,
         string tracerLanguage,
@@ -66,12 +72,7 @@ internal class LibdatadogUtils
                 serviceEnvSlice,
                 serviceVersionSlice);
 
-            if (result.IsError)
-            {
-                throw new Exception($"Failed to store tracer metadata: {result.ErrorMsg}");
-            }
-
-            return result.Value;
+            return result;
         }
         finally
         {
@@ -86,16 +87,10 @@ internal class LibdatadogUtils
         }
     }
 
-    public static void CloseTracerMemfdHandle(TracerMemfdHandle handle)
-    {
-        NativeInterop.Ddcommon.CloseTracerMemfd(handle);
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     public struct TracerMemfdHandle
     {
         public int FileHandle;
-        public bool IsValid;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -106,13 +101,29 @@ internal class LibdatadogUtils
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct MaybeError<T>
-        where T : struct
+    public struct Error
     {
-        public T Value;
-        public bool IsError;
+        private CharSlice message;
 
-        [MarshalAs(UnmanagedType.LPStr)]
-        public string ErrorMsg;
+        public string Message => message.ToString();
+
+        // Clean up the error using the FFI function
+        public void Dispose()
+        {
+            // NativeMethods.ddog_Error_drop(ref this);
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct TracerMemfdHandleResult
+    {
+        [FieldOffset(0)]
+        public ResultTag Tag;
+
+        [FieldOffset(8)] // Ensure proper alignment
+        public TracerMemfdHandle Ok;
+
+        [FieldOffset(8)]
+        public Error Err;
     }
 }

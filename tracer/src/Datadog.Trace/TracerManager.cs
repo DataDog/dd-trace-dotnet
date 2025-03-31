@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -592,7 +593,11 @@ namespace Datadog.Trace
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
-                _handle = LibdatadogUtils.StoreTracerMetadata(1, "10", "dotnet", "something", "something", "something", "something", "something");
+                var result = LibdatadogUtils.StoreTracerMetadata(1, "10", "dotnet", "something", "something", "something", "something", "something");
+                if (result.Tag == LibdatadogUtils.ResultTag.Ok)
+                {
+                    _handle = result.Ok;
+                }
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
 
@@ -703,6 +708,8 @@ namespace Datadog.Trace
 #endif
                 }
 
+                GC.KeepAlive(_handle);
+
                 if (instance is not null)
                 {
                     Log.Debug("Disposing DynamicConfigurationManager");
@@ -735,7 +742,6 @@ namespace Datadog.Trace
                     Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
 #endif
-                    LibdatadogUtils.CloseTracerMemfdHandle(_handle);
                     Log.Debug("Finished waiting for disposals.");
                 }
             }

@@ -68,7 +68,7 @@ internal class NativeInterop
     internal static class Ddcommon
     {
         [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
-        internal static extern LibdatadogUtils.MaybeError<LibdatadogUtils.TracerMemfdHandle> OpenTracerMemfd(
+        internal static extern LibdatadogUtils.TracerMemfdHandleResult OpenTracerMemfd(
             byte schemaVersion,
             LibdatadogUtils.CharSlice runtimeId,
             LibdatadogUtils.CharSlice tracerLanguage,
@@ -77,8 +77,5 @@ internal class NativeInterop
             LibdatadogUtils.CharSlice serviceName,
             LibdatadogUtils.CharSlice serviceEnv,
             LibdatadogUtils.CharSlice serviceVersion);
-
-        [DllImport(DllName, EntryPoint = "ddog_close_tracer_memfd_handle")]
-        internal static extern void CloseTracerMemfd(LibdatadogUtils.TracerMemfdHandle handle);
     }
 }
