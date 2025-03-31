@@ -46,7 +46,7 @@ upload-to-bp-ui:
     name: "artifacts"
     when: always
     paths:
-      - artifacts/
+      - candidate-results/
     expire_in: 3 months
     
   rules:
