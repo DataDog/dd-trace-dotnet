@@ -10,6 +10,7 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -39,11 +40,14 @@ public class KestrelServerImplStartAsyncIntegration
     {
         try
         {
-            GatherEndpoints(instance);
+            if (Security.Instance.ApiSecurity.CanCollectEndpoints())
+            {
+                GatherEndpoints(instance);
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Api Sec: Error gathering endpoints.");
+            Log.Error(ex, "API Security: Failed to collect endpoints.");
         }
 
         return CallTargetState.GetDefault();
@@ -53,27 +57,32 @@ public class KestrelServerImplStartAsyncIntegration
     {
         if (instance == null)
         {
+            Log.Warning("API Security: Endpoints collection: No Instance.");
             return;
         }
 
         if (!instance.TryDuckCast<IKestrelServer>(out var kestrelServer))
         {
+            Log.Warning("API Security: Endpoints collection: Failed to duck the Kestrel Server.");
             return;
         }
 
         if (!kestrelServer.Options.TryDuckCast<IKestrelServerOptions>(out var serviceProvider))
         {
+            Log.Warning("API Security: Endpoints collection: Failed to duck the Server Options.");
             return;
         }
 
         var endpointDataSourceType = Type.GetType("Microsoft.AspNetCore.Routing.EndpointDataSource, Microsoft.AspNetCore.Routing");
         if (endpointDataSourceType == null)
         {
+            Log.Warning("API Security: Endpoints collection: Failed to get the EndpointDataSource Type.");
             return;
         }
 
         if (!serviceProvider.ApplicationServices.GetService(endpointDataSourceType).TryDuckCast<IEndpointDataSource>(out var endpointDataSource))
         {
+            Log.Warning("API Security: Endpoints collection: Failed to get/duck the EndpointDataSource Service.");
             return;
         }
 
