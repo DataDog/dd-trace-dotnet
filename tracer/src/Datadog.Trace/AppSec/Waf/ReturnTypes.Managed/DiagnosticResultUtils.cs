@@ -6,11 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Vendors.dnlib.IO;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
