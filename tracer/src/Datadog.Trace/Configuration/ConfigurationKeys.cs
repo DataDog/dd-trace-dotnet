@@ -825,8 +825,11 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
             /// Default value is <c>false</c> (enabled).
-            /// This only applies to StoredProcedures for Microsoft SQL Server when <see cref="DbmPropagationMode"/> is set to <c>service</c> or <c>full</c>.
-            /// This changes stored procedures that do not have <c>Output</c>/<c>InputOutput</c>/<c>Return</c> ADO.NET command parameters to their <c>EXEC</c> counterparts to inject context as a comment.
+            /// When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:
+            /// <ul>
+            ///   <li>The database is Microsoft SQL Server and <see cref="DbmPropagationMode"/> is set to <c>service</c> or <c>full</c>.</li>
+            ///   <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
+            /// </ul>
             /// </summary>
             public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
         }
