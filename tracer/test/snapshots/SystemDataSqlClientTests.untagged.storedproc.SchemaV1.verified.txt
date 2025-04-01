@@ -1,0 +1,3655 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: sql-server.query,
+    Resource:
+CREATE PROCEDURE dbo.sp_BatchUpdate
+    @Id int,
+    @NewName varchar(100)
+AS
+BEGIN
+    -- Update the specified row
+    UPDATE [Stored-Proc-System-Data-SqlClient-Test-GUID] SET Name = @NewName WHERE Id = @Id;
+    -- Return affected rows
+    RETURN @@ROWCOUNT;
+END,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: sql-server.query,
+    Resource:
+CREATE PROCEDURE dbo.sp_GetTableRow
+    @Id int
+AS
+BEGIN
+    SELECT * FROM [Stored-Proc-System-Data-SqlClient-Test-GUID] WHERE Id = @Id;
+END,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: sql-server.query,
+    Resource:
+CREATE PROCEDURE dbo.sp_UpdateRowWithOutput
+    @Id int,
+    @NewName varchar(100),
+    @OldName varchar(100) OUTPUT
+AS
+BEGIN
+    -- Store the old name before updating
+    SELECT @OldName = Name FROM [Stored-Proc-System-Data-SqlClient-Test-GUID] WHERE Id = @Id;
+    -- Update the row
+    UPDATE [Stored-Proc-System-Data-SqlClient-Test-GUID] SET Name = @NewName WHERE Id = @Id;
+    -- Return number of rows affected
+    RETURN @@ROWCOUNT;
+END,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: sql-server.query,
+    Resource:
+IF OBJECT_ID('dbo.sp_GetTableRow', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_GetTableRow;
+IF OBJECT_ID('dbo.sp_UpdateRowWithOutput', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_UpdateRowWithOutput;
+IF OBJECT_ID('dbo.sp_BatchUpdate', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_BatchUpdate;
+DROP TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID];,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: sql-server.query,
+    Resource: CREATE TABLE [Stored-Proc-System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: sql-server.query,
+    Resource: dbo.sp_BatchUpdate,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: sql-server.query,
+    Resource: dbo.sp_BatchUpdate,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: sql-server.query,
+    Resource: dbo.sp_GetTableRow,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
+    Name: sql-server.query,
+    Resource: dbo.sp_UpdateRowWithOutput,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_20,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_22,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_24,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_26,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_28,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_30,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_32,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_34,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_36,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_38,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_40,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_42,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_44,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_47,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_49,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_51,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_54,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_56,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_58,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_60,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_62,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_64,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_66,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_68,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_70,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_71,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_72,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_73,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_74,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_75,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_76,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_77,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_78,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_79,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_80,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_81,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_82,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_83,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_84,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_85,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_86,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_87,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_88,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_89,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_90,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_91,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_92,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_93,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_94,
+    SpanId: Id_95,
+    Name: sql-server.query,
+    Resource: INSERT INTO [Stored-Proc-System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (1, 'Name1'), (2, 'Name2'), (3, 'Name3');,
+    Service: Samples.SqlServer,
+    Type: sql,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_96,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_97,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_98,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_99,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_100,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_101,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_102,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_103,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_104,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_105,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_106,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_107,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_108,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_109,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_110,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_111,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_112,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_113,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_114,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_115,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_116,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_117,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_118,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_119,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_120,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_121,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_122,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_123,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_124,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_125,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_126,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_127,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_128,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_129,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_130,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_131,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_132,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_133,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_134,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_135,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_136,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_137,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_138,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_139,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_140,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_141,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_142,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_143,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_144,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_145,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_146,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_147,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_148,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_149,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_150,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_151,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_152,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_153,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_154,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_155,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_156,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_157,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_158,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_159,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_160,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_161,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_162,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_163,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_164,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_165,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_166,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_167,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_168,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_169,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_170,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_171,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_172,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_173,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_174,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_175,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_176,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_177,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_178,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_179,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_180,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_181,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_182,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_183,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_184,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_185,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_186,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_187,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_188,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_189,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_190,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_191,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_192,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_193,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_194,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_195,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_196,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_29,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_197,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_31,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_198,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_33,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_199,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_35,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_200,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_201,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_202,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_203,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_204,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_205,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_48,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_206,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_50,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_46,
+    SpanId: Id_207,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_52,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_208,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_55,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_209,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_57,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_210,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_59,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_211,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_61,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_212,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_63,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_213,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_65,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_214,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_67,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_215,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer,
+    Type: sql,
+    ParentId: Id_69,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      language: dotnet,
+      out.host: sqlserver,
+      peer.service: sqlserver,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  }
+]
