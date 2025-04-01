@@ -355,9 +355,7 @@ namespace Datadog.Trace
 
         private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
         {
-            // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
-            // as it may lead to different stats results than the managed one.
-            if (!settings.StatsComputationEnabled && settings.DataPipelineEnabled)
+            if (settings.DataPipelineEnabled)
             {
                 var configuration = new TraceExporterConfiguration
                 {
