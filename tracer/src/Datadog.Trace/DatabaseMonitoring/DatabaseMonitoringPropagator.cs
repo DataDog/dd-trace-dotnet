@@ -221,11 +221,8 @@ namespace Datadog.Trace.DatabaseMonitoring
                     command.CommandText = $"EXEC {quotedName} {propagationComment}";
                 }
 
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    // Log the command text for debugging purposes
-                    Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
-                }
+                // Log the command text for debugging purposes
+                Log.Debug("Executing stored procedure with command text: {CommandText}", command.CommandText);
             }
             else if (ShouldAppend(integrationId, commandText))
             {
