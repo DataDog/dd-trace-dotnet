@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -11,6 +10,9 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
 {
+    [CollectionDefinition("Non-Parallel Collection", DisableParallelization = true)]
+    public class NonParallelCollectionDefinition { }
+
     protected string taintedTitle = "Think_Python";
     protected string notTaintedValue = "nottainted";
     protected string commandUnsafe;
