@@ -274,8 +274,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 expectedSpanCount: expectedSpanCount,
                 filterServerSpans: !_enableInferredProxySpans);
 
-            var server = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
-            ValidateIntegrationSpans(server, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
+            // ValidateIntegrationSpans() expects only server spans, but we want all spans in the snapshot (e.g. inferred proxy spans)
+            var serverSpans = spans.Where(s => s.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server);
+            ValidateIntegrationSpans(serverSpans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
