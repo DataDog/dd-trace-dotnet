@@ -18,15 +18,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public readonly string FunctionAdornment;
         public readonly string Signature;
         public readonly string Filename;
-        public readonly long StartLine;
         public readonly long Line;
 
         public StackFrame(string rawStackFrame)
-            : this(rawStackFrame, string.Empty, 0, 0)
+            : this(rawStackFrame, string.Empty, 0)
         {
         }
 
-        public StackFrame(string rawStackFrame, string filename, long startLine, long line)
+        public StackFrame(string rawStackFrame, string filename, long line)
         {
             // |lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2
             var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|cg:(?<typeAdorn>.*) \|fn:(?<function>.*) \|fg:(?<functionArdorn>.*) \|sg:(?<signature>.*)$");
@@ -44,7 +43,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             FunctionAdornment = match.Groups["functionAdorn"].Value;
             Signature = match.Groups["signature"].Value;
             Filename = filename;
-            StartLine = startLine;
             Line = line;
         }
 
