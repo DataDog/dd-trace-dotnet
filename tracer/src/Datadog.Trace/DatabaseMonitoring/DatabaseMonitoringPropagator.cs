@@ -46,8 +46,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            if ((!injectStoredProcedure && command.CommandType == CommandType.StoredProcedure)
-                || (command.CommandType == CommandType.StoredProcedure && integrationId != IntegrationId.SqlClient))
+            if (command.CommandType == CommandType.StoredProcedure && (!injectStoredProcedure || integrationId != IntegrationId.SqlClient))
             {
                 // We don't inject into StoredProcedures unless enabled as we change the commands
                 // We don't inject into StoredProcedures unless we are in SqlClient
