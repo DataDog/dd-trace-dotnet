@@ -126,7 +126,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             var wafHandle = IntPtr.Zero;
             if (wafBuilderHandle == IntPtr.Zero)
             {
-                Log.Warning("DDAS-0005-00: WAF builder initialization failed."); // Check were all these error codes are defined
+                Log.Error("DDAS-0005-00: WAF builder initialization failed."); // Check were all these error codes are defined
             }
             else
             {
@@ -143,7 +143,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                             if (!_wafLibraryInvoker.BuilderRemoveConfig(wafBuilderHandle, path))
                             {
-                                Log.Warning("DDAS-0005-00: WAF builder: Config failed to be removed : {0}", path); // Check were all these error codes are defined
+                                Log.Error("DDAS-0005-00: WAF builder: Config failed to be removed : {0}", path); // Check were all these error codes are defined
                             }
                         }
                     }
@@ -160,7 +160,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                                 var path = config.Key;
                                 if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, path, ref configObj, ref diagnostics))
                                 {
-                                    Log.Warning("DDAS-0005-00: WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
+                                    Log.Error("DDAS-0005-00: WAF builder: Config failed to load : {0}", path); // Check were all these error codes are defined
                                 }
                             }
                         }
@@ -169,12 +169,12 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     wafHandle = _wafLibraryInvoker.BuilderBuildInstance(wafBuilderHandle);
                     if (wafHandle == IntPtr.Zero)
                     {
-                        Log.Warning("DDAS-0005-00: WAF initialization failed.");
+                        Log.Error("DDAS-0005-00: WAF initialization failed.");
                     }
                 }
                 else if (!updating)
                 {
-                    Log.Warning("DDAS-0005-00: WAF initialization failed. No valid rules found.");
+                    Log.Error("DDAS-0005-00: WAF initialization failed. No valid rules found.");
                     return UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.");
                 }
             }
