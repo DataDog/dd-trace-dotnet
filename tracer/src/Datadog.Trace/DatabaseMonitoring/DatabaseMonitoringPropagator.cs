@@ -36,7 +36,11 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static readonly char[] PgHintPrefix = ['/', '*', '+']; // the characters that identify a pg_hint_plan
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
 
-        private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
+        // TODO: improve this rate limiting
+        // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
+        private static int _remainingErrorLogs = 100;
+        private static int _remainingDirectionErrorLogs = 100;
+        private static int _remainingQuoteErrorLogs = 100;
 
         internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
         {
@@ -146,6 +150,18 @@ namespace Datadog.Trace.DatabaseMonitoring
 
                         if (param.Direction != ParameterDirection.Input)
                         {
+                            if (_remainingDirectionErrorLogs > 0)
+                            {
+                                var actualRemaining = Interlocked.Decrement(ref _remainingDirectionErrorLogs);
+                                if (actualRemaining >= 0)
+                                {
+                                    Log.Warning<string, int>(
+                                        "Cannot propagate DBM data for stored procedure with non-Input parameter '{ProcedureName}'. Only Input parameters are supported for DBM propagation (will log {N} more times and then stop).",
+                                        commandText,
+                                        actualRemaining);
+                                }
+                            }
+
                             return false;
                         }
                     }
@@ -167,12 +183,36 @@ namespace Datadog.Trace.DatabaseMonitoring
                     if (string.IsNullOrEmpty(quotedName))
                     {
                         // if we can't parse the identifier, return false
+                        if (_remainingQuoteErrorLogs > 0)
+                        {
+                            var actualRemaining = Interlocked.Decrement(ref _remainingQuoteErrorLogs);
+                            if (actualRemaining >= 0)
+                            {
+                                Log.Error<string, int>(
+                                    "Failed to parse/quote stored procedure '{ProcedureName}' for DBM propagation. (will log {N} more times and then stop).",
+                                    commandText,
+                                    actualRemaining);
+                            }
+                        }
+
                         return false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Failed to parse/quote stored procedure, no DBM data will be propagated");
+                    if (_remainingQuoteErrorLogs > 0)
+                    {
+                        var actualRemaining = Interlocked.Decrement(ref _remainingQuoteErrorLogs);
+                        if (actualRemaining >= 0)
+                        {
+                            Log.Error<string, int>(
+                                ex,
+                                "Exception while attempting to parse/quote stored procedure '{ProcedureName}' for DBM propagation. (will log {N} more times and then stop).",
+                                commandText,
+                                actualRemaining);
+                        }
+                    }
+
                     return false;
                 }
 
