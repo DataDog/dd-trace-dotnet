@@ -6,8 +6,11 @@ include(FetchContent)
 
 set(LIBDATADOG_VERSION "v16.0.3" CACHE STRING "libdatadog version")
 
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
-    if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(SHA256_LIBDATADOG "2d7933e09dc39706e9c99c7edcff5c60f7567ea2777157596de828f62f39035b" CACHE STRING "libdatadog sha256")
+        set(FILE_TO_DOWNLOAD libdatadog-aarch64-apple-darwin.tar.gz)
+    elseif (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
         set(SHA256_LIBDATADOG "dd08d3a4dbbd765392121d27b790d7818e80dd28500b554db16e9186b1025ba9" CACHE STRING "libdatadog sha256")
         set(FILE_TO_DOWNLOAD libdatadog-aarch64-alpine-linux-musl.tar.gz)
     else()
@@ -15,7 +18,10 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL a
         set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
     endif()
 else()
-    if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
+    if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(SHA256_LIBDATADOG "ced5db61e0ca8e974b9d59b0b6833c28e19445a3e4ec3c548fda965806c17560" CACHE STRING "libdatadog sha256")
+        set(FILE_TO_DOWNLOAD libdatadog-x86_64-apple-darwin.tar.gz)
+    elseif (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
         set(SHA256_LIBDATADOG "8e09afd3cfb5ace85501f37b4bd6378299ebbf71189ccc2173169998b75b4b56" CACHE STRING "libdatadog sha256")
         set(FILE_TO_DOWNLOAD libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl.tar.gz)
     else()
@@ -24,16 +30,16 @@ else()
     endif()
 endif()
 
-FetchContent_Declare(libdatadog-${LIBDATADOG_VERSION}
+FetchContent_Declare(libdatadog-install
     URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
     URL_HASH SHA256=${SHA256_LIBDATADOG}
-    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-${LIBDATADOG_VERSION}
+    SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-install
 )
-if(NOT libdatadog-${LIBDATADOG_VERSION}_POPULATED)
-    FetchContent_Populate(libdatadog-${LIBDATADOG_VERSION})
+if(NOT libdatadog-install_POPULATED)
+    FetchContent_Populate(libdatadog-install)
 endif()
 
-set(LIBDATADOG_BASE_DIR ${libdatadog-${LIBDATADOG_VERSION}_SOURCE_DIR})
+set(LIBDATADOG_BASE_DIR ${libdatadog-install_SOURCE_DIR})
 
 add_library(libdatadog-lib SHARED IMPORTED)
 
@@ -42,7 +48,7 @@ set_target_properties(libdatadog-lib PROPERTIES
     IMPORTED_LOCATION ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.so
 )
 
-add_dependencies(libdatadog-lib libdatadog-${LIBDATADOG_VERSION})
+add_dependencies(libdatadog-lib libdatadog-install)
 
 # Override target_link_libraries
 function(target_link_libraries target)

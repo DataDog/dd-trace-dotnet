@@ -30,6 +30,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+
+            // When doing log injection for CI, only emit 64-bit trace-ids.
+            // By default, the version conflict results in both 64-bit trace-ids
+            // and 128-bit trace-ids, which complicates the log correlation validation.
+            // If we can remove the netcoreapp2.1 test application, then we can remove this
+            // and start root spans with the automatic tracer so that we always generate 128-bit trace-ids.
+            SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", "false");
         }
 
         [SkippableFact]
@@ -58,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
-                ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount);
+                ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, use128Bits: false);
             }
         }
     }
