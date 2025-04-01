@@ -805,9 +805,11 @@ namespace Datadog.Trace.Configuration
             /// If disabled, 128-bit trace ids will be truncated to the lower 64 bits,
             /// and injected as decimal strings. 64-bit trace ids are
             /// always injected as decimal strings, regardless of this setting.
-            /// Default value is <c>true</c> (enabled).
-            /// If <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> is set to <c>false</c>,
-            /// this setting will also be set to <c>false</c>.
+            /// If unset, this configuration will take the value of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// which is <c>true</c> by default.
+            /// Note: This configuration can be set independently of the <see cref="ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled"/> configuration,
+            /// so it's possible to inject 128-bit trace ids into logs even if the application is only generating 64-bit trace ids, since distributed traces from upstream
+            /// services may contain 128-bit trace ids.
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
 
@@ -819,6 +821,17 @@ namespace Datadog.Trace.Configuration
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
 
             public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
+            /// Default value is <c>false</c> (enabled).
+            /// When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:
+            /// <ul>
+            ///   <li>The database is Microsoft SQL Server and <see cref="DbmPropagationMode"/> is set to <c>service</c> or <c>full</c>.</li>
+            ///   <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
+            /// </ul>
+            /// </summary>
+            public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
         }
 
         internal static class Telemetry
