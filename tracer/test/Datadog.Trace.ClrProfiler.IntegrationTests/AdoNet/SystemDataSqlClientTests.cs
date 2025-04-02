@@ -31,7 +31,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             => from packageVersionArray in PackageVersions.SystemDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
                from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
+               from injectStoredProc in new[] { "true", "false" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation, injectStoredProc };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
@@ -39,15 +40,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation, string injectStoredProc)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+            SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", injectStoredProc);
 
             // ALWAYS: 98 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
             // - IDbCommand: 14 spans (2 groups * 7 spans)
             // - SqlCommandVb: 21 spans (3 groups * 7 spans)
+            // - StoredProcedures: 10 spans (1 group * 10 spans)
             //
             // NETSTANDARD: +56 spans
             // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
@@ -62,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 
-            const int expectedSpanCount = 168;
+            const int expectedSpanCount = 178;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
@@ -98,6 +101,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 "full" => ".tagged",
                 _ => ".untagged",
             });
+
+            if (injectStoredProc == "true")
+            {
+                // we inject comment into the stored procedures by changing them to EXEC statements
+                // only works for SQL Server, not for other databases
+                // only works for stored procedures that do not have: Output, Return, InputOutput
+                fileName += ".storedproc";
+            }
+            else
+            {
+                fileName += ".nostoredproc";
+            }
 
             await VerifyHelper.VerifySpans(spans, settings)
                               .DisableRequireUniquePrefix()

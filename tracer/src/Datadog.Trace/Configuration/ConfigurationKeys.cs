@@ -827,6 +827,17 @@ namespace Datadog.Trace.Configuration
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
 
             public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
+            /// Default value is <c>false</c> (enabled).
+            /// When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:
+            /// <ul>
+            ///   <li>The database is Microsoft SQL Server and <see cref="DbmPropagationMode"/> is set to <c>service</c> or <c>full</c>.</li>
+            ///   <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
+            /// </ul>
+            /// </summary>
+            public const string InjectContextIntoStoredProceduresEnabled = "DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED";
         }
 
         internal static class Telemetry

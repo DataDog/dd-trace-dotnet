@@ -157,6 +157,36 @@ namespace BuggyBits.Models
         }
 
         // -------------------------------------------------------
+        // Different sync-over-async implementations
+        public async Task<IEnumerable<Product>> GetAllProductGetAwaiterGetResult(string rootPath)
+        {
+            // Note: sync-over-async is much slower so reduce the number of product to return
+            const int productCount = 2000;
+            var path = GetProductInfoRoot(rootPath);
+            var products = new List<Product>(productCount);
+            for (int id = 0; id < productCount; id++)
+            {
+                products.Add(GetProductAsync(path, id).GetAwaiter().GetResult());
+            }
+
+            return products;
+        }
+
+        public async Task<IEnumerable<Product>> GetAllProductWithResult(string rootPath)
+        {
+            // Note: sync-over-async is much slower so reduce the number of product to return
+            const int productCount = 2000;
+            var path = GetProductInfoRoot(rootPath);
+            var products = new List<Product>(productCount);
+            for (int id = 0; id < productCount; id++)
+            {
+                products.Add(GetProductAsync(path, id).Result);
+            }
+
+            return products;
+        }
+
+        // -------------------------------------------------------
         // Different asynchronous implementations
         public async Task<IEnumerable<Product>> GetAllProductAsync(string rootPath)
         {
