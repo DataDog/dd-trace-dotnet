@@ -89,11 +89,11 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         var url = $"/health?arg=dummy_rule";
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings(type, statusCode);
-        var fileId = nameof(TestBlockingAction) + Guid.NewGuid();
+        var fileId = nameof(TestBlockingAction);
         // need to reset if the process is going to be reused
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
+        await agent.SetupRcmAndWait(Output, []);
         var spans1 = await SendRequestsAsync(agent, url);
-        fileId = nameof(TestBlockingAction) + Guid.NewGuid();
+        fileId = nameof(TestBlockingAction);
         await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = new[] { new Action { Id = "block", Type = type, Parameters = new Parameter { StatusCode = statusCode, Type = "html", Location = "/redirect" } } } }, asmProduct, fileId) });
 
         var spans2 = await SendRequestsAsync(agent, url);
@@ -101,7 +101,7 @@ public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFix
         spans.AddRange(spans1);
         spans.AddRange(spans2);
         await VerifySpans(spans.ToImmutableList(), settings);
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
+        await agent.SetupRcmAndWait(Output, []);
     }
 
     public async Task InitializeAsync()
