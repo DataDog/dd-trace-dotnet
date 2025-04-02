@@ -9,7 +9,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 #if !NET6_0_OR_GREATER
 [Xunit.Trait("Category", "AlpineArmUnsupported")] // sqlite isn't supported in .NET 5 on Alpine
 #endif
-[Collection("Non-Parallel Collection")]
+[Collection("IastEfCoreSqliteTests")]
 public class EFCoreSqliteTests : EFCoreBaseTests
 {
     public EFCoreSqliteTests()
