@@ -264,6 +264,7 @@ namespace Datadog.Trace.AspNet
 
                     try
                     {
+                        var currentSpan = scope.Span;
                         var rootScope = scope.Root;
                         var rootSpan = rootScope.Span;
 
@@ -343,36 +344,45 @@ namespace Datadog.Trace.AspNet
                         //
                         // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
                         // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
+
+                        var response = app.Context.Response;
+                        int status;
+
+                        if (response.StatusCode == 500 && !response.IsClientConnected && app.Context.Error is null)
+                        {
+                            // rare case when client disconnects - IIS returns a 400 but reports a 500
+                            status = 400;
+                        }
+                        else
+                        {
+                            status = response.StatusCode;
+                        }
+
+                        // add "http.status_code" tag to the root span
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            var response = app.Context.Response;
-                            var status = response.StatusCode;
-                            if (status == 500 && !response.IsClientConnected && app.Context.Error is null)
-                            {
-                                // rare case when client disconnects - IIS returns a 400 but reports a 500
-                                status = 400;
-                            }
-
                             rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
+                        }
 
-                            if (scope.Span != rootSpan)
-                            {
-                                scope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
-                                AddHeaderTagsFromHttpResponse(app.Context, scope);
-                            }
+                        // also add "http.status_code" tag to the current span if it's not the root
+                        if (currentSpan != rootSpan && !currentSpan.HasHttpStatusCode())
+                        {
+                            currentSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            AddHeaderTagsFromHttpResponse(app.Context, scope);
+                        }
 
-                            if (proxyScope?.Span != null)
-                            {
-                                proxyScope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
-                                AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
-                            }
+                        // also add "http.status_code" tag to the inferred proxy span
+                        if (proxyScope?.Span is { } proxySpan && proxySpan != rootSpan && !proxySpan.HasHttpStatusCode())
+                        {
+                            proxySpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
                         }
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                          && !string.IsNullOrEmpty(resourceName))
                         {
-                            scope.Span.ResourceName = resourceName;
+                            currentSpan.ResourceName = resourceName;
                         }
                         else
                         {
@@ -382,11 +392,11 @@ namespace Datadog.Trace.AspNet
                             if (url is not null)
                             {
                                 string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
-                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                                currentSpan.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                             }
                             else
                             {
-                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()}";
+                                currentSpan.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()}";
                             }
                         }
                     }
