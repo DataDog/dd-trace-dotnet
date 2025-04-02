@@ -79,7 +79,6 @@ std::basic_string<TChar> ReplaceString(std::basic_string<TChar> subject, const s
 
 
 WSTRING to_lower(const WSTRING& str);
-bool string_lower_equal(WSTRING const& s1, WSTRING const& s2);
 bool string_iequal(WSTRING const& s1, WSTRING const& s2);
 
 } // namespace shared
