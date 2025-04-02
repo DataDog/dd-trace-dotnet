@@ -9,8 +9,8 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
     public class DeleteItemAsyncIntegration
     {
         private const string Operation = "DeleteItem";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DeleteItemAsyncIntegration>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             }
             catch (Exception exception)
             {
-                Log.Debug("Unable to add span pointer: " + exception.Message);
+                Log.Debug(exception, "Unable to add span pointer");
             }
 
             return new CallTargetState(scope);
