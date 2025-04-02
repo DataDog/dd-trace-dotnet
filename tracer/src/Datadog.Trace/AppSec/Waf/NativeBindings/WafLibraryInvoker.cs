@@ -194,7 +194,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             else
             {
                 Log.Error("Lib name or runtime ids is null, current platform {Fd} is likely not supported", fd.ToString());
-                return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.PaltformNotSupported);
+                return new LibraryInitializationResult(LibraryInitializationResult.LoadStatus.PlatformNotSupported);
             }
 
             var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle, libVersion);
@@ -239,7 +239,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if ((tracerVersion is { Minor: >= 34, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor <= 10) ||
                 (tracerVersion is { Minor: >= 38, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 13) ||
                 (tracerVersion is { Minor: >= 44, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 15) ||
-                (tracerVersion is { Minor: >= 51, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 17))
+                (tracerVersion is { Minor: >= 51, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 17) ||
+                (tracerVersion is { Minor: >= 51, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 23))
             {
                 Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
                 return false;

@@ -29,7 +29,7 @@ internal class LibraryInitializationResult
         Ok = 0,
         LibraryLoad = 1 << 0,
         ExportError = 1 << 1,
-        PaltformNotSupported = 1 << 2,
+        PlatformNotSupported = 1 << 2,
         VersionNotCompatible = 1 << 3,
     }
 
