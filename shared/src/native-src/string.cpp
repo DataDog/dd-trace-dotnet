@@ -160,11 +160,6 @@ namespace shared {
         return lower;
     }
 
-    bool string_lower_equal(WSTRING const& s1, WSTRING const& s2)
-    {
-        return s1 == s2;
-    }
-
     bool icompare_pred(WCHAR a, WCHAR b)
     {
         return std::tolower(a) == std::tolower(b);
