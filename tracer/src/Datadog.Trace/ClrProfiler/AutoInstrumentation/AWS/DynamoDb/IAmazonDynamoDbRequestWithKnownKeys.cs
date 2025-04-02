@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
     /// <summary>
     /// Interface for duck typing AmazonDynamoDbRequest implementations with the TableName and Key properties.
+    /// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/UpdateItemRequest.cs
+    /// https://github.com/aws/aws-sdk-net/blob/main/sdk/src/Services/DynamoDBv2/Generated/Model/DeleteItemRequest.cs
     /// </summary>
     internal interface IAmazonDynamoDbRequestWithKnownKeys
     {
