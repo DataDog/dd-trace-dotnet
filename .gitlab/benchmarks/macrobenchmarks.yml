@@ -1,6 +1,7 @@
 stages:
   - check-azure-pipeline
   - benchmarks
+  - setup-win
   - benchmarks-win
 
 variables:
@@ -435,6 +436,20 @@ profiler_cpu_timer_create-arm64:
     # Variables prefixed by 'BP_INFRA_' are automatically used by launch.sh
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
+
+build-ami:
+  stage: setup-win
+  needs: []
+  tags: ["arch:amd64"]
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  interruptible: true
+  timeout: 1h
+  when: manual
+  variables:
+    <<: *ephemeral-infra-setup-variables
+  script:
+    - !reference [.ephemeral-infra-setup, script]
+    - /app/infra/launch.sh --region "${AWS_REGION}" --provision .gitlab/benchmarks/provisions/macrobenchmark-base-instance-and-ami.yaml
 
 .benchmarks-win:
   stage: benchmarks-win
