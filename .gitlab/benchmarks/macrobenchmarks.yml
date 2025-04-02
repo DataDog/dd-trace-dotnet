@@ -405,6 +405,37 @@ profiler_cpu_timer_create-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
+.ephemeral-infra-setup:
+  variables: &ephemeral-infra-setup-variables
+    AWS_REGION: "us-east-1"
+    AWS_PROFILE: "ephemeral-infra-ci"
+  script:
+    # Future improvements: Save this to a script in benchmarking-platform-tools,
+    # considering that repos using ephemeral infra will run the same steps.  
+    - mkdir -p ~/.aws 
+    - |
+      (
+      unset AWS_PROFILE
+      aws ssm get-parameter \
+        --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.${CI_PROJECT_NAME}-profile" \
+        --region "$AWS_REGION" \
+        --with-decryption --query "Parameter.Value" \
+        --out text >> ~/.aws/config
+      aws ssm get-parameter \
+        --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-pair-name" \
+        --region "$AWS_REGION" \
+        --with-decryption --query "Parameter.Value" \
+        --out text >> ~/.aws/key-pair-name.txt
+      aws ssm get-parameter \
+        --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-private-key" \
+        --region "$AWS_REGION" \
+        --with-decryption --query "Parameter.Value" \
+        --out text >> ~/.aws/key-pair-private-key.pem
+      )
+    # Variables prefixed by 'BP_INFRA_' are automatically used by launch.sh
+    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
+    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
+
 .benchmarks-win:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
