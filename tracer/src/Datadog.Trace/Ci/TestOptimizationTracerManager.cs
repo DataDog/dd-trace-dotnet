@@ -180,7 +180,6 @@ namespace Datadog.Trace.Ci
                 spanSampler,
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
-                tracerFlareManager)
                 tracerFlareManager,
                 spanEventsManager)
             {
