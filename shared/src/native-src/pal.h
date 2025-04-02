@@ -123,9 +123,25 @@ inline WSTRING GetCurrentProcessName()
     proc_name(getpid(), buffer, length);
     return ToWSTRING(std::string(buffer));
 #else
-    std::fstream comm("/proc/self/comm");
+    std::ifstream cmdline("/proc/self/cmdline");
     std::string name;
-    std::getline(comm, name);
+    std::getline(cmdline, name, '\0'); // Read until first null character
+
+    // If name is empty or doesn't contain a path, fallback to /proc/self/comm
+    if (name.empty())
+    {
+        // proc/self/comm only contains 15 characters, which may be an issue
+        std::ifstream comm("/proc/self/comm");
+        std::getline(comm, name);
+    }
+
+    // Extract the filename from the full path if a path is provided
+    if (!name.empty())
+    {
+        fs::path process_path(name);
+        name = process_path.filename().string();
+    }
+
     return ToWSTRING(name);
 #endif
 }
