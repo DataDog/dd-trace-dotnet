@@ -470,7 +470,8 @@ build-ami:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
 
     <<: *ephemeral-infra-setup-variables
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "igoragoli/improve-representativeness"
+    # TODO: Switch to 'dd-trace-dotnet/macro' once testing is complete.
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "igoragoli/update-dd-trace-dotnet-macro"
     CLEANUP: "true"
 
     K6_OPTIONS_WARMUP_RATE: 500
