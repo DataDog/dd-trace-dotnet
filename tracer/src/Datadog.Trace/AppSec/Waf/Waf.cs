@@ -31,7 +31,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly IEncoder _encoder;
-        private IntPtr _wafBuilderHandle;
+        private readonly IntPtr _wafBuilderHandle;
         private IntPtr _wafHandle;
 
         internal Waf(IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -230,36 +230,6 @@ namespace Datadog.Trace.AppSec.Waf
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
         public unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds)
             => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
-
-        internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
-        {
-            if (res == null)
-            {
-                throw new ArgumentNullException(nameof(res));
-            }
-
-            var finalRuleData = new List<RuleData>();
-            var groups = res.GroupBy(r => r.Id + r.Type);
-            foreach (var ruleDatas in groups)
-            {
-                var dataByValue = ruleDatas.SelectMany(d => d.Data!).GroupBy(d => d.Value);
-                var mergedDatas = new List<Data>();
-                foreach (var data in dataByValue)
-                {
-                    var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
-                    mergedDatas.Add(longestLastingIp);
-                }
-
-                var ruleData = ruleDatas.FirstOrDefault();
-                if (ruleData != null && !string.IsNullOrEmpty(ruleData.Type) && !string.IsNullOrEmpty(ruleData.Id))
-                {
-                    ruleData.Data = mergedDatas.ToArray();
-                    finalRuleData.Add(ruleData);
-                }
-            }
-
-            return finalRuleData;
-        }
 
         public void Dispose()
         {

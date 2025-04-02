@@ -15,7 +15,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmGenericProduct : IAsmConfigUpdater
 {
-    private Func<Dictionary<string, JToken>> _getCollection;
+    private readonly Func<Dictionary<string, JToken>> _getCollection;
 
     public AsmGenericProduct(Func<Dictionary<string, JToken>> getCollection)
     {

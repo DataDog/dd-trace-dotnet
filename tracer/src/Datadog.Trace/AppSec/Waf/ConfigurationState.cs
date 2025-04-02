@@ -30,13 +30,6 @@ internal record ConfigurationState
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationState>();
 
-    internal const string WafRulesKey = "rules";
-    internal const string WafRulesOverridesKey = "rules_override";
-    internal const string WafExclusionsKey = "exclusions";
-    internal const string WafRulesDataKey = "rules_data";
-    internal const string WafExclusionsDataKey = "exclusion_data";
-    internal const string WafCustomRulesKey = "custom_rules";
-    internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
 
     private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters;

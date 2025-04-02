@@ -80,24 +80,19 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestGlobalRulesToggling));
-            // var ruleId = "crs-942-290";
+            var fileId = nameof(TestRulesToggling);
 
+            // ruleId = "crs-942-290" should be triggered;
             var spans0 = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, userAgent: "acunetix-product");
-            var productId = nameof(TestRulesToggling) + Guid.NewGuid();
-
-            var request1 = await agent.SetupRcmAndWait(
-                               Output,
-                               new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, ASMProduct, productId: productId) });
+            var payload1 = ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = null, OnMatch = new[] { "block" }, RulesTarget = JToken.Parse(@"[{'tags': {'confidence': '1'}}]") } } }, ASMProduct, productId: fileId + "1");
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { payload1 });
             CheckAckState(request1, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "First RCM call");
 
             var spans1 = await SendRequestsAsync(agent, url);
 
             // reset
-            productId = nameof(TestRulesToggling) + Guid.NewGuid();
-            var request2 = await agent.SetupRcmAndWait(
-                               Output,
-                               new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, ASMProduct, fileId: productId) });
-            CheckAckState(request2, ASMProduct, 1, ApplyStates.ACKNOWLEDGED, null, "Reset RCM call");
+            var request2 = await agent.SetupRcmAndWait(Output, []);
+            CheckAckState(request2, ASMProduct, 0, ApplyStates.ACKNOWLEDGED, null, "Reset RCM call");
             var spans2 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();

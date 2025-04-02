@@ -33,7 +33,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             var payload = new Payload { RulesData = rulesData!.ToArray() };
             AddAsmDataRemoteConfig(configurationStatus, payload, "001");
             configurationStatus.ApplyStoredFiles();
-            // var configurationStatus = UpdateConfigurationState(rulesData: new() { ["test"] = rulesData!.ToArray() });
             var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasRuleErrors.Should().BeFalse();

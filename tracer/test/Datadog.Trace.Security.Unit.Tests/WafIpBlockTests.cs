@@ -56,20 +56,5 @@ namespace Datadog.Trace.Security.Unit.Tests
             result!.ReturnCode.Should().Be(WafReturnCode.Ok);
             result.Actions.Should().BeEmpty();
         }
-
-        [Fact]
-        public void TestMergeWithoutWaf()
-        {
-            var result = Waf.MergeRuleData(
-                [new() { Id = "id1", Type = "type1", Data = [new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id2", Type = "type2", Data = [new Data { Expiration = 10, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id3", Type = "type3", Data = [new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id2", Type = "type2", Data = [new Data { Expiration = 30, Value = "1" }, new Data { Expiration = 30, Value = "2" }, new Data { Expiration = 30, Value = "3" }] }]);
-
-            result.Should().NotBeEmpty();
-            result.Should().ContainItemsAssignableTo<RuleData>();
-            result.Should().HaveCount(3);
-
-            var expectedResult = new RuleData[] { new() { Id = "id1", Type = "type1", Data = [new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id2", Type = "type2", Data = [new Data { Expiration = 30, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 30, Value = "3" }] }, new() { Id = "id3", Type = "type3", Data = [new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" }] } };
-
-            result.Should().BeEquivalentTo(expectedResult);
-        }
     }
 }
