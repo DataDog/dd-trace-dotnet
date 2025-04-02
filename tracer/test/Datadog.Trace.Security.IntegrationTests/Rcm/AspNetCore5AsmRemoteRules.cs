@@ -55,7 +55,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // Should fall back to the default rules and trigger "ua0-600-56x"
             // Should block and return a 405 (from the defined action)
 
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (new Payload { Actions = [] }, "ASM", $"{block405ActionProductId}3") });
+            await agent.SetupRcmAndWait(Output, []);
             var spans6 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
             // Should use the default rules with no defined action and trigger "ua0-600-56x"
             // Should block and return a 403

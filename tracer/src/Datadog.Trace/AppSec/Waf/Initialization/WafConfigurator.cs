@@ -139,7 +139,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     {
                         foreach (var path in configs.Removes)
                         {
-                            Log.Information("WAF: Removing config: {Path}", path);
+                            Log.Debug("WAF: Removing config: {Path}", path);
 
                             if (!_wafLibraryInvoker.BuilderRemoveConfig(wafBuilderHandle, path))
                             {
@@ -152,7 +152,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     {
                         foreach (var config in configs.Updates)
                         {
-                            Log.Information("WAF: Applying config: {Path}", config.Key);
+                            Log.Debug("WAF: Applying config: {Path}", config.Key);
 
                             using (var encoded = encoder.Encode(config.Value, applySafetyLimits: false))
                             {
