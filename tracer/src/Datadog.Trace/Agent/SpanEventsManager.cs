@@ -13,10 +13,10 @@ namespace Datadog.Trace.Agent;
 internal class SpanEventsManager : ISpanEventsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanEventsManager>();
-    private readonly IDiscoveryService _discoveryService;
+    private readonly IDiscoveryService? _discoveryService;
     private bool _nativeSpanEventsEnabled;
 
-    public SpanEventsManager(IDiscoveryService discoveryService)
+    public SpanEventsManager(IDiscoveryService? discoveryService)
     {
         _discoveryService = discoveryService;
     }
@@ -25,12 +25,18 @@ internal class SpanEventsManager : ISpanEventsManager
 
     public void Start()
     {
-        _discoveryService.SubscribeToChanges(HandleConfigUpdate);
+        if (_discoveryService is not null)
+        {
+            _discoveryService.SubscribeToChanges(HandleConfigUpdate);
+        }
     }
 
     public void Dispose()
     {
-        _discoveryService.RemoveSubscription(HandleConfigUpdate);
+        if (_discoveryService is not null)
+        {
+            _discoveryService.RemoveSubscription(HandleConfigUpdate);
+        }
     }
 
     private void HandleConfigUpdate(AgentConfiguration config)

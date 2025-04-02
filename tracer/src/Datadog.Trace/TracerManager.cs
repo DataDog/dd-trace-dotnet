@@ -70,6 +70,7 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
