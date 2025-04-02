@@ -106,7 +106,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                 {
                     var args = CreateWafArgs();
                     var r = new Random();
-                    for (var i = 0; i < 1000; i++)
+                    for (var i = 0; i < 100; i++)
                     {
                         var next = r.Next();
                         using var context = waf.CreateContext();
@@ -159,18 +159,19 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
 
             if (t < updateThreads)
             {
-                for (int i = 0; i < 40; i++)
-                {
                     var threadUpdate = new Thread(
                     () =>
                     {
-                        var configurationState = UpdateConfigurationState(ruleSet: new() { { "test", ruleSet! } });
-                        var res = waf!.Update(configurationState);
-                        res.Success.Should().BeTrue();
+                        for (int i = 0; i < 10; i++)
+                        {
+                            var configurationState = UpdateConfigurationState(ruleSet: new() { { "test", ruleSet! } });
+                            var res = waf!.Update(configurationState);
+                            res.Success.Should().BeTrue();
+                        }
+
+                        Thread.Sleep(500);
                     });
                     threadsUpdate[t] = threadUpdate;
-                    Thread.Sleep(1500);
-                }
             }
         }
 

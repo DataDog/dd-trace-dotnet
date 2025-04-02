@@ -87,7 +87,7 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         var url = $"/health";
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        var fileId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
+        var fileId = nameof(TestGlobalRulesToggling);
         var userAgent = "(sql power injector)";
 
         var spans1 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: userAgent);
@@ -97,7 +97,7 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
 
         // reset
         fileId = nameof(TestGlobalRulesToggling) + Guid.NewGuid();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = Array.Empty<RuleOverride>() }, asmProduct, fileId) });
+        await agent.SetupRcmAndWait(Output, []);
         var spans3 = await SendRequestsAsync(agent, url, null, 1, 1, null, userAgent: userAgent);
 
         var spans = new List<MockSpan>();
@@ -105,7 +105,7 @@ public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture
         spans.AddRange(spans2);
         spans.AddRange(spans3);
         await VerifySpans(spans.ToImmutableList(), settings);
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
+        // await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { Actions = Array.Empty<Action>() }, asmProduct, fileId) });
     }
 
     public async Task InitializeAsync()

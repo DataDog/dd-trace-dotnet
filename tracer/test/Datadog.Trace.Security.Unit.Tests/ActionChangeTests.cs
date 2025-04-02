@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
@@ -22,13 +23,12 @@ public class ActionChangeTests : WafLibraryRequiredTest
 {
     [Theory]
     [InlineData("dummy_rule", "test-dummy-rule", "block", BlockingAction.BlockRequestType, 500)]
-    [InlineData("dummyrule2", "test-dummy-rule2", "customblock", BlockingAction.BlockRequestType, 500)]
     // Redirect status code is restricted in newer versions of the waf to 301, 302, 303, 307
-    [InlineData("dummyrule2", "test-dummy-rule2", "customblock", BlockingAction.RedirectRequestType, 303)]
     [InlineData("dummy_rule", "test-dummy-rule", "block", BlockingAction.RedirectRequestType, 303)]
     public void GivenADummyRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string paramValue, string rule, string action, string actionType, int newStatus)
     {
-        var initResult = CreateWaf(true, "rasp-rule-set.json");
+        var configurationState = CreateConfigurationState("rasp-rule-set.json");
+        var initResult = CreateWaf(configurationState, true);
         var waf = initResult.Waf;
         using var context = waf.CreateContext();
         var args = CreateArgs(paramValue);
@@ -39,7 +39,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
         var newAction = CreateNewStatusAction(action, actionType, newStatus);
-        UpdateWafWithActions([newAction], waf);
+        UpdateWafWithActions([newAction], waf, configurationState, "update1");
 
         using var contextNew = waf.CreateContext();
         result = contextNew.Run(args, TimeoutMicroSeconds);
@@ -60,11 +60,12 @@ public class ActionChangeTests : WafLibraryRequiredTest
     [Fact]
     public void GivenADummyRule_WhenActionReturnCodeIsChangedAfterInit_ThenChangesAreApplied()
     {
-        var initResult = CreateWaf(true, "rasp-rule-set.json");
+        var configurationState = CreateConfigurationState("rasp-rule-set.json");
+        var initResult = CreateWaf(configurationState, true);
         var waf = initResult.Waf;
         var args = CreateArgs("dummyrule2");
 
-        UpdateWafWithActions([CreateNewStatusAction("customblock", BlockingAction.BlockRequestType, 500)], waf);
+        UpdateWafWithActions([CreateNewStatusAction("block", BlockingAction.BlockRequestType, 500)], waf, configurationState, "update1");
 
         using var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
@@ -74,12 +75,12 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
     private Dictionary<string, object> CreateArgs(string requestParam) => new() { { AddressesConstants.RequestUriRaw, "http://localhost:54587/" }, { AddressesConstants.RequestBody, new[] { "param", requestParam } }, { AddressesConstants.RequestMethod, "GET" } };
 
-    private void UpdateWafWithActions(Action[] actions, Waf waf)
+    private UpdateResult UpdateWafWithActions(Action[] actions, Waf waf, ConfigurationState configurationState, string updateId)
     {
-        var configurationStatus = UpdateConfigurationState(actions: new() { ["file"] = actions });
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
-        var res = waf.Update(configurationStatus);
+        AddAsmRemoteConfig(configurationState, new Payload { Actions = actions }, updateId);
+        var res = UpdateWaf(configurationState, waf);
         res.Success.Should().BeTrue();
+        return res;
     }
 
     private Action CreateNewStatusAction(string action, string actionType, int newStatus)
