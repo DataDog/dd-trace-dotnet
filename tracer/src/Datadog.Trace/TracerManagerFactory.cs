@@ -363,6 +363,7 @@ namespace Datadog.Trace
         {
             if (settings.DataPipelineEnabled)
             {
+                var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                 var configuration = new TraceExporterConfiguration
                 {
                     Url = GetUrl(settings),
@@ -373,7 +374,12 @@ namespace Datadog.Trace
                     Hostname = HostMetadata.Instance.Hostname,
                     Language = ".NET",
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                    LanguageInterpreter = FrameworkDescription.Instance.Name
+                    LanguageInterpreter = FrameworkDescription.Instance.Name,
+                    TelemetryClientConfiguration = new TelemetryClientConfiguration
+                    {
+                        Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                        RuntimeId = new CharSlice(Tracer.RuntimeId)
+                    }
                 };
                 return new TraceExporter(configuration);
             }
