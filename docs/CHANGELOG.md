@@ -16,6 +16,25 @@
 
 
 
+
+## [Release 3.14.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.14.0)
+
+## Summary
+
+* [Database Monitoring] Propagate context for some stored procedures
+
+## Changes
+
+### Misc
+* [Database Monitoring] Propagate context for some stored procedures (#6799)
+
+### Build / Test
+* [R&D Week Profiling] Add tests for sync over async scenarios (#6763)
+* Download and Copy libdatadog binaries for Data-Pipeline integration (#6777)
+
+
+[Changes since 3.13.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.13.0...v3.14.0)
+
 ## [Release 3.13.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.13.0)
 
 ## Summary
