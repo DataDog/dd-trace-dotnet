@@ -367,7 +367,7 @@ namespace Datadog.Trace
                     Hostname = HostMetadata.Instance.Hostname,
                     Language = ".NET",
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                    LanguageInterpreter = ".NET"
+                    LanguageInterpreter = FrameworkDescription.Instance.Name
                 };
                 return new TraceExporter(configuration);
             }
