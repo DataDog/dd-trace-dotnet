@@ -1,0 +1,188 @@
+name: &provision_name "dd-trace-dotnet-macrobenchmark-ephemeral-instance"
+
+init_environment:
+  BENCHMARKING_PLATFORM_DIR: "C:\\benchmarking-platform"
+  DD_TRACE_DOTNET_DIR: "C:\\benchmarking-platform\\dd-trace-dotnet"
+  BUILD_ARTIFACTS_DIR: "C:\\benchmarking-platform\\dd-trace-dotnet\\build-artifacts"
+
+  BP_REPO_FETCHER_KEY_SSM_PARAMETER: "/windows-benchmarking/bp-repo-fetcher-key"
+  BP_REPO_FETCHER_CLIENT_ID: "Iv23liYOxTI8nIatGymV"
+
+  ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results"
+  DD_API_KEY_SSM_PARAMETER: "/windows-benchmarking/dd-api-key"
+
+user_data_path: user_data/setup-benchmarking-platform-module.ps1
+
+source_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet/macrobenchmark-base-instance-ami-id"
+
+tags:
+  Name: *provision_name
+  igoragoli: true
+
+provision_steps:
+  - check_cpu_model
+  - clone_bp
+  - clone_dd-trace-dotnet_and_prepare_sut
+  - clone_build_artifacts
+  - build_sut
+  - run_benchmarks
+  - upload_artifacts_to_s3
+
+check_cpu_model:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $cpuModel = (Get-WmiObject -Class Win32_Processor).Name
+    if ($cpuModel -notlike "*8259CL CPU*") {
+        Write-Error "CPU model is not Intel(R) Xeon(R) Platinum 8259CL"
+    }
+    Write-Output "CPU model is Intel(R) Xeon(R) Platinum 8259CL"
+
+clone_bp:
+  populate_env: true
+  remote_command: |
+    $moduleFile = "C:\BenchmarkingPlatformModule.psm1"
+    $timeout = (Get-Date).AddMinutes(5)
+
+    while (-not (Test-Path $moduleFile)) {
+        if ((Get-Date) -gt $timeout) {
+            Write-Error "Timed out waiting for $moduleFile"
+            exit 1
+        }
+        Write-Output "Waiting for $moduleFile..."
+        Start-Sleep -Seconds 5
+    }
+
+    Import-Module $moduleFile
+
+    $installationAccessToken = Generate-GitHubInstallationAccessToken `
+        -privateKeySSMParameterName "$env:BP_REPO_FETCHER_KEY_SSM_PARAMETER" `
+        -clientId "$env:BP_REPO_FETCHER_CLIENT_ID"
+
+    if (Test-Path "C:\benchmarking-platform") {
+        Remove-Item -Recurse -Force "C:\benchmarking-platform"
+    }
+    git clone "https://x-access-token:$installationAccessToken@github.com/DataDog/benchmarking-platform.git" "C:\benchmarking-platform"
+    Set-Location "C:\benchmarking-platform"
+    # TODO: Ideally, hard-code this to dd-trace-dotnet/macro
+    git checkout $env:BP_INFRA_BENCHMARKING_PLATFORM_BRANCH
+
+clone_dd-trace-dotnet_and_prepare_sut:
+  populate_env: true
+  remote_command: |
+    if ($env:CI_PROJECT_NAME -match "dd-trace-dotnet") {
+      $branch = $env:CI_COMMIT_REF_NAME
+    } else {
+      $branch = "master"
+      Write-Output "Not running from dd-trace-dotnet's CI. Setting cloned dd-trace-dotnet branch to '$branch'..."
+    }
+
+    git clone https://github.com/DataDog/dd-trace-dotnet.git $env:DD_TRACE_DOTNET_DIR
+    Set-Location $env:DD_TRACE_DOTNET_DIR
+    git checkout $branch
+
+    Write-Output "Preparing Samples.AspNetCoreSimpleController to use .NET 9..."
+    (Get-Content './tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj' -Raw) -replace '<TargetFramework>net5.0</TargetFramework>', '<TargetFramework>net9.0</TargetFramework>' | Set-Content './tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj'
+
+# Future improvements: remove hard-coded buildId
+clone_build_artifacts:
+  populate_env: true
+  remote_command: |
+    if (-not $env:buildId) {
+      $defaultBuildId = "175481"
+      Write-Output "buildId is not set, using $defaultBuildId as default"
+      $env:buildId = $defaultBuildId
+    }
+
+    $ProgressPreference = "SilentlyContinue" # Makes Invoke-WebRequest faster
+
+    $personalAccessToken = "1"
+    $artifactNames = @(
+        "windows-tracer-home",
+        "Datadog.Trace.Manual.dll"
+    )
+
+    New-Item -ItemType Directory -Path $env:BUILD_ARTIFACTS_DIR -Force | Out-Null
+
+    foreach ($artifactName in $artifactNames) {
+        $artifactsUri = "https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/$env:buildId/artifacts?artifactName=$artifactName&api-version=4.1"
+        $artifactData = Invoke-RestMethod -Uri $artifactsUri -Headers @{Authorization = "Basic "+[Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$personalAccessToken"))}
+        $downloadUrl = $artifactData.resource.downloadUrl
+        Invoke-WebRequest -Uri $downloadUrl -OutFile "$env:BUILD_ARTIFACTS_DIR/$artifactName.zip"
+        Expand-Archive -Path "$env:BUILD_ARTIFACTS_DIR/$artifactName.zip" -DestinationPath "$env:BUILD_ARTIFACTS_DIR/$artifactName" -Force
+    }
+
+    Move-Item -Path "$env:BUILD_ARTIFACTS_DIR\windows-tracer-home\*" -Destination "$env:DD_TRACE_DOTNET_DIR\tracer\windows-tracer-home" -Force
+
+    New-Item -ItemType Directory -Path "$env:DD_TRACE_DOTNET_DIR\tracer\bin\netcoreapp3.1" -Force | Out-Null
+
+    # Copy and move DLLs
+    Copy-Item `
+        -Recurse `
+        -Path "$env:BUILD_ARTIFACTS_DIR\Datadog.Trace.Manual.dll\Datadog.Trace.Manual.dll\*" `
+        -Destination "$env:DD_TRACE_DOTNET_DIR\tracer\test\test-applications\throughput\Samples.AspNetCoreSimpleController"
+    Copy-Item `
+        -Recurse `
+        -Path "$env:BUILD_ARTIFACTS_DIR\Datadog.Trace.Manual.dll\Datadog.Trace.Manual.dll\*" `
+        -Destination "$env:DD_TRACE_DOTNET_DIR\tracer\bin\netcoreapp3.1"
+
+build_sut:
+  populate_env: true
+  remote_command: |
+    # Set environment variables
+    $env:COR_PROFILER = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+    $env:CORECLR_PROFILER = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+    $env:NATIVE_PROFILER_PATH = "C:\dd-trace-dotnet\tracer\windows-tracer-home\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
+    $env:TRACER_HOME_PATH = "C:\dd-trace-dotnet\tracer\windows-tracer-home"
+    $env:COR_PROFILER_PATH = "$env:NATIVE_PROFILER_PATH"
+    $env:CORECLR_PROFILER_PATH = "$env:NATIVE_PROFILER_PATH"
+    $env:DD_DOTNET_TRACER_HOME = "$env:TRACER_HOME_PATH"
+
+    Set-Location "$env:DD_TRACE_DOTNET_DIR\tracer\test\test-applications\throughput\Samples.AspNetCoreSimpleController"
+    dotnet build $DOTNET_BUILD_ARGS
+
+run_benchmarks:
+  populate_env: true
+  remote_command: |
+    $env:DD_API_KEY = (Get-SSMParameter -Name $env:DD_API_KEY_SSM_PARAMETER -WithDecryption $true).Value
+    Set-Location $env:BENCHMARKING_PLATFORM_DIR
+    bp-runner --debug ./config/bp-runner.yml
+
+upload_artifacts_to_s3:
+  populate_env: true
+  remote_command: |
+    # Adds user data outputs, errors and logs to artifacts directory
+    $artifactsDir = "C:\UserDataArtifacts"
+    $EC2LaunchArtifactsDir = "$artifactsDir\EC2LaunchArtifactsEphemeralInstance"
+    $EC2LaunchTempDir = (Get-Content "C:\ProgramData\Amazon\EC2Launch\log\agent.log" | Select-String "Output file is created at: (.+output\.tmp)" | ForEach-Object { $_.Matches.Groups[1].Value } | Select-Object -Last 1) -replace "\\output\.tmp$"
+    $EC2LaunchTempFiles = @("$EC2LaunchTempDir\UserScript.ps1", "$EC2LaunchTempDir\err.tmp", "$EC2LaunchTempDir\output.tmp")
+    foreach ($file in $EC2LaunchTempFiles) {
+        Copy-Item $file $EC2LaunchArtifactsDir
+    }
+
+    $s3Prefix =
+    if ($env:CI_PROJECT_NAME -and
+        $env:CI_COMMIT_REF_NAME -and
+        $env:CI_JOB_ID) {
+        "$env:CI_PROJECT_NAME/$env:CI_COMMIT_REF_NAME/$env:CI_JOB_ID/"
+    }
+    else {
+        # See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+        $instanceId = try {
+            $instanceMetadataLinkLocalAddress = "http://169.254.169.254/latest/meta-data"
+
+            Invoke-RestMethod -Uri "$instanceMetadataLinkLocalAddress/instance-id" -ErrorAction Stop
+        } catch {
+            "unknown-instance"
+        }
+        "manual/ephemeral-instance/$instanceId/"
+    }
+
+    Write-S3Object `
+        -BucketName $env:ARTIFACTS_BUCKET_NAME `
+        -KeyPrefix $s3Prefix `
+        -Folder $artifactsDir `
+        -CannedACLName "bucket-owner-full-control" `
+        -Recurse
+
+    Write-Output "Successfully uploaded artifacts to s3://$($env:ARTIFACTS_BUCKET_NAME)/$s3Prefix!"
