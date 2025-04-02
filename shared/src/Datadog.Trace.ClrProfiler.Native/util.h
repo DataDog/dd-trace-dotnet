@@ -53,6 +53,7 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
     WStr("waappagent.exe"),            // https://github.com/Azure/WindowsVMAgent
+    WStr("werfault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
     WStr("windowsazureguestagent.exe") // https://github.com/Azure/WindowsVMAgent
 };
 
