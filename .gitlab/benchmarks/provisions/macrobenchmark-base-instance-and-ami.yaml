@@ -1,0 +1,66 @@
+# Builds a "base" instance and creates an AMI with it for running the dd-trace-dotnet macrobenchmark.
+
+name: &provision_name "dd-trace-dotnet-macrobenchmark-base-instance"
+
+init_environment:
+  # Specific build version used to install .NET Core.
+  # See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
+  ASP_NET_CORE_RUNTIME_VERSION: "9.0.0"
+  NET_CORE_WINDOWS_DESKTOP_RUNTIME_VERSION: "9.0.0"
+  NET_CORE_SDK_VERSION: "9.0.202"
+
+source_ami:
+  # Instance with tweaks for benchmarking repeatability, base dependencies,
+  # and benchmarking tooling.
+  # See https://github.com/DataDog/benchmarking-platform-tools/blob/main/infra/src/provisions/windows/user_data/base-instance-setup.ps1
+  ami_id_ssm_parameter: "/windows-benchmarking/windows-base-instance-ami-id"
+
+create_ami:
+  ami_id_ssm_parameter: "/windows-benchmarking/dd-trace-dotnet/macrobenchmark-base-instance-ami-id"
+
+tags:
+  Name: *provision_name
+
+provision_steps:
+  - check_cpu_model
+  - install_k6_v0.43.1
+  - install_dotnet
+
+check_cpu_model:
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $cpuModel = (Get-WmiObject -Class Win32_Processor).Name
+    if ($cpuModel -notlike "*8259CL CPU*") {
+        Write-Error "CPU model is not Intel(R) Xeon(R) Platinum 8259CL: $cpuModel"
+    }
+    Write-Output "CPU model is Intel(R) Xeon(R) Platinum 8259CL"
+
+# This step must be completed because the source AMI has the latest k6 version,
+# which differs from that used in Linux benchmarks.
+# TODO: Once testing is done, remove this step and install k6 v0.43.1 on
+# the source AMI.
+install_k6_v0.43.1:
+  remote_command: |
+    Remove-Item -Recurse -Force -Path "$env:ProgramFiles\k6"
+    choco install k6 --version=0.43.1 --no-progress -y
+
+install_dotnet:
+  populate_env: true
+  remote_command: |
+    $ErrorActionPreference = "Stop"
+    $ProgressPreference = "SilentlyContinue" # Makes Invoke-WebRequest faster
+
+    $timeoutSec = 120
+    Write-Output "Installing ASP.NET Core Runtime $env:ASP_NET_CORE_RUNTIME_VERSION, .NET Core Windows Desktop Runtime $env:NET_CORE_WINDOWS_DESKTOP_RUNTIME_VERSION, and .NET Core SDK $env:NET_CORE_SDK_VERSION"
+    try {
+      powershell -NoProfile -ExecutionPolicy unrestricted -Command `
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; `
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Runtime aspnetcore -Version "$env:ASP_NET_CORE_RUNTIME_VERSION" -InstallDir C:\dotnet; `
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Runtime windowsdesktop -Version "$env:NET_CORE_WINDOWS_DESKTOP_RUNTIME_VERSION" -InstallDir C:\dotnet; `
+        &([scriptblock]::Create((Invoke-WebRequest -UseBasicParsing 'https://dot.net/v1/dotnet-install.ps1' -TimeoutSec $timeoutSec))) -Channel 9.0 -Version "$env:NET_CORE_SDK_VERSION" -InstallDir C:\dotnet
+    } catch {
+      Write-Error "Failed installation: $_"
+    }
+
+    $newPath = "$env:Path;C:\dotnet"
+    [System.Environment]::SetEnvironmentVariable("Path", $newPath, [System.EnvironmentVariableTarget]::Machine)
