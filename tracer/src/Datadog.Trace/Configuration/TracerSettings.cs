@@ -415,8 +415,15 @@ namespace Datadog.Trace.Configuration
 
             // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
             // as it may lead to different stats results than the managed one.
-            DataPipelineEnabled = !StatsComputationEnabled && config.WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                                                    .AsBool(defaultValue: false);
+            DataPipelineEnabled = config
+                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
+                                  .AsBool(defaultValue: false);
+
+            if (DataPipelineEnabled && StatsComputationEnabled)
+            {
+                DataPipelineEnabled = false;
+                _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+            }
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
