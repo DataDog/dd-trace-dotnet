@@ -25,6 +25,53 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         }
 
         [TestAppFact("Samples.Computer01")]
+        public void CheckTimerCreateIsNotDefault(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers except CPU
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+               .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var logLines = File.ReadLines(logFile);
+
+            logLines.Should().NotContainMatch("*timer_create Cpu profiler is enabled*");
+            logLines.Should().ContainMatch("*Manual Cpu profiler is enabled*");
+
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckTimerCreateIsDisabledWhenManualIsSet(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            // disable default profilers except CPU
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "ManualCpuTime");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+               .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var logLines = File.ReadLines(logFile);
+
+            logLines.Should().NotContainMatch("*timer_create Cpu profiler is enabled*");
+            logLines.Should().ContainMatch("*Manual Cpu profiler is enabled*");
+
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotBeEmpty("No samples were found");
+        }
+
+        [TestAppFact("Samples.Computer01")]
         public void CheckLogForError(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
@@ -74,6 +121,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 values[0].Should().Be(long.Parse(samplingInterval) * 1_000_000);
                 values[1].Should().BeGreaterThan(0);
             }
+
+            AssertTimestampInProfile(runner.Environment.PprofDir, runner.ProfilingExportsIntervalInSeconds);
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -100,31 +149,32 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 values[0].Should().Be(expectedInterval);
                 values[1].Should().BeGreaterThan(0);
             }
+
+            AssertTimestampInProfile(runner.Environment.PprofDir, runner.ProfilingExportsIntervalInSeconds);
         }
 
-        [TestAppFact("Samples.Computer01")]
-        public void CheckDefaultCpuSamplingInterval(string appName, string framework, string appAssembly)
+        private static void AssertTimestampInProfile(string pprofFolder, int exportIntervalSec)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            var samplingInterval = "9"; // ms (default)
-            // disable default profilers except CPU
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
-            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-
-            runner.Run(agent);
-
-            var expectedInterval = long.Parse(samplingInterval) * 1_000_000;
-            // only cpu  profiler enabled so should see 1 value per sample and
-            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
-            samples.Should().NotBeEmpty();
-            foreach (var (_, _, values) in samples)
+            foreach (var profile in SamplesHelper.GetProfiles(pprofFolder))
             {
-                values.Length.Should().Be(2);
-                values[0].Should().Be(expectedInterval);
-                values[1].Should().BeGreaterThan(0);
+                var start = profile.TimeNanos;
+                var end = profile.DurationNanos + start;
+                var previousCollectionStart = start - (exportIntervalSec * 1_000_000_000_000);
+                foreach (var sample in profile.Sample)
+                {
+                    var samplex = Sample.Create(profile, sample);
+                    var endTimestamp = long.Parse(samplex.Labels["end_timestamp_ns"]);
+
+                    // we check that end_timestamp_ns is either part of the previous collection
+                    // either the current collection.
+                    endTimestamp.Should().BeInRange(previousCollectionStart, end);
+
+                    // same for timeline
+                    if (samplex.Values.TryGetValue("timeline", out var timelineTimestamp))
+                    {
+                        timelineTimestamp.Should().BeInRange(previousCollectionStart, end);
+                    }
+                }
             }
         }
     }
