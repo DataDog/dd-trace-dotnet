@@ -150,7 +150,7 @@ namespace datadog::shared::nativeloader
 
             for (auto&& exclude_assembly : default_exclude_assemblies)
             {
-                if (string_lower_equal(process_name_lower, exclude_assembly))
+                if (process_name_lower == exclude_assembly)
                 {
                     Log::Info("CorProfiler::Initialize ClrProfiler disabled: ", process_name," found in default exclude list");
                     return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
