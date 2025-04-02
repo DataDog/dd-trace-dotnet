@@ -538,6 +538,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("bypass_http_request_url_caching_enabled");
                     writer.WriteValue(instanceSettings.BypassHttpRequestUrlCachingEnabled);
 
+                    writer.WritePropertyName("inject_context_into_stored_procedures_enabled");
+                    writer.WriteValue(instanceSettings.InjectContextIntoStoredProceduresEnabled);
+
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 
