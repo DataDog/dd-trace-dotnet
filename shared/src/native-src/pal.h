@@ -123,19 +123,41 @@ inline WSTRING GetCurrentProcessName()
     proc_name(getpid(), buffer, length);
     return ToWSTRING(std::string(buffer));
 #else
-    std::ifstream cmdline("/proc/self/cmdline");
     std::string name;
-    std::getline(cmdline, name, '\0'); // Read until first null character
+    // Attempt to read from /proc/self/exe which is a symlink to the actual executable
+    char buffer[260];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
 
-    // If name is empty or doesn't contain a path, fallback to /proc/self/comm
-    if (name.empty())
+    if (len != -1)
     {
-        // proc/self/comm only contains 15 characters, which may be an issue
-        std::ifstream comm("/proc/self/comm");
-        std::getline(comm, name);
+        buffer[len] = '\0'; // Null-terminate the string
+        name = std::string(buffer);
+    }
+    else
+    {
+        // If readlink fails, fallback to /proc/self/cmdline
+        // Fallback to cmdline if readlink fails
+        std::ifstream cmdline("/proc/self/cmdline");
+        if (cmdline)
+        {
+            std::getline(cmdline, name, '\0');
+        }
+
+        // If name is empty or doesn't contain a path, fallback to /proc/self/comm
+        if (name.empty())
+        {
+            // proc/self/comm only contains 15 characters, which may be an issue
+            std::ifstream comm("/proc/self/comm");
+            if (comm)
+            {
+                std::getline(comm, name);
+                // we don't need to parse this name further as it is the process name
+                return ToWSTRING(name);
+            }
+        }
     }
 
-    // Extract the filename from the full path if a path is provided
+    // Extract the filename from the full path
     if (!name.empty())
     {
         fs::path process_path(name);
