@@ -1,7 +1,6 @@
 stages:
   - check-azure-pipeline
   - benchmarks
-  - setup-win
   - benchmarks-win
 
 variables:
