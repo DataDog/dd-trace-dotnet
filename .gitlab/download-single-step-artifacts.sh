@@ -24,8 +24,12 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
     mkdir -p $win_target_dir
 
     curl --location --fail \
-        --output $win_target_dir/serverless-artifacts.zip \
+        --output $win_target_dir/fleet-installer.zip \
         "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/fleet-installer.zip"
+
+    curl --location --fail \
+        --output $win_target_dir/windows-tracer-home.zip \
+        "https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/${CI_COMMIT_SHA}/windows-tracer-home.zip"
   fi
 
   echo -n $VERSION > $target_dir/version.txt
