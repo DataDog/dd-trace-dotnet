@@ -66,10 +66,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData("windowsazureguestagent")]
-        [InlineData("WindoWsazureguestagent")]
-        [InlineData("iisexpresstray")]
-        [InlineData("WINDOWSAZUREGUESTAGENT")]
+        [InlineData("VSdbG")] // list has vsdbg and vsdbg.exe
+        [InlineData("dd-TRACE")] // list has dd-trace and dd-trace.exe
         [Trait("RunOnWindows", "True")]
         public async Task DoesNotInstrumentExcludedNames(string excludedProcess)
         {
