@@ -15,6 +15,9 @@ using Logger = Serilog.Log;
 
 partial class Build : NukeBuild
 {
+    private const string TracerFilter = "Area=Tracer";
+    private const string DebuggerFilter = "Area=Debugger";
+
     Target GenerateVariables
         => _ =>
         {
@@ -152,7 +155,7 @@ partial class Build : NukeBuild
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, filter = TracerFilter });
                     }
                 }
 
@@ -188,6 +191,7 @@ partial class Build : NukeBuild
                                                targetPlatform = targetPlatform,
                                                debugType = debugType,
                                                optimize = optimize,
+                                               filter = DebuggerFilter
                                            });
                             }
                         }
@@ -229,7 +233,7 @@ partial class Build : NukeBuild
                     foreach (var targetPlatform in targetPlatforms)
                     {
                         var enable32bit = targetPlatform == "x86";
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, filter = TracerFilter });
                     }
                 }
 
@@ -282,7 +286,7 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, filter = TracerFilter });
                     }
                 }
 
@@ -306,7 +310,7 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, filter = TracerFilter });
                     }
                 }
 
@@ -339,6 +343,7 @@ partial class Build : NukeBuild
                                            baseImage = baseImage,
                                            optimize = optimize,
                                            artifactSuffix = artifactSuffix,
+                                           filter = TracerFilter
                                        });
                         }
                     }
