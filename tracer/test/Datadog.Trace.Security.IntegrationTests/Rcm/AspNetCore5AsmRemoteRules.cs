@@ -35,9 +35,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // Test new rules
             var spans1 = await SendRequestsAsync(agent, url);
             var productId = nameof(TestRemoteRules);
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("2.22.222"), "ASM_DD", productId) });
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("2.22.222"), "ASM_DD", $"{productId}1") });
             var spans2 = await SendRequestsAsync(agent, url);
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("3.33.333"), "ASM_DD", productId) });
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (GetRules("3.33.333"), "ASM_DD", $"{productId}2") });
             var spans3 = await SendRequestsAsync(agent, url);
 
             // Test deletion + switch back to default rules when no RC no rules + keep updated blocking action + reset blocking actions
@@ -45,17 +45,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var block405Action = new Payload() { Actions = [new Action { Id = "block", Type = "block_request", Parameters = new Parameter { StatusCode = 405, Type = "json" } }] };
             var block405ActionProductId = "action";
 
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (block405Action, "ASM", block405ActionProductId), (GetNonBlockingRules(), "ASM_DD", productId) });
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (block405Action, "ASM", $"{block405ActionProductId}1"), (GetNonBlockingRules(), "ASM_DD", $"{productId}3") });
             var spans4 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
             // Should trigger on the new applied rule "new-test-non-blocking"
             // Should not block and return a 200
 
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (block405Action, "ASM", block405ActionProductId) });
+            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (block405Action, "ASM", $"{block405ActionProductId}2") });
             var spans5 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
             // Should fall back to the default rules and trigger "ua0-600-56x"
             // Should block and return a 405 (from the defined action)
 
-            await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (new Payload { Actions = [] }, "ASM", block405ActionProductId) });
+            await agent.SetupRcmAndWait(Output, []);
             var spans6 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
             // Should use the default rules with no defined action and trigger "ua0-600-56x"
             // Should block and return a 403

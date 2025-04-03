@@ -112,23 +112,27 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: [test, sanitisedUrl]);
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
-            var asmFeaturesFileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick);
 
-            var request = await agent.SetupRcmAndWait(Output, [(new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, RcmProducts.AsmFeatures, asmFeaturesFileId)]);
+            var asmFeaturesFileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick);
+            var fileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
+            var fileId2 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
+
+            var asmFeatureConfigEnabled = (new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, RcmProducts.AsmFeatures, asmFeaturesFileId + "Enabled");
+            var asmFeatureConfigDisabled = (new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, RcmProducts.AsmFeatures, asmFeaturesFileId + "Disabled");
+            var asmDataConfig1 = (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" }] }] }, RcmProducts.AsmData, fileId);
+            var asmDataConfig2 = (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 1545453532, Value = MainIp }] }] }, RcmProducts.AsmData, fileId2);
+
+            var request = await agent.SetupRcmAndWait(Output, [asmFeatureConfigEnabled]);
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(1);
             var spanAfterAsmActivated = await SendRequestsAsync(agent, url);
 
-            var fileId = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
-            var fileId2 = nameof(AspNetCore5AsmDataSecurityEnabledBlockingRequestIpOneClick) + Guid.NewGuid();
-
             request = await agent.SetupRcmAndWait(
                           Output,
                           [
-                              (new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, RcmProducts.AsmFeatures, asmFeaturesFileId),
-                              (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" }] }] }, RcmProducts.AsmData, fileId),
-                              (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 1545453532, Value = MainIp }] }] }, RcmProducts.AsmData,
-                               fileId2)
+                              asmFeatureConfigEnabled,
+                              asmDataConfig1,
+                              asmDataConfig2
                           ]);
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(3);
@@ -140,12 +144,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             request = await agent.SetupRcmAndWait(
                           Output,
                           [
-                              (new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, RcmProducts.AsmFeatures,
-                                asmFeaturesFileId),
-                              (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" }] }] },
-                               RcmProducts.AsmData, fileId),
-                              (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 1545453532, Value = MainIp }] }] },
-                               RcmProducts.AsmData, fileId2)
+                              asmFeatureConfigDisabled,
+                              asmDataConfig1,
+                              asmDataConfig2
                           ]);
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(3);
@@ -155,17 +156,17 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             request = await agent.SetupRcmAndWait(
                           Output,
                           [
-                              (new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, RcmProducts.AsmFeatures, asmFeaturesFileId)]);
+                              asmFeatureConfigEnabled
+                          ]);
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(1);
 
             request = await agent.SetupRcmAndWait(
                           Output,
                           [
-                              (new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, RcmProducts.AsmFeatures, asmFeaturesFileId),
-                              (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 5545453532, Value = MainIp }, new Data { Expiration = null, Value = "123.1.1.1" }] }] }, RcmProducts.AsmData, fileId),
-                              (new Payload { RulesData = [new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = [new Data { Expiration = 1545453532, Value = MainIp }] }] },
-                               RcmProducts.AsmData, fileId2)
+                              asmFeatureConfigEnabled,
+                              asmDataConfig1,
+                              asmDataConfig2
                           ]);
             request.Should().NotBeNull();
             request.CachedTargetFiles.Should().HaveCount(3);

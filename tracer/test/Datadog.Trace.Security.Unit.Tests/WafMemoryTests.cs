@@ -87,7 +87,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides] });
                 var result = waf!.Update(configurationStatus);
                 result.Success.Should().BeTrue();
-                result.HasErrors.Should().BeFalse();
+                result.HasRuleErrors.Should().BeFalse();
 
                 Execute(waf, AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120", enabled);
 
