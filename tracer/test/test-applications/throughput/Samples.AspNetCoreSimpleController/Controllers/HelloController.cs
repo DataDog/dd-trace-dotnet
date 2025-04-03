@@ -25,10 +25,9 @@ namespace Samples.AspNetCoreSimpleController.Controllers
 //             scope.Span.SetTag("location", "outer");
 // #endif
 #if MANUAL_INSTRUMENTATION
-            using Datadog.Trace;
             for (int i = 0; i < 1000; i++)
             {
-                using (var scope = Tracer.Instance.StartActive($"manual-{i}"))
+                using (var scope = Datadog.Trace.Tracer.Instance.StartActive($"manual-{i}"))
                 {
                     scope.Span.SetTag("location", "outer");
                 }
