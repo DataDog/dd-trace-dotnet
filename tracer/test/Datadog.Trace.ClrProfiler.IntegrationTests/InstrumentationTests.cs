@@ -469,6 +469,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Directory.CreateDirectory(logDir);
             SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDir);
+            // Disable .NET CLI telemetry to prevent extra HTTP spans
+            SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
 
             using var process = await ProfilerHelper.StartProcessWithProfiler(
                                     executable: EnvironmentHelper.GetDotnetExe(),
