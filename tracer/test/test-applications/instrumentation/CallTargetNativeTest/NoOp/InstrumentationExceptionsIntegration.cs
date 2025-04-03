@@ -23,7 +23,7 @@ public static class InstrumentationExceptionsIntegration
             }
             else if (name.Contains("CallTargetInvokerException"))
             {
-                throw new CallTargetInvokerException(new Exception());
+                throw new CallTargetInvokerException(new Exception("Throwing a call target invoker exception"));
             }
             else if (name.Contains("MissingMethodException"))
             {
@@ -48,7 +48,7 @@ public static class InstrumentationExceptionsIntegration
             }
             else if (name.Contains("CallTargetInvokerException"))
             {
-                throw new CallTargetInvokerException(new Exception());
+                throw new CallTargetInvokerException(new Exception("Throwing a call target invoker exception"));
             }
             else if (name.Contains("MissingMethodException"))
             {
@@ -77,7 +77,7 @@ public static class InstrumentationExceptionsIntegrationAsync
             }
             else if (name.Contains("CallTargetInvokerException"))
             {
-                throw new CallTargetInvokerException(new Exception());
+                throw new CallTargetInvokerException(new Exception("Throwing a call target invoker exception"));
             }
             else if (name.Contains("MissingMethodException"))
             {
@@ -103,7 +103,7 @@ public static class InstrumentationExceptionsIntegrationAsync
             }
             else if (name.Contains("CallTargetInvokerException"))
             {
-                throw new CallTargetInvokerException(new Exception());
+                throw new CallTargetInvokerException(new Exception("Throwing a call target invoker exception"));
             }
             else if (name.Contains("MissingMethodException"))
             {
