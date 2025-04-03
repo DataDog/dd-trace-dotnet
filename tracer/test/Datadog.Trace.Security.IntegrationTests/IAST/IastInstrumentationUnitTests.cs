@@ -52,7 +52,7 @@ public class IastInstrumentationUnitTests : TestHelper
         // https://github.com/dotnet/runtime/issues/95653
         // In the past, we have solved it by setting this variable,
         // e.g. https://github.com/DataDog/dd-trace-dotnet/pull/5004
-        // so trying the same thing here: 
+        // so trying the same thing here:
         SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
     }
 
