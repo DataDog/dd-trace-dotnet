@@ -407,8 +407,7 @@ profiler_cpu_timer_create-arm64:
 
 .benchmarks-win:
   stage: benchmarks-win
-  # needs: ["check_azure_pipeline"]
-  needs: [ ]
+  needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   interruptible: true
@@ -445,7 +444,7 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
   script:
-    # - source build-id.txt
+    - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     # TODO: Remove this once the branch is merged to dd-trace-dotnet/macro
     - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=igoragoli/update-dd-trace-dotnet-macro
