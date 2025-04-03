@@ -201,7 +201,9 @@ namespace Samples.WaitHandles
             }
         }
 
-        [DllImport("kernel32.dll")]
-        private static extern uint GetCurrentThreadId();
+        private static int GetCurrentThreadId()
+        {
+            return Thread.CurrentThread.ManagedThreadId;
+        }
     }
 }
