@@ -25,63 +25,36 @@ const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 const shared::WSTRING default_exclude_assemblies[]{
     WStr("aspnet_state.exe"),
-    WStr("aspnet_state"),
     WStr("collectguestlogs.exe"), // https://github.com/Azure/WindowsVMAgent
-    WStr("collectguestlogs"),     // https://github.com/Azure/WindowsVMAgent
     WStr("csc.exe"),
-    WStr("csc"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
     WStr("devenv.exe"),
-    WStr("devenv"),
     WStr("iisexpresstray.exe"),
-    WStr("iisexpresstray"),
     WStr("inetmgr.exe"),
-    WStr("inetmgr"),
     WStr("microsoft.servicehub.controller.exe"),
-    WStr("microsoft.servicehub.controller"),
     WStr("msbuild.exe"),
-    WStr("msbuild"),
     WStr("msdtssrvr.exe"),
-    WStr("msdtssrvr"),
     WStr("msvsmon.exe"),
-    WStr("msvsmon"),
     WStr("perfwatson2.exe"),
-    WStr("perfwatson2"),
     WStr("servicehub.datawarehousehost.exe"),
-    WStr("servicehub.datawarehousehost"),
     WStr("servicehub.host.clr.exe"),
-    WStr("servicehub.host.clr"),
     WStr("servicehub.host.clr.x86.exe"),
-    WStr("servicehub.host.clr.x86"),
     WStr("servicehub.identityhost.exe"),
-    WStr("servicehub.identityhost"),
     WStr("servicehub.roslyncodeanalysisservice32.exe"),
-    WStr("servicehub.roslyncodeanalysisservice32"),
     WStr("servicehub.settingshost.exe"),
-    WStr("servicehub.settingshost"),
     WStr("servicehub.testwindowstorehost.exe"),
-    WStr("servicehub.testwindowstorehost"),
     WStr("servicehub.threadedwaitdialog.exe"),
-    WStr("servicehub.threadedwaitdialog"),
     WStr("servicehub.vsdetouredhost.exe"),
-    WStr("servicehub.vsdetouredhost"),
     WStr("sqlagent.exe"),
-    WStr("sqlagent"),
     WStr("sqlbrowser.exe"),
-    WStr("sqlbrowser"),
     WStr("sqlservr.exe"),
-    WStr("sqlservr"),
     WStr("vbcscompiler.exe"),
-    WStr("vbcscompiler"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
-    WStr("waappagent.exe"),             // https://github.com/Azure/WindowsVMAgent
-    WStr("waappagent"),                 // https://github.com/Azure/WindowsVMAgent
-    WStr("werfault.exe"),               // WER = Windows Error Reporting - can kick in when a process crashes
-    WStr("werfault"),                   // WER = Windows Error Reporting - can kick in when a process crashes
-    WStr("windowsazureguestagent.exe"), // https://github.com/Azure/WindowsVMAgent
-    WStr("windowsazureguestagent")      // https://github.com/Azure/WindowsVMAgent
+    WStr("waappagent.exe"),            // https://github.com/Azure/WindowsVMAgent
+    WStr("werfault.exe"),              // WER = Windows Error Reporting - can kick in when a process crashes
+    WStr("windowsazureguestagent.exe") // https://github.com/Azure/WindowsVMAgent
 };
 
 inline static const ::shared::WSTRING datadog_logs_folder_path = WStr(R"(Datadog .NET Tracer\logs)");
