@@ -57,7 +57,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
         else if (exception is MissingMemberException or TargetInvocationException { InnerException: MissingMemberException })
         {
             Log.Warning(
-                "MissingMemberException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled."
+                "MissingMemberException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled. "
               + "This may be because the application uses trimming. "
               + "To make your app compatible with trimming, add a reference to either the Datadog.Trace or "
               + "Datadog.Trace.Trimming NuGet package. If the problem persists, or you are not using trimming, please contact support.",
