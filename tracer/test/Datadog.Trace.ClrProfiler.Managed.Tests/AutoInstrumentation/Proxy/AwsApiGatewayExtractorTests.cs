@@ -43,7 +43,7 @@ public class AwsApiGatewayExtractorTests
     }
 
     [Fact]
-    public void TryExtract_WithValidHeaders_ReturnsTrue()
+    public void TryExtract_WithAllValidHeaders_ReturnsTrue()
     {
         // this reduces precision to 1ms, so we can't compare extracted value to the original DateTimeOffset directly
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -62,6 +62,30 @@ public class AwsApiGatewayExtractorTests
         data.Stage.Should().Be("prod");
     }
 
+    [Fact]
+    public void TryExtract_WithMinimumValidHeaders_ReturnsTrue()
+    {
+        // this reduces precision to 1ms, so we can't compare extracted value to the original DateTimeOffset directly
+        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
+
+        var headers = ProxyTestHelpers.CreateValidHeaders(unixTimeMilliseconds.ToString(CultureInfo.InvariantCulture));
+        headers.Remove(InferredProxyHeaders.Domain);
+        headers.Remove(InferredProxyHeaders.HttpMethod);
+        headers.Remove(InferredProxyHeaders.Path);
+        headers.Remove(InferredProxyHeaders.Stage);
+
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+
+        success.Should().BeTrue();
+        data.ProxyName.Should().Be("aws-apigateway");
+        data.StartTime.Should().Be(start);
+        data.DomainName.Should().BeNull();
+        data.HttpMethod.Should().BeNull();
+        data.Path.Should().BeNull();
+        data.Stage.Should().BeNull();
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -78,6 +102,18 @@ public class AwsApiGatewayExtractorTests
         data.Should().Be(default(InferredProxyData));
     }
 
+    [Fact]
+    public void TryExtract_WithMissingProxyName_ReturnsFalse()
+    {
+        var headers = ProxyTestHelpers.CreateValidHeaders();
+        headers.Remove(InferredProxyHeaders.Name);
+
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+
+        success.Should().BeFalse();
+        data.Should().Be(default(InferredProxyData));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -87,6 +123,18 @@ public class AwsApiGatewayExtractorTests
     {
         var headers = ProxyTestHelpers.CreateValidHeaders();
         headers.Set(InferredProxyHeaders.StartTime, startTime);
+
+        var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
+
+        success.Should().BeFalse();
+        data.Should().Be(default(InferredProxyData));
+    }
+
+    [Fact]
+    public void TryExtract_WithMissingStartTime_ReturnsFalse()
+    {
+        var headers = ProxyTestHelpers.CreateValidHeaders();
+        headers.Remove(InferredProxyHeaders.StartTime);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), _tracer, out var data);
 
