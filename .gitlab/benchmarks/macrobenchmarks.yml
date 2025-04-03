@@ -406,51 +406,6 @@ profiler_cpu_timer_create-arm64:
     COMPlus_EnableDiagnostics: 1
     ENDPOINT: "hello"
 
-.ephemeral-infra-setup:
-  variables: &ephemeral-infra-setup-variables
-    AWS_REGION: "us-east-1"
-    AWS_PROFILE: "ephemeral-infra-ci"
-  script:
-    # Future improvements: Save this to a script in benchmarking-platform-tools,
-    # considering that repos using ephemeral infra will run the same steps.  
-    - mkdir -p ~/.aws 
-    - |
-      (
-      unset AWS_PROFILE
-      aws ssm get-parameter \
-        --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.${CI_PROJECT_NAME}-profile" \
-        --region "$AWS_REGION" \
-        --with-decryption --query "Parameter.Value" \
-        --out text >> ~/.aws/config
-      aws ssm get-parameter \
-        --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-pair-name" \
-        --region "$AWS_REGION" \
-        --with-decryption --query "Parameter.Value" \
-        --out text >> ~/.aws/key-pair-name.txt
-      aws ssm get-parameter \
-        --name "ci.${CI_PROJECT_NAME}.ephemeral-infra-ci.windows-benchmarking-key-private-key" \
-        --region "$AWS_REGION" \
-        --with-decryption --query "Parameter.Value" \
-        --out text >> ~/.aws/key-pair-private-key.pem
-      )
-    # Variables prefixed by 'BP_INFRA_' are automatically used by launch.sh
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-
-build-ami:
-  stage: setup-win
-  needs: []
-  tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
-  interruptible: true
-  timeout: 1h
-  when: manual
-  variables:
-    <<: *ephemeral-infra-setup-variables
-  script:
-    - !reference [.ephemeral-infra-setup, script]
-    - /app/infra/launch.sh --region "${AWS_REGION}" --provision .gitlab/benchmarks/provisions/macrobenchmark-base-instance-and-ami.yaml
-
 .benchmarks-win:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
@@ -469,9 +424,7 @@ build-ami:
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
 
-    <<: *ephemeral-infra-setup-variables
-    # TODO: Switch to 'dd-trace-dotnet/macro' once testing is complete.
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "igoragoli/update-dd-trace-dotnet-macro"
+    # Whether to cleanup ephemeral instances after benchmarks are run
     CLEANUP: "true"
 
     K6_OPTIONS_WARMUP_RATE: 500
@@ -492,12 +445,12 @@ build-ami:
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
   script:
-    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - !reference [.ephemeral-infra-setup, script]
-    - CLEANUP_ARG=$([[ "$CLEANUP" == "false" ]] && echo "--no-cleanup" || echo "")
-    - source build-id.txt # Contains an environment variable named 'buildId'
-    - printenv | grep -E '^K6_OPTIONS_|^BP_|^ENDPOINT=|^buildId=' > /tmp/.env
-    - /app/infra/launch.sh --region "${AWS_REGION}" --provision .gitlab/benchmarks/provisions/macrobenchmark-ephemeral-instance.yaml --env "/tmp/.env" $CLEANUP_ARG
+    - source build-id.txt
+    - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    # TODO: Remove this once the branch is merged to dd-trace-dotnet/macro
+    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=igoragoli/update-dd-trace-dotnet-macro
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./ephemeral-infra/run-windows-benchmarks.sh
 
 baseline-win:
   extends: .benchmarks-win
