@@ -5,13 +5,15 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb;
 using Datadog.Trace.Util;
 
 #if NETCOREAPP3_1_OR_GREATER
-using System;
 using System.Buffers;
 #else
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
@@ -30,6 +32,7 @@ internal static class SpanPointers
     private const string LinkKind = "span-pointer";
     private const int SpanPointerHashSizeBytes = 16;
     private const string S3PtrKind = "aws.s3.object";
+    private const string DynamoDbPtrKind = "aws.dynamodb.item";
 
     // S3 hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/S3/Object/README.md
     public static void AddS3SpanPointer(Span span, string bucketName, string key, string? eTag)
@@ -45,6 +48,41 @@ internal static class SpanPointers
         var spanLinkAttributes = new List<KeyValuePair<string, string>>(4)
         {
             new("ptr.kind", S3PtrKind),
+            new("ptr.dir", DownDirection),
+            new("ptr.hash", hash),
+            new("link.kind", LinkKind)
+        };
+
+        var spanLink = new SpanLink(SpanContext.Zero, spanLinkAttributes);
+        span.AddLink(spanLink);
+    }
+
+    // DynamoDB hashing rules: https://github.com/DataDog/dd-span-pointer-rules/blob/main/AWS/DynamoDB/Item/README.md
+    public static void AddDynamoDbSpanPointer(Span span, string tableName, IDynamoDbKeysObject? keys)
+    {
+        if (keys is null || keys.KeyNames is null || !keys.KeyNames.Any())
+        {
+            return;
+        }
+
+        var sortedKeys = keys.KeyNames.OrderBy(k => k, StringComparer.Ordinal).ToArray();
+        var key1 = sortedKeys[0];
+        var value1 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key1]);
+        var key2 = string.Empty;
+        var value2 = string.Empty;
+
+        if (sortedKeys.Length > 1)
+        {
+            key2 = sortedKeys[1];
+            value2 = AwsDynamoDbCommon.GetValueFromDynamoDbAttribute(keys[key2]);
+        }
+
+        var components = ConcatenateComponents(tableName, key1, value1, key2, value2);
+        var hash = GeneratePointerHash(components);
+
+        var spanLinkAttributes = new List<KeyValuePair<string, string>>(4)
+        {
+            new("ptr.kind", DynamoDbPtrKind),
             new("ptr.dir", DownDirection),
             new("ptr.hash", hash),
             new("link.kind", LinkKind)
@@ -77,6 +115,11 @@ internal static class SpanPointers
         }
 
         return StringBuilderCache.GetStringAndRelease(builder);
+    }
+
+    internal static string ConcatenateComponents(string tableName, string key1, string value1, string key2, string value2)
+    {
+        return $"{tableName}|{key1}|{value1}|{key2}|{value2}";
     }
 
     // Hashing rules: https://github.com/DataDog/dd-span-pointer-rules/tree/main?tab=readme-ov-file#general-hashing-rules
