@@ -225,12 +225,12 @@ TEST(WallTimeProviderTest, CheckFrames)
     auto samples = provider.GetSamples();
     provider.Stop();
 
-    std::vector<InternedStringView> expectedFrames =
+    std::vector<InternedString> expectedFrames =
         {
-            InternedStringView{ ._s = "Frame #1", ._impl = nullptr},
-            InternedStringView{ ._s = "Frame #2", ._impl = nullptr},
-            InternedStringView{ ._s = "Frame #3", ._impl = nullptr},
-            InternedStringView{ ._s = "Frame #4", ._impl = nullptr},
+            "Frame #1",
+            "Frame #2",
+            "Frame #3",
+            "Frame #4",
         };
 
     std::vector<std::string> expectedModules =

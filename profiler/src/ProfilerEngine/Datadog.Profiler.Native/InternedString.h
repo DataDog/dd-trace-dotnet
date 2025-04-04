@@ -5,30 +5,7 @@
 
 struct StringId;
 
-struct InternedStringView
-{
-public:
-    std::string_view _s;
-    std::shared_ptr<StringId> _impl;
-    operator std::string_view() const
-    {
-        return _s;
-    }
-
-    bool operator==(InternedStringView other) const
-    {
-        return _s == other._s;
-    }
-
-    
-
-    bool operator!=(InternedStringView other) const
-    {
-        return _s != other._s;
-    }
-};
-
-class InternedString
+class InternedString final
 {
 public:
     // InternableString ??
@@ -37,17 +14,12 @@ public:
     InternedString(const char* s);
     ~InternedString();
 
-    operator InternedStringView()
-    {
-        return InternedStringView{._s = _s, ._impl = _impl};
-    }
+    operator std::string_view() const;
 
-    operator InternedStringView() const
-    {
-        return InternedStringView{._s = _s, ._impl = _impl};
-    }
+    std::shared_ptr<StringId>& Id();
+
+    bool operator==(InternedString const& other) const;
 
 private:
-    std::string _s;
     std::shared_ptr<StringId> _impl;
 };

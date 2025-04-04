@@ -13,10 +13,9 @@
 struct FrameInfoView
 {
 public:
-    std::string_view ModuleName;
-    InternedStringView Frame;
-    //std::string_view Frame;
-    std::string_view Filename;
+    InternedString ModuleName;
+    InternedString Frame;
+    InternedString Filename;
     std::uint32_t StartLine;
 };
 
