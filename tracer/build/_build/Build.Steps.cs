@@ -1690,12 +1690,14 @@ partial class Build
 
                 var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
-                var filter = (string.IsNullOrWhiteSpace(Filter), IsWin, Filter?.StartsWith("Area=")) switch
+                var filterData = Filter?.StartsWith("Area=") is true ? Filter : $"({Filter})";
+                var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _, true) => $"{Filter}{dockerFilter}{armFilter}", // No parentheses for area=
-                    (false, _, false) => $"({Filter}){dockerFilter}{armFilter}", // Parentheses for other filters
-                    (true, false, _) => "(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True)" + $"{dockerFilter}{armFilter}",
-                    (true, true, _) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
+                    (false, _) => $"{filterData}{dockerFilter}{armFilter}",
+                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
+                    // TODO: I think we should change this filter to run on Windows by default, e.g.
+                    // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
+                    (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 
                 return filter;
