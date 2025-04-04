@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "InternedString.h"
 #include "RawSample.h"
 #include "Sample.h"
 
@@ -123,10 +124,10 @@ private:
     static const inline std::string Gen2Value = "2";
 
     // each Stop the World garbage collection will share the same root frame and the second one will show the collected generation
-    static constexpr inline std::string_view EmptyModule = "CLR";
-    static constexpr inline std::string_view RootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
-    static constexpr inline std::string_view Gen0Frame = "|lm: |ns: |ct: |cg: |fn:gen0 |fg: |sg:";
-    static constexpr inline std::string_view Gen1Frame = "|lm: |ns: |ct: |cg: |fn:gen1 |fg: |sg:";
-    static constexpr inline std::string_view Gen2Frame = "|lm: |ns: |ct: |cg: |fn:gen2 |fg: |sg:";
-    static constexpr inline std::string_view UnknownGenerationFrame = "|lm: |ns: |ct: |cg: |fn:unknown |fg: |sg:";
+    static const inline std::string_view EmptyModule = "CLR";
+    static const inline InternedString RootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
+    static const inline InternedString Gen0Frame = "|lm: |ns: |ct: |cg: |fn:gen0 |fg: |sg:";
+    static const inline InternedString Gen1Frame = "|lm: |ns: |ct: |cg: |fn:gen1 |fg: |sg:";
+    static const inline InternedString Gen2Frame = "|lm: |ns: |ct: |cg: |fn:gen2 |fg: |sg:";
+    static const inline InternedString UnknownGenerationFrame = "|lm: |ns: |ct: |cg: |fn:unknown |fg: |sg:";
 };

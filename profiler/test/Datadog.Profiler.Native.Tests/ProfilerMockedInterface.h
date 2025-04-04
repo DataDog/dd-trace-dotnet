@@ -23,6 +23,7 @@
 #include "Sample.h"
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
+#include "InternedString.h"
 
 #include <chrono>
 #include <memory>
@@ -248,6 +249,6 @@ std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager();
 
-std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
+std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, InternedString>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 
-std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);
+std::vector<std::pair<std::string, InternedString>> CreateCallstack(int depth);
