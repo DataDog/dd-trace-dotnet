@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// Gets the collection of key names.
         /// </summary>
         [Duck(Name = "Keys")]
-        IEnumerable<string> KeyNames { get; }
+        IEnumerable<string>? KeyNames { get; }
 
         /// <summary>
         /// Gets the attribute value for the specified key.
