@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Arrange
             SpanCodeOriginManager spanCodeOriginManager = new();
-            using var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager);
+            var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager);
 
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Arrange
             SpanCodeOriginManager spanCodeOriginManager = new();
-            using var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager, true);
+            var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager, true);
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
             // Act
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Arrange
             SpanCodeOriginManager spanCodeOriginManager = new();
-            using var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager, true, 2);
+            var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager, true, 2);
 
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.Debugger
             tags.Should().NotContain(s => s.StartsWith($"{CodeOriginTag}.frames.2"));
         }
 
-        private static IDisposable SetCodeOriginManagerSettings(SpanCodeOriginManager instance, bool isEnable = false, int numberOfFrames = 8, string excludeFromFilter = "Datadog.Trace.Tests")
+        private static CodeOriginSettingsSetter SetCodeOriginManagerSettings(SpanCodeOriginManager instance, bool isEnable = false, int numberOfFrames = 8, string excludeFromFilter = "Datadog.Trace.Tests")
         {
             var setter = new CodeOriginSettingsSetter();
             setter.Set(isEnable, numberOfFrames, excludeFromFilter, instance);
@@ -123,12 +123,8 @@ namespace Datadog.Trace.Tests.Debugger
             instance.SetCodeOrigin(span);
         }
 
-        internal class CodeOriginSettingsSetter : IDisposable
+        internal class CodeOriginSettingsSetter
         {
-            public void Dispose()
-            {
-            }
-
             internal void Set(bool isEnable, int numberOfFrames, string excludeFromFilter, SpanCodeOriginManager instance)
             {
                 var overrideSettings = DebuggerSettings.FromSource(
