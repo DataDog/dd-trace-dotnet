@@ -18,9 +18,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger
 {
-#pragma warning disable SA1649 // File name should match first type name
-    public class DebuggerTagsListTestsSpan
-#pragma warning restore SA1649 // File name should match first type name
+    public class SpanCodeOriginTests
     {
         private const string CodeOriginTag = "_dd.code_origin";
 
@@ -54,6 +52,8 @@ namespace Datadog.Trace.Tests.Debugger
             // Arrange
             SpanCodeOriginManager spanCodeOriginManager = new();
             var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager, true);
+            System.Threading.Thread.Sleep(1000); // Ensure that the timestamp is different
+
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
             // Act
@@ -67,6 +67,7 @@ namespace Datadog.Trace.Tests.Debugger
             var frame0Type = span.Tags.GetTag($"{CodeOriginTag}.frames.0.type");
             frame0Type.Should().Be(GetType().FullName);
             var file = span.Tags.GetTag($"{CodeOriginTag}.frames.0.file");
+            file.Should().EndWith($"{nameof(SpanCodeOriginTests)}.cs");
             var line = span.Tags.GetTag($"{CodeOriginTag}.frames.0.line");
             line.Should().NotBeNullOrEmpty();
             var column = span.Tags.GetTag($"{CodeOriginTag}.frames.0.column");
