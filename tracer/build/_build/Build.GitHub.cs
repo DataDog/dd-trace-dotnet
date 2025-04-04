@@ -986,6 +986,27 @@ partial class Build
              await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
          });
 
+    Target CompareBenchmarksResultsBP => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => GitHubRepositoryName)
+         .Requires(() => BenchmarkCategory)
+         .Executes(async () =>
+         {
+             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
+             {
+                 Logger.Warning("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 return;
+             }
+
+             var masterDir = BuildDataDirectory / "previous_benchmarks";
+             var prDir = BuildDataDirectory / "benchmarks";
+
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, BenchmarkCategory);
+             string filePath = "C:\\benchmarks_report.md";
+             File.WriteAllText(filePath, markdown);
+         });
+
     Target CompareThroughputResults => _ => _
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
