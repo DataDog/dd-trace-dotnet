@@ -12,6 +12,7 @@
 namespace libdatadog {
 
 class Exporter;
+class AgentProxy;
 
 class ExporterBuilder
 {
