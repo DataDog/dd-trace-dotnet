@@ -79,6 +79,26 @@ internal class AspNetCoreResourceNameHelper
 
                         sb.Append(actionName);
                     }
+                    else if (parameterName.Equals("version", StringComparison.OrdinalIgnoreCase) || parameterName.StartsWith("version:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // takes something like /foo/v{version} and replaces it with /foo/v1
+                        if (parts == 1)
+                        {
+                            sb.Append('/');
+                        }
+
+                        if (routeValueDictionary.TryGetValue("version", out var versionValue) && versionValue != null)
+                        {
+                            sb.Append(versionValue.ToString());
+                        }
+                        else
+                        {
+                            // keep the placeholder if we can't resolve it
+                            sb.Append('{');
+                            sb.Append(parameterName);
+                            sb.Append('}');
+                        }
+                    }
                     else
                     {
                         var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
@@ -188,6 +208,26 @@ internal class AspNetCoreResourceNameHelper
                     }
 
                     sb.Append(actionName);
+                }
+                else if (partName.Equals("version", StringComparison.OrdinalIgnoreCase) || partName.StartsWith("version:", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (parts == 1)
+                    {
+                        sb.Append('/');
+                    }
+
+                    // takes something like /foo/v{version} and replaces it with /foo/
+                    if (routeValueDictionary.TryGetValue("version", out var versionValue) && versionValue != null)
+                    {
+                        sb.Append(versionValue.ToString());
+                    }
+                    else
+                    {
+                        // Keep the placeholder if we can't resolve it
+                        sb.Append('{');
+                        sb.Append(partName);
+                        sb.Append('}');
+                    }
                 }
                 else
                 {
