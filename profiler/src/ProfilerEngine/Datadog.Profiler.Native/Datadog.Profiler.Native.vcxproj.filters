@@ -492,6 +492,8 @@
     <ClInclude Include="NetworkProvider.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="InternedString.h" />
+    <ClInclude Include="StringId.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -754,6 +756,9 @@
     </ClCompile>
     <ClCompile Include="NetworkActivity.cpp">
       <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="InternedString.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

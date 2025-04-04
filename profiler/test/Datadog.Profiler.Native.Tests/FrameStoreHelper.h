@@ -4,6 +4,7 @@
 #pragma once
 #include <unordered_map>
 #include "IFrameStore.h"
+#include "InternedString.h"
 
 class FrameStoreHelper : public IFrameStore
 {
@@ -21,7 +22,7 @@ private:
     {
     public:
         std::string ModuleName;
-        std::string Frame;
+        InternedString Frame;
         std::string_view Filename;
         std::uint32_t StartLine;
 

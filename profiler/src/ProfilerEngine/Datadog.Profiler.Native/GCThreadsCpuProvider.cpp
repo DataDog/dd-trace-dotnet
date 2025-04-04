@@ -66,10 +66,12 @@ Labels GCThreadsCpuProvider::GetLabels()
 
 std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
 {
+    static const InternedString GarbageCollectorFrame = "|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
+    static const InternedString DotNETFrame = "|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:";
     return
     {
-        {"", "|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:", "", 0},
-        {"", "|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:", "", 0}
+        {"", GarbageCollectorFrame, "", 0},
+        {"", DotNETFrame, "", 0}
     };
 }
 

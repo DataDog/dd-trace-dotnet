@@ -64,12 +64,12 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
+    static const InternedString NotResolvedFrame("NotResolvedFrame");
     static const std::string UnloadedModuleName("UnloadedModule");
     static const std::string FakeModuleName("FakeModule");
 
-    static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
-    static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
+    static const InternedString FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
+    static const InternedString FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
 
 
     // check for fake IPs used in tests
@@ -122,9 +122,9 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 // to get function name + offset
 // see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
 // However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
+std::pair<std::string_view, InternedStringView> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
 {
-    static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
+    static const InternedString UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
     static const std::string UnknowNativeModule = "Unknown-Native-Module";
 
     auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
@@ -243,13 +243,13 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 
     auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
-    std::string managedFrame = builder.str();
+    auto managedFrame = InternedString(builder.str());
 
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
 
         // store it into the function cache and return an iterator to the stored elements
-        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
+        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, std::move(managedFrame), debugInfo.File, debugInfo.StartLine});
         // first is the key, second is the associated value
         return it->second;
     }

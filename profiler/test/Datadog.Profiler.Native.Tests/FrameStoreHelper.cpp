@@ -24,7 +24,7 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
 std::pair<bool, FrameInfoView> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
     static std::string UnknownModuleName = "module???";
-    static std::string UnknownFunctionName = "frame???";
+    static InternedString UnknownFunctionName = "frame???";
 
     auto item = _mapping.find(instructionPointer);
     if (item != _mapping.end())
