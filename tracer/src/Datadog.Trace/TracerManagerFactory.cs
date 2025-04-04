@@ -62,7 +62,8 @@ namespace Datadog.Trace
                 dataStreamsManager: null,
                 remoteConfigurationManager: null,
                 dynamicConfigurationManager: null,
-                tracerFlareManager: null);
+                tracerFlareManager: null,
+                spanEventsManager: null);
 
             try
             {
@@ -99,7 +100,8 @@ namespace Datadog.Trace
             DataStreamsManager dataStreamsManager,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager)
+            ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
 
@@ -180,12 +182,14 @@ namespace Datadog.Trace
 
                 dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
                 tracerFlareManager ??= new TracerFlareManager(discoveryService, RcmSubscriptionManager.Instance, telemetry, TracerFlareApi.Create(settings.Exporter));
+                spanEventsManager ??= new SpanEventsManager(discoveryService);
             }
             else
             {
                 remoteConfigurationManager ??= new NullRemoteConfigurationManager();
                 dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
                 tracerFlareManager ??= new NullTracerFlareManager();
+                spanEventsManager ??= new NullSpanEventsManager();
 
                 if (RcmSubscriptionManager.Instance.HasAnySubscription)
                 {
@@ -209,7 +213,8 @@ namespace Datadog.Trace
                 GetSpanSampler(settings),
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
-                tracerFlareManager);
+                tracerFlareManager,
+                spanEventsManager);
         }
 
         protected virtual ITelemetryController CreateTelemetryController(TracerSettings settings, IDiscoveryService discoveryService)
@@ -244,8 +249,9 @@ namespace Datadog.Trace
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager);
+            ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager);
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {

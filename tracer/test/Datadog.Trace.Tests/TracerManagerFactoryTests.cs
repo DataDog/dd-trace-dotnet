@@ -86,7 +86,8 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             new DataStreamsManager("env", "service", Mock.Of<IDataStreamsWriter>()),
             remoteConfigurationManager: null,
             dynamicConfigurationManager: null,
-            tracerFlareManager: null);
+            tracerFlareManager: null,
+            spanEventsManager: null);
 
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(
