@@ -52,7 +52,6 @@ namespace Datadog.Trace.Tests.Debugger
             // Arrange
             SpanCodeOriginManager spanCodeOriginManager = new();
             var settingsSetter = SetCodeOriginManagerSettings(spanCodeOriginManager, true);
-            System.Threading.Thread.Sleep(1000); // Ensure that the timestamp is different
 
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
