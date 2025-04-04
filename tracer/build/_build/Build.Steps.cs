@@ -1690,9 +1690,10 @@ partial class Build
 
                 var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
+                var filterData = Filter?.StartsWith("Area=") is true ? Filter : $"({Filter})";
                 var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _) => $"({Filter}){dockerFilter}{armFilter}",
+                    (false, _) => $"{filterData}{dockerFilter}{armFilter}",
                     (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
