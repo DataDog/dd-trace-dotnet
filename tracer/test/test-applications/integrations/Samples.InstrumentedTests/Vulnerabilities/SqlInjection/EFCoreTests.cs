@@ -8,6 +8,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 // We cannot use localDB on linux and these calls cannot be mocked
 [Trait("Category", "LinuxUnsupported")]
+[Collection("IastEfCoreSqliteTests")]
 public class EFCoreTests : EFCoreBaseTests
 {
     public EFCoreTests()
