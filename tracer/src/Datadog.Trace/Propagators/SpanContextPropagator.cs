@@ -48,7 +48,7 @@ namespace Datadog.Trace.Propagators
         public void Inject<TCarrier>(PropagationContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
+            Inject(context, headers, headers.GetAccessor());
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Propagators
         public PropagationContext Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
-            return Extract(headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
+            return Extract(headers, headers.GetAccessor());
         }
 
         /// <summary>
@@ -374,20 +374,6 @@ namespace Datadog.Trace.Propagators
             {
                 return HeaderName == other.HeaderName &&
                        TagPrefix == other.TagPrefix;
-            }
-        }
-
-        private readonly struct HeadersCollectionGetterAndSetter<TCarrier> : ICarrierGetter<TCarrier>, ICarrierSetter<TCarrier>
-            where TCarrier : IHeadersCollection
-        {
-            public IEnumerable<string?> Get(TCarrier carrier, string key)
-            {
-                return carrier.GetValues(key);
-            }
-
-            public void Set(TCarrier carrier, string key, string value)
-            {
-                carrier.Set(key, value);
             }
         }
 

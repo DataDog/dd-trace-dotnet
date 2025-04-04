@@ -12,23 +12,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -494,6 +485,15 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.ApiKey, "DUMMY_KEY_REQUIRED_FOR_DIRECT_SUBMISSION");
         }
 
+        /// <summary>
+        /// Creates a new <see cref="HttpRequestMessage"/> to use in the test.
+        /// Derived tests can override this to customize the request (e.g. add headers).
+        /// </summary>
+        protected virtual HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string requestUri, DateTimeOffset testStart)
+        {
+            return new HttpRequestMessage(method, requestUri);
+        }
+
         protected async Task<IImmutableList<MockSpan>> GetWebServerSpans(
             string path,
             MockTracerAgent agent,
@@ -508,10 +508,11 @@ namespace Datadog.Trace.TestHelpers
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTimeOffset.UtcNow;
-            var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+            using var request = CreateHttpRequestMessage(HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
+            using var response = await httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {content}");
-            Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+            response.StatusCode.Should().Be(expectedHttpStatusCode);
 
             if (filterServerSpans)
             {
