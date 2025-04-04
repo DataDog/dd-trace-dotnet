@@ -1171,7 +1171,6 @@ TEST_F(ConfigurationTest, CheckSsiTelemetryIsEnabledIfTelemetryEnvVarIsEnabled)
     ASSERT_THAT(configuration.IsSsiTelemetryEnabled(), expectedValue);
 }
 
-
 TEST_F(ConfigurationTest, CheckHttpRequestThresholdWhenEnvVarNotSet)
 {
     auto configuration = Configuration{};
@@ -1250,4 +1249,24 @@ TEST_F(ConfigurationTest, CheckForceHttpSamplingIsEnabledIfEnvVarIsEnabled)
     auto configuration = Configuration{};
     auto expectedValue = true;
     ASSERT_THAT(configuration.ForceHttpSampling(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsWaitHandleProfilingEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WaitHandleProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsWaitHandleProfilingEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WaitHandleProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsWaitHandleProfilingEnabled(), false);
 }

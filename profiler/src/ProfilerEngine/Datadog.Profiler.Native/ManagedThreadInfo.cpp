@@ -48,6 +48,8 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _timerId{-1},
 #endif
     _info{pCorProfilerInfo},
-    _blockingThreadId{0}
+    _blockingThreadId{0},
+    _waitStartTimestamp{0ns},
+    _contentionType{ContentionType::Unknown}
 {
 }
