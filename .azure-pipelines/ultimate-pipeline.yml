@@ -720,7 +720,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -763,7 +763,7 @@ stages:
     dependsOn: []
 
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -813,7 +813,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -855,7 +855,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -903,7 +903,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1222,7 +1222,7 @@ stages:
           artifactSuffix: linux-musl-arm64
 
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1325,7 +1325,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -1489,6 +1489,7 @@ stages:
         command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -1519,7 +1520,7 @@ stages:
         matrix:
           $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_arm64_matrix'] ]
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
       workspace:
         clean: all
       steps:
@@ -1538,6 +1539,7 @@ stages:
             command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -2432,11 +2434,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2538,11 +2536,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2727,11 +2721,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2821,11 +2811,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -3205,7 +3191,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3252,6 +3238,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3283,7 +3270,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3348,6 +3335,7 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3397,7 +3385,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3434,6 +3422,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3614,6 +3603,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -4136,6 +4126,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       displayName: Uploading tool_artifacts_tests_windows logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -4178,12 +4169,12 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolname: aws-arm64-auto-scaling
+          poolname: azure-managed-linux-arm64-1
           targetArch: arm64
         alpine_arm64:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
-          poolname: aws-arm64-auto-scaling
+          poolname: azure-managed-linux-arm64-1
           targetArch: arm64
 
     pool:
@@ -4260,11 +4251,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -5990,7 +5977,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -6074,7 +6061,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -6148,7 +6135,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -6240,7 +6227,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -6964,7 +6951,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
