@@ -63,10 +63,10 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
-    static const std::string NotResolvedModuleName("NotResolvedModule");
+    static const InternedString NotResolvedModuleName("NotResolvedModule");
     static const InternedString NotResolvedFrame("NotResolvedFrame");
-    static const std::string UnloadedModuleName("UnloadedModule");
-    static const std::string FakeModuleName("FakeModule");
+    static const InternedString UnloadedModuleName("UnloadedModule");
+    static const InternedString FakeModuleName("FakeModule");
 
     static const InternedString FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
     static const InternedString FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
@@ -122,10 +122,10 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 // to get function name + offset
 // see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
 // However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string_view, InternedStringView> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
+std::pair<InternedString, InternedString> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
 {
     static const InternedString UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
-    static const std::string UnknowNativeModule = "Unknown-Native-Module";
+    static const InternedString UnknowNativeModule = "Unknown-Native-Module";
 
     auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
     if (moduleName.empty())

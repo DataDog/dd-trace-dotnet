@@ -124,7 +124,7 @@ private:
     static const inline std::string Gen2Value = "2";
 
     // each Stop the World garbage collection will share the same root frame and the second one will show the collected generation
-    static const inline std::string_view EmptyModule = "CLR";
+    static const inline InternedString EmptyModule = "CLR";
     static const inline InternedString RootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
     static const inline InternedString Gen0Frame = "|lm: |ns: |ct: |cg: |fn:gen0 |fg: |sg:";
     static const inline InternedString Gen1Frame = "|lm: |ns: |ct: |cg: |fn:gen1 |fg: |sg:";

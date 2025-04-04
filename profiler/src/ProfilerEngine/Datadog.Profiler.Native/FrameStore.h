@@ -82,7 +82,7 @@ private:
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     FrameInfoView GetManagedFrame(FunctionID functionId);
-    std::pair <std::string_view, InternedStringView> GetNativeFrame(uintptr_t instructionPointer);
+    std::pair<InternedString, InternedString> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
@@ -132,9 +132,9 @@ private:
     struct FrameInfo
     {
     public:
-        std::string ModuleName;
+        InternedString ModuleName;
         InternedString Frame;
-        std::string_view Filename;
+        InternedString Filename;
         std::uint32_t StartLine;
 
         operator FrameInfoView() const

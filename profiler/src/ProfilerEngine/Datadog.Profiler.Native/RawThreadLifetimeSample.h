@@ -26,7 +26,7 @@ public:
 
 private:
     // each thread lifetime event will share the same root frame and the second one will show the collected generation
-    static constexpr inline std::string_view EmptyModule = "CLR";
+    static const inline InternedString EmptyModule = "CLR";
     static const inline InternedString StartFrame = "|lm: |ns: |ct: |cg: |fn:Thread Start |fg: |sg:";
     static const inline InternedString StopFrame = "|lm: |ns: |ct: |cg: |fn:Thread Stop |fg: |sg:";
 };

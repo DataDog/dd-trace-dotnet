@@ -28,8 +28,8 @@ TEST(ProfileTest, AddSample)
 
     Sample::ValuesCount = 1;
     auto s = std::make_shared<Sample>(1ns, "1", 2);
-    s->AddFrame({"", InternedString(""), "", 1});
-    s->AddFrame({"", InternedString(""), "", 2});
+    s->AddFrame({"", "", "", 1});
+    s->AddFrame({"", "", "", 2});
     s->AddValue(42, 0);
     auto success = p.Add(s);
     ASSERT_TRUE(success) << success.message();
@@ -70,8 +70,8 @@ TEST(ProfileTest, EnsureAddFailIfWrongNumberOfValues)
     // change number of values to fail the Add
     Sample::ValuesCount = 2;
     auto s = std::make_shared<Sample>(1ns, "1", 2);
-    s->AddFrame({"", InternedString(""), "", 1});
-    s->AddFrame({"", InternedString(""), "", 2});
+    s->AddFrame({"", "", "", 1});
+    s->AddFrame({"", "", "", 2});
     s->AddValue(42, 0);
     auto success = p.Add(s);
     ASSERT_FALSE(success);

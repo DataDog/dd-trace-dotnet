@@ -21,9 +21,9 @@ private:
     struct FrameInfo
     {
     public:
-        std::string ModuleName;
+        InternedString ModuleName;
         InternedString Frame;
-        std::string_view Filename;
+        InternedString Filename;
         std::uint32_t StartLine;
 
         operator FrameInfoView() const

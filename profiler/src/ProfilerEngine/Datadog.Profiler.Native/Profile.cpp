@@ -37,16 +37,30 @@ std::pair<ddog_prof_StringId, Success> InternString(ddog_prof_Profile* profile, 
     return {result.ok, make_success()};
 }
 
-std::pair<ddog_prof_MappingId, Success> InternMapping(ddog_prof_Profile* profile, std::string_view moduleName)
+static Success UpdateInternedString(ddog_prof_Profile* profile, InternedString& s)
 {
-    auto [id, error] = InternString(profile, moduleName);
-
-    if (!error)
+    auto profileId = ddog_prof_Profile_get_generation(profile);
+    if (!ddog_prof_Profile_generations_are_equal(profileId.ok, s.Id()->Id.generation))
     {
-        return {ddog_prof_MappingId{}, std::move(error)};
+        auto [sid, error] = InternString(profile, s);
+        if (!error)
+        {
+            return std::move(error);
+        }
+        s.Id()->Id = sid;
+    }
+    return make_success();
+}
+
+std::pair<ddog_prof_MappingId, Success> InternMapping(ddog_prof_Profile* profile, InternedString moduleName)
+{
+    auto success = UpdateInternedString(profile, moduleName);
+    if (!success)
+    {
+        return {ddog_prof_MappingId{}, std::move(success)};
     }
 
-    auto result = ddog_prof_Profile_intern_mapping(profile, 0, 0, 0, id, ddog_prof_Profile_interned_empty_string());
+    auto result = ddog_prof_Profile_intern_mapping(profile, 0, 0, 0, moduleName.Id()->Id, ddog_prof_Profile_interned_empty_string());
 
     if (result.tag == DDOG_PROF_MAPPING_ID_RESULT_ERR_GENERATIONAL_ID_MAPPING_ID)
     {
@@ -57,31 +71,21 @@ std::pair<ddog_prof_MappingId, Success> InternMapping(ddog_prof_Profile* profile
 }
 
 std::pair<ddog_prof_FunctionId, Success> InternFunction(
-    ddog_prof_Profile* profile, std::string_view fileName, InternedStringView frame)
+    ddog_prof_Profile* profile, InternedString fileName, InternedString frame)
 {
-    auto [filenameId, error] = InternString(profile, fileName);
-
-    if (!error)
+    auto success = UpdateInternedString(profile, fileName);
+    if (!success)
     {
-        return {ddog_prof_FunctionId{}, std::move(error)};
+        return {ddog_prof_FunctionId{}, std::move(success)};
     }
 
-    auto profileId = ddog_prof_Profile_get_generation(profile);
-    if (frame._impl == nullptr || !ddog_prof_Profile_generations_are_equal(profileId.ok, frame._impl->Id.generation))
+    auto success2 = UpdateInternedString(profile, frame);
+    if (!success2)
     {
-        auto [sid, error] = InternString(profile, frame._s);
-        if (!error)
-        {
-            return {ddog_prof_FunctionId{}, std::move(error)};
-        }
-        if (frame._impl == nullptr)
-        {
-            frame._impl = std::make_shared<StringId>();
-        }
-        frame._impl->Id = sid;
+        return {ddog_prof_FunctionId{}, std::move(success2)};
     }
 
-    auto result = ddog_prof_Profile_intern_function(profile, frame._impl->Id, ddog_prof_Profile_interned_empty_string(), filenameId);
+    auto result = ddog_prof_Profile_intern_function(profile, frame.Id()->Id, ddog_prof_Profile_interned_empty_string(), fileName.Id()->Id);
     
     if (result.tag == DDOG_PROF_FUNCTION_ID_RESULT_ERR_GENERATIONAL_ID_FUNCTION_ID)
     {
@@ -115,20 +119,22 @@ std::pair<ddog_prof_LocationId, Success> InternLocation(
 }
 
 std::pair<ddog_prof_LabelId, Success> InternStringLabel(
-    ddog_prof_Profile* profile, std::string_view name, std::string_view value
+    ddog_prof_Profile* profile, InternedString name, std::string_view value
 )
 {
-    std::array<ddog_CharSlice, 2> strings = {to_char_slice(name), to_char_slice(value)};
-    std::array<ddog_prof_StringId, 2> stringIds;
-    ddog_prof_MutSlice_GenerationalIdStringId slice = {.ptr = stringIds.data(), .len = 2};
-
-    auto v = ddog_prof_Profile_intern_strings(profile, {strings.data(), 2}, slice);
-    if (v.tag == DDOG_VOID_RESULT_ERR)
+    auto success = UpdateInternedString(profile, name);
+    if (!success)
     {
-        return {ddog_prof_LabelId{}, make_error(v.err)};
+        return {ddog_prof_LabelId{}, std::move(success)};
     }
 
-    auto result = ddog_prof_Profile_intern_label_str(profile, stringIds[0], stringIds[1]);
+    auto [internedValue, success2] = InternString(profile, value);
+    if (!success2)
+    {
+        return {ddog_prof_LabelId{}, std::move(success2)};
+    }
+
+    auto result = ddog_prof_Profile_intern_label_str(profile, name.Id()->Id, internedValue);
     if (result.tag == DDOG_PROF_LABEL_ID_RESULT_ERR_GENERATIONAL_ID_LABEL_ID)
     {
         return {ddog_prof_LabelId{}, make_error(result.err)};
@@ -137,17 +143,15 @@ std::pair<ddog_prof_LabelId, Success> InternStringLabel(
     return {result.ok, make_success()};
 }
 
-std::pair<ddog_prof_LabelId, Success> InternNumericLabel(
-    ddog_prof_Profile* profile, std::string_view name, int64_t value
-)
+std::pair<ddog_prof_LabelId, Success> InternNumericLabel(ddog_prof_Profile* profile, InternedString name, int64_t value)
 {
-    auto [nameId, success] = InternString(profile, name);
+    auto success = UpdateInternedString(profile, name);
     if (!success)
     {
         return {ddog_prof_LabelId{}, std::move(success)};
     }
 
-    auto result = ddog_prof_Profile_intern_label_num(profile, nameId, value);
+    auto result = ddog_prof_Profile_intern_label_num(profile, name.Id()->Id, value);
     if (result.tag == DDOG_PROF_LABEL_ID_RESULT_ERR_GENERATIONAL_ID_LABEL_ID)
     {
         return {ddog_prof_LabelId{}, make_error(result.err)};
