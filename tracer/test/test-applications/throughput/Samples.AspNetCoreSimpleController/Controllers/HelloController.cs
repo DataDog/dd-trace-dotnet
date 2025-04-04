@@ -20,9 +20,19 @@ namespace Samples.AspNetCoreSimpleController.Controllers
         [HttpGet]
         public string Get()
         {
+// #if MANUAL_INSTRUMENTATION
+//             using var scope = Datadog.Trace.Tracer.Instance.StartActive("manual");
+//             scope.Span.SetTag("location", "outer");
+// #endif
 #if MANUAL_INSTRUMENTATION
-            using var scope = Datadog.Trace.Tracer.Instance.StartActive("manual");
-            scope.Span.SetTag("location", "outer");
+            for (int i = 0; i < 1000; i++)
+            {
+                using (var scope = Datadog.Trace.Tracer.Instance.StartActive($"manual-{i}"))
+                {
+                    scope.Span.SetTag("location", "outer");
+                    // You can add more logic here, if needed
+                }
+            }
 #endif
             return "Hello world";
         }
