@@ -47,11 +47,6 @@ elif [ "$OS" == "windows" ]; then
     exit 0
   fi
 
-  if [ -n "$CI_COMMIT_TAG" ]; then
-    echo "Creating public release, skipping Windows artifacts"
-    exit 0
-  fi
-
   # unzip the tracer home directory, and remove the xml files
   mkdir -p sources/library
   unzip ../artifacts/windows/windows-tracer-home.zip -d sources/library
