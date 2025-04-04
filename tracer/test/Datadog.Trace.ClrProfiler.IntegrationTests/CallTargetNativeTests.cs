@@ -271,6 +271,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
         [Trait("RunOnWindows", "True")]
+        public async Task InstrumentationExceptionIntegrations()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "instrumentationexceptions");
+            processResult.ExitCode.Should().Be(0);
+            var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            beginMethodCount.Should().Be(5);
+            endMethodCount.Should().Be(2);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task CategorizedCallTargetIntegrations()
         {
             SetInstrumentationVerification();

@@ -128,6 +128,13 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
 
+            // instrumnentation exceptions
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionDuckTypeExceptionThrowOnBegin).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionDuckTypeExceptionThrowOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionMissingMethodExceptionThrowOnBegin).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionMissingMethodExceptionThrowOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionCallTargetInvokerExceptionThrowOnBegin).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionCallTargetInvokerExceptionThrowOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionDuckTypeExceptionThrowOnEnd).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionDuckTypeExceptionThrowOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionDuckTypeExceptionThrowOnAsyncEnd).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionDuckTypeExceptionThrowOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegrationAsync).FullName));
+
             // Add Ref Struct integrations
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidReadOnlySpanMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructOneParametersVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidSpanMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructOneParametersVoidIntegration).FullName));
@@ -326,6 +333,11 @@ namespace CallTargetNativeTest
                     CallTargetBubbleUpExceptions();
                     break;
                 }
+                case "instrumentationexceptions":
+                {
+                    InstrumentationExceptions();
+                    break;
+                }
                 case "all":
                     {
                         Argument0();
@@ -405,6 +417,8 @@ namespace CallTargetNativeTest
                         //.
                         CallTargetBubbleUpExceptions();
                         //.
+                        InstrumentationExceptions();
+                        //.
                         CallSite();
                         // .
                         WithRefStructArguments();
@@ -421,7 +435,7 @@ namespace CallTargetNativeTest
 #endif
         }
 
-        private static void RunMethod(Action action, bool checkInstrumented = true, bool bubblingUpException = false, bool asyncMethod = false)
+        private static void RunMethod(Action action, bool checkInstrumented = true, bool bubblingUpException = false, bool asyncMethod = false, bool expectEndMethodExecution = true)
         {
             var cOut = Console.Out;
             Console.SetOut(sWriter);
@@ -456,10 +470,14 @@ namespace CallTargetNativeTest
                 {
                     throw new Exception("Profiler didn't return a valid ProfilerOK: BeginMethod string.");
                 }
-                var endMethodString = asyncMethod ? "ProfilerOK: EndMethodAsync(" : "ProfilerOK: EndMethod(";
-                if (!str.Contains(endMethodString))
+
+                if (expectEndMethodExecution)
                 {
-                    throw new Exception($"Profiler didn't return a valid {endMethodString} string.");
+                    var endMethodString = asyncMethod ? "ProfilerOK: EndMethodAsync(" : "ProfilerOK: EndMethod(";
+                    if (!str.Contains(endMethodString))
+                    {
+                        throw new Exception($"Profiler didn't return a valid {endMethodString} string.");
+                    }
                 }
             }
             else 

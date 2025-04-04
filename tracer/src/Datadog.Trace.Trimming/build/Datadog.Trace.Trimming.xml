@@ -657,6 +657,7 @@
       <type fullname="System.Math" />
       <type fullname="System.MethodAccessException" />
       <type fullname="System.MidpointRounding" />
+      <type fullname="System.MissingMemberException" />
       <type fullname="System.MulticastDelegate" />
       <type fullname="System.Net.WebUtility" />
       <type fullname="System.NonSerializedAttribute" />

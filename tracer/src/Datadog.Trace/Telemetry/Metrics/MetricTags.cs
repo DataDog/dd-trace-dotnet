@@ -274,6 +274,7 @@ internal static class MetricTags
         [Description("error_type:duck_typing")]DuckTyping,
         [Description("error_type:invoker")]Invoker,
         [Description("error_type:execution")]Execution,
+        [Description("error_type:missing_member")]MissingMember,
     }
 
     public enum WafAnalysis
