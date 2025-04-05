@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal void AddProbeProcessor(ProbeDefinition probe)
         {
-            if (LiveDebugger.Instance?.IsInitialized == false)
+            if (LiveDebugger.Instance?.IsInitialized == false && LiveDebugger.Instance.Settings.IsSnapshotExplorationTestEnabled != true)
             {
                 Log.Error("Failed to create probe processor for probe: {Id}", probe.Id);
                 throw new Exception("AddProbeProcessor can be called only when LiveDebugger is initialized");

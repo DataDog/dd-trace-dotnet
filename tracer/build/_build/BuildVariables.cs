@@ -15,8 +15,17 @@ partial class Build
 
         envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
         envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        // envVars.Add("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
 
-        if (description.LineProbesEnabled)
+        if (description.IsSnapshotScenario)
+        {
+            envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
+            envVars.Add(SnapshotExplorationEnabledKey, "1");
+            var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            envVars.Add(SnapshotExplorationProbesFilePathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestProbesFileName));
+            envVars.Add(SnapshotExplorationReportFolderPathKey, Path.Combine(testRootPath, SnapshotExplorationTestFolderName, framework, SnapshotExplorationTestReportFolderName));
+        }
+        else if (description.LineProbesEnabled)
         {
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
@@ -25,7 +34,7 @@ partial class Build
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
-        envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
+        // envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
 
         if (EnableFaultTolerantInstrumentation)
         {
