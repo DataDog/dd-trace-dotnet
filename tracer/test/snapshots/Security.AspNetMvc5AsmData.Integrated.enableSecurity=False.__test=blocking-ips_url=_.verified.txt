@@ -11,6 +11,7 @@
       aspnet.action: index,
       aspnet.controller: home,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -29,6 +30,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -59,6 +61,7 @@
       aspnet.action: index,
       aspnet.controller: home,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -77,6 +80,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
