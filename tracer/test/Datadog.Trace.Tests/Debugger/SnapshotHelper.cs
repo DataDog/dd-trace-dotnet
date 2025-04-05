@@ -68,7 +68,7 @@ internal static class SnapshotHelper
             snapshotCreator.EndReturn(hasArgumentsOrLocals: args.Length + locals.Length > 0);
         }
 
-        snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
+        snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo", true);
 
         var snapshot = snapshotCreator.GetSnapshotJson();
         return prettify ? JsonPrettify(snapshot) : snapshot;
