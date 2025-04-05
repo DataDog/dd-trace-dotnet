@@ -8,12 +8,14 @@
 #include <string>
 #include <cstdint>
 
+#include "InternedString.h"
+
 struct FrameInfoView
 {
 public:
-    std::string_view ModuleName;
-    std::string_view Frame;
-    std::string_view Filename;
+    InternedString ModuleName;
+    InternedString Frame;
+    InternedString Filename;
     std::uint32_t StartLine;
 };
 

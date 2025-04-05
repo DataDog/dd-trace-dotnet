@@ -118,7 +118,7 @@ void ContentionProvider::OnContention(std::chrono::nanoseconds contentionDuratio
 void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack)
 {
     _lockContentionsCountMetric->Incr();
-    _lockContentionsDurationMetric->Add(contentionDuration.count());
+    _lockContentionsDurationMetric->Add(static_cast<double>(contentionDuration.count()));
 
     auto bucket = GetBucket(contentionDuration);
 
@@ -231,7 +231,7 @@ void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp,
 
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
-    _sampledLockContentionsDurationMetric->Add(contentionDuration.count());
+    _sampledLockContentionsDurationMetric->Add(static_cast<double>(contentionDuration.count()));
 }
 
 

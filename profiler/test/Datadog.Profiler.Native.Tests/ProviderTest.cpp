@@ -225,7 +225,7 @@ TEST(WallTimeProviderTest, CheckFrames)
     auto samples = provider.GetSamples();
     provider.Stop();
 
-    std::vector<std::string> expectedFrames =
+    std::vector<InternedString> expectedFrames =
         {
             "Frame #1",
             "Frame #2",

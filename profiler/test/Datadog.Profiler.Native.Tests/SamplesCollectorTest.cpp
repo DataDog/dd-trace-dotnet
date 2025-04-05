@@ -73,7 +73,7 @@ public:
     std::shared_ptr<Sample> CreateSample(std::string_view rid)
     {
         static std::string ModuleName = "My module";
-        static std::string FunctionName = "My frame";
+        static InternedString FunctionName = "My frame";
 
         auto s = std::make_shared<Sample>(rid);
 

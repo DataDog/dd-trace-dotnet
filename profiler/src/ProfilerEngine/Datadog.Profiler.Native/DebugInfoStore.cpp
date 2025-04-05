@@ -15,7 +15,7 @@
 #undef MDTOKEN_DEFINED
 #undef GUID_DEFINED
 
-const std::string DebugInfoStore::NoFileFound = "";
+const InternedString DebugInfoStore::NoFileFound = "";
 const std::uint32_t DebugInfoStore::NoStartLine = 0;
 
 DebugInfoStore::DebugInfoStore(ICorProfilerInfo4* profilerInfo, IConfiguration* _configuration) noexcept :
