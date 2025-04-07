@@ -1699,7 +1699,7 @@ partial class Build
                     (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                    (true, true) => $"(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
+                    (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 
                 return filter;
