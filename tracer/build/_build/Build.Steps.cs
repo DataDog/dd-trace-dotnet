@@ -64,7 +64,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.22.0";
+    const string LibDdwafVersion = "1.23.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -2327,6 +2327,10 @@ partial class Build
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException.*", RegexOptions.Compiled),
+               // These are thrown by the CallTargetNativeTests
+               new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.DuckTyping.DuckTypeException: Throwing a ducktype exception.*"),
+               new(@".*Exception occurred when calling the CallTarget integration continuation. System.MissingMethodException: Throwing a missing method exception.*"),
+               new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvokerException: Throwing a call target invoker exception.*"),
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
            };
