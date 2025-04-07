@@ -63,5 +63,8 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
         internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_enable_telemetry")]
+        internal static extern ErrorHandle EnableTelemetry(SafeHandle config, TelemetryClientConfiguration telemetryConfig);
     }
 }

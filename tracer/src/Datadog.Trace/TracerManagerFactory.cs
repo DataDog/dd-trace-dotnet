@@ -367,8 +367,21 @@ namespace Datadog.Trace
                     Hostname = HostMetadata.Instance.Hostname,
                     Language = ".NET",
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                    LanguageInterpreter = FrameworkDescription.Instance.Name
+                    LanguageInterpreter = FrameworkDescription.Instance.Name,
                 };
+
+                var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
+                if (telemetrySettings.TelemetryEnabled)
+                {
+                    configuration.TelemetryClientConfiguration = new TelemetryClientConfiguration
+                    {
+                        Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                        RuntimeId = new CharSlice(Tracer.RuntimeId),
+                        // TODO: enable after libdatadog release
+                        // DebugEnabled = telemetrySettings.DebugEnabled
+                    };
+                }
+
                 return new TraceExporter(configuration);
             }
 
