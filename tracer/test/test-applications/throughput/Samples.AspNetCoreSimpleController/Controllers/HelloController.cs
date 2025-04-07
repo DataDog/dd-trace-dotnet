@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Text;
+using Datadog.Trace;
 
 namespace Samples.AspNetCoreSimpleController.Controllers
 {
@@ -25,11 +26,16 @@ namespace Samples.AspNetCoreSimpleController.Controllers
 //             scope.Span.SetTag("location", "outer");
 // #endif
 #if MANUAL_INSTRUMENTATION
-            for (int i = 0; i < 1000; i++)
+            for (var i = 0; i < 1000; i++)
             {
-                using (var scope = Datadog.Trace.Tracer.Instance.StartActive($"manual-{i}"))
+                var settings = new SpanCreationSettings()
                 {
-                    scope.Span.SetTag("location", "outer");
+                    Parent = null
+                };
+                using var parent = Datadog.Trace.Tracer.Instance.StartActive($"root {i} span", settings);
+                for (var j = 0; j < 1000; j++)
+                {
+                    using var child = Datadog.Trace.Tracer.Instance.StartActive($"child of {i}, {j} span", settings);
                 }
             }
 #endif
