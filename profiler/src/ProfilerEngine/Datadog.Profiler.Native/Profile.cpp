@@ -81,10 +81,10 @@ static std::pair<ddog_prof_FunctionId, Success> InternFunction(
         return {ddog_prof_FunctionId{}, std::move(success)};
     }
 
-    auto success2 = UpdateInternedString(profile, frame);
-    if (!success2)
+    success = UpdateInternedString(profile, frame);
+    if (!success)
     {
-        return {ddog_prof_FunctionId{}, std::move(success2)};
+        return {ddog_prof_FunctionId{}, std::move(success)};
     }
 
     auto result = ddog_prof_Profile_intern_function(profile, frame.Id()->Id, ddog_prof_Profile_interned_empty_string(), fileName.Id()->Id);

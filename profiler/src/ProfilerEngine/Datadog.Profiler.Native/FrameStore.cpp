@@ -78,16 +78,16 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
-            return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
+            return {true, {FakeModuleName, FakeContentionFrame, UnknownFileInfo, 0}};
         }
         else
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
-            return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+            return {true, {FakeModuleName, FakeAllocationFrame, UnknownFileInfo, 0}};
         }
         else
         {
-            return { true, {FakeModuleName, UnknownManagedFrame, "", 0} };
+            return {true, {FakeModuleName, UnknownManagedFrame, UnknownFileInfo, 0}};
         }
     }
 
@@ -96,7 +96,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     if (!result.has_value())
     {
         // we still want a frame to display a good'ish callstack shape
-        return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
+        return {true, {UnloadedModuleName, NotResolvedFrame, UnknownFileInfo, 0}};
     }
 
     auto const& [hr, functionId] = result.value();
@@ -110,11 +110,11 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     {
         if (!_resolveNativeFrames)
         {
-            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            return {false, {NotResolvedModuleName, NotResolvedFrame, UnknownFileInfo, 0}};
         }
 
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, {moduleName, frame, "", 0}};
+        return {true, {moduleName, frame, UnknownFileInfo, 0}};
     }
 }
 
@@ -180,21 +180,21 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     ULONG32 genericParametersCount;
     if (!GetFunctionInfo(functionId, mdTokenFunc, classId, moduleId, genericParametersCount, genericParameters))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {UnknownManagedAssembly, UnknownManagedFrame, UnknownFileInfo, 0};
     }
 
     // Use metadata API to get method name
     ComPtr<IMetaDataImport2> pMetadataImport;
     if (!GetMetadataApi(moduleId, functionId, pMetadataImport))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {UnknownManagedAssembly, UnknownManagedFrame, UnknownFileInfo, 0};
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
     auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {UnknownManagedAssembly, UnknownManagedFrame, UnknownFileInfo, 0};
     }
 
     // get the method signature
@@ -221,7 +221,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             auto& value = _methods[functionId];
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
-            value = {UnknownManagedAssembly, builder.str(), "", 0};
+            value = {UnknownManagedAssembly, builder.str(), UnknownFileInfo, 0};
             return value;
         }
 
@@ -609,9 +609,9 @@ std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     return std::make_tuple(methodName, builder.str(), mdTokenType);
 }
 
-bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
+bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, InternedString& assemblyName)
 {
-    assemblyName = std::string("");
+    assemblyName = "";
 
     AssemblyID assemblyId;
     INVOKE(pInfo->GetModuleInfo(moduleId, nullptr, 0, nullptr, nullptr, &assemblyId));

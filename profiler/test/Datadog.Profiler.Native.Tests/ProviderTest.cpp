@@ -233,7 +233,7 @@ TEST(WallTimeProviderTest, CheckFrames)
             "Frame #4",
         };
 
-    std::vector<std::string> expectedModules =
+    std::vector<InternedString> expectedModules =
         {
             "module #1",
             "module #2",

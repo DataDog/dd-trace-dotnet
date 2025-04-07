@@ -33,8 +33,24 @@ std::shared_ptr<StringId>& InternedString::Id()
     return _impl;
 }
 
+bool InternedString::empty() const
+{
+    return _impl->Str.empty();
+}
+
 bool InternedString::operator==(InternedString const& other) const
 {
     return _impl->Str == other._impl->Str &&
         ddog_prof_Profile_generations_are_equal(_impl->Id.generation, other._impl->Id.generation);
+}
+
+bool InternedString::operator!=(InternedString const& other) const
+{
+    return !(*this == other);
+}
+
+std::ostream& operator<<(std::ostream& os, const InternedString& s)
+{
+    os << s._impl->Str;
+    return os;
 }

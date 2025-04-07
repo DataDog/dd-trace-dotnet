@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -18,9 +19,12 @@ public:
     operator std::string_view() const;
 
     std::shared_ptr<StringId>& Id();
+    bool empty() const;
 
     bool operator==(InternedString const& other) const;
+    bool operator!=(InternedString const& other) const;
 
 private:
+    friend std::ostream& operator<<(std::ostream& os, const InternedString& s);
     std::shared_ptr<StringId> _impl;
 };
