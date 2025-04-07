@@ -377,7 +377,8 @@ namespace Datadog.Trace
                     {
                         Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
                         RuntimeId = new CharSlice(Tracer.RuntimeId),
-                        DebugEnabled = telemetrySettings.DebugEnabled
+                        // TODO: enable after libdatadog release
+                        // DebugEnabled = telemetrySettings.DebugEnabled
                     };
                 }
 
