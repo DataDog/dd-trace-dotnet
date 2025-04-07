@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     MethodName = "TrackUserLoginFailure",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.String, ClrNames.Bool, ClrNames.String, "System.Collections.Generic.IDictionary`2[System.String,System.String]"],
-    MinimumVersion = "3.0.13",
+    MinimumVersion = "3.0.15",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]

@@ -9,7 +9,8 @@ using Datadog.Trace.SourceGenerators;
 namespace Datadog.Trace.AppSec;
 
 /// <summary>
-/// Allow
+/// Handlers for setting ASM login success / failures events in traces
+/// Includes a security scan if asm is enabled
 /// </summary>
 public static class EventTrackingSdkV2
 {

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     MethodName = "TrackUserLoginFailure",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.String, ClrNames.Bool, "Datadog.Trace.UserDetails", "System.Collections.Generic.IDictionary`2[System.String,System.String]"],
-    MinimumVersion = "3.0.13",
+    MinimumVersion = "3.0.15",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
@@ -33,7 +33,7 @@ public class EventTrackingSdkV2TrackUserLoginFailureUserDetailsIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TUserDetails>(ref string userLogin, ref bool exists, TUserDetails userDetails, ref IDictionary<string, string>? metadata)
         where TUserDetails : IUserDetails
     {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginFailure_UserId);
+        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginFailure_UserDetails);
         Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginFailure(userLogin, exists, userDetails, metadata, Trace.Tracer.Instance);
         return CallTargetState.GetDefault();
     }

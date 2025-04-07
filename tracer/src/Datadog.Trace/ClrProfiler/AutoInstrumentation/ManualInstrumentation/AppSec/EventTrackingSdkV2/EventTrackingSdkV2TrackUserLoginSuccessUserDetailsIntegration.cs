@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ap
     MethodName = "TrackUserLoginSuccess",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.String, "Datadog.Trace.UserDetails", "System.Collections.Generic.IDictionary`2[System.String,System.String]"],
-    MinimumVersion = "3.0.13",
+    MinimumVersion = "3.0.15",
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]

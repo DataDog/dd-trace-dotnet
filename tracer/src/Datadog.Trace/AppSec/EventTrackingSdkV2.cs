@@ -72,7 +72,7 @@ public static class EventTrackingSdkV2
     [PublicApi]
     public static void TrackUserLoginFailure(string userLogin, bool exists, UserDetails userDetails, IDictionary<string, string>? metadata = null)
     {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginSuccess_UserDetails);
+        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginFailure_UserDetails);
         TrackUserLoginFailure(userLogin, exists, userDetails, metadata, Tracer.Instance);
     }
 
