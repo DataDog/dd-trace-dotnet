@@ -28,4 +28,10 @@ internal struct TelemetryClientConfiguration
     ///  - Be associated with traces to allow correlation between traces and telemetry data
     /// </summary>
     public CharSlice RuntimeId;
+
+    /// <summary>
+    /// Whether to enable debug mode for telemetry. When enabled, sets the dd-telemetry-debug-enabled header to true.
+    /// Defaults to false.
+    /// </summary>
+    public bool DebugEnabled;
 }
