@@ -4804,7 +4804,6 @@ stages:
   dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
-    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -6999,7 +6998,6 @@ stages:
     - integration_tests_windows
     - integration_tests_windows_debugger
     - integration_tests_windows_iis
-    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
