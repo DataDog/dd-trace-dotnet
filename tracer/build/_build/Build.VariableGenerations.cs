@@ -158,7 +158,7 @@ partial class Build : NukeBuild
                     {
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
                         }
                     }
                 }
@@ -236,10 +236,10 @@ partial class Build : NukeBuild
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
+                        var enable32bit = targetPlatform == "x86";
                         foreach (var area in areas)
                         {
-                            var enable32bit = targetPlatform == "x86";
-                            matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
                         }
                     }
                 }
@@ -293,7 +293,10 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = areas });
+                        foreach (var area in areas)
+                        {
+                            matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = areas });
+                        }
                     }
                 }
 
@@ -320,7 +323,7 @@ partial class Build : NukeBuild
                     {
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
                         }
                     }
                 }
