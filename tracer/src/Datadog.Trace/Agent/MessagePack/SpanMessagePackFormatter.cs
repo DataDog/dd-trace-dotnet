@@ -180,9 +180,11 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             var hasSpanEvents = span.SpanEvents is { Count: > 0 };
-            var spanEventsManager = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager;
+            var nativeSpanEventsEnabled = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager?.NativeSpanEventsEnabled;
+            var hasNativeSpanEvents = hasSpanEvents && nativeSpanEventsEnabled == true;
+            var hasMetaSpanEvents = hasSpanEvents && nativeSpanEventsEnabled == false;
 
-            if (hasSpanEvents && spanEventsManager?.NativeSpanEventsEnabled == true)
+            if (hasNativeSpanEvents)
             {
                 len++;
             }
@@ -236,7 +238,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
+            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors, hasMetaSpanEvents);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             if (hasMetaStruct)
@@ -249,7 +251,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += WriteSpanLink(ref bytes, offset, in spanModel);
             }
 
-            if (hasSpanEvents && spanEventsManager?.NativeSpanEventsEnabled == true)
+            if (hasNativeSpanEvents)
             {
                 offset += WriteSpanEvent(ref bytes, offset, in spanModel);
             }
@@ -451,14 +453,11 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
 
-            if (spanModel.Span.SpanEvents is { Count: > 0 })
-            {
-                var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
-                var eventsJson = JsonConvert.SerializeObject(spanModel.Span.SpanEvents, settings);
+            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
+            var eventsJson = JsonConvert.SerializeObject(spanModel.Span.SpanEvents, settings);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
-            }
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _eventBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
 
             return offset - originalOffset;
         }
@@ -491,7 +490,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors, bool hasMetaSpanEvents)
         {
             var span = model.Span;
             int originalOffset = offset;
@@ -512,8 +511,7 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            var spanEventsManager = (span.Context.TraceContext?.Tracer as Tracer)?.TracerManager?.SpanEventsManager;
-            if (span.SpanEvents is { Count: > 0 } && spanEventsManager?.NativeSpanEventsEnabled != true)
+            if (hasMetaSpanEvents)
             {
                 count++;
                 offset += WriteJsonEvents(ref bytes, offset, in model);

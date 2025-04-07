@@ -209,10 +209,10 @@ public class SpanMessagePackFormatterTests
     }
 
     [Theory]
-    [InlineData("true")]
-    [InlineData("false")]
-    [InlineData("null")]
-    public void SpanEvent_Tag_Serialization(string nativeSpanEventsEnabled)
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void SpanEvent_Tag_Serialization(bool? nativeSpanEventsEnabled)
     {
         var discoveryService = new DiscoveryServiceMock();
         var mockApi = new MockApi();
@@ -222,9 +222,9 @@ public class SpanMessagePackFormatterTests
 
         tracer.TracerManager.Start();
 
-        if (nativeSpanEventsEnabled is not "null")
+        if (nativeSpanEventsEnabled is not null)
         {
-            discoveryService.TriggerChange(spanEvents: nativeSpanEventsEnabled == "true");
+            discoveryService.TriggerChange(spanEvents: (bool)nativeSpanEventsEnabled);
         }
 
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
@@ -277,7 +277,7 @@ public class SpanMessagePackFormatterTests
         result.Should().HaveCount(1);
         var deserializedSpan = result[0];
 
-        if (nativeSpanEventsEnabled == "true")
+        if (nativeSpanEventsEnabled is true)
         {
             deserializedSpan.SpanEvents.Should().HaveCount(2);
 
@@ -414,6 +414,13 @@ public class SpanMessagePackFormatterTests
                 "\"bool_key\":true",
                 "\"int_key\":42",
                 "\"double_key\":3.14",
+                "\"char_key\":\"c\"",
+                "\"uint_key\":420",
+                "\"byte_key\":7",
+                "\"sbyte_key\":-7",
+                "\"short_key\":30000",
+                "\"ushort_key\":60000",
+                "\"float_key\":1.23",
                 "\"string_array\":[\"item1\",\"item2\",\"item3\"]"
             };
             firstEventExpectedAttributes.Should().AllSatisfy(attr => eventsJson.Should().Contain(attr));

@@ -259,7 +259,7 @@ namespace Datadog.Trace.Activity
                     foreach (var kvp in duckLink.Tags)
                     {
                         if (!string.IsNullOrEmpty(kvp.Key)
-                         && IsAllowedAtributeType(kvp.Value))
+                         && IsAllowedAttributeType(kvp.Value))
                         {
                             if (kvp.Value is Array array)
                             {
@@ -614,7 +614,7 @@ namespace Datadog.Trace.Activity
             return null;
         }
 
-        private static bool IsAllowedAtributeType(object? value)
+        private static bool IsAllowedAttributeType(object? value)
         {
             if (value is null)
             {
