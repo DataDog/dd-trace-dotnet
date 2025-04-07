@@ -409,33 +409,25 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
   interruptible: true
   timeout: 1h
-  # Image based on earlier version of tooling
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-tests
-
-  script:
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
-    - ./platform/launch-windows-instances.sh
-    
+  rules:
+    - when: on_success
   artifacts:
     name: "artifacts"
     when: always
     paths:
       - artifacts/
     expire_in: 3 months
-  rules:
-    - when: on_success
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
-    AWS_REGION: "us-east-1"
-    CLEANUP: "false"
-    AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER: "ci.dd-trace-dotnet.ephemeral-infra-ci.dd-trace-dotnet-profile"
-    AWS_EPHEMERAL_INFRA_PROFILE_NAME: "ephemeral-infra-ci"
-    AWS_EPHEMERAL_INFRA_ARTIFACTS_BUCKET_URI: "s3://windows-benchmarking-results/$CI_PROJECT_NAME/$CI_COMMIT_REF_NAME/$CI_JOB_ID"
-    AWS_EPHEMERAL_INFRA_REGION: "us-east-1"
-    K6_OPTIONS_WARMUP_RATE: 30
-    K6_OPTIONS_WARMUP_DURATION: 3m
+
+    # Whether to cleanup ephemeral instances after benchmarks are run
+    CLEANUP: "true"
+
+    K6_OPTIONS_WARMUP_RATE: 500
+    K6_OPTIONS_WARMUP_DURATION: 1m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
     K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_WARMUP_MAX_VUS: 4
@@ -451,6 +443,13 @@ profiler_cpu_timer_create-arm64:
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+  script:
+    - source build-id.txt
+    - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
+    # TODO: Remove this once the branch is merged to dd-trace-dotnet/macro
+    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=igoragoli/update-dd-trace-dotnet-macro
+    - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./ephemeral-infra/run-windows-benchmarks.sh
 
 baseline-win:
   extends: .benchmarks-win
