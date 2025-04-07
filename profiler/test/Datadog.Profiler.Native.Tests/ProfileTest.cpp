@@ -3,12 +3,16 @@
 
 #include "gtest/gtest.h"
 
+#include "InternedString.h"
+#include "StringId.hpp"
 #include "Profile.h"
 #include "ProfilerMockedInterface.h"
 
+#include <memory>
+
 namespace libdatadog {
 
-Profile CreateProfile(std::unique_ptr<IConfiguration> const& configuration)
+static Profile CreateProfile(std::unique_ptr<IConfiguration> const& configuration)
 {
     return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
 }
@@ -28,11 +32,14 @@ TEST(ProfileTest, AddSample)
 
     Sample::ValuesCount = 1;
     auto s = std::make_shared<Sample>(1ns, "1", 2);
-    s->AddFrame({"", "", "", 1});
-    s->AddFrame({"", "", "", 2});
+    InternedString moduleName = "m1";
+    ASSERT_FALSE(moduleName.Id()->IsInitialized);
+    s->AddFrame({moduleName, "", "", 1});
+    s->AddFrame({moduleName, "", "", 2});
     s->AddValue(42, 0);
     auto success = p.Add(s);
     ASSERT_TRUE(success) << success.message();
+    ASSERT_TRUE(moduleName.Id()->IsInitialized);
 }
 
 TEST(ProfileTest, AddUpscalingRule)

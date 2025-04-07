@@ -11,7 +11,7 @@ InternedString::InternedString() : InternedString("")
 }
 
 InternedString::InternedString(std::string s) :
-    _impl{std::make_shared<StringId>()}
+    _impl{std::make_shared<StringId>(StringId{.Str = std::move(s), .Id = {}, .IsInitialized = false})}
 {
 }
 

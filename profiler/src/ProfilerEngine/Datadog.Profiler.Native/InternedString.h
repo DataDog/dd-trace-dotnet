@@ -5,6 +5,7 @@
 
 struct StringId;
 
+// rename InternableString
 class InternedString final
 {
 public:
