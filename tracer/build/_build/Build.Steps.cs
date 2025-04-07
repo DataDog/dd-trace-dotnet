@@ -1695,7 +1695,7 @@ partial class Build
                     (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                    (true, true) => $"(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
+                    (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 
                 return filter;
@@ -1797,6 +1797,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
+            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
 
             try
             {
@@ -1808,7 +1809,7 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
+                    .SetFilter(filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1833,14 +1834,7 @@ partial class Build
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
         .Executes(() => RunWindowsIisIntegrationTests(
-                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
-
-    Target RunWindowsSecurityIisIntegrationTests => _ => _
-        .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
-        .After(PublishIisSamples)
-        .Triggers(PrintSnapshotsDiff)
-        .Requires(() => Framework)
+                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)))
         .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
 
@@ -1848,6 +1842,8 @@ partial class Build
     {
         var isDebugRun = IsDebugRun();
         EnsureResultsDirectory(project);
+        var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
+
         try
         {
             // Different filter from RunWindowsIntegrationTests
@@ -1858,7 +1854,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
+                                .SetFilter(filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
