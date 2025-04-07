@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Text;
-using Datadog.Trace;
 
 namespace Samples.AspNetCoreSimpleController.Controllers
 {
@@ -28,7 +27,7 @@ namespace Samples.AspNetCoreSimpleController.Controllers
 #if MANUAL_INSTRUMENTATION
             for (var i = 0; i < 1000; i++)
             {
-                var settings = new SpanCreationSettings()
+                var settings = new Datadog.Trace.SpanCreationSettings()
                 {
                     Parent = null
                 };
