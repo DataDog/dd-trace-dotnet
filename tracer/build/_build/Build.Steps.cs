@@ -1408,7 +1408,6 @@ partial class Build
                   );
 
                   DotnetBuild(projects, noDependencies: false, noRestore: false);
-
                   // these are defined in Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet dependencies
                   var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
                   var frameworks = Framework is null || string.IsNullOrEmpty(Framework)
@@ -1627,7 +1626,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = GetFilter();
+            var filter = AddAreaFilter(GetFilter());
 
             try
             {
@@ -1645,7 +1644,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
+                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1690,19 +1689,33 @@ partial class Build
 
                 var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
-                var filterData = Filter?.StartsWith("Area=") is true ? Filter : $"({Filter})";
                 var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _) => $"{filterData}{dockerFilter}{armFilter}",
+                    (false, _) => $"({Filter}){dockerFilter}{armFilter}",
                     (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                    (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
+                    (true, true) => $"(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 
                 return filter;
             }
         });
+
+    private string AddAreaFilter(string filter)
+    {
+        if (string.IsNullOrWhiteSpace(Area))
+        {
+            return filter;
+        }
+
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return $"(Area={Area})";
+        }
+
+        return filter + $"&(Area={Area})";
+    }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()

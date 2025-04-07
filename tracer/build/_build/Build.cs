@@ -80,6 +80,9 @@ partial class Build : NukeBuild
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
+    [Parameter("Run tests from a especific area (tracer, ASM, debugger, profiler...)")]
+    readonly string Area;
+
     [Parameter("Override the default category filter for running benchmarks. (Optional)")]
     readonly string BenchmarkCategory;
 

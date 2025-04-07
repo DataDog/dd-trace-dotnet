@@ -5,4 +5,4 @@
 
 using Xunit;
 
-[assembly: AssemblyTrait("Area", "Tracer")]
+[assembly: AssemblyTrait("Area", "ASM")]
