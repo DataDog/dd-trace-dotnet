@@ -29,9 +29,9 @@ typedef std::vector<NumericLabel> NumericLabels;
 typedef std::vector<std::variant<StringLabel, NumericLabel>> Labels;
 
 template<class... Ts>
-struct overloaded : Ts... { using Ts::operator()...; };
+struct LabelsVisitor : Ts... { using Ts::operator()...; };
 template<class... Ts>
-overloaded(Ts...) -> overloaded<Ts...>;
+LabelsVisitor(Ts...) -> LabelsVisitor<Ts...>;
 
 using namespace std::chrono_literals;
 

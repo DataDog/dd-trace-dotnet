@@ -169,7 +169,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         auto labels = sample->GetLabels();
         for (auto const& label : labels)
         {
-            std::visit(overloaded{
+            std::visit(LabelsVisitor{
                 [expectedPid](NumericLabel const& label){
                     auto const& [name, value] = label;
                     if(name == Sample::ProcessIdLabel)

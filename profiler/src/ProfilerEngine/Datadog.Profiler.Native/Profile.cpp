@@ -66,7 +66,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     for (auto const& label : labels)
     {
         auto ffiLabel = std::visit(
-            overloaded{
+            LabelsVisitor{
                 [](NumericLabel const& l) -> ddog_prof_Label {
                     auto const& [name, value] = l;
                     return ddog_prof_Label {
