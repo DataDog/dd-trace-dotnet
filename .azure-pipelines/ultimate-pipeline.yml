@@ -2366,6 +2366,7 @@ stages:
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
