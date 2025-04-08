@@ -1630,6 +1630,9 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
+
+            Logger.Information("Running integration tests with area: {Area}", Area);
+
             var filter = AddAreaFilter(GetFilter());
 
             try
@@ -1655,6 +1658,8 @@ partial class Build
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
+
+                Logger.Information("Running integration tests with filter: {Filter}", filter);
 
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
