@@ -991,7 +991,7 @@ partial class Build
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => GitHubRepositoryName)
          .Requires(() => BenchmarkCategory)
-         .Executes(async () =>
+         .Executes(() =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
              {
