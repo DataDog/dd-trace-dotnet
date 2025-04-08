@@ -131,6 +131,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"Area: {Area}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
