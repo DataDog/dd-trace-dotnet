@@ -33,7 +33,15 @@ public class EventTrackingSdkV2TrackUserLoginSuccessUserIdIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userLogin, string? userId, IDictionary<string, string>? metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginSuccess_UserId);
-        Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginSuccess(userLogin, userId is not null ? new UserDetails(userId) : null, metadata, Trace.Tracer.Instance);
+        if (userId is not null)
+        {
+            Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginSuccess(userLogin,  new UserDetails(userId), metadata, Trace.Tracer.Instance);
+        }
+        else
+        {
+            Datadog.Trace.AppSec.EventTrackingSdkV2.TrackUserLoginSuccess<IUserDetails?>(userLogin, null, metadata, Trace.Tracer.Instance);
+        }
+
         return CallTargetState.GetDefault();
     }
 }

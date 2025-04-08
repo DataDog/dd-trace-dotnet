@@ -22,61 +22,8 @@ namespace Datadog.Trace.AppSec;
 /// </summary>
 public static class EventTrackingSdkV2
 {
-    /// <summary>
-    /// Sets the details of a successful login on the local root span
-    /// </summary>
-    /// <param name="userLogin">The userLogin associated with the login success</param>
-    /// <param name="userId">The optional userId associated with the login success</param>
-    /// <param name="metadata">The optional metadata associated with the login success</param>
-    [PublicApi]
-    public static void TrackUserLoginSuccess(string userLogin, string? userId = null, IDictionary<string, string>? metadata = null)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginSuccess_UserId);
-        TrackUserLoginSuccess(userLogin, userId is not null ? new UserDetails(userId) : null, metadata, Tracer.Instance);
-    }
-
-    /// <summary>
-    /// Sets the details of a successful logon on the local root span
-    /// </summary>
-    /// <param name="userLogin">The userId associated with the login success</param>
-    /// <param name="userDetails">The userLogin associated with the login success</param>
-    /// <param name="metadata">Metadata associated with the login success</param>
-    [PublicApi]
-    public static void TrackUserLoginSuccess(string userLogin, UserDetails userDetails, IDictionary<string, string>? metadata = null)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginSuccess_UserDetails);
-        TrackUserLoginSuccess(userLogin, userDetails, metadata, Tracer.Instance);
-    }
-
-    /// <summary>
-    /// Sets the details of a logon failure on the local root span
-    /// </summary>
-    /// <param name="userLogin">The userId associated with the login failure</param>
-    /// <param name="exists">If the userId associated with the login failure exists</param>
-    /// <param name="userId">The optional userId associated with the login success</param>
-    /// <param name="metadata">Metadata associated with the login failure</param>
-    [PublicApi]
-    public static void TrackUserLoginFailure(string userLogin, bool exists, string? userId = null, IDictionary<string, string>? metadata = null)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginFailure_UserId);
-        TrackUserLoginFailure(userLogin, exists, userId is not null ? new UserDetails(userId) : null, metadata, Tracer.Instance);
-    }
-
-    /// <summary>
-    /// Sets the details of a logon failure on the local root span
-    /// </summary>
-    /// <param name="userLogin">The user login associated with the login failure</param>
-    /// <param name="exists">If the userId associated with the login failure exists</param>
-    /// <param name="userDetails">The details of the user associated with the login failure</param>
-    /// <param name="metadata">Metadata associated with the login failure</param>
-    [PublicApi]
-    public static void TrackUserLoginFailure(string userLogin, bool exists, UserDetails userDetails, IDictionary<string, string>? metadata = null)
-    {
-        TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdkV2_TrackUserLoginFailure_UserDetails);
-        TrackUserLoginFailure(userLogin, exists, userDetails, metadata, Tracer.Instance);
-    }
-
-    internal static void TrackUserLoginSuccess(string userLogin, IUserDetails? userDetails, IDictionary<string, string>? metadata, Tracer tracer)
+    internal static void TrackUserLoginSuccess<TUserDetails>(string userLogin, TUserDetails? userDetails, IDictionary<string, string>? metadata, Tracer tracer)
+        where TUserDetails : IUserDetails?
     {
         TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventLoginSuccessSdkV2);
 
