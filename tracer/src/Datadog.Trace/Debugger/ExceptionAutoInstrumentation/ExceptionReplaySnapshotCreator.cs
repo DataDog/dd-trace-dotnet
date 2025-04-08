@@ -33,7 +33,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal static string FrameIndex { get; } = Guid.NewGuid().ToString();
 
-        internal override DebuggerSnapshotCreator EndSnapshot(bool isMethodPrpbe)
+        internal override DebuggerSnapshotCreator EndSnapshot()
         {
             JsonWriter.WritePropertyName("exceptionHash");
             JsonWriter.WriteValue(ExceptionHash);
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             JsonWriter.WritePropertyName("frameIndex");
             JsonWriter.WriteValue(FrameIndex);
 
-            return base.EndSnapshot(isMethodPrpbe);
+            return base.EndSnapshot();
         }
     }
 }

@@ -326,7 +326,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal virtual DebuggerSnapshotCreator EndSnapshot(bool isMethodProbe)
+        internal virtual DebuggerSnapshotCreator EndSnapshot()
         {
             JsonWriter.WritePropertyName("id");
             JsonWriter.WriteValue(SnapshotId);
@@ -334,7 +334,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WritePropertyName("timestamp");
             JsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
 
-            if (isMethodProbe)
+            if (_probeLocation == ProbeLocation.Method)
             {
                 JsonWriter.WritePropertyName("duration");
                 JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
@@ -687,8 +687,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        info.LineCaptureInfo.ProbeFilePath,
-                        isMethodProbe: false);
+                        info.LineCaptureInfo.ProbeFilePath);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
@@ -715,15 +714,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                    .FinalizeSnapshot(
                         methodName,
                         typeFullName,
-                        null,
-                        isMethodProbe: true);
+                        null);
 
                 var snapshot = GetSnapshotJson();
                 return snapshot;
             }
         }
 
-        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath, bool isMethodProbe)
+        internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
         {
             var activeScope = Tracer.Instance.InternalActiveScope;
 
@@ -732,7 +730,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var spanId = activeScope?.Span.SpanId.ToString(CultureInfo.InvariantCulture);
 
             AddStackInfo()
-            .EndSnapshot(isMethodProbe)
+            .EndSnapshot()
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
             .AddGeneralInfo(DynamicInstrumentationHelper.ServiceName, traceId, spanId)
