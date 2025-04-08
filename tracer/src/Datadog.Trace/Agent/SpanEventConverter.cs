@@ -1,4 +1,4 @@
-// <copyright file="ActivityEventConverter.cs" company="Datadog">
+// <copyright file="SpanEventConverter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,18 +6,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Activity.DuckTypes;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
-namespace Datadog.Trace.Activity;
+namespace Datadog.Trace.Agent;
 
-internal class ActivityEventConverter : JsonConverter<ActivityEvent>
+internal class SpanEventConverter : JsonConverter<SpanEvent>
 {
     public override bool CanRead => false; // don't need to read the JSON only write
 
-    public override void WriteJson(JsonWriter writer, ActivityEvent value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, SpanEvent value, JsonSerializer serializer)
     {
         var eventJObject = new JObject();
         eventJObject.Add("name", value.Name);
@@ -26,11 +24,11 @@ internal class ActivityEventConverter : JsonConverter<ActivityEvent>
         // allowed types as values: string, bool, or some numeric type
         // note that char wasn't listed in RFC, but putting it here as it is like a string
         // allow any dimension of those primitive types above
-        if (value.Tags is not null)
+        if (value.Attributes is not null)
         {
             var acceptedAttr = new List<KeyValuePair<string, object>>();
             // while we _can_ serialize most objects we aren't supposed to
-            foreach (var kvp in value.Tags)
+            foreach (var kvp in value.Attributes)
             {
                 if (!string.IsNullOrEmpty(kvp.Key)
                     && IsAllowedType(kvp.Value))
@@ -49,12 +47,12 @@ internal class ActivityEventConverter : JsonConverter<ActivityEvent>
         writer.WriteToken(eventJObject.CreateReader());
     }
 
-    public override ActivityEvent ReadJson(JsonReader reader, Type objectType, ActivityEvent existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override SpanEvent ReadJson(JsonReader reader, Type objectType, SpanEvent existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         throw new NotImplementedException();
     }
 
-    private static bool IsAllowedType(object value)
+    internal static bool IsAllowedType(object value)
     {
         if (value is null)
         {
@@ -86,6 +84,7 @@ internal class ActivityEventConverter : JsonConverter<ActivityEvent>
             }
         }
 
+        // Removed decimal & ulong from supported types to match both Native SpanEvents RFC and JSON events
         return (value is string or bool ||
                 value is char ||
                 value is sbyte ||
@@ -94,10 +93,8 @@ internal class ActivityEventConverter : JsonConverter<ActivityEvent>
                 value is short ||
                 value is uint ||
                 value is int ||
-                value is ulong ||
                 value is long ||
                 value is float ||
-                value is double ||
-                value is decimal);
+                value is double);
     }
 }
