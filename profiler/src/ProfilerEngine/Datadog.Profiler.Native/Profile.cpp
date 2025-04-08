@@ -60,26 +60,29 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 
     // Labels
     auto const& labels = sample->GetLabels();
-    auto const& numericLabels = sample->GetNumericLabels();
     std::vector<ddog_prof_Label> ffiLabels;
-    ffiLabels.reserve(labels.size() + numericLabels.size());
+    ffiLabels.reserve(labels.size());
 
-    for (auto const& [label, value] : labels)
+    for (auto const& label : labels)
     {
-        auto labelz = ddog_prof_Label {
-            .key = {label.data(), label.size()},
-            .str = {value.data(), value.size()}
-        };
-        ffiLabels.push_back(std::move(labelz));
-    }
-
-    for (auto const& [label, value] : numericLabels)
-    {
-        auto labelz = ddog_prof_Label {
-            .key = {label.data(), label.size()},
-            .num = value
-        };
-        ffiLabels.push_back(std::move(labelz));
+        auto ffiLabel = std::visit(
+            overloaded{
+                [](NumericLabel const& l) -> ddog_prof_Label {
+                    auto const& [name, value] = l;
+                    return ddog_prof_Label {
+                        .key = {name.data(), name.size()},
+                        .num = value
+                    };
+                },
+                [](StringLabel const& l) -> ddog_prof_Label {
+                    auto const& [name, value] = l;
+                    return ddog_prof_Label {
+                        .key = {name.data(), name.size()},
+                        .str = {value.data(), value.size()}
+                    };
+                }
+            }, label);
+        ffiLabels.push_back(ffiLabel);
     }
 
     ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};

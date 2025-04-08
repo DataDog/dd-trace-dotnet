@@ -69,45 +69,45 @@ public:
         // Note: we don't need to add the start timestamp as a label because it is computed
         // by the backend from the end timestamp and the duration; i.e. the value of this sample
 
-        sample->AddLabel(Label(Sample::RequestUrlLabel, Url));
-        sample->AddNumericLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
+        sample->AddLabel(StringLabel(Sample::RequestUrlLabel, Url));
+        sample->AddLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
         if (!Error.empty())
         {
-            sample->AddLabel(Label(Sample::RequestErrorLabel, Error));
+            sample->AddLabel(StringLabel(Sample::RequestErrorLabel, Error));
         }
         if (HasBeenRedirected)
         {
-            sample->AddLabel(Label(Sample::RequestRedirectUrlLabel, RedirectUrl));
+            sample->AddLabel(StringLabel(Sample::RequestRedirectUrlLabel, RedirectUrl));
         }
         if (DnsDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestDnsWaitLabel, DnsWait.count()));
-            sample->AddNumericLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration.count()));
-            sample->AddLabel(Label(Sample::RequestDnsSuccessLabel, DnsSuccess ? "true" : "false"));
+            sample->AddLabel(NumericLabel(Sample::RequestDnsWaitLabel, DnsWait.count()));
+            sample->AddLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration.count()));
+            sample->AddLabel(StringLabel(Sample::RequestDnsSuccessLabel, DnsSuccess ? "true" : "false"));
         }
         if (HandshakeDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeWaitLabel, HandshakeWait.count()));
-            sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration.count()));
+            sample->AddLabel(NumericLabel(Sample::RequestHandshakeWaitLabel, HandshakeWait.count()));
+            sample->AddLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration.count()));
         }
         if (!HandshakeError.empty())
         {
-            sample->AddLabel(Label(Sample::RequestHandshakeErrorLabel, HandshakeError));
+            sample->AddLabel(StringLabel(Sample::RequestHandshakeErrorLabel, HandshakeError));
         }
         if (SocketConnectDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration.count()));
+            sample->AddLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration.count()));
         }
         if (RequestDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of connection/handshake error
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestDurationLabel, RequestDuration.count()));
+            sample->AddLabel(NumericLabel(Sample::RequestDurationLabel, RequestDuration.count()));
         }
         if (ResponseDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of error
         {
-            sample->AddNumericLabel(NumericLabel(Sample::ResponseContentDurationLabel, ResponseDuration.count()));
+            sample->AddLabel(NumericLabel(Sample::ResponseContentDurationLabel, ResponseDuration.count()));
         }
-        sample->AddLabel(Label(Sample::RequestResponseThreadIdLabel, EndThreadId));
-        sample->AddLabel(Label(Sample::RequestResponseThreadNameLabel, EndThreadName));
+        sample->AddLabel(StringLabel(Sample::RequestResponseThreadIdLabel, EndThreadId));
+        sample->AddLabel(StringLabel(Sample::RequestResponseThreadNameLabel, EndThreadName));
     }
 
     std::string Url;
