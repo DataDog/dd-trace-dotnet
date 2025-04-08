@@ -295,7 +295,7 @@ partial class Build : NukeBuild
                     {
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = areas });
+                            matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
                         }
                     }
                 }
