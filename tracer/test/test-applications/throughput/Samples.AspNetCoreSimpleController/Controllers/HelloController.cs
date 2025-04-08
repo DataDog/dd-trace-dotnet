@@ -25,16 +25,32 @@ namespace Samples.AspNetCoreSimpleController.Controllers
 //             scope.Span.SetTag("location", "outer");
 // #endif
 #if MANUAL_INSTRUMENTATION
-            for (var i = 0; i < 1000; i++)
+            // Add 1000 spans to the current automatically instrumented trace
+            var activeScope = Datadog.Trace.Tracer.Instance.ActiveScope;
+            if (activeScope != null)
             {
-                var settings = new Datadog.Trace.SpanCreationSettings()
+                for (int i = 0; i < 1000; i++)
                 {
-                    Parent = null
-                };
-                using var parent = Datadog.Trace.Tracer.Instance.StartActive($"root {i} span", settings);
-                for (var j = 0; j < 1000; j++)
+                    using (var spanScope = Tracer.Instance.StartActive($"auto-span-{i}"))
+                    {
+                        spanScope.Span.SetTag("location", "auto");
+                    }
+                }
+                // Force the span from integration to finish
+                activeScope.Span.Finish()
+            }
+            // Create 1000 new traces, each with 1000 spans
+            for (int traceIndex = 0; traceIndex < 1000; traceIndex++)
+            {
+                using (var traceScope = Tracer.Instance.StartActive($"manual-trace-{traceIndex}"))
                 {
-                    using var child = Datadog.Trace.Tracer.Instance.StartActive($"child of {i}, {j} span", settings);
+                    for (int spanIndex = 0; spanIndex < 1000; spanIndex++)
+                    {
+                        using (var spanScope = Tracer.Instance.StartActive($"manual-span-{traceIndex}-{spanIndex}"))
+                        {
+                            spanScope.Span.SetTag("location", "manual");
+                        }
+                    }
                 }
             }
 #endif
