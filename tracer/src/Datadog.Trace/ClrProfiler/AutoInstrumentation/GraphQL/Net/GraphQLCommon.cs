@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -128,6 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             if (errorCount > 0)
             {
                 RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
+                AddGraphQlQueryErrorSpanEvent(span, errorType, executionErrors);
             }
         }
 
@@ -183,6 +185,69 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             }
 
             return Util.StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        private static void AddGraphQlQueryErrorSpanEvent(Span span, string errorType, IExecutionErrors executionErrors)
+        {
+            var eventAttributes = new List<KeyValuePair<string, object>>();
+
+            for (var i = 0; i < executionErrors.Count; i++)
+            {
+                var error = executionErrors[i];
+
+                if (!string.IsNullOrEmpty(error.Message))
+                {
+                    eventAttributes.Add(new KeyValuePair<string, object>("message", error.Message));
+                }
+
+                if (!string.IsNullOrEmpty(errorType))
+                {
+                    eventAttributes.Add(new KeyValuePair<string, object>("type", errorType));
+                }
+
+                // https://github.com/graphql-dotnet/graphql-dotnet/blob/78a4a13b15eab5896442bd0755acfae805825b26/docs2/site/docs/guides/serialization.md#error-serialization
+                if (!string.IsNullOrEmpty(error.ToString()))
+                {
+                    eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", error.ToString()));
+                }
+
+                // Handle 'locations' attribute (only set if present)
+                if (error.Locations is not null)
+                {
+                    var locations = new List<string>();
+                    foreach (var location in error.Locations)
+                    {
+                        if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
+                        {
+                            locations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                        }
+                    }
+
+                    eventAttributes.Add(new KeyValuePair<string, object>("locations", locations));
+                }
+
+                if (error.Path is not null)
+                {
+                    var path = new List<string>();
+                    foreach (var segment in error.Path)
+                    {
+                        path.Add(segment.ToString());
+                    }
+
+                    eventAttributes.Add(new KeyValuePair<string, object>("path", path));
+                }
+
+                var code = error.Code;
+                if (code is not null)
+                {
+                    eventAttributes.Add(new KeyValuePair<string, object>("code", code));
+                }
+
+                if (eventAttributes.Count > 0)
+                {
+                    span.AddEvent(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
+                }
+            }
         }
     }
 }
