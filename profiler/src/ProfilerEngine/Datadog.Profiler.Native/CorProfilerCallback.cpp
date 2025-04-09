@@ -289,7 +289,10 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsContentionProfilingEnabled())
+        if (
+            (_pConfiguration->IsContentionProfilingEnabled()) ||
+            (_pConfiguration->IsWaitHandleProfilingEnabled())
+            )
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
@@ -392,6 +395,7 @@ void CorProfilerCallback::InitializeServices()
                 MemoryResourceManager::GetDefault());
         }
 
+        // WaitHandle profiling is not supported in .NET Framework
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
@@ -588,7 +592,10 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
-        if (_pConfiguration->IsContentionProfilingEnabled())
+        if (
+            (_pConfiguration->IsContentionProfilingEnabled()) ||
+            (_pConfiguration->IsWaitHandleProfilingEnabled())
+            )
         {
             _pSamplesCollector->Register(_pContentionProvider);
         }
@@ -1171,7 +1178,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
-        _pConfiguration->IsHttpProfilingEnabled()
+        _pConfiguration->IsHttpProfilingEnabled() ||
+        _pConfiguration->IsWaitHandleProfilingEnabled()
         ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
@@ -1239,6 +1247,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
+    if (_pConfiguration->IsWaitHandleProfilingEnabled())
+    {
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
+    }
+
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
     {
         //              for GC                              for JIT
@@ -1261,6 +1274,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - AllocationTick_V4
         //  - ContentionStop_V1
         //  - GC related events
+        //  - WaitHandle events for .NET 9+
 
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1282,6 +1296,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
+        }
+        if (_pConfiguration->IsWaitHandleProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_WAITHANDLE;
+            verbosity = VerboseVerbosity;
         }
 
         std::array<COR_PRF_EVENTPIPE_PROVIDER_CONFIG, 6> providers;
