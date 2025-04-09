@@ -5,11 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.VendoredMicrosoftCode.System;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
@@ -24,12 +20,12 @@ internal static class StackTraceProcessor
         }
 
         var results = new List<string>();
-        var currentSpan = VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(exceptionString);
+        var currentSpan = exceptionString.AsSpan();
 
         while (!currentSpan.IsEmpty)
         {
             var lineEndIndex = currentSpan.IndexOfAny('\r', '\n');
-            VendoredMicrosoftCode.System.ReadOnlySpan<char> line;
+            ReadOnlySpan<char> line;
 
             if (lineEndIndex >= 0)
             {
@@ -53,7 +49,7 @@ internal static class StackTraceProcessor
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ProcessLine(VendoredMicrosoftCode.System.ReadOnlySpan<char> line, List<string> results)
+    private static void ProcessLine(ReadOnlySpan<char> line, List<string> results)
     {
         line = line.TrimStart();
         if (line.IsEmpty)
@@ -62,7 +58,7 @@ internal static class StackTraceProcessor
         }
 
         // Check if it's a stack frame line (starts with "at ")
-        if (!VendoredMicrosoftCode.System.MemoryExtensions.StartsWith(line, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("at "), StringComparison.Ordinal))
+        if (!line.StartsWith("at ".AsSpan(), StringComparison.Ordinal))
         {
             return;
         }
@@ -71,7 +67,7 @@ internal static class StackTraceProcessor
         line = line.Slice(3);
 
         // Find the " in " marker and truncate if found
-        var inIndex = VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(line, VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(" in "), StringComparison.Ordinal);
+        var inIndex = line.IndexOf(" in ".AsSpan(), StringComparison.Ordinal);
 
         if (inIndex > 0)
         {

@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class MemoryExtensions
@@ -16,7 +14,7 @@ namespace Datadog.Trace.Debugger.Helpers
         /// </summary>
         internal static IMemoryOwner<T> EnlargeBuffer<T>(this IMemoryOwner<T> memoryOwner, int currentSize)
         {
-            var newMemory = ArrayMemoryPool<T>.Shared.Rent(currentSize * 2);
+            var newMemory = MemoryPool<T>.Shared.Rent(currentSize * 2);
             memoryOwner.Memory.Span.CopyTo(newMemory.Memory.Span);
             memoryOwner.Dispose();
             return newMemory;
