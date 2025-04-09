@@ -5365,7 +5365,8 @@ stages:
         
         - task: PublishPipelineArtifact@1
           displayName: Publish Docker images artifact
-          condition: eq( variables['System.JobAttempt'], 1 )
+          # Ignore if we re-run the job and don't try to re-publish
+          continueOnError: true
           inputs:
             path: 'docker-images'
             artifactName: 'system-test-docker-images'
