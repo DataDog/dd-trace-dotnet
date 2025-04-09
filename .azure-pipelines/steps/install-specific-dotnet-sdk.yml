@@ -9,7 +9,6 @@ parameters:
 
 steps:
 
-
 # Always installing the latest version as I think it is necessary for build scripts
 - task: UseDotNet@2
   displayName: install latest dotnet SDK
@@ -23,8 +22,6 @@ steps:
     echo "Framework is .NET Framework ${{ parameters.frameworkVersion }} - no specific SDK needed beyond the latest"
   displayName: Using latest SDK for .NET Framework
   condition: startsWith('${{ parameters.frameworkVersion }}', 'net4')
-
-
 
   # Bash script to allow us to extract the correct .NET Core / .NET version
 - bash: |
@@ -87,37 +84,41 @@ steps:
     # set the necessary pipeline variables
     echo "##vso[task.setvariable variable=sdkVersion]$SDK_VERSION"
     echo "##vso[task.setvariable variable=sdkChannel]$CHANNEL"
+    echo "##vso[task.setvariable variable=installSpecificSdk]true"
   displayName: Determine SDK version
   failOnStderr: true
-  condition: and(not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+  condition: not(startsWith('${{ parameters.frameworkVersion }}', 'net4'))
 
 # Install the specific SDK version needed for this test
-- template: install-dotnet-sdk-manually.yml
-  parameters:
-    channel: $(sdkChannel)
-  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+- bash: |
+    if [[ "$AGENT_OS" == "Windows_NT" ]]; then
+      echo "##vso[task.setvariable variable=isWindows]true"
+    else
+      echo "##vso[task.setvariable variable=isWindows]false"
+    fi
+  displayName: Determine agent OS
 
-- template: install-dotnet-sdk-manually.yml
-  parameters:
-    channel: $(sdkChannel)
-    is64bit: false
-  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), eq('${{ parameters.includeX86 }}', 'true'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
-
+# Windows SDK installation (x64)
 - ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
   - template: install-dotnet-sdk-manually.yml
     parameters:
       channel: $(sdkChannel)
+    condition: and(eq(variables['installSpecificSdk'], 'true'), eq(variables['Agent.OS'], 'Windows_NT'))
 
-- template: install-dotnet-sdk-manually.yml
-  parameters:
-    channel: $(sdkChannel)
-    is64bit: false
-  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), eq('${{ parameters.includeX86 }}', 'true'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+  # Windows SDK installation (x86)
+  - ${{ if eq(parameters.includeX86, true) }}:
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        channel: $(sdkChannel)
+        is64bit: false
+      condition: and(eq(variables['installSpecificSdk'], 'true'), eq(variables['Agent.OS'], 'Windows_NT'))
 
-- task: UseDotNet@2
-  displayName: install dotnet SDK $(sdkVersion)
-  inputs:
-    packageType: sdk
-    version: $(sdkVersion)
-  retryCountOnTaskFailure: 5
-  condition: and(ne(variables['Agent.OS'], 'Windows_NT'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+# Linux/macOS SDK installation
+- ${{ if ne(variables['Agent.OS'], 'Windows_NT') }}:
+  - task: UseDotNet@2
+    displayName: install dotnet SDK $(sdkVersion)
+    inputs:
+      packageType: sdk
+      version: $(sdkVersion)
+    retryCountOnTaskFailure: 5
+    condition: and(eq(variables['installSpecificSdk'], 'true'), ne(variables['Agent.OS'], 'Windows_NT'))
