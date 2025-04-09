@@ -32,13 +32,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
           || (_settings.DynamicSettings.CodeOriginEnabled.HasValue && !_settings.DynamicSettings.CodeOriginEnabled.Value);
 
 
-        internal SpanCodeOrigin()
+		internal SpanCodeOrigin(DebuggerSettings settings)
         {
-            _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
-            _tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
+            _settings = settings;
+			_tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
         }
-
-        internal static SpanCodeOriginManager Instance { get; } = new();
+		
 		
 		public void UpdateConfiguration(DebuggerSettings newSettings)
         {
@@ -220,7 +219,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 if (frames != null)
                 {
                     ArrayPool<FrameInfo>.Shared.Return(frames);
-                }            }
+                }
         }
 
         private int PopulateUserFrames(FrameInfo[] frames)
