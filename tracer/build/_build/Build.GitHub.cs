@@ -1003,7 +1003,6 @@ partial class Build
              var prDir = BuildDataDirectory / "benchmarks";
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, BenchmarkCategory);
-             string tempFolder = Path.GetTempPath();
              string filePath = Path.Combine(Path.GetTempPath(), "benchmarks_report.md");
              Console.WriteLine($"The file was stored at: {filePath}");
              File.WriteAllText(filePath, markdown);
