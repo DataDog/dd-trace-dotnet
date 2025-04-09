@@ -1,0 +1,16 @@
+
+parameters:
+  - name: channel
+    type: string
+    default: '6.0'
+  - name: includeX86
+    type: boolean
+    default: false
+
+steps:
+# 
+- ${{ if ne(parameters.channel, '') }}:
+  - template: install-dotnet-sdk-manually.yml
+    parameters:
+      channel: ${{ parameters.channel }}
+      includeX86: ${{ parameters.includeX86 }}

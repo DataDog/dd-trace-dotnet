@@ -1773,8 +1773,9 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
+    - template: steps/install-specific-dotnet-sdk.yml
       parameters:
+        frameworkVersion: $(framework)
         includeX86: true
     - template: steps/restore-working-directory.yml
     - task: DownloadPipelineArtifact@2
