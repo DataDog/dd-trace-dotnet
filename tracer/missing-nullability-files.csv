@@ -476,7 +476,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaConsumerConsumeInte
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaConsumerDisposeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaConsumerUnsubscribeIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaHeadersCollectionAdapter.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaProduceAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaProducerConstructorIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaProduceSyncDeliveryHandlerIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/KafkaProduceSyncIntegration.cs

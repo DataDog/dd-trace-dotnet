@@ -315,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
             Span span,
             DataStreamsManager dataStreamsManager,
-            string topic,
+            string? topic,
             TMessage message)
             where TMessage : IMessage
         {
