@@ -30,12 +30,11 @@ public class KafkaProducerConstructorIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder? builder)
         where TProducerBuilder : IProducerBuilder
     {
-        if (instance is null || builder is null || builder.Instance is null || builder.Config is null)
-        {
-            return CallTargetState.GetDefault();
-        }
-
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+        if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+            || instance is null
+            || builder is null
+            || builder.Instance is null
+            || builder.Config is null)
         {
             return CallTargetState.GetDefault();
         }
