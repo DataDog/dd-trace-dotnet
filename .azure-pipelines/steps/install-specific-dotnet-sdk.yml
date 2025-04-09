@@ -8,11 +8,29 @@ parameters:
     default: false
 
 steps:
-# Bash script to allow us to extract the correct .NET Core / .NET version
+
+
+# Always installing the latest version as I think it is necessary for build scripts
+- task: UseDotNet@2
+  displayName: install latest dotnet SDK
+  inputs:
+    packageType: sdk
+    version: $(dotnetCoreSdkLatestVersion)
+  retryCountOnTaskFailure: 5
+
+# skip .NET Framewrok
+- bash: |
+    echo "Framework is .NET Framework ${{ parameters.frameworkVersion }} - no specific SDK needed beyond the latest"
+  displayName: Using latest SDK for .NET Framework
+  condition: startsWith('${{ parameters.frameworkVersion }}', 'net4')
+
+
+
+  # Bash script to allow us to extract the correct .NET Core / .NET version
 - bash: |
     # convert it to lowercase just in case
     FRAMEWORK=$(echo "${{ parameters.frameworkVersion }}" | tr '[:upper:]' '[:lower:]')
-    
+
     # Extract the version number from framework
     # No .NET Framework these are just .NET Core and .NET
     if [[ $FRAMEWORK == netcoreapp* ]]; then
@@ -23,7 +41,7 @@ steps:
       echo "Unknown framework format: $FRAMEWORK"
       exit 1
     fi
-    
+
     # Set SDK version based on framework version
     # 9.0 is in here, but don't think it gets hit
     case "$VERSION" in
@@ -64,37 +82,42 @@ steps:
         exit 1
         ;;
     esac
-    
+
     echo "Framework: $FRAMEWORK, Version: $VERSION, SDK Version: $SDK_VERSION, Channel: $CHANNEL"
     # set the necessary pipeline variables
     echo "##vso[task.setvariable variable=sdkVersion]$SDK_VERSION"
     echo "##vso[task.setvariable variable=sdkChannel]$CHANNEL"
   displayName: Determine SDK version
   failOnStderr: true
-
-# Always installing the latest version as I think it is necessary for build scripts
-- task: UseDotNet@2
-  displayName: install latest dotnet SDK
-  inputs:
-    packageType: sdk
-    version: $(dotnetCoreSdkLatestVersion)
-  retryCountOnTaskFailure: 5
+  condition: and(not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
 
 # Install the specific SDK version needed for this test
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: $(sdkChannel)
+  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: $(sdkChannel)
+    is64bit: false
+  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), eq('${{ parameters.includeX86 }}', 'true'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+
 - ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
   - template: install-dotnet-sdk-manually.yml
     parameters:
       channel: $(sdkChannel)
 
-  - ${{ if eq(parameters.includeX86, true) }}:
-    - template: install-dotnet-sdk-manually.yml
-      parameters:
-        channel: $(sdkChannel)
-        is64bit: false
-- ${{ else }}: # linux uses this simpler approach
-  - task: UseDotNet@2
-    displayName: install dotnet SDK $(sdkVersion)
-    inputs:
-      packageType: sdk
-      version: $(sdkVersion)
-    retryCountOnTaskFailure: 5
+- template: install-dotnet-sdk-manually.yml
+  parameters:
+    channel: $(sdkChannel)
+    is64bit: false
+  condition: and(eq(variables['Agent.OS'], 'Windows_NT'), eq('${{ parameters.includeX86 }}', 'true'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
+
+- task: UseDotNet@2
+  displayName: install dotnet SDK $(sdkVersion)
+  inputs:
+    packageType: sdk
+    version: $(sdkVersion)
+  retryCountOnTaskFailure: 5
+  condition: and(ne(variables['Agent.OS'], 'Windows_NT'), not(startsWith('${{ parameters.frameworkVersion }}', 'net4')), succeeded())
