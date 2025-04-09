@@ -2366,7 +2366,6 @@ stages:
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
-          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2466,7 +2465,6 @@ stages:
           -e IncludeTestsRequiringDocker=true \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
-          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -3188,7 +3186,6 @@ stages:
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
-              -e Area=$(area) \
               IntegrationTests.ARM64
           displayName: docker-compose run --no-deps IntegrationTests
           env:
@@ -3278,7 +3275,6 @@ stages:
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
-              -e Area=$(area) \
               IntegrationTests.ARM64 \
           displayName: docker-compose run IntegrationTests
           env:
