@@ -1,16 +1,100 @@
-
 parameters:
-  - name: channel
+  - name: frameworkVersion
     type: string
-    default: '6.0'
+    default: ''
+  
   - name: includeX86
     type: boolean
     default: false
 
 steps:
-# 
-- ${{ if ne(parameters.channel, '') }}:
+# Bash script to allow us to extract the correct .NET Core / .NET version
+- bash: |
+    # convert it to lowercase just in case
+    FRAMEWORK=$(echo "${{ parameters.frameworkVersion }}" | tr '[:upper:]' '[:lower:]')
+    
+    # Extract the version number from framework
+    # No .NET Framework these are just .NET Core and .NET
+    if [[ $FRAMEWORK == netcoreapp* ]]; then
+      VERSION=${FRAMEWORK#netcoreapp} # "netcoreapp3.1" -> "3.1"
+    elif [[ $FRAMEWORK == net* ]]; then
+      VERSION=${FRAMEWORK#net} # "net9.0" => "9.0"
+    else
+      echo "Unknown framework format: $FRAMEWORK"
+      exit 1
+    fi
+    
+    # Set SDK version based on framework version
+    # 9.0 is in here, but don't think it gets hit
+    case "$VERSION" in
+      2.1)
+        SDK_VERSION="2.1.x"
+        CHANNEL="2.1"
+        ;;
+      3.0)
+        SDK_VERSION="3.0.x"
+        CHANNEL="3.0"
+        ;;
+      3.1)
+        SDK_VERSION="3.1.x"
+        CHANNEL="3.1"
+        ;;
+      5.0)
+        SDK_VERSION="5.0.x"
+        CHANNEL="5.0"
+        ;;
+      6.0)
+        SDK_VERSION="6.0.x"
+        CHANNEL="6.0"
+        ;;
+      7.0)
+        SDK_VERSION="7.0.x"
+        CHANNEL="7.0"
+        ;;
+      8.0)
+        SDK_VERSION="8.0.x"
+        CHANNEL="8.0"
+        ;;
+      9.0)
+        SDK_VERSION="9.0.x"
+        CHANNEL="9.0"
+        ;;
+      *)
+        echo "Unknown framework version: $VERSION"
+        exit 1
+        ;;
+    esac
+    
+    echo "Framework: $FRAMEWORK, Version: $VERSION, SDK Version: $SDK_VERSION, Channel: $CHANNEL"
+    # set the necessary pipeline variables
+    echo "##vso[task.setvariable variable=sdkVersion]$SDK_VERSION"
+    echo "##vso[task.setvariable variable=sdkChannel]$CHANNEL"
+  displayName: Determine SDK version
+  failOnStderr: true
+
+# Always installing the latest version as I think it is necessary for build scripts
+- task: UseDotNet@2
+  displayName: install latest dotnet SDK
+  inputs:
+    packageType: sdk
+    version: $(dotnetCoreSdkLatestVersion)
+  retryCountOnTaskFailure: 5
+
+# Install the specific SDK version needed for this test
+- ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
   - template: install-dotnet-sdk-manually.yml
     parameters:
-      channel: ${{ parameters.channel }}
-      includeX86: ${{ parameters.includeX86 }}
+      channel: $(sdkChannel)
+
+  - ${{ if eq(parameters.includeX86, true) }}:
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        channel: $(sdkChannel)
+        is64bit: false
+- ${{ else }}: # linux uses this simpler approach
+  - task: UseDotNet@2
+    displayName: install dotnet SDK $(sdkVersion)
+    inputs:
+      packageType: sdk
+      version: $(sdkVersion)
+    retryCountOnTaskFailure: 5
