@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -39,28 +41,39 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="message">Message instance</param>
         /// <param name="cancellationToken">CancellationToken instance</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage? message, CancellationToken cancellationToken)
             where TMessage : IMessage
         {
-            var partition = topicPartition.DuckCast<ITopicPartition>();
-            Scope scope = KafkaHelper.CreateProducerScope(
+            if (instance is null || topicPartition is null || message is null || message.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            if (!topicPartition.TryDuckCast<ITopicPartition>(out var partition) || partition?.Instance is null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            // Create the scope
+            var scope = KafkaHelper.CreateProducerScope(
                 Tracer.Instance,
                 instance,
                 partition,
-                isTombstone: message.Value is null,
+                isTombstone: message.Value == null,
                 finishOnClose: true);
 
-            if (scope is not null)
+            if (scope is null)
             {
-                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
-                    scope.Span,
-                    Tracer.Instance.TracerManager.DataStreamsManager,
-                    partition?.Topic,
-                    message);
-                return new CallTargetState(scope);
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
+                                            scope.Span,
+                                            Tracer.Instance.TracerManager.DataStreamsManager,
+                                            partition?.Topic,
+                                            message);
+
+            return new CallTargetState(scope);
         }
 
         /// <summary>
@@ -73,12 +86,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+        internal static TResponse? OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse? response, Exception exception, in CallTargetState state)
             where TResponse : IDeliveryResult
         {
             if (state.Scope?.Span?.Tags is KafkaTags tags)
             {
-                IDeliveryResult deliveryResult = null;
+                IDeliveryResult? deliveryResult = null;
                 if (exception is not null)
                 {
                     var produceException = exception.DuckAs<IProduceException>();

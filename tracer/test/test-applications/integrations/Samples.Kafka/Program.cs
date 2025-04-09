@@ -21,8 +21,11 @@ namespace Samples.Kafka
 
                 await TopicHelpers.TryDeleteTopic(topic, config);
 
-                await ConsumeAgainstNonExistentTopic(topic, config);
+                // null message and topic were edge cases where we were throwing in our integrations
+                await TryProduceWithNullMessage(topic, config);
+                await TryProduceWithNullTopicPartition(topic, config);
 
+                await ConsumeAgainstNonExistentTopic(topic, config);
                 await ConsumeAndProduceMessages(topic, config);
 
                 Console.WriteLine($"Shut down complete");
@@ -120,6 +123,53 @@ namespace Samples.Kafka
             await Task.WhenAny(
                 Task.WhenAll(consumeTask1, consumeTask2),
                 Task.Delay(TimeSpan.FromSeconds(5)));
+        }
+
+        private static async Task TryProduceWithNullTopicPartition(string topic, ClientConfig config)
+        {
+            // NOTE: you'll see an Null Ref exception, it is expected, but it shouldn't be in OUR logs
+            try
+            {
+                using var producer = new ProducerBuilder<string, string>(config).Build();
+
+                // Create a message with null values but valid structure
+                var message = new Message<string, string>
+                {
+                    Key = null,
+                    Value = null,
+                };
+
+                // This should pass Kafka validation but might still trigger our issue
+                Console.WriteLine("Attempting to produce message with NULL TopicPartition THIS SHOULD THROW.");
+                await producer.ProduceAsync((TopicPartition)null, message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CAUGHT EXPECTED EXCEPTION!");
+                Console.WriteLine($"Exception in reproduction test: {ex}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
+        }
+
+        private static async Task TryProduceWithNullMessage(string topic, ClientConfig config)
+        {
+            // NOTE: you'll see an Null Ref exception, it is expected, but it shouldn't be in OUR logs
+            try
+            {
+                using var producer = new ProducerBuilder<string, string>(config).Build();
+
+                var topicPartition = new TopicPartition(topic, new Partition(0));
+
+                Console.WriteLine("Attempting to produce message with NULL MESSAGE THIS SHOULD THROW.");
+                await producer.ProduceAsync(topicPartition, null);
+                Console.WriteLine("Message produced successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("CAUGHT EXPECTED EXCEPTION!");
+                Console.WriteLine($"Exception in reproduction test: {ex}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
         }
 
         private static async Task<MessagesProduced> ProduceMessages(string topic, ClientConfig config)
