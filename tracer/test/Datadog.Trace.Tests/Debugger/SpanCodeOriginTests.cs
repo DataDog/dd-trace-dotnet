@@ -25,6 +25,7 @@ namespace Datadog.Trace.Tests.Debugger
     public class SpanCodeOriginTests
     {
         private const string CodeOriginTag = "_dd.code_origin";
+		private DebuggerSettings _settings = DebuggerSettings.FromDefaultSource();
 
         private static CodeOriginSettingsSetter SetCodeOriginManagerSettings(SpanCodeOriginManager instance, bool isEnable = false, int numberOfFrames = 8, string excludeFromFilter = "Datadog.Trace.Tests")
         {
