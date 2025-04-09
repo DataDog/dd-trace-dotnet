@@ -17,7 +17,7 @@ run-benchmarks:
     # - ./platform/steps/upload-to-bp-ui.sh
     
   rules:
-    - when: manual
+    - when: on_success
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
     AWS_REGION: "us-east-1"
