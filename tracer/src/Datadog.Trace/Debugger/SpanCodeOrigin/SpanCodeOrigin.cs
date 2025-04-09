@@ -12,7 +12,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
-    internal class SpanCodeOrigin(DebuggerSettings settings)
+    internal class SpanCodeOrigin
     {
         private const string CodeOriginTag = "_dd.code_origin";
 
@@ -20,7 +20,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
-        private DebuggerSettings _settings = settings;
+        private readonly DebuggerSettings _settings;
+
+        internal SpanCodeOrigin(DebuggerSettings settings)
+        {
+            _settings = settings;
+        }
 
         private bool Disabled =>
             _settings.CodeOriginForSpansEnabled == null
