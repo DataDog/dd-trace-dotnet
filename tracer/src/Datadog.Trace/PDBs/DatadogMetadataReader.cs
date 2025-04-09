@@ -203,9 +203,9 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal DatadogSequencePoint[]? GetMethodSequencePoints(int rowId, bool searchMoveNext = true)
+        internal DatadogSequencePoint[]? GetMethodSequencePoints(int methodRid, bool searchMoveNext = true)
         {
-            using var memory = GetMethodSequencePointsAsMemoryOwner(rowId, searchMoveNext, out var count);
+            using var memory = GetMethodSequencePointsAsMemoryOwner(methodRid, searchMoveNext, out var count);
             if (count == 0 || memory == null)
             {
                 return null;
@@ -276,6 +276,55 @@ namespace Datadog.Trace.Pdb
                 }
 
                 return memory;
+            }
+
+            return null;
+        }
+
+        internal DatadogSequencePoint? GetMethodSourceLocation(int methodToken, bool searchMoveNext = true)
+        {
+            if (_isDnlibPdbReader)
+            {
+                return this.GetMethodSourceLocationDnlib(methodToken & RidMask, searchMoveNext);
+            }
+
+            if (PdbReader != null)
+            {
+                var methodDef = GetMethodDef(methodToken & RidMask);
+                if (methodDef.Handle.IsNil)
+                {
+                    return null;
+                }
+
+                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
+                if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
+                {
+                    var moveNext = GetMoveNextMethod(methodDef);
+                    if (moveNext.IsNil)
+                    {
+                        return null;
+                    }
+
+                    methodDebugInformation = PdbReader.GetMethodDebugInformation(moveNext.ToDebugInformationHandle());
+                    if (methodDebugInformation.SequencePointsBlob.IsNil)
+                    {
+                        return null;
+                    }
+                }
+
+                foreach (var sp in methodDebugInformation.GetSequencePoints())
+                {
+                    if (sp.IsHidden)
+                    {
+                        continue;
+                    }
+
+                    var filePath = GetDocumentName(sp.Document);
+                    if (!string.IsNullOrEmpty(filePath) && sp.StartLine > 0)
+                    {
+                        return new DatadogSequencePoint { URL = filePath, StartLine = sp.StartLine, StartColumn = sp.StartColumn };
+                    }
+                }
             }
 
             return null;
@@ -474,14 +523,14 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        private string[]? GetLocalVariableNames(int rowId, bool searchMoveNext)
+        private string[]? GetLocalVariableNames(int methodRid, bool searchMoveNext)
         {
             if (PdbReader == null)
             {
                 return null;
             }
 
-            var method = GetMethodDef(rowId);
+            var method = GetMethodDef(methodRid);
             int localsCount = 0;
             var methodLocalsCount = GetLocalVariablesCount(method);
             if (methodLocalsCount == 0)
