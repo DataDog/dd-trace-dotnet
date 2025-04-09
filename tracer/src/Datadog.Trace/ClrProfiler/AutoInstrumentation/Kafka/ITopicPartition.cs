@@ -3,12 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
     /// TopicPartition interface for duck-typing
     /// </summary>
-    internal interface ITopicPartition
+    internal interface ITopicPartition : IDuckType
     {
         /// <summary>
         ///     Gets the Kafka topic name.
