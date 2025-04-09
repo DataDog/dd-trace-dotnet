@@ -372,17 +372,16 @@ namespace Datadog.Trace.TestHelpers
         // Based on https://github.com/VerifyTests/Verify.DiffPlex/blob/9f9f2a18f35074680be47c9043e95d1857e457e0/src/Verify.DiffPlex/VerifyDiffPlex.cs
         public static class VerifyDiffPlex
         {
+            public enum OutputType
+            {
+                Full,
+                Compact,
+                Minimal
+            }
+
             public static bool Initialized { get; private set; }
 
             public static void Initialize() => Initialize(OutputType.Full);
-
-            private static Func<string, string, StringBuilder> GetCompareFunc(OutputType outputType) =>
-                outputType switch
-                {
-                    OutputType.Compact => CompactCompare,
-                    OutputType.Minimal => MinimalCompare,
-                    _ => VerboseCompare
-                };
 
             public static void Initialize(OutputType outputType)
             {
@@ -402,6 +401,14 @@ namespace Datadog.Trace.TestHelpers
             public static SettingsTask UseDiffPlex(SettingsTask settings, OutputType outputType = OutputType.Full) =>
                 settings.UseStringComparer(
                     (received, verified, _) => GetResult(outputType, received, verified));
+
+            private static Func<string, string, StringBuilder> GetCompareFunc(OutputType outputType) =>
+                outputType switch
+                {
+                    OutputType.Compact => CompactCompare,
+                    OutputType.Minimal => MinimalCompare,
+                    _ => VerboseCompare
+                };
 
             private static Task<CompareResult> GetResult(OutputType outputType, string received, string verified)
             {
@@ -542,13 +549,6 @@ namespace Datadog.Trace.TestHelpers
                 {
                     builder.Length = i + 1;
                 }
-            }
-
-            public enum OutputType
-            {
-                Full,
-                Compact,
-                Minimal
             }
         }
     }
