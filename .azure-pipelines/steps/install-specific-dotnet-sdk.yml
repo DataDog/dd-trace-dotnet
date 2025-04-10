@@ -93,27 +93,24 @@ steps:
     fi
   displayName: Determine agent OS
 
-# Windows SDK installation (x64)
 - ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
-  - template: install-dotnet-sdk-manually.yml
-    parameters:
-      channel: $(sdkChannel)
-    condition: and(eq(variables['installSpecificSdk'], 'true'), eq(variables['Agent.OS'], 'Windows_NT'))
+  - ${{ if eq(variables['installSpecificSdk'], 'true') }}:
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        channel: $(sdkChannel)
 
-  # Windows SDK installation (x86)
-  - ${{ if eq(parameters.includeX86, true) }}:
+  - ${{ if and(eq(parameters.includeX86, true), eq(variables['installSpecificSdk'], 'true')) }}:
     - template: install-dotnet-sdk-manually.yml
       parameters:
         channel: $(sdkChannel)
         is64bit: false
-      condition: and(eq(variables['installSpecificSdk'], 'true'), eq(variables['Agent.OS'], 'Windows_NT'))
 
-# Linux/macOS SDK installation
-- ${{ if ne(variables['Agent.OS'], 'Windows_NT') }}:
+# Linux/macOS-specific steps
+- ${{ else }}:
   - task: UseDotNet@2
     displayName: install dotnet SDK $(sdkVersion)
     inputs:
       packageType: sdk
       version: $(sdkVersion)
     retryCountOnTaskFailure: 5
-    condition: and(eq(variables['installSpecificSdk'], 'true'), ne(variables['Agent.OS'], 'Windows_NT'))
+    condition: eq(variables['installSpecificSdk'], 'true')
