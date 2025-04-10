@@ -90,6 +90,10 @@ std::vector<WCHAR*> callSites =
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object,System.Object)\",\"\",[0],[False],[None],Default,[])] Concat(System.Object,System.Object,System.Object,System.Object) 1"),
 #endif
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.Object[])\",\"\",[0],[False],[None],Default,[])] Concat(System.Object[]) 15"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)\",\"\",[0],[False],[None],Default,[])] Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>) 8"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)\",\"\",[0],[False],[None],Default,[])] Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>) 8"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)\",\"\",[0],[False],[None],Default,[])] Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>) 8"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.ReadOnlySpan`1<System.String>)\",\"\",[0],[False],[None],Default,[])] Concat(System.ReadOnlySpan`1<System.String>) 8"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Default,[])] Concat(System.String,System.String) 15"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_0],Default,[])] Concat_0(System.String,System.String) 15"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiteral_1],Default,[])] Concat_1(System.String,System.String) 15"),
@@ -113,6 +117,7 @@ std::vector<WCHAR*> callSites =
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[]);V3.2.0] Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>) 15"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)\",\"\",[0],[False],[None],Default,[])] JoinString(System.String,System.Collections.Generic.IEnumerable`1<System.String>) 15"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Join(System.String,System.Object[])\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.Object[]) 15"),
+(WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Join(System.String,System.ReadOnlySpan`1<System.String>)\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.ReadOnlySpan`1<System.String>) 8"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Join(System.String,System.String[])\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.String[]) 15"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Join(System.String,System.String[],System.Int32,System.Int32)\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.String[],System.Int32,System.Int32) 15"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::PadLeft(System.Int32)\",\"\",[0],[False],[StringLiteral_0],Default,[])] PadLeft(System.String,System.Int32) 15"),

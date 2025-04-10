@@ -526,4 +526,17 @@ public class StringJoinTests : InstrumentationTestsBase
             string.Join<ClassForStringTest>("|", list),
             () => string.Join<ClassForStringTest>("|", list));
     }
+
+#if NET9_0_OR_GREATER
+    [Fact]
+    public void GivenStringAndReadOnlySpans_WhenJoin_ResultIsOk()
+    {
+        var values = new string[] { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString };
+        var span = new ReadOnlySpan<string>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:|OtherUntaintedString",
+            System.String.Join("|", span),
+            () => System.String.Join("|", values)); // Use values here as we can not use span in the lambda expression
+    }
+#endif
+
 }
