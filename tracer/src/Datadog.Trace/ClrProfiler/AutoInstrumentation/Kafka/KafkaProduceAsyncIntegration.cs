@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.Threading;
@@ -42,7 +44,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, CancellationToken cancellationToken)
             where TMessage : IMessage
         {
-            if (message.Instance is null
+            if (instance is null
+                || message.Instance is null
                 || !topicPartition.TryDuckCast<ITopicPartition>(out var partition)
                 || partition?.Instance is null)
             {
@@ -82,11 +85,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
-            where TResponse : IDeliveryResult
+            where TResponse : IDeliveryResult, IDuckType
         {
             if (state.Scope?.Span?.Tags is KafkaTags tags)
             {
-                IDeliveryResult deliveryResult = null;
+                IDeliveryResult? deliveryResult = null;
                 if (exception is not null)
                 {
                     var produceException = exception.DuckAs<IProduceException>();
@@ -95,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         deliveryResult = produceException.DeliveryResult;
                     }
                 }
-                else if (response is not null)
+                else if (response.Instance is not null)
                 {
                     deliveryResult = response;
                 }
