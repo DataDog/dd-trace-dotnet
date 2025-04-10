@@ -80,6 +80,9 @@ partial class Build : NukeBuild
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
+    [Parameter("Run tests from a especific area (tracer, ASM, debugger, profiler...)")]
+    readonly string Area;
+
     [Parameter("Override the default category filter for running benchmarks. (Optional)")]
     readonly string BenchmarkCategory;
 
@@ -128,6 +131,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"Area: {Area}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });

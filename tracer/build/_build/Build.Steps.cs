@@ -1412,7 +1412,6 @@ partial class Build
                   );
 
                   DotnetBuild(projects, noDependencies: false, noRestore: false);
-
                   // these are defined in Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet dependencies
                   var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
                   var frameworks = Framework is null || string.IsNullOrEmpty(Framework)
@@ -1631,7 +1630,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = GetFilter();
+            var filter = AddAreaFilter(GetFilter());
 
             try
             {
@@ -1649,7 +1648,7 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
+                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1706,6 +1705,21 @@ partial class Build
                 return filter;
             }
         });
+
+    private string AddAreaFilter(string filter)
+    {
+        if (string.IsNullOrWhiteSpace(Area))
+        {
+            return filter;
+        }
+
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return $"(Area={Area})";
+        }
+
+        return filter + $"&(Area={Area})";
+    }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
@@ -1787,6 +1801,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
+            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
 
             try
             {
@@ -1798,7 +1813,7 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
+                    .SetFilter(filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1823,14 +1838,7 @@ partial class Build
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
         .Executes(() => RunWindowsIisIntegrationTests(
-                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
-
-    Target RunWindowsSecurityIisIntegrationTests => _ => _
-        .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
-        .After(PublishIisSamples)
-        .Triggers(PrintSnapshotsDiff)
-        .Requires(() => Framework)
+                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)))
         .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
 
@@ -1838,6 +1846,8 @@ partial class Build
     {
         var isDebugRun = IsDebugRun();
         EnsureResultsDirectory(project);
+        var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
+
         try
         {
             // Different filter from RunWindowsIntegrationTests
@@ -1848,7 +1858,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
+                                .SetFilter(filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)

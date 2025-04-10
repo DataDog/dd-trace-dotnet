@@ -15,6 +15,9 @@ using Logger = Serilog.Log;
 
 partial class Build : NukeBuild
 {
+    private const string TracerArea = "Tracer";
+    private const string AsmArea = "ASM";
+
     Target GenerateVariables
         => _ =>
         {
@@ -146,13 +149,17 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = TestingFrameworks;
                 var targetPlatforms = new[] { "x86", "x64" };
+                var areas = new[] { TracerArea, AsmArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, });
+                        foreach (var area in areas)
+                        {
+                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                        }
                     }
                 }
 
@@ -187,7 +194,7 @@ partial class Build : NukeBuild
                                                framework = framework,
                                                targetPlatform = targetPlatform,
                                                debugType = debugType,
-                                               optimize = optimize,
+                                               optimize = optimize
                                            });
                             }
                         }
@@ -222,6 +229,7 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsWindowsIISMatrix(params TargetFramework[] targetFrameworks)
             {
                 var targetPlatforms = new[] { "x86", "x64" };
+                var areas = new[] { TracerArea, AsmArea };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -229,7 +237,10 @@ partial class Build : NukeBuild
                     foreach (var targetPlatform in targetPlatforms)
                     {
                         var enable32bit = targetPlatform == "x86";
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
+                        foreach (var area in areas)
+                        {
+                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                        }
                     }
                 }
 
@@ -275,7 +286,6 @@ partial class Build : NukeBuild
                 };
 
                 var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
-
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -338,7 +348,7 @@ partial class Build : NukeBuild
                                            publishTargetFramework = framework,
                                            baseImage = baseImage,
                                            optimize = optimize,
-                                           artifactSuffix = artifactSuffix,
+                                           artifactSuffix = artifactSuffix
                                        });
                         }
                     }
