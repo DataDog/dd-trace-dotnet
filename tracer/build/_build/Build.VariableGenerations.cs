@@ -272,12 +272,14 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrices()
             {
-                GenerateIntegrationTestsLinuxMatrix();
-                GenerateIntegrationTestsLinuxArm64Matrix();
+                GenerateIntegrationTestsLinuxMatrix(true);
+                GenerateIntegrationTestsLinuxArm64Matrix(false);
+                GenerateIntegrationTestsLinuxMatrix(true);
+                GenerateIntegrationTestsLinuxArm64Matrix(false);
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
-            void GenerateIntegrationTestsLinuxMatrix()
+            void GenerateIntegrationTestsLinuxMatrix(bool dockerTest)
             {
                 var baseImages = new []
                 {
@@ -292,16 +294,28 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (dockerTest)
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            var areas = new[] { TracerArea, AsmArea };
+                            foreach (var area in areas)
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
+                        }
                     }
                 }
 
                 Logger.Information($"Integration test Linux matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                var outputVariableName = dockerTest ? "integration_tests_linux_docker_matrix" : "integration_tests_linux_matrix";
+                AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsLinuxArm64Matrix()
+            void GenerateIntegrationTestsLinuxArm64Matrix(bool dockerTest)
             {
                 var baseImages = new []
                 {
@@ -316,13 +330,25 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (dockerTest)
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            var areas = new[] { TracerArea, AsmArea };
+                            foreach (var area in areas)
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
+                        }
                     }
                 }
 
                 Logger.Information($"Integration test Linux Arm64 matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                var outputVariableName = dockerTest ? "integration_tests_linux_arm64_docker_matrix" : "integration_tests_linux_arm64_matrix";
+                AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()

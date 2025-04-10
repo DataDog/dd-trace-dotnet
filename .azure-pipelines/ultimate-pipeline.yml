@@ -2403,7 +2403,7 @@ stages:
   - job: DockerTest
     timeoutInMinutes: 60 #default value
     strategy:
-      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
 
     variables:
       TestAllPackageVersions: true
@@ -3209,7 +3209,7 @@ stages:
     - job: DockerTest
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_docker_matrix']]
       workspace:
         clean: all
       pool:
