@@ -10,12 +10,26 @@ parameters:
 steps:
 
 # Always installing the latest version as I think it is necessary for build scripts
-- task: UseDotNet@2
-  displayName: install latest dotnet SDK
-  inputs:
-    packageType: sdk
-    version: $(dotnetCoreSdkLatestVersion)
-  retryCountOnTaskFailure: 5
+- ${{ if eq(variables['Agent.OS'], 'Windows_NT') }}:
+  - ${{ if eq(parameters.includeX86, true) }}:
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        sdkVersion: $(dotnetCoreSdkLatestVersion)
+        is64bit: false
+  - ${{ else }}:
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        sdkVersion: $(dotnetCoreSdkLatestVersion)
+        is64bit: true
+
+- ${{ else }}:
+  # For non-Windows, just install the latest SDK
+  - task: UseDotNet@2
+    displayName: install latest dotnet SDK
+    inputs:
+      packageType: sdk
+      version: $(dotnetCoreSdkLatestVersion)
+    retryCountOnTaskFailure: 5
 
 - bash: |
     # check if the framework version starts with 'net4'
