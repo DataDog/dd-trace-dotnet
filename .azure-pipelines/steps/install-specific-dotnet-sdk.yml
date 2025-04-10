@@ -19,24 +19,19 @@ steps:
 
 # skip .NET Framewrok
 - bash: |
-    echo "Framework is .NET Framework ${{ parameters.frameworkVersion }} - no specific SDK needed beyond the latest"
-  displayName: Using latest SDK for .NET Framework
-  condition: startsWith('${{ parameters.frameworkVersion }}', 'net4')
-
-  # Bash script to allow us to extract the correct .NET Core / .NET version
-- bash: |
     # convert it to lowercase just in case
     FRAMEWORK=$(echo "${{ parameters.frameworkVersion }}" | tr '[:upper:]' '[:lower:]')
 
     # Extract the version number from framework
-    # No .NET Framework these are just .NET Core and .NET
     if [[ $FRAMEWORK == netcoreapp* ]]; then
       VERSION=${FRAMEWORK#netcoreapp} # "netcoreapp3.1" -> "3.1"
-    elif [[ $FRAMEWORK == net* ]]; then
-      VERSION=${FRAMEWORK#net} # "net9.0" => "9.0"
+      echo "Detected .NET Core version: $VERSION"
+    elif [[ $FRAMEWORK == net[56789]* ]]; then
+      VERSION=${FRAMEWORK#net} # "net6.0" -> "6.0"
+      echo "Detected .NET version: $VERSION"
     else
-      echo "Unknown framework format: $FRAMEWORK"
-      exit 1
+      echo "Detected .NET Framework - skipping: $FRAMEWORK"
+      exit 0
     fi
 
     # Set SDK version based on framework version
@@ -87,7 +82,7 @@ steps:
     echo "##vso[task.setvariable variable=installSpecificSdk]true"
   displayName: Determine SDK version
   failOnStderr: true
-  condition: not(startsWith('${{ parameters.frameworkVersion }}', 'net4'))
+  condition: eq(variables['isNetFx'], 'false')
 
 # Install the specific SDK version needed for this test
 - bash: |
