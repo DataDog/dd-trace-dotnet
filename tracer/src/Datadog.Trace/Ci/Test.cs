@@ -212,7 +212,7 @@ public sealed class Test
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
-            ImpactedTestsModule.Analyze(this);
+            _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
 
             if (ciValues.CodeOwners is { } codeOwners)
             {

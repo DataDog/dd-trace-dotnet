@@ -85,15 +85,14 @@ internal static class GitCommandHelper
         }
     }
 
-    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string workingDirectory, string baseCommit, string? headCommit = null)
+    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string workingDirectory, string baseCommit, string? headCommit)
     {
         try
         {
             // Retrieve PR list of modified files
             var arguments = string.IsNullOrEmpty(headCommit) ? $"diff -U0 --word-diff=porcelain {baseCommit}" : $"diff -U0 --word-diff=porcelain {baseCommit} {headCommit}";
-
             var output = RunGitCommand(workingDirectory, arguments, MetricTags.CIVisibilityCommands.Diff);
-            if (output is not null && output.ExitCode == 0 && output.Output is { Length: > 0 })
+            if (output is { ExitCode: 0, Output.Length: > 0 })
             {
                 return ParseGitDiff(output.Output).ToArray();
             }
