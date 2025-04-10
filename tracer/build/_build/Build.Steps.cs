@@ -61,7 +61,7 @@ partial class Build
     AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";
     AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
-    AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
+    AbsolutePath NativeBuildDirectory => BuildArtifactsDirectory / "obj" / "native";
 
     const string LibDdwafVersion = "1.24.1";
 
