@@ -687,7 +687,7 @@ In the above example, the `ProxyMyHandlerStruct.Configuration` field is of type 
 What's more, the `[DuckCopy]` `struct` does _not_ implement `IDuckType`. So with the above duck-types, there's no way to detect when `originalObject.Configuration` is `null`! This is a problem, as it could mean accidentally using the `default` value for `MaxConnections` (i.e. `0`) when in practice the `Configuration` property was `null`. 
 
 The solution to this problem is to always define duck-chained `[DuckCopy]` `struct`s as nullable.
-Note though that the underlying type that is being duck-types _must_ NOT be a `struct`, if the underlying type is a `struct` do not mark is as nullable as it cannot be `null`.
+Note though that the underlying type that is being duck-typed _must_ NOT be a `struct`; if the underlying type is a `struct` **do not mark** is as nullable as it cannot be `null` and you will get duck-typing errors at runtime.
 
 ```csharp
 [DuckCopy]
