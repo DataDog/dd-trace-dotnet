@@ -21,7 +21,7 @@ namespace Samples.Kafka
 
                 await TopicHelpers.TryDeleteTopic(topic, config);
 
-                // null message and topic were edge cases where we were throwing in our integrations
+                // null message was an edge case causing us to throw a null reference in the 
                 await TryProduceWithNullMessage(topic, config);
 
                 await ConsumeAgainstNonExistentTopic(topic, config);
@@ -139,9 +139,7 @@ namespace Samples.Kafka
             }
             catch (Exception ex)
             {
-                Console.WriteLine("CAUGHT EXPECTED EXCEPTION!");
-                Console.WriteLine($"Exception in reproduction test: {ex}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                Console.WriteLine($"Expected Exception in reproduction test: {ex}");
             }
         }
 
