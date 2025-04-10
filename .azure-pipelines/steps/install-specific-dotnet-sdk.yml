@@ -21,13 +21,11 @@ steps:
 # Always installing the latest version as I think it is necessary for build scripts
 
 - template: install-dotnet-sdk-manually.yml
-  displayName: install 32-bit SDK manually
   parameters:
     sdkVersion: $(dotnetCoreSdkLatestVersion)
     is64bit: false
 
 - template: install-dotnet-sdk-manually.yml
-  displayName: install 64-bit SDK manually
   parameters:
     sdkVersion: $(dotnetCoreSdkLatestVersion)
     is64bit: true
@@ -121,14 +119,12 @@ steps:
 
 # Windows-specific install: 32-bit
 - template: install-dotnet-sdk-manually.yml
-  displayName: install specific 32-bit SDK Windows
   parameters:
     channel: $(sdkChannel)
     is64bit: false
 
 # Windows-specific install: 64-bit
 - template: install-dotnet-sdk-manually.yml
-  displayName: install specific 64-bit SDK Windows
   parameters:
     channel: $(sdkChannel)
     is64bit: true
