@@ -5328,7 +5328,6 @@ stages:
           
         - task: DownloadPipelineArtifact@2
           displayName: Download linux-packages
-          condition: eq( variables['System.JobAttempt'], 1 )
           inputs:
             artifact: linux-packages-linux-x64
             patterns: '**/*tar.gz'
