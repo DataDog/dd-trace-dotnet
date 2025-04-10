@@ -16,6 +16,10 @@ parameters:
 
 steps:
   - powershell: |
+      if ($env:AGENT_OS -ne "Windows_NT") {
+          Write-Host "This install script is intended for Windows only. Skipping."
+          exit 0
+      }
       $channel = "${{ parameters.channel }}"
       $sdkVersion = "${{ parameters.sdkVersion }}"
 

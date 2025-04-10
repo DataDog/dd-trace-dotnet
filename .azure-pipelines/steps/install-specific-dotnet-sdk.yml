@@ -25,14 +25,12 @@ steps:
   parameters:
     sdkVersion: $(dotnetCoreSdkLatestVersion)
     is64bit: false
-  condition: and(eq(variables['isWindows'], 'true'), eq('${{ parameters.includeX86 }}', 'true'))
 
 - template: install-dotnet-sdk-manually.yml
   displayName: install 64-bit SDK manually
   parameters:
     sdkVersion: $(dotnetCoreSdkLatestVersion)
     is64bit: true
-  condition: and(eq(variables['isWindows'], 'true'), ne('${{ parameters.includeX86 }}', 'true'))
 
 - task: UseDotNet@2
   displayName: install latest dotnet SDK (non-Windows)
@@ -127,15 +125,13 @@ steps:
   parameters:
     channel: $(sdkChannel)
     is64bit: false
-  condition: and(eq(variables['isWindows'], 'true'), eq(variables['installSpecificSdk'], 'true'), eq('${{ parameters.includeX86 }}', 'true'))
 
 # Windows-specific install: 64-bit
 - template: install-dotnet-sdk-manually.yml
-  displayName: install specific 364-bit SDK Windows
+  displayName: install specific 64-bit SDK Windows
   parameters:
     channel: $(sdkChannel)
     is64bit: true
-  condition: and(eq(variables['isWindows'], 'true'), eq(variables['installSpecificSdk'], 'true'), ne('${{ parameters.includeX86 }}', 'true'))
 
 # Linux/macOS-specific steps
 - task: UseDotNet@2
