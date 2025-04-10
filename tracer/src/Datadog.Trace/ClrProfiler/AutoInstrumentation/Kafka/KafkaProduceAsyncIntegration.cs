@@ -44,12 +44,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage? message, CancellationToken cancellationToken)
             where TMessage : IMessage
         {
-            if (instance is null || topicPartition is null || message is null || message.Instance is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            if (!topicPartition.TryDuckCast<ITopicPartition>(out var partition) || partition?.Instance is null)
+            if (message.Instance is null
+                || !topicPartition.TryDuckCast<ITopicPartition>(out var partition)
+                || partition?.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
