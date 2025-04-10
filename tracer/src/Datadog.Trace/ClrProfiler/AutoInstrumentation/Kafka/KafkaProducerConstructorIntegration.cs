@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
-
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -27,12 +25,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaProducerConstructorIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder? builder)
+    internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder builder)
         where TProducerBuilder : IProducerBuilder
     {
         if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
-            || instance is null
-            || builder is null
             || builder.Instance is null
             || builder.Config is null)
         {
@@ -77,7 +73,7 @@ public class KafkaProducerConstructorIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
         // This method is called in the Producer constructor, so if we have an exception
         // the builder won't be created, so no point recording it.
