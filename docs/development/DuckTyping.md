@@ -686,7 +686,8 @@ In the above example, the `ProxyMyHandlerStruct.Configuration` field is of type 
 
 What's more, the `[DuckCopy]` `struct` does _not_ implement `IDuckType`. So with the above duck-types, there's no way to detect when `originalObject.Configuration` is `null`! This is a problem, as it could mean accidentally using the `default` value for `MaxConnections` (i.e. `0`) when in practice the `Configuration` property was `null`. 
 
-The solution to this problem is to always define duck-chained `[DuckCopy]` `struct`s as nullable:
+The solution to this problem is to always define duck-chained `[DuckCopy]` `struct`s as nullable.
+Note though that the underlying type that is being duck-types _must_ NOT be a `struct`, if the underlying type is a `struct` do not mark is as nullable as it cannot be `null`.
 
 ```csharp
 [DuckCopy]
@@ -694,7 +695,7 @@ public struct ProxyMyHandlerStruct
 {
     public string Name;
     public ProxyMyHandlerConfiguration? Configuration;
-                                    //☝ Make this nullable
+                                    //☝ Make this nullable when the underlying type is not a struct
 }
 ```
 
@@ -721,13 +722,13 @@ public interface IProxyMyHandler // The "root" proxy
                              // ☝ Marked nullable
 }
 ```
-3. When duck chaining `[DuckCopy]` `struct`, _always_ mark the struct property as nullable. e.g.
+3. When duck chaining `[DuckCopy]` `struct`, _always_ mark the struct property as nullable _if_ the underlying type is _not_ a `struct`. e.g.
 ```csharp
 public interface IProxyMyHandler // The "root" proxy, doesn' matter what type it is
 {
     string Name { get; set; }
     ProxyMyHandlerConfiguration? Configuration { get; } // duck-chained [DuckCopy] struct proxy
-                             // ☝ Marked nullable
+                             // ☝ Marked nullable when the underlying type is not a struct
 }
 ```
 4. _Before_ using _any_ ducktype proxy (from an integration or a duck-chained property), check it for null using the following helper methods:
@@ -739,7 +740,6 @@ public class DuckType
     internal static bool HasValue<T>(T proxy);
 }
 ```
-
 For example:
 
 
@@ -755,6 +755,15 @@ internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instanc
             // safe to use duck-chained property - underlying type is not null
         }
     }
+}
+```
+5. Match the nullablility of the parameter types, _unless_ the parameters are used in constraints:
+
+```csharp
+// assuming underlying method is ".(MyProxy? proxy)                                👇 no nullable as we have `where TMyProxy : IMyProxy`
+internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instance, TMyProxy proxy)
+    where TMyProxy : IMyProxy
+{
 }
 ```
 
