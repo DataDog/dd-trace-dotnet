@@ -118,7 +118,7 @@ internal class ImpactedTestsModule
 
         if (modifiedFiles.Length == 0)
         {
-            Log.Warning("ImpactedTestsModule: No modified files found.");
+            Log.Information("ImpactedTestsModule: No modified files found.");
         }
 
         return new ImpactedTestsModule(baseCommitSha, currentCommitSha, modifiedFiles);
@@ -201,7 +201,7 @@ internal class ImpactedTestsModule
     {
         if (string.IsNullOrEmpty(tags.SourceFile))
         {
-            Log.Warning("ImpactedTestsModule: No test definition file found for {TestName}", tags.Name);
+            Log.Information("ImpactedTestsModule: No test definition file found for {TestName}", tags.Name);
             return [];
         }
 
