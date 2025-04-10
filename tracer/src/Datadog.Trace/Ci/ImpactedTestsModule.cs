@@ -52,25 +52,20 @@ internal class ImpactedTestsModule
     {
         // Get the current commit SHA
         var currentCommitSha = environmentValues.HeadCommit ?? environmentValues.Commit ?? string.Empty;
-        if (string.IsNullOrEmpty(currentCommitSha))
-        {
-            Log.Warning("ImpactedTestsModule: No current commit sha found.");
-            return new ImpactedTestsModule(string.Empty, string.Empty, []);
-        }
 
         // Get the base commit SHA
-        var baseCommitSha = environmentValues.PrBaseCommit;
+        var baseCommitSha = environmentValues.PrBaseCommit ?? string.Empty;
         var workspacePath = environmentValues.WorkspacePath ?? string.Empty;
         FileCoverageInfo[] modifiedFiles = [];
 
         // Check if the base commit SHA is available
         if (!string.IsNullOrEmpty(baseCommitSha))
         {
-            Log.Debug("ImpactedTestsModule: PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit}", workspacePath, baseCommitSha, currentCommitSha);
+            Log.Debug("ImpactedTestsModule: PR detected. Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
             // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
             try
             {
-                modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha!, currentCommitSha);
+                modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
             }
             catch (Exception ex)
             {
@@ -84,16 +79,16 @@ internal class ImpactedTestsModule
             // Milestone 1 : Retrieve diff files from Backend
 
             // set the new base commit SHA
-            baseCommitSha = impactedTestsDetectionResponse.BaseSha;
+            baseCommitSha = impactedTestsDetectionResponse.BaseSha ?? string.Empty;
 
             // First we try to use the base commit SHA from the backend for the diff
             if (!string.IsNullOrEmpty(baseCommitSha))
             {
-                Log.Debug("ImpactedTestsModule: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit}", workspacePath, baseCommitSha, currentCommitSha);
+                Log.Debug("ImpactedTestsModule: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
                 // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI but with the base commit from the backend (always try the maximum accuracy)
                 try
                 {
-                    modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha!, currentCommitSha);
+                    modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
                 }
                 catch (Exception ex)
                 {
@@ -126,7 +121,7 @@ internal class ImpactedTestsModule
             Log.Warning("ImpactedTestsModule: No modified files found.");
         }
 
-        return new ImpactedTestsModule(baseCommitSha ?? string.Empty, currentCommitSha, modifiedFiles);
+        return new ImpactedTestsModule(baseCommitSha, currentCommitSha, modifiedFiles);
     }
 
     /// <summary>
@@ -143,6 +138,7 @@ internal class ImpactedTestsModule
     {
         if (ModifiedFiles.Length == 0)
         {
+            // No modified files, no need to analyze
             return;
         }
 

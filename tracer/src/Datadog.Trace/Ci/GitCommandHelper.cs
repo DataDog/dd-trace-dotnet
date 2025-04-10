@@ -85,7 +85,7 @@ internal static class GitCommandHelper
         }
     }
 
-    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string workingDirectory, string baseCommit, string? headCommit)
+    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string workingDirectory, string baseCommit, string? headCommit = null)
     {
         try
         {
