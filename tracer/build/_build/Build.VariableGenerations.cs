@@ -273,8 +273,8 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsLinuxMatrices()
             {
                 GenerateIntegrationTestsLinuxMatrix(true);
-                GenerateIntegrationTestsLinuxArm64Matrix(false);
-                GenerateIntegrationTestsLinuxMatrix(true);
+                GenerateIntegrationTestsLinuxMatrix(false);
+                GenerateIntegrationTestsLinuxArm64Matrix(true);
                 GenerateIntegrationTestsLinuxArm64Matrix(false);
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
@@ -309,7 +309,7 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Information($"Integration test Linux matrix");
+                Logger.Information(dockerTest ? "Integration test Linux dockerTest matrix" : "Integration test Linux matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 var outputVariableName = dockerTest ? "integration_tests_linux_docker_matrix" : "integration_tests_linux_matrix";
                 AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
@@ -345,7 +345,7 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Information($"Integration test Linux Arm64 matrix");
+                Logger.Information(dockerTest ? "Integration test Linux Arm64 dockerTest matrix": "Integration test Linux Arm64 matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 var outputVariableName = dockerTest ? "integration_tests_linux_arm64_docker_matrix" : "integration_tests_linux_arm64_matrix";
                 AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
