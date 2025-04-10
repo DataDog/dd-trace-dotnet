@@ -17,6 +17,18 @@ steps:
     version: $(dotnetCoreSdkLatestVersion)
   retryCountOnTaskFailure: 5
 
+- bash: |
+    # check if the framework version starts with 'net4'
+    FRAMEWORK=$(echo "${{ parameters.frameworkVersion }}" | tr '[:upper:]' '[:lower:]')
+    if [[ $FRAMEWORK == net4* ]]; then
+      echo "##vso[task.setvariable variable=isNetFx]true"
+      echo "Framework is .NET Framework ${{ parameters.frameworkVersion }} - no specific SDK needed beyond the latest"
+    else
+      echo "##vso[task.setvariable variable=isNetFx]false"
+    fi
+  displayName: Check if .NET Framework
+  failOnStderr: true
+
 # skip .NET Framewrok
 - bash: |
     # convert it to lowercase just in case
