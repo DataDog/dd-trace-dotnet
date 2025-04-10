@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -29,6 +31,7 @@ public class KafkaProducerConstructorIntegration
         where TProducerBuilder : IProducerBuilder
     {
         if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+            || instance is null
             || builder.Instance is null
             || builder.Config is null)
         {
