@@ -147,6 +147,8 @@ partial class Build : NukeBuild
                 DeleteReparsePoints(SourceDirectory);
                 DeleteReparsePoints(TestsDirectory);
             }
+
+            RootDirectory.GlobDirectories("obj*").ForEach(x => DeleteDirectory(x));
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));

@@ -341,7 +341,11 @@ partial class Build
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
 
-            var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = finalArchs };
+            var envVariables = new Dictionary<string, string>
+            {
+                ["CMAKE_OSX_ARCHITECTURES"] = finalArchs,
+                ["PATH"] = Environment.GetEnvironmentVariable("PATH")
+            };
 
             // Build native
             CMake.Value(
@@ -2337,6 +2341,10 @@ partial class Build
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException.*", RegexOptions.Compiled),
+               // These are thrown by the CallTargetNativeTests
+               new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.DuckTyping.DuckTypeException: Throwing a ducktype exception.*"),
+               new(@".*Exception occurred when calling the CallTarget integration continuation. System.MissingMethodException: Throwing a missing method exception.*"),
+               new(@".*Exception occurred when calling the CallTarget integration continuation. Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvokerException: Throwing a call target invoker exception.*"),
                // error thrown to check error handling in RC tests
                new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
            };

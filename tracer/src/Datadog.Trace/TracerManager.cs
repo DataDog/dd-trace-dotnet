@@ -70,6 +70,7 @@ namespace Datadog.Trace
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
+            ISpanEventsManager spanEventsManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -99,6 +100,7 @@ namespace Datadog.Trace
             RemoteConfigurationManager = remoteConfigurationManager;
             DynamicConfigurationManager = dynamicConfigurationManager;
             TracerFlareManager = tracerFlareManager;
+            SpanEventsManager = new SpanEventsManager(discoveryService);
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings, settings.PeerServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
@@ -165,6 +167,8 @@ namespace Datadog.Trace
 
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
+        public ISpanEventsManager SpanEventsManager { get; }
+
         public PerTraceSettings PerTraceSettings { get; }
 
         public SpanContextPropagator SpanContextPropagator { get; }
@@ -223,6 +227,7 @@ namespace Datadog.Trace
             DynamicConfigurationManager.Start();
             TracerFlareManager.Start();
             RemoteConfigurationManager.Start();
+            SpanEventsManager.Start();
         }
 
         /// <summary>
@@ -708,6 +713,8 @@ namespace Datadog.Trace
                     instance.DynamicConfigurationManager.Dispose();
                     Log.Debug("Disposing TracerFlareManager");
                     instance.TracerFlareManager.Dispose();
+                    Log.Debug("Disposing SpanEventsManager");
+                    instance.SpanEventsManager.Dispose();
 
                     Log.Debug("Disposing AgentWriter.");
                     var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;

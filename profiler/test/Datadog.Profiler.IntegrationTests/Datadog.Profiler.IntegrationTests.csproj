@@ -55,6 +55,18 @@
     <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpanLink.cs">
       <Link>Tracer\MockSpanLink.cs</Link>
     </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockSpanEvent.cs">
+      <Link>Tracer\MockSpanEvent.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockAttributeAnyValue.cs">
+      <Link>Tracer\MockAttributeAnyValue.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockAttributeArray.cs">
+      <Link>Tracer\MockAttributeArray.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tracer\test\Datadog.Trace.TestHelpers\MockAttributeArrayValue.cs">
+      <Link>Tracer\MockAttributeArrayValue.cs</Link>
+    </Compile>
     <Compile Include="..\..\..\tracer\src\Datadog.Trace\Tags.cs">
       <Link>Tracer\Tags.cs</Link>
     </Compile>

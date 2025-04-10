@@ -274,6 +274,7 @@ internal static class MetricTags
         [Description("error_type:duck_typing")]DuckTyping,
         [Description("error_type:invoker")]Invoker,
         [Description("error_type:execution")]Execution,
+        [Description("error_type:missing_member")]MissingMember,
     }
 
     public enum WafAnalysis
@@ -293,6 +294,15 @@ internal static class MetricTags
     {
         [Description("waf_version;event_rules_version;success:true")] Success,
         [Description("waf_version;event_rules_version;success:false")] Error
+    }
+
+    public enum UserEventSdk
+    {
+        [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,
+        [Description("event_type:login_success;sdk_version:v2")] UserEventLoginSuccessSdkV2,
+        [Description("event_type:login_failure;sdk_version:v1")] UserEventFailureSdkV1,
+        [Description("event_type:login_failure;sdk_version:v2")] UserEventFailureSdkV2,
+        [Description("event_type:custom;sdk_version:v1")] UserEventCustomSdkV1,
     }
 
     [EnumExtensions]
