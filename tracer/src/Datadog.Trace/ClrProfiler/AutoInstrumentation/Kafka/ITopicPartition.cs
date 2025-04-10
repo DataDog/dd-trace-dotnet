@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <summary>
         ///     Gets the Kafka topic name.
         /// </summary>
-        public string Topic { get; }
+        public string? Topic { get; }
 
         /// <summary>
         ///     Gets the Kafka partition.
