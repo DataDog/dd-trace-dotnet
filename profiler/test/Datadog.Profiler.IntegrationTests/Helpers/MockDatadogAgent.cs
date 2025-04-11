@@ -30,6 +30,7 @@ namespace Datadog.Profiler.IntegrationTests
         public event EventHandler<EventArgs<int>> ProfilerUnregistered;
 
         public int NbCallsOnProfilingEndpoint { get; private set; }
+        public int ProfiledProcessId { get; set; }
 
         public bool IsReady => _readinessNotifier.Wait(TimeSpan.FromSeconds(30)); // wait for Agent being ready
 
