@@ -274,8 +274,7 @@ partial class Build : NukeBuild
             {
                 GenerateIntegrationTestsLinuxMatrix(true);
                 GenerateIntegrationTestsLinuxMatrix(false);
-                GenerateIntegrationTestsLinuxArm64Matrix(true);
-                GenerateIntegrationTestsLinuxArm64Matrix(false);
+                GenerateIntegrationTestsLinuxArm64Matrix();
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 

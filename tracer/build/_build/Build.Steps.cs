@@ -1630,7 +1630,6 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-
             var filter = AddAreaFilter(GetFilter());
 
             try
