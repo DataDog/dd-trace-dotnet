@@ -666,7 +666,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
     if (callTargetStateTypeSkipMethodBodyMemberRef == mdMemberRefNil)
     {
         COR_SIGNATURE signature[3] = {
-            IMAGE_CEE_CS_CALLCONV_DEFAULT,
+            IMAGE_CEE_CS_CALLCONV_DEFAULT | IMAGE_CEE_CS_CALLCONV_HASTHIS,
             0x00,
             ELEMENT_TYPE_BOOLEAN,
         };

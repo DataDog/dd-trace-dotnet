@@ -1,4 +1,5 @@
 using System;
+using CallTargetNativeTest.NoOp;
 
 namespace CallTargetNativeTest;
 
@@ -17,6 +18,9 @@ partial class Program
         RunMethod(() => w1.ReturnGenericMethod<string, string>("Hello world"));
         Console.WriteLine($"{typeof(With1Arguments).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => w1.ReturnGenericMethod<int, int>(42));
+        
+        Console.WriteLine($"{typeof(With1Arguments).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1g1 = new With1ArgumentsGeneric<string>();
