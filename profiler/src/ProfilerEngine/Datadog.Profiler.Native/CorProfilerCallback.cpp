@@ -189,7 +189,7 @@ void CorProfilerCallback::InitializeServices()
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), _pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), _pRuntimeIdStore, _pConfiguration.get(), _memoryResourceManager.GetSynchronizedPool(500, sizeof(RawWallTimeSample)));
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())

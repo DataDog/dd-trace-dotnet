@@ -85,7 +85,7 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
                                     &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
     // Add samples to only one application
-    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto callstack1 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
 
     auto sample1 = CreateSample(firstRid,
@@ -93,14 +93,14 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
                                 labels1,
                                 21);
 
-    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
+    auto callstack2 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
     auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
     auto sample2 = CreateSample(firstRid,
                                 callstack2,
                                 labels2,
                                 42);
 
-    auto callstack3 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
+    auto callstack3 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}});
     auto labels3 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}};
     auto sample3 = CreateSample(firstRid,
                                 callstack3,
@@ -200,14 +200,14 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
-    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto callstack1 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample1 = CreateSample(firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
+    auto callstack2 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
     auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
     auto sample2 = CreateSample(secondRid,
                                 callstack2,
@@ -308,14 +308,14 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                     metricsRegistry, metadataProvider, ssiManager, allocRecorder);
 
-    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto callstack1 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample1 = CreateSample(firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto callstack2 = std::vector<std::pair<std::string, InternedString>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample2 = CreateSample(secondRid,
                                 callstack2,

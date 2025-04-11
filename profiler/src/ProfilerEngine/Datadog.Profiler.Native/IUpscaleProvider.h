@@ -9,6 +9,7 @@
 
 #include "GroupSampler.h"
 #include "SampleValueTypeProvider.h"
+#include "InternedString.h"
 
 using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 
@@ -16,7 +17,7 @@ struct UpscalingInfo
 {
 public:
     std::vector<SampleValueTypeProvider::Offset> const& Offsets;
-    std::string LabelName;
+    std::string_view LabelName;
     std::vector<UpscaleStringGroup> UpscaleGroups;
 };
 

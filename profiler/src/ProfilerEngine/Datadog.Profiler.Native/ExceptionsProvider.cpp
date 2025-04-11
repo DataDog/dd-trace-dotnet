@@ -60,7 +60,7 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
     }
 
     // Check if it's mscorlib. In that case, locate the System.Exception type
-    std::string assemblyName;
+    InternedString assemblyName;
 
     if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
     {
@@ -68,7 +68,10 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
         return false;
     }
 
-    if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
+    static const InternedString coreLib = "System.Private.CoreLib";
+    static const InternedString mscorlib = "mscorlib";
+
+    if (assemblyName != coreLib && assemblyName != mscorlib)
     {
         return false;
     }

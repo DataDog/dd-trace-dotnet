@@ -4,6 +4,7 @@
 #pragma once
 
 #include "IFrameStore.h"
+#include "InternedString.h"
 
 #include <array>
 #include <chrono>
@@ -22,10 +23,10 @@ struct SampleValueType
 
 
 typedef std::vector<int64_t> Values;
-typedef std::pair<std::string_view, std::string> Label;
+typedef std::pair<InternedString, std::string> Label;
 typedef std::vector<Label> Labels;
-typedef std::pair<std::string_view, int64_t> NumericLabel;
-typedef std::pair<std::string_view, uint64_t> SpanLabel;
+typedef std::pair<InternedString, int64_t> NumericLabel;
+typedef std::pair<InternedString, uint64_t> SpanLabel;
 typedef std::vector<NumericLabel> NumericLabels;
 
 using namespace std::chrono_literals;
@@ -151,43 +152,43 @@ public:
     }
     // well known labels
 public:
-    static const std::string ThreadIdLabel;
-    static const std::string ThreadNameLabel;
-    static const std::string ProcessIdLabel;
-    static const std::string AppDomainNameLabel;
-    static const std::string LocalRootSpanIdLabel;
-    static const std::string SpanIdLabel;
+    static const InternedString ThreadIdLabel;
+    static const InternedString ThreadNameLabel;
+    static const InternedString ProcessIdLabel;
+    static const InternedString AppDomainNameLabel;
+    static const InternedString LocalRootSpanIdLabel;
+    static const InternedString SpanIdLabel;
     static const std::string ExceptionTypeLabel;
-    static const std::string ExceptionMessageLabel;
-    static const std::string AllocationClassLabel;
-    static const std::string GarbageCollectionGenerationLabel;
-    static const std::string GarbageCollectionNumberLabel;
-    static const std::string TimelineEventTypeLabel;
+    static const InternedString ExceptionMessageLabel;
+    static const InternedString AllocationClassLabel;
+    static const InternedString GarbageCollectionGenerationLabel;
+    static const InternedString GarbageCollectionNumberLabel;
+    static const InternedString TimelineEventTypeLabel;
     static const std::string TimelineEventTypeStopTheWorld;
     static const std::string TimelineEventTypeGarbageCollection;
     static const std::string TimelineEventTypeThreadStart;
     static const std::string TimelineEventTypeThreadStop;
-    static const std::string GarbageCollectionReasonLabel;
-    static const std::string GarbageCollectionTypeLabel;
-    static const std::string GarbageCollectionCompactingLabel;
-    static const std::string ObjectLifetimeLabel;
-    static const std::string ObjectIdLabel;
-    static const std::string ObjectGenerationLabel;
-    static const std::string RequestUrlLabel;
-    static const std::string RequestStatusCodeLabel;
-    static const std::string RequestErrorLabel;
-    static const std::string RequestRedirectUrlLabel;
-    static const std::string RequestDnsWaitLabel;
-    static const std::string RequestDnsDurationLabel;
-    static const std::string RequestDnsSuccessLabel;
-    static const std::string RequestHandshakeWaitLabel;
-    static const std::string RequestHandshakeDurationLabel;
-    static const std::string RequestHandshakeErrorLabel;
-    static const std::string RequestSocketDurationLabel;
-    static const std::string RequestResponseThreadIdLabel;
-    static const std::string RequestResponseThreadNameLabel;
-    static const std::string RequestDurationLabel;
-    static const std::string ResponseContentDurationLabel;
+    static const InternedString GarbageCollectionReasonLabel;
+    static const InternedString GarbageCollectionTypeLabel;
+    static const InternedString GarbageCollectionCompactingLabel;
+    static const InternedString ObjectLifetimeLabel;
+    static const InternedString ObjectIdLabel;
+    static const InternedString ObjectGenerationLabel;
+    static const InternedString RequestUrlLabel;
+    static const InternedString RequestStatusCodeLabel;
+    static const InternedString RequestErrorLabel;
+    static const InternedString RequestRedirectUrlLabel;
+    static const InternedString RequestDnsWaitLabel;
+    static const InternedString RequestDnsDurationLabel;
+    static const InternedString RequestDnsSuccessLabel;
+    static const InternedString RequestHandshakeWaitLabel;
+    static const InternedString RequestHandshakeDurationLabel;
+    static const InternedString RequestHandshakeErrorLabel;
+    static const InternedString RequestSocketDurationLabel;
+    static const InternedString RequestResponseThreadIdLabel;
+    static const InternedString RequestResponseThreadNameLabel;
+    static const InternedString RequestDurationLabel;
+    static const InternedString ResponseContentDurationLabel;
 
 private:
     std::chrono::nanoseconds _timestamp;

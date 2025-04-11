@@ -13,20 +13,23 @@
 
 #include "shared/src/native-src/com_ptr.h"
 
+#include "InternedString.h"
+
 class IConfiguration;
 
 class FrameStore : public IFrameStore
 {
 private:
-    const std::string UnknownManagedFrame = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Method |fg: |sg:(?)";
-    const std::string UnknownManagedType = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: ";
-    const std::string UnknownManagedAssembly = "Unknown-Assembly";
+    const InternedString UnknownManagedFrame = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Method |fg: |sg:(?)";
+    const InternedString UnknownManagedType = "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: ";
+    const InternedString UnknownManagedAssembly = "Unknown-Assembly";
+    const InternedString UnknownFileInfo = "";
 
 private:
     class TypeDesc
     {
     public:
-        std::string Assembly;
+        InternedString Assembly;
         std::string Namespace;
         std::string Type;
         std::string Parameters;
@@ -80,10 +83,10 @@ private:
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     FrameInfoView GetManagedFrame(FunctionID functionId);
-    std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
+    std::pair<InternedString, InternedString> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
-    static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
+    static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, InternedString& assemblyName);
 
 private:  // global helpers
     static void FixTrailingGeneric(WCHAR* name);
@@ -130,9 +133,9 @@ private:
     struct FrameInfo
     {
     public:
-        std::string ModuleName;
-        std::string Frame;
-        std::string_view Filename;
+        InternedString ModuleName;
+        InternedString Frame;
+        InternedString Filename;
         std::uint32_t StartLine;
 
         operator FrameInfoView() const
@@ -151,7 +154,7 @@ private:
     std::unordered_map<FunctionID, FrameInfo> _methods;
     std::mutex _typesLock;
     std::unordered_map<ClassID, TypeDesc> _types;
-    std::unordered_map<std::string, std::string> _framePerNativeModule;
+    std::unordered_map<std::string, InternedString> _framePerNativeModule;
 
     // for allocation recorder
     std::mutex _fullTypeNamesLock;

@@ -8,7 +8,7 @@
 #include "Log.h"
 #include "ProfileImpl.hpp"
 #include "Sample.h"
-
+#include "StringId.hpp"
 #include <chrono>
 
 namespace libdatadog {
@@ -25,6 +25,141 @@ Profile::Profile(IConfiguration* configuration, std::vector<SampleValueType> con
 }
 
 Profile::~Profile() = default;
+
+static std::pair<ddog_prof_StringId, Success> InternString(ddog_prof_Profile* profile, std::string_view s)
+{
+    auto result = ddog_prof_Profile_intern_string(profile, to_char_slice(s));
+    if (result.tag == DDOG_PROF_STRING_ID_RESULT_ERR_GENERATIONAL_ID_STRING_ID) [[unlikely]]
+    {
+        return {ddog_prof_StringId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
+
+static Success UpdateInternedString(ddog_prof_Profile* profile, InternedString& s)
+{
+    auto profileId = ddog_prof_Profile_get_generation(profile);
+    auto& sId = s.Id();
+    if (!sId->IsInitialized || !ddog_prof_Profile_generations_are_equal(profileId.ok, sId->Id.generation))
+    {
+        auto [sid, error] = InternString(profile, s);
+        if (!error)
+        {
+            return std::move(error);
+        }
+        sId->Id = sid;
+        sId->IsInitialized = true;
+    }
+    return make_success();
+}
+
+static std::pair<ddog_prof_MappingId, Success> InternMapping(ddog_prof_Profile* profile, InternedString moduleName)
+{
+    auto success = UpdateInternedString(profile, moduleName);
+    if (!success)
+    {
+        return {ddog_prof_MappingId{}, std::move(success)};
+    }
+
+    auto result = ddog_prof_Profile_intern_mapping(profile, 0, 0, 0, moduleName.Id()->Id, ddog_prof_Profile_interned_empty_string());
+
+    if (result.tag == DDOG_PROF_MAPPING_ID_RESULT_ERR_GENERATIONAL_ID_MAPPING_ID)
+    {
+        return {ddog_prof_MappingId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
+
+static std::pair<ddog_prof_FunctionId, Success> InternFunction(
+    ddog_prof_Profile* profile, InternedString fileName, InternedString frame)
+{
+    auto success = UpdateInternedString(profile, fileName);
+    if (!success)
+    {
+        return {ddog_prof_FunctionId{}, std::move(success)};
+    }
+
+    success = UpdateInternedString(profile, frame);
+    if (!success)
+    {
+        return {ddog_prof_FunctionId{}, std::move(success)};
+    }
+
+    auto result = ddog_prof_Profile_intern_function(profile, frame.Id()->Id, ddog_prof_Profile_interned_empty_string(), fileName.Id()->Id);
+
+    if (result.tag == DDOG_PROF_FUNCTION_ID_RESULT_ERR_GENERATIONAL_ID_FUNCTION_ID)
+    {
+        return {ddog_prof_FunctionId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
+
+static std::pair<ddog_prof_StackTraceId, Success> InternStacktrace(ddog_prof_Profile* profile, ddog_prof_Slice_LocationId locations)
+{
+    auto result = ddog_prof_Profile_intern_stacktrace(profile, locations);
+    if (result.tag == DDOG_PROF_STACK_TRACE_ID_RESULT_ERR_GENERATIONAL_ID_STACK_TRACE_ID)
+    {
+        return {ddog_prof_StackTraceId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
+
+static std::pair<ddog_prof_LocationId, Success> InternLocation(
+    ddog_prof_Profile* profile, ddog_prof_MappingId mapping, ddog_prof_FunctionId function, int64_t line)
+{
+    auto result = ddog_prof_Profile_intern_location_with_mapping_id(profile, mapping, function, 0, line);
+    if (result.tag == DDOG_PROF_LOCATION_ID_RESULT_ERR_GENERATIONAL_ID_LOCATION_ID)
+    {
+        return {ddog_prof_LocationId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
+
+static std::pair<ddog_prof_LabelId, Success> InternStringLabel(
+    ddog_prof_Profile* profile, InternedString name, std::string_view value)
+{
+    auto success = UpdateInternedString(profile, name);
+    if (!success)
+    {
+        return {ddog_prof_LabelId{}, std::move(success)};
+    }
+
+    auto [internedValue, success2] = InternString(profile, value);
+    if (!success2)
+    {
+        return {ddog_prof_LabelId{}, std::move(success2)};
+    }
+
+    auto result = ddog_prof_Profile_intern_label_str(profile, name.Id()->Id, internedValue);
+    if (result.tag == DDOG_PROF_LABEL_ID_RESULT_ERR_GENERATIONAL_ID_LABEL_ID)
+    {
+        return {ddog_prof_LabelId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
+
+static std::pair<ddog_prof_LabelId, Success> InternNumericLabel(ddog_prof_Profile* profile, InternedString name, int64_t value)
+{
+    auto success = UpdateInternedString(profile, name);
+    if (!success)
+    {
+        return {ddog_prof_LabelId{}, std::move(success)};
+    }
+
+    auto result = ddog_prof_Profile_intern_label_num(profile, name.Id()->Id, value);
+    if (result.tag == DDOG_PROF_LABEL_ID_RESULT_ERR_GENERATIONAL_ID_LABEL_ID)
+    {
+        return {ddog_prof_LabelId{}, make_error(result.err)};
+    }
+
+    return {result.ok, make_success()};
+}
 
 libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 {
@@ -44,50 +179,62 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     {
         auto& location = locations[idx];
 
-        location.mapping = {};
-        location.mapping.filename = to_char_slice(frame.ModuleName);
-        location.function.filename = to_char_slice(frame.Filename);
-        location.function.start_line = frame.StartLine;
-        location.line = frame.StartLine; // For now we only have the start line of the function.
-        location.function.name = to_char_slice(frame.Frame);
-        location.address = 0; // TODO check if we can get that information in the provider
+        auto [mapping, success] = InternMapping(&profile, frame.ModuleName);
+        if (!success)
+        {
+            return std::move(success);
+        }
+
+        auto [function, success2] = InternFunction(&profile, frame.Filename, frame.Frame);
+        if (!success2)
+        {
+            return std::move(success2);
+        }
+
+        std::tie(location, success) = InternLocation(&profile, mapping, function, frame.StartLine);
+        if (!success)
+        {
+            return std::move(success);
+        }
 
         ++idx;
     }
 
-    auto ffiSample = ddog_prof_Sample{};
-    ffiSample.locations = {locations.data(), nbFrames};
+    auto [stackTrace, success] = InternStacktrace(&profile, {locations.data(), nbFrames});
+    if (!success)
+    {
+        return std::move(success);
+    }
 
     // Labels
     auto const& labels = sample->GetLabels();
     auto const& numericLabels = sample->GetNumericLabels();
-    std::vector<ddog_prof_Label> ffiLabels;
+    std::vector<ddog_prof_LabelId> ffiLabels;
     ffiLabels.reserve(labels.size() + numericLabels.size());
 
     for (auto const& [label, value] : labels)
     {
-        auto labelz = ddog_prof_Label {
-            .key = {label.data(), label.size()},
-            .str = {value.data(), value.size()}
-        };
+        auto [labelz, success] = InternStringLabel(&profile, label, value);
+        if (!success)
+        {
+            // skip ?? or stop
+            continue;
+        }
         ffiLabels.push_back(std::move(labelz));
     }
 
     for (auto const& [label, value] : numericLabels)
     {
-        auto labelz = ddog_prof_Label {
-            .key = {label.data(), label.size()},
-            .num = value
-        };
+        auto [labelz, success] = InternNumericLabel(&profile, label, value);
+        if (!success)
+        {
+            // skip ?? or stop
+            continue;
+        }
         ffiLabels.push_back(std::move(labelz));
     }
 
-    ffiSample.labels = {ffiLabels.data(), ffiLabels.size()};
-
-    // values
     auto const& values = sample->GetValues();
-    ffiSample.values = {values.data(), values.size()};
-
     // add timestamp
     auto timestamp = 0ns;
     if (_addTimestampOnSample)
@@ -97,11 +244,18 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         timestamp = sample->GetTimeStamp();
     }
 
-    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp.count());
-    if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    auto ss = ddog_prof_Profile_intern_labelset(&profile, {ffiLabels.data(), ffiLabels.size()});
+
+    auto rr = ddog_prof_Profile_intern_sample(&profile, stackTrace,
+                                              {values.data(), values.size()},
+                                              ss.ok,
+                                              timestamp.count());
+
+    if (rr.tag == DDOG_VOID_RESULT_ERR)
     {
-        return make_error(add_res.err);
+        return make_error(rr.err);
     }
+
     return make_success();
 }
 
@@ -173,7 +327,7 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     period.type_ = period_value_type;
     period.value = 1;
 
-    auto res = ddog_prof_Profile_new(sample_types, &period, nullptr);
+    auto res = ddog_prof_Profile_new(sample_types, &period);
     if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
     {
         return nullptr;
