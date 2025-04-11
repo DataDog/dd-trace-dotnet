@@ -707,5 +707,58 @@ public class StringConcatTests : InstrumentationTestsBase
 
         System.String.Concat(obj).Should().BeEmpty();
     }
+
+#if NET9_0_OR_GREATER
+    [Fact]
+    public void GivenStringsReadOnlySpan_WhenConcat_ResultIsOk()
+    {
+        var values = new string[] { "concat", "CONCAT2", taintedValue, taintedValue2 };
+        var span = new ReadOnlySpan<string>(values);
+
+        AssertTaintedFormatWithOriginalCallCheck("concatCONCAT2:+-tainted-+::+-TAINTED2-+:", 
+                  System.String.Concat(span), 
+            () => System.String.Concat(values));
+    }
+
+    [Fact]
+    public void GivenTwoReadOnlySpan_WhenConcat_ResultIsOk()
+    {
+        var values = new string[] { "concat", taintedValue };
+        ReadOnlySpan<char> span0 = values[0];
+        ReadOnlySpan<char> span1 = values[1];
+
+        AssertTaintedFormatWithOriginalCallCheck("concat:+-tainted-+:",
+                  System.String.Concat(span0, span1),
+            () => System.String.Concat(values));
+    }
+
+    [Fact]
+    public void GivenThreeReadOnlySpan_WhenConcat_ResultIsOk()
+    {
+        var values = new string[] { "concat", taintedValue, UntaintedString };
+        ReadOnlySpan<char> span0 = values[0];
+        ReadOnlySpan<char> span1 = values[1];
+        ReadOnlySpan<char> span2 = values[2];
+
+        AssertTaintedFormatWithOriginalCallCheck("concat:+-tainted-+:UntaintedString",
+                  System.String.Concat(span0, span1, span2),
+            () => System.String.Concat(values));
+    }
+
+    [Fact]
+    public void GivenFourReadOnlySpan_WhenConcat_ResultIsOk()
+    {
+        var values = new string[] { "concat", taintedValue, UntaintedString, TaintedString };
+        ReadOnlySpan<char> span0 = values[0];
+        ReadOnlySpan<char> span1 = values[1];
+        ReadOnlySpan<char> span2 = values[2];
+        ReadOnlySpan<char> span3 = values[3];
+
+        AssertTaintedFormatWithOriginalCallCheck("concat:+-tainted-+:UntaintedString:+-TaintedString-+:",
+                  System.String.Concat(span0, span1, span2, span3),
+            () => System.String.Concat(values));
+    }
+
+#endif
 }
 
