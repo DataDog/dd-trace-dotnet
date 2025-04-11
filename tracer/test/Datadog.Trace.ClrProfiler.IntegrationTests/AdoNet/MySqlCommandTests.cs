@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static bool IsMainOrReleaseBranch()
         {
             // TODO: consider interaction with RequiresThoroughTesting()
-            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("isMainOrReleaseBranch") ?? string.Empty;
+            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("USE_FULL_TEST_CONFIG") ?? string.Empty;
 
             if (string.IsNullOrEmpty(isMainOrReleaseBranch))
             {
