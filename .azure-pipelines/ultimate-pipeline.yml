@@ -1809,6 +1809,7 @@ stages:
         enable_crash_dumps: true
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        USE_FULL_TEST_CONFIG: $(isMainOrReleaseBranch)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1872,6 +1873,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        USE_FULL_TEST_CONFIG: $(isMainOrReleaseBranch)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1932,6 +1934,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        USE_FULL_TEST_CONFIG: $(isMainOrReleaseBranch)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2011,6 +2014,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
+        USE_FULL_TEST_CONFIG: $(isMainOrReleaseBranch)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2369,6 +2373,7 @@ stages:
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
+          -e USE_FULL_TEST_CONFIG=$(isMainOrReleaseBranch) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2465,6 +2470,7 @@ stages:
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
+          -e USE_FULL_TEST_CONFIG=$(isMainOrReleaseBranch) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2602,6 +2608,7 @@ stages:
           -e framework=$(publishTargetFramework) \
           -e lambdaBaseImage=$(lambdaBaseImage) \
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          -e USE_FULL_TEST_CONFIG=$(isMainOrReleaseBranch) \
           IntegrationTests.Serverless
       displayName: docker-compose run IntegrationTests.Serverless
       env:
@@ -3174,6 +3181,7 @@ stages:
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              -e USE_FULL_TEST_CONFIG=$(isMainOrReleaseBranch) \
               IntegrationTests.ARM64
           displayName: docker-compose run --no-deps IntegrationTests
           env:
@@ -3264,6 +3272,7 @@ stages:
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              -e USE_FULL_TEST_CONFIG=$(isMainOrReleaseBranch) \
               IntegrationTests.ARM64 \
           displayName: docker-compose run IntegrationTests
           env:
