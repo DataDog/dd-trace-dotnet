@@ -459,6 +459,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     reWriterWrapper.CallMember(tracerTokens->GetCallTargetStateSkipMethodBodyMemberRef(), false);
     ILInstr* brTrueSJumpMethodInstr = rewriter.NewILInstr();
     brTrueSJumpMethodInstr->m_opcode = CEE_BRTRUE_S;
+    rewriter.InsertBefore(reWriterWrapper.GetCurrentILInstr(), brTrueSJumpMethodInstr);
 
     // leave from the begin method structure should go here in skip method body check
     pStateLeaveToBeginOriginalMethodInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
