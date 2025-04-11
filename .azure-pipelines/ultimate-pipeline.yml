@@ -2368,6 +2368,7 @@ stages:
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2402,7 +2403,7 @@ stages:
   - job: DockerTest
     timeoutInMinutes: 60 #default value
     strategy:
-      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
 
     variables:
       TestAllPackageVersions: true
@@ -2463,6 +2464,7 @@ stages:
           -e IncludeTestsRequiringDocker=true \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
