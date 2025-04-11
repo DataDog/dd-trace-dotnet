@@ -16,7 +16,7 @@ internal struct RouteEndpoint
     /// <summary>
     /// Delegates to Endpoint.RoutePattern;
     /// </summary>
-    public RoutePattern RoutePattern;
+    public object RoutePattern;
 
     /// <summary>
     /// Delegates to Endpoint.DisplayName;
@@ -27,7 +27,7 @@ internal struct RouteEndpoint
     /// Delegates to Endpoint.RequestDelegate;
     /// </summary>
     public RequestDelegate? RequestDelegate;
-    
+
     /// <summary>
     /// Delegates to Endpoint.Metadata;
     /// </summary>
