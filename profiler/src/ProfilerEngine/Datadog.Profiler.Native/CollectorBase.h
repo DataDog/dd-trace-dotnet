@@ -95,8 +95,8 @@ public:
 
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
-            sample->AddNumericLabel(SpanLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
-            sample->AddNumericLabel(SpanLabel{Sample::SpanIdLabel, rawSample.SpanId});
+            sample->AddLabel(NumericLabel{Sample::LocalRootSpanIdLabel, rawSample.LocalRootSpanId});
+            sample->AddLabel(NumericLabel{Sample::SpanIdLabel, rawSample.SpanId});
         }
 
         // compute thread/appdomain details

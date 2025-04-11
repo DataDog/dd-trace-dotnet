@@ -164,32 +164,42 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
         builder << "AD_" << expectedAppDomainId[currentSample];
         std::string expectedAppDomainName(builder.str());
 
-        std::stringstream builder2;
-        builder2 << expectedAppDomainId[currentSample];
-        std::string expectedPid(builder2.str());
+        auto expectedPid = expectedAppDomainId[currentSample];
 
         auto labels = sample->GetLabels();
-        for (const Label& label : labels)
+        for (auto const& label : labels)
         {
-            if (label.first == Sample::AppDomainNameLabel)
-            {
-                ASSERT_EQ(expectedAppDomainName, label.second);
-            }
-            else if (label.first == Sample::ProcessIdLabel)
-            {
-                ASSERT_EQ(expectedPid, label.second);
-            }
-            else if (
-                (label.first == Sample::ThreadIdLabel) ||
-                (label.first == Sample::ThreadNameLabel))
-            {
-                // can't test thread info
-            }
-            else
-            {
-                // unknown label
-                ASSERT_TRUE(false);
-            }
+            std::visit(LabelsVisitor{
+                [expectedPid](NumericLabel const& label){
+                    auto const& [name, value] = label;
+                    if(name == Sample::ProcessIdLabel)
+                    {
+                        ASSERT_EQ(expectedPid, value);
+                    }
+                    else
+                    {
+                        ASSERT_TRUE(false) << label.first;
+                    }
+                },
+                [expectedAppDomainName](StringLabel const& label) {
+                    auto const& [name, value] = label;
+                    if (name == Sample::AppDomainNameLabel)
+                    {
+                        ASSERT_EQ(expectedAppDomainName, value);
+                    }
+                    else if (
+                        (name == Sample::ThreadIdLabel) ||
+                        (name == Sample::ThreadNameLabel))
+                    {
+                        // can't test thread info
+                    }
+                    else
+                    {
+                        // unknown label
+                        ASSERT_TRUE(false);
+                    }
+                }, 
+            }, label);
         }
 
         currentSample++;
