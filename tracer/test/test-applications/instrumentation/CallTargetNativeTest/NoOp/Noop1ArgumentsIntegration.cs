@@ -14,7 +14,6 @@ namespace CallTargetNativeTest.NoOp
         public static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 arg1)
             where TTarget : IInstance, IDuckType
         {
-            CallTargetState returnValue = new CallTargetState(null, instance.Instance);
             Console.WriteLine($"ProfilerOK: BeginMethod(1)<{typeof(Noop1ArgumentsIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}>({instance}, {arg1})");
             if (instance.Instance?.GetType().Name.Contains("ThrowOnBegin") == true)
             {
@@ -22,19 +21,19 @@ namespace CallTargetNativeTest.NoOp
                 throw new Exception();
             }
 
-            if (arg1 is SKIPMETHODBODY)
+            Console.WriteLine(arg1 as string);
+            if (arg1 as string == SKIPMETHODBODY)
             {
                 return new CallTargetState(null, instance.Instance, skipMethodBody: true);
             }
 
-            return returnValue;
+            return new CallTargetState(null, instance.Instance);
         }
 
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
             where TTarget : IInstance, IDuckType
             where TReturn : IReturnValue, IDuckType
         {
-            CallTargetReturn<TReturn> rValue = new CallTargetReturn<TReturn>(returnValue);
             Console.WriteLine($"ProfilerOK: EndMethod(1)<{typeof(Noop1ArgumentsIntegration)}, {typeof(TTarget)}, {typeof(TReturn)}>({instance}, {returnValue}, {exception?.ToString() ?? "(null)"}, {state})");
             if (instance.Instance?.GetType().Name.Contains("ThrowOnEnd") == true)
             {
@@ -53,7 +52,7 @@ namespace CallTargetNativeTest.NoOp
                 }
             }
 
-            return rValue;
+            return new CallTargetReturn<TReturn>(returnValue);;
         }
 
         public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)

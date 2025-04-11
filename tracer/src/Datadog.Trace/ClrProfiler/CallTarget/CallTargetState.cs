@@ -98,15 +98,14 @@ public readonly struct CallTargetState
     /// <param name="previousScope">Previous scope instance</param>
     /// <param name="previousDistributedSpanContext">Previous distributed span context</param>
     /// <param name="state">Object state instance</param>
-    /// <param name="skipMethodBody">Flag to skip the original method body execution</param>
-    internal CallTargetState(Scope? previousScope, IReadOnlyDictionary<string, string>? previousDistributedSpanContext, CallTargetState state, bool skipMethodBody = false)
+    internal CallTargetState(Scope? previousScope, IReadOnlyDictionary<string, string>? previousDistributedSpanContext, CallTargetState state)
     {
         _previousScope = previousScope;
         _scope = state._scope;
         _state = state._state;
         _startTime = state._startTime;
         _previousDistributedSpanContext = previousDistributedSpanContext;
-        _skipMethodBody = skipMethodBody;
+        _skipMethodBody = state._skipMethodBody;
     }
 
     /// <summary>
