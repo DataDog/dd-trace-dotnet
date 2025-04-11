@@ -79,7 +79,7 @@ public static class CriticalPathAnalyzer
         // displaying in original (pipeline) order
         var stageOrder = pipeline.Stages.Select((x, i) => (x.Stage, Index: i)).ToDictionary(x => x.Stage, x => x.Index);
         var ordered = stages.OrderBy(x => stageOrder[x.Id]);
-        var mermaidDiagram = GenerateMermaidDiagram(ordered);
+        var mermaidDiagram = GenerateMermaidDiagram(ordered, isMasterRun);
         var outputPath = rootDirectory / "artifacts" / "build_data" / "pipeline_critical_path.md";
         File.WriteAllText(outputPath, $"""
                                        ```mermaid
@@ -213,14 +213,17 @@ public static class CriticalPathAnalyzer
         return ordered;
     }
 
-    static string GenerateMermaidDiagram(IEnumerable<PipelineStage> stages)
+    static string GenerateMermaidDiagram(IEnumerable<PipelineStage> stages, bool isMaster)
     {
         // can't easily show flex in the diagram, so display using earliest start/end
         // and mark critical tasks
         var sb = new StringBuilder();
-        sb.AppendLine("""
+        sb.Append("""
              gantt
                  title Consolidated pipeline critical path analysis
+             """);
+        sb.AppendLine(isMaster ? " for master" : " for branches");
+        sb.AppendLine("""
                  dateFormat s
                  axisFormat %H:%M
                  todayMarker off
