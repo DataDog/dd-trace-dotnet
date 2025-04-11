@@ -3417,7 +3417,7 @@ stages:
 
     # Enable the Datadog Agent service for this job
     services:
-      dd_agent: dd_agent_no_pull
+      dd_agent: dd_agent
 
     steps:
     - template: steps/clone-repo.yml
