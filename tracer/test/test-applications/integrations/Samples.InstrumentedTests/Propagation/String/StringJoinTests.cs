@@ -528,8 +528,9 @@ public class StringJoinTests : InstrumentationTestsBase
     }
 
 #if NET9_0_OR_GREATER
+
     [Fact]
-    public void GivenStringAndReadOnlySpans_WhenJoin_ResultIsOk()
+    public void GivenStringAndStringReadOnlySpan_WhenJoin_ResultIsOk()
     {
         var values = new string[] { TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString };
         var span = new ReadOnlySpan<string>(values);
@@ -537,6 +538,36 @@ public class StringJoinTests : InstrumentationTestsBase
             System.String.Join("|", span),
             () => System.String.Join("|", values)); // Use values here as we can not use span in the lambda expression
     }
-#endif
 
+    [Fact]
+    public void GivenATaintedStringInAStringReadOnlySpan_WhenCallingJoin_ResultIsTainted()
+    {
+        var values = new string[] { taintedValue, taintedValue};
+        var span = new ReadOnlySpan<string>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:a:+-tainted-+:",
+            System.String.Join('a', span),
+            () => System.String.Join('a', values)); // Use values here as we can not use span in the lambda expression
+    }
+
+    [Fact]
+    public void GivenStringAndObjectReadOnlySpan_WhenJoin_ResultIsOk()
+    {
+        var values = new object[] { TaintedString, UntaintedString, OtherTaintedString, 1 };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:|UntaintedString|:+-OtherTaintedString-+:|1",
+            System.String.Join("|", span),
+            () => System.String.Join("|", values)); // Use values here as we can not use span in the lambda expression
+    }
+
+    [Fact]
+    public void GivenATaintedStringInAnObjectReadOnlySpan_WhenCallingJoin_ResultIsTainted()
+    {
+        var values = new object[] { taintedValue, taintedValue, 1 };
+        var span = new ReadOnlySpan<object>(values);
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:a:+-tainted-+:a1",
+            System.String.Join('a', span),
+            () => System.String.Join('a', values)); // Use values here as we can not use span in the lambda expression
+    }
+
+#endif
 }

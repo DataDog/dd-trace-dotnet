@@ -917,18 +917,49 @@ public class StringAspects
     public static string Join(string separator, ReadOnlySpan<string> values)
 #pragma warning disable DD0005 // Aspect is in incorrect format
     {
-        var array = values.ToArray();
-        var result = string.Join(separator, array);
-        try
-        {
-            return OnStringJoin(result, separator, array);
-        }
-        catch (Exception ex)
-        {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
-        }
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
 
-        return result;
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.ReadOnlySpan`1<System.String>)")]
+    public static string Join(char separator, ReadOnlySpan<string> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Join(string separator, ReadOnlySpan<object> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Join(char separator, ReadOnlySpan<object> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
     }
 #pragma warning restore DD0005 // Aspect is in incorrect format
 
@@ -1406,6 +1437,38 @@ public class StringAspects
         return result;
     }
 
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Format(string format, ReadOnlySpan<object> args)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Format(format, args.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Format(IFormatProvider provider, string format, ReadOnlySpan<object> args)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Format(provider, format, args.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+#endif
+
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// String.Replace aspect
@@ -1737,6 +1800,24 @@ public class StringAspects
 
         return result;
     }
+#endif
+
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.ReadOnlySpan`1<System.Char>)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, ReadOnlySpan<char> separator)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Split(target, separator.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
 #endif
 
 #pragma warning disable CS0618 // Obsolete
