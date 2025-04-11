@@ -36,6 +36,7 @@ private:
 
     volatile mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
     volatile mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
+    volatile mdMemberRef callTargetStateTypeSkipMethodBodyMemberRef = mdMemberRefNil;
     volatile mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
     mdTypeRef GetTargetStateTypeRef();
@@ -93,6 +94,8 @@ public:
     mdTypeRef GetRuntimeMethodHandleTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
+
+    mdMethodDef GetCallTargetStateSkipMethodBodyMemberRef();
 
     HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType, std::vector<TypeSignature>* methodTypeArguments,
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,

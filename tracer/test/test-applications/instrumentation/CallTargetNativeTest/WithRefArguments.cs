@@ -1,4 +1,5 @@
 using System;
+using CallTargetNativeTest.NoOp;
 
 namespace CallTargetNativeTest;
 
@@ -37,6 +38,16 @@ partial class Program
             if (strVal != "Hello world")
             {
                 throw new Exception("Error modifying string value.");
+            }
+        });
+        RunMethod(() =>
+        {
+            string strVal = GenericRefModificationVoidIntegration.SKIPMETHODBODY;
+            wRefArg.VoidRefMethod(ref strVal);
+
+            if (strVal != GenericRefModificationVoidIntegration.SKIPMETHODBODY)
+            {
+                throw new Exception("Error skipping method body.");
             }
         });
         RunMethod(() =>

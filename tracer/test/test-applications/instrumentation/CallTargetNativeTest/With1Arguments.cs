@@ -1,4 +1,5 @@
 using System;
+using CallTargetNativeTest.NoOp;
 
 namespace CallTargetNativeTest;
 
@@ -17,6 +18,8 @@ partial class Program
         RunMethod(() => w1.ReturnGenericMethod<string, string>("Hello world"));
         Console.WriteLine($"{typeof(With1Arguments).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => w1.ReturnGenericMethod<int, int>(42));
+        Console.WriteLine($"{typeof(With1Arguments).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1g1 = new With1ArgumentsGeneric<string>();
@@ -28,6 +31,8 @@ partial class Program
         RunMethod(() => w1g1.ReturnReferenceMethod("Hello World"));
         Console.WriteLine($"{typeof(With1ArgumentsGeneric<string>).FullName}.ReturnGenericMethod");
         RunMethod(() => w1g1.ReturnGenericMethod<string>("Hello World"));
+        Console.WriteLine($"{typeof(With1ArgumentsGeneric<string>).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1g1.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1g2 = new With1ArgumentsGeneric<int>();
@@ -39,6 +44,8 @@ partial class Program
         RunMethod(() => w1g2.ReturnReferenceMethod("Hello world"));
         Console.WriteLine($"{typeof(With1ArgumentsGeneric<int>).FullName}.ReturnGenericMethod");
         RunMethod(() => w1g2.ReturnGenericMethod<int>(42));
+        Console.WriteLine($"{typeof(With1ArgumentsGeneric<int>).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1g2.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1in = new With1ArgumentsInherits();
@@ -52,6 +59,8 @@ partial class Program
         RunMethod(() => w1in.ReturnGenericMethod<string, int>(42));
         Console.WriteLine($"{typeof(With1ArgumentsInherits).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => w1in.ReturnGenericMethod<int, string>("Hello World"));
+        Console.WriteLine($"{typeof(With1ArgumentsInherits).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1in.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1inGen = new With1ArgumentsInheritsGeneric();
@@ -63,6 +72,8 @@ partial class Program
         RunMethod(() => w1inGen.ReturnReferenceMethod("Hello World"));
         Console.WriteLine($"{typeof(With1ArgumentsInheritsGeneric).FullName}.ReturnGenericMethod");
         RunMethod(() => w1inGen.ReturnGenericMethod<int>(42));
+        Console.WriteLine($"{typeof(With1ArgumentsInheritsGeneric).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1inGen.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1Struct = new With1ArgumentsStruct();
@@ -76,6 +87,8 @@ partial class Program
         RunMethod(() => w1Struct.ReturnGenericMethod<string, int>(42));
         Console.WriteLine($"{typeof(With1ArgumentsStruct).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => w1Struct.ReturnGenericMethod<int, string>("Hello World"));
+        Console.WriteLine($"{typeof(With1ArgumentsStruct).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => w1Struct.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         Console.WriteLine($"{typeof(With1ArgumentsStatic).FullName}.VoidMethod");
@@ -88,6 +101,8 @@ partial class Program
         RunMethod(() => With1ArgumentsStatic.ReturnGenericMethod<string, int>(42));
         Console.WriteLine($"{typeof(With1ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => With1ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World"));
+        Console.WriteLine($"{typeof(With1ArgumentsStatic).FullName}.ReturnValueMethod (SKIPPING METHOD BODY)");
+        RunMethod(() => With1ArgumentsStatic.ReturnValueMethod(Noop1ArgumentsIntegration.SKIPMETHODBODY));
         Console.WriteLine();
         //
         var w1TBegin = new With1ArgumentsThrowOnBegin();
