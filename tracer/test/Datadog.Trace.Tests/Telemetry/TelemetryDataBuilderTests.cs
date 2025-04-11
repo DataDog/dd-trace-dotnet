@@ -43,7 +43,7 @@ public class TelemetryDataBuilderTests
     {
         var builder = new TelemetryDataBuilder();
 
-        var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: false);
+        var input = new TelemetryInput(null, null, null, null, null, null, sendAppStarted: false);
         var result = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: true);
 
         result.Should().NotBeNull();
@@ -83,7 +83,7 @@ public class TelemetryDataBuilderTests
     {
         var builder = new TelemetryDataBuilder();
 
-        var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: true);
+        var input = new TelemetryInput(null, null, null, null, null, null, sendAppStarted: true);
         var data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: false);
         data.SeqId.Should().Be(1);
 
@@ -137,7 +137,7 @@ public class TelemetryDataBuilderTests
         var metrics = hasMetrics ? new List<MetricData>() : null;
         var distributions = hasDistributions ? new List<DistributionMetricData>() : null;
         var products = hasProducts ? new ProductsData() : null;
-        var input = new TelemetryInput(config, dependencies, integrations, new MetricResults(metrics, distributions), products, sendAppStarted: !hasSentAppStarted);
+        var input = new TelemetryInput(config, dependencies, integrations, null, new MetricResults(metrics, distributions), products, sendAppStarted: !hasSentAppStarted);
         var builder = new TelemetryDataBuilder();
 
         var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: hasSendAppClosing);
@@ -231,7 +231,7 @@ public class TelemetryDataBuilderTests
             new DependencyTelemetryData("Something"),
             numOfDependencies)
                                      .ToList();
-        var input = new TelemetryInput(null, dependencies, null, null, null, sendAppStarted: false);
+        var input = new TelemetryInput(null, dependencies, null, null, null, null, sendAppStarted: false);
         var builder = new TelemetryDataBuilder();
 
         var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: false);
