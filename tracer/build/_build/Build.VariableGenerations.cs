@@ -315,7 +315,7 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsLinuxArm64Matrix(bool dockerTest)
+            void GenerateIntegrationTestsLinuxArm64Matrix()
             {
                 var baseImages = new []
                 {
@@ -330,25 +330,13 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        if (dockerTest)
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
-                        }
-                        else
-                        {
-                            var areas = new[] { TracerArea, AsmArea };
-                            foreach (var area in areas)
-                            {
-                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
-                            }
-                        }
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
                     }
                 }
 
-                Logger.Information(dockerTest ? "Integration test Linux Arm64 dockerTest matrix": "Integration test Linux Arm64 matrix");
+                Logger.Information($"Integration test Linux Arm64 matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                var outputVariableName = dockerTest ? "integration_tests_linux_arm64_docker_matrix" : "integration_tests_linux_arm64_matrix";
-                AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
+                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
