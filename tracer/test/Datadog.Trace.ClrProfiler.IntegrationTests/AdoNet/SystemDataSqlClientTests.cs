@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -27,17 +28,66 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
+        public static IEnumerable<object[]> GetFullConfig()
             => from packageVersionArray in PackageVersions.SystemDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
                from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
                from injectStoredProc in new[] { "true", "false" }
                select new[] { packageVersionArray[0], metadataSchemaVersion, propagation, injectStoredProc };
 
+        public static IEnumerable<object[]> GetReducedConfig()
+        {
+            object minPackage = string.Empty;
+            object maxPackage = string.Empty;
+            if (PackageVersions.SystemDataSqlClient.Any())
+            {
+                // we get the min and max supported versions to test the "full" range
+                minPackage = PackageVersions.SystemDataSqlClient.First()[0];
+                maxPackage = PackageVersions.SystemDataSqlClient.Last()[0];
+            }
+
+            return
+            [
+                [maxPackage, "v1", "full", "true"],
+                [minPackage, "v1", "full", "true"],
+                [maxPackage, "v1", "service", "true"],
+
+                // do not change the stored procedure command test
+                [maxPackage, "v1", "service", "false"],
+
+                // test with disabled propagation
+                [maxPackage, "v1", "disabled", "true"],
+
+                // metadata is not as important as others, so just one test
+                [maxPackage, "v0", "full", "true"],
+            ];
+        }
+
+        // Determine which configuration to use based on branch (and whether this is run locally)
+        public static IEnumerable<object[]> GetTestConfiguration()
+        {
+            return IsMainOrReleaseBranch() ? GetFullConfig() : GetReducedConfig();
+        }
+
+        public static bool IsMainOrReleaseBranch()
+        {
+            // TODO: consider interaction with RequiresThoroughTesting()
+            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("isMainOrReleaseBranch") ?? string.Empty;
+
+            if (string.IsNullOrEmpty(isMainOrReleaseBranch))
+            {
+                // Default to true if the environment variable is not set - locally just run everything
+                return true;
+            }
+
+            // otherwise, only run the full suite if we are on master / release
+            return string.Equals(isMainOrReleaseBranch, "True", StringComparison.OrdinalIgnoreCase);
+        }
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [MemberData(nameof(GetTestConfiguration))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation, string injectStoredProc)

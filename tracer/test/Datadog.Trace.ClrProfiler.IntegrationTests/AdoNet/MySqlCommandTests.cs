@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetMySqlData(bool newVersionsOnly)
+        public static IEnumerable<object[]> GetFullConfig(bool newVersionsOnly)
         {
             foreach (var item in PackageVersions.MySqlData)
             {
@@ -46,10 +46,74 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
+        public static IEnumerable<object[]> GetReducedConfig(bool newVersionsOnly)
+        {
+            // FIXME: would be nice to split the newVersionsOnly out a bit better as it is a bit messy
+            object minPackage = string.Empty;
+            object maxPackage = string.Empty;
+            if (PackageVersions.MySqlData.Any())
+            {
+                // we get the min and max supported versions to test the "full" range
+                minPackage = PackageVersions.MySqlData.First()[0];
+                maxPackage = PackageVersions.MySqlData.Last()[0];
+            }
+
+            if (newVersionsOnly)
+            {
+                return
+                [
+                    [maxPackage, "v1", "full"],
+                    [minPackage, "v1", "full"],
+                    [maxPackage, "v1", "service"],
+
+                    // test with disabled propagation
+                    [maxPackage, "v1", "disabled"],
+
+                    // metadata is not as important as others, so just one test
+                    [maxPackage, "v0", "full"],
+                ];
+            }
+            else
+            {
+                return
+                [
+                    [maxPackage, "v1", "full"],
+                    [maxPackage, "v1", "service"],
+
+                    // test with disabled propagation
+                    [maxPackage, "v1", "disabled"],
+
+                    // metadata is not as important as others, so just one test
+                    [maxPackage, "v0", "full"],
+                 ];
+            }
+        }
+
+        // Determine which configuration to use based on branch (and whether this is run locally)
+        public static IEnumerable<object[]> GetTestConfiguration(bool newVersionsOnly)
+        {
+            return IsMainOrReleaseBranch() ? GetFullConfig(newVersionsOnly) : GetReducedConfig(newVersionsOnly);
+        }
+
+        public static bool IsMainOrReleaseBranch()
+        {
+            // TODO: consider interaction with RequiresThoroughTesting()
+            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("isMainOrReleaseBranch") ?? string.Empty;
+
+            if (string.IsNullOrEmpty(isMainOrReleaseBranch))
+            {
+                // Default to true if the environment variable is not set - locally just run everything
+                return true;
+            }
+
+            // otherwise, only run the full suite if we are on master / release
+            return string.Equals(isMainOrReleaseBranch, "True", StringComparison.OrdinalIgnoreCase);
+        }
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetMySqlData), parameters: true)]
+        [MemberData(nameof(GetTestConfiguration), parameters: true)]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
@@ -57,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetMySqlData), parameters: false)]
+        [MemberData(nameof(GetTestConfiguration), parameters: false)]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
