@@ -89,14 +89,20 @@ public:
     }
 
 private:
-    Success WriteProfileToDisk(ddog_prof_EncodedProfile const* profile, std::string const& serviceName, std::string const& uid)
+    Success WriteProfileToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName, std::string const& uid)
     {
         // no specific filename for the pprof file
         auto filepath = GenerateFilePath("", ".pprof", serviceName, uid);
+        auto resultBytes = ddog_prof_EncodedProfile_bytes(profile);
 
-        auto bufferPtr = profile->buffer.ptr;
-        auto bufferSize = static_cast<std::size_t>(profile->buffer.len);
+        if (resultBytes.tag == DDOG_PROF_RESULT_BYTE_SLICE_ERR_BYTE_SLICE)
+        {
+            return make_error(resultBytes.err);
+        }
 
+        auto bufferPtr = resultBytes.ok.ptr;
+        auto bufferSize = static_cast<std::size_t>(resultBytes.ok.len);
+        
         return WriteFileToDisk(filepath, (char const*)bufferPtr, bufferSize);
     }
 

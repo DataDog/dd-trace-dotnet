@@ -41,6 +41,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.RunAndCheckWithRetries(RetryCount, errorExceptions);
         }
 
