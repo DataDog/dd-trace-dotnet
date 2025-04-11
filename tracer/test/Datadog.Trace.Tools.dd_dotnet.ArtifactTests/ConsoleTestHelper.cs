@@ -65,7 +65,7 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
         if (enableProfiler)
         {
-            agent = MockTracerAgent.Create(Output, useTelemetry: true, optionalTelemetryHeaders: true);
+            agent = MockTracerAgent.Create(Output, useTelemetry: true);
 
             environmentHelper.SetEnvironmentVariables(
                 agent,
