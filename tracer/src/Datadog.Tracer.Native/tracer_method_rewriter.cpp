@@ -453,11 +453,21 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     // ***
+    // CHECK IF WE NEED TO SKIP THE METHOD BODY
+    // ***
+    ILInstr* skipMethodCheckFirstMethodInstr = reWriterWrapper.LoadLocalAddress(callTargetStateIndex);
+    reWriterWrapper.CallMember(tracerTokens->GetCallTargetStateSkipMethodBodyMemberRef(), false);
+    ILInstr* brTrueSJumpMethodInstr = rewriter.NewILInstr();
+    brTrueSJumpMethodInstr->m_opcode = CEE_BRTRUE_S;
+
+    // leave from the begin method structure should go here in skip method body check
+    pStateLeaveToBeginOriginalMethodInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+    beginMethodCatchLeaveInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+
+    // ***
     // METHOD EXECUTION
     // ***
-    ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
-    pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
-    beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    // We don't do anything at method execution if the check is not true (no jump)
 
     // ***
     // ENDING OF THE METHOD EXECUTION
@@ -645,6 +655,9 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                     {
                         pInstr->m_opcode = CEE_LEAVE_S;
                         pInstr->m_pTarget = endFinallyInstr->m_pNext;
+
+                        // The jump of the SkipMethodBody check should go to the leave_s instruction
+                        brTrueSJumpMethodInstr->m_pTarget = pInstr;
                     }
                     else
                     {
@@ -662,6 +675,9 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                         leaveInstr->m_opcode = CEE_LEAVE_S;
                         leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
                         rewriter.InsertAfter(pInstr, leaveInstr);
+
+                        // The jump of the SkipMethodBody check should go to the leave_s instruction
+                        brTrueSJumpMethodInstr->m_pTarget = leaveInstr;
                     }
                 }
                 break;

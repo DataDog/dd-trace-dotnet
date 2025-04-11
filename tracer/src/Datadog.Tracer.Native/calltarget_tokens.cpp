@@ -18,6 +18,7 @@ static const shared::WSTRING managed_profiler_calltarget_getdefaultvalue_name = 
 static const shared::WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
 static const shared::WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
 static const shared::WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
+static const shared::WSTRING managed_profiler_calltarget_statetype_getskipmethodbody_name = WStr("get_SkipMethodBody");
 
 /**
  * PRIVATE
@@ -191,6 +192,16 @@ mdMemberRef CallTargetTokens::GetCallTargetStateDefaultMemberRef()
         return mdMemberRefNil;
     }
     return callTargetStateTypeGetDefault;
+}
+
+mdMemberRef CallTargetTokens::GetCallTargetStateSkipMethodBodyMemberRef()
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return mdMemberRefNil;
+    }
+    return callTargetStateTypeSkipMethodBodyMemberRef;
 }
 
 mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef()
@@ -649,6 +660,28 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
             return hr;
         }
         callTargetStateTypeGetDefault = newCallTargetStateTypeGetDefault;
+    }
+
+    // *** Ensure CallTargetState.get_SkipMethodBody() member ref
+    if (callTargetStateTypeSkipMethodBodyMemberRef == mdMemberRefNil)
+    {
+        COR_SIGNATURE signature[3] = {
+            IMAGE_CEE_CS_CALLCONV_DEFAULT,
+            0x00,
+            ELEMENT_TYPE_BOOLEAN,
+        };
+
+        mdMemberRef newCallTargetStateTypeSkipMethodBodyMemberRef;
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(
+            callTargetStateTypeRef, managed_profiler_calltarget_statetype_getskipmethodbody_name.data(), signature,
+            3, &newCallTargetStateTypeSkipMethodBodyMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper callTargetStateTypeSkipMethodBodyMemberRef could not be defined.");
+            return hr;
+        }
+
+        callTargetStateTypeSkipMethodBodyMemberRef = newCallTargetStateTypeSkipMethodBodyMemberRef;
     }
 
     // *** Ensure calltargetrefstruct type ref
