@@ -125,7 +125,7 @@ public static class ErrorHelpers
 
         try
         {
-            var crashReport = new CrashReport(pathToCrashReport, output);
+            using var crashReport = new CrashReport(pathToCrashReport, output);
             var stacktrace = await crashReport.ResolveCrashStackTrace();
 
             output.WriteLine("Crash stacktrace:");
