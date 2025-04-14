@@ -63,7 +63,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 return
                 [
                     [maxPackage, "v1", "full"],
-                    [minPackage, "v1", "full"],
                     [maxPackage, "v1", "service"],
 
                     // test with disabled propagation
@@ -78,6 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 return
                 [
                     [maxPackage, "v1", "full"],
+                    [minPackage, "v1", "full"],
                     [maxPackage, "v1", "service"],
 
                     // test with disabled propagation
