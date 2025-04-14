@@ -11,6 +11,13 @@ namespace Datadog.Trace.AppSec
         public static void TrackUserLoginSuccessEvent(string userId) { }
         public static void TrackUserLoginSuccessEvent(string userId, System.Collections.Generic.IDictionary<string, string> metadata) { }
     }
+    public static class EventTrackingSdkV2
+    {
+        public static void TrackUserLoginFailure(string userLogin, bool exists, Datadog.Trace.UserDetails userDetails, System.Collections.Generic.IDictionary<string, string>? metadata = null) { }
+        public static void TrackUserLoginFailure(string userLogin, bool exists, string? userId = null, System.Collections.Generic.IDictionary<string, string>? metadata = null) { }
+        public static void TrackUserLoginSuccess(string userLogin, Datadog.Trace.UserDetails userDetails, System.Collections.Generic.IDictionary<string, string>? metadata = null) { }
+        public static void TrackUserLoginSuccess(string userLogin, string? userId = null, System.Collections.Generic.IDictionary<string, string>? metadata = null) { }
+    }
 }
 namespace Datadog.Trace
 {

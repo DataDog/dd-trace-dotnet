@@ -92,7 +92,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null, spanEventsManager: null))
         {
         }
 
@@ -528,7 +528,7 @@ namespace Datadog.Trace
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
 
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOriginManager.Instance.SetCodeOriginForExitSpan(span);
 
             return span;
         }

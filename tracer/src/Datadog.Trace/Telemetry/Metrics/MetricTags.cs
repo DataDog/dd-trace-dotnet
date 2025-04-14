@@ -296,6 +296,15 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;success:false")] Error
     }
 
+    public enum UserEventSdk
+    {
+        [Description("event_type:login_success;sdk_version:v1")] UserEventLoginSuccessSdkV1,
+        [Description("event_type:login_success;sdk_version:v2")] UserEventLoginSuccessSdkV2,
+        [Description("event_type:login_failure;sdk_version:v1")] UserEventFailureSdkV1,
+        [Description("event_type:login_failure;sdk_version:v2")] UserEventFailureSdkV2,
+        [Description("event_type:custom;sdk_version:v1")] UserEventCustomSdkV1,
+    }
+
     [EnumExtensions]
     public enum RaspRuleType
     {

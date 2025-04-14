@@ -53,11 +53,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
         {
             Scope scope = null;
+            Scope proxyScope = null;
             var httpContext = HttpContext.Current;
 
             try
             {
                 scope = SharedItems.TryPopScope(httpContext, AspNetMvcIntegration.HttpContextKey);
+                proxyScope = SharedItems.TryPopScope(httpContext, AspNetMvcIntegration.HttpProxyContextKey);
             }
             catch (Exception ex)
             {
@@ -69,6 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (exception != null)
                 {
                     scope.Span.SetException(exception);
+                    proxyScope?.Span.SetException(exception);
 
                     // In case of exception, the status code is set further down the ASP.NET pipeline
                     // We use the OnRequestCompleted callback to be notified when that happens.
@@ -78,38 +81,64 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // us to defer finishing the span later while making sure callers of this method do not
                     // get this scope when calling Tracer.ActiveScope
                     var now = scope.Span.Context.TraceContext.Clock.UtcNow;
-                    httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
+                    httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, proxyScope, now));
 
                     scope.SetFinishOnClose(false);
+                    proxyScope?.SetFinishOnClose(false);
+
                     scope.Dispose();
+                    proxyScope?.Dispose();
                 }
                 else
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+
+                    if (proxyScope?.Span != null)
+                    {
+                        HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                    }
+
                     scope.Dispose();
+                    proxyScope?.Dispose();
                 }
             }
 
             return new CallTargetReturn<TResult>(returnValue);
         }
 
-        private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
+        private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, Scope proxyScope, DateTimeOffset finishTime)
         {
-            HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-
-            if (!HttpRuntime.UsingIntegratedPipeline && httpContext.Response.StatusCode == 200)
+            try
             {
-                // in classic mode, the exception won't cause the correct status code to be set
-                // even though a 500 response will be sent, so set it manually instead
-                scope.Span.SetHttpStatusCode(500, isServer: true, Tracer.Instance.Settings);
-            }
-            else
-            {
-                scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-            }
+                int statusCode;
+                if (!HttpRuntime.UsingIntegratedPipeline && httpContext.Response.StatusCode == 200)
+                {
+                    // in classic mode, the exception won't cause the correct status code to be set
+                    // even though a 500 response will be sent, so set it manually instead
+                    statusCode = 500;
+                }
+                else
+                {
+                    statusCode = httpContext.Response.StatusCode;
+                }
 
-            scope.Span.Finish(finishTime);
+                if (proxyScope?.Span != null)
+                {
+                    HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+                    proxyScope.Span.Finish(finishTime);
+                }
+
+                HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
+                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.Settings);
+                scope.Span.Finish(finishTime);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error in OnRequestCompletedAfterException callback");
+            }
         }
     }
 }
