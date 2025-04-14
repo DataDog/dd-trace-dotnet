@@ -232,7 +232,7 @@ profiler_cpu_timer_create:
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     - git clone --branch fayssal/push-macrobenchmark-rps https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
-    - bp-runner bp-runner.yml --debug
+    - bp-runner bp-runner.arm.yml --debug
   artifacts:
     name: "artifacts"
     when: always
