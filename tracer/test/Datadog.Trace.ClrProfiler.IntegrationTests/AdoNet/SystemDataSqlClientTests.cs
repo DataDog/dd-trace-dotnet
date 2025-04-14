@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
@@ -28,69 +29,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetFullConfig()
-            => from packageVersionArray in PackageVersions.SystemDataSqlClient
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
-               from injectStoredProc in new[] { "true", "false" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation, injectStoredProc };
-
-        public static IEnumerable<object[]> GetReducedConfig()
+        public static string[] GetPackageVersion()
         {
-            object minPackage = string.Empty;
-            object maxPackage = string.Empty;
-            if (PackageVersions.SystemDataSqlClient.Any())
-            {
-                // we get the min and max supported versions to test the "full" range
-                minPackage = PackageVersions.SystemDataSqlClient.First()[0];
-                maxPackage = PackageVersions.SystemDataSqlClient.Last()[0];
-            }
-
-            return
-            [
-                [maxPackage, "v1", "full", "true"],
-                [minPackage, "v1", "full", "true"],
-                [maxPackage, "v1", "service", "true"],
-
-                // do not change the stored procedure command test
-                [maxPackage, "v1", "service", "false"],
-
-                // test with disabled propagation
-                [maxPackage, "v1", "disabled", "true"],
-
-                // metadata is not as important as others, so just one test
-                [maxPackage, "v0", "full", "true"],
-            ];
+            return [.. PackageVersions.SystemDataSqlClient.Select(p => p[0] as string)];
         }
 
-        // Determine which configuration to use based on branch (and whether this is run locally)
-        public static IEnumerable<object[]> GetTestConfiguration()
+        public static string[] GetMetadataSchemaVersions()
         {
-            return IsMainOrReleaseBranch() ? GetFullConfig() : GetReducedConfig();
+            return ["v0", "v1"];
         }
 
-        public static bool IsMainOrReleaseBranch()
+        public static string[] GetDbmPropagationModes()
         {
-            // TODO: consider interaction with RequiresThoroughTesting()
-            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("USE_FULL_TEST_CONFIG") ?? string.Empty;
+            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
+        }
 
-            if (string.IsNullOrEmpty(isMainOrReleaseBranch))
-            {
-                // Default to true if the environment variable is not set - locally just run everything
-                return true;
-            }
-
-            // otherwise, only run the full suite if we are on master / release
-            return string.Equals(isMainOrReleaseBranch, "True", StringComparison.OrdinalIgnoreCase);
+        public static string[] GetInjectStoredProcedure()
+        {
+            return ["true", "false"];
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestConfiguration))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation, string injectStoredProc)
+        public async Task SubmitsTraces(
+            [CombinatorialValues(nameof(GetPackageVersion))] string packageVersion,
+            [CombinatorialValues(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialValues(nameof(GetDbmPropagationModes))] string dbmPropagation,
+            [CombinatorialValues(nameof(GetInjectStoredProcedure))] string injectStoredProc)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
             SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", injectStoredProc);

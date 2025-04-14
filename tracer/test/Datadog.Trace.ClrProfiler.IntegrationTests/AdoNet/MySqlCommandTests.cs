@@ -6,14 +6,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
@@ -27,104 +30,53 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetFullConfig(bool newVersionsOnly)
+        public static string[] GetMySqlVersions(bool newVersionsOnly)
         {
+            var versions = new List<string>();
             foreach (var item in PackageVersions.MySqlData)
             {
                 var version = (string)item[0];
                 var isNewVersion = string.IsNullOrEmpty(version) || Version.Parse(version).Major >= 8;
-                if (newVersionsOnly != isNewVersion)
+                if (newVersionsOnly == isNewVersion)
                 {
-                    continue;
-                }
-
-                foreach (var propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" })
-                {
-                    yield return [version, "v0", propagation];
-                    yield return [version, "v1", propagation];
+                    versions.Add(version);
                 }
             }
+
+            return [.. versions];
         }
 
-        public static IEnumerable<object[]> GetReducedConfig(bool newVersionsOnly)
+        public static string[] GetMetadataSchemaVersions()
         {
-            // FIXME: would be nice to split the newVersionsOnly out a bit better as it is a bit messy
-            object minPackage = string.Empty;
-            object maxPackage = string.Empty;
-            if (PackageVersions.MySqlData.Any())
-            {
-                // we get the min and max supported versions to test the "full" range
-                minPackage = PackageVersions.MySqlData.First()[0];
-                maxPackage = PackageVersions.MySqlData.Last()[0];
-            }
-
-            if (newVersionsOnly)
-            {
-                return
-                [
-                    [maxPackage, "v1", "full"],
-                    [maxPackage, "v1", "service"],
-
-                    // test with disabled propagation
-                    [maxPackage, "v1", "disabled"],
-
-                    // metadata is not as important as others, so just one test
-                    [maxPackage, "v0", "full"],
-                ];
-            }
-            else
-            {
-                return
-                [
-                    [maxPackage, "v1", "full"],
-                    [minPackage, "v1", "full"],
-                    [maxPackage, "v1", "service"],
-
-                    // test with disabled propagation
-                    [maxPackage, "v1", "disabled"],
-
-                    // metadata is not as important as others, so just one test
-                    [maxPackage, "v0", "full"],
-                 ];
-            }
+            return ["v0", "v1"];
         }
 
-        // Determine which configuration to use based on branch (and whether this is run locally)
-        public static IEnumerable<object[]> GetTestConfiguration(bool newVersionsOnly)
+        public static string[] GetDbmPropagationModes()
         {
-            return IsMainOrReleaseBranch() ? GetFullConfig(newVersionsOnly) : GetReducedConfig(newVersionsOnly);
-        }
-
-        public static bool IsMainOrReleaseBranch()
-        {
-            // TODO: consider interaction with RequiresThoroughTesting()
-            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("USE_FULL_TEST_CONFIG") ?? string.Empty;
-
-            if (string.IsNullOrEmpty(isMainOrReleaseBranch))
-            {
-                // Default to true if the environment variable is not set - locally just run everything
-                return true;
-            }
-
-            // otherwise, only run the full suite if we are on master / release
-            return string.Equals(isMainOrReleaseBranch, "True", StringComparison.OrdinalIgnoreCase);
+            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestConfiguration), parameters: true)]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+        public async Task SubmitsTracesInMySql8(
+            [CombinatorialValues(nameof(GetMySqlVersions), new object[] { true })] string packageVersion,
+            [CombinatorialValues(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialValues(nameof(GetDbmPropagationModes))] string dbmPropagation)
         {
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestConfiguration), parameters: false)]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+        public async Task SubmitsTracesInOldMySql(
+            [CombinatorialValues(nameof(GetMySqlVersions), new object[] { false })] string packageVersion,
+            [CombinatorialValues(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialValues(nameof(GetDbmPropagationModes))] string dbmPropagation)
         {
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
