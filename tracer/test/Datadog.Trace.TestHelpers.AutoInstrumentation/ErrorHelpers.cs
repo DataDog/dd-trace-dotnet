@@ -123,16 +123,23 @@ public static class ErrorHelpers
             return;
         }
 
-        var crashReport = new CrashReport(pathToCrashReport, output);
-        var stacktrace = await crashReport.ResolveCrashStackTrace();
-
-        output.WriteLine("Crash stacktrace:");
-
-        foreach (var frame in stacktrace)
+        try
         {
-            output.WriteLine(frame);
-        }
+            var crashReport = new CrashReport(pathToCrashReport, output);
+            var stacktrace = await crashReport.ResolveCrashStackTrace();
 
-        // TODO: Add logic to throw SkipException on known crashes
+            output.WriteLine("Crash stacktrace:");
+
+            foreach (var frame in stacktrace)
+            {
+                output.WriteLine(frame);
+            }
+
+            // TODO: Add logic to throw SkipException on known crashes
+        }
+        catch (Exception ex) when (ex is not SkipException)
+        {
+            output.WriteLine($"Unexpected exception while analyzing the crash report: {ex}");
+        }
     }
 }

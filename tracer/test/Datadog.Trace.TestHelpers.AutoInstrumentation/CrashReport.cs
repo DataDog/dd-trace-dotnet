@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -14,18 +15,24 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation;
 
-internal class CrashReport
+internal class CrashReport : IDisposable
 {
     private readonly string _pdbSymbolsFolder;
     private readonly Dictionary<string, List<(ulong Offset, uint Size, string Symbol)>> _pdbSymbols = new();
     private readonly JObject _json;
     private readonly ITestOutputHelper _output;
+    private HttpClient _httpClient;
 
     public CrashReport(string pathToCrashReport, ITestOutputHelper output)
     {
         _output = output;
         _pdbSymbolsFolder = Path.Combine(Path.GetTempPath(), "symbols");
         _json = JObject.Parse(File.ReadAllText(pathToCrashReport));
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
     }
 
     public async Task<IReadOnlyList<string>> ResolveCrashStackTrace()
@@ -125,9 +132,9 @@ internal class CrashReport
 
         _output.WriteLine($"Downloading symbol from {url} to {destinationFolder}");
 
-        using var client = new HttpClient();
+        _httpClient ??= new HttpClient();
 
-        var response = await client.GetAsync(url);
+        var response = await _httpClient.GetAsync(url);
 
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
