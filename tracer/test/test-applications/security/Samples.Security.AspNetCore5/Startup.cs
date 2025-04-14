@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 #if NET7_0_OR_GREATER
 using Microsoft.EntityFrameworkCore;
 #endif
@@ -150,6 +152,22 @@ namespace Samples.Security.AspNetCore5
                             await context.Response.WriteAsync("Yes");
                         });
                 });
+            
+            app.Map(
+                "/map_endpoint",
+                builder =>
+                {
+                    builder.Map(
+                        "/sub_level",
+                        builder =>
+                        {
+                            builder.Run(
+                                async context =>
+                                {
+                                    await context.Response.WriteAsync("on /map_endpoint/sub_level");
+                                });
+                        });
+                });
 
             app.Map(
                 "/shutdown",
@@ -170,7 +188,6 @@ namespace Samples.Security.AspNetCore5
                     // await context.Response.WriteAsync("do smth before all");
                     await next.Invoke();
                 });
-
 
             app.UseEndpoints(
                 endpoints =>

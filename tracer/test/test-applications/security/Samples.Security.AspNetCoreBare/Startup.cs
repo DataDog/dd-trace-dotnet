@@ -51,6 +51,22 @@ namespace Samples.Security.AspNetCoreBare
                 });
             });
 
+            app.Map(
+                "/map_endpoint",
+                builder =>
+                {
+                    builder.Map(
+                        "/sub_level",
+                        builder2 =>
+                        {
+                            builder2.Run(
+                                async context =>
+                                {
+                                    await context.Response.WriteAsync("on /map_endpoint/sub_level");
+                                });
+                        });
+                });
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
