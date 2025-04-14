@@ -16,6 +16,7 @@ using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
