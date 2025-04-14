@@ -64,6 +64,8 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public string PathToCrashReport { get; private set; }
+
         public bool AutomaticInstrumentationEnabled { get; private set; } = true;
 
         public bool DebugModeEnabled { get; set; }
@@ -295,6 +297,10 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
             }
+
+            PathToCrashReport = Path.Combine(LogDirectory, $"{SampleName}-{Guid.NewGuid()}.crash.json");
+            environmentVariables["DD_INTERNAL_CRASHTRACKING_OUTPUT"] = $"file://{PathToCrashReport}";
+            environmentVariables["DD_CRASHTRACKING_FILTERING_ENABLED"] = "0";
 
             ConfigureTransportVariables(environmentVariables, agent);
 
