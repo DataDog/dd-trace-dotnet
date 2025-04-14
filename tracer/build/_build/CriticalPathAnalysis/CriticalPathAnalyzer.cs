@@ -121,7 +121,7 @@ public static class CriticalPathAnalyzer
             var stageDefinition = pipeline.Stages.FirstOrDefault(x => x.Stage == currentStage.Id);
             if (stageDefinition is null)
             {
-                throw new Exception("Could not find stage called " + currentStage.Id);
+                throw new Exception($"Could not find stage called {currentStage.Id}. " );
             }
 
             foreach (var dependency in stageDefinition.DependsOn)
@@ -134,7 +134,7 @@ public static class CriticalPathAnalyzer
                 var predecessor = stages.FirstOrDefault(x => x.Id == dependency);
                 if (predecessor is null)
                 {
-                    throw new Exception(stageDefinition.Stage + " depends on stage '" + dependency + "' that could not be found in output results");
+                    throw new Exception($"{stageDefinition.Stage} depends on stage '{dependency}' that could not be found in output results");
                 }
                 currentStage.Predecessors.Add(predecessor);
                 predecessor.Successors.Add(currentStage);
