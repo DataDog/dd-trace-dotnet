@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tracer/src/bin/ProfilerResources/netcoreapp2.0)
+SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/artifacts/bin/Datadog.Trace.ClrProfiler.Managed.Loader/netcoreapp2.0)
 
 
 # Set specific custom commands to embed the loader
