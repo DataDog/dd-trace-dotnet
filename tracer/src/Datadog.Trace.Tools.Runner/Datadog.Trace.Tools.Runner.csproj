@@ -23,6 +23,7 @@
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <ArtifactsPivots>$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())</ArtifactsPivots>
   </PropertyGroup>
 
   <Choose>
@@ -30,7 +31,7 @@
       <PropertyGroup>
         <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
         <TargetFrameworks>net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
-        <OutputPath>bin\$(Configuration)\Console</OutputPath>
+        <ArtifactsPivots>$(ArtifactsPivots)_Console</ArtifactsPivots>
         <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
         <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64;linux-musl-arm64</RuntimeIdentifiers>
@@ -129,7 +130,7 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <PackageId>dd-trace</PackageId>
-        <OutputPath>bin\$(Configuration)\Tool</OutputPath>
+        <ArtifactsPivots>$(ArtifactsPivots)_Tool</ArtifactsPivots>
       </PropertyGroup>
       <ItemGroup>
         <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
