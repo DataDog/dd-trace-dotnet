@@ -182,4 +182,4 @@ steps:
   condition: succeededOrFailed()
   continueOnError: true
 
-    
+- template: ./make-artifacts-uploadable.yml

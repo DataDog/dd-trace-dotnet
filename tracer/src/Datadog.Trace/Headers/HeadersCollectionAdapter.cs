@@ -5,7 +5,6 @@
 
 #if !NETFRAMEWORK
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.Headers
@@ -26,7 +25,7 @@ namespace Datadog.Trace.Headers
                 return values;
             }
 
-            return Enumerable.Empty<string>();
+            return [];
         }
 
         public void Set(string name, string value)

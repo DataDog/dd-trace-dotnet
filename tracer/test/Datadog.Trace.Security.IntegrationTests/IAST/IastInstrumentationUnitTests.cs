@@ -48,6 +48,12 @@ public class IastInstrumentationUnitTests : TestHelper
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
     {
+        // We have seen crashes in CI for these tests which seem to be due to
+        // https://github.com/dotnet/runtime/issues/95653
+        // In the past, we have solved it by setting this variable,
+        // e.g. https://github.com/DataDog/dd-trace-dotnet/pull/5004
+        // so trying the same thing here:
+        SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
     }
 
     public List<string> GetAspects()

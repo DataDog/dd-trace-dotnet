@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.20 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.402.20" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.35 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.402.35" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.406.2 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.406.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.406.17 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.406.17" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.402.56 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.402.56" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.403 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.403" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.91 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.91" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.106 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.106" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.415.19 -->
-    <PackageReference Include="AWSSDK.S3" Version="3.7.415.19" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.416.5 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.416.5" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.114 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.114" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.129 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.129" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.114 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.114" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.129 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.129" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.57 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.72 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.72" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -63,8 +63,8 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!--    Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.8.0 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.9.0 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.9.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
@@ -78,8 +78,8 @@
 
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
-    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.30.1 -->
-    <PackageReference Include="Google.Protobuf" Version="3.30.1" />
+    <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.30.2 -->
+    <PackageReference Include="Google.Protobuf" Version="3.30.2" />
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
@@ -105,8 +105,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.0.3 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="15.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/15.1.3 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.3" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
@@ -170,8 +170,8 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.47.2 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.47.2" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.48.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.48.0" />
 
     <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
     <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
@@ -222,8 +222,8 @@
     <!--    Assembly: MongoDB.Driver -->
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.2.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="3.2.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/3.3.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="3.3.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!--    Assembly: MongoDB.Driver.Core -->
@@ -272,8 +272,8 @@
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!--    Assembly: Oracle.ManagedDataAccess -->
-    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.7.0 -->
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.7.0" />
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/23.8.0 -->
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="23.8.0" />
 
     <!-- Integration: RabbitMQ.Client -->
     <!--    Assembly: RabbitMQ.Client -->
@@ -282,8 +282,8 @@
 
     <!-- Integration: WebDriver -->
     <!--    Assembly: WebDriver -->
-    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.29.0 -->
-    <PackageReference Include="Selenium.WebDriver" Version="4.29.0" />
+    <!-- Latest package https://www.nuget.org/packages/Selenium.WebDriver/4.31.0 -->
+    <PackageReference Include="Selenium.WebDriver" Version="4.31.0" />
 
     <!-- Integration: Serilog -->
     <!--    Assembly: Serilog -->
@@ -354,8 +354,8 @@
 
     <!-- Integration: xunit.v3.core -->
     <!--    Assembly: xunit.v3.core -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.v3/2.0.0 -->
-    <PackageReference Include="xunit.v3" Version="2.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.v3/2.0.1 -->
+    <PackageReference Include="xunit.v3" Version="2.0.1" />
 
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->
