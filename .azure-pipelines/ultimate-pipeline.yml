@@ -1560,7 +1560,7 @@ stages:
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [standalone, multi_version, merge]
+        jobs: [standalone, multi_version]
 
     - job: standalone
       timeoutInMinutes: 60 #default value
