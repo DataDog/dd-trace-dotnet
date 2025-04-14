@@ -56,10 +56,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(
-            [CombinatorialValues(nameof(GetPackageVersion))] string packageVersion,
-            [CombinatorialValues(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialValues(nameof(GetDbmPropagationModes))] string dbmPropagation,
-            [CombinatorialValues(nameof(GetInjectStoredProcedure))] string injectStoredProc)
+            [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
+            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation,
+            [CombinatorialMemberData(nameof(GetInjectStoredProcedure))] string injectStoredProc)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
             SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", injectStoredProc);

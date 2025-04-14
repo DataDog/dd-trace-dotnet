@@ -62,9 +62,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTracesInMySql8(
-            [CombinatorialValues(nameof(GetMySqlVersions), new object[] { true })] string packageVersion,
-            [CombinatorialValues(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialValues(nameof(GetDbmPropagationModes))] string dbmPropagation)
+            [CombinatorialMemberData(nameof(GetMySqlVersions), [true])] string packageVersion,
+            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation)
         {
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
@@ -74,9 +74,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitsTracesInOldMySql(
-            [CombinatorialValues(nameof(GetMySqlVersions), new object[] { false })] string packageVersion,
-            [CombinatorialValues(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialValues(nameof(GetDbmPropagationModes))] string dbmPropagation)
+            [CombinatorialMemberData(nameof(GetMySqlVersions), [false])] string packageVersion,
+            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation)
         {
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }

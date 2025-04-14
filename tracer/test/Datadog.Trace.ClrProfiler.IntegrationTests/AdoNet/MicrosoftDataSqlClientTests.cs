@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -23,65 +24,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetFullConfig()
-            => from packageVersionArray in PackageVersions.MicrosoftDataSqlClient
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               from propagation in new[] { "disabled", "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
-
-        public static IEnumerable<object[]> GetReducedConfig()
+        public static string[] GetPackageVersion()
         {
-            object minPackage = string.Empty;
-            object maxPackage = string.Empty;
-            if (PackageVersions.MicrosoftDataSqlClient.Any())
-            {
-                // we get the min and max supported versions to test the "full" range
-                minPackage = PackageVersions.MicrosoftDataSqlClient.First()[0];
-                maxPackage = PackageVersions.MicrosoftDataSqlClient.Last()[0];
-            }
-
-            return
-            [
-                [maxPackage, "v1", "full"],
-                [minPackage, "v1", "full"],
-                [maxPackage, "v1", "service"],
-
-                // test with disabled propagation
-                [maxPackage, "v1", "disabled"],
-
-                // metadata is not as important as others, so just one test
-                [maxPackage, "v0", "full"],
-            ];
+            return [.. PackageVersions.MicrosoftDataSqlClient.Select(p => p[0] as string)];
         }
 
-        // Determine which configuration to use based on branch (and whether this is run locally)
-        public static IEnumerable<object[]> GetTestConfiguration()
+        public static string[] GetMetadataSchemaVersions()
         {
-            return IsMainOrReleaseBranch() ? GetFullConfig() : GetReducedConfig();
+            return ["v0", "v1"];
         }
 
-        public static bool IsMainOrReleaseBranch()
+        public static string[] GetDbmPropagationModes()
         {
-            // TODO: consider interaction with RequiresThoroughTesting()
-            var isMainOrReleaseBranch = Environment.GetEnvironmentVariable("USE_FULL_TEST_CONFIG") ?? string.Empty;
-
-            if (string.IsNullOrEmpty(isMainOrReleaseBranch))
-            {
-                // Default to true if the environment variable is not set - locally just run everything
-                return true;
-            }
-
-            // otherwise, only run the full suite if we are on master / release
-            return string.Equals(isMainOrReleaseBranch, "True", StringComparison.OrdinalIgnoreCase);
+            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestConfiguration))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string propagation)
+        public async Task SubmitsTraces(
+            [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
+            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
+            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string propagation)
         {
             // ALWAYS: 133 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)

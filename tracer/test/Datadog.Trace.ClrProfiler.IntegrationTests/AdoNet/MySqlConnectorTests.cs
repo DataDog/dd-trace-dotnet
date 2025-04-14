@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -23,6 +24,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        public static string[] GetPackageVersion()
+        {
+            return [.. PackageVersions.MySqlConnector.Select(p => p[0] as string)];
+        }
+
+        public static string[] GetMetadataSchemaVersions()
+        {
+            return ["v0", "v1"];
+        }
+
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.MySqlConnector
                from metadataSchemaVersion in new[] { "v0", "v1" }
@@ -31,9 +42,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(
+             [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
+             [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion)
         {
             // ALWAYS: 75 spans
             // - MySqlCommand: 21 spans (3 groups * 7 spans - 6 missing spans)
