@@ -40,6 +40,7 @@ partial class Build
                 .SetTargetPath(NativeLoaderProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProcessEnvironmentVariable(nameof(NugetPackageDirectory), NugetPackageDirectory))
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
@@ -64,6 +65,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProcessEnvironmentVariable(nameof(NugetPackageDirectory), NugetPackageDirectory))
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));

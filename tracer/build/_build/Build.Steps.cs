@@ -294,6 +294,7 @@ partial class Build
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
                 .DisableRestore()
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProcessEnvironmentVariable(nameof(NugetPackageDirectory), NugetPackageDirectory))
                 // Gitlab has issues with memory usage...
                 .SetMaxCpuCount(IsGitlab ? 1 : null)
                 .CombineWith(platforms, (m, platform) => m
@@ -469,6 +470,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .SetTargets("BuildCppTests")
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProcessEnvironmentVariable(nameof(NugetPackageDirectory), NugetPackageDirectory))
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m

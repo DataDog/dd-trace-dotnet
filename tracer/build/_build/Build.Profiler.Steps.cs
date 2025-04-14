@@ -75,6 +75,7 @@ partial class Build
                 .SetTargetPath(project)
                 .SetConfiguration(BuildConfiguration)
                 .SetProperty("SpectreMitigation", "false") // Enforce the same build in all CI environments
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProcessEnvironmentVariable(nameof(NugetPackageDirectory), NugetPackageDirectory))
                 .SetMSBuildPath()
                 .DisableRestore()
                 .SetMaxCpuCount(null)
@@ -290,6 +291,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .SetTargets("BuildCppTestsOnly")
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProcessEnvironmentVariable(nameof(NugetPackageDirectory), NugetPackageDirectory))
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
