@@ -452,23 +452,32 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         beginMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
     }
 
-    // ***
-    // CHECK IF WE NEED TO SKIP THE METHOD BODY
-    // ***
-    ILInstr* skipMethodCheckFirstMethodInstr = reWriterWrapper.LoadLocalAddress(callTargetStateIndex);
-    reWriterWrapper.CallMember(tracerTokens->GetCallTargetStateSkipMethodBodyMemberRef(), false);
-    ILInstr* brTrueSJumpMethodInstr = rewriter.NewILInstr();
-    brTrueSJumpMethodInstr->m_opcode = CEE_BRTRUE_S;
-    rewriter.InsertBefore(reWriterWrapper.GetCurrentILInstr(), brTrueSJumpMethodInstr);
+    // Let's check if the CallTargetState.SkipMethodBody property is available.
+    ILInstr* brTrueSJumpMethodInstr = nullptr;
+    if (m_corProfiler->call_target_state_skip_method_body_function_available)
+    {
+        // ***
+        // CHECK IF WE NEED TO SKIP THE METHOD BODY
+        // ***
+        ILInstr* skipMethodCheckFirstMethodInstr = reWriterWrapper.LoadLocalAddress(callTargetStateIndex);
+        reWriterWrapper.CallMember(tracerTokens->GetCallTargetStateSkipMethodBodyMemberRef(), false);
+        brTrueSJumpMethodInstr = rewriter.NewILInstr();
+        brTrueSJumpMethodInstr->m_opcode = CEE_BRTRUE_S;
+        rewriter.InsertBefore(reWriterWrapper.GetCurrentILInstr(), brTrueSJumpMethodInstr);
 
-    // leave from the begin method structure should go here in skip method body check
-    pStateLeaveToBeginOriginalMethodInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
-    beginMethodCatchLeaveInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
-
-    // ***
-    // METHOD EXECUTION
-    // ***
-    // We don't do anything at method execution if the check is not true (no jump)
+        // leave from the begin method structure should go here in skip method body check
+        pStateLeaveToBeginOriginalMethodInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+        beginMethodCatchLeaveInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+    }
+    else
+    {
+        // ***
+        // METHOD EXECUTION
+        // ***
+        ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
+        pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
+        beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    }
 
     // ***
     // ENDING OF THE METHOD EXECUTION
@@ -657,8 +666,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                         pInstr->m_opcode = CEE_LEAVE_S;
                         pInstr->m_pTarget = endFinallyInstr->m_pNext;
 
-                        // The jump of the SkipMethodBody check should go to the leave_s instruction
-                        brTrueSJumpMethodInstr->m_pTarget = pInstr;
+                        if (brTrueSJumpMethodInstr != nullptr)
+                        {
+                            // The jump of the SkipMethodBody check should go to the leave_s instruction
+                            brTrueSJumpMethodInstr->m_pTarget = pInstr;
+                        }
                     }
                     else
                     {
@@ -677,8 +689,11 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
                         leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
                         rewriter.InsertAfter(pInstr, leaveInstr);
 
-                        // The jump of the SkipMethodBody check should go to the leave_s instruction
-                        brTrueSJumpMethodInstr->m_pTarget = leaveInstr;
+                        if (brTrueSJumpMethodInstr != nullptr)
+                        {
+                            // The jump of the SkipMethodBody check should go to the leave_s instruction
+                            brTrueSJumpMethodInstr->m_pTarget = leaveInstr;
+                        }
                     }
                 }
                 break;

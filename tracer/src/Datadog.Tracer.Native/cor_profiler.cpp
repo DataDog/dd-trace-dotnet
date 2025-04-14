@@ -983,6 +983,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             call_target_bubble_up_exception_function_available = EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(module_metadata, bubbleUpTypeDef);
         }
 
+        call_target_state_skip_method_body_function_available = EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
+
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
         {
@@ -3238,6 +3240,23 @@ bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const Mod
     auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
     Logger::Debug("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
     return res;
+}
+
+bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata)
+{
+    mdTypeDef typeDef;
+    const auto type_found = module_metadata.metadata_import->FindTypeDefByName(calltargetstate_type_name.c_str(), mdTokenNil, &typeDef);
+    if (SUCCEEDED(type_found))
+    {
+        mdMethodDef methodDef = mdTokenNil;
+        const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetstate_skipmethodbody_property_getter_name.c_str(), 0, 0, &methodDef);
+        const auto res = SUCCEEDED(function_found);
+        Logger::Debug("CallTargetState.SkipMethodBody property found: ", res);
+        return res;
+    }
+
+    Logger::Debug("CallTargetState.SkipMethodBody property not found: ", type_found);
+    return false;
 }
 
 //

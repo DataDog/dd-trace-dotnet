@@ -18,7 +18,6 @@ static const shared::WSTRING managed_profiler_calltarget_getdefaultvalue_name = 
 static const shared::WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
 static const shared::WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
 static const shared::WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
-static const shared::WSTRING managed_profiler_calltarget_statetype_getskipmethodbody_name = WStr("get_SkipMethodBody");
 
 /**
  * PRIVATE
@@ -673,7 +672,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 
         mdMemberRef newCallTargetStateTypeSkipMethodBodyMemberRef;
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetStateTypeRef, managed_profiler_calltarget_statetype_getskipmethodbody_name.data(), signature,
+            callTargetStateTypeRef, calltargetstate_skipmethodbody_property_getter_name.data(), signature,
             3, &newCallTargetStateTypeSkipMethodBodyMemberRef);
         if (FAILED(hr))
         {
