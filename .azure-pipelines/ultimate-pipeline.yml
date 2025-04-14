@@ -1624,7 +1624,7 @@ stages:
           retryCountOnTaskFailure: 1
 
         - publish: $(outputDir)/publish
-          displayName: Upload artifact samples (bin only)
+          displayName: Upload artifact samples (publish only)
           artifact: samples-multi-version-$(framework)
 
         - publish: artifacts/build_data
@@ -1694,12 +1694,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples-standalone
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -2252,18 +2247,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download standalone samples
-      inputs:
-        artifact: samples-standalone
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
-    - task: DownloadPipelineArtifact@2
-      displayName: Download multi-version samples
-      inputs:
-        artifact: samples-multi-version-$(publishTargetFramework)
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2342,18 +2328,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download standalone samples
-      inputs:
-        artifact: samples-standalone
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
-    - task: DownloadPipelineArtifact@2
-      displayName: Download multi-version samples
-      inputs:
-        artifact: samples-multi-version-$(publishTargetFramework)
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2471,18 +2448,9 @@ stages:
       inputs:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples-standalone
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
-    - task: DownloadPipelineArtifact@2
-      displayName: Download multi-version samples
-      inputs:
-        artifact: samples-multi-version-$(publishTargetFramework)
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3078,18 +3046,9 @@ stages:
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-standalone
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
-        - task: DownloadPipelineArtifact@2
-          displayName: Download multi-version samples
-          inputs:
-            artifact: samples-multi-version-$(publishTargetFramework)
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
+        - template: steps/download-samples.yml
+          parameters:
+            framework: $(publishTargetFramework)
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -3162,18 +3121,9 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-standalone
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
-        - task: DownloadPipelineArtifact@2
-          displayName: Download multi-version samples
-          inputs:
-            artifact: samples-multi-version-$(publishTargetFramework)
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
+        - template: steps/download-samples.yml
+          parameters:
+            framework: $(publishTargetFramework)
 
         - template: steps/run-in-docker.yml
           parameters:
