@@ -632,10 +632,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var testDir = project.Directory;
                     var frameworks = project.GetTargetFrameworks();
-
-                    var testBinFolder = testDir / "bin" / BuildConfiguration;
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -651,7 +648,7 @@ partial class Build
                                 var source = MonitoringHomeDirectory / arch;
                                 foreach (var fmk in frameworks)
                                 {
-                                    var dest = testBinFolder / fmk / arch;
+                                    var dest = GetTestBinOutputPath(fmk) / arch;
                                     CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
@@ -679,7 +676,7 @@ partial class Build
                                     // - The native tracer must be side-by-side with the running dll
                                     // As this is a managed-only unit test, the native tracer _must_ be in the root folder
                                     // For simplicity, we just copy all the native dlls there
-                                    var dest = testBinFolder / fmk;
+                                    var dest = GetTestBinOutputPath(fmk);
 
                                     // use the files from the monitoring native folder
                                     CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
@@ -688,6 +685,9 @@ partial class Build
                             }
                         }
                     }
+
+                    AbsolutePath GetTestBinOutputPath(string framework) =>
+                        BuildArtifactsDirectory / "bin" / project.Name / $"{BuildConfiguration.ToString().ToLowerInvariant()}_{framework}";
                 });
 
     Target PublishManagedTracer => _ => _
