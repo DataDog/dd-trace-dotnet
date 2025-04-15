@@ -6783,6 +6783,7 @@ stages:
             COMPlus_DbgEnableMiniDump=1 \
             COMPlus_DbgMiniDumpType=4 \
             DOTNET_DbgMiniDumpName=$(System.DefaultWorkingDirectory)/artifacts/build_data/dumps/coredump.%t.%p \
+            DOTNET_EnableCrashReport=1 \
             DD_INJECTION_ENABLED=tracer \
             DD_INJECT_FORCE=1 \
             DD_TELEMETRY_FORWARDER_PATH=/usr/bin/true \

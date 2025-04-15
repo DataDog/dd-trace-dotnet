@@ -2724,7 +2724,7 @@ partial class Build
 
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp", "*.crashreport.json"))
             {
                 Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
 
