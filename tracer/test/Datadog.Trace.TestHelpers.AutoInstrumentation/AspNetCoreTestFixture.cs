@@ -221,6 +221,7 @@ namespace Datadog.Trace.TestHelpers
             // wait for server to be ready to receive requests
             while (intervals-- > 0)
             {
+                DateTime startTime = DateTime.Now;
                 try
                 {
                     if (sendHealthCheck)
@@ -249,7 +250,12 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                Thread.Sleep(intervalMilliseconds);
+                var milisecondsElapsed = (DateTime.Now - startTime).TotalMilliseconds;
+
+                if (milisecondsElapsed < intervalMilliseconds)
+                {
+                    Thread.Sleep((int)(intervalMilliseconds - milisecondsElapsed));
+                }
             }
 
             if (!serverReady)
