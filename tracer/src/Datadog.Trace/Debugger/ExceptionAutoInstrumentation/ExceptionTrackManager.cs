@@ -79,15 +79,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            // For V1 of Exception Debugging, we only care about exceptions propagating up the stack
-            // and marked as error by the service entry/root span.
-            if (span.IsRootSpan == false || exception == null || !IsSupportedExceptionType(exception))
+            if (exception == null || !IsSupportedExceptionType(exception))
             {
                 Log.Information(exception, "Skipping the processing of the exception. Exception = {Exception}, Span = {Span}", exception?.ToString(), span.ToString());
 
-                var failureReason =
-                    span.IsRootSpan == false ? ExceptionReplayDiagnosticTagNames.NotRootSpan :
-                                    exception == null ? ExceptionReplayDiagnosticTagNames.ExceptionObjectIsNull : ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType;
+                var failureReason = exception == null ? ExceptionReplayDiagnosticTagNames.ExceptionObjectIsNull : ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType;
                 SetDiagnosticTag(span, failureReason, 0);
                 return;
             }
@@ -323,6 +319,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     }
                     else
                     {
+                        EvaluateWithRootSpanCases.Add(normalizedExHash);
+
                         if (rootSpan != null)
                         {
                             SetDiagnosticTag(rootSpan, ExceptionReplayDiagnosticTagNames.EmptyCallStackTreeWhileCollecting, normalizedExHash);
@@ -759,6 +757,40 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static void SetDiagnosticTag(Span span, string exceptionPhase, int exceptionHash)
         {
+            if (exceptionPhase is ExceptionReplayDiagnosticTagNames.CachedInvalidatedExceptionCase or ExceptionReplayDiagnosticTagNames.CachedDoneExceptionCase or ExceptionReplayDiagnosticTagNames.NonCachedDoneExceptionCase)
+            {
+                return;
+            }
+
+            var noCaptureReason = string.Empty;
+
+            switch (exceptionPhase)
+            {
+                case ExceptionReplayDiagnosticTagNames.Eligible:
+                    break;
+                case ExceptionReplayDiagnosticTagNames.NoCustomerFrames or ExceptionReplayDiagnosticTagNames.NoFramesToInstrument:
+                    noCaptureReason = NoCaptureReason.OnlyThirdPartyCode;
+                    break;
+                case ExceptionReplayDiagnosticTagNames.InvalidatedCase or ExceptionReplayDiagnosticTagNames.InvalidatedExceptionCase:
+                    noCaptureReason = NoCaptureReason.InstrumentationFailure;
+                    break;
+                case ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType:
+                    noCaptureReason = NoCaptureReason.NonSupportedExceptionType;
+                    break;
+                case ExceptionReplayDiagnosticTagNames.NotEligible or ExceptionReplayDiagnosticTagNames.NewCase:
+                    noCaptureReason = NoCaptureReason.FirstOccurrence;
+                    break;
+                default:
+                    noCaptureReason = NoCaptureReason.GeneralError;
+                    break;
+            }
+
+            if (noCaptureReason != string.Empty)
+            {
+                span.Tags.SetTag("error.debug_info_captured", "true");
+                span.Tags.SetTag("_dd.debug.error.no_capture_reason", noCaptureReason);
+            }
+
             span.Tags.SetTag("_dd.di._er", exceptionPhase);
             span.Tags.SetTag("_dd.di._eh", exceptionHash.ToString());
         }
