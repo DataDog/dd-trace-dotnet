@@ -219,21 +219,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                     {
                         waitTypes |= WaitHandleType.ManualResetEvent;
                     }
-
-                    // BUG: should see ManualResetEventSlimThread as root frame but absent on Linux
-                    else if (function.Contains("ManualResetEventSlim"))
-                    {
-                        waitTypes |= WaitHandleType.ManualResetEventSlim;
-                    }
                     else if (function.Contains("SemaphoreThread"))
                     {
                         waitTypes |= WaitHandleType.Semaphore;
-                    }
-
-                    // BUG: should see SemaphoreSlimThread as root frame but absent on Linux
-                    else if (function.Contains("SemaphoreSlim"))
-                    {
-                        waitTypes |= WaitHandleType.SemaphoreSlim;
                     }
                     else if (function.Contains("ReaderWriterLockThread"))
                     {
@@ -246,6 +234,22 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                     else if (function.Contains("MutexThread"))
                     {
                         waitTypes |= WaitHandleType.Mutex;
+                    }
+                    else
+                    {
+                        var type = stackTrace[currentFrame].Type;
+
+                        // BUG: should see ManualResetEventSlimThread as root frame but absent on Linux
+                        if (type == "ManualResetEventSlim")
+                        {
+                            waitTypes |= WaitHandleType.ManualResetEventSlim;
+                        }
+
+                        // BUG: should see SemaphoreSlimThread as root frame but absent on Linux
+                        else if (type == "SemaphoreSlim")
+                        {
+                            waitTypes |= WaitHandleType.SemaphoreSlim;
+                        }
                     }
                 }
             }
