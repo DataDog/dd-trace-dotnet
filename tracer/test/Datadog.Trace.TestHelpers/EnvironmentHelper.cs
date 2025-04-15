@@ -80,6 +80,8 @@ namespace Datadog.Trace.TestHelpers
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
+        public bool UseCrashTracking { get; set; } = true;
+
         public static bool IsNet5()
         {
             return Environment.Version.Major >= 5;
@@ -298,9 +300,12 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
             }
 
-            PathToCrashReport = Path.Combine(LogDirectory, $"{SampleName}-{Guid.NewGuid()}.crash.json");
-            environmentVariables["DD_INTERNAL_CRASHTRACKING_OUTPUT"] = $"file://{PathToCrashReport}";
-            environmentVariables["DD_CRASHTRACKING_FILTERING_ENABLED"] = "0";
+            if (UseCrashTracking)
+            {
+                PathToCrashReport = Path.Combine(LogDirectory, $"{SampleName}-{Guid.NewGuid()}.crash.json");
+                environmentVariables["DD_INTERNAL_CRASHTRACKING_OUTPUT"] = $"file://{PathToCrashReport}";
+                environmentVariables["DD_CRASHTRACKING_FILTERING_ENABLED"] = "0";
+            }
 
             ConfigureTransportVariables(environmentVariables, agent);
 
