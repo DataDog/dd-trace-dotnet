@@ -35,7 +35,6 @@ using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
 using Logger = Serilog.Log;
 using Nuke.Common.Utilities;
-using OpenAI;
 
 partial class Build
 {
@@ -44,9 +43,6 @@ partial class Build
 
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
     readonly string GitHubRepositoryName = "dd-trace-dotnet";
-
-    [Parameter("An OpenAI key", Name = "OPEN_AI_KEY")]
-    readonly string OpenAIKey;
 
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
@@ -97,71 +93,6 @@ partial class Build
                 new IssueUpdate { Milestone = milestone.Number });
 
             Console.WriteLine($"PR assigned");
-        });
-
-    Target LLMPRReview => _ => _
-        .Unlisted()
-        .Requires(() => GitHubRepositoryName)
-        .Requires(() => GitHubToken)
-        .Requires(() => OpenAIKey)
-        .Requires(() => PullRequestNumber)
-        .Executes(async () =>
-        {
-            var executeLocal = IsLocalBuild;
-            var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
-            var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
-            var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
-
-            string result = string.Empty;
-            var client = GetGitHubClient();
-
-            var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-            var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-
-            string changesText = string.Empty;
-            foreach (var file in pullRequestFiles)
-            {
-                if (!extensionsToReview.Any(ext => file.FileName.EndsWith(ext)) || excludePath.Any(x => file.FileName.Contains(x, StringComparison.OrdinalIgnoreCase)))
-                {
-                    continue;
-                }
-
-                changesText += ($"Filename: {file.FileName}" + Environment.NewLine + ($"{file.Patch}") + Environment.NewLine + Environment.NewLine);
-            }
-
-            if (string.IsNullOrEmpty(changesText))
-            {
-                result = "No changes detected.";
-            }
-            else
-            {
-                var fullPrompt = prompt + changesText;
-
-                result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
-
-                if (executeLocal)
-                {
-                    Console.Write(fullPrompt);
-                }
-            }
-
-            if (string.IsNullOrEmpty(result))
-            {
-                Console.WriteLine("Error in OpenAI's response");
-                result = "Error in OpenAI's response";
-            }
-
-            var llmReport = new StringBuilder();
-            llmReport.AppendLine("## LLM Report").AppendLine(result).AppendLine();
-
-            if (executeLocal)
-            {
-                Console.WriteLine(llmReport.ToString());
-            }
-            else
-            {
-                await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", llmReport.ToString());
-            }
         });
 
     Target SummaryOfSnapshotChanges => _ => _
@@ -984,6 +915,28 @@ partial class Build
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
 
              await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
+         });
+
+    Target CompareBenchmarksResultsBP => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => GitHubRepositoryName)
+         .Requires(() => BenchmarkCategory)
+         .Executes(() =>
+         {
+             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
+             {
+                 Logger.Warning("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 return;
+             }
+
+             var masterDir = BuildDataDirectory / "previous_benchmarks";
+             var prDir = BuildDataDirectory / "benchmarks";
+
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, BenchmarkCategory);
+             string filePath = Path.Combine(Path.GetTempPath(), "benchmarks_report.md");
+             Console.WriteLine($"The file was stored at: {filePath}");
+             File.WriteAllText(filePath, markdown);
          });
 
     Target CompareThroughputResults => _ => _

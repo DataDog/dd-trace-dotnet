@@ -424,11 +424,6 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             var framework = Framework ?? TargetFramework.NET8_0;
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(framework)
-                .SetNoWarnDotNetCore3());
 
             string rid;
 
@@ -454,6 +449,7 @@ partial class Build : NukeBuild
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
                 .SetFramework(framework)
+                .SetNoWarnDotNetCore3()
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));
@@ -572,7 +568,7 @@ partial class Build : NukeBuild
                     .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 2000")
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
