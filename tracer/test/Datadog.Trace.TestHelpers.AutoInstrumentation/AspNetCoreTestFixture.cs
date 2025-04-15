@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
@@ -214,15 +215,15 @@ namespace Datadog.Trace.TestHelpers
             var intervals = maxMillisecondsToWait / intervalMilliseconds;
             var serverReady = false;
 
-            if (sendHealthCheck)
-            {
-                // if we end up retrying, accept spans from previous attempts
-                var dateTime = DateTime.UtcNow;
+            // if we end up retrying, accept spans from previous attempts
+            var dateTime = DateTime.UtcNow;
 
-                // wait for server to be ready to receive requests
-                while (intervals-- > 0)
+            // wait for server to be ready to receive requests
+            while (intervals-- > 0)
+            {
+                try
                 {
-                    try
+                    if (sendHealthCheck)
                     {
                         var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:{HttpPort}/alive-check");
                         var responseCode = await SendHttpRequest(request);
@@ -233,30 +234,49 @@ namespace Datadog.Trace.TestHelpers
                             serverReady = true;
                         }
                     }
-                    catch
+                    else
                     {
-                        // ignore
+                        serverReady = IsPortListening(HttpPort);
                     }
-
-                    if (serverReady)
-                    {
-                        break;
-                    }
-
-                    Thread.Sleep(intervalMilliseconds);
                 }
-            }
-            else
-            {
-                // To minimize flake, add a large wait just to make sure the application starts up
-                Thread.Sleep(maxMillisecondsToWait);
-                serverReady = true;
+                catch
+                {
+                    // ignore
+                }
+
+                if (serverReady)
+                {
+                    break;
+                }
+
+                Thread.Sleep(intervalMilliseconds);
             }
 
             if (!serverReady)
             {
                 throw new Exception("Couldn't verify the application is ready to receive requests.");
             }
+        }
+
+        private bool IsPortListening(int port)
+        {
+            try
+            {
+                using (var client = new TcpClient())
+                {
+                    var task = client.ConnectAsync("127.0.0.1", port);
+                    if (task.Wait(1000))
+                    {
+                        return client.Connected;
+                    }
+                }
+            }
+            catch
+            {
+                // If there's an exception, the server is not listening on this port
+            }
+
+            return false;
         }
 
         private bool IsNotServerLifeCheck(MockSpan span)
