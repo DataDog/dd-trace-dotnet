@@ -2187,7 +2187,7 @@ partial class Build
 
     Target CreateTrimmingFile => _ => _
        .Description("Create Datadog.Trace.Trimming.xml file")
-       .DependsOn(CompileManagedSrc)
+       .After(CompileManagedSrc)
        .Executes(() =>
         {
             var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
