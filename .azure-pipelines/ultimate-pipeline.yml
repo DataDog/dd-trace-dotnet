@@ -1560,7 +1560,7 @@ stages:
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [standalone, multi_version, merge]
+        jobs: [standalone, multi_version]
 
     - job: standalone
       timeoutInMinutes: 60 #default value
@@ -1579,7 +1579,7 @@ stages:
 
         - publish: $(outputDir)/bin
           displayName: Upload artifact samples (bin only)
-          artifact: samples-bin-standalone
+          artifact: samples-standalone
 
         - publish: artifacts/build_data
           displayName: Uploading logs
@@ -1624,7 +1624,7 @@ stages:
           retryCountOnTaskFailure: 1
 
         - publish: $(outputDir)/publish
-          displayName: Upload artifact samples (bin only)
+          displayName: Upload artifact samples (publish only)
           artifact: samples-multi-version-$(framework)
 
         - publish: artifacts/build_data
@@ -1632,91 +1632,6 @@ stages:
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: failed()
           continueOnError: true
-
-    - job: merge
-      dependsOn: [ standalone, multi_version ]
-      timeoutInMinutes: 60 #default value
-      pool:
-        name: azure-windows-scale-set-3
-      steps:
-        - checkout: none
-        - powershell: |
-            mkdir $(Build.ArtifactStagingDirectory)/bin
-            mkdir $(Build.ArtifactStagingDirectory)/publish
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-bin-standalone
-            path: $(Build.ArtifactStagingDirectory)/bin
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net462
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-netcoreapp2.1
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-netcoreapp3.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-netcoreapp3.1
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net5.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net6.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net7.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net8.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net9.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - publish: $(Build.ArtifactStagingDirectory)
-          displayName: Upload artifact samples
-          artifact: samples
 
 # This is just to test that we _can_ build the solution on macos
 # It's not used by other stages, and just ensures we don't break the macos build
@@ -1779,12 +1694,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -2337,12 +2247,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2421,12 +2328,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2544,12 +2448,9 @@ stages:
       inputs:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3145,12 +3046,9 @@ stages:
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
+        - template: steps/download-samples.yml
+          parameters:
+            framework: $(publishTargetFramework)
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -3223,12 +3121,9 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
+        - template: steps/download-samples.yml
+          parameters:
+            framework: $(publishTargetFramework)
 
         - template: steps/run-in-docker.yml
           parameters:
