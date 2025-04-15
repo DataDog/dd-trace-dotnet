@@ -1695,6 +1695,10 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
     - template: steps/download-samples.yml
+    - powershell: |
+        ls .
+        ls ./artifacts
+        ls ./artifacts/monitoring-home
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -2250,6 +2254,10 @@ stages:
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
+    - powershell: |
+        ls .
+        ls ./artifacts
+        ls ./artifacts/monitoring-home
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
