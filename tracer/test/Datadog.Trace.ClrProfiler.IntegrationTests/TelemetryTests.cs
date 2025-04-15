@@ -192,7 +192,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("Category", "LinuxUnsupported")]
         [InlineData(null)]
         [InlineData(true)]
         [InlineData(false)]
