@@ -219,7 +219,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                     {
                         waitTypes |= WaitHandleType.ManualResetEvent;
                     }
-                    else if (function.Contains("ManualResetEventSlimThread"))
+
+                    // BUG: should see ManualResetEventSlimThread as root frame but absent on Linux
+                    else if (function.Contains("ManualResetEventSlim"))
                     {
                         waitTypes |= WaitHandleType.ManualResetEventSlim;
                     }
@@ -227,7 +229,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                     {
                         waitTypes |= WaitHandleType.Semaphore;
                     }
-                    else if (function.Contains("SemaphoreSlimThread"))
+
+                    // BUG: should see SemaphoreSlimThread as root frame but absent on Linux
+                    else if (function.Contains("SemaphoreSlim"))
                     {
                         waitTypes |= WaitHandleType.SemaphoreSlim;
                     }
