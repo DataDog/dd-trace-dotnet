@@ -35,9 +35,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var versions = new List<string>();
             foreach (var item in PackageVersions.MySqlData)
             {
-                var version = (string)item[0];
+                var version = item[0] as string;
                 var isNewVersion = string.IsNullOrEmpty(version) || Version.Parse(version).Major >= 8;
                 if (newVersionsOnly == isNewVersion)
+                {
+                    versions.Add(version);
+                }
+                else if (!newVersionsOnly)
                 {
                     versions.Add(version);
                 }
