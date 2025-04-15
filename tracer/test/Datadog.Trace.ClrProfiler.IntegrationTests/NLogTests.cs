@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(output, "LogsInjection.NLog")
         {
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_INTERNAL_SKIP_METHOD_BODY_ENABLED", "0");
         }
 
         public enum ConfigurationType
