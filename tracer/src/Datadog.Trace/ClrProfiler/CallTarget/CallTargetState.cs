@@ -119,11 +119,6 @@ public readonly struct CallTargetState
     public object? State => _state;
 
     /// <summary>
-    /// Gets a value indicating whether if the original method body should be skipped
-    /// </summary>
-    public bool SkipMethodBody => _skipMethodBody;
-
-    /// <summary>
     /// Gets the CallTarget state StartTime
     /// </summary>
     public DateTimeOffset? StartTime => _startTime;
@@ -147,6 +142,12 @@ public readonly struct CallTargetState
     {
         return default;
     }
+
+    /// <summary>
+    /// Gets a value indicating whether if the original method body should be skipped
+    /// </summary>
+    /// <returns>True if the method body should be skipped; otherwise false.</returns>
+    public bool GetSkipMethodBody() => _skipMethodBody;
 
     /// <summary>
     /// ToString override

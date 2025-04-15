@@ -41,7 +41,7 @@ namespace CallTargetNativeTest.NoOp
                 throw new Exception();
             }
 
-            if (state.SkipMethodBody && returnValue.Type == typeof(int))
+            if (state.GetSkipMethodBody() && returnValue.Type == typeof(int))
             {
                 // if we skip the method body, for an int return value we should have the default int value (0) as return value.
                 // originally in the example we always return 42.

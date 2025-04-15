@@ -3249,7 +3249,7 @@ bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const Mod
     if (SUCCEEDED(type_found))
     {
         mdMethodDef methodDef = mdTokenNil;
-        const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetstate_skipmethodbody_property_getter_name.c_str(), 0, 0, &methodDef);
+        const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetstate_skipmethodbody_function_name.c_str(), 0, 0, &methodDef);
         const auto res = SUCCEEDED(function_found);
         Logger::Debug("CallTargetState.SkipMethodBody property found: ", res);
         return res;

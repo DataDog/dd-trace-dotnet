@@ -672,7 +672,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 
         mdMemberRef newCallTargetStateTypeSkipMethodBodyMemberRef;
         auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetStateTypeRef, calltargetstate_skipmethodbody_property_getter_name.data(), signature,
+            callTargetStateTypeRef, calltargetstate_skipmethodbody_function_name.data(), signature,
             3, &newCallTargetStateTypeSkipMethodBodyMemberRef);
         if (FAILED(hr))
         {
