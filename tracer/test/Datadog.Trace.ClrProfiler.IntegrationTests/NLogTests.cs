@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(output, "LogsInjection.NLog")
         {
             SetServiceVersion("1.0.0");
-            SetEnvironmentVariable("DD_INTERNAL_SKIP_METHOD_BODY_ENABLED", "0");
+            // SetEnvironmentVariable("DD_INTERNAL_SKIP_METHOD_BODY_ENABLED", "0");
         }
 
         public enum ConfigurationType
@@ -275,7 +275,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping == DirectLogSubmission.Enable)
             {
@@ -313,7 +312,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping == DirectLogSubmission.Enable)
             {
@@ -353,7 +351,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.NLog), hostName);
 
             using var telemetry = this.ConfigureTelemetry();
