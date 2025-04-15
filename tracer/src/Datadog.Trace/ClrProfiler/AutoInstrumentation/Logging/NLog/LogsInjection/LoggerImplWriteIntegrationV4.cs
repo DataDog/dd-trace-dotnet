@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 if (DiagnosticContextHelper.Cache<TTarget>.Mdc is { } mdc)
                 {
                     var removeSpanId = DiagnosticContextHelper.SetMdcState(mdc, tracer);
-                    return new CallTargetState(scope: null, removeSpanId);
+                    return new CallTargetState(scope: null, (object)removeSpanId);
                 }
             }
 
