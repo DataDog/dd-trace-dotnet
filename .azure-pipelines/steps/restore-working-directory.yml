@@ -8,6 +8,6 @@ steps:
   displayName: Download working dir
   inputs:
     artifact: ${{ parameters.artifact }}
-    patterns: "**/@(bin|obj|packages)/**"
+    patterns: "artifacts/**"
     path: $(System.DefaultWorkingDirectory)
   retryCountOnTaskFailure: 5
