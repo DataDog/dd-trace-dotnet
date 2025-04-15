@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tools.dd_dotnet.IntegrationTests.Checks;
 
 [SupportedOSPlatform("windows")]
+[Trait("Category", "LinuxUnsupported")]
 [Collection(nameof(ConsoleTestsCollection))]
 public class IisCheckTests : TestHelper
 {

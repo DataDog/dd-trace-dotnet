@@ -138,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
         [MemberData(nameof(Data))]
         public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry(bool? enableDependencies)
         {
@@ -191,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
         [InlineData(null)]
         [InlineData(true)]
         [InlineData(false)]
