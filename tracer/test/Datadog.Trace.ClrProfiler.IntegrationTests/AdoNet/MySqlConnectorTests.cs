@@ -24,29 +24,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static string[] GetPackageVersion()
-        {
-            return [.. PackageVersions.MySqlConnector.Select(p => p[0] as string)];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.MySqlConnector
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
         [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTraces(
-             [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
-             [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion)
+             [PackageVersionData(nameof(PackageVersions.MySqlConnector))] string packageVersion,
+             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             // ALWAYS: 75 spans
             // - MySqlCommand: 21 spans (3 groups * 7 spans - 6 missing spans)

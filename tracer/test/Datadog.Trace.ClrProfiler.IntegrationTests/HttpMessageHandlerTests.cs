@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -42,26 +41,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ];
         }
 
-        public static bool[] GetInstrumentSocketHandler()
-        {
-            return [true, false];
-        }
-
-        public static bool[] GetInstrumentWinHttpOrCurlHandler()
-        {
-            return [true, false];
-        }
-
-        public static bool[] GetSocketHandlerEnabled()
-        {
-            return [true, false];
-        }
-
-        public static bool[] GetQueryStringEnabled()
-        {
-            return [true, false];
-        }
-
         public static StringSizeExpectation[] GetStringSizeAndExpectation()
         {
             return
@@ -70,16 +49,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new StringSizeExpectation(200, "?key1=value1&<redacted>"),
                 new StringSizeExpectation(2, "?k")
             ];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
-        public static bool[] GetTraceId128Enabled()
-        {
-            return [true, false];
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
@@ -91,11 +60,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [CombinatorialOrPairwiseData]
         public async Task HttpClient_SubmitsTraces(
             [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
-            [CombinatorialMemberData(nameof(GetSocketHandlerEnabled))] bool socketsHandlerEnabled,
-            [CombinatorialMemberData(nameof(GetQueryStringEnabled))] bool queryStringCaptureEnabled,
+            bool socketsHandlerEnabled,
+            bool queryStringCaptureEnabled,
             [CombinatorialMemberData(nameof(GetStringSizeAndExpectation))] StringSizeExpectation queryStringSizeAndExpected,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialMemberData(nameof(GetTraceId128Enabled))] bool traceId128Enabled)
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            bool traceId128Enabled)
         {
             try
             {
@@ -212,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [CombinatorialOrPairwiseData]
         public async Task TracingDisabled_DoesNotSubmitsTraces(
             [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
-            [CombinatorialMemberData(nameof(GetSocketHandlerEnabled))] bool enableSocketsHandler)
+            bool enableSocketsHandler)
         {
             try
             {

@@ -28,16 +28,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static string[] GetPackageVersion()
-        {
-            return [.. PackageVersions.MicrosoftDataSqlite.Select(p => p[0] as string)];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlite(metadataSchemaVersion);
 
         [SkippableTheory]
@@ -46,8 +36,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitsTraces(
-            [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion)
+            [PackageVersionData(nameof(PackageVersions.MicrosoftDataSqlite))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
 #if NETCOREAPP3_0
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")) // set in dockerfile

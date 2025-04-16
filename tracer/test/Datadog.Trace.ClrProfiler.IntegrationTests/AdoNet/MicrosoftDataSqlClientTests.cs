@@ -24,21 +24,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static string[] GetPackageVersion()
-        {
-            return [.. PackageVersions.MicrosoftDataSqlClient.Select(p => p[0] as string)];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
-        public static string[] GetDbmPropagationModes()
-        {
-            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
-        }
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
         [SkippableTheory]
@@ -46,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(
-            [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string propagation)
+            [PackageVersionData(nameof(PackageVersions.MicrosoftDataSqlClient), minInclusive: "1.0.0", maxInclusive: "2.0.0")] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string propagation)
         {
             // ALWAYS: 133 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)

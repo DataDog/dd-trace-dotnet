@@ -28,30 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static string[] GetPackageVersion()
-        {
-            return [.. PackageVersions.Npgsql.Select(p => p[0] as string)];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
-        public static string[] GetDbmPropagationModes()
-        {
-            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
-        }
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableTheory]
         [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTraces(
-            [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation)
+            [PackageVersionData(nameof(PackageVersions.Npgsql))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
 

@@ -16,7 +16,6 @@ using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
@@ -30,45 +29,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static string[] GetMySqlVersions(bool newVersionsOnly)
-        {
-            var versions = new List<string>();
-            foreach (var item in PackageVersions.MySqlData)
-            {
-                var version = item[0] as string;
-                var isNewVersion = string.IsNullOrEmpty(version) || Version.Parse(version).Major >= 8;
-                if (newVersionsOnly == isNewVersion)
-                {
-                    versions.Add(version);
-                }
-                else if (!newVersionsOnly)
-                {
-                    versions.Add(version);
-                }
-            }
-
-            return [.. versions];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
-        public static string[] GetDbmPropagationModes()
-        {
-            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
-        }
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
         [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTracesInMySql8(
-            [CombinatorialMemberData(nameof(GetMySqlVersions), [true])] string packageVersion,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation)
+            [PackageVersionData(nameof(PackageVersions.MySqlData), minInclusive: "8.0.0")] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation)
         {
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
@@ -78,10 +47,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitsTracesInOldMySql(
-            [CombinatorialMemberData(nameof(GetMySqlVersions), [false])] string packageVersion,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation)
+            [PackageVersionData(nameof(PackageVersions.MySqlData), maxInclusive: "7.*.*")] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation)
         {
+            // FIXME: When running these tests locally with the default sample application this will fail
+            //        This is "expected" in the sense that the Samples.MySql references the v8+ NuGet
+            //        package and we should consider handling this in a different way.
             await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 

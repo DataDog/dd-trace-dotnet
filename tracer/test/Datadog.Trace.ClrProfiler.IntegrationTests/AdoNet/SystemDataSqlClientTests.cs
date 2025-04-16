@@ -29,26 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static string[] GetPackageVersion()
-        {
-            return [.. PackageVersions.SystemDataSqlClient.Select(p => p[0] as string)];
-        }
-
-        public static string[] GetMetadataSchemaVersions()
-        {
-            return ["v0", "v1"];
-        }
-
-        public static string[] GetDbmPropagationModes()
-        {
-            return [string.Empty, "100", "randomValue", "disabled", "service", "full"];
-        }
-
-        public static string[] GetInjectStoredProcedure()
-        {
-            return ["true", "false"];
-        }
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
         [SkippableTheory]
@@ -56,13 +36,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(
-            [CombinatorialMemberData(nameof(GetPackageVersion))] string packageVersion,
-            [CombinatorialMemberData(nameof(GetMetadataSchemaVersions))] string metadataSchemaVersion,
-            [CombinatorialMemberData(nameof(GetDbmPropagationModes))] string dbmPropagation,
-            [CombinatorialMemberData(nameof(GetInjectStoredProcedure))] string injectStoredProc)
+            [PackageVersionData(nameof(PackageVersions.SystemDataSqlClient))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation,
+            bool injectStoredProc)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
-            SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", injectStoredProc);
+            SetEnvironmentVariable("DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED", injectStoredProc.ToString());
 
             // ALWAYS: 98 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
@@ -121,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 _ => ".untagged",
             });
 
-            if (injectStoredProc == "true")
+            if (injectStoredProc)
             {
                 // we inject comment into the stored procedures by changing them to EXEC statements
                 // only works for SQL Server, not for other databases
