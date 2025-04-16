@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -24,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class NLogTests : LogsInjectionTestBase
     {
-        private const string ContextNone = "None";
         private const string CustomContextKey = "CustomContextKey";
         private const string CustomContextValue = "CustomContextValue";
 
@@ -117,160 +117,85 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ScopeContext
         }
 
-        public static IEnumerable<object[]> GetTestDataDirectSubmission()
+        public static string[] GetPackageVersions()
         {
-            var minScopeContext = new Version("5.0.0");
-            var minMdlc = new Version("4.6.0");
-            foreach (var item in PackageVersions.NLog)
-            {
-                Version version;
-                var defaultSamples = (string)item[0] == string.Empty;
-                if (defaultSamples)
-                {
-                    // LogsInjection.NLog uses different versions depending on framework
-                    version = EnvironmentHelper.IsCoreClr() ?
-                                  new Version("5.0.0") :
-                                  new Version("2.1.0");
-                }
-                else
-                {
-                    version = new Version((string)item[0]);
-                }
-
-                foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
-                {
-                    if ((DirectLogSubmission)agentless == DirectLogSubmission.Disable)
-                    {
-                        continue;
-                    }
-
-                    foreach (var configType in Enum.GetValues(typeof(ConfigurationType)))
-                    {
-                        if ((ConfigurationType)configType == ConfigurationType.NoLogsInjection && version < new Version("4.0.0"))
-                        {
-                            continue; // pre 4.0.0 doesn't have JSON support
-                        }
-
-                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Enable);
-                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Disable);
-
-                        if (version >= minScopeContext)
-                        {
-                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Enable);
-                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Disable);
-                        }
-
-                        if (version >= minMdlc)
-                        {
-                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Enable);
-                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Disable);
-                        }
-                    }
-                }
-            }
+            return [.. PackageVersions.NLog.Select(p => p[0] as string)];
         }
 
-        public static IEnumerable<object[]> GetTestDataLogsInjection()
+        public static bool ShouldSkipInvalidTestCombination(
+            string packageVersion,
+            DirectLogSubmission enableLogShipping,
+            LoggingContext context,
+            ConfigurationType configType,
+            Enable128BitInjection enable128BitInjection)
         {
+            var version = DetermineVersion(packageVersion);
+
+            if (configType == ConfigurationType.None)
+            {
+                return true; // skip - if we don't have a config there won't be any targets to inject logs to
+            }
+
+            if (configType == ConfigurationType.NoLogsInjection && version < new Version("4.0.0"))
+            {
+                return true; // skip - pre 4.0.0 doesn't have JSON support
+            }
+
             var minScopeContext = new Version("5.0.0");
             var minMdlc = new Version("4.6.0");
-            foreach (var item in PackageVersions.NLog)
+
+            if (context == LoggingContext.ScopeContext && version < minScopeContext)
             {
-                Version version;
-                var defaultSamples = (string)item[0] == string.Empty;
-                if (defaultSamples)
-                {
-                    // LogsInjection.NLog uses different versions depending on framework
-                    version = EnvironmentHelper.IsCoreClr() ?
-                                  new Version("5.0.0") :
-                                  new Version("2.1.0");
-                }
-                else
-                {
-                    version = new Version((string)item[0]);
-                }
-
-                foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
-                {
-                    foreach (var configType in Enum.GetValues(typeof(ConfigurationType)))
-                    {
-                        if ((ConfigurationType)configType == ConfigurationType.None)
-                        {
-                            // if we don't have a config there won't be any targets to inject logs to
-                            continue;
-                        }
-
-                        if ((ConfigurationType)configType == ConfigurationType.NoLogsInjection && version < new Version("4.0.0"))
-                        {
-                            continue; // pre 4.0.0 doesn't have JSON support
-                        }
-
-                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Enable);
-                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType).Concat(Enable128BitInjection.Disable);
-
-                        if (version >= minScopeContext)
-                        {
-                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Enable);
-                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType).Concat(Enable128BitInjection.Disable);
-                        }
-
-                        if (version >= minMdlc)
-                        {
-                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Enable);
-                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType).Concat(Enable128BitInjection.Disable);
-                        }
-                    }
-                }
+                return true; // skip - pre 5.0.0 doesn't have ScopeContext
             }
+
+            if (context == LoggingContext.Mdlc && version < minMdlc)
+            {
+                return true; // skip - pre 4.6.0 doesn't have MDLC
+            }
+
+            return false; // don't skip the test
         }
 
-        public static IEnumerable<object[]> DoesNotInjectLogsWhenDisabledTestData()
+        public static Version DetermineVersion(string packageVersion)
         {
-            var minScopeContext = new Version("5.0.0");
-            var minMdlc = new Version("4.6.0");
-            foreach (var item in PackageVersions.NLog)
+            Version version;
+            var defaultSamples = packageVersion == string.Empty;
+            if (defaultSamples)
             {
-                Version version;
-                var defaultSamples = (string)item[0] == string.Empty;
-                if (defaultSamples)
-                {
-                    // LogsInjection.NLog uses different versions depending on framework
-                    version = EnvironmentHelper.IsCoreClr() ?
-                                  new Version("5.0.0") :
-                                  new Version("2.1.0");
-                }
-                else
-                {
-                    version = new Version((string)item[0]);
-                }
-
-                foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
-                {
-                    yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Enable);
-                    yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Disable);
-
-                    if (version >= minScopeContext)
-                    {
-                        yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Enable);
-                        yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Disable);
-                    }
-
-                    if (version >= minMdlc)
-                    {
-                        yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Enable);
-                        yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection).Concat(Enable128BitInjection.Disable);
-                    }
-                }
+                // LogsInjection.NLog uses different versions depending on framework
+                version = EnvironmentHelper.IsCoreClr() ?
+                              new Version("5.0.0") :
+                              new Version("2.1.0");
             }
+            else
+            {
+                version = new Version(packageVersion);
+            }
+
+            return version;
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestDataLogsInjection))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogsWhenEnabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
+        public async Task InjectsLogsWhenEnabled(
+            [CombinatorialMemberData(nameof(GetPackageVersions))] string packageVersion,
+            DirectLogSubmission enableLogShipping,
+            LoggingContext context,
+            ConfigurationType configType,
+            Enable128BitInjection enable128BitInjection)
         {
+            Skip.If(
+                ShouldSkipInvalidTestCombination(
+                packageVersion,
+                enableLogShipping,
+                context,
+                configType,
+                enable128BitInjection),
+                "Skip invalid test combination");
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
             SetInstrumentationVerification();
@@ -297,16 +222,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(DoesNotInjectLogsWhenDisabledTestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
+        public async Task DoesNotInjectLogsWhenDisabled(
+            [CombinatorialMemberData(nameof(GetPackageVersions))] string packageVersion,
+            DirectLogSubmission enableLogShipping,
+            LoggingContext context,
+            ConfigurationType configType,
+            Enable128BitInjection enable128BitInjection)
         {
-            if (configType != ConfigurationType.LogsInjection)
-            {
-                throw new Xunit.SkipException("Does not inject logs when disabled without any log configuration targets doesn't apply to this test.");
-            }
+            Skip.If(
+                configType != ConfigurationType.LogsInjection
+                || ShouldSkipInvalidTestCombination(
+                    packageVersion,
+                    enableLogShipping,
+                    context,
+                    configType,
+                    enable128BitInjection),
+                "Skip invalid test combination");
 
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection == Enable128BitInjection.Enable ? "true" : "false");
@@ -335,12 +270,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestDataDirectSubmission))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DirectlyShipsLogs(string packageVersion, DirectLogSubmission enableLogShipping, string context, ConfigurationType configType, Enable128BitInjection enable128BitInjection)
+        public async Task DirectlyShipsLogs(
+            [CombinatorialMemberData(nameof(GetPackageVersions))] string packageVersion,
+            DirectLogSubmission enableLogShipping,
+            LoggingContext context,
+            ConfigurationType configType,
+            Enable128BitInjection enable128BitInjection)
         {
+            Skip.If(
+                enableLogShipping != DirectLogSubmission.Enable
+                || ShouldSkipInvalidTestCombination(
+                    packageVersion,
+                    enableLogShipping,
+                    context,
+                    configType,
+                    enable128BitInjection),
+                "Skip invalid test combination");
             if (enableLogShipping != DirectLogSubmission.Enable) { throw new Xunit.SkipException("Direct log submission disabled does not apply to this test"); }
 
             var hostName = "integration_nlog_tests";
@@ -381,7 +330,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             VerifyInstrumentation(processResult.Process);
 
-            if (context != ContextNone)
+            if (context != LoggingContext.None)
             {
                 Func<MockLogsIntake.Log, string, string, bool> hasProperty = (log, key, value) =>
                 {
@@ -394,9 +343,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.AssertIntegrationEnabled(IntegrationId.NLog);
         }
 
-        private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, string context)
+        private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, LoggingContext context)
         {
-            if (context == ContextNone) { return; }
+            if (context == LoggingContext.None) { return; }
 
             // Skip for versions that don't support json
             foreach (var testFile in testFiles)
