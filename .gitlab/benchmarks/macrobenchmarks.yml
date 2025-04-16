@@ -446,8 +446,7 @@ profiler_cpu_timer_create-arm64:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    # TODO: Remove this once the branch is merged to dd-trace-dotnet/macro
-    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=igoragoli/update-dd-trace-dotnet-macro
+    - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=dd-trace-dotnet/macro
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./ephemeral-infra/run-windows-benchmarks.sh
 
