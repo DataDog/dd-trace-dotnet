@@ -51,7 +51,6 @@
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.NewerNuGet/        @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/Samples.TracingWithoutLimits/                               @DataDog/tracing-dotnet
 
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/tracing-dotnet

@@ -167,10 +167,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyResolveMscorlibResources.InfiniteRecursionCrash", "tracer\test\test-applications\regression\AssemblyResolveMscorlibResources.InfiniteRecursionCrash\AssemblyResolveMscorlibResources.InfiniteRecursionCrash.csproj", "{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TracingWithoutLimits", "tracer\test\test-applications\integrations\Samples.TracingWithoutLimits\Samples.TracingWithoutLimits.csproj", "{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.RateLimiter", "tracer\test\test-applications\integrations\Samples.RateLimiter\Samples.RateLimiter.csproj", "{EF718502-7760-45B5-A563-5F1B22A6B840}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc30", "tracer\test\test-applications\integrations\Samples.AspNetCoreMvc30\Samples.AspNetCoreMvc30.csproj", "{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc31", "tracer\test\test-applications\integrations\Samples.AspNetCoreMvc31\Samples.AspNetCoreMvc31.csproj", "{303F8E41-691F-4453-AB7D-88A0036C0465}"
@@ -525,14 +521,6 @@ Global
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EF718502-7760-45B5-A563-5F1B22A6B840}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EF718502-7760-45B5-A563-5F1B22A6B840}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EF718502-7760-45B5-A563-5F1B22A6B840}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EF718502-7760-45B5-A563-5F1B22A6B840}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1108,8 +1096,6 @@ Global
 		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{472DBA92-4FEA-4B9A-BA70-0E97B942E12D} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{EEA89ACD-CFBB-4F60-A150-74F0A84DF028} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
-		{8BDF1DE0-E6DE-48AD-AAA3-CE09CB544E2C} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
-		{EF718502-7760-45B5-A563-5F1B22A6B840} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{8B457E8F-8716-4F29-BBE2-DD6C7BC4AC37} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{303F8E41-691F-4453-AB7D-88A0036C0465} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{D141BD06-DD95-4CAF-85CD-657116E0DAD4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
