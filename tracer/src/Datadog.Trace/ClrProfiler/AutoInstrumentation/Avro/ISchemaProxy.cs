@@ -23,3 +23,22 @@ internal interface ISchemaProxy : IDuckType
     /// </summary>
     string? Fullname { get; }
 }
+
+/// <summary>
+/// DuckTyping interface for Avro.Generic.DatumReader`1
+/// </summary>
+internal interface IDatumReaderGeneric1Proxy : IDuckType
+{
+    ISchemaProxy ReaderSchema { get; }
+
+    ISchemaProxy WriterSchema { get; }
+}
+
+/// <summary>
+/// DuckTyping interface for Avro.Generic.DatumWriter`1
+/// </summary>
+internal interface IDatumWriterGeneric1Proxy : IDuckType
+{
+    ISchemaProxy Schema { get; }
+}
+

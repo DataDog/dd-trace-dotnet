@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Avro.IO;
 using Avro.Specific;
@@ -10,7 +11,14 @@ internal class Program
     private static void Main()
     {
         // our sample data
-        var outMessage = new Person { name = "Jane Doe", phoneNumbers = { new PhoneNumber { number = "67890", type = PhoneType.WORK }, new PhoneNumber { number = "54321", type = PhoneType.MOBILE } } };
+        var outMessage = new Person
+        {
+            name = "Jane Doe", phoneNumbers = new List<PhoneNumber>
+            {
+                new() { number = "67890", type = PhoneType.WORK },
+                new() { number = "54321", type = PhoneType.MOBILE }
+            }
+        };
         Person inMessage;
 
         // serialization

@@ -1,4 +1,4 @@
-// <copyright file="GoogleProtobufTests.cs" company="Datadog">
+// <copyright file="AvroTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,16 +14,13 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-// ReSharper disable InconsistentNaming
-#pragma warning disable SA1402 // File may only contain a single type
-
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
-public class GoogleProtobufTests : TracingIntegrationTest
+public class AvroTests : TracingIntegrationTest
 {
-    public GoogleProtobufTests(ITestOutputHelper output)
-        : base("GoogleProtobuf", output)
+    public AvroTests(ITestOutputHelper output)
+        : base("Avro", output)
     {
     }
 
@@ -35,7 +32,7 @@ public class GoogleProtobufTests : TracingIntegrationTest
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
     {
-        return span.IsProtobuf(metadataSchemaVersion);
+        return span.IsAvro(metadataSchemaVersion);
     }
 
     [SkippableTheory]
@@ -44,17 +41,18 @@ public class GoogleProtobufTests : TracingIntegrationTest
     public async Task TagTraces(string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.WaitForDebuggerAttach, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, "AddressBook"))
+        using (await RunSampleAndWaitForExit(agent))
         {
             using var assertionScope = new AssertionScope();
             var spans = agent.WaitForSpans(2);
 
-            ValidateIntegrationSpans(spans, metadataSchemaVersion, "Samples.GoogleProtobuf", isExternalSpan: true);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, "Samples.Avro", isExternalSpan: true);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var filename = $"{nameof(GoogleProtobufTests)}";
+            var filename = $"{nameof(AvroTests)}";
 
             // Default sorting isn't very reliable, so use our own (adds in name and resource)
             await VerifyHelper.VerifySpans(
@@ -74,29 +72,12 @@ public class GoogleProtobufTests : TracingIntegrationTest
 
     [Fact]
     [Trait("Category", "EndToEnd")]
-    public async Task NoInstrumentationForGoogleTypes()
-    {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        using var telemetry = this.ConfigureTelemetry();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, "TimeStamp"))
-        {
-            var spans = agent.WaitForSpans(2);
-            foreach (var span in spans)
-            {
-                span.Tags.Should().NotContain(t => t.Key.StartsWith("schema."));
-            }
-        }
-    }
-
-    [Fact]
-    [Trait("Category", "EndToEnd")]
     public async Task OnlyEnabledWithDsm()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, "AddressBook"))
+        using (await RunSampleAndWaitForExit(agent))
         {
             var spans = agent.WaitForSpans(2);
             foreach (var span in spans)
