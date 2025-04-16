@@ -135,6 +135,9 @@ namespace environment
 
     // Security Controls config.
     const shared::WSTRING security_controls_configuration = WStr("DD_IAST_SECURITY_CONTROLS_CONFIGURATION");
+
+    // Enables or disables the skip method body feature
+    const shared::WSTRING internal_skip_method_body_enabled = WStr("DD_INTERNAL_SKIP_METHOD_BODY_ENABLED");
 } // namespace environment
 } // namespace trace
 
