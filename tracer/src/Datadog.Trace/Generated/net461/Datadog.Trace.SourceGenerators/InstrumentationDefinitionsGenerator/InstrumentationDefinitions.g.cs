@@ -89,7 +89,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ReflectedHttpActionDescriptor_ExecuteAsync_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetWebApi2,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultReaderReadIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumReaderGeneric1ReadIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumWriterGeneric1WriteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultReaderReadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultWriterWriteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Avro,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemIntegration"

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro;
     MethodName = "Read",
     ReturnTypeName = ClrNames.Object,
     ParameterTypeNames = [ClrNames.Object, "Avro.Schema", "Avro.Schema", "Avro.IO.Decoder"],
-    MinimumVersion = "1.12.0",
+    MinimumVersion = "1.0.0",
     MaximumVersion = "1.*.*",
     IntegrationName = nameof(IntegrationId.Avro))]
 [Browsable(false)]
