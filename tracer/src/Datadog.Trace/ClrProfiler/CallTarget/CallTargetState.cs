@@ -31,15 +31,14 @@ public readonly struct CallTargetState
     /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
     /// </summary>
     /// <param name="scope">Scope instance</param>
-    /// <param name="skipMethodBody">Flag to skip the original method body execution</param>
-    internal CallTargetState(Scope? scope, bool skipMethodBody = false)
+    internal CallTargetState(Scope? scope)
     {
         _previousScope = null;
         _scope = scope;
         _state = null;
         _startTime = null;
         _previousDistributedSpanContext = null;
-        _skipMethodBody = skipMethodBody;
+        _skipMethodBody = false;
     }
 
     /// <summary>
@@ -64,8 +63,23 @@ public readonly struct CallTargetState
     /// </summary>
     /// <param name="scope">Scope instance</param>
     /// <param name="state">Object state instance</param>
+    internal CallTargetState(Scope? scope, object? state)
+    {
+        _previousScope = null;
+        _scope = scope;
+        _state = state;
+        _startTime = null;
+        _previousDistributedSpanContext = null;
+        _skipMethodBody = false;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
+    /// </summary>
+    /// <param name="scope">Scope instance</param>
+    /// <param name="state">Object state instance</param>
     /// <param name="skipMethodBody">Flag to skip the original method body execution</param>
-    internal CallTargetState(Scope? scope, object? state, bool skipMethodBody = false)
+    internal CallTargetState(Scope? scope, object? state, bool skipMethodBody)
     {
         _previousScope = null;
         _scope = scope;
