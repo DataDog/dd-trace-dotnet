@@ -983,7 +983,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             call_target_bubble_up_exception_function_available = EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(module_metadata, bubbleUpTypeDef);
         }
 
-        call_target_state_skip_method_body_function_available = IsSkipMethodBodyEnabled() && EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
+        call_target_state_skip_method_body_function_available = EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
 
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))

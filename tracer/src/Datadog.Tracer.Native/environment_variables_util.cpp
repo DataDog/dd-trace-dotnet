@@ -80,9 +80,5 @@ bool IsEditAndContinueEnabled()
 {
     return IsEditAndContinueEnabledCore() || IsEditAndContinueEnabledNetFx();
 }
-bool IsSkipMethodBodyEnabled()
-{
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::internal_skip_method_body_enabled), true);
-}
 
 } // namespace trace
