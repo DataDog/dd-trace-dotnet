@@ -20,9 +20,23 @@ namespace Samples.AspNetCoreSimpleController.Controllers
         [HttpGet]
         public string Get()
         {
+// #if MANUAL_INSTRUMENTATION
+//             using var scope = Datadog.Trace.Tracer.Instance.StartActive("manual");
+//             scope.Span.SetTag("location", "outer");
+// #endif
 #if MANUAL_INSTRUMENTATION
-            using var scope = Datadog.Trace.Tracer.Instance.StartActive("manual");
-            scope.Span.SetTag("location", "outer");
+            for (var i = 0; i < 1000; i++)
+            {
+                var settings = new Datadog.Trace.SpanCreationSettings()
+                {
+                    Parent = null
+                };
+                using var parent = Datadog.Trace.Tracer.Instance.StartActive($"root {i} span", settings);
+                for (var j = 0; j < 1000; j++)
+                {
+                    using var child = Datadog.Trace.Tracer.Instance.StartActive($"child of {i}, {j} span", settings);
+                }
+            }
 #endif
             return "Hello world";
         }
