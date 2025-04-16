@@ -46,7 +46,7 @@ public:
             sample->AddValue(AllocationSize, allocationSizeIndex);
         }
 
-        sample->AddLabel(Label(Sample::AllocationClassLabel, AllocationClass));
+        sample->AddLabel(StringLabel(Sample::AllocationClassLabel, AllocationClass));
     }
 
     std::string AllocationClass;
