@@ -272,12 +272,13 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrices()
             {
-                GenerateIntegrationTestsLinuxMatrix();
+                GenerateIntegrationTestsLinuxMatrix(true);
+                GenerateIntegrationTestsLinuxMatrix(false);
                 GenerateIntegrationTestsLinuxArm64Matrix();
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
-            void GenerateIntegrationTestsLinuxMatrix()
+            void GenerateIntegrationTestsLinuxMatrix(bool dockerTest)
             {
                 var baseImages = new []
                 {
@@ -292,13 +293,25 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (dockerTest)
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            var areas = new[] { TracerArea, AsmArea };
+                            foreach (var area in areas)
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
+                        }
                     }
                 }
 
-                Logger.Information($"Integration test Linux matrix");
+                Logger.Information(dockerTest ? "Integration test Linux dockerTest matrix" : "Integration test Linux matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                var outputVariableName = dockerTest ? "integration_tests_linux_docker_matrix" : "integration_tests_linux_matrix";
+                AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsLinuxArm64Matrix()
@@ -364,27 +377,27 @@ partial class Build : NukeBuild
                 var isDebuggerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isDebuggerChanged") ?? "false");
                 var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
 
-                var useCases = new List<string>();
+                var useCases = new List<global::ExplorationTestUseCase>();
                 if (isTracerChanged)
                 {
-                    useCases.Add(global::ExplorationTestUseCase.Tracer.ToString());
+                    useCases.Add(global::ExplorationTestUseCase.Tracer);
                 }
 
                 if (isDebuggerChanged)
                 {
-                    useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
+                    useCases.Add(global::ExplorationTestUseCase.Debugger);
                 }
 
                 if (isProfilerChanged)
                 {
-                    useCases.Add(global::ExplorationTestUseCase.ContinuousProfiler.ToString());
+                    useCases.Add(global::ExplorationTestUseCase.ContinuousProfiler);
                 }
 
                 GenerateExplorationTestsWindowsMatrix(useCases);
                 GenerateExplorationTestsLinuxMatrix(useCases);
             }
 
-            void GenerateExplorationTestsWindowsMatrix(IEnumerable<string> useCases)
+            void GenerateExplorationTestsWindowsMatrix(IEnumerable<global::ExplorationTestUseCase> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
                 var matrix = new Dictionary<string, object>();
@@ -392,9 +405,17 @@ partial class Build : NukeBuild
                 {
                     foreach (var testDescription in testDescriptions)
                     {
+                        if (explorationTestUseCase == global::ExplorationTestUseCase.Debugger
+                            && (testDescription.Name is global::ExplorationTestName.cake or global::ExplorationTestName.protobuf))
+                        {
+                            // Debugger tests are very slow on Windows only on cake and protobuf tests,
+                            //  so exclude them for now, pending investigation by debugger team
+                            continue;
+                        }
+
                         matrix.Add(
                             $"{explorationTestUseCase}_{testDescription.Name.ToString()}",
-                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name.ToString() });
+                            new { explorationTestUseCase = explorationTestUseCase.ToString(), explorationTestName = testDescription.Name.ToString() });
                     }
                 }
 
@@ -403,7 +424,7 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetOutputVariable("exploration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateExplorationTestsLinuxMatrix(IEnumerable<string> useCases)
+            void GenerateExplorationTestsLinuxMatrix(IEnumerable<global::ExplorationTestUseCase> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
                 var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
@@ -428,7 +449,7 @@ partial class Build : NukeBuild
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",
-                                        new { baseImage = baseImage, publishTargetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name, artifactSuffix = artifactSuffix });
+                                        new { baseImage = baseImage, publishTargetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase.ToString(), explorationTestName = testDescription.Name, artifactSuffix = artifactSuffix });
                                 }
                             }
                         }

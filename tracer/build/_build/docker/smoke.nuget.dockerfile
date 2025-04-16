@@ -55,6 +55,6 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
-
+ENV DOTNET_EnableCrashReport=1
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]

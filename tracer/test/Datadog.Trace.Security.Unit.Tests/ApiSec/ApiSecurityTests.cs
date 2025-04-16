@@ -12,14 +12,13 @@ using System.Reflection;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Security.Unit.Tests;
+namespace Datadog.Trace.Security.Unit.Tests.ApiSec;
 
 public class ApiSecurityTests
 {

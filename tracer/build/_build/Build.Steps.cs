@@ -64,7 +64,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.23.0";
+    const string LibDdwafVersion = "1.24.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -2187,7 +2187,7 @@ partial class Build
 
     Target CreateTrimmingFile => _ => _
        .Description("Create Datadog.Trace.Trimming.xml file")
-       .DependsOn(CompileManagedSrc)
+       .After(CompileManagedSrc)
        .Executes(() =>
         {
             var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
@@ -2724,7 +2724,7 @@ partial class Build
 
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp", "*.crashreport.json"))
             {
                 Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
 
