@@ -18,47 +18,47 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.35 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.402.35" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.39 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.402.39" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.406.17 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.406.17" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.406.21 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.406.21" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.403 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.403" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.403.4 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.403.4" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.106 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.106" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.110 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.110" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.416.5 -->
-    <PackageReference Include="AWSSDK.S3" Version="3.7.416.5" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.416.9 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.416.9" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.129 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.129" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.133 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.133" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.129 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.129" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.133 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.133" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.72 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.72" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.76 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.76" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
-    <!-- Latest package https://www.nuget.org/packages/Azure.Messaging.ServiceBus/7.18.4 -->
+    <!-- Latest package https://www.nuget.org/packages/Azure.Messaging.ServiceBus/7.19.0 -->
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.5" />
 
     <!-- Integration: Confluent.Kafka -->
@@ -68,8 +68,8 @@
 
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.6.6 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.6.6" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.7.0 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.7.0" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!--    Assembly: Elasticsearch.Net -->
@@ -190,28 +190,28 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!--    Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/9.0.3 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/9.0.4 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.4" />
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!--    Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.3 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/9.0.4 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.4" />
 
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!--    Assembly: Microsoft.Extensions.Logging -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/9.0.3 -->
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/9.0.4 -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.4" />
 
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!--    Assembly: Microsoft.Extensions.Logging.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/9.0.3 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/9.0.4 -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
 
     <!-- Integration: Microsoft.Extensions.Telemetry -->
     <!--    Assembly: Microsoft.Extensions.Telemetry -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/9.3.0 -->
-    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.3.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Telemetry/9.4.0 -->
+    <PackageReference Include="Microsoft.Extensions.Telemetry" Version="9.4.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
@@ -329,8 +329,8 @@
 
     <!-- Integration: System.Net.Http.WinHttpHandler -->
     <!--    Assembly: System.Net.Http.WinHttpHandler -->
-    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/9.0.3 -->
-    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.3" />
+    <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/9.0.4 -->
+    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.4" />
 
     <!-- Integration: System.Net.Requests -->
     <!--    Assembly: System.Net.Requests -->

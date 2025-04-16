@@ -452,12 +452,36 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         beginMethodExClause.m_ClassToken = tracerTokens->GetExceptionTypeRef();
     }
 
-    // ***
-    // METHOD EXECUTION
-    // ***
-    ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
-    pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
-    beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    // Let's check if the CallTargetState.SkipMethodBody property is available.
+    ILInstr* skipMethodBodyReturnInstr = nullptr;
+    if (m_corProfiler->call_target_state_skip_method_body_function_available)
+    {
+        // ***
+        // CHECK IF WE NEED TO SKIP THE METHOD BODY
+        // ***
+        ILInstr* skipMethodCheckFirstMethodInstr = reWriterWrapper.LoadLocalAddress(callTargetStateIndex);
+        reWriterWrapper.CallMember(tracerTokens->GetCallTargetStateSkipMethodBodyMemberRef(), false);
+
+        ILInstr* brTrueSJumpMethodInstr = rewriter.NewILInstr();
+        brTrueSJumpMethodInstr->m_opcode = CEE_BRFALSE_S;
+        brTrueSJumpMethodInstr->m_pTarget = reWriterWrapper.GetCurrentILInstr();
+        rewriter.InsertBefore(reWriterWrapper.GetCurrentILInstr(), brTrueSJumpMethodInstr);
+
+        skipMethodBodyReturnInstr = reWriterWrapper.Return();
+
+        // leave from the begin method structure should go here in skip method body check
+        pStateLeaveToBeginOriginalMethodInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+        beginMethodCatchLeaveInstr->m_pTarget = skipMethodCheckFirstMethodInstr;
+    }
+    else
+    {
+        // ***
+        // METHOD EXECUTION
+        // ***
+        ILInstr* beginOriginalMethodInstr = reWriterWrapper.GetCurrentILInstr();
+        pStateLeaveToBeginOriginalMethodInstr->m_pTarget = beginOriginalMethodInstr;
+        beginMethodCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    }
 
     // ***
     // ENDING OF THE METHOD EXECUTION
@@ -641,7 +665,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
             {
                 if (pInstr != methodReturnInstr)
                 {
-                    if (isVoid)
+                    if (isVoid || pInstr == skipMethodBodyReturnInstr)
                     {
                         pInstr->m_opcode = CEE_LEAVE_S;
                         pInstr->m_pTarget = endFinallyInstr->m_pNext;
