@@ -388,3 +388,6 @@ datadog-coverage-*
 
 # nuke
 .nuke/build.schema.json
+
+# dotnet tool config file
+.config/dotnet-tools.json

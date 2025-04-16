@@ -78,6 +78,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.AspNetCoreMvc30\\Samples.AspNetCoreMvc30.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AspNetCoreMvc31\\Samples.AspNetCoreMvc31.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AspNetCoreRazorPages\\Samples.AspNetCoreRazorPages.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.Avro\\Samples.Avro.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.DynamoDBv2\\Samples.AWS.DynamoDBv2.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.EventBridge\\Samples.AWS.EventBridge.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.Kinesis\\Samples.AWS.Kinesis.csproj",
