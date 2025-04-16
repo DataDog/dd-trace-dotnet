@@ -32,7 +32,7 @@ private:
     {
     public:
         std::string ModulePath;
-        std::vector<std::string> Files;
+        std::vector<InternedString> Files;
         std::vector<SymbolDebugInfo> SymbolsDebugInfo;
         bool IsValid = false;
         bool ErrorLogged = false;
@@ -66,7 +66,7 @@ private:
         return info.SymbolsDebugInfo[rid];
     }
 
-    static const std::string NoFileFound;
+    static const InternedString NoFileFound;
     static const std::uint32_t NoStartLine;
 
     std::unordered_map<ModuleID, ModuleDebugInfo> _modulesInfo;

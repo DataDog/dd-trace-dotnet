@@ -255,6 +255,7 @@
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="INetworkListener.h" />
+    <ClInclude Include="InternedString.h" />
     <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
@@ -267,6 +268,7 @@
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="SsiManager.h" />
+    <ClInclude Include="StringId.hpp" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -408,6 +410,7 @@
     <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
+    <ClCompile Include="InternedString.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="NetworkActivity.cpp" />
     <ClCompile Include="NetworkProvider.cpp" />

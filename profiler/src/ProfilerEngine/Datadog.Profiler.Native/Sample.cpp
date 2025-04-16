@@ -4,49 +4,49 @@
 #include "Sample.h"
 
 // define well known label string constants
-const std::string Sample::ThreadIdLabel = "thread id";
-const std::string Sample::ThreadNameLabel = "thread name";
-const std::string Sample::AppDomainNameLabel = "appdomain name";
-const std::string Sample::ProcessIdLabel = "appdomain process id";
-const std::string Sample::LocalRootSpanIdLabel = "local root span id";
-const std::string Sample::SpanIdLabel = "span id";
+const InternedString Sample::ThreadIdLabel = "thread id";
+const InternedString Sample::ThreadNameLabel = "thread name";
+const InternedString Sample::AppDomainNameLabel = "appdomain name";
+const InternedString Sample::ProcessIdLabel = "appdomain process id";
+const InternedString Sample::LocalRootSpanIdLabel = "local root span id";
+const InternedString Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
-const std::string Sample::ExceptionMessageLabel = "exception message";
-const std::string Sample::AllocationClassLabel = "allocation class";
+const InternedString Sample::ExceptionMessageLabel = "exception message";
+const InternedString Sample::AllocationClassLabel = "allocation class";
 
 // garbage collection related labels
-const std::string Sample::TimelineEventTypeLabel = "event";
+const InternedString Sample::TimelineEventTypeLabel = "event";
     const std::string Sample::TimelineEventTypeThreadStart = "thread start";
     const std::string Sample::TimelineEventTypeThreadStop = "thread stop";
     const std::string Sample::TimelineEventTypeStopTheWorld = "stw";
     const std::string Sample::TimelineEventTypeGarbageCollection = "gc";
-        const std::string Sample::GarbageCollectionReasonLabel = "gc reason";   // look at GCReason enumeration
-        const std::string Sample::GarbageCollectionTypeLabel = "gc type";       // look at GCType enumeration
-        const std::string Sample::GarbageCollectionCompactingLabel = "gc compacting"; // true or false
-const std::string Sample::GarbageCollectionGenerationLabel = "gc generation";
-const std::string Sample::GarbageCollectionNumberLabel = "gc number";
+        const InternedString Sample::GarbageCollectionReasonLabel = "gc reason";   // look at GCReason enumeration
+        const InternedString Sample::GarbageCollectionTypeLabel = "gc type";       // look at GCType enumeration
+        const InternedString Sample::GarbageCollectionCompactingLabel = "gc compacting"; // true or false
+const InternedString Sample::GarbageCollectionGenerationLabel = "gc generation";
+const InternedString Sample::GarbageCollectionNumberLabel = "gc number";
 
 // life object related labels
-const std::string Sample::ObjectLifetimeLabel = "object lifetime";
-const std::string Sample::ObjectIdLabel = "object id";
-const std::string Sample::ObjectGenerationLabel = "object generation";
+const InternedString Sample::ObjectLifetimeLabel = "object lifetime";
+const InternedString Sample::ObjectIdLabel = "object id";
+const InternedString Sample::ObjectGenerationLabel = "object generation";
 
 // network requests related labels
-const std::string Sample::RequestUrlLabel = "request url";
-const std::string Sample::RequestStatusCodeLabel = "response status code";
-const std::string Sample::RequestErrorLabel = "response error";
-const std::string Sample::RequestRedirectUrlLabel = "redirect url";
-const std::string Sample::RequestDnsWaitLabel = "dns.wait";
-const std::string Sample::RequestDnsDurationLabel = "dns.duration";
-const std::string Sample::RequestDnsSuccessLabel = "dns.success";
-const std::string Sample::RequestHandshakeWaitLabel = "tls.wait";
-const std::string Sample::RequestHandshakeDurationLabel = "tls.duration";
-const std::string Sample::RequestHandshakeErrorLabel = "tls.error";
-const std::string Sample::RequestSocketDurationLabel = "socket.duration";
-const std::string Sample::RequestDurationLabel = "request.duration";
-const std::string Sample::ResponseContentDurationLabel = "response_content.duration";
-const std::string Sample::RequestResponseThreadIdLabel = "response.thread_id";
-const std::string Sample::RequestResponseThreadNameLabel = "response.thread_name";
+const InternedString Sample::RequestUrlLabel = "request url";
+const InternedString Sample::RequestStatusCodeLabel = "response status code";
+const InternedString Sample::RequestErrorLabel = "response error";
+const InternedString Sample::RequestRedirectUrlLabel = "redirect url";
+const InternedString Sample::RequestDnsWaitLabel = "dns.wait";
+const InternedString Sample::RequestDnsDurationLabel = "dns.duration";
+const InternedString Sample::RequestDnsSuccessLabel = "dns.success";
+const InternedString Sample::RequestHandshakeWaitLabel = "tls.wait";
+const InternedString Sample::RequestHandshakeDurationLabel = "tls.duration";
+const InternedString Sample::RequestHandshakeErrorLabel = "tls.error";
+const InternedString Sample::RequestSocketDurationLabel = "socket.duration";
+const InternedString Sample::RequestDurationLabel = "request.duration";
+const InternedString Sample::ResponseContentDurationLabel = "response_content.duration";
+const InternedString Sample::RequestResponseThreadIdLabel = "response.thread_id";
+const InternedString Sample::RequestResponseThreadNameLabel = "response.thread_name";
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created

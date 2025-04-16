@@ -11,10 +11,12 @@
 #include <string_view>
 #include <cstdint>
 
+#include "InternedString.h"
+
 struct SymbolDebugInfo
 {
 public:
-    std::string_view File;
+    InternedString File;
     std::uint32_t StartLine = 0;
 };
 

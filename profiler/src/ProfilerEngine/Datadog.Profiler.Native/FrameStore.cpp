@@ -63,13 +63,13 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
-    static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
-    static const std::string UnloadedModuleName("UnloadedModule");
-    static const std::string FakeModuleName("FakeModule");
+    static const InternedString NotResolvedModuleName("NotResolvedModule");
+    static const InternedString NotResolvedFrame("NotResolvedFrame");
+    static const InternedString UnloadedModuleName("UnloadedModule");
+    static const InternedString FakeModuleName("FakeModule");
 
-    static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
-    static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
+    static const InternedString FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
+    static const InternedString FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
 
 
     // check for fake IPs used in tests
@@ -78,16 +78,16 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
-            return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
+            return {true, {FakeModuleName, FakeContentionFrame, UnknownFileInfo, 0}};
         }
         else
         if (instructionPointer == FrameStore::FakeAllocationIP)
         {
-            return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+            return {true, {FakeModuleName, FakeAllocationFrame, UnknownFileInfo, 0}};
         }
         else
         {
-            return { true, {FakeModuleName, UnknownManagedFrame, "", 0} };
+            return {true, {FakeModuleName, UnknownManagedFrame, UnknownFileInfo, 0}};
         }
     }
 
@@ -96,7 +96,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     if (!result.has_value())
     {
         // we still want a frame to display a good'ish callstack shape
-        return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
+        return {true, {UnloadedModuleName, NotResolvedFrame, UnknownFileInfo, 0}};
     }
 
     auto const& [hr, functionId] = result.value();
@@ -110,11 +110,11 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     {
         if (!_resolveNativeFrames)
         {
-            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            return {false, {NotResolvedModuleName, NotResolvedFrame, UnknownFileInfo, 0}};
         }
 
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, {moduleName, frame, "", 0}};
+        return {true, {moduleName, frame, UnknownFileInfo, 0}};
     }
 }
 
@@ -122,10 +122,10 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 // to get function name + offset
 // see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
 // However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
+std::pair<InternedString, InternedString> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
 {
-    static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
-    static const std::string UnknowNativeModule = "Unknown-Native-Module";
+    static const InternedString UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
+    static const InternedString UnknowNativeModule = "Unknown-Native-Module";
 
     auto moduleName = OpSysTools::GetModuleName(reinterpret_cast<void*>(instructionPointer));
     if (moduleName.empty())
@@ -180,21 +180,21 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     ULONG32 genericParametersCount;
     if (!GetFunctionInfo(functionId, mdTokenFunc, classId, moduleId, genericParametersCount, genericParameters))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {UnknownManagedAssembly, UnknownManagedFrame, UnknownFileInfo, 0};
     }
 
     // Use metadata API to get method name
     ComPtr<IMetaDataImport2> pMetadataImport;
     if (!GetMetadataApi(moduleId, functionId, pMetadataImport))
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {UnknownManagedAssembly, UnknownManagedFrame, UnknownFileInfo, 0};
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
     auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
-        return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
+        return {UnknownManagedAssembly, UnknownManagedFrame, UnknownFileInfo, 0};
     }
 
     // get the method signature
@@ -221,7 +221,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             auto& value = _methods[functionId];
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
-            value = {UnknownManagedAssembly, builder.str(), "", 0};
+            value = {UnknownManagedAssembly, builder.str(), UnknownFileInfo, 0};
             return value;
         }
 
@@ -243,13 +243,13 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 
     auto debugInfo = _pDebugInfoStore->Get(moduleId, mdTokenFunc);
 
-    std::string managedFrame = builder.str();
+    auto managedFrame = InternedString(builder.str());
 
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
 
         // store it into the function cache and return an iterator to the stored elements
-        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
+        auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, std::move(managedFrame), debugInfo.File, debugInfo.StartLine});
         // first is the key, second is the associated value
         return it->second;
     }
@@ -609,9 +609,9 @@ std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     return std::make_tuple(methodName, builder.str(), mdTokenType);
 }
 
-bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
+bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, InternedString& assemblyName)
 {
-    assemblyName = std::string("");
+    assemblyName = "";
 
     AssemblyID assemblyId;
     INVOKE(pInfo->GetModuleInfo(moduleId, nullptr, 0, nullptr, nullptr, &assemblyId));
