@@ -144,6 +144,9 @@ const shared::WSTRING instrumentation_type_name = WStr("Datadog.Trace.ClrProfile
 const shared::WSTRING libdatadog_exporter_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Exporter");
 const shared::WSTRING libdatadog_config_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Config");
 
+const shared::WSTRING calltargetstate_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+const shared::WSTRING calltargetstate_skipmethodbody_function_name = WStr("GetSkipMethodBody");
+
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
 #elif MACOS
