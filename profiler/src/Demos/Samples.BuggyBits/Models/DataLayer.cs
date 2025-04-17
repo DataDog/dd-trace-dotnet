@@ -352,6 +352,23 @@ namespace BuggyBits.Models
             return result;
         }
 
+        public async Task<string> SimulateGithubPage(string rootPath)
+        {
+            Thread.Sleep(1000);
+            string result = string.Empty;
+            try
+            {
+                result = await _client.GetStringAsync($"{rootPath}/CompanyInformation/AccessGithub");
+            }
+            catch (Exception x)
+            {
+                // this will happen when the application stops during the Sleep
+                result = x.Message;
+            }
+
+            return result;
+        }
+
         private string GetProductInfoRoot(string rootPath)
         {
             return $"{rootPath}/Products/Info";
