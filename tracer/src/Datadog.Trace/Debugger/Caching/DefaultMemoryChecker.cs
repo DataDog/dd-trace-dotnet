@@ -64,7 +64,12 @@ internal class DefaultMemoryChecker : IMemoryChecker
 
     private bool IsLowResourceEnvironmentSystem()
     {
-        return FrameworkDescription.Instance.IsWindows() ? CheckWindowsMemory() : CheckUnixMemory();
+        return FrameworkDescription.Instance.OSPlatform switch
+        {
+            OSPlatformName.Windows => CheckWindowsMemory(),
+            OSPlatformName.Linux => CheckUnixMemory(),
+            _ => false,
+        };
     }
 
     internal bool CheckWindowsMemory()
