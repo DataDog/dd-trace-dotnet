@@ -46,6 +46,7 @@ check_azure_pipeline:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   artifacts:
     name: "artifacts"
@@ -56,23 +57,23 @@ check_azure_pipeline:
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
 
-    K6_OPTIONS_WARMUP_RATE: 500
+    K6_OPTIONS_WARMUP_RATE: 14000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_WARMUP_MAX_VUS: 4
+    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 500
+    K6_OPTIONS_WARMUP_MAX_VUS: 2000
 
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 400
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
-    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 500
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2000
 
-    K6_OPTIONS_HIGH_LOAD_RATE: 600
+    K6_OPTIONS_HIGH_LOAD_RATE: 15000
     K6_OPTIONS_HIGH_LOAD_DURATION: 3m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
-    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 500
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2000
 
 baseline:
   extends: .benchmarks
@@ -222,13 +223,14 @@ profiler_cpu_timer_create:
       - scheduler_failure
       - api_failure
   rules:
-    - when: manual
+    - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
     - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+    - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
   artifacts:
     name: "artifacts"
@@ -239,23 +241,23 @@ profiler_cpu_timer_create:
   variables:
     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
 
-    K6_OPTIONS_WARMUP_RATE: 500
+    K6_OPTIONS_WARMUP_RATE: 14000
     K6_OPTIONS_WARMUP_DURATION: 3m
     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
-    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_WARMUP_MAX_VUS: 4
+    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 500
+    K6_OPTIONS_WARMUP_MAX_VUS: 2000
 
-    K6_OPTIONS_NORMAL_OPERATION_RATE: 400
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 13000
     K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
-    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 500
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 2000
 
-    K6_OPTIONS_HIGH_LOAD_RATE: 600
+    K6_OPTIONS_HIGH_LOAD_RATE: 15000
     K6_OPTIONS_HIGH_LOAD_DURATION: 3m
     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
-    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
-    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 500
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 2000
 
 baseline-arm64:
   extends: .benchmarks-arm64
