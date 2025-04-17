@@ -427,6 +427,10 @@ partial class Build
                 .SetSolutionDirectory(RootDirectory)
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory)));
 
+            // build the dependencies
+            var projects = new[] { "Samples.ExampleLibraryTracer", "Samples.ExampleLibrary" }.Select(x => Solution.GetProject(x).Path);
+            DotnetBuild(projects, noRestore: false);
+
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
