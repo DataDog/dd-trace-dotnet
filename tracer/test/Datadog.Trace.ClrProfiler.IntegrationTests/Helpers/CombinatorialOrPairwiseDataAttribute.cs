@@ -15,8 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public static bool UseFullTestConfiguration()
         {
-            // TODO: consider interaction with RequiresThoroughTesting()
-            // maybe we update USE_FULL_TEST_CONFIG to be both a main/release branch AND thorough testing
+            // USE_FULL_TEST_CONFIG is set in Target RunIntegrationTests when RequiresThoroughTesting() is true
             var fullTest = Environment.GetEnvironmentVariable("USE_FULL_TEST_CONFIG") ?? string.Empty;
 
             if (string.IsNullOrEmpty(fullTest))
