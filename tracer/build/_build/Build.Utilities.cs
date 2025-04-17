@@ -206,7 +206,7 @@ partial class Build
 
     Target GeneratePackageVersions => _ => _
        .Description("Regenerate the PackageVersions props and .cs files")
-       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
+       .DependsOn(Clean, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
        .Executes(async () =>
        {
            if (IncludePackages is not null)

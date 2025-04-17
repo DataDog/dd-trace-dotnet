@@ -35,6 +35,7 @@ using Logger = Serilog.Log;
 partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
+    [Solution("Datadog.Trace.Build.g.sln")] readonly Solution BuildSolution;
     [Solution("Datadog.Trace.Samples.g.sln")] readonly Solution SamplesSolution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
@@ -247,35 +248,6 @@ partial class Build
             EnsureExistingDirectory(SymbolsDirectory);
         });
 
-    Target Restore => _ => _
-        .After(Clean)
-        .Unlisted()
-        .Executes(() =>
-        {
-            if (FastDevLoop)
-            {
-                return;
-            }
-
-            if (IsWin)
-            {
-                NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackagesDirectory(NugetPackageDirectory)));
-            }
-            else
-            {
-                DotNetRestore(s => s
-                    .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
-                    .SetProperty("configuration", BuildConfiguration.ToString())
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory)));
-            }
-        });
-
     Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileManagedLoader)
@@ -410,7 +382,6 @@ partial class Build
         .Unlisted()
         .Description("Compiles the managed loader (which is required by the native loader)")
         .After(CreateRequiredDirectories)
-        .After(Restore)
         .Executes(() =>
         {
             DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
@@ -420,7 +391,6 @@ partial class Build
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
-        .After(Restore)
         .After(CompileManagedLoader)
         .Executes(() =>
         {
@@ -431,21 +401,14 @@ partial class Build
                 EnsureCleanDirectory(DatadogTraceDirectory / "Generated");
             }
 
-            var include = TracerDirectory.GlobFiles(
-                "src/**/*.csproj"
-            );
-
-            var exclude = TracerDirectory.GlobFiles(
-                "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
-                "src/Datadog.Trace.Tools.Runner/*.csproj",
-                "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
-                $"src/{Projects.ManagedLoader}/*.csproj"
-            );
-
-            var toBuild = include.Except(exclude);
-
-            DotnetBuild(toBuild, noDependencies: false);
+            DotNetBuild(s => s
+                .SetProjectFile(BuildSolution)
+                .SetConfiguration(BuildConfiguration)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                .SetNoWarnDotNetCore3()
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))); //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
             CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
@@ -817,7 +780,7 @@ partial class Build
     Target PublishFleetInstaller => _ => _
         .Unlisted()
         .Description("Builds and publishes the fleet installer binary files as a zip")
-        .After(Clean, Restore, CompileManagedSrc)
+        .After(Clean, CompileManagedSrc)
         .Before(SignDlls)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
@@ -1218,41 +1181,9 @@ partial class Build
             CompressZip(MonitoringHomeDirectory, OsxTracerHomeZip, fileMode: FileMode.Create);
         });
 
-    Target CompileInstrumentationVerificationLibrary => _ => _
-        .Unlisted()
-        .After(Restore, CompileManagedSrc)
-        .Executes(() =>
-        {
-            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
-        });
-
-    Target CompileManagedTestHelpers => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .DependsOn(CompileInstrumentationVerificationLibrary)
-        .Executes(() =>
-        {
-            //we need to build in this exact order
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
-        });
-
-    Target CompileManagedUnitTests => _ => _
-        .Unlisted()
-        .After(Restore)
-        .After(CompileManagedSrc)
-        .After(BuildRunnerTool)
-        .DependsOn(CopyNativeFilesForAppSecUnitTests)
-        .DependsOn(CompileManagedTestHelpers)
-        .Executes(() =>
-        {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
-        });
-
     Target RunManagedUnitTests => _ => _
         .Unlisted()
-        .After(CompileManagedUnitTests)
+        .After(BuildRunnerTool, CompileManagedSrc)
         .DependsOn(CleanTestLogs)
         .Executes(() =>
         {
@@ -1372,7 +1303,6 @@ partial class Build
     Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
-        .After(CompileManagedTestHelpers)
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
         .Requires(() => Framework)
@@ -1589,7 +1519,7 @@ partial class Build
 
     Target PublishIisSamples => _ => _
         .Unlisted()
-        .After(CompileManagedTestHelpers)
+        .After(CompileManagedSrc)
         .After(CompileSamples)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
@@ -1622,8 +1552,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileSamples)
         .After(CompileTrimmingSamples)
-        .After(BuildWindowsIntegrationTests)
-        .After(CompileLinuxOrOsxIntegrationTests)
+        .After(BuildRunnerTool)
         .DependsOn(CleanTestLogs)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
@@ -1920,40 +1849,8 @@ partial class Build
             ProjectModelTasks.Initialize();
         });
 
-    Target CompileLinuxOrOsxIntegrationTests => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .After(CompileManagedTestHelpers)
-        .After(BuildRunnerTool)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Requires(() => Framework)
-        .Executes(() =>
-        {
-            // Build the actual integration test projects for Any CPU
-            var integrationTestProjects =
-                TracerDirectory
-                   .GlobFiles("test/*.IntegrationTests/*.csproj")
-                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
-
-            DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
-
-            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
-            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
-        });
-
-    Target CompileLinuxDdDotnetIntegrationTests => _ => _
-        .Unlisted()
-        .After(CompileManagedSrc)
-        .After(CompileManagedTestHelpers)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Executes(() =>
-        {
-            DotnetBuild(Solution.GetProject(Projects.DdDotnetIntegrationTests), noRestore: false);
-        });
-
     Target RunLinuxDdDotnetIntegrationTests => _ => _
-        .After(CompileLinuxOrOsxIntegrationTests)
+        .After(CompileManagedSrc)
         .DependsOn(CleanTestLogs)
         .Description("Runs the linux dd-dotnet integration tests")
         .Requires(() => !IsWin)
@@ -2010,7 +1907,6 @@ partial class Build
 
     Target BuildToolArtifactTests => _ => _
          .Description("Builds the tool artifacts tests")
-         .After(CompileManagedTestHelpers)
          .After(InstallDdTraceTool)
          .Executes(() =>
           {
@@ -2019,7 +1915,6 @@ partial class Build
 
     Target BuildDdDotnetArtifactTests => _ => _
      .Description("Builds the dd-dotnet artifacts tests")
-     .After(CompileManagedTestHelpers)
      .Requires(() => Framework)
      .Executes(() =>
      {

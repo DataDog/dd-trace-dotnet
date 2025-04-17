@@ -118,7 +118,7 @@ partial class Build : NukeBuild
 
     Target Info => _ => _
                        .Description("Describes the current configuration")
-                       .Before(Clean, Restore, BuildTracerHome)
+                       .Before(Clean, BuildTracerHome)
                        .Executes(() =>
                         {
                             Logger.Information($"Configuration: {BuildConfiguration}");
@@ -206,7 +206,6 @@ partial class Build : NukeBuild
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
@@ -222,7 +221,6 @@ partial class Build : NukeBuild
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracerR2R)
         .DependsOn(DownloadLibDdwaf)
@@ -269,7 +267,6 @@ partial class Build : NukeBuild
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
-        .DependsOn(CompileManagedUnitTests)
         .DependsOn(RunManagedUnitTests);
 
     Target RunNativeUnitTests => _ => _
@@ -282,7 +279,6 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(BuildRunnerTool);
 
@@ -290,7 +286,6 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the ASP.NET integration tests for Windows")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
@@ -298,7 +293,6 @@ partial class Build : NukeBuild
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
@@ -319,7 +313,6 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsAzureFunctionsTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows Azure Functions tests")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileAzureFunctionsSamplesWindows)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileIntegrationTests)
@@ -328,9 +321,6 @@ partial class Build : NukeBuild
     Target BuildLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
         .Description("Builds the linux integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
-        .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
 
@@ -344,8 +334,6 @@ partial class Build : NukeBuild
     Target BuildOsxIntegrationTests => _ => _
         .Requires(() => IsOsx)
         .Description("Builds the osx integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
 
@@ -359,14 +347,12 @@ partial class Build : NukeBuild
 
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
-       .DependsOn(CompileManagedTestHelpers)
        .DependsOn(InstallDdTraceTool)
        .DependsOn(BuildToolArtifactTests)
        .DependsOn(RunToolArtifactTests);
 
     Target BuildAndRunDdDotnetArtifactTests => _ => _
         .Description("Builds and runs the tool artifacts tests")
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(BuildDdDotnetArtifactTests)
         .DependsOn(CopyDdDotnet)
         .DependsOn(RunDdDotnetArtifactTests);
@@ -460,7 +446,6 @@ partial class Build : NukeBuild
 
     Target BuildRunnerTool => _ => _
         .Unlisted()
-        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {

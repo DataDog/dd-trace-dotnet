@@ -42,20 +42,9 @@ partial class Build
     Target BuildDebuggerIntegrationTests => _ => _
         .Unlisted()
         .Description("Builds the debugger integration tests")
-        .DependsOn(CompileDebuggerIntegrationTests);
-
-    Target CompileDebuggerIntegrationTests => _ => _
-        .Unlisted()
         .After(CompileManagedSrc)
-        .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileDebuggerIntegrationTestsDependencies)
-        .DependsOn(CompileDebuggerIntegrationTestsSamples)
-        .Requires(() => Framework)
-        .Requires(() => MonitoringHomeDirectory != null)
-        .Executes(() =>
-        {
-            DotnetBuild(DebuggerIntegrationTests, framework: Framework);
-        });
+        .DependsOn(CompileDebuggerIntegrationTestsSamples);
 
     Target CompileDebuggerIntegrationTestsDependencies => _ => _
         .Unlisted()
