@@ -144,7 +144,9 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
         public class RelationalDataReader : IAsyncDisposable, IDisposable
         {
             private bool _disposed = false;
+#pragma warning disable CS0414 // Assigned but never used
             private bool _disposedAsync = false;
+#pragma warning restore CS0414 // Assigned but never used
 
             public void Dispose()
             {
