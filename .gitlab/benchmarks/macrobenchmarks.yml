@@ -1,11 +1,3 @@
-.setup:
-  script:
-    - unset AWS_PROFILE
-    - mkdir -p ~/.aws
-    - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
-    - export AWS_PROFILE=ephemeral-infra-ci
-    - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
-    - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
 stages:
   - check-azure-pipeline
   - benchmarks
@@ -457,9 +449,9 @@ profiler_cpu_timer_create-arm64:
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./ephemeral-infra/run-windows-benchmarks.sh
   after_script:
-    - !reference [.setup, script]
+    - source "./platform/ephemeral-infra/setup-credentials.sh"
     - |
-      infra cleanup --provision ./ephemeral-infra/ephemeral-instance-main.yaml \
+      infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
         --region "${AWS_REGION}" \
         --bypass-stack-destroy
 
