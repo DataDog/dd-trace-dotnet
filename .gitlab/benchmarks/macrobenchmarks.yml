@@ -44,7 +44,6 @@ check_azure_pipeline:
   rules:
     - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
-
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
@@ -411,7 +410,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
   interruptible: true
   timeout: 1h
   rules:
@@ -451,6 +450,12 @@ profiler_cpu_timer_create-arm64:
     - export BP_INFRA_BENCHMARKING_PLATFORM_BRANCH=dd-trace-dotnet/macro
     - git clone --branch $BP_INFRA_BENCHMARKING_PLATFORM_BRANCH https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
     - ./ephemeral-infra/run-windows-benchmarks.sh
+  after_script:
+    - source "./platform/ephemeral-infra/setup-credentials.sh"
+    - |
+      infra cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ephemeral-instance.yaml \
+        --region "${AWS_REGION}" \
+        --bypass-stack-destroy
 
 baseline-win:
   extends: .benchmarks-win
