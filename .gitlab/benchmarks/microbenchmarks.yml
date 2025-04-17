@@ -15,7 +15,7 @@ run-benchmarks:
   interruptible: true
   timeout: 1h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-test
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-2
 
   script:
     - git clone --branch dd-trace-dotnet/micro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
@@ -26,7 +26,7 @@ run-benchmarks:
       infra cleanup --provision ./platform/ephemeral-infra/ephemeral-instance-main.yaml \
         --region "${AWS_REGION}" \
         --bypass-stack-destroy
-    # - ./platform/steps/post-pr-comment.sh
+    - ./platform/steps/post-pr-comment.sh
     # Temporarely commented out pending issue resolution with sending files to backend
     # - ./platform/steps/upload-to-bp-ui.sh
     
