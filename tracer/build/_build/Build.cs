@@ -265,6 +265,7 @@ partial class Build : NukeBuild
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
+        .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(BuildRunnerTool)
         .DependsOn(RunManagedUnitTests);

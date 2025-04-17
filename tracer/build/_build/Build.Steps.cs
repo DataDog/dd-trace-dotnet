@@ -1183,7 +1183,7 @@ partial class Build
 
     Target RunManagedUnitTests => _ => _
         .Unlisted()
-        .After(BuildRunnerTool, CompileManagedSrc)
+        .After(BuildRunnerTool, CompileManagedSrc, CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CleanTestLogs)
         .Executes(() =>
         {
