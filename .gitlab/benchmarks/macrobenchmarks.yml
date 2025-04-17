@@ -1,5 +1,6 @@
 .setup:
   script:
+    - unset AWS_PROFILE
     - mkdir -p ~/.aws
     - /app/infra/tools/fetch-ssm-parameter.sh $AWS_EPHEMERAL_INFRA_PROFILE_SSM_PARAMETER > ~/.aws/config || exit $?
     - export AWS_PROFILE=ephemeral-infra-ci
