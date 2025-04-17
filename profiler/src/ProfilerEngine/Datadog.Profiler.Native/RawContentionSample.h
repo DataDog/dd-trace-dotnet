@@ -47,15 +47,15 @@ public:
         auto contentionCountIndex = valueOffsets[0];
         auto contentionDurationIndex = valueOffsets[1];
 
-        sample->AddLabel(Label{BucketLabelName, std::move(Bucket)});
+        sample->AddLabel(StringLabel{BucketLabelName, std::move(Bucket)});
         sample->AddValue(1, contentionCountIndex);
-        sample->AddNumericLabel(NumericLabel{RawCountLabelName, 1});
-        sample->AddNumericLabel(NumericLabel{RawDurationLabelName, ContentionDuration.count()});
+        sample->AddLabel(NumericLabel{RawCountLabelName, 1});
+        sample->AddLabel(NumericLabel{RawDurationLabelName, ContentionDuration.count()});
         sample->AddValue(ContentionDuration.count(), contentionDurationIndex);
         if (BlockingThreadId != 0)
         {
-            sample->AddNumericLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
-            sample->AddLabel(Label{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
+            sample->AddLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
+            sample->AddLabel(StringLabel{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
         }
     }
 

@@ -13,12 +13,12 @@ void RawThreadLifetimeSample::OnTransform(
     if (Kind == ThreadEventKind::Start)
     {
         sample->AddFrame({EmptyModule, StartFrame, "", 0});
-        sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStart));
+        sample->AddLabel(StringLabel(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStart));
     }
     else if (Kind == ThreadEventKind::Stop)
     {
         sample->AddFrame({EmptyModule, StopFrame, "", 0});
-        sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStop));
+        sample->AddLabel(StringLabel(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStop));
     }
 
     // Set an arbitratry value to avoid being discarded by the backend
