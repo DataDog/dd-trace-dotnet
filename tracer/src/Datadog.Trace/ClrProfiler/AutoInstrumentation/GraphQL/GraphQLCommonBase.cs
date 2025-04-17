@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return scope;
         }
 
-        protected static void RecordExecutionErrors(Span span, string errorType, int errorCount, string errors)
+        protected static void RecordExecutionErrors(Span span, string errorType, int errorCount, string errors, List<SpanEvent> spanEvents)
         {
             if (errorCount > 0)
             {
@@ -48,6 +49,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
                 span.SetTag(Trace.Tags.ErrorType, errorType);
                 span.SetTag(Trace.Tags.ErrorStack, errors);
+
+                for (int i = 0; i < spanEvents.Count; i++)
+                {
+                    span.AddEvent(spanEvents[i]);
+                }
             }
         }
 
