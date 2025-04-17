@@ -420,6 +420,13 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
+            // Run explicit restore
+            NuGetTasks.NuGetRestore(s => s
+                .SetTargetPath(NativeTracerTestsProject)
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .SetSolutionDirectory(RootDirectory)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory)));
+
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -428,11 +435,9 @@ partial class Build
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             MSBuild(s => s
-                .SetTargetPath(MsBuildProject)
+                .SetTargetPath(NativeTracerTestsProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
-                .SetTargets("BuildCppTests")
-                .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
