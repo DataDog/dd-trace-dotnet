@@ -271,6 +271,16 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
         emptyList = false;
     }
 
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Network))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "http";
+        emptyList = false;
+    }
+
     return buffer.str();
 }
 
