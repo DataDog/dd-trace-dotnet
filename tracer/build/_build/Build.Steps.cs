@@ -2713,7 +2713,7 @@ partial class Build
     private void DotnetBuild(
         Project project,
         TargetFramework framework = null,
-        bool noRestore = true,
+        bool noRestore = false,
         bool noDependencies = true
         )
     {
@@ -2723,7 +2723,7 @@ partial class Build
     private void DotnetBuild(
         IEnumerable<AbsolutePath> projPaths,
         TargetFramework framework = null,
-        bool noRestore = true,
+        bool noRestore = false,
         bool noDependencies = true)
     {
         DotNetBuild(s => s
