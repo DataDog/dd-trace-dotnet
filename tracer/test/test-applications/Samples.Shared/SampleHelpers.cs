@@ -6,6 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
+// Some sample projects enable nullables, and we don't really want to deal with that here
+#nullable disable
+
 namespace Samples
 {
     public class SampleHelpers
