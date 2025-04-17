@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
@@ -34,5 +35,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         // GraphQL2 uses IEnumerable<string> and GraphQL3 uses IEnumerable<object>
         // Declaring the property as IEnumerable allows to support both at once
         IEnumerable Path { get; }
+
+        /// <summary>
+        /// Gets additional Extensions information about error.
+        /// </summary>
+        IDictionary Extensions { get; }
     }
 }

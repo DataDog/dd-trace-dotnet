@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -185,6 +186,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
+        private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
 
         protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
@@ -206,7 +208,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetInstrumentationVerification();
 
-            await fixture.TryStartApp(this, packageVersion: packageVersion);
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration
+            {
+                SpanEvents = false
+            };
+
+            await fixture.TryStartApp(this, packageVersion: packageVersion, agentConfiguration: agentConfiguration);
+
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(fixture.HttpPort, usingWebsockets);
 
@@ -222,6 +230,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
             // Graphql 5 has different error message for missing subscription
             settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
+            // Added to scrub the SpanEvents time
+            settings.AddRegexScrubber(_timeUnixNanoRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer

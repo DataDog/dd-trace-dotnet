@@ -5,7 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
+using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -128,13 +131,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
-                AddGraphQlQueryErrorSpanEvent(span, errorType, executionErrors);
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out List<SpanEvent> errorSpanEvents), errorSpanEvents);
             }
         }
 
-        private static string ConstructErrorMessage(IExecutionErrors executionErrors)
+        private static string ConstructErrorMessageAndEvents(IExecutionErrors executionErrors, out List<SpanEvent> spanEvents)
         {
+            spanEvents = [];
+
             if (executionErrors == null)
             {
                 return string.Empty;
@@ -150,6 +154,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
                     var executionError = executionErrors[i];
+                    var eventAttributes = new List<KeyValuePair<string, object>>();
 
                     builder.AppendLine($"{tab}{{");
 
@@ -157,97 +162,61 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     if (message != null)
                     {
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                        eventAttributes.Add(new KeyValuePair<string, object>("message", message));
                     }
 
-                    var path = executionError.Path;
-                    if (path != null)
+                    var paths = executionError.Path;
+                    if (paths != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
+                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
+
+                        var pathAttribute = new List<string>();
+                        foreach (var path in paths)
+                        {
+                            pathAttribute.Add(path.ToString());
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("path", pathAttribute.ToArray()));
                     }
 
                     var code = executionError.Code;
                     if (code != null)
                     {
                         builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                        eventAttributes.Add(new KeyValuePair<string, object>("code", code.ToString()));
                     }
 
-                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
+                    var locations = executionError.Locations;
+                    if (locations is not null)
+                    {
+                        ConstructErrorLocationsMessage(builder, tab, locations);
+
+                        var joinedLocations = new List<string>();
+                        foreach (var location in (System.Collections.IEnumerable)locations)
+                        {
+                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
+                            {
+                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                            }
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
+                    }
+
                     builder.AppendLine($"{tab}}},");
+                    spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
                 }
 
                 builder.AppendLine("]");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating GraphQL error message.");
+                Log.Error(ex, "Error creating GraphQL error message and SpanEvent.");
                 Util.StringBuilderCache.Release(builder);
                 return "errors: []";
             }
 
             return Util.StringBuilderCache.GetStringAndRelease(builder);
-        }
-
-        private static void AddGraphQlQueryErrorSpanEvent(Span span, string errorType, IExecutionErrors executionErrors)
-        {
-            var eventAttributes = new List<KeyValuePair<string, object>>();
-
-            for (var i = 0; i < executionErrors.Count; i++)
-            {
-                var error = executionErrors[i];
-
-                if (!string.IsNullOrEmpty(error.Message))
-                {
-                    eventAttributes.Add(new KeyValuePair<string, object>("message", error.Message));
-                }
-
-                if (!string.IsNullOrEmpty(errorType))
-                {
-                    eventAttributes.Add(new KeyValuePair<string, object>("type", errorType));
-                }
-
-                // https://github.com/graphql-dotnet/graphql-dotnet/blob/78a4a13b15eab5896442bd0755acfae805825b26/docs2/site/docs/guides/serialization.md#error-serialization
-                if (!string.IsNullOrEmpty(error.ToString()))
-                {
-                    eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", error.ToString()));
-                }
-
-                // Handle 'locations' attribute (only set if present)
-                if (error.Locations is not null)
-                {
-                    var locations = new List<string>();
-                    foreach (var location in error.Locations)
-                    {
-                        if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
-                        {
-                            locations.Add($"{locationProxy.Line}:{locationProxy.Column}");
-                        }
-                    }
-
-                    eventAttributes.Add(new KeyValuePair<string, object>("locations", locations));
-                }
-
-                if (error.Path is not null)
-                {
-                    var path = new List<string>();
-                    foreach (var segment in error.Path)
-                    {
-                        path.Add(segment.ToString());
-                    }
-
-                    eventAttributes.Add(new KeyValuePair<string, object>("path", path));
-                }
-
-                var code = error.Code;
-                if (code is not null)
-                {
-                    eventAttributes.Add(new KeyValuePair<string, object>("code", code));
-                }
-
-                if (eventAttributes.Count > 0)
-                {
-                    span.AddEvent(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
-                }
-            }
         }
     }
 }

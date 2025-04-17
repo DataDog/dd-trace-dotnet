@@ -114,12 +114,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out List<SpanEvent> errorSpanEvents), errorSpanEvents);
             }
         }
 
-        private static string ConstructErrorMessage(List<IError> executionErrors)
+        private static string ConstructErrorMessageAndEvents(List<IError> executionErrors, out List<SpanEvent> spanEvents)
         {
+            spanEvents = [];
+
             if (executionErrors == null)
             {
                 return string.Empty;
