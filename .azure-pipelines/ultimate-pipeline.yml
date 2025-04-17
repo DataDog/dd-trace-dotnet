@@ -1317,7 +1317,7 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-latest-dotnet-sdk.yml
 
-      - script: tracer\build.cmd Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
+      - script: tracer\build.cmd Clean CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
         displayName: Build tracer home in debug
         retryCountOnTaskFailure: 1
 
@@ -1338,7 +1338,7 @@ stages:
           build: true
           target: builder
           baseImage: debian
-          command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
+          command: "Clean CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
           retryCountForRunCommand: 1
 
   - job: macos
@@ -1353,7 +1353,7 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-latest-dotnet-sdk.yml
 
-      - script: ./tracer/build.sh Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
+      - script: ./tracer/build.sh Clean CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
         displayName: Build tracer home
         retryCountOnTaskFailure: 1
 
