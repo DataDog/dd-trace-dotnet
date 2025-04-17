@@ -6,6 +6,7 @@ using System.Linq;
 using System.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Tools.NuGet;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
@@ -51,6 +52,13 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
+            // Run explicit restore
+            NuGetTasks.NuGetRestore(s => s
+                .SetTargetPath(NativeLoaderTestsProject)
+                .SetVerbosity(NuGetVerbosity.Normal)
+                .SetSolutionDirectory(RootDirectory)
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackagesDirectory(NugetPackageDirectory)));
+
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
