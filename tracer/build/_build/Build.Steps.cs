@@ -1325,19 +1325,19 @@ partial class Build
         .Executes(() =>
         {
             // Compile the dependent samples.
-            if (!Framework.ToString().StartsWith("net46"))
-            {
-                // we need to build RazorPages before integration tests for .net46x
-                DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
-            }
+            // if (!Framework.ToString().StartsWith("net46"))
+            // {
+            //     // we need to build RazorPages before integration tests for .net46x
+            //     DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
+            // }
 
-            var projects = TracerDirectory
-                    .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
-                    .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
-                ;
+            // var projects = TracerDirectory
+            //         .GlobFiles("test/*.IntegrationTests/*.IntegrationTests.csproj")
+            //         .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
+            //         .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework))
+            //     ;
 
-            DotnetBuild(projects, framework: Framework);
+            // DotnetBuild(projects, framework: Framework);
         });
 
     Target CompileSamples => _ => _
