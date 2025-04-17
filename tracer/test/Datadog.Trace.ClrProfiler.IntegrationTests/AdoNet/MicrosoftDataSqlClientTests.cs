@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces(
-            [PackageVersionData(nameof(PackageVersions.MicrosoftDataSqlClient), minInclusive: "1.0.0", maxInclusive: "2.0.0")] string packageVersion,
+            [PackageVersionData(nameof(PackageVersions.MicrosoftDataSqlClient))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion,
             [DbmPropagationModesData] string propagation)
         {
