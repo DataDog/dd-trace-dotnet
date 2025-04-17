@@ -7,7 +7,7 @@ run-benchmarks:
   interruptible: true
   timeout: 1h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-test
 
   script:
     - git clone --branch fayssal/test-micro-delivery https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform
