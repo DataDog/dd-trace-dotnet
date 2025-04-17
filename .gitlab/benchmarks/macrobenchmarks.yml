@@ -24,8 +24,6 @@ check_azure_pipeline:
   timeout: 1h
   rules:
     - when: on_success
-  variables:
-    TEST_BRANCH: "master"
 
 .benchmarks:
   stage: benchmarks
