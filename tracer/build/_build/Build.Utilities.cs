@@ -431,24 +431,48 @@ partial class Build
                .Description("Regenerates the 'build' solutions based on the 'master' solution")
                .Executes(() =>
                 {
-                    // Create a copy of the "full solution"
-                    var sln = ProjectModelTasks.CreateSolution(
-                        fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
-                        solutions: new[] { Solution },
-                        randomizeProjectIds: false);
+                    RegenerateSolution("Datadog.Trace.Samples.g.sln", x => !IsStandaloneTestApplication(x));
+                    RegenerateSolution("Datadog.Trace.Build.g.sln", x => !IsBuildApplication(x));
 
-                    // Remove everything except the standalone test-application projects
-                    sln.AllProjects
-                       .Where(x => !IsTestApplication(x))
-                       .ForEach(x =>
+                    void RegenerateSolution(string sampleName, Func<Project, bool> removalPredicate)
+                    {
+                        var samplesSln = ProjectModelTasks.CreateSolution(
+                            fileName: RootDirectory / sampleName,
+                            solutions: new[] { Solution },
+                            randomizeProjectIds: false);
+
+                        // Remove everything except the standalone test-application projects
+                        Logger.Information("Building '{Name}'", samplesSln.Name);
+                        samplesSln.AllProjects
+                                  .Where(removalPredicate)
+                                  .ForEach(x =>
+                                   {
+                                       Logger.Information("Removing project '{Name}'", x.Name);
+                                       samplesSln.RemoveProject(x);
+                                   });
+
+                        samplesSln.Save();
+                    }
+
+                    bool IsBuildApplication(Project x)
+                    {
+                        // There's a few projects we don't care about here,
+                        // because they require additional steps to build, are built seperately, or they aren't used in CI
+                        if (x.Name is "Datadog.InstrumentationAssemblyGenerator" or "Datadog.Trace.Tools.Runner"
+                            or "Datadog.Trace.Bundle" or "Datadog.Trace.Trimming" or "Datadog.Trace.ClrProfiler.Managed.Loader"
+                         || Path.GetExtension(x.Path) != ".csproj")
                         {
-                            Logger.Information("Removing project '{Name}'", x.Name);
-                            sln.RemoveProject(x);
-                        });
-                    
-                    sln.Save();
+                            return false;
+                        }
 
-                    bool IsTestApplication(Project x)
+                        // We only want to include projects which are in the top-level "src" or "test" solution folders
+                        var solutionFolder = x.SolutionFolder;
+                        return
+                            solutionFolder.Name is "src" or "test"
+                            && solutionFolder.SolutionFolder is null;
+                    }
+
+                    bool IsStandaloneTestApplication(Project x)
                     {
                         // We explicitly don't build some of these because
                         // 1. They're a pain to build
