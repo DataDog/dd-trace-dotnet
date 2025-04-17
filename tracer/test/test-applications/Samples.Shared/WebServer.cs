@@ -5,7 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Some sample projects enable nullables, and we don't really want to deal with that here
+// But this isn't a directive recognized by "old" aspnet which causes issues there
+#if !NETFRAMEWORK
 #nullable disable
+#endif
 
 namespace Samples
 {
