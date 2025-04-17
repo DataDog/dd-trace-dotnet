@@ -228,6 +228,11 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_login", isCommon: true, NS.ASM)] MissingUserLogin,
 
+    /// <summary>
+    /// Counts the number of times a user login (username or email in our case) hasn't been found as part of the login success, login failure or signup event
+    /// </summary>
+    [TelemetryMetric<UserEventSdk>("sdk.event", isCommon: true, NS.ASM)] UserEventSdk,
+
 #endregion
 #region Iast Namespace
 

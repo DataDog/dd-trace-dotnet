@@ -20,7 +20,7 @@ public class TelemetryDataAggregatorTests
         var previous = GetPopulatedTelemetryInput();
         var aggregator = new TelemetryDataAggregator(previous);
 
-        var result = aggregator.Combine(null, null, null, null, null);
+        var result = aggregator.Combine(null, null, null, null, null, null);
 
         result.Configuration.Should().BeSameAs(previous.Configuration);
         result.Dependencies.Should().BeSameAs(previous.Dependencies);
@@ -43,6 +43,7 @@ public class TelemetryDataAggregatorTests
             next.Configuration,
             next.Dependencies,
             next.Integrations,
+            next.AppEndpoints,
             new MetricResults((List<MetricData>)next.Metrics, (List<DistributionMetricData>)next.Distributions),
             next.Products);
 
@@ -66,6 +67,8 @@ public class TelemetryDataAggregatorTests
         var currentIntegrations = new IntegrationTelemetryData[] { new("current", false, true, null) };
         var previousIntegrations = new IntegrationTelemetryData[] { new("previous", false, true, null) };
 
+        var currentAppEndpoints = new AppEndpointData[] { new("GET", "/hello") };
+
         var currentProducts = new ProductsData { Appsec = new(true, null) };
         var previousProducts = new ProductsData { Profiler = new(true, null) };
 
@@ -77,6 +80,7 @@ public class TelemetryDataAggregatorTests
             previousConfig,
             previousDeps,
             previousIntegrations,
+            null,
             null, // we don't save previous metrics and distributions
             previousProducts,
             sendAppStarted: false);
@@ -87,6 +91,7 @@ public class TelemetryDataAggregatorTests
             currentConfig,
             currentDeps,
             currentIntegrations,
+            currentAppEndpoints,
             new MetricResults(currentMetrics, currentDistributions),
             currentProducts);
 
@@ -102,6 +107,9 @@ public class TelemetryDataAggregatorTests
                .Should()
                .Contain(currentIntegrations)
                .And.Contain(previousIntegrations);
+        results.AppEndpoints
+               .Should()
+               .Contain(currentAppEndpoints);
         results.Metrics
                .Should()
                .Contain(currentMetrics);
@@ -167,6 +175,7 @@ public class TelemetryDataAggregatorTests
             Array.Empty<ConfigurationKeyValue>(),
             Array.Empty<DependencyTelemetryData>(),
             Array.Empty<IntegrationTelemetryData>(),
+            Array.Empty<AppEndpointData>(),
             new MetricResults(new List<MetricData>(), new List<DistributionMetricData>()),
             new ProductsData(),
             sendAppStarted: false);
@@ -174,7 +183,7 @@ public class TelemetryDataAggregatorTests
 
     private void AssertStoredValues(TelemetryDataAggregator aggregator, TelemetryInput expected)
     {
-        var result = aggregator.Combine(null, null, null, null, null);
+        var result = aggregator.Combine(null, null, null, null, null, null);
 
         if (expected.Configuration is { } expectedConfig)
         {

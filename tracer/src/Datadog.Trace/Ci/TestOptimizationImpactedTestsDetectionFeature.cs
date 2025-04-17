@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Logging;
@@ -15,9 +16,12 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationImpactedTestsDetectionFeature));
     private readonly Task<TestOptimizationClient.ImpactedTestsDetectionResponse> _impactedTestsDetectionFilesTask;
+    private readonly CIEnvironmentValues _environmentValues;
+    private ImpactedTestsModule? _impactedTestsModule;
 
-    private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
+    private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient, CIEnvironmentValues environmentValues)
     {
+        _environmentValues = environmentValues;
         if (settings.ImpactedTestsDetectionEnabled == null && clientSettingsResponse.ImpactedTestsEnabled.HasValue)
         {
             Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);
@@ -34,6 +38,7 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
         {
             Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection is disabled.");
             _impactedTestsDetectionFilesTask = Task.FromResult(default(TestOptimizationClient.ImpactedTestsDetectionResponse));
+            _impactedTestsModule = ImpactedTestsModule.CreateNoOp();
             Enabled = false;
         }
 
@@ -53,6 +58,20 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
     public TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse
         => _impactedTestsDetectionFilesTask.SafeGetResult();
 
-    public static ITestOptimizationImpactedTestsDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient)
-        => new TestOptimizationImpactedTestsDetectionFeature(settings, clientSettingsResponse, testOptimizationClient);
+    public ImpactedTestsModule ImpactedTestsAnalyzer
+    {
+        get
+        {
+            if (_impactedTestsModule is not null)
+            {
+                return _impactedTestsModule;
+            }
+
+            var response = _impactedTestsDetectionFilesTask.SafeGetResult();
+            return _impactedTestsModule = ImpactedTestsModule.CreateInstance(response, _environmentValues);
+        }
+    }
+
+    public static ITestOptimizationImpactedTestsDetectionFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, ITestOptimizationClient testOptimizationClient, CIEnvironmentValues environmentValues)
+        => new TestOptimizationImpactedTestsDetectionFeature(settings, clientSettingsResponse, testOptimizationClient, environmentValues);
 }

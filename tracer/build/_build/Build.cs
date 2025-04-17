@@ -63,7 +63,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.13.0";
+    readonly string Version = "3.15.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -79,6 +79,9 @@ partial class Build : NukeBuild
 
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
+
+    [Parameter("Run tests from a especific area (tracer, ASM, debugger, profiler...)")]
+    readonly string Area;
 
     [Parameter("Override the default category filter for running benchmarks. (Optional)")]
     readonly string BenchmarkCategory;
@@ -128,6 +131,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"Area: {Area}");
                             Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestFrameworks: {string.Join(",", TestingFrameworks.Select(x => x.ToString()))}");
                         });
@@ -143,6 +147,8 @@ partial class Build : NukeBuild
                 DeleteReparsePoints(SourceDirectory);
                 DeleteReparsePoints(TestsDirectory);
             }
+
+            RootDirectory.GlobDirectories("obj*").ForEach(x => DeleteDirectory(x));
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
@@ -205,6 +211,8 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(DownloadLibDatadog)
+        .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile)
         .DependsOn(RegenerateSolutions);
@@ -219,6 +227,8 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedTracerR2R)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
+        .DependsOn(DownloadLibDatadog)
+        .DependsOn(CopyLibDatadog)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateTrimmingFile);
 
@@ -414,11 +424,6 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             var framework = Framework ?? TargetFramework.NET8_0;
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(framework)
-                .SetNoWarnDotNetCore3());
 
             string rid;
 
@@ -444,6 +449,7 @@ partial class Build : NukeBuild
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
                 .SetFramework(framework)
+                .SetNoWarnDotNetCore3()
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));
@@ -562,7 +568,7 @@ partial class Build : NukeBuild
                     .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 2000")
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)

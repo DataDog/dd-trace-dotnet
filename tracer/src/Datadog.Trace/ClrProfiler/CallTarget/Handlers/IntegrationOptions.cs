@@ -54,6 +54,23 @@ internal static class IntegrationOptions<TIntegration, TTarget>
 
             _disableIntegration = true;
         }
+        else if (exception is MissingMemberException or TargetInvocationException { InnerException: MissingMemberException })
+        {
+            Log.Warning(
+                "MissingMemberException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled. "
+              + "This may be because the application uses trimming. "
+              + "To make your app compatible with trimming, add a reference to either the Datadog.Trace or "
+              + "Datadog.Trace.Trimming NuGet package. If the problem persists, or you are not using trimming, please contact support.",
+                typeof(TIntegration),
+                typeof(TTarget));
+            if (_integrationId.Value is { } integrationId)
+            {
+                TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.MissingMember);
+                Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(MissingMemberException));
+            }
+
+            _disableIntegration = true;
+        }
         else
         {
             if (_integrationId.Value is { } integrationId)

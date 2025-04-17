@@ -763,6 +763,23 @@ std::string GetNativeLoaderFilePath()
     return native_loader_file_path.string();
 }
 
+std::string GetLibDatadogFilePath()
+{
+    auto libdatadog_filename =
+#ifdef LINUX
+        "libdatadog_profiling.so";
+#elif MACOS
+        "libdatadog_profiling.dylib";
+#else
+        "datadog_profiling_ffi.dll";
+#endif
+
+    auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
+
+    auto libdatadog_file_path = module_file_path.parent_path() / libdatadog_filename;
+    return libdatadog_file_path.string();
+}
+
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
@@ -946,12 +963,27 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
+        auto libdatadog_library_path = GetLibDatadogFilePath();
+        std::error_code ec;
+        if (fs::exists(libdatadog_library_path, ec))
+        {
+            auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
+            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_exporter"), libdatadog_exporter_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_config"), libdatadog_config_nativemethods_type, libdatadog_filepath);
+        }
+        else
+        {
+            Logger::Info("Libdatadog library does not exist: ", libdatadog_library_path);
+        }
+
         mdTypeDef bubbleUpTypeDef;
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata, &bubbleUpTypeDef);
         if(call_target_bubble_up_exception_available)
         {
             call_target_bubble_up_exception_function_available = EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(module_metadata, bubbleUpTypeDef);
         }
+
+        call_target_state_skip_method_body_function_available = IsSkipMethodBodyEnabled() && EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
 
         auto native_loader_library_path = GetNativeLoaderFilePath();
         if (fs::exists(native_loader_library_path))
@@ -1608,6 +1640,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
     else if (module_metadata->assemblyName == WStr("System") ||
              module_metadata->assemblyName == WStr("System.Net.Http") ||
+             module_metadata->assemblyName == WStr("System.Security.AccessControl") ||
+             module_metadata->assemblyName == WStr("System.Security.Claims") ||
+             module_metadata->assemblyName == WStr("System.Security.Principal.Windows") ||
              module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
     {
         valid_startup_hook_callsite = false;
@@ -3205,6 +3240,23 @@ bool CorProfiler::EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const Mod
     auto res = SUCCEEDED(found_call_target_bubble_up_exception_function);
     Logger::Debug("CallTargetBubbleUpException.IsCallTargetBubbleUpException method found: ", res);
     return res;
+}
+
+bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata)
+{
+    mdTypeDef typeDef;
+    const auto type_found = module_metadata.metadata_import->FindTypeDefByName(calltargetstate_type_name.c_str(), mdTokenNil, &typeDef);
+    if (SUCCEEDED(type_found))
+    {
+        mdMethodDef methodDef = mdTokenNil;
+        const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetstate_skipmethodbody_function_name.c_str(), 0, 0, &methodDef);
+        const auto res = SUCCEEDED(function_found);
+        Logger::Debug("CallTargetState.SkipMethodBody property found: ", res);
+        return res;
+    }
+
+    Logger::Debug("CallTargetState.SkipMethodBody property not found: ", type_found);
+    return false;
 }
 
 //

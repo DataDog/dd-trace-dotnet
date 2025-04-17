@@ -15,6 +15,91 @@
 
 
 
+
+
+## [Release 3.14.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.14.0)
+
+## Summary
+
+* [Database Monitoring] Propagate context for some stored procedures
+
+## Changes
+
+### Misc
+* [Database Monitoring] Propagate context for some stored procedures (#6799)
+
+### Build / Test
+* [R&D Week Profiling] Add tests for sync over async scenarios (#6763)
+* Download and Copy libdatadog binaries for Data-Pipeline integration (#6777)
+
+
+[Changes since 3.13.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.13.0...v3.14.0)
+
+## [Release 3.13.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.13.0)
+
+## Summary
+
+- Fix RabbitMQ V7+ headers being overwritten (thanks @johang88)!
+- Update the default value of `DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED` to `true`
+- Fix `Microsoft.Extensions.Telemetry` logging integration in `9.3.0`
+- [Test Optimization] Flaky Test Management feature 
+- Temporarily remove instrumentation for Protobuf Schema tagging
+
+## Changes
+
+### Tracer
+* [Tracing] Update the default value of DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED to true  (#6751)
+* [Tracer] Fix Rabbitmq7 header injection overwrites user supplied basic properties [from external PR #6730] (#6753)
+* Fix Microsoft.Extensions.Telemetry logging integration in 9.3.0 (#6773)
+* Refactor RabbitMQ test sample (#6778)
+* Clarify doc comment for DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED (#6791)
+* fix: container ID prefix in metadata and related tests (#6793)
+
+### CI Visibility
+* [Test Optimization] Flaky Test Management feature (#6740)
+* [Test Optimization] Add missing `test_session` metric (#6776)
+
+### ASM
+* [ASM] Fix IAST Grpc DotNet flaky test (#6772)
+
+### Continuous Profiler
+* [Profiler] Change profiler to use the libdatadog dynamic library instead (#6301)
+
+### Debugger
+* Skip the failing debugger tests (#6755)
+
+### Serverless
+* Add AWS Lamda testing for .NET 9 (#6779)
+
+### Fixes
+* [BUG]: RabbitMQ Basic Properties overwritten to default values (#6723)
+* Fix: Rabbitmq7 header injection overwrites user supplied basic properties (#6730)
+* Remove instrumentation for Protobuf Schema tagging (#6792)
+
+### Build / Test
+* Fix dependabot configuration for gh-actions-packages group (#6696)
+* [IAST] LDAP flakiness fix (#6706)
+* [fleet installer] Add some integration tests (#6714)
+* [Test Package Versions Bump] Updating package versions (#6732)
+* [CI] Stop running windows throughput tests (#6752)
+* Remove profiler throughput tests and bump timeouts (#6757)
+* feat: add dev container for consistent development environment (#6761)
+* [Benchmarks] Migrate linux throughput tests (#6765)
+* ssi tests onepipeline (#6767)
+* Remove graphql scenarios from CI system tests (#6768)
+* Pin github actions to sha (#6774)
+* Disable the merge queue (#6780)
+* Update dependabot to scan composite actions (#6784)
+
+### Miscellaneous
+* [fleet installer] Try to fix Gac Installer issue when older versions are already installed (#6715)
+* add kafka topic to messaging.destination.name tag (#6758)
+* [fleet installer] Split the `install` command in two (#6766)
+* [fleet installer] Update logging for fleet installer (#6782)
+
+
+[Changes since 3.12.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.12.0...v3.13.0)
+
 ## [Release 3.12.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.12.0)
 
 ## Summary

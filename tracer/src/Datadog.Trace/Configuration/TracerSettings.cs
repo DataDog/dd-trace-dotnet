@@ -511,6 +511,10 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
                                    .AsBool(defaultValue: true);
 
+            InferredProxySpansEnabled = config
+                                      .WithKeys(ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled)
+                                      .AsBool(defaultValue: false);
+
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
                                          .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
@@ -671,6 +675,9 @@ namespace Datadog.Trace.Configuration
                                        .AsBool(false);
 
             BypassHttpRequestUrlCachingEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled)
+                                                       .AsBool(false);
+
+            InjectContextIntoStoredProceduresEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.InjectContextIntoStoredProceduresEnabled)
                                                        .AsBool(false);
 
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
@@ -961,6 +968,12 @@ namespace Datadog.Trace.Configuration
         internal bool WcfObfuscationEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether to generate an inferred span based on extracted headers from a proxy service.
+        /// </summary>
+        /// <seeaslo cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
+        internal bool InferredProxySpansEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
         /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
@@ -1176,6 +1189,13 @@ namespace Datadog.Trace.Configuration
         /// HttpRequestUrl caching when HttpRequest.Url is accessed.
         /// </summary>
         internal bool BypassHttpRequestUrlCachingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will inject context into
+        /// StoredProcedure commands for Microsoft SQL Server.
+        /// Requires the <see cref="DbmPropagationMode"/> to be set to either <see cref="DbmPropagationLevel.Service"/> or <see cref="DbmPropagationLevel.Full"/>.
+        /// </summary>
+        internal bool InjectContextIntoStoredProceduresEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings

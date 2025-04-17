@@ -112,7 +112,7 @@ const shared::WSTRING system_private_corelib_assemblyName = WStr("System.Private
 const shared::WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const shared::WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=3.13.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=3.15.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
 const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual");
@@ -141,6 +141,12 @@ const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanc
 
 const shared::WSTRING instrumentation_type_name = WStr("Datadog.Trace.ClrProfiler.Instrumentation");
 
+const shared::WSTRING libdatadog_exporter_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Exporter");
+const shared::WSTRING libdatadog_config_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Config");
+
+const shared::WSTRING calltargetstate_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+const shared::WSTRING calltargetstate_skipmethodbody_function_name = WStr("GetSkipMethodBody");
+
 #ifdef _WIN32
 const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
 #elif MACOS
@@ -160,7 +166,7 @@ const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
                   49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
                   233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
     160, 32772, 1)
-        .WithVersion(3, 13, 0, 0);
+        .WithVersion(3, 15, 0, 0);
 
 } // namespace trace
 

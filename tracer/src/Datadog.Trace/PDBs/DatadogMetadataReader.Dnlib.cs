@@ -31,9 +31,9 @@ namespace Datadog.Trace.Pdb
             return _dnlibModule?.ResolveMethod(methodRid);
         }
 
-        private List<SymbolScope>? GetAllScopes(uint rowId, bool searchMoveNext)
+        private List<SymbolScope>? GetAllScopes(uint methodRid, bool searchMoveNext)
         {
-            var method = GetSymbolMethodDnlib(rowId, searchMoveNext);
+            var method = GetSymbolMethodDnlib(methodRid, searchMoveNext);
             if (method == null)
             {
                 return null;
@@ -89,9 +89,9 @@ namespace Datadog.Trace.Pdb
             return localNames;
         }
 
-        private SymbolMethod? GetSymbolMethodDnlib(uint rowId, bool searchMoveNext)
+        private SymbolMethod? GetSymbolMethodDnlib(uint methodRid, bool searchMoveNext)
         {
-            var mdMethod = GetMethodDefDnlib(rowId);
+            var mdMethod = GetMethodDefDnlib(methodRid);
             return searchMoveNext ? (GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1)) : DnlibPdbReader?.GetMethod(mdMethod, version: 1);
         }
 
@@ -114,10 +114,10 @@ namespace Datadog.Trace.Pdb
             return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
-        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
+        private ImmutableArray<LocalScope>? GetLocalSymbolsDnlib(int methodRid, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints, bool searchMoveNext)
         {
             ImmutableArray<LocalScope>.Builder? localScopes = null;
-            var method = GetMethodDefDnlib((uint)rowId);
+            var method = GetMethodDefDnlib((uint)methodRid);
             if (method!.Body is not { Variables.Count: > 0 })
             {
                 return null;
@@ -239,10 +239,10 @@ namespace Datadog.Trace.Pdb
             return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
-        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int rowId, bool searchMoveNext, out int count)
+        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int methodRid, bool searchMoveNext, out int count)
         {
             count = 0;
-            var symbolMethod = GetSymbolMethodDnlib((uint)rowId, searchMoveNext);
+            var symbolMethod = GetSymbolMethodDnlib((uint)methodRid, searchMoveNext);
             if (symbolMethod == null)
             {
                 return null;
@@ -274,6 +274,32 @@ namespace Datadog.Trace.Pdb
             }
 
             return memory;
+        }
+
+        private DatadogSequencePoint? GetMethodSourceLocationDnlib(int methodRid, bool searchMoveNext)
+        {
+            var symbolMethod = GetSymbolMethodDnlib((uint)methodRid, searchMoveNext);
+            if (symbolMethod == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < symbolMethod.SequencePoints.Count; i++)
+            {
+                var sp = symbolMethod.SequencePoints[i];
+                if (sp.IsHidden())
+                {
+                    continue;
+                }
+
+                var filePath = sp.Document.URL;
+                if (!string.IsNullOrEmpty(filePath) && sp.Line > 0)
+                {
+                    return new DatadogSequencePoint { URL = filePath, StartLine = sp.Line, StartColumn = sp.Column };
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -94,6 +94,131 @@
   {
     TraceId: Id_9,
     SpanId: Id_10,
+    Name: Manual-10.EventSdkV2.Failure.Outer,
+    Resource: Manual-10.EventSdkV2.Failure.Outer,
+    Service: Samples.ManualInstrumentation,
+    Tags: {
+      appsec.events.users.login.failure.key-1: val-1,
+      appsec.events.users.login.failure.key-2: val-2,
+      appsec.events.users.login.failure.track: true,
+      appsec.events.users.login.failure.usr.email: test@test.fr,
+      appsec.events.users.login.failure.usr.exists: true,
+      appsec.events.users.login.failure.usr.id: my-id,
+      appsec.events.users.login.failure.usr.login: my-login,
+      appsec.events.users.login.failure.usr.name: test-name,
+      appsec.events.users.login.failure.usr.propagate_id: false,
+      appsec.events.users.login.failure.usr.role: test-role,
+      appsec.events.users.login.failure.usr.scope: test-scope,
+      appsec.events.users.login.failure.usr.session_id: abc123,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      usr.email: test@test.fr,
+      usr.id: my-id,
+      usr.name: test-name,
+      usr.role: test-role,
+      usr.scope: test-scope,
+      usr.session_id: abc123,
+      _dd.appsec.events.users.login.failure.sdk: true,
+      _dd.appsec.user.collection_mode: sdk
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_11,
+    Name: Manual-10.EventSdkV2.Failure.Inner,
+    Resource: Manual-10.EventSdkV2.Failure.Inner,
+    Service: Samples.ManualInstrumentation,
+    ParentId: Id_10,
+    Tags: {
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_12,
+    Name: Manual-10.Ext.HttpClient,
+    Resource: Manual-10.Ext.HttpClient,
+    Service: Samples.ManualInstrumentation,
+    ParentId: Id_11,
+    Tags: {
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_13,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.ManualInstrumentation-http-client,
+    Type: http,
+    ParentId: Id_12,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_2/?q=10.Ext,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_14,
+    SpanId: Id_15,
+    Name: Manual-10.Ext.HttpListener,
+    Resource: Manual-10.Ext.HttpListener,
+    Service: Samples.ManualInstrumentation,
+    Tags: {
+      content: PONG,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_16,
+    SpanId: Id_17,
+    Name: Manual-11.CustomContext.HttpListener,
+    Resource: Manual-11.CustomContext.HttpListener,
+    Service: Samples.ManualInstrumentation,
+    Tags: {
+      content: PONG,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_18,
+    SpanId: Id_19,
     Name: Manual-2.Reconfigured,
     Resource: Manual-2.Reconfigured,
     Service: updated-name,
@@ -111,12 +236,12 @@
     }
   },
   {
-    TraceId: Id_9,
-    SpanId: Id_11,
+    TraceId: Id_18,
+    SpanId: Id_20,
     Name: Manual-2.Reconfigured.HttpClient,
     Resource: Manual-2.Reconfigured.HttpClient,
     Service: updated-name,
-    ParentId: Id_10,
+    ParentId: Id_19,
     Tags: {
       env: updated-env,
       language: dotnet,
@@ -124,13 +249,13 @@
     }
   },
   {
-    TraceId: Id_9,
-    SpanId: Id_12,
+    TraceId: Id_18,
+    SpanId: Id_21,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: updated-name-http-client,
     Type: http,
-    ParentId: Id_11,
+    ParentId: Id_20,
     Tags: {
       component: HttpMessageHandler,
       env: updated-env,
@@ -150,8 +275,8 @@
     }
   },
   {
-    TraceId: Id_13,
-    SpanId: Id_14,
+    TraceId: Id_22,
+    SpanId: Id_23,
     Name: Manual-2.Reconfigured.HttpListener,
     Resource: Manual-2.Reconfigured.HttpListener,
     Service: updated-name,
@@ -170,8 +295,8 @@
     }
   },
   {
-    TraceId: Id_15,
-    SpanId: Id_16,
+    TraceId: Id_24,
+    SpanId: Id_25,
     Name: Manual-3.HttpDisabled,
     Resource: Manual-3.HttpDisabled,
     Service: Samples.ManualInstrumentation,
@@ -188,20 +313,20 @@
     }
   },
   {
-    TraceId: Id_15,
-    SpanId: Id_17,
+    TraceId: Id_24,
+    SpanId: Id_26,
     Name: Manual-3.HttpDisabled.HttpClient,
     Resource: Manual-3.HttpDisabled.HttpClient,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_16,
+    ParentId: Id_25,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_18,
-    SpanId: Id_19,
+    TraceId: Id_27,
+    SpanId: Id_28,
     Name: Manual-3.HttpDisabled.HttpListener,
     Resource: Manual-3.HttpDisabled.HttpListener,
     Service: Samples.ManualInstrumentation,
@@ -219,8 +344,8 @@
     }
   },
   {
-    TraceId: Id_20,
-    SpanId: Id_21,
+    TraceId: Id_29,
+    SpanId: Id_30,
     Name: Manual-4.DefaultsReinstated,
     Resource: Manual-4.DefaultsReinstated,
     Service: Samples.ManualInstrumentation,
@@ -237,25 +362,25 @@
     }
   },
   {
-    TraceId: Id_20,
-    SpanId: Id_22,
+    TraceId: Id_29,
+    SpanId: Id_31,
     Name: Manual-4.DefaultsReinstated.HttpClient,
     Resource: Manual-4.DefaultsReinstated.HttpClient,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_21,
+    ParentId: Id_30,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_20,
-    SpanId: Id_23,
+    TraceId: Id_29,
+    SpanId: Id_32,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.ManualInstrumentation-http-client,
     Type: http,
-    ParentId: Id_22,
+    ParentId: Id_31,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
@@ -274,8 +399,8 @@
     }
   },
   {
-    TraceId: Id_24,
-    SpanId: Id_25,
+    TraceId: Id_33,
+    SpanId: Id_34,
     Name: Manual-4.DefaultsReinstated.HttpListener,
     Resource: Manual-4.DefaultsReinstated.HttpListener,
     Service: Samples.ManualInstrumentation,
@@ -293,8 +418,8 @@
     }
   },
   {
-    TraceId: Id_26,
-    SpanId: Id_27,
+    TraceId: Id_35,
+    SpanId: Id_36,
     Name: Manual-5.Ext.HttpListener,
     Resource: Manual-5.Ext.HttpListener,
     Service: Samples.ManualInstrumentation,
@@ -312,8 +437,8 @@
     }
   },
   {
-    TraceId: Id_28,
-    SpanId: Id_29,
+    TraceId: Id_37,
+    SpanId: Id_38,
     Name: Manual-5.Ext.Outer,
     Resource: Manual-5.Ext.Outer,
     Service: Samples.ManualInstrumentation,
@@ -337,12 +462,12 @@
     }
   },
   {
-    TraceId: Id_28,
-    SpanId: Id_30,
+    TraceId: Id_37,
+    SpanId: Id_39,
     Name: Manual-5.Ext.Inner,
     Resource: Manual-5.Ext.Inner,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_29,
+    ParentId: Id_38,
     Error: 1,
     Tags: {
       Custom: Some-Value,
@@ -359,25 +484,25 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_28,
-    SpanId: Id_31,
+    TraceId: Id_37,
+    SpanId: Id_40,
     Name: Manual-5.Ext.HttpClient,
     Resource: Manual-5.Ext.HttpClient,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_30,
+    ParentId: Id_39,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_28,
-    SpanId: Id_32,
+    TraceId: Id_37,
+    SpanId: Id_41,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.ManualInstrumentation-http-client,
     Type: http,
-    ParentId: Id_31,
+    ParentId: Id_40,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
@@ -396,8 +521,8 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_33,
-    SpanId: Id_34,
+    TraceId: Id_42,
+    SpanId: Id_43,
     Name: Manual-6.EventSdk.Custom.Outer,
     Resource: Manual-6.EventSdk.Custom.Outer,
     Service: Samples.ManualInstrumentation,
@@ -420,37 +545,37 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_33,
-    SpanId: Id_35,
+    TraceId: Id_42,
+    SpanId: Id_44,
     Name: Manual-6.EventSdk.Custom.Inner,
     Resource: Manual-6.EventSdk.Custom.Inner,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_34,
+    ParentId: Id_43,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_33,
-    SpanId: Id_36,
+    TraceId: Id_42,
+    SpanId: Id_45,
     Name: Manual-6.Ext.HttpClient,
     Resource: Manual-6.Ext.HttpClient,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_35,
+    ParentId: Id_44,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_33,
-    SpanId: Id_37,
+    TraceId: Id_42,
+    SpanId: Id_46,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.ManualInstrumentation-http-client,
     Type: http,
-    ParentId: Id_36,
+    ParentId: Id_45,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
@@ -469,8 +594,8 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_38,
-    SpanId: Id_39,
+    TraceId: Id_47,
+    SpanId: Id_48,
     Name: Manual-6.Ext.HttpListener,
     Resource: Manual-6.Ext.HttpListener,
     Service: Samples.ManualInstrumentation,
@@ -488,8 +613,8 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_40,
-    SpanId: Id_41,
+    TraceId: Id_49,
+    SpanId: Id_50,
     Name: Manual-7.EventSdk.Success.Outer,
     Resource: Manual-7.EventSdk.Success.Outer,
     Service: Samples.ManualInstrumentation,
@@ -512,37 +637,37 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_40,
-    SpanId: Id_42,
+    TraceId: Id_49,
+    SpanId: Id_51,
     Name: Manual-7.EventSdk.Success.Inner,
     Resource: Manual-7.EventSdk.Success.Inner,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_41,
+    ParentId: Id_50,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_40,
-    SpanId: Id_43,
+    TraceId: Id_49,
+    SpanId: Id_52,
     Name: Manual-7.Ext.HttpClient,
     Resource: Manual-7.Ext.HttpClient,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_42,
+    ParentId: Id_51,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_40,
-    SpanId: Id_44,
+    TraceId: Id_49,
+    SpanId: Id_53,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.ManualInstrumentation-http-client,
     Type: http,
-    ParentId: Id_43,
+    ParentId: Id_52,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
@@ -561,8 +686,8 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_45,
-    SpanId: Id_46,
+    TraceId: Id_54,
+    SpanId: Id_55,
     Name: Manual-7.Ext.HttpListener,
     Resource: Manual-7.Ext.HttpListener,
     Service: Samples.ManualInstrumentation,
@@ -580,8 +705,8 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_48,
+    TraceId: Id_56,
+    SpanId: Id_57,
     Name: Manual-8.EventSdk.Failure.Outer,
     Resource: Manual-8.EventSdk.Failure.Outer,
     Service: Samples.ManualInstrumentation,
@@ -605,37 +730,37 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_49,
+    TraceId: Id_56,
+    SpanId: Id_58,
     Name: Manual-8.EventSdk.Failure.Inner,
     Resource: Manual-8.EventSdk.Failure.Inner,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_48,
+    ParentId: Id_57,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_50,
+    TraceId: Id_56,
+    SpanId: Id_59,
     Name: Manual-8.Ext.HttpClient,
     Resource: Manual-8.Ext.HttpClient,
     Service: Samples.ManualInstrumentation,
-    ParentId: Id_49,
+    ParentId: Id_58,
     Tags: {
       env: integration_tests,
       language: dotnet
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_51,
+    TraceId: Id_56,
+    SpanId: Id_60,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.ManualInstrumentation-http-client,
     Type: http,
-    ParentId: Id_50,
+    ParentId: Id_59,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
@@ -654,8 +779,8 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_52,
-    SpanId: Id_53,
+    TraceId: Id_61,
+    SpanId: Id_62,
     Name: Manual-8.Ext.HttpListener,
     Resource: Manual-8.Ext.HttpListener,
     Service: Samples.ManualInstrumentation,
@@ -673,10 +798,96 @@ CustomException: Exception of type 'CustomException' was thrown.
     }
   },
   {
-    TraceId: Id_54,
-    SpanId: Id_55,
-    Name: Manual-9.CustomContext.HttpListener,
-    Resource: Manual-9.CustomContext.HttpListener,
+    TraceId: Id_63,
+    SpanId: Id_64,
+    Name: Manual-9.EventSdkV2.Success.Outer,
+    Resource: Manual-9.EventSdkV2.Success.Outer,
+    Service: Samples.ManualInstrumentation,
+    Tags: {
+      appsec.events.users.login.success.key-1: val-1,
+      appsec.events.users.login.success.key-2: val-2,
+      appsec.events.users.login.success.track: true,
+      appsec.events.users.login.success.usr.email: test@test.fr,
+      appsec.events.users.login.success.usr.id: my-id,
+      appsec.events.users.login.success.usr.login: my-login,
+      appsec.events.users.login.success.usr.name: test-name,
+      appsec.events.users.login.success.usr.propagate_id: false,
+      appsec.events.users.login.success.usr.role: test-role,
+      appsec.events.users.login.success.usr.scope: test-scope,
+      appsec.events.users.login.success.usr.session_id: abc123,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      usr.email: test@test.fr,
+      usr.id: my-id,
+      usr.name: test-name,
+      usr.role: test-role,
+      usr.scope: test-scope,
+      usr.session_id: abc123,
+      _dd.appsec.events.users.login.success.sdk: true,
+      _dd.appsec.user.collection_mode: sdk
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_65,
+    Name: Manual-9.EventSdkV2.Success.Inner,
+    Resource: Manual-9.EventSdkV2.Success.Inner,
+    Service: Samples.ManualInstrumentation,
+    ParentId: Id_64,
+    Tags: {
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_66,
+    Name: Manual-9.Ext.HttpClient,
+    Resource: Manual-9.Ext.HttpClient,
+    Service: Samples.ManualInstrumentation,
+    ParentId: Id_65,
+    Tags: {
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_67,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.ManualInstrumentation-http-client,
+    Type: http,
+    ParentId: Id_66,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_2/?q=9.Ext,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_68,
+    SpanId: Id_69,
+    Name: Manual-9.Ext.HttpListener,
+    Resource: Manual-9.Ext.HttpListener,
     Service: Samples.ManualInstrumentation,
     Tags: {
       content: PONG,

@@ -27,9 +27,9 @@ internal static class GitCommandHelper
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandHelper));
 
     // Regex patterns for parsing the diff output
-    private static readonly Regex DiffHeaderRegex = new Regex(@"^diff --git a/(?<file>.+) b/(?<file2>.+)$");
-    private static readonly Regex LineChangeRegex = new Regex(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@");
-    private static char[] lineSeparators = { '\n', '\r' };
+    private static readonly Regex DiffHeaderRegex = new(@"^diff --git a/(?<fileA>.+) b/(?<fileB>.+)$", RegexOptions.Compiled);
+    private static readonly Regex LineChangeRegex = new(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@", RegexOptions.Compiled);
+    private static readonly char[] LineSeparators = ['\n', '\r'];
 
     public static ProcessHelpers.CommandOutput? RunGitCommand(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
@@ -91,9 +91,8 @@ internal static class GitCommandHelper
         {
             // Retrieve PR list of modified files
             var arguments = string.IsNullOrEmpty(headCommit) ? $"diff -U0 --word-diff=porcelain {baseCommit}" : $"diff -U0 --word-diff=porcelain {baseCommit} {headCommit}";
-
             var output = RunGitCommand(workingDirectory, arguments, MetricTags.CIVisibilityCommands.Diff);
-            if (output is not null && output.ExitCode == 0 && output.Output is { Length: > 0 })
+            if (output is { ExitCode: 0, Output.Length: > 0 })
             {
                 return ParseGitDiff(output.Output).ToArray();
             }
@@ -110,8 +109,8 @@ internal static class GitCommandHelper
         static List<FileCoverageInfo> ParseGitDiff(string diffOutput)
         {
             var fileChanges = new List<FileCoverageInfo>();
+            var modifiedLines = new List<LineRange>(25);
             FileCoverageInfo? currentFile = null;
-            var modifiedLines = new List<Tuple<int, int>>(100);
 
             // Split the diff output into lines for processing
             var lines = SplitLines(diffOutput);
@@ -130,27 +129,31 @@ internal static class GitCommandHelper
                         modifiedLines.Clear();
                     }
 
-                    currentFile = new FileCoverageInfo(headerMatch.Groups["file"].Value);
+                    currentFile = new FileCoverageInfo(headerMatch.Groups["fileB"].Value);
                     Log.Debug("GitCommandHelper:  Processing {File} ...", currentFile.Path);
-
                     continue;
                 }
 
                 // Check for the line change marker (e.g., @@ -1,2 +3,4 @@)
+                // Start tracking new lines
                 var lineChangeMatch = LineChangeRegex.Match(line);
-                if (lineChangeMatch.Success)
+                if (lineChangeMatch.Success &&
+                    int.TryParse(lineChangeMatch.Groups["start"].Value, out var startLine))
                 {
-                    int startLine = int.Parse(lineChangeMatch.Groups["start"].Value); // Start tracking new lines
-                    int lineCount = 0;
-                    if (lineChangeMatch.Groups["count"].Value is string countTxt && countTxt.Length > 0)
+                    var lineCount = 0;
+                    if (lineChangeMatch.Groups["count"].Value is { Length: > 0 } countTxt &&
+                        int.TryParse(countTxt.Trim(), out var lCount))
                     {
-                        lineCount = int.Parse(countTxt); // Start tracking new lines
+                        lineCount = lCount; // Start tracking new lines
+                        if (lineCount > 0)
+                        {
+                            lineCount -= 1; // Adjust for the start line count
+                        }
                     }
 
-                    modifiedLines.Add(new Tuple<int, int>(startLine, startLine + lineCount));
-                    var range = modifiedLines[modifiedLines.Count - 1];
-                    Log.Debug<int, int>("GitCommandHelper:    {From}..{To} ...", range.Item1, range.Item2);
-                    continue;
+                    var range = new LineRange(startLine, startLine + lineCount);
+                    modifiedLines.Add(range);
+                    Log.Debug<int, int>("GitCommandHelper:    {From}..{To} ...", range.Start, range.End);
                 }
             }
 
@@ -163,19 +166,18 @@ internal static class GitCommandHelper
 
             return fileChanges;
 
-            static byte[]? ToFileBitmap(List<Tuple<int, int>> modifiedLines)
+            static byte[]? ToFileBitmap(List<LineRange> modifiedLines)
             {
                 if (modifiedLines.Count == 0)
                 {
                     return null;
                 }
 
-                var maxCount = modifiedLines[modifiedLines.Count - 1].Item2;
-
+                var maxCount = modifiedLines.Max(m => m.End);
                 var bitmap = FileBitmap.FromLineCount(maxCount);
                 foreach (var tuple in modifiedLines)
                 {
-                    for (int i = tuple.Item1; i <= tuple.Item2; i++)
+                    for (var i = tuple.Start; i <= tuple.End; i++)
                     {
                         bitmap.Set(i);
                     }
@@ -189,6 +191,8 @@ internal static class GitCommandHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string[] SplitLines(string text, StringSplitOptions options = StringSplitOptions.RemoveEmptyEntries)
     {
-        return text.Split(lineSeparators, options);
+        return text.Split(LineSeparators, options);
     }
+
+    private readonly record struct LineRange(int Start, int End);
 }
