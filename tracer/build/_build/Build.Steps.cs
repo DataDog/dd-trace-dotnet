@@ -429,7 +429,13 @@ partial class Build
 
             // build the dependencies
             var projects = new[] { "Samples.ExampleLibraryTracer", "Samples.ExampleLibrary" }.Select(x => Solution.GetProject(x).Path);
-            DotnetBuild(projects, noRestore: false);
+            MSBuild(s => s
+                .SetTargetPath(NativeTracerTestsProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
+                .SetMaxCpuCount(null)
+                .CombineWith(projects, (m, project) => m
+                    .SetTargetPath(project)));
 
             // If we're building for x64, build for x86 too
             var platforms =
