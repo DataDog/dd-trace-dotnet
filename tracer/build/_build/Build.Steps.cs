@@ -381,7 +381,7 @@ partial class Build
     Target CompileManagedLoader => _ => _
         .Unlisted()
         .Description("Compiles the managed loader (which is required by the native loader)")
-        .After(CreateRequiredDirectories)
+        .After(Clean, CreateRequiredDirectories)
         .Executes(() =>
         {
             DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
