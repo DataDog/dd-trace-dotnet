@@ -1945,10 +1945,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
+    Log::Debug("ExceptionThrown");
+
     if (false == _isInitialized.load())
     {
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
+    }
+
+    // Record the exception for the current thread
+    // If the exception is not handled, ExceptionSearchCatcherFound won't be called
+    // before ExceptionUnwindFunctionEnter
+    ThreadID currentThreadId = 0;
+    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&currentThreadId);
+    if (SUCCEEDED(hr))
+    {
+        auto threadInfo = _pManagedThreadList->GetOrCreate(currentThreadId);
+        threadInfo->SetException(thrownObjectId);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
@@ -1981,6 +1994,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterLeave()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchCatcherFound(FunctionID functionId)
 {
+    Log::Debug("ExceptionSearchCatcherFound");
+
+    if (false == _isInitialized.load())
+    {
+        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    // A catch block was found for the exception
+    ThreadID currentThreadId = 0;
+    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&currentThreadId);
+    if (SUCCEEDED(hr))
+    {
+        auto threadInfo = _pManagedThreadList->GetOrCreate(currentThreadId);
+        threadInfo->ClearException();
+    }
+
     return S_OK;
 }
 
@@ -1996,11 +2026,37 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionOSHandlerLeave(UINT_PTR 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(FunctionID functionId)
 {
+    auto result = _pFrameStore->GetManagedFrame(functionId);
+    Log::Debug("ExceptionUnwindFunctionEnter in ", result.Frame);
+
+    if (false == _isInitialized.load())
+    {
+        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    // Starting to unwind the stack after the exception has be handled... or not
+    ThreadID currentThreadId = 0;
+    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&currentThreadId);
+    if (SUCCEEDED(hr))
+    {
+        auto threadInfo = _pManagedThreadList->GetOrCreate(currentThreadId);
+        auto exception = threadInfo->GetException();
+        if (exception != 0)
+        {
+            // The exception is not handled so keep track of the method where the exception was thrown
+            // TODO: it should be possible to "stack" all frames as this method is called for each frame from the top to the bottom of the stack
+            threadInfo->SetFaultyMethod(result);
+            // TODO: instead, create a fake Exception sample here
+        }
+    }
+
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave()
 {
+    Log::Debug("ExceptionUnwindFunctionLeave");
     return S_OK;
 }
 
@@ -2016,11 +2072,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId)
 {
+    Log::Debug("ExceptionCatcherEnter");
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave()
 {
+    Log::Debug("ExceptionCatcherLeave");
     return S_OK;
 }
 

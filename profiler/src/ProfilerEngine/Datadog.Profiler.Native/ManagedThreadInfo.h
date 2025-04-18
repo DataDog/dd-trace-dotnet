@@ -8,6 +8,7 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "IFrameStore.h"
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
 #include "shared/src/native-src/string.h"
@@ -99,6 +100,31 @@ public:
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
 
+    // TODO: maybe it would be better to store the type name and its message
+    //       who knows if the exception object could be moved by a compacting GC?
+    //       Not very likely in the case of an unhandled exception, but still...
+    inline void SetException(ObjectID exception)
+    {
+        _exception = exception;
+    }
+    inline ObjectID  GetException()
+    {
+        return _exception;
+    }
+    inline void ClearException()
+    {
+        _exception = 0;
+    }
+    inline void SetFaultyMethod(FrameInfoView method)
+    {
+        if (_hasFaultyMethod)
+        {
+            return;
+        }
+        _hasFaultyMethod = true;
+        _faultyMethod = method;
+    }
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
@@ -145,6 +171,9 @@ private:
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
     dd_mutex_t _objLock;
+    ObjectID _exception;
+    FrameInfoView _faultyMethod;
+    bool _hasFaultyMethod;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()

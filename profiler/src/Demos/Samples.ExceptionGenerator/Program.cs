@@ -30,6 +30,8 @@ namespace Samples.ExceptionGenerator
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--timeout TimeoutInSeconds | --run-infinitely | --scenario Scenario]");
             Console.WriteLine();
 
+            Console.ReadLine();
+
             EnvironmentInfo.PrintDescriptionToConsole();
 
             ParseCommandLine(args, out TimeSpan timeout, out var scenario, out var iterations, out bool runAsService);
@@ -93,7 +95,8 @@ namespace Samples.ExceptionGenerator
 
                                 case Scenario.Unhandled:
                                     Console.WriteLine(" ########### Crashing...");
-                                    throw new InvalidOperationException("Task failed successfully.");
+                                    OnUnhandledException();
+                                    break;
 
                                 default:
                                     Console.WriteLine($" ########### Unknown scenario: {scenario}.");
@@ -129,6 +132,21 @@ namespace Samples.ExceptionGenerator
 
                 Console.WriteLine($"{Environment.NewLine} ########### Finishing run at {DateTime.UtcNow}");
             }
+        }
+
+        private static void OnUnhandledException()
+        {
+            // This ensures that the method is not inlined + we see the difference in the stack trace
+            // with the unhandled exception case
+            try
+            {
+                throw new InvalidOperationException("This is a handled exception");
+            }
+            catch (Exception)
+            {
+            }
+
+            throw new InvalidOperationException("Task failed successfully.");
         }
 
         private static void ParseCommandLine(string[] args, out TimeSpan timeout, out Scenario? scenario, out int iterations, out bool runAsService)

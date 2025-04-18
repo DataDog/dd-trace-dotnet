@@ -79,7 +79,12 @@ private:
         const char* arraySuffix);
     bool GetTypeDesc(ClassID classId, TypeDesc*& typeDesc);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc);
+
+public:
+    // used for unhandled exceptions
     FrameInfoView GetManagedFrame(FunctionID functionId);
+
+private:
     std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
