@@ -47,6 +47,7 @@ internal class Program
         var encoder = new BinaryEncoder(ms);
         using (SampleHelpers.CreateScope("Ser"))
         {
+            // datum and default writers have the same write signature, but they don't share a common interface
             if (args[0].Equals("Default", StringComparison.OrdinalIgnoreCase))
             {
                 var writer = new SpecificDefaultWriter(outMessage.Schema);

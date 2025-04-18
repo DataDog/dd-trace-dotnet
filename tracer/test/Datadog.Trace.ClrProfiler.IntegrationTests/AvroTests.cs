@@ -42,7 +42,6 @@ public class AvroTests : TracingIntegrationTest
     public async Task TagTraces(string type, string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        // SetEnvironmentVariable(ConfigurationKeys.WaitForDebuggerAttach, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, type))

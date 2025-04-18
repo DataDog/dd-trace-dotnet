@@ -1651,56 +1651,6 @@
   {
     "IntegrationName": "Avro",
     "AssemblyName": "Avro",
-    "TargetTypeName": "Avro.Generic.DatumReader`1",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "!0",
-    "TargetParameterTypes": [
-      "!0",
-      "Avro.IO.Decoder"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 1,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumReaderGeneric1ReadIntegration",
-    "IntegrationKind": 2,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Avro",
-    "AssemblyName": "Avro",
-    "TargetTypeName": "Avro.Generic.DatumWriter`1",
-    "TargetMethodName": "Write",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [
-      "T",
-      "Avro.IO.Encoder"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 1,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumWriterGeneric1WriteIntegration",
-    "IntegrationKind": 2,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Avro",
-    "AssemblyName": "Avro",
     "TargetTypeName": "Avro.Generic.DefaultReader",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Object",
@@ -1747,6 +1697,56 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultWriterWriteIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Avro",
+    "AssemblyName": "Avro",
+    "TargetTypeName": "Avro.Generic.PreresolvingDatumReader`1",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "!0",
+      "Avro.IO.Decoder"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumReaderIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Avro",
+    "AssemblyName": "Avro",
+    "TargetTypeName": "Avro.Generic.PreresolvingDatumWriter`1",
+    "TargetMethodName": "Write",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "!0",
+      "Avro.IO.Encoder"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumWriterIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

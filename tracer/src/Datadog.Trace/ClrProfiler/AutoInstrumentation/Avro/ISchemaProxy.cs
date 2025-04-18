@@ -25,9 +25,9 @@ internal interface ISchemaProxy : IDuckType
 }
 
 /// <summary>
-/// DuckTyping interface for Avro.Generic.DatumReader`1
+/// DuckTyping interface for Avro.Generic.PreresolvingDatumReader`1
 /// </summary>
-internal interface IDatumReaderGeneric1Proxy : IDuckType
+internal interface IPreresolvingDatumReaderProxy : IDuckType
 {
     ISchemaProxy ReaderSchema { get; }
 
@@ -35,9 +35,9 @@ internal interface IDatumReaderGeneric1Proxy : IDuckType
 }
 
 /// <summary>
-/// DuckTyping interface for Avro.Generic.DatumWriter`1
+/// DuckTyping interface for Avro.Generic.PreresolvingDatumWriter`1
 /// </summary>
-internal interface IDatumWriterGeneric1Proxy : IDuckType
+internal interface IPreresolvingDatumWriterProxy : IDuckType
 {
     ISchemaProxy Schema { get; }
 }

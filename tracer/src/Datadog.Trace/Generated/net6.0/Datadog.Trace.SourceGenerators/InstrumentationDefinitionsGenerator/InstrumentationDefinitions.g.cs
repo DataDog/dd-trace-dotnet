@@ -101,10 +101,10 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.UserManagerCreateIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.UserManagerCreateIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumReaderGeneric1ReadIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumWriterGeneric1WriteIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultReaderReadIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultReaderReadIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DefaultWriterWriteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumReaderIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro.DatumWriterIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Avro,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb.BatchGetItemAsyncIntegration"

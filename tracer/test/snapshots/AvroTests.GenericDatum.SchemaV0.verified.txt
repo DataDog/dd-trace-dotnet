@@ -1,0 +1,50 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: Deser,
+    Resource: Deser,
+    Service: Samples.Avro,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      schema.definition: {"type":"record","name":"Person","fields":[{"name":"name","type":"string"},{"name":"email","default":"","type":"string"}]},
+      schema.id: 18049516638931113261,
+      schema.name: Person,
+      schema.operation: deserialization,
+      schema.type: avro,
+      schema.weight: 1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: Ser,
+    Resource: Ser,
+    Service: Samples.Avro,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      schema.definition: {"type":"record","name":"Person","fields":[{"name":"name","type":"string"},{"name":"email","default":"","type":"string"}]},
+      schema.id: 18049516638931113261,
+      schema.name: Person,
+      schema.operation: serialization,
+      schema.type: avro,
+      schema.weight: 1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]
