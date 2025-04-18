@@ -225,7 +225,7 @@ profiler_cpu_timer_create:
       - scheduler_failure
       - api_failure
   rules:
-    - when: on_success
+    - when: manual
   image: $MACROBENCHMARKS_CI_IMAGE
 
   script:
@@ -414,7 +414,7 @@ profiler_cpu_timer_create-arm64:
   interruptible: true
   timeout: 1h
   rules:
-    - when: on_success
+    - when: manual
   artifacts:
     name: "artifacts"
     when: always
