@@ -290,6 +290,17 @@ namespace Datadog.Trace
             instance?.TracerManager.Start();
         }
 
+#if NETCOREAPP3_1_OR_GREATER
+        /// <summary>
+        /// TEMP for testing trimming
+        /// </summary>
+        public void Testing()
+        {
+            var x = new Microsoft.AspNetCore.Http.CookieBuilder();
+            x.Name = "test";
+        }
+#endif
+
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.
         /// </summary>
