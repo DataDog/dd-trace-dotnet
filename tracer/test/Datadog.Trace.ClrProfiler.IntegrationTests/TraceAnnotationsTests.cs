@@ -44,8 +44,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // The .NET 8 runtime is more aggressive in optimising structs
             // so if you reference a version of the .NET tracer prior to this fix:
             // https://github.com/DataDog/dd-trace-dotnet/pull/4608 you may get
-            // struct tearing issues. Bumping the TraceAnnotations.VersionMismatch.AfterFeature project to a version
-            // with the issue solves the problem.
+            // struct tearing issues. Bumping the TraceAnnotations.VersionMismatch.AfterFeature project to a
+            // version with the issue solves the problem.
             // _However_ Duck-typing is broken on .NET 8 prior to when we added explicit support, so there will never
             // be an "older" package version we can test with
             throw new SkipException("Tracer versions before TraceAnnotations was supported do not support .NET 8");
