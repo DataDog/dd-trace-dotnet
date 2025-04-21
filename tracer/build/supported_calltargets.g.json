@@ -12773,6 +12773,30 @@
     "InstrumentationCategory": 4
   },
   {
+    "IntegrationName": "Owin",
+    "AssemblyName": "Microsoft.Owin.Hosting",
+    "TargetTypeName": "Microsoft.Owin.Hosting.Engine.HostingEngine",
+    "TargetMethodName": "ResolveApp",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Microsoft.Owin.Hosting.Engine.StartContext"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Owin.ResolveAppIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "Process",
     "AssemblyName": "System",
     "TargetTypeName": "System.Diagnostics.Process",

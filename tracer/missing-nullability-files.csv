@@ -501,6 +501,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Msmq/MsmqConstants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/StartRootSpanIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/StartSpanIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/TracerProviderBuilderIntegration.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Owin/ResolveAppIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/EnvironmentVariablesScrubber.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ProcessStartTags.cs
