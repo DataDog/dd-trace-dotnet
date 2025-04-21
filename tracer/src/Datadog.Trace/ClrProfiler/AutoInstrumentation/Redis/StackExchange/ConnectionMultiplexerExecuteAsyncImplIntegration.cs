@@ -63,7 +63,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
 
             // Assuming that instance.Instance is not null, because we're calling an instance method
+            StackExchangeRedisHelper.Log.Warning("Redis command: {Config}", rawCommand);
+            StackExchangeRedisHelper.Log.Warning("Redis config1: {Config}", instance.Configuration);
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
+            StackExchangeRedisHelper.Log.Warning("Redis host/port: {Host}, {Port}", hostAndPort.Host, hostAndPort.Port);
 
             var scope = RedisHelper.CreateScope(
                 Tracer.Instance,

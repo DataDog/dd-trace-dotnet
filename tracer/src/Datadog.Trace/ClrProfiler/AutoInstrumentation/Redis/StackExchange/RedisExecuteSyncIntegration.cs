@@ -56,6 +56,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
 
+            StackExchangeRedisHelper.Log.Warning("Redis command2: {Config}", rawCommand);
+            StackExchangeRedisHelper.Log.Warning("Redis config12: {Config}", instance.Multiplexer.Configuration);
+            StackExchangeRedisHelper.Log.Warning("Redis host/port2: {Host}, {Port}", hostAndPort.Host, hostAndPort.Port);
+
             var scope = RedisHelper.CreateScope(
                 Tracer.Instance,
                 IntegrationId,

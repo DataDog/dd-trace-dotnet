@@ -5,9 +5,11 @@
 
 #nullable enable
 
+using System.ComponentModel;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -18,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StackExchangeRedisHelper));
 
         /// <summary>
         /// Get the host and port from the config
@@ -34,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
                 // config can contain several settings separated by commas:
                 // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
                 // split in commas, find the one without '=', split that one on ':'
+                Log.Warning("Redis config: {Config}", config);
+
                 var hostAndPort = config.Split(',')
                                         .FirstOrDefault(p => !p.Contains("="))
                                        ?.Split(':');
