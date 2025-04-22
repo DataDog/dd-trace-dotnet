@@ -21,8 +21,7 @@ Full combinatorial test suites are run when:
 - Any *current* instrumentations have been changed
 - 100+ snapshots have changed
 
-Reduced pairwise test suites are when when all of the above aren't true.
-
+Reduced pairwise test suites are used when all of the above aren't true.
 > At a later point we can consider fine-tuning this further to more selectively choose what configuration to use on PRs.
 
 ## Migrating to Combinatorial Tests
