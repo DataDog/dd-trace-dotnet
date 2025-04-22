@@ -27,6 +27,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("StackExchange.Redis", output)
         {
             SetServiceVersion("1.0.0");
+#pragma warning disable CS0618 // Type or member is obsolete
+            EnableDebugMode();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         private enum PackageVersion
