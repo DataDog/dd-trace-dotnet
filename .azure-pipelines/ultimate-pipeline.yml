@@ -3264,7 +3264,6 @@ stages:
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
-              -e USE_FULL_TEST_CONFIG=$(isMainOrReleaseBranch) \
               IntegrationTests.ARM64 \
           displayName: docker-compose run IntegrationTests
           env:
