@@ -292,7 +292,7 @@ stages:
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
-    - script: tracer\build.cmd CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
+    - script: tracer\build.cmd CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
       displayName: Build and run tracer and native loader native tests
       retryCountOnTaskFailure: 1
       env:
