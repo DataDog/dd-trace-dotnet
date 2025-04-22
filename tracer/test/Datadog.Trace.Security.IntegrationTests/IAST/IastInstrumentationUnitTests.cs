@@ -282,7 +282,11 @@ public class IastInstrumentationUnitTests : TestHelper
 
     [Theory]
     [InlineData(typeof(StringBuilder))]
+#if NET9_0_OR_GREATER
     [InlineData(typeof(string))]
+#else
+    [InlineData(typeof(string), new[] { "System.String::Concat(System.ReadOnlySpan`1<System.String>)" })]
+#endif
     [InlineData(typeof(StreamWriter))]
     [InlineData(typeof(StreamReader))]
     [InlineData(typeof(FileStream))]
