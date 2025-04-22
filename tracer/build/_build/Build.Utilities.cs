@@ -464,6 +464,13 @@ partial class Build
                             return false;
                         }
 
+                        // These projects are a dependency for the native unit tests
+                        // and are generally a pain, so just include them here
+                        if (x.Name is "Samples.ExampleLibraryTracer" or "Samples.ExampleLibrary")
+                        {
+                            return true;
+                        }
+
                         // We only want to include projects which are in the top-level "src" or "test" solution folders
                         var solutionFolder = x.SolutionFolder;
                         return
