@@ -1,3 +1,5 @@
+# Xunit Combinatorial
+
 [Xunit.Combinatorial](https://github.com/AArnott/Xunit.Combinatorial) has allowed us to reduce some integrations tests from taking 10+ minutes each CI run to being around 1 minute while maintaining a good coverage of tested configurations. Migrating a test suite to leverage this is a relatively quick process and you will immediately be able to take advantage of the performance improvements.
 
 Instead of running our exhaustive combinatorial test suite on every PR we can *dynamically* determine when we should run the full test configuration or a much reduced [Pairwise](https://en.wikipedia.org/wiki/All-pairs_testing) test configuration.
