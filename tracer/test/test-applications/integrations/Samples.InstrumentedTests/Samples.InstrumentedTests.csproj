@@ -22,7 +22,6 @@
     <!-- as those force choosing the span overloads (which we currently don't support)   -->
     <!-- Once we add support for those overloads, we should remove this   -->
     <LangVersion>12.0</LangVersion>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net462'">

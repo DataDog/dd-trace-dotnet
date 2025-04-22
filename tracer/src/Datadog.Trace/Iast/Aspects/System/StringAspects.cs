@@ -530,7 +530,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
         }
 
         return result;
@@ -553,7 +553,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
         }
 
         return result;
@@ -577,7 +577,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
         }
 
         return result;
