@@ -172,7 +172,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.14.0
+  ToolVersion: 3.16.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -720,7 +720,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -763,7 +763,7 @@ stages:
     dependsOn: []
 
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -813,7 +813,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -855,7 +855,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -903,7 +903,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1222,7 +1222,7 @@ stages:
           artifactSuffix: linux-musl-arm64
 
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1325,7 +1325,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
     workspace:
       clean: all
     steps:
@@ -1489,6 +1489,7 @@ stages:
         command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -1519,7 +1520,7 @@ stages:
         matrix:
           $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_arm64_matrix'] ]
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
       workspace:
         clean: all
       steps:
@@ -1538,6 +1539,7 @@ stages:
             command: "BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -1558,7 +1560,7 @@ stages:
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [standalone, multi_version, merge]
+        jobs: [standalone, multi_version]
 
     - job: standalone
       timeoutInMinutes: 60 #default value
@@ -1577,7 +1579,7 @@ stages:
 
         - publish: $(outputDir)/bin
           displayName: Upload artifact samples (bin only)
-          artifact: samples-bin-standalone
+          artifact: samples-standalone
 
         - publish: artifacts/build_data
           displayName: Uploading logs
@@ -1622,7 +1624,7 @@ stages:
           retryCountOnTaskFailure: 1
 
         - publish: $(outputDir)/publish
-          displayName: Upload artifact samples (bin only)
+          displayName: Upload artifact samples (publish only)
           artifact: samples-multi-version-$(framework)
 
         - publish: artifacts/build_data
@@ -1630,91 +1632,6 @@ stages:
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: failed()
           continueOnError: true
-
-    - job: merge
-      dependsOn: [ standalone, multi_version ]
-      timeoutInMinutes: 60 #default value
-      pool:
-        name: azure-windows-scale-set-3
-      steps:
-        - checkout: none
-        - powershell: |
-            mkdir $(Build.ArtifactStagingDirectory)/bin
-            mkdir $(Build.ArtifactStagingDirectory)/publish
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-bin-standalone
-            path: $(Build.ArtifactStagingDirectory)/bin
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net462
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-netcoreapp2.1
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-netcoreapp3.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-netcoreapp3.1
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net5.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net6.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net7.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net8.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples-multi-version-net9.0
-            path: $(Build.ArtifactStagingDirectory)/publish
-          retryCountOnTaskFailure: 5
-
-        - publish: $(Build.ArtifactStagingDirectory)
-          displayName: Upload artifact samples
-          artifact: samples
 
 # This is just to test that we _can_ build the solution on macos
 # It's not used by other stages, and just ensures we don't break the macos build
@@ -1777,12 +1694,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -1926,66 +1838,6 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisTracerIntegrationTests
-      env:
-        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        Filter: $(IntegrationTestFilter)
-        SampleName: $(IntegrationTestSampleName)
-
-    - task: PublishTestResults@2
-      displayName: publish test results
-      inputs:
-        testResultsFormat: VSTest
-        testResultsFiles: artifacts/build_data/results/**/*.trx
-      condition: succeededOrFailed()
-
-    - publish: artifacts/build_data
-      displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - publish: tracer/test/snapshots
-      displayName: Uploading snapshots
-      artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: Check logs for errors
-
-- stage: integration_tests_windows_iis_security
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [security]
-
-  - job: security
-    timeoutInMinutes: 60 #default value
-    strategy:
-      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
-    pool:
-      name: azure-windows-scale-set-3
-    variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
-    - template: steps/restore-working-directory.yml
-
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
@@ -2395,12 +2247,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2426,17 +2275,14 @@ stages:
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2464,7 +2310,7 @@ stages:
   - job: DockerTest
     timeoutInMinutes: 60 #default value
     strategy:
-      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
 
     variables:
       TestAllPackageVersions: true
@@ -2482,12 +2328,9 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2525,6 +2368,7 @@ stages:
           -e IncludeTestsRequiringDocker=true \
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
+          -e Area=$(area) \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2538,11 +2382,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2608,12 +2448,9 @@ stages:
       inputs:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download samples
-      inputs:
-        artifact: samples
-        path: $(outputDir)
-      retryCountOnTaskFailure: 5
+    - template: steps/download-samples.yml
+      parameters:
+        framework: $(publishTargetFramework)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2727,11 +2564,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -2821,11 +2654,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -3205,7 +3034,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3217,12 +3046,9 @@ stages:
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
+        - template: steps/download-samples.yml
+          parameters:
+            framework: $(publishTargetFramework)
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -3252,6 +3078,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3283,7 +3110,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3294,12 +3121,9 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
-        - task: DownloadPipelineArtifact@2
-          displayName: Download samples
-          inputs:
-            artifact: samples
-            path: $(outputDir)
-          retryCountOnTaskFailure: 5
+        - template: steps/download-samples.yml
+          parameters:
+            framework: $(publishTargetFramework)
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -3348,6 +3172,7 @@ stages:
           condition: succeededOrFailed()
           continueOnError: true
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3397,7 +3222,7 @@ stages:
       workspace:
         clean: all
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -3434,6 +3259,7 @@ stages:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+        - template: steps/make-artifacts-uploadable.yml
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: always()
@@ -3614,6 +3440,7 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -4136,6 +3963,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
 
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       displayName: Uploading tool_artifacts_tests_windows logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -4178,12 +4006,12 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
-          poolname: aws-arm64-auto-scaling
+          poolname: azure-managed-linux-arm64-1
           targetArch: arm64
         alpine_arm64:
           baseImage: alpine
           artifactSuffix: linux-musl-arm64
-          poolname: aws-arm64-auto-scaling
+          poolname: azure-managed-linux-arm64-1
           targetArch: arm64
 
     pool:
@@ -4260,11 +4088,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
-    - script: |
-        sudo chmod -R 644 artifacts/build_data/dumps/* || true
-      displayName: Make dumps uploadable to AzDo
-      condition: succeededOrFailed()
-
+    - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -4864,7 +4688,6 @@ stages:
   dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
-    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -5328,7 +5151,6 @@ stages:
           
         - task: DownloadPipelineArtifact@2
           displayName: Download linux-packages
-          condition: eq( variables['System.JobAttempt'], 1 )
           inputs:
             artifact: linux-packages-linux-x64
             patterns: '**/*tar.gz'
@@ -5339,8 +5161,7 @@ stages:
             echo Moving $PACKAGE_NAME to system-tests/binaries
             mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
           displayName: Move dotnet binary to system test folder
-          condition: eq( variables['System.JobAttempt'], 1 )
-        
+
         - script: |
             set -e
             cd system-tests
@@ -5361,11 +5182,11 @@ stages:
             docker save system_tests/agent:latest -o ../docker-images/agent.tar
 
           displayName: Build weblogs and agent & save Docker images
-          condition: eq( variables['System.JobAttempt'], 1 )
-        
+
         - task: PublishPipelineArtifact@1
           displayName: Publish Docker images artifact
-          condition: eq( variables['System.JobAttempt'], 1 )
+          # Ignore if we re-run the job and don't try to re-publish
+          continueOnError: true
           inputs:
             path: 'docker-images'
             artifactName: 'system-test-docker-images'
@@ -5990,7 +5811,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -6074,7 +5895,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -6148,7 +5969,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -6240,7 +6061,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: aws-arm64-auto-scaling
+      name: azure-managed-linux-arm64-1
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -6625,7 +6446,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/install-docker-compose-v1.yml
@@ -6857,6 +6678,7 @@ stages:
             COMPlus_DbgEnableMiniDump=1 \
             COMPlus_DbgMiniDumpType=4 \
             DOTNET_DbgMiniDumpName=$(System.DefaultWorkingDirectory)/artifacts/build_data/dumps/coredump.%t.%p \
+            DOTNET_EnableCrashReport=1 \
             DD_INJECTION_ENABLED=tracer \
             DD_INJECT_FORCE=1 \
             DD_TELEMETRY_FORWARDER_PATH=/usr/bin/true \
@@ -6964,7 +6786,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: aws-arm64-auto-scaling
+        name: azure-managed-linux-arm64-1
 
       steps:
         - template: steps/clone-repo.yml
@@ -7059,7 +6881,6 @@ stages:
     - integration_tests_windows
     - integration_tests_windows_debugger
     - integration_tests_windows_iis
-    - integration_tests_windows_iis_security
     - integration_tests_azure_functions
     - msi_integration_tests_windows
     - integration_tests_linux
@@ -7151,31 +6972,3 @@ stages:
         -d '{"commit": "'$sha'"}' \
           $(slackWebhookUrl)
       displayName: "notify"
-
-- stage: generate_LLM_Report
-  dependsOn: [merge_commit_id]
-  condition: eq(variables['generate_llm_report'], 'true')
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - job: generate_LLM_job
-    timeoutInMinutes: 3
-    dependsOn: []
-    pool:
-      name: azure-windows-scale-set-3
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-
-    - powershell: tracer/build.ps1 LLMPRReview
-      displayName: Generate LLM report
-      name: generate_llm_step
-      env:
-        PullRequestNumber: $(System.PullRequest.PullRequestNumber)
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
-        OPEN_AI_KEY: $(OPEN_AI_KEY)

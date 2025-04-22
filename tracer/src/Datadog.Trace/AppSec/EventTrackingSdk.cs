@@ -42,6 +42,8 @@ public static class EventTrackingSdk
 
     internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
     {
+        TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventLoginSuccessSdkV1);
+
         if (string.IsNullOrEmpty(userId))
         {
             ThrowHelper.ThrowArgumentNullException(nameof(userId));
@@ -143,6 +145,8 @@ public static class EventTrackingSdk
 
     internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
     {
+        TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventFailureSdkV1);
+
         if (string.IsNullOrEmpty(userId))
         {
             ThrowHelper.ThrowArgumentNullException(nameof(userId));
@@ -201,6 +205,8 @@ public static class EventTrackingSdk
 
     internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, Tracer tracer)
     {
+        TelemetryFactory.Metrics.RecordCountUserEventSdk(MetricTags.UserEventSdk.UserEventCustomSdkV1);
+
         if (string.IsNullOrEmpty(eventName))
         {
             ThrowHelper.ThrowArgumentNullException(nameof(eventName));

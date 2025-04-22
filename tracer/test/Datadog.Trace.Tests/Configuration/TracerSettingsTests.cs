@@ -1337,6 +1337,16 @@ namespace Datadog.Trace.Tests.Configuration
             errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
         }
 
+        [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void InferredProxySpansEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.InferredProxySpansEnabled.Should().Be(expected);
+        }
+
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
         {
             if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)

@@ -66,7 +66,7 @@ std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vect
 
     for (auto const& [name, value] : labels)
     {
-        sample->AddLabel(Label{name, value});
+        sample->AddLabel(StringLabel{name, value});
     }
 
     sample->SetValue(value);

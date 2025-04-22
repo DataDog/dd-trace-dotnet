@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
 
 </Project>

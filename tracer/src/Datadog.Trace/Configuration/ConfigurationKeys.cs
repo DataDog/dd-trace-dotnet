@@ -829,6 +829,14 @@ namespace Datadog.Trace.Configuration
             public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
 
             /// <summary>
+            /// Configuration key to enable or disable the generation of an inferred span for proxy services.
+            /// Enabling this will create a fake span based on provided proxy headers to allow for better
+            /// observability when a client request routes through some proxy to an application.
+            /// Default value is <c>false</c> (disabled).
+            /// </summary>
+            internal const string InferredProxySpansEnabled = "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED";
+
+            /// <summary>
             /// Configuration key to enable or disable the injection of the Datadog trace context into stored procedures.
             /// Default value is <c>false</c> (enabled).
             /// When enabled, Datadog trace context will be injected into individual stored procedure calls when the following requirements are met:

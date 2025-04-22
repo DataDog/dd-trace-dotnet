@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MethodArgumentsData()
         {
-            for (var i = 0; i < 1; i++)
+            for (var i = 0; i < 9; i++)
             {
                 var fastPath = i < 9;
                 yield return new object[] { i, fastPath };
@@ -69,6 +69,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(180, endMethodCount);
                     Assert.Equal(44, exceptionCount);
                 }
+                else if (numberOfArguments == 1)
+                {
+                    Assert.Equal(175, beginMethodCount);
+                    Assert.Equal(175, endMethodCount);
+                    Assert.Equal(40, exceptionCount);
+                }
                 else
                 {
                     Assert.Equal(168, beginMethodCount);
@@ -104,9 +110,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".VoidRefMethod",
                 };
 
-                Assert.Equal(8, beginMethodCount);
+                Assert.Equal(9, beginMethodCount);
                 Assert.Equal(8, begin2MethodCount);
-                Assert.Equal(16, endMethodCount);
+                Assert.Equal(17, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
@@ -198,8 +204,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".ReturnValueMethod",
                 };
 
-                Assert.Equal(3, begin1MethodCount);
-                Assert.Equal(3, endMethodCount);
+                Assert.Equal(5, begin1MethodCount);
+                Assert.Equal(5, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
@@ -266,6 +272,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.CallTargetBubbleUpExceptionsIntegration, CallTargetNativeTest").Count;
             beginMethodCount.Should().Be(6);
             endMethodCount.Should().Be(6);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task InstrumentationExceptionIntegrations()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "instrumentationexceptions");
+            processResult.ExitCode.Should().Be(0);
+            var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            beginMethodCount.Should().Be(5);
+            endMethodCount.Should().Be(2);
         }
 
         [SkippableFact]

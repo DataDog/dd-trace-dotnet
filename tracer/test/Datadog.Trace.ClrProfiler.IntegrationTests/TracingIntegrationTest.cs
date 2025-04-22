@@ -12,12 +12,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TracingIntegrationTest : TestHelper
     {
-        public TracingIntegrationTest(string sampleAppName, ITestOutputHelper output)
+        protected TracingIntegrationTest(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
         }
 
-        public TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
+        protected TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : base(sampleAppName, samplePathOverrides, output)
         {
         }

@@ -5,8 +5,10 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
@@ -28,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
     public class UpdateItemIntegration
     {
         private const string Operation = "UpdateItem";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<UpdateItemIntegration>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -38,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <param name="request">The request for the DynamoDB operation</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TUpdateItemRequest>(TTarget instance, TUpdateItemRequest request)
-            where TUpdateItemRequest : IAmazonDynamoDbRequestWithTableName, IDuckType
+            where TUpdateItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType
         {
             if (request.Instance is null)
             {
@@ -47,6 +50,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
             AwsDynamoDbCommon.TagTableNameAndResourceName(request.TableName, tags, scope);
+
+            if (!Tracer.Instance.Settings.SpanPointersEnabled)
+            {
+                return new CallTargetState(scope);
+            }
+
+            var tableName = request.TableName;
+            try
+            {
+                var keys = request.Keys.DuckCast<IDynamoDbKeysObject>();
+                SpanPointers.AddDynamoDbSpanPointer(scope.Span, tableName, keys);
+            }
+            catch (Exception exception)
+            {
+                Log.Debug(exception, "Unable to add span pointer");
+            }
 
             return new CallTargetState(scope);
         }

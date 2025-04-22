@@ -5,15 +5,6 @@
   },
   "actions": [
     {
-      "id": "customblock",
-      "type": "block_request",
-      "parameters": {
-        "status_code": 403,
-        "grpc_status_code": "10",
-        "type": "auto"
-      }
-    },
-    {
       "id": "redirectstatuscode_200",
       "type": "redirect_request",
       "parameters": {

@@ -204,6 +204,50 @@ internal class Program
                 await SendHttpRequest("Ext");
             }
 
+            using (Tracer.Instance.StartActive($"Manual-{++count}.EventSdkV2.Success.Outer"))
+            {
+                using var s2 = Tracer.Instance.StartActive($"Manual-{count}.EventSdkV2.Success.Inner");
+                EventTrackingSdkV2.TrackUserLoginSuccess(
+                    "my-login",
+                    new UserDetails("my-id")
+                    {
+                        Email = "test@test.fr",
+                        Name = "test-name",
+                        Role = "test-role",
+                        Scope = "test-scope",
+                        SessionId = "abc123"
+                    },
+                    new Dictionary<string, string>
+                    {
+                        { "key-1", "val-1" },
+                        { "key-2", "val-2" }
+                    });
+                await SendHttpRequest("Ext");
+            }
+
+            using (Tracer.Instance.StartActive($"Manual-{++count}.EventSdkV2.Failure.Outer"))
+            {
+                using var s2 = Tracer.Instance.StartActive($"Manual-{count}.EventSdkV2.Failure.Inner");
+                EventTrackingSdkV2.TrackUserLoginFailure(
+                    "my-login",
+                    true,
+                    new UserDetails("my-id")
+                    {
+                        Email = "test@test.fr",
+                        Name = "test-name",
+                        Role = "test-role",
+                        Scope = "test-scope",
+                        SessionId = "abc123"
+                    },
+                    new Dictionary<string, string>
+                    {
+                        { "key-1", "val-1" },
+                        { "key-2", "val-2" }
+                    });
+
+                await SendHttpRequest("Ext");
+            }
+
             // Custom context
             var parent = new SpanContext(traceId: 1234567, 7654321, SamplingPriority.AutoKeep, "manual-parent");
             var createSpan = new SpanCreationSettings { FinishOnClose = false, StartTime = DateTimeOffset.Now.AddHours(-1), Parent = parent, };
