@@ -172,3 +172,38 @@ missing-nullability-files.csv             @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Configuration/IntegrationId.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs @DataDog/apm-dotnet
+
+# Version Bump Related Files - overriding to have wider coverage
+
+/profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt @DataDog/profiling-dotnet @DataDog/apm-dotnet
+/profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt @DataDog/profiling-dotnet @DataDog/apm-dotnet
+/profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc @DataDog/profiling-dotnet @DataDog/apm-dotnet
+/profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h @DataDog/profiling-dotnet @DataDog/apm-dotnet
+/profiler/src/ProfilerEngine/ProductVersion.props @DataDog/profiling-dotnet @DataDog/apm-dotnet
+/tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj @DataDog/apm-dotnet
+/tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj @DataDog/apm-dotnet
+/tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj @DataDog/apm-dotnet
+/tracer/samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj @DataDog/apm-dotnet
+/tracer/samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj @DataDog/apm-dotnet
+/tracer/samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj @DataDog/apm-dotnet
+/tracer/samples/ConsoleApp/Alpine3.10.dockerfile @DataDog/apm-dotnet
+/tracer/samples/ConsoleApp/Alpine3.9.dockerfile @DataDog/apm-dotnet
+/tracer/samples/ConsoleApp/Debian.dockerfile @DataDog/apm-dotnet
+/tracer/samples/OpenTelemetry/Debian.dockerfile @DataDog/apm-dotnet
+/tracer/samples/WindowsContainer/Dockerfile @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Datadog.Trace.csproj @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/TracerConstants.cs @DataDog/apm-dotnet
+/tracer/src/Datadog.Tracer.Native/CMakeLists.txt @DataDog/apm-dotnet
+/tracer/src/Datadog.Tracer.Native/Resource.rc @DataDog/apm-dotnet
+/tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h @DataDog/apm-dotnet
+/tracer/tools/PipelineMonitor/PipelineMonitor.csproj @DataDog/apm-dotnet
