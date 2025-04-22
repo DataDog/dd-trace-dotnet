@@ -40,7 +40,6 @@
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
     <PackageReference Include="DiffPlex" Version="1.7.2" />
-    <PackageReference Include="Xunit.Combinatorial" Version="1.6.24" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
