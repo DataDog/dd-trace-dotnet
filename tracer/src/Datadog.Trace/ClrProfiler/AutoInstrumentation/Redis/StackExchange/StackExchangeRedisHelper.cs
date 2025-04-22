@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.ComponentModel;
 using System.Linq;
 using Datadog.Trace.Configuration;
@@ -38,6 +39,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
                 // hostname:port,name=MyName,keepAlive=180,syncTimeout=10000,abortConnect=False
                 // split in commas, find the one without '=', split that one on ':'
                 Log.Warning("Redis config: {Config}", config);
+                var hostVar = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST");
+                StackExchangeRedisHelper.Log.Warning("Redis hostVar: {Config}", hostVar);
 
                 var hostAndPort = config.Split(',')
                                         .FirstOrDefault(p => !p.Contains("="))
