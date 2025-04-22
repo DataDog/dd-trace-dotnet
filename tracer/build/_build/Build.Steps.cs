@@ -35,6 +35,7 @@ using Logger = Serilog.Log;
 partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
+    [Solution("Datadog.Trace.Build.g.sln")] readonly Solution BuildSolution;
     [Solution("Datadog.Trace.Samples.g.sln")] readonly Solution SamplesSolution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
@@ -260,7 +261,7 @@ partial class Build
             if (IsWin)
             {
                 NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
+                    .SetTargetPath(BuildSolution)
                     .SetVerbosity(NuGetVerbosity.Normal)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
@@ -268,7 +269,7 @@ partial class Build
             else
             {
                 DotNetRestore(s => s
-                    .SetProjectFile(Solution)
+                    .SetProjectFile(BuildSolution)
                     .SetVerbosity(DotNetVerbosity.Normal)
                     .SetProperty("configuration", BuildConfiguration.ToString())
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
