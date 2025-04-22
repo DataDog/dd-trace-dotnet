@@ -44,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 var tags = tracer.CurrentTraceSettings.Schema.Database.CreateRedisTags();
                 tags.InstrumentationName = integrationName;
 
+                Log.Warning("SetTag6666: {Host}", tags.Host);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 int separatorIndex = rawCommand.IndexOf(' ');
                 string command;
@@ -61,7 +62,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 span.Type = SpanTypes.Redis;
                 span.ResourceName = command;
                 tags.RawCommand = rawCommand;
+                Log.Warning("SetTag444: {Host}", host);
                 tags.Host = host;
+                Log.Warning("SetTag7777: {Host}", tags.Host);
                 tags.Port = port;
                 if (databaseIndex.HasValue)
                 {
@@ -69,7 +72,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 }
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                Log.Warning("SetTag23772: {Host}", Tags.PeerService);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                Log.Warning("SetTag222234232: {Host}", Tags.PeerService);
+                Log.Warning("SetTag8888: {Host}", tags.Host);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)
