@@ -459,8 +459,7 @@ partial class Build
                         // There's a few projects we don't care about here,
                         // because they require additional steps to build, are built seperately, or they aren't used in CI
                         if (x.Name is "Datadog.InstrumentationAssemblyGenerator" or "Datadog.Trace.Tools.Runner"
-                            or "Datadog.Trace.Bundle" or "Datadog.Trace.Trimming" or "Datadog.Trace.ClrProfiler.Managed.Loader"
-                         || Path.GetExtension(x.Path) != ".csproj")
+                            or "Datadog.Trace.Bundle" or "Datadog.Trace.ClrProfiler.Managed.Loader")
                         {
                             return false;
                         }
