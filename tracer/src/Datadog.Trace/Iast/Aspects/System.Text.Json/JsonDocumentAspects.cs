@@ -60,7 +60,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex);
+            IastModule.LogAspectException(ex, "(DuckCast)");
             return null;
         }
 
@@ -101,7 +101,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex);
+            IastModule.LogAspectException(ex, "(DuckCast)");
             return null;
         }
 
