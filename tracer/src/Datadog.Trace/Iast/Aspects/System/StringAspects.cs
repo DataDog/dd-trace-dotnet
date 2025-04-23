@@ -512,6 +512,104 @@ public class StringAspects
         return result;
     }
 
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param1"> First param </param>
+    /// <param name="param2"> Second param </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)")]
+    public static string Concat(ReadOnlySpan<char> param1, ReadOnlySpan<char> param2)
+    {
+        var result = string.Concat(param1, param2);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(TaintedObjects.GetString(ref param1), TaintedObjects.GetString(ref param2), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param1"> First param </param>
+    /// <param name="param2"> Second param </param>
+    /// <param name="param3"> Third param </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)")]
+    public static string Concat(ReadOnlySpan<char> param1, ReadOnlySpan<char> param2, ReadOnlySpan<char> param3)
+    {
+        var result = string.Concat(param1, param2, param3);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(TaintedObjects.GetString(ref param1), TaintedObjects.GetString(ref param2), TaintedObjects.GetString(ref param3)), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param1"> First param </param>
+    /// <param name="param2"> Second param </param>
+    /// <param name="param3"> Third param </param>
+    /// <param name="param4"> Fourth param </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>,System.ReadOnlySpan`1<System.Char>)")]
+    public static string Concat(ReadOnlySpan<char> param1, ReadOnlySpan<char> param2, ReadOnlySpan<char> param3, ReadOnlySpan<char> param4)
+    {
+        var result = string.Concat(param1, param2, param3, param4);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(new StringConcatParams(TaintedObjects.GetString(ref param1), TaintedObjects.GetString(ref param2), TaintedObjects.GetString(ref param3), TaintedObjects.GetString(ref param4)), result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="param"> Strings to concat </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Concat(System.ReadOnlySpan`1<System.String>)")]
+    public static string Concat(ReadOnlySpan<string> param)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        // TODO: use propper overload when dotnet 9 or later target is available
+        var values = param.ToArray();
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+        }
+
+        return result;
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+#endif
+
     /// <summary>
     /// String.Substring aspect
     /// </summary>
@@ -806,6 +904,66 @@ public class StringAspects
 
         return result;
     }
+
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.ReadOnlySpan`1<System.String>)")]
+    public static string Join(string separator, ReadOnlySpan<string> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.ReadOnlySpan`1<System.String>)")]
+    public static string Join(char separator, ReadOnlySpan<string> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Join(string separator, ReadOnlySpan<object> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplace("System.String::Join(System.Char,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Join(char separator, ReadOnlySpan<object> values)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Join(separator, values.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+#endif
 
     /// <summary>
     /// String.ToUpper aspect
@@ -1279,6 +1437,38 @@ public class StringAspects
         return result;
     }
 
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Format(string format, ReadOnlySpan<object> args)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Format(format, args.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.ReadOnlySpan`1<System.Object>)")]
+    public static string Format(IFormatProvider provider, string format, ReadOnlySpan<object> args)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Format(provider, format, args.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+#endif
+
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// String.Replace aspect
@@ -1610,6 +1800,24 @@ public class StringAspects
 
         return result;
     }
+#endif
+
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.ReadOnlySpan`1<System.Char>)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, ReadOnlySpan<char> separator)
+#pragma warning disable DD0005 // Aspect is in incorrect format
+    {
+        return Split(target, separator.ToArray());
+    }
+#pragma warning restore DD0005 // Aspect is in incorrect format
+
 #endif
 
 #pragma warning disable CS0618 // Obsolete

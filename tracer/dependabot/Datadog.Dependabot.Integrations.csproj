@@ -18,43 +18,43 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.39 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.402.39" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.43 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.402.43" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.406.21 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.406.21" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.406.25 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.406.25" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.403.4 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.403.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.404.2 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.404.2" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.110 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.110" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.114 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.114" />
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.416.9 -->
-    <PackageReference Include="AWSSDK.S3" Version="3.7.416.9" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/3.7.416.13 -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.416.13" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.133 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.133" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.137 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.137" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.133 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.133" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.137 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.137" />
 
     <!-- Integration: AWSSDK.StepFunctions -->
     <!--    Assembly: AWSSDK.StepFunctions -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.76 -->
-    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.76" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.StepFunctions/3.7.403.80 -->
+    <PackageReference Include="AWSSDK.StepFunctions" Version="3.7.403.80" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -63,8 +63,8 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!--    Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.9.0 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.9.0" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.10.0 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.10.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
@@ -83,8 +83,8 @@
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.4.1 -->
-    <PackageReference Include="GraphQL" Version="8.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/8.5.0 -->
+    <PackageReference Include="GraphQL" Version="8.5.0" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!--    Assembly: GraphQL.SystemReactive -->
@@ -138,6 +138,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Html.Abstractions/2.3.0 -->
     <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.3.0" />
 
+    <!-- Integration: Microsoft.AspNetCore.Http.Abstractions -->
+    <!--    Assembly: Microsoft.AspNetCore.Http.Abstractions -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Http.Abstractions/2.3.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+
     <!-- Integration: Microsoft.AspNetCore.Identity -->
     <!--    Assembly: Microsoft.AspNetCore.Identity -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Identity/2.3.1 -->
@@ -170,8 +175,8 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.48.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.48.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.49.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.49.0" />
 
     <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
     <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
@@ -237,8 +242,8 @@
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.2.0 -->
-    <PackageReference Include="MySql.Data" Version="9.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/9.3.0 -->
+    <PackageReference Include="MySql.Data" Version="9.3.0" />
 
     <!-- Integration: MySqlConnector -->
     <!--    Assembly: MySqlConnector -->
@@ -292,8 +297,8 @@
 
     <!-- Integration: ServiceStack.Redis -->
     <!--    Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.6.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="8.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.7.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="8.7.0" />
 
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
