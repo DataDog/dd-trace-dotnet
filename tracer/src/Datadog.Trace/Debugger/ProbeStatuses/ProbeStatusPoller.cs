@@ -208,19 +208,17 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
         }
 
         /// <summary>
-        /// Returns a subset of probeIds from <paramref name="candidateProbeIds" /> that have native representation (e.g either requested rejit or rejitted).
+        /// Returns a subset of probeIds that have native representation (e.g either requested rejit or rejitted).
         /// Note that <see cref="Status.EMITTING"/> is taken into account, since EMITTING probes are those that not only have native representation,
         /// but their instrumentation is actively executing.
         /// </summary>
-        /// <param name="candidateProbeIds">The set of probes that needs to be checked</param>
         /// <returns>An array of ProbeIds that have native representation.</returns>
-        public string[] GetBoundedProbes(string[] candidateProbeIds)
+        public string[] GetBoundedProbes()
         {
             lock (_locker)
             {
                 return _probes
-                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING) && candidateProbeIds
-                                .Contains(p.ProbeId))
+                      .Where(p => (p.ShouldFetch() || p.ProbeStatus.Status == Status.EMITTING))
                       .Select(p => p.ProbeId)
                       .ToArray();
             }
