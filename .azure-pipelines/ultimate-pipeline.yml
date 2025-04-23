@@ -172,7 +172,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.15.0
+  ToolVersion: 3.16.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -4501,14 +4501,14 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: throughput
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  # By default throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
+  condition: and(succeeded(), eq(variables.isMainRepository, true), or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true')))
   dependsOn: [package_linux, package_arm64, build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
-    # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
-    runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
+    runExtendedThroughputTests: true
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -6446,7 +6446,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/install-docker-compose-v1.yml
