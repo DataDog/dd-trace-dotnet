@@ -4,18 +4,18 @@
 
 Instead of running our exhaustive combinatorial test suite on every PR we can *dynamically* determine when we should run the full test configuration or a much reduced [Pairwise](https://en.wikipedia.org/wiki/All-pairs_testing) test configuration.
 
-For a overview and comparison to normal Xunit I'd recommend Andrew Lock's [Simplifying Theory test data with Xunit.Combinatorial](https://andrewlock.net/simplifying-theory-test-data-with-xunit-combinatorial/).
+For an overview and comparison to normal Xunit I'd recommend Andrew Lock's [Simplifying Theory test data with Xunit.Combinatorial](https://andrewlock.net/simplifying-theory-test-data-with-xunit-combinatorial/).
 
 ## CombinatorialOrPairwiseData Attribute
 
-Powering this is a custom `[CombinatorialOrPairwiseData]` attribute that replaces our commonly used `[MemberData(nameof(GetEnabledConfig))]` attribute.
+Powering this is a custom `[CombinatorialOrPairwiseData]` attribute that replaces our commonly used `[MemberData(nameof(GetEnabledConfig))]` attribute. It acts as a combination of the `[CombinatorialData]` and `[PairwiseData]` attributes that are part of the Xunit.Combinatorial package
 
 ## Choosing Between Combinatorial or Pairwise Test Configurations
 
-This is all handled automatically so after migrating to combinatorial tests there are no further steps. Our Nuke scripts will detect when we need to run the full / reduced configuration and will insert a `USE_FULL_TEST_CONFIG` environment variable automatically.
+Choosing the correct configurations is handled automatically, so after migrating to combinatorial tests there are no further steps. Our Nuke scripts will detect when we need to run the full / reduced configuration and will insert a `USE_FULL_TEST_CONFIG` environment variable automatically.
 
 Full combinatorial test suites are run when:
-- Any local test runs
+- Running locally
 - Default branch or release branch triggered the CI run (e.g., `master`)
 - Any *new* instrumentations have been added
 - Any *current* instrumentations have been changed
@@ -112,5 +112,5 @@ This is mainly a visual bug and doesn't impact the functionality anyway, but whe
 What this means though in our case is that we won't have much visibility in being able to see *what* tests are being run in pairwise-mode.
 
 "Non-Serializable" data is usually any non-primitive data type used as a test parameter.
-To fix, create a class (if necessary) and implement `IXunitSerializable` - see the examples in `HttpMessageHandlerTests`.
+To fix, create a class (if necessary) and implement `IXunitSerializable` - see the examples in `HttpMessageHandlerTests`. Note that there are already implementations for `SerializableList<T>` and `SerializableDictionary` which serve as serializable versions of `List<T>` and `Dictionary<string, string>`.
 
