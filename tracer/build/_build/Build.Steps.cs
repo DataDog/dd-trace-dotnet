@@ -640,28 +640,32 @@ partial class Build
                 var project = Solution.GetProject(projectName);
                 var testDir = project.Directory;
                 var frameworks = project.GetTargetFrameworks();
-
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
+                var renamedLibdatadogFileName = "LibDatadog";
 
                 if (IsWin)
                 {
+                    var libdatadogFileName = "datadog_profiling_ffi";
                     foreach (var arch in WindowsArchitectureFolders)
                     {
                         var source = MonitoringHomeDirectory / arch;
                         foreach (var fmk in frameworks)
                         {
                             var dest = testBinFolder / fmk / arch;
-                            CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                            CopyFile(source / $"{libdatadogFileName}.dll", dest / $"{renamedLibdatadogFileName}.dll", FileExistsPolicy.Overwrite);
+                            CopyFile(source / $"{libdatadogFileName}.pdb", dest / $"{renamedLibdatadogFileName}.pdb", FileExistsPolicy.Overwrite);
                         }
                     }
                 }
                 else
                 {
-                    var (arch, _) = GetUnixArchitectureAndExtension();
+                    var libdatadogFileName = $"libdatadog_profiling";
+                    var (arch, ext) = GetUnixArchitectureAndExtension();
                     foreach (var fmk in frameworks)
                     {
                         var dest = testBinFolder / fmk;
-                        CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                        var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
+                        CopyFile(source / $"{libdatadogFileName}.{ext}", dest / $"{renamedLibdatadogFileName}.{ext}", FileExistsPolicy.Overwrite);
                     }
                 }
             }
