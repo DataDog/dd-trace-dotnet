@@ -1807,7 +1807,7 @@ partial class Build
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
-                        .SetProjectFile(project)));
+                        .SetProjectFile(project)), degreeOfParallelism: Environment.ProcessorCount);
             }
             finally
             {
@@ -2814,7 +2814,7 @@ partial class Build
             .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
             .SetNoWarnDotNetCore3()
             .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-            .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
+            .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)), degreeOfParallelism: Environment.ProcessorCount);
     }
 
     

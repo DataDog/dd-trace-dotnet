@@ -391,7 +391,7 @@ partial class Build
                    .SetNoWarnDotNetCore3()
                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                    .CombineWith(samplesToBuild, (c, project) => c
-                       .SetProjectFile(project)));
+                       .SetProjectFile(project)), degreeOfParallelism: Environment.ProcessorCount);
        });
 
     Target BuildAndRunProfilerCpuLimitTests => _ => _

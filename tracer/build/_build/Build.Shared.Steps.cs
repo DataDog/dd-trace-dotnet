@@ -66,7 +66,7 @@ partial class Build
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
-                    .SetTargetPlatform(platform)));
+                    .SetTargetPlatform(platform)), degreeOfParallelism: Environment.ProcessorCount);
         });
 
     Target RunNativeLoaderTestsWindows => _ => _
