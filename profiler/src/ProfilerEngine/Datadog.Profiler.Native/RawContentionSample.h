@@ -11,6 +11,7 @@ class RawContentionSample : public RawSample
 {
 public:
     inline static const std::string BucketLabelName = "Duration bucket";
+    inline static const std::string WaitBucketLabelName = "Wait duration bucket";
     inline static const std::string RawCountLabelName = "raw count";
     inline static const std::string RawDurationLabelName = "raw duration";
     inline static const std::string BlockingThreadIdLabelName = "blocking thread id";
@@ -51,7 +52,14 @@ public:
         auto contentionCountIndex = valueOffsets[0];
         auto contentionDurationIndex = valueOffsets[1];
 
-        sample->AddLabel(StringLabel{BucketLabelName, std::move(Bucket)});
+        // To avoid breaking the backend, always set the bucket label, but provide the wait bucket label if needed
+        // This is needed to allow an upscaling different between wait and lock contentions
+        sample->AddLabel(StringLabel{BucketLabelName, Bucket});
+        if (Type == ContentionType::Wait)
+        {
+            sample->AddLabel(StringLabel{WaitBucketLabelName, std::move(Bucket)});
+        }
+
         sample->AddValue(1, contentionCountIndex);
         sample->AddLabel(NumericLabel{RawCountLabelName, 1});
         sample->AddLabel(NumericLabel{RawDurationLabelName, ContentionDuration.count()});

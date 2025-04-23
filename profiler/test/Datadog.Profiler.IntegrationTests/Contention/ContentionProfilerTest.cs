@@ -189,9 +189,9 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         private static void AssertContainWait(string pprofDir)
         {
             // get samples with lock-count value set and Wait as contention type
-            var contentionSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
+            var waitSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
                 .Where(e => e.Labels.Any(x => (x.Name == "contention type") && (x.Value == "Wait")));
-            Assert.True(contentionSamples.Count() > 8);
+            Assert.True(waitSamples.Count() > 8);
 
             // check that we get samples 500+ ms for supported wait handles based on callstacks
             // |lm:Samples.WaitHandles |ns:Samples.WaitHandles |ct:Program |cg: |fn:AutoResetEventThread |fg: |sg:()
@@ -205,7 +205,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             // Duration bucket = +500 ms
 
             WaitHandleType waitTypes = WaitHandleType.None;
-            foreach (var (stackTrace, labels, _) in contentionSamples
+            foreach (var (stackTrace, labels, _) in waitSamples
                 .Where(s => s.Labels.Any(l => (l.Value == "+500 ms") && (l.Name == "Duration bucket"))))
             {
                 var contentionTypeLabel = labels.FirstOrDefault(l => l.Name == "contention type");
@@ -255,9 +255,22 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                         }
                     }
                 }
+
+                // check that we also have the wait label
+                var waitDurationLabel = labels.FirstOrDefault(l => l.Name == "Wait duration bucket");
+                waitDurationLabel.Name.Should().NotBeNull();
             }
 
             waitTypes.Should().Be(WaitHandleType.All, "missing Wait events = " + GetMissingWaitType(waitTypes));
+
+            // check that wait duration label should not be present for lock samples
+            var lockSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
+                .Where(e => e.Labels.Any(x => (x.Name == "contention type") && (x.Value == "Lock")));
+            foreach (var (_, labels, _) in lockSamples)
+            {
+                var waitDurationLabel = labels.FirstOrDefault(l => l.Name == "Wait duration bucket");
+                waitDurationLabel.Name.Should().BeNull();
+            }
         }
 
         private static string GetMissingWaitType(WaitHandleType waitTypes)

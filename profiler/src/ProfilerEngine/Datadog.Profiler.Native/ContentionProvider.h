@@ -62,7 +62,7 @@ public:
     void OnWaitStop(std::chrono::nanoseconds timestamp) override;
 
     // IUpscaleProvider implementation
-    UpscalingInfo GetInfo() override;
+    std::list<UpscalingInfo> GetInfos() override;
 
 private:
     static std::string GetBucket(std::chrono::nanoseconds contentionDuration);
@@ -74,8 +74,8 @@ private:
 
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
-    GroupSampler<std::string> _sampler;
-    int32_t _contentionDurationThreshold;
+    GroupSampler<std::string> _samplerLock;
+    GroupSampler<std::string> _samplerWait;
     int32_t _sampleLimit;
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _lockContentionsCountMetric;

@@ -45,8 +45,9 @@ ContentionProvider::ContentionProvider(
     CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
-    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
-    _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
+    // keep at least 1 sampled lock contention per bucket so we will at least see long one if any
+    _samplerLock(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), true),
+    _samplerWait(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), true),
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
     _pConfiguration{pConfiguration},
     _callstackProvider{std::move(callstackProvider)},
@@ -189,7 +190,7 @@ void ContentionProvider::AddContentionSample(
     {
         std::lock_guard lock(_contentionsLock);
 
-        if (!_sampler.Sample(bucket, contentionDuration.count()))
+        if (!_samplerLock.Sample(bucket, contentionDuration.count()))
         {
             return;
         }
@@ -300,7 +301,10 @@ void ContentionProvider::AddContentionSample(
 }
 
 
-UpscalingInfo ContentionProvider::GetInfo()
+std::list<UpscalingInfo> ContentionProvider::GetInfos()
 {
-    return {GetValueOffsets(), RawContentionSample::BucketLabelName, _sampler.GetGroups()};
+    return {
+        {GetValueOffsets(), RawContentionSample::BucketLabelName, _samplerLock.GetGroups()},
+        {GetValueOffsets(), RawContentionSample::WaitBucketLabelName, _samplerWait.GetGroups()}
+        };
 }
