@@ -26,7 +26,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         // take long time to start and to end.
         private readonly TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
 
-        private readonly int _profilingExportsIntervalInSeconds = 3;
         private string _appListenerPort;
 
         public TestApplicationRunner(
@@ -58,6 +57,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public int TestDurationInSeconds { get; set; } = 10;
 
         public double TotalTestDurationInMilliseconds { get; set; } = 0;
+
+        public int ProfilingExportsIntervalInSeconds { get; } = 3;
 
         public string ProcessOutput { get; set; }
 
@@ -237,7 +238,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
         {
-            Environment.PopulateEnvironmentVariables(environmentVariables, agent, _profilingExportsIntervalInSeconds, ServiceName);
+            Environment.PopulateEnvironmentVariables(environmentVariables, agent, ProfilingExportsIntervalInSeconds, ServiceName);
         }
     }
 }
