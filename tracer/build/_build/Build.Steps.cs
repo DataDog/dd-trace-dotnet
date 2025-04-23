@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -861,7 +862,7 @@ partial class Build
                     .CombineWith(architectures, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
                         .SetTargetPlatform(arch)),
-                degreeOfParallelism: 2);
+                degreeOfParallelism: Environment.ProcessorCount);
         });
 
     Target CreateBundleHome => _ => _
@@ -1290,7 +1291,7 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
-                                .SetProjectFile(project)));
+                                .SetProjectFile(project)), degreeOfParallelism: Environment.ProcessorCount);
                     }
                     catch (Exception ex)
                     {
@@ -1630,7 +1631,8 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = AddAreaFilter(GetFilter());
+            var ClrProfilerTestsfilter = AddAreaFilter(GetFilter());
+            var parallelTestsFilter = AddAreaFilter(Filter);
 
             try
             {
@@ -1647,35 +1649,20 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
-                        .SetProjectFile(project)), degreeOfParallelism: 4);
-
-                DotNetTest(config => config
-                    .SetDotnetPath(TargetPlatform)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetFramework(Framework)
-                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                    .EnableCrashDumps()
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetTestTargetPlatform(TargetPlatform)
-                    .SetIsDebugRun(isDebugRun)
-                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
-                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
+                        .When(!string.IsNullOrWhiteSpace(parallelTestsFilter), s2 => s2.SetFilter(parallelTestsFilter))
+                        .SetProjectFile(project))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
-                        .SetProjectFile(project)));
+                        .When(!string.IsNullOrWhiteSpace(ClrProfilerTestsfilter), s2 => s2.SetFilter(ClrProfilerTestsfilter))
+                        .SetProjectFile(project))
+                    , degreeOfParallelism: Environment.ProcessorCount
+                    );
             }
             finally
             {
@@ -1697,8 +1684,6 @@ partial class Build
                 {
                     (false, _) => $"({Filter}){dockerFilter}{armFilter}",
                     (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
-                    // TODO: I think we should change this filter to run on Windows by default, e.g.
-                    // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                     (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 

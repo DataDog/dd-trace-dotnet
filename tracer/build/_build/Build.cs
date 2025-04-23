@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -385,7 +386,7 @@ partial class Build : NukeBuild
                     .SetOutputDirectory(ArtifactsDirectory / "nuget")
                     .CombineWith(ProjectsToPack, (x, project) => x
                         .SetProject(project)),
-                degreeOfParallelism: 2);
+                degreeOfParallelism: Environment.ProcessorCount);
         });
 
     Target BuildBundleNuget => _ => _
