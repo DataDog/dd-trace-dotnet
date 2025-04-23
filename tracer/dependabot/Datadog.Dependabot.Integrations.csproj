@@ -16,6 +16,11 @@
     <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.13.0 -->
     <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.13.0" />
 
+    <!-- Integration: Avro -->
+    <!--    Assembly: Avro -->
+    <!-- Latest package https://www.nuget.org/packages/Apache.Avro/1.12.0 -->
+    <PackageReference Include="Apache.Avro" Version="1.12.0" />
+
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.402.43 -->
