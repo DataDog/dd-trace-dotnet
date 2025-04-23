@@ -21,10 +21,10 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
     }
 }
 
+static std::string UnknownModuleName = "module???";
+static std::string UnknownFunctionName = "frame???";
 std::pair<bool, FrameInfoView> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
-    static std::string UnknownModuleName = "module???";
-    static std::string UnknownFunctionName = "frame???";
 
     auto item = _mapping.find(instructionPointer);
     if (item != _mapping.end())
@@ -44,4 +44,9 @@ bool FrameStoreHelper::GetTypeName(ClassID classId, std::string& name)
 bool FrameStoreHelper::GetTypeName(ClassID classId, std::string_view& name)
 {
     return false;
+}
+
+FrameInfoView FrameStoreHelper::GetManagedFrame(FunctionID functionId)
+{
+    return { UnknownModuleName, UnknownFunctionName, "", 0 };
 }
