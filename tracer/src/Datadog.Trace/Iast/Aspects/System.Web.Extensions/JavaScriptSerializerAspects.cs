@@ -38,7 +38,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JavaScriptSerializerAspects)}.{nameof(DeserializeObject)} (DuckCast)");
+            IastModule.LogAspectException(ex, "(DuckCast)");
             return null;
         }
 
@@ -57,7 +57,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JavaScriptSerializerAspects)}.{nameof(DeserializeObject)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

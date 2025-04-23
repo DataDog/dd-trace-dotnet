@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -916,11 +917,12 @@ internal static partial class IastModule
         }
     }
 
-    public static void LogAspectException(Exception ex, string aspectInfo)
+    public static void LogAspectException(Exception ex, string extraInfo = "", [CallerFilePath] string filePath = "", [CallerMemberName] string memberName = "")
     {
         try
         {
-            var hashCode = aspectInfo.GetHashCode();
+            var text = $"{Path.GetFileNameWithoutExtension(filePath)}.{memberName} {extraInfo}";
+            var hashCode = text.GetHashCode();
             bool alreadyLogged;
             lock (LoggedAspectExceptionMessages)
             {
@@ -931,17 +933,17 @@ internal static partial class IastModule
 #pragma warning disable DDLOG004 // Message templates should be constant
             if (alreadyLogged)
             {
-                Log.Debug(ex, $"Error invoking {aspectInfo}");
+                Log.Debug(ex, $"Error invoking {extraInfo}");
             }
             else
             {
-                Log.Error(ex, $"Error invoking {aspectInfo}");
+                Log.Error(ex, $"Error invoking {extraInfo}");
             }
 #pragma warning restore DDLOG004 // Message templates should be constant
         }
         catch (Exception e)
         {
-            Log.Debug(e, "Error while logging aspect exception.");
+            Log.Debug(new AggregateException(ex, e), "Error while logging aspect exception");
         }
     }
 
