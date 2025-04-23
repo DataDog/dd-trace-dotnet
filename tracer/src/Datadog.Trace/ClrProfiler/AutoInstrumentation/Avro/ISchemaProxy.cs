@@ -25,19 +25,20 @@ internal interface ISchemaProxy : IDuckType
 }
 
 /// <summary>
-/// DuckTyping interface for Avro.Generic.PreresolvingDatumReader`1
+/// DuckTyping proxy for Avro.Generic.PreresolvingDatumReader`1
 /// </summary>
-internal interface IPreresolvingDatumReaderProxy : IDuckType
+[DuckCopy]
+internal struct PreresolvingDatumReaderProxy
 {
-    ISchemaProxy ReaderSchema { get; }
-
-    ISchemaProxy WriterSchema { get; }
+    public ISchemaProxy ReaderSchema;
+    public ISchemaProxy WriterSchema;
 }
 
 /// <summary>
-/// DuckTyping interface for Avro.Generic.PreresolvingDatumWriter`1
+/// DuckTyping proxy for Avro.Generic.PreresolvingDatumWriter`1
 /// </summary>
-internal interface IPreresolvingDatumWriterProxy : IDuckType
+[DuckCopy]
+internal struct PreresolvingDatumWriterProxy
 {
-    ISchemaProxy Schema { get; }
+    public ISchemaProxy Schema;
 }

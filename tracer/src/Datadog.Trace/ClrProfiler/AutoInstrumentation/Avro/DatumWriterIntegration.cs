@@ -33,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro;
 public class DatumWriterIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TDatum, TEncoder>(TTarget instance, ref TDatum? datum, ref TEncoder? encoder)
-        // where TTarget : IPreresolvingDatumWriterProxy
+        // cannot use type constraints because of limitation on instrumenting methods on generic type: https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/development/AutomaticInstrumentation.md#current-limitations
     {
-        if (instance.TryDuckCast<IPreresolvingDatumWriterProxy>(out var instanceP))
+        if (instance.TryDuckCast<PreresolvingDatumWriterProxy>(out var instanceProxy))
         {
-            SchemaExtractor.EnrichActiveSpanWith(instanceP.Schema, "serialization");
+            SchemaExtractor.EnrichActiveSpanWith(instanceProxy.Schema, "serialization");
         }
 
         return CallTargetState.GetDefault();

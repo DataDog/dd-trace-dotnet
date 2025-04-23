@@ -33,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro;
 public class DatumReaderIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TReuse, TDecoder>(TTarget instance, ref TReuse? reuse, ref TDecoder? decoder)
-        // where TTarget : IPreresolvingDatumReaderProxy
+        // cannot use type constraints because of limitation on instrumenting methods on generic type: https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/development/AutomaticInstrumentation.md#current-limitations
     {
-        if (instance.TryDuckCast<IPreresolvingDatumReaderProxy>(out var instanceP))
+        if (instance.TryDuckCast<PreresolvingDatumReaderProxy>(out var instanceProxy))
         {
-            SchemaExtractor.EnrichActiveSpanWith(instanceP.ReaderSchema, "deserialization");
+            SchemaExtractor.EnrichActiveSpanWith(instanceProxy.ReaderSchema, "deserialization");
         }
 
         return CallTargetState.GetDefault();
