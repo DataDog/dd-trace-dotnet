@@ -59,33 +59,33 @@ namespace Datadog.Trace.IntegrationTests
                 {
                     // we don't extract the containerId in some cases, such as when running on Windows.
                     // In these cases, it should not appear in the headers at all.
-                    headers.AllKeys.Select(x => x?.ToLower()).Should().NotContain(AgentHttpHeaderNames.ContainerId.ToLower());
+                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.ContainerId);
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId.ToLower(), expectedContainedId);
+                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
                 }
 
-                var expectedEntityId = ContainerMetadata.GetEntityId();
-                if (expectedEntityId == null)
+                var expectedEntitydId = ContainerMetadata.GetEntityId();
+                if (expectedEntitydId == null)
                 {
                     // we don't extract the entityId in some cases, such as when running on Windows.
                     // In these cases, it should not appear in the headers at all.
-                    headers.AllKeys.Select(x => x?.ToLower()).Should().NotContain(AgentHttpHeaderNames.EntityId.ToLower());
+                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.EntityId);
                 }
                 else
                 {
-                    headers.AllKeys.ToDictionary(x => x?.ToLower(), x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId.ToLower(), expectedEntityId);
+                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.EntityId, expectedEntitydId);
                 }
 
-                if (expectedContainedId is not null && expectedEntityId is not null)
+                if (expectedContainedId is not null && expectedEntitydId is not null)
                 {
-                    expectedEntityId.Should().Be($"ci-{expectedContainedId}");
+                    expectedEntitydId.Should().Be($"cid-{expectedContainedId}");
                 }
-                else if (expectedEntityId is not null)
+                else if (expectedEntitydId is not null)
                 {
                     // Note: This line hasn't been executed by CI yet
-                    expectedEntityId.StartsWith("in-").Should().BeTrue();
+                    expectedEntitydId.StartsWith("in-").Should().BeTrue();
                 }
             }
         }
