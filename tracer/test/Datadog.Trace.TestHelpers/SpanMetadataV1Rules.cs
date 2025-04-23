@@ -881,35 +881,35 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAvroV1(this MockSpan span)
         {
             return Result.FromSpan(span)
-                         .Tags(
-                              s => s
-                                  .Matches(Tags.SchemaType, "avro")
-                                  .IsPresent(Tags.SchemaName)
-                                  .IsPresent(Tags.SchemaOperation)
-                                  .IsPresent(Tags.SchemaId)
-                                  .IsPresent(Tags.SchemaDefinition)
-                                  .IsPresent(Tags.SchemaWeight));
+                .Tags(
+                    s => s
+                        .Matches(Tags.SchemaType, "avro")
+                        .IsPresent(Tags.SchemaName)
+                        .IsPresent(Tags.SchemaOperation)
+                        .IsPresent(Tags.SchemaId)
+                        .IsPresent(Tags.SchemaDefinition)
+                        .IsPresent(Tags.SchemaWeight));
         }
 
         public static Result IsRabbitMQAdminV1(this MockSpan span) => Result.FromSpan(span)
-                                                                            .WithMarkdownSection("Rabbit - Admin")
-                                                                            .Properties(s => s
-                                                                                            .Matches(Name, "amqp.command")
-                                                                                            .Matches(Type, "queue"))
-                                                                            .Tags(s => s
-                                                                                      .IsPresent("amqp.command")
-                                                                                      .IsPresent("out.host")
-                                                                                      .IsOptional("amqp.delivery_mode")
-                                                                                      .IsOptional("amqp.exchange")
-                                                                                      .IsOptional("amqp.routing_key")
-                                                                                      .IsOptional("amqp.queue")
-                                                                                      .IsOptional("message.size")
-                                                                                      .IsPresent("peer.service")
-                                                                                      .IsOptional("peer.service.remapped_from")
-                                                                                      .IsOptional("_dd.base_service")
-                                                                                      .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
-                                                                                      .Matches("component", "RabbitMQ")
-                                                                                      .Matches("span.kind", "client"));
+            .WithMarkdownSection("Rabbit - Admin")
+            .Properties(s => s
+                .Matches(Name, "amqp.command")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("amqp.command")
+                .IsPresent("out.host")
+                .IsOptional("amqp.delivery_mode")
+                .IsOptional("amqp.exchange")
+                .IsOptional("amqp.routing_key")
+                .IsOptional("amqp.queue")
+                .IsOptional("message.size")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .IsOptional("_dd.base_service")
+                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
+                .Matches("component", "RabbitMQ")
+                .Matches("span.kind", "client"));
 
         public static Result IsRabbitMQInboundV1(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Rabbit - Inbound")
@@ -948,27 +948,27 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("span.kind", "producer"));
 
         public static Result IsRemotingClientV1(this MockSpan span) => Result.FromSpan(span)
-           .Properties(s => s
-                          .Matches(Name, "dotnet_remoting.client.request"))
-           .Tags(s => s
-                     .IsPresent("rpc.method")
-                     .IsOptional("peer.service")
-                     .IsOptional("peer.service.remapped_from")
-                     .Matches("rpc.system", "dotnet_remoting")
-                     .Matches("component", "Remoting")
-                     .IfPresentMatchesOneOf("_dd.peer.service.source", "peer.service", "rpc.service")
-                     .IsOptional("_dd.base_service")
-                     .MatchesOneOf("span.kind", "client", "server"));
+            .Properties(s => s
+                .Matches(Name, "dotnet_remoting.client.request"))
+            .Tags(s => s
+                .IsPresent("rpc.method")
+                .IsOptional("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .Matches("rpc.system", "dotnet_remoting")
+                .Matches("component", "Remoting")
+                .IfPresentMatchesOneOf("_dd.peer.service.source", "peer.service", "rpc.service")
+                .IsOptional("_dd.base_service")
+                .MatchesOneOf("span.kind", "client", "server"));
 
         public static Result IsRemotingServerV1(this MockSpan span) => Result.FromSpan(span)
-             .Properties(s => s
+            .Properties(s => s
                 .Matches(Name, "dotnet_remoting.server.request"))
-             .Tags(s => s
-               .IsPresent("rpc.method")
-               .Matches("rpc.system", "dotnet_remoting")
-               .Matches("component", "Remoting")
-               .IsOptional("_dd.base_service")
-               .MatchesOneOf("span.kind", "client", "server"));
+            .Tags(s => s
+                .IsPresent("rpc.method")
+                .Matches("rpc.system", "dotnet_remoting")
+                .Matches("component", "Remoting")
+                .IsOptional("_dd.base_service")
+                .MatchesOneOf("span.kind", "client", "server"));
 
         public static Result IsServiceRemotingClientV1(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Service Remoting - Client")
