@@ -26,4 +26,4 @@ jobs:
         with:
           symbols_folder: "debug_symbols"
           preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
-          prod_key: "${{ secrets.DD_API_KEY }}"
+          prod_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"
