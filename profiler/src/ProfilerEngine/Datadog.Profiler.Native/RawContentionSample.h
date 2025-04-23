@@ -61,7 +61,7 @@ public:
             sample->AddLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
             sample->AddLabel(StringLabel{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
         }
-        sample->AddLabel(Label{ContentionTypeLabelName, ContentionTypes[static_cast<int>(Type)]});
+        sample->AddLabel(StringLabel{ContentionTypeLabelName, ContentionTypes[static_cast<int>(Type)]});
     }
 
     std::chrono::nanoseconds ContentionDuration;

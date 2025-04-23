@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -129,12 +130,21 @@ namespace Samples.WaitHandles
             Console.WriteLine("    <-- ManualResetEvent");
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ManualResetEventSlimThread()
         {
-            Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for ManualResetEventSlim...");
-            manualResetEventSlim.Wait();
-            manualResetEventSlim.Reset();
-            Console.WriteLine("    <-- ManualResetEventSlim");
+            try
+            {
+                Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for ManualResetEventSlim...");
+                manualResetEventSlim.Wait();
+                manualResetEventSlim.Reset();
+                Console.WriteLine("    <-- ManualResetEventSlim");
+
+                throw new Exception("This is a test exception to check the behavior of the profiler");
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private static void MutexThread()
@@ -153,12 +163,21 @@ namespace Samples.WaitHandles
             Console.WriteLine("    <-- Semaphore");
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void SemaphoreSlimThread()
         {
-            Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for SemaphoreSlim");
-            semaphoreSlim.Wait();
-            semaphoreSlim.Release(1);
-            Console.WriteLine("    <-- SemaphoreSlim");
+            try
+            {
+                Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for SemaphoreSlim");
+                semaphoreSlim.Wait();
+                semaphoreSlim.Release(1);
+                Console.WriteLine("    <-- SemaphoreSlim");
+
+                throw new Exception("This is a test exception to check the behavior of the profiler");
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private static void ReaderWriterLockThread()

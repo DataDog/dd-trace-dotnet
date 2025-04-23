@@ -30,13 +30,16 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--iterations 1");
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            // BUG: uncomment these lines to investigate missing root frame in contention but present in exception samples
+            // runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            // runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WaitHandleContentionProfilingEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
-            // only contention profiler enabled so should only see the 2 related values per sample
+            // only contention profiler enabled so should only see the 2 contention related values per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
             Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "raw duration"));
 
