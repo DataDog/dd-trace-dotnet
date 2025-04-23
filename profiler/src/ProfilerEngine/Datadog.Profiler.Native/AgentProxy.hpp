@@ -26,12 +26,15 @@ namespace libdatadog {
 class AgentProxy
 {
 public:
-    AgentProxy(ddog_prof_Exporter* exporter) :
+    AgentProxy(ddog_prof_ProfileExporter exporter) :
         _exporter{exporter}
     {
     }
 
-    ~AgentProxy() = default;
+    ~AgentProxy()
+    {
+        ddog_prof_Exporter_drop(&_exporter);
+    }
 
     Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
     {
@@ -43,16 +46,16 @@ public:
 
         assert(request != nullptr);
 
-        auto result = ddog_prof_Exporter_send(_exporter.get(), request, nullptr);
+        auto result = ddog_prof_Exporter_send(&_exporter, request, nullptr);
 
-        if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
+        if (result.tag == DDOG_PROF_RESULT_HTTP_STATUS_ERR_HTTP_STATUS)
         {
             return make_error(result.err);
         }
 
-        if (IsValidHttpCode(result.http_response.code))
+        if (IsValidHttpCode(result.ok.code))
         {
-            return make_error(std::to_string(result.http_response.code));
+            return make_error(std::to_string(result.ok.code));
         }
 
         return make_success();
@@ -67,12 +70,13 @@ public:
 private:
     struct Request
     {
-        Request(ddog_prof_Exporter_Request* p) :
+        Request(ddog_prof_Request p) :
             _inner(p)
         {
         }
+
         Request(std::nullptr_t) :
-            _inner(nullptr)
+            _inner{}
         {
         }
 
@@ -84,7 +88,7 @@ private:
         Request(Request const&) = delete;
         Request& operator=(Request const&) = delete;
 
-        Request(Request&& o) noexcept
+        Request(Request&& o) noexcept : _inner{}
         {
             *this = std::move(o);
         }
@@ -93,33 +97,23 @@ private:
         {
             if (this != &o)
             {
-                _inner = std::exchange(o._inner, nullptr);
+                std::swap(_inner, o._inner);
             }
             return *this;
         }
 
-        operator ddog_prof_Exporter_Request**()
+        operator ddog_prof_Request*()
         {
             return &_inner;
         }
 
     private:
-        ddog_prof_Exporter_Request* _inner;
+        ddog_prof_Request _inner;
     };
 
     std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
     {
-        auto start = encodedProfile->start;
-        auto end = encodedProfile->end;
-        auto profileBuffer = encodedProfile->buffer;
         std::string const profile_filename = "auto.pprof";
-
-        ddog_prof_Exporter_File profile{to_char_slice(profile_filename), ddog_Vec_U8_as_slice(&profileBuffer)};
-
-        std::vector<ddog_prof_Exporter_File> uncompressed_files;
-        uncompressed_files.reserve(1);
-        // profile
-        uncompressed_files.push_back(profile);
 
         std::vector<ddog_prof_Exporter_File> to_compress_files;
         to_compress_files.reserve(files.size());
@@ -130,7 +124,7 @@ private:
             to_compress_files.push_back({to_char_slice(filename), fileSlice});
         }
 
-        ddog_prof_Exporter_Slice_File uncompressed_files_view = {uncompressed_files.data(), uncompressed_files.size()};
+        auto uncompressed_files_view = ddog_prof_Exporter_Slice_File_empty();
         ddog_prof_Exporter_Slice_File to_compress_files_view = {to_compress_files.data(), to_compress_files.size()};
 
         ddog_CharSlice* pMetadata = nullptr;
@@ -152,15 +146,14 @@ private:
             pInfo = &ffi_info;
         }
 
-        auto* endpoints_stats = encodedProfile->endpoints_stats;
         auto requestResult =
             ddog_prof_Exporter_Request_build(
-                _exporter.get(), start, end,
+                &_exporter, encodedProfile,
                 to_compress_files_view, uncompressed_files_view,
                 static_cast<ddog_Vec_Tag const*>(*tags._impl),
-                endpoints_stats, pMetadata, pInfo);
+                pMetadata, pInfo);
 
-        if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
+        if (requestResult.tag == DDOG_PROF_REQUEST_RESULT_ERR_HANDLE_REQUEST)
         {
             return std::make_pair(Request{nullptr}, make_error(requestResult.err));
         }
@@ -168,14 +161,6 @@ private:
     }
 
 private:
-    struct ExporterDeleter
-    {
-        void operator()(ddog_prof_Exporter* o)
-        {
-            ddog_prof_Exporter_drop(o);
-        }
-    };
-
-    std::unique_ptr<ddog_prof_Exporter, ExporterDeleter> _exporter;
+    ddog_prof_ProfileExporter _exporter;
 };
 } // namespace libdatadog

@@ -28,6 +28,7 @@ public class SymbolExtractorTest
         typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<") && !t.IsNested).Select(type => new object[] { type });
 
     [SkippableTheory]
+    [Trait("Category", "LinuxUnsupported")]
     [MemberData(nameof(TestSamples))]
     private async Task Test(Type type)
     {
