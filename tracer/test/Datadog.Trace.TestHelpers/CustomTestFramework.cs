@@ -8,9 +8,14 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using Xunit;
 using Xunit.Abstractions;
@@ -127,7 +132,7 @@ namespace Datadog.Trace.TestHelpers
                     .ToList();
 
                 if (Environment.GetEnvironmentVariable("RANDOM_SEED") is not { } environmentSeed
-                    || !int.TryParse(environmentSeed, out var seed))
+                 || !int.TryParse(environmentSeed, out var seed))
                 {
                     seed = new Random().Next();
                 }
@@ -258,26 +263,104 @@ namespace Datadog.Trace.TestHelpers
 
                 _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
 
-                using var timer = new Timer(
-                    _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
-                    null,
-                    TimeSpan.FromMinutes(15),
-                    Timeout.InfiniteTimeSpan);
+                var flakyAttribute = TestMethod
+                                    .Method
+                                    .GetCustomAttributes("Datadog.Trace.TestHelpers.FlakyAttribute")
+                                    .FirstOrDefault();
 
                 try
                 {
-                    var result = await base.RunTestCaseAsync(testCase);
-
-                    var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
-
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
-
-                    return result;
+                    return await RunTest();
                 }
-                catch (Exception ex)
+                catch (Exception) when (flakyAttribute != null)
                 {
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
-                    throw;
+                    // If the test fails, we retry it once
+                    var reason = (string)flakyAttribute.GetConstructorArguments().First();
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Retrying flaky test: {test} ({reason})"));
+                    var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
+
+                    await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, reason);
+
+                    // Just accept the result of this run regardless of the outcome
+                    return await RunTest();
+                }
+
+                async Task<RunSummary> RunTest()
+                {
+                    using var timer = new Timer(
+                        _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
+                        null,
+                        TimeSpan.FromMinutes(15),
+                        Timeout.InfiniteTimeSpan);
+
+                    try
+                    {
+                        var result = await base.RunTestCaseAsync(testCase);
+
+                        var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
+
+                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"{status}: {test} ({result.Time}s)"));
+
+                        return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));
+                        throw;
+                    }
+                }
+
+                async Task SendMetric(IMessageSink outputHelper, string metricName, string testFullName, string reason)
+                {
+                    var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
+                    if (string.IsNullOrEmpty(envKey))
+                    {
+                        // We're probably not in CI
+                        return;
+                    }
+
+                    using var client = new HttpClient();
+                    client.DefaultRequestHeaders.Add("DD-API-KEY", envKey);
+
+                    var tags = $$"""
+                                     "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
+                                     "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
+                                     "target.framework:{{SanitizeTagValue(FrameworkDescription.Instance.ProductVersion)}}",
+                                     "test.name:{{SanitizeTagValue(testFullName)}}",
+                                     "git.branch:{{SanitizeTagValue(Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH"))}}",
+                                     "flaky_retry_reason: {{SanitizeTagValue(reason)}}",
+                                 """;
+
+                    var payload = $$"""
+                                        {
+                                            "series": [{
+                                                "metric": "{{metricName}}",
+                                                "type": 1,
+                                                "points": [{
+                                                    "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
+                                                    "value": 1
+                                                    }],
+                                                "tags": [
+                                                    {{tags}}
+                                                ]
+                                            }]
+                                        }
+                                    """;
+
+                    var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (response.StatusCode != HttpStatusCode.Accepted)
+                    {
+                        outputHelper.OnMessage(new DiagnosticMessage($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\""));
+                    }
+
+                    string SanitizeTagValue(string tag)
+                    {
+                        SpanTagHelper.TryNormalizeTagName(tag, normalizeSpaces: true, out var normalizedTag);
+                        return normalizedTag;
+                    }
                 }
             }
         }
