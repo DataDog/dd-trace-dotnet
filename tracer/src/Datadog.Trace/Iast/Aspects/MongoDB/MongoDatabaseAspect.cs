@@ -53,7 +53,7 @@ public class MongoDatabaseAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(MongoDatabaseAspect)}.{nameof(AnalyzeCommand)}");
+            IastModule.LogAspectException(ex);
             return command;
         }
     }
