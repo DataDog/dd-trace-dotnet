@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class SystemDataSqlClientTests : TracingIntegrationTest
+    public class SystemDataSqlClientTests : AdoNetIntegrationTest
     {
         public SystemDataSqlClientTests(ITestOutputHelper output)
             : base("SqlServer", output)

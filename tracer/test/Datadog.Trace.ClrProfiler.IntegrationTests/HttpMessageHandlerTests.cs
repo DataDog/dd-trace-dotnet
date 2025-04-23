@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [IntegrationArea(KnownTestAreas.Http)]
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
     public class HttpMessageHandlerTests : TracingIntegrationTest
     {

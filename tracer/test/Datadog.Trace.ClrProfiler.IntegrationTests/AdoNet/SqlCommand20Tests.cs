@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class SqlCommand20Tests : TracingIntegrationTest
+    public class SqlCommand20Tests : AdoNetIntegrationTest
     {
         public SqlCommand20Tests(ITestOutputHelper output)
 

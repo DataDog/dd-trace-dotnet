@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MicrosoftDataSqlClientTests : TracingIntegrationTest
+    public class MicrosoftDataSqlClientTests : AdoNetIntegrationTest
     {
         public MicrosoftDataSqlClientTests(ITestOutputHelper output)
             : base("Microsoft.Data.SqlClient", output)

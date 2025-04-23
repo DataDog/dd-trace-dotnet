@@ -20,7 +20,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [UsesVerify]
-    public class MicrosoftDataSqliteTests : TracingIntegrationTest
+    public class MicrosoftDataSqliteTests : AdoNetIntegrationTest
     {
         public MicrosoftDataSqliteTests(ITestOutputHelper output)
             : base("Microsoft.Data.Sqlite", output)

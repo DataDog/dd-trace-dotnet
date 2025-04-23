@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [UsesVerify]
-    public class FakeCommandTests : TracingIntegrationTest
+    public class FakeCommandTests : AdoNetIntegrationTest
     {
         public FakeCommandTests(ITestOutputHelper output)
             : base("FakeDbCommand", output)

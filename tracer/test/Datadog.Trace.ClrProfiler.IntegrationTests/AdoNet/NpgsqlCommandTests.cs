@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class NpgsqlCommandTests : TracingIntegrationTest
+    public class NpgsqlCommandTests : AdoNetIntegrationTest
     {
         public NpgsqlCommandTests(ITestOutputHelper output)
             : base("Npgsql", output)

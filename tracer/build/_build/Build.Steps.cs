@@ -198,9 +198,9 @@ partial class Build
 
     bool RequiresThoroughTesting()
     {
+        // all tests configurations will be run locally
         if (IsLocalBuild)
         {
-            // we should always run all tests locally
             return true;
         }
 
@@ -211,7 +211,27 @@ partial class Build
             return true;
         }
 
+        // TODO: can probably come up with a more concise means of doing this
+        // Make sure to map to KnownTestAreas defined in integration tests
+        // this maps file paths to integration areas, track if they've changed
+        var integrationAreaChanges = new Dictionary<string, bool>
+        {
+            { "AdoNet", false },
+            { "Http", false },
+            // add more areas as needed here - recommended to use the Namespace/Folder name where the files are in as the key
+        };
+
+        // TODO: ignoring changes to the _tests_ themselves which we may want to care about
+        var integrationAreaPaths = new Dictionary<string, string[]>
+        {
+            { "AdoNet", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AdoNet" } },
+            { "Http", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Http" } },
+            // add more areas as needed here - same key as above!
+        };
+
         var gitChangedFiles = GetGitChangedFiles(baseBranch);
+
+        // overall are there any changes?
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
             {
@@ -226,12 +246,39 @@ partial class Build
             })
             .ToList();
 
+        // Check if any of the integration areas have changed
+        foreach (var file in gitChangedFiles)
+        {
+            foreach (var area in integrationAreaChanges.Keys.ToArray())
+            {
+                if (integrationAreaPaths[area].Any(file.Contains))
+                {
+                    integrationAreaChanges[area] = true;
+                    Logger.Information($"Integration area {area} has changed due to {file} - full test suite will be run for that area");
+                }
+            }
+        }
+
+        var changedAreas = integrationAreaChanges
+            .Where(kvp => kvp.Value)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        // Set the environment variable with changed areas (even if we end up doing a full test)
+        // This allows tests to be selective even during a full test run if needed
+        // Note though that this can only be reached on PRs
+        if (changedAreas.Count != 0)
+        {
+            // TODO have a way to override this if some generic file is changed that affects _all_ areas
+            Environment.SetEnvironmentVariable("CHANGED_INTEGRATION_AREAS", string.Join(",", changedAreas));
+        }
+
         var hasIntegrationChanges = gitChangedFiles.Any(s => integrationChangedFiles.Any(s.Contains));
         var snapshotChangeCount = gitChangedFiles.Count(s => s.EndsWith("verified.txt"));
 
         // If the integrations have changed, we should play it safe and test all the frameworks
         // If a lot of snapshots have changed, we should play it safe
-        return hasIntegrationChanges || (snapshotChangeCount > 100);
+        return changedAreas.Count != 0 || hasIntegrationChanges || (snapshotChangeCount > 100);
     }
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]

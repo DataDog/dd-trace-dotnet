@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class MySqlCommandTests : TracingIntegrationTest
+    public class MySqlCommandTests : AdoNetIntegrationTest
     {
         public MySqlCommandTests(ITestOutputHelper output)
             : base("MySql", output)
