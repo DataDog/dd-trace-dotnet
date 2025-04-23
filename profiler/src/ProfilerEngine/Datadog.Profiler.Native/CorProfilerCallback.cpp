@@ -1956,11 +1956,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
     // Record the exception for the current thread
     // If the exception is not handled, ExceptionSearchCatcherFound won't be called
     // before ExceptionUnwindFunctionEnter
-    ThreadID currentThreadId = 0;
-    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&currentThreadId);
-    if (SUCCEEDED(hr))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo != nullptr)
     {
-        auto threadInfo = _pManagedThreadList->GetOrCreate(currentThreadId);
         threadInfo->SetException(thrownObjectId);
     }
 
@@ -2003,14 +2001,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchCatcherFound(Funct
     }
 
     // A catch block was found for the exception
-    ThreadID currentThreadId = 0;
-    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&currentThreadId);
-    if (SUCCEEDED(hr))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo != nullptr)
     {
-        auto threadInfo = _pManagedThreadList->GetOrCreate(currentThreadId);
         threadInfo->ClearException();
     }
-
     return S_OK;
 }
 
@@ -2026,21 +2021,20 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionOSHandlerLeave(UINT_PTR 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(FunctionID functionId)
 {
-    auto result = _pFrameStore->GetManagedFrame(functionId);
-    Log::Debug("ExceptionUnwindFunctionEnter in ", result.Frame);
-
     if (false == _isInitialized.load())
     {
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
+    auto result = _pFrameStore->GetManagedFrame(functionId);
+    Log::Debug("ExceptionUnwindFunctionEnter in ", result.Frame);
+
     // Starting to unwind the stack after the exception has be handled... or not
     ThreadID currentThreadId = 0;
-    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&currentThreadId);
-    if (SUCCEEDED(hr))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo != nullptr)
     {
-        auto threadInfo = _pManagedThreadList->GetOrCreate(currentThreadId);
         auto exception = threadInfo->GetException();
         if (exception != 0)
         {
