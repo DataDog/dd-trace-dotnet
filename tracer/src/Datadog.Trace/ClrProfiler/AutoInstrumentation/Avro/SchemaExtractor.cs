@@ -21,7 +21,7 @@ internal class SchemaExtractor
             return;
         }
 
-        SchemaTrackingCommon.EnrichActiveSpanWith(new MessageDescriptorWrapper(descriptor), operationName, "protobuf");
+        SchemaTrackingCommon.EnrichActiveSpanWith(new MessageDescriptorWrapper(descriptor), operationName, "avro");
     }
 
     private class MessageDescriptorWrapper : SchemaTrackingCommon.IDescriptorWrapper

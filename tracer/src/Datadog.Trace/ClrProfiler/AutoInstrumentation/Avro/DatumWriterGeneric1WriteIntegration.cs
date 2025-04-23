@@ -31,7 +31,7 @@ public class DatumWriterGeneric1WriteIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TDatum, TEncoder>(TTarget instance, ref TDatum? datum, ref TEncoder? encoder)
         where TTarget : IDatumWriterGeneric1Proxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(instance.Schema, "deserialization");
+        SchemaExtractor.EnrichActiveSpanWith(instance.Schema, "serialization");
 
         return CallTargetState.GetDefault();
     }

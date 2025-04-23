@@ -41,4 +41,3 @@ internal interface IDatumWriterGeneric1Proxy : IDuckType
 {
     ISchemaProxy Schema { get; }
 }
-

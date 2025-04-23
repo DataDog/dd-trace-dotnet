@@ -24,10 +24,11 @@ public class AvroTests : TracingIntegrationTest
     {
     }
 
-    public static IEnumerable<object[]> GetEnabledConfig()
+    public static IEnumerable<object[]> TestData
     {
-        return from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { metadataSchemaVersion };
+        get => from type in new[] { "Default", "SpecificDatum", "GenericDatum" }
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               select new object[] { type, metadataSchemaVersion };
     }
 
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
@@ -36,23 +37,21 @@ public class AvroTests : TracingIntegrationTest
     }
 
     [SkippableTheory]
-    [MemberData(nameof(GetEnabledConfig))]
+    [MemberData(nameof(TestData))]
     [Trait("Category", "EndToEnd")]
-    public async Task TagTraces(string metadataSchemaVersion)
+    public async Task TagTraces(string type, string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.WaitForDebuggerAttach, "1");
+        // SetEnvironmentVariable(ConfigurationKeys.WaitForDebuggerAttach, "1");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent))
+        using (await RunSampleAndWaitForExit(agent, type))
         {
             using var assertionScope = new AssertionScope();
             var spans = agent.WaitForSpans(2);
 
             ValidateIntegrationSpans(spans, metadataSchemaVersion, "Samples.Avro", isExternalSpan: true);
             var settings = VerifyHelper.GetSpanVerifierSettings();
-
-            var filename = $"{nameof(AvroTests)}";
 
             // Default sorting isn't very reliable, so use our own (adds in name and resource)
             await VerifyHelper.VerifySpans(
@@ -65,7 +64,7 @@ public class AvroTests : TracingIntegrationTest
                                        .ThenBy(x => x.Resource)
                                        .ThenBy(x => x.Start)
                                        .ThenBy(x => x.Duration))
-                              .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
+                              .UseFileName($"{nameof(AvroTests)}.{type}.Schema{metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix();
         }
     }
@@ -77,7 +76,7 @@ public class AvroTests : TracingIntegrationTest
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent))
+        using (await RunSampleAndWaitForExit(agent, "Default"))
         {
             var spans = agent.WaitForSpans(2);
             foreach (var span in spans)

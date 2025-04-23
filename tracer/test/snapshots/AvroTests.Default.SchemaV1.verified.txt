@@ -1,0 +1,50 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: Deser,
+    Resource: Deser,
+    Service: Samples.Avro,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      schema.definition: {"type":"record","name":"Person","doc":"IF THE AVSC FILE IS CHANGED, SOURCES NEED TO BE REGENERATED\n To do so, install avro tools with\n `dotnet tool install Apache.Avro.Tools --create-manifest-if-needed`\n and then generate the files by running\n `dotnet avrogen -s tracer/test/test-applications/integrations/Samples.Avro/sample.avsc tracer/test/test-applications/integrations/Samples.Avro/ --skip-directories`","namespace":"Samples.Avro","fields":[{"name":"name","type":"string"},{"name":"email","default":null,"type":["null","string"]},{"name":"phoneNumbers","type":{"type":"array","items":{"type":"record","name":"PhoneNumber","namespace":"Samples.Avro","fields":[{"name":"number","type":"string"},{"name":"type","type":{"type":"enum","name":"PhoneType","namespace":"Samples.Avro","symbols":["MOBILE","HOME","WORK"]}}]}}}]},
+      schema.id: 7386686566764264730,
+      schema.name: Samples.Avro.Person,
+      schema.operation: deserialization,
+      schema.type: avro,
+      schema.weight: 1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: Ser,
+    Resource: Ser,
+    Service: Samples.Avro,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      schema.definition: {"type":"record","name":"Person","doc":"IF THE AVSC FILE IS CHANGED, SOURCES NEED TO BE REGENERATED\n To do so, install avro tools with\n `dotnet tool install Apache.Avro.Tools --create-manifest-if-needed`\n and then generate the files by running\n `dotnet avrogen -s tracer/test/test-applications/integrations/Samples.Avro/sample.avsc tracer/test/test-applications/integrations/Samples.Avro/ --skip-directories`","namespace":"Samples.Avro","fields":[{"name":"name","type":"string"},{"name":"email","default":null,"type":["null","string"]},{"name":"phoneNumbers","type":{"type":"array","items":{"type":"record","name":"PhoneNumber","namespace":"Samples.Avro","fields":[{"name":"number","type":"string"},{"name":"type","type":{"type":"enum","name":"PhoneType","namespace":"Samples.Avro","symbols":["MOBILE","HOME","WORK"]}}]}}}]},
+      schema.id: 7386686566764264730,
+      schema.name: Samples.Avro.Person,
+      schema.operation: serialization,
+      schema.type: avro,
+      schema.weight: 1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

@@ -8,6 +8,7 @@
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro;
 
@@ -28,9 +29,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Avro;
 public class DefaultWriterWriteIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TSchema, TEncoder>(TTarget instance, ref TSchema? schema, ref object? value, ref TEncoder? encoder)
-        where TSchema : ISchemaProxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(schema, "deserialization");
+        if (schema.TryDuckCast<ISchemaProxy>(out var schemaProxy))
+        {
+            SchemaExtractor.EnrichActiveSpanWith(schemaProxy, "serialization");
+        }
 
         return CallTargetState.GetDefault();
     }
