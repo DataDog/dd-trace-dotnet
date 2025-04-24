@@ -663,7 +663,7 @@ partial class Build
                     foreach (var fmk in frameworks)
                     {
                         var dest = testBinFolder / fmk;
-                        var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
+                        var source = MonitoringHomeDirectory / arch;
                         CopyFile(source / $"{libdatadogFileName}.{ext}", dest / $"{renamedLibdatadogFileName}.{ext}", FileExistsPolicy.Overwrite);
                     }
                 }
