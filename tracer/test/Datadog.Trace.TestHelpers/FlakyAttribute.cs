@@ -11,8 +11,11 @@ namespace Datadog.Trace.TestHelpers;
 /// Marks a test as flaky, so that it is automatically retried by <see cref="CustomTestFramework"/>
 /// </summary>
 /// <param name="reason">The reason that this test was marked flaky e.g. it relies on flaky infrastructure, hits a known runtime bug etc</param>
+/// <param name="maxRetries">The maximum number of times a test should be retried</param>
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-public class FlakyAttribute(string reason) : Attribute
+public class FlakyAttribute(string reason, int maxRetries = 1) : Attribute
 {
     public string Reason { get; } = reason;
+
+    public int MaxRetries { get; } = maxRetries;
 }

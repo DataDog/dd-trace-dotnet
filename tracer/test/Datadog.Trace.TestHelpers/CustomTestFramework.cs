@@ -263,39 +263,48 @@ namespace Datadog.Trace.TestHelpers
 
                 var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
 
-                FlakyAttribute flakyAttribute = null;
+                var attemptsRemaining = 1;
+                var retryReason = string.Empty;
                 try
                 {
-                    flakyAttribute = Method
-                                    .MethodInfo
-                                    .GetCustomAttribute<FlakyAttribute>();
+                    var flakyAttribute = Method.MethodInfo.GetCustomAttribute<FlakyAttribute>();
+                    if (flakyAttribute != null)
+                    {
+                        attemptsRemaining = flakyAttribute.MaxRetries + 1;
+                        retryReason = flakyAttribute.Reason;
+                    }
                 }
                 catch (Exception e)
                 {
                     _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: Looking for FlakyAttribute {e}"));
                 }
 
-                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
-
-                // If this throws, we just let it bubble up, regardless of whether there's a retry, as this is an infra issue
-                var delayedMessageBus = new DelayedMessageBus(MessageBus);
-                var firstResult = await RunTest(delayedMessageBus);
-                if (flakyAttribute is null || firstResult.Failed == 0)
+                DelayedMessageBus messageBus = null;
+                try
                 {
-                    // No failures, or not allowed to retry
-                    delayedMessageBus.Dispose();
-                    return firstResult;
+                    while (true)
+                    {
+                        attemptsRemaining--;
+                        messageBus = new DelayedMessageBus(MessageBus);
+
+                        // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
+                        var summary = await RunTest(messageBus);
+                        if (summary.Failed == 0 || attemptsRemaining == 0)
+                        {
+                            // No failures, or not allowed to retry
+                            return summary;
+                        }
+
+                        _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRYING: {test} ({attemptsRemaining} attempts remaining, {retryReason})"));
+                        var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
+                        await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, retryReason);
+                    }
                 }
-
-                // Retry it once only, so we know we will always want to dispose this one
-                using var retryMessageBus = new DelayedMessageBus(MessageBus);
-                var reason = flakyAttribute.Reason;
-                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRY: Retrying flaky test: {test} ({reason})"));
-                var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
-
-                await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, reason);
-
-                return await RunTest(retryMessageBus);
+                finally
+                {
+                    // need to dispose of the message bus to flush any messages
+                    messageBus?.Dispose();
+                }
 
                 async Task<RunSummary> RunTest(DelayedMessageBus messageBus)
                 {
@@ -304,6 +313,8 @@ namespace Datadog.Trace.TestHelpers
                         null,
                         TimeSpan.FromMinutes(15),
                         Timeout.InfiniteTimeSpan);
+
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
 
                     try
                     {
