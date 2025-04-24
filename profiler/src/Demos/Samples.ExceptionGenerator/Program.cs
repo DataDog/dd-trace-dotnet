@@ -142,8 +142,9 @@ namespace Samples.ExceptionGenerator
             {
                 throw new InvalidOperationException("This is a handled exception");
             }
-            catch (Exception)
+            catch (InvalidOperationException x)
             {
+                Console.WriteLine($"Exception detected: {x.Message}");
             }
 
             throw new InvalidOperationException("Task failed successfully.");
