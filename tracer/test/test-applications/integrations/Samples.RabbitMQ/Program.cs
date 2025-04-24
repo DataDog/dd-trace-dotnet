@@ -37,125 +37,137 @@ namespace Samples.RabbitMQ
 
         public static async Task Main(string[] args)
         {
-            // Test a derived type for the sync consumer from the library
-            await RunProducersAndConsumers(useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
-
-            // Test a derived type for the async consumer from the library
-            await RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
-
-            // Test a custom type that implements the sync consumer interface, using implicit interface implementation
-            await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalImplicit, isAsyncConsumer: false);
-
-            // Test a custom type that implements the async consumer inteface, using explicit interface implementation
-            await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalExplicit, isAsyncConsumer: true);
-        }
-
-        private static async Task RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
-        {
-            await PublishAndGet(consumerType.ToString(), useDefaultQueue: false);
-            await PublishAndGet(consumerType.ToString(), useDefaultQueue: true);
-
-            var sendTask = Task.Run(() => Send(consumerType.ToString()));
-            var receiveTask = Task.Run(() => Receive(useQueue, consumerType, isAsyncConsumer));
-
-            var allTasks = Task.WhenAll(sendTask, receiveTask);
-            var completed = await Task.WhenAny(allTasks, Task.Delay(TimeSpan.FromMinutes(3))); // Intentionally very big
-            if (completed != allTasks)
+            // connecting takes 2 to 3 seconds, we re-use the connection to save time
+            var factory = new ConnectionFactory() { HostName = Host() };
+#if RABBITMQ_5_0 && !RABBITMQ_7_0
+            factory.DispatchConsumersAsync = true;
+#endif
+            using (var asyncConnection = await Helper.CreateConnectionAsync(factory))
             {
-                throw new TimeoutException("Timeout waiting for the Send and receive tasks to complete");
+                // Test a derived type for the async consumer from the library
+                await RunProducersAndConsumers(asyncConnection, useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
+
+                // Test a custom type that implements the async consumer inteface, using explicit interface implementation
+                await RunProducersAndConsumers(asyncConnection, useQueue: true, ConsumerType.ExternalExplicit, isAsyncConsumer: true);
             }
 
-            _sendFinished.Reset();
+            factory = new ConnectionFactory() { HostName = Host() };
+            using (var syncConnection = await Helper.CreateConnectionAsync(factory))
+            {
+                // Test a derived type for the sync consumer from the library
+                await RunProducersAndConsumers(syncConnection, useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
+                // Test a custom type that implements the sync consumer interface, using implicit interface implementation
+                await RunProducersAndConsumers(syncConnection, useQueue: true, ConsumerType.ExternalImplicit, isAsyncConsumer: false);
+            }
         }
 
-        private static async Task PublishAndGet(string consumerType, bool useDefaultQueue)
+        private static async Task RunProducersAndConsumers(IConnection connection, bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
+        {
+            using (var channel = await Helper.CreateChannelAsync(connection))
+            {
+                await PublishAndGet(channel, consumerType.ToString(), useDefaultQueue: false);
+                await PublishAndGet(channel, consumerType.ToString(), useDefaultQueue: true);
+
+
+                var sendTask = Task.Run(() => Send(connection, consumerType.ToString()));
+                var receiveTask = Task.Run(() => Receive(connection, useQueue, consumerType, isAsyncConsumer));
+
+                var allTasks = Task.WhenAll(sendTask, receiveTask);
+
+                var completed = await Task.WhenAny(allTasks, Task.Delay(TimeSpan.FromMinutes(3))); // Intentionally very big
+                if (completed != allTasks)
+                {
+                    throw new TimeoutException("Timeout waiting for the Send and receive tasks to complete");
+                }
+
+                _sendFinished.Reset();
+            }
+        }
+
+        private static async Task PublishAndGet(IRabbitChannel channel, string consumerType, bool useDefaultQueue)
         {
             string messagePrefix = $"Program.PublishAndGetDefault({consumerType}, useDefaultQueue: {useDefaultQueue})";
 
             // Configure and send to RabbitMQ queue
-            var factory = new ConnectionFactory() { HostName = Host() };
-            using (var connection = await Helper.CreateConnectionAsync(factory))
-            using (var channel = await Helper.CreateChannelAsync(connection))
+            string publishExchangeName;
+            string publishQueueName;
+            string publishRoutingKey;
+            string messageId = Guid.NewGuid().ToString();
+            string headerValue = Guid.NewGuid().ToString();
+
+            using (SampleHelpers.CreateScope(messagePrefix))
             {
-                string publishExchangeName;
-                string publishQueueName;
-                string publishRoutingKey;
-                string messageId = Guid.NewGuid().ToString();
-                string headerValue = Guid.NewGuid().ToString();
-
-                using (SampleHelpers.CreateScope(messagePrefix))
+                if (useDefaultQueue)
                 {
-                    if (useDefaultQueue)
-                    {
-                        publishExchangeName = "";
-                        publishQueueName = (await Helper.QueueDeclareAsync(channel)).QueueName;
-                        publishRoutingKey = publishQueueName;
-                    }
-                    else
-                    {
-                        publishExchangeName = exchangeName;
-                        publishQueueName = queueName;
-                        publishRoutingKey = routingKey;
+                    publishExchangeName = "";
+                    publishQueueName = (await Helper.QueueDeclareAsync(channel)).QueueName;
+                    publishRoutingKey = publishQueueName;
+                }
+                else
+                {
+                    publishExchangeName = exchangeName;
+                    publishQueueName = queueName;
+                    publishRoutingKey = routingKey;
 
-                        await Helper.ExchangeDeclareAsync(channel, publishExchangeName, "direct");
-                        await Helper.QueueDeclareAsync(channel, queue: publishQueueName);
-                        await Helper.QueueBindAsync(channel, publishQueueName, publishExchangeName, publishRoutingKey);
-                    }
+                    await Helper.ExchangeDeclareAsync(channel, publishExchangeName, "direct");
 
-                    // Ensure there are no more messages in this queue
-                    await Helper.QueuePurgeAsync(channel, publishQueueName);
+                    await Helper.QueueDeclareAsync(channel, queue: publishQueueName);
 
-                    // Test an empty BasicGetResult
-                    await Helper.BasicGetAsync(channel, publishQueueName);
+                    await Helper.QueueBindAsync(channel, publishQueueName, publishExchangeName, publishRoutingKey);
 
-                    // Setup basic properties to verify instrumentation preserves properties and headers.
-                    var properties = Helper.CreateBasicProperties(channel);
-                    properties.MessageId = messageId;
-                    properties.Headers = new Dictionary<string, object>
+                }
+
+                // Ensure there are no more messages in this queue
+                await Helper.QueuePurgeAsync(channel, publishQueueName);
+
+                // Test an empty BasicGetResult
+                await Helper.BasicGetAsync(channel, publishQueueName);
+
+                // Setup basic properties to verify instrumentation preserves properties and headers.
+                var properties = Helper.CreateBasicProperties(channel);
+                properties.MessageId = messageId;
+                properties.Headers = new Dictionary<string, object>
                     {
                         { customHeaderName, headerValue }
                     };
 
-                    // Send message to the default exchange and use new queue as the routingKey
-                    string message = $"{messagePrefix} - Message";
-                    var body = Encoding.UTF8.GetBytes(message);
+                // Send message to the default exchange and use new queue as the routingKey
+                string message = $"{messagePrefix} - Message";
+                var body = Encoding.UTF8.GetBytes(message);
 
-                    await Helper.BasicPublishAsync(channel, publishExchangeName, publishRoutingKey, body, properties);
+                await Helper.BasicPublishAsync(channel, publishExchangeName, publishRoutingKey, body, properties);
 
-                    Console.WriteLine($"BasicPublish - Sent message: {message}");
-                }
+                Console.WriteLine($"BasicPublish - Sent message: {message}");
+            }
 
-                // Immediately get a message from the queue
-                // Move this outside of the manual span to ensure that the operation
-                // uses the distributed tracing context
-                var result = await Helper.BasicGetAsync(channel, publishQueueName);
+            // Immediately get a message from the queue
+            // Move this outside of the manual span to ensure that the operation
+            // uses the distributed tracing context
+            var result = await Helper.BasicGetAsync(channel, publishQueueName);
 #if RABBITMQ_6_0 || RABBITMQ_7_0
-                var resultMessage = Encoding.UTF8.GetString(result.Body.ToArray());
+            var resultMessage = Encoding.UTF8.GetString(result.Body.ToArray());
 #else
                 var resultMessage = Encoding.UTF8.GetString(result.Body);
 #endif
-                Console.WriteLine($"[Program.PublishAndGetDefault] BasicGet - Received message: {resultMessage}");
+            Console.WriteLine($"[Program.PublishAndGetDefault] BasicGet - Received message: {resultMessage}");
 
-                if (result.BasicProperties.MessageId != messageId)
-                {
-                    throw new Exception("MessageId was not preserved in BasicProperties");
-                }
+            if (result.BasicProperties.MessageId != messageId)
+            {
+                throw new Exception("MessageId was not preserved in BasicProperties");
+            }
 
-                if (result.BasicProperties.Headers is null ||
-                    !result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue) ||
-                    receivedHeaderValue is not byte[] receivedHeaderValueString ||
-                    Encoding.UTF8.GetString(receivedHeaderValueString) != headerValue)
-                {
-                    throw new Exception("Custom header was not preserved in BasicProperties");
-                }
+            if (result.BasicProperties.Headers is null ||
+                !result.BasicProperties.Headers.TryGetValue(customHeaderName, out var receivedHeaderValue) ||
+                receivedHeaderValue is not byte[] receivedHeaderValueString ||
+                Encoding.UTF8.GetString(receivedHeaderValueString) != headerValue)
+            {
+                throw new Exception("Custom header was not preserved in BasicProperties");
             }
         }
 
-        private static async Task Send(string consumerType)
+        private static async Task Send(IConnection connection, string consumerType)
         {
             // Configure and send to RabbitMQ queue
-            var factory = new ConnectionFactory() { HostName = Host() };
-            using (var connection = await Helper.CreateConnectionAsync(factory))
             using (var channel = await Helper.CreateChannelAsync(connection))
             {
                 await Helper.QueueDeclareAsync(channel, queue: "hello");
@@ -183,7 +195,7 @@ namespace Samples.RabbitMQ
             Console.WriteLine("[Send] Exiting Thread.");
         }
 
-        private static async Task Receive(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
+        private static async Task Receive(IConnection connection, bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
             // Let's just wait for all sending activity to finish before doing any work
             _sendFinished.WaitOne();
@@ -196,7 +208,6 @@ namespace Samples.RabbitMQ
 #else
             _ = isAsyncConsumer; // not used in v7+
 #endif
-            using (var connection = await Helper.CreateConnectionAsync(factory))
             using (var channel = await Helper.CreateChannelAsync(connection))
 
             {
