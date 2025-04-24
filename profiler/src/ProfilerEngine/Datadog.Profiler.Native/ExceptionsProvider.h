@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "Callstack.h"
 #include "CallstackProvider.h"
 #include "CollectorBase.h"
 #include "IFrameStore.h"
@@ -44,8 +45,7 @@ public:
         shared::pmr::memory_resource* memoryResource);
 
     bool OnModuleLoaded(ModuleID moduleId);
-    bool OnExceptionThrown(ObjectID thrownObjectId);
-
+    bool OnExceptionThrown(ObjectID thrownObjectId, FrameInfoView throwingMethod);
     UpscalingInfo GetInfo() override;
 
 private:
@@ -58,7 +58,7 @@ private:
 private:
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
-
+    static void AddUnhandledExceptionStack(RawExceptionSample& sample, FrameInfoView const& throwingMethod);
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;

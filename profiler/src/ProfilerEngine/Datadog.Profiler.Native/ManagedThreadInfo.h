@@ -100,20 +100,32 @@ public:
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
 
-    // TODO: maybe it would be better to store the type name and its message
-    //       who knows if the exception object could be moved by a compacting GC?
-    //       Not very likely in the case of an unhandled exception, but still...
-    inline void SetException(ObjectID exception)
+    // it is better to store the type name and its message:
+    // who knows if the exception object could be moved by a compacting GC?
+    // It was not possible to get the type name and message from the stored exception ObjectID...
+    inline void SetException(std::string& type, std::string& message)
     {
-        _exception = exception;
+        _hasFaultyMethod = true;
+        _exceptionType = type;
+        _exceptionMessage = message;
     }
-    inline ObjectID  GetException()
+    inline std::string GetExceptionType()
     {
-        return _exception;
+        return _exceptionType;
+    }
+    inline std::string GetExceptionMessage()
+    {
+        return _exceptionMessage;
     }
     inline void ClearException()
     {
-        _exception = 0;
+        _hasFaultyMethod = false;
+        _exceptionType.clear();
+        _exceptionMessage.clear();
+    }
+    inline bool HasException()
+    {
+        return _hasFaultyMethod;
     }
     inline void SetFaultyMethod(FrameInfoView method)
     {
@@ -171,6 +183,9 @@ private:
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
     dd_mutex_t _objLock;
+
+    std::string _exceptionType;
+    std::string _exceptionMessage;
     ObjectID _exception;
     FrameInfoView _faultyMethod;
     bool _hasFaultyMethod;

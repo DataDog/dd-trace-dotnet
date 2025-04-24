@@ -66,6 +66,9 @@
 
 #include "dd_profiler_version.h"
 
+// used for debugging unhandled exceptions processing in CLR
+#define CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS false
+
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
@@ -1966,7 +1969,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    Log::Debug("ExceptionThrown");
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionThrown");
+    }
 
     if (false == _isInitialized.load())
     {
@@ -1974,18 +1980,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
         return S_OK;
     }
 
-    // Record the exception for the current thread
-    // If the exception is not handled, ExceptionSearchCatcherFound won't be called
-    // before ExceptionUnwindFunctionEnter
-    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
-    if (threadInfo != nullptr)
-    {
-        threadInfo->SetException(thrownObjectId);
-    }
-
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
-        _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+        _pExceptionsProvider->OnExceptionThrown(thrownObjectId, { "", "", "", 0 });
     }
 
     return S_OK;
@@ -2049,20 +2046,29 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(Func
     }
 
     auto result = _pFrameStore->GetManagedFrame(functionId);
-    Log::Debug("ExceptionUnwindFunctionEnter in ", result.Frame);
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionUnwindFunctionEnter in ", result.Frame);
+    }
 
     // Starting to unwind the stack after the exception has be handled... or not
+    // If the exception is not handled, ExceptionSearchCatcherFound won't be called
+    // before ExceptionUnwindFunctionEnter
     ThreadID currentThreadId = 0;
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo != nullptr)
     {
-        auto exception = threadInfo->GetException();
-        if (exception != 0)
+        // TODO: it should be possible to "stack" all frames as this method is called for each frame from the top to the bottom of the stack.
+        //       we would need to wait until Shutdown is called to iterate on the managed thread list and find a thread
+        //       with an exception before creating the Exception sample.
+
+        // instead, immediately create a fake Exception sample right now from the method that threw the exception
+        if (threadInfo->HasException())
         {
-            // The exception is not handled so keep track of the method where the exception was thrown
-            // TODO: it should be possible to "stack" all frames as this method is called for each frame from the top to the bottom of the stack
-            threadInfo->SetFaultyMethod(result);
-            // TODO: instead, create a fake Exception sample here
+            if (_pExceptionsProvider != nullptr)
+            {
+                _pExceptionsProvider->OnExceptionThrown(0, result);
+            }
         }
     }
 
@@ -2071,7 +2077,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(Func
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave()
 {
-    Log::Debug("ExceptionUnwindFunctionLeave");
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionUnwindFunctionLeave");
+    }
+
     return S_OK;
 }
 
@@ -2087,13 +2097,21 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId)
 {
-    Log::Debug("ExceptionCatcherEnter");
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionCatcherEnter");
+    }
+
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave()
 {
-    Log::Debug("ExceptionCatcherLeave");
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionCatcherLeave");
+    }
+
     return S_OK;
 }
 

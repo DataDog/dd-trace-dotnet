@@ -80,10 +80,16 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
     return true;
 }
 
-bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
+bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId, FrameInfoView throwingMethod)
 {
-    _exceptionsCountMetric->Incr();
+    if (thrownObjectId != 0)
+    {
+        // For an unhandled exception, OnExceptionThrown is called with a non empty throwing method
+        // AFTER the exception is actually thrown; so don't count it twice
+        _exceptionsCountMetric->Incr();
+    }
 
+    // get the offset of the message field
     if (_mscorlibModuleId == 0)
     {
         if (!_loggedMscorlibError)
@@ -93,7 +99,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
         return false;
     }
-
     if (_exceptionClassId == 0)
     {
         if (!LoadExceptionMetadata())
@@ -102,42 +107,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
     }
 
-    ClassID classId;
-
-    INVOKE(_pCorProfilerInfo->GetClassFromObject(thrownObjectId, &classId))
-
     std::string name;
-    if (!GetExceptionType(classId, name))
-    {
-        return false;
-    }
-
-    if (!_sampler.Sample(name))
-    {
-        return true;
-    }
-
-    const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);
-
-    std::string message;
-
-    if (messageAddress == 0)
-    {
-        message = std::string();
-    }
-    else
-    {
-        const auto stringLength = *reinterpret_cast<ULONG*>(messageAddress + _stringLengthOffset);
-
-        if (stringLength == 0)
-        {
-            message = std::string();
-        }
-        else
-        {
-            message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset), stringLength);
-        }
-    }
 
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
@@ -146,35 +116,101 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
-    uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
-
-    pStackFramesCollector->PrepareForNextCollection();
-    const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
-
-    static uint64_t failureCount = 0;
-    if ((result->GetFramesCount() == 0) && (failureCount % 100 == 0))
+    std::string message;
+    if (thrownObjectId == 0)
     {
-        // log every 100 failures
-        failureCount++;
-        Log::Warn("Failed to walk ", failureCount, " stacks for sampled exception: ", HResultConverter::ToStringWithCode(hrCollectStack));
-        return false;
+        // if the exception is not handled, we will always create the exception sample
+        name = std::move(threadInfo->GetExceptionType());
+        message = std::move(threadInfo->GetExceptionMessage());
+
+        // today, we don't use ExceptionUnwindFunctionEnter to unwind the stack
+        // so we need to reset the current thread exception
+        threadInfo->ClearException();
+    }
+    else
+    {
+        // get the exception type name for sampling bucket (and the unhandled exception case)
+        ClassID classId;
+        INVOKE(_pCorProfilerInfo->GetClassFromObject(thrownObjectId, &classId))
+        if (!GetExceptionType(classId, name))
+        {
+            return false;
+        }
+
+        const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);
+        if (messageAddress == 0)
+        {
+            message = std::string();
+        }
+        else
+        {
+            const auto stringLength = *reinterpret_cast<ULONG*>(messageAddress + _stringLengthOffset);
+
+            if (stringLength == 0)
+            {
+                message = std::string();
+            }
+            else
+            {
+                message = shared::ToString(reinterpret_cast<WCHAR*>(messageAddress + _stringBufferOffset), stringLength);
+            }
+        }
+
+        // still, we need to keep track of the exception type and message
+        // for the current thread just in case it won't be handled
+        threadInfo->SetException(name, message);
+
+        if (!_sampler.Sample(name))
+        {
+            return true;
+        }
     }
 
-    result->SetUnixTimeUtc(GetCurrentTimestamp());
-
+    // Create a fake call stack for unhandled exception
+    // and get the current call stack for the others
     RawExceptionSample rawSample;
+    auto timestamp = GetCurrentTimestamp();
+    rawSample.Timestamp = timestamp;
 
-    rawSample.Timestamp = result->GetUnixTimeUtc();
-    rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
-    rawSample.SpanId = result->GetSpanId();
+    if (thrownObjectId == 0)
+    {
+        auto [localRootSpanId, spanId] = threadInfo->GetTracingContext();
+        rawSample.LocalRootSpanId = localRootSpanId;
+        rawSample.SpanId = spanId;
+
+        // for unhandled exceptions, a fake callstack will be created in OnTransform
+        // based on the throwing method
+        rawSample.ThrowingMethod = throwingMethod;
+    }
+    else
+    {
+        uint32_t hrCollectStack = E_FAIL;
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+            _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
+
+        pStackFramesCollector->PrepareForNextCollection();
+        const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
+
+        static uint64_t failureCount = 0;
+        if ((result->GetFramesCount() == 0) && (failureCount % 100 == 0))
+        {
+            // log every 100 failures
+            failureCount++;
+            Log::Warn("Failed to walk ", failureCount, " stacks for sampled exception: ", HResultConverter::ToStringWithCode(hrCollectStack));
+            return false;
+        }
+
+        rawSample.LocalRootSpanId = result->GetLocalRootSpanId();
+        rawSample.SpanId = result->GetSpanId();
+        rawSample.Stack = result->GetCallstack();
+    }
+
     rawSample.AppDomainId = threadInfo->GetAppDomainId();
-    rawSample.Stack = result->GetCallstack();
     rawSample.ThreadInfo = threadInfo;
     rawSample.ExceptionMessage = std::move(message);
     rawSample.ExceptionType = std::move(name);
     Add(std::move(rawSample));
+
     _sampledExceptionsCountMetric->Incr();
 
     return true;

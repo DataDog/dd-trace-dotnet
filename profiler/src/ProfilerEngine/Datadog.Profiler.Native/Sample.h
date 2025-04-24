@@ -144,6 +144,7 @@ public:
     static const std::string SpanIdLabel;
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
+    static const std::string ExceptionUnhandledLabel;
     static const std::string AllocationClassLabel;
     static const std::string GarbageCollectionGenerationLabel;
     static const std::string GarbageCollectionNumberLabel;

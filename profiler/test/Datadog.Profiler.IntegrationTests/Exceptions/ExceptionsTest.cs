@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
 using Xunit;
@@ -21,6 +22,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         private const string Scenario2 = "--scenario 2";
         private const string Scenario3 = "--scenario 3";
         private const string ScenarioMeasureException = "--scenario 6";
+        private const string ScenarioUnhandledException = "--scenario 7";
 
         private readonly ITestOutputHelper _output;
 
@@ -340,6 +342,42 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 builder.AppendLine($"{stats,11}");
                 logger.WriteLine(builder.ToString());
             }
+        }
+
+        [TestAppFact("Samples.ExceptionGenerator", new[] { "net462", "netcoreapp3.1", "net6.0", "net7.0", "net8.0", "net9.0" })]
+        public void DetectUnhandledException(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioUnhandledException);
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            try
+            {
+                runner.Run(agent);
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x.Message);
+            }
+
+            //Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            long total = 0;
+            foreach (var sample in exceptionSamples)
+            {
+                if (sample.Message == "Task failed successfully.")
+                {
+                    total++;
+                }
+
+                sample.Type.Should().Be("System.InvalidOperationException");
+            }
+
+            Assert.True(total > 0);
         }
 
         private static Dictionary<string, int> GetRealExceptions(string output)
