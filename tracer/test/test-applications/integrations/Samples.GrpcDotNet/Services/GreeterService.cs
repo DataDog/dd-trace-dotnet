@@ -50,7 +50,7 @@ public class GreeterService : Greeter.GreeterBase
     public override async Task<HelloReply> VerySlow(HelloRequest request, ServerCallContext context)
     {
         LogMethod();
-        await Task.Delay(5_000);
+        await Task.Delay(300);
         return new HelloReply { Message = "Hello " + request.Name };
     }
 
@@ -71,7 +71,7 @@ public class GreeterService : Greeter.GreeterBase
             }
 
             await responseStream.WriteAsync(new HelloReply { Message = $"Hello {i}" });
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            await Task.Delay(TimeSpan.FromMilliseconds(30));
         }
     }
 
