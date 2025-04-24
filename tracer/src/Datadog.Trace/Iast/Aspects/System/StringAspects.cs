@@ -36,7 +36,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Trim)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -65,7 +65,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Trim)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -88,7 +88,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Trim)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -118,7 +118,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimStart)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -141,7 +141,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimStart)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -162,7 +162,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimStart)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -192,7 +192,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimEnd)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -215,7 +215,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimEnd)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -236,7 +236,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(TrimEnd)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -259,7 +259,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -281,7 +281,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat_0)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -303,7 +303,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat_1)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -325,7 +325,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -348,7 +348,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -371,7 +371,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -395,7 +395,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -420,7 +420,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -442,7 +442,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -463,7 +463,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -484,7 +484,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -506,7 +506,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -530,7 +530,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -553,7 +553,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -577,7 +577,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -601,7 +601,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Concat)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -626,7 +626,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Substring)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -649,7 +649,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Substring)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -670,7 +670,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToCharArray)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -693,7 +693,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToCharArray)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -717,7 +717,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -740,7 +740,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -762,7 +762,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -786,7 +786,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -809,7 +809,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -833,7 +833,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -855,7 +855,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -877,7 +877,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -899,7 +899,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Join)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -980,7 +980,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToUpper)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1002,7 +1002,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToUpper)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1023,7 +1023,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToUpperInvariant)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1044,7 +1044,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToLower)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1066,7 +1066,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToLower)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1087,7 +1087,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(ToLowerInvariant)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1109,7 +1109,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Remove)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1132,7 +1132,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Remove)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1155,7 +1155,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Insert)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1177,7 +1177,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(PadLeft)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1200,7 +1200,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(PadLeft)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1222,7 +1222,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(PadRight)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1245,7 +1245,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(PadRight)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1267,7 +1267,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1290,7 +1290,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1314,7 +1314,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1336,7 +1336,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1359,7 +1359,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1383,7 +1383,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1408,7 +1408,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1431,7 +1431,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Format)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1489,7 +1489,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Replace)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1513,7 +1513,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Replace)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1537,7 +1537,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Replace)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1560,7 +1560,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Replace)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1582,7 +1582,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1605,7 +1605,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1628,7 +1628,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1652,7 +1652,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1675,7 +1675,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1699,7 +1699,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1725,7 +1725,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1748,7 +1748,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1771,7 +1771,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1795,7 +1795,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Split)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -1836,7 +1836,7 @@ public class StringAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Copy)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

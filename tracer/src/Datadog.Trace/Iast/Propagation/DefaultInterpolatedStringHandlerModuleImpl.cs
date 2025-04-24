@@ -74,9 +74,9 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 tainted.Ranges = rangesResult;
             }
         }
-        catch (Exception error)
+        catch (Exception ex)
         {
-            IastModule.LogAspectException(error, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(FullTaintIfAnyTainted)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -113,9 +113,9 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 TaintedRefStructs.Pop();
             }
         }
-        catch (Exception err)
+        catch (Exception ex)
         {
-            IastModule.LogAspectException(err, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(PropagateTaint)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

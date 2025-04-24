@@ -29,7 +29,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(ProcessCipherClassCreation)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -47,7 +47,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(InitDES)}");
+            IastModule.LogAspectException(ex);
         }
 
         return target;
@@ -67,7 +67,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(InitRC2)}");
+            IastModule.LogAspectException(ex);
         }
 
         return target;
@@ -87,7 +87,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(InitTripleDES)}");
+            IastModule.LogAspectException(ex);
         }
 
         return target;
@@ -107,7 +107,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(InitRijndaelManaged)}");
+            IastModule.LogAspectException(ex);
         }
 
         return target;
@@ -127,7 +127,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(InitAesCryptoServiceProvider)}");
+            IastModule.LogAspectException(ex);
         }
 
         return target;
@@ -157,7 +157,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SymmetricAlgorithmAspect)}.{nameof(Create)}");
+            IastModule.LogAspectException(ex);
             return target;
         }
     }

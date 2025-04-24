@@ -35,7 +35,7 @@ public class ISessionAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(ISessionAspect)}.{nameof(AnalyzeQuery)}");
+            IastModule.LogAspectException(ex);
             return query;
         }
     }
