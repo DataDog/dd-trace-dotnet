@@ -94,9 +94,9 @@ namespace Datadog.Trace.ContinuousProfiler
                     return true;
                 }
             }
-            catch (ObjectDisposedException e)
+            catch (Exception e)
             {
-                // seen in a crash: weird but possible on shutdown probably
+                // seen in a crash: weird but possible on shutdown probably if the object is disposed
                 Log.Warning(e, "Disposed tracing context pointer wrapper for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
                 _traceContextPtr.Value = IntPtr.Zero;
                 return false;
