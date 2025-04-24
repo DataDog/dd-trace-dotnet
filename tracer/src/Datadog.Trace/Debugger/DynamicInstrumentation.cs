@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
 #nullable enable
 
 using System;
@@ -150,7 +151,7 @@ namespace Datadog.Trace.Debugger
                                  TaskScheduler.Default);
         }
 
-        internal List<UpdateResult> UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
+        internal List<ConfigurationUpdater.UpdateResult> UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
         {
             if (IsDisposed)
             {
@@ -165,7 +166,7 @@ namespace Datadog.Trace.Debugger
                 }
 
                 Log.Information<int>("Dynamic Instrumentation.InstrumentProbes: Request to instrument {Count} probes definitions", addedProbes.Count);
-				var result = new List<UpdateResult>(addedProbes.Count);
+				var result = new List<ConfigurationUpdater.UpdateResult>(addedProbes.Count);
 
 lock (_instanceLock)
             {
@@ -233,14 +234,14 @@ lock (_instanceLock)
 
                         case ProbeLocationType.Unrecognized:
                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0, new ProbeStatus(addedProbe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
-							result.Add(new UpdateResult(addedProbe.Id, "Unknown probe type"));
+							result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, "Unknown probe type"));
                             break;
                     }
 					result.Add(new UpdateResult(addedProbe.Id, null));
 					}
                     catch (Exception e)
                     {
-                        result.Add(new UpdateResult(addedProbe.Id, e.Message));
+                        result.Add(new ConfigurationUpdater.UpdateResult(addedProbe.Id, e.Message));
                     }
                 }
 
@@ -460,6 +461,7 @@ lock (_instanceLock)
                             serviceConfig = namedRawFile.Deserialize<ServiceConfiguration>().TypedFile;
                             break;
                         default:
+                            result.Add(ApplyDetails.FromError(namedRawFile.Path.Path, "Unknown config"));
                             break;
                     }
                 }
@@ -487,9 +489,10 @@ lock (_instanceLock)
                     var config = configs.FirstOrDefault(c => c.Path.Id == updateResult.Id);
                     if (config != null)
                     {
-                        result.Add(updateResult.Error == null 
-                                       ? ApplyDetails.FromOk(config.Path.Path) 
-                                       : ApplyDetails.FromError(config.Path.Path, updateResult.Error));
+                        result.Add(
+                            updateResult.Error == null
+                                ? ApplyDetails.FromOk(config.Path.Path)
+                                : ApplyDetails.FromError(config.Path.Path, updateResult.Error));
                     }
                 }
             }
