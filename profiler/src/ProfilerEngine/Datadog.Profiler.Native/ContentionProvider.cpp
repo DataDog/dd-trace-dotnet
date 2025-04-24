@@ -164,12 +164,6 @@ void ContentionProvider::OnWaitStop(std::chrono::nanoseconds timestamp)
     }
     currentThreadInfo->SetWaitStart(0ns);
 
-    // We are not interested in waits that are too short
-    if (waitDuration < 1ms)
-    {
-        return;
-    }
-
     AddContentionSample(0ns, -1, currentThreadInfo->GetContentionType(), waitDuration, 0, WStr(""), _emptyStack);
 }
 
