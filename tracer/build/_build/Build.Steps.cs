@@ -653,7 +653,6 @@ partial class Build
                         {
                             var dest = testBinFolder / fmk / arch;
                             CopyFile(source / $"{libdatadogFileName}.dll", dest / $"{renamedLibdatadogFileName}.dll", FileExistsPolicy.Overwrite);
-                            CopyFile(source / $"{libdatadogFileName}.pdb", dest / $"{renamedLibdatadogFileName}.pdb", FileExistsPolicy.Overwrite);
                         }
                     }
                 }
