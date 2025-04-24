@@ -741,6 +741,7 @@
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
+      <type fullname="System.Runtime.CompilerServices.CallerMemberNameAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />

@@ -4501,14 +4501,14 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: throughput
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  # By default throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
+  condition: and(succeeded(), eq(variables.isMainRepository, true), or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true')))
   dependsOn: [package_linux, package_arm64, build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
-    # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
-    runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
+    runExtendedThroughputTests: true
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
   jobs:
   - template: steps/update-github-status-jobs.yml

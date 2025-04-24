@@ -30,7 +30,7 @@ public class RandomAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(RandomAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
             return;
         }
     }

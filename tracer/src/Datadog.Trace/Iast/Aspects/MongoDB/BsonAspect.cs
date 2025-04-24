@@ -35,7 +35,7 @@ public class BsonAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(BsonAspect)}.{nameof(AnalyzeJsonString)}");
+            IastModule.LogAspectException(ex);
             return json;
         }
     }

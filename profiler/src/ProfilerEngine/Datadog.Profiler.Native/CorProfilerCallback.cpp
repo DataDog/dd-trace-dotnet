@@ -265,7 +265,7 @@ void CorProfilerCallback::InitializeServices()
             }
             else
             {
-                Log::Warn("Live Heap profiling is disabled: .NET 7+ is required.");
+                Log::Warn("Live Heap profiling is disabled for .NET ", _pRuntimeInfo->GetDotnetMajorVersion(), ":.NET 7 + is required.");
             }
         }
 
@@ -334,21 +334,29 @@ void CorProfilerCallback::InitializeServices()
             _pGarbageCollectionProvider = nullptr;
         }
 
+        // HTTP profiler is only supported in .NET 7+
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-            _pNetworkProvider = RegisterService<NetworkProvider>(
-                valueTypeProvider,
-                _pCorProfilerInfo,
-                _pManagedThreadList,
-                _pFrameStore.get(),
-                _pThreadsCpuManager,
-                _pAppDomainStore.get(),
-                _pRuntimeIdStore,
-                _pConfiguration.get(),
-                _metricsRegistry,
-                CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault()
-            );
+            if (_pRuntimeInfo->GetDotnetMajorVersion() >= 7)
+            {
+                _pNetworkProvider = RegisterService<NetworkProvider>(
+                    valueTypeProvider,
+                    _pCorProfilerInfo,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    _pRuntimeIdStore,
+                    _pConfiguration.get(),
+                    _metricsRegistry,
+                    CallstackProvider(_memoryResourceManager.GetDefault()),
+                    MemoryResourceManager::GetDefault()
+                );
+            }
+            else
+            {
+                Log::Warn("Outgoing HTTP profiling is disabled for .NET ", _pRuntimeInfo->GetDotnetMajorVersion(), ": .NET 7 + is required.");
+            }
         }
 
         // TODO: add new CLR events-based providers to the event parser
@@ -465,9 +473,10 @@ void CorProfilerCallback::InitializeServices()
             || _pEtwEventsManager != nullptr, // .NET Framework CLR events-based profilers
         _pLiveObjectsProvider != nullptr);
 
-    // disable profilers if the connection with the agent failed
+    // disable providers depending on current CLR type/version
     if (_pRuntimeInfo->IsDotnetFramework())
     {
+        // disable profilers if the connection with the agent failed
         if (_pEtwEventsManager == nullptr)
         {
             // keep track that event-based profilers are disabled
@@ -477,6 +486,17 @@ void CorProfilerCallback::InitializeServices()
 
             // these profilers are not supported in .NET Framework anyway
             _pEnabledProfilers->Disable(RuntimeProfiler::Heap);
+        }
+
+        // http profiling is not supported in .NET Framework
+        _pEnabledProfilers->Disable(RuntimeProfiler::Network);
+    }
+    else
+    {
+        // http profiling requires .NET 7+
+        if (_pRuntimeInfo->GetDotnetMajorVersion() < 7)
+        {
+            _pEnabledProfilers->Disable(RuntimeProfiler::Network);
         }
     }
 
@@ -599,7 +619,8 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
 
-        if (_pConfiguration->IsHttpProfilingEnabled())
+        // HTTP profiling is only available for .NET 7+
+        if (_pConfiguration->IsHttpProfilingEnabled() && (_pNetworkProvider != nullptr))
         {
             _pSamplesCollector->Register(_pNetworkProvider);
         }
