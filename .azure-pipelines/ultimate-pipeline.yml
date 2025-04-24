@@ -2375,6 +2375,13 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+    - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs
+      displayName: docker-compose logs
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
       displayName: docker-compose stop services
       env:
@@ -3164,6 +3171,13 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
+
+        - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs
+          displayName: docker-compose logs
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
+          condition: succeededOrFailed()
+          continueOnError: true
 
         - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) down
           displayName: docker-compose stop services
