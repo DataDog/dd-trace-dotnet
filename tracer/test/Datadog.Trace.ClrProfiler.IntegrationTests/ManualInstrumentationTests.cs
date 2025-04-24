@@ -96,7 +96,7 @@ public class ManualInstrumentationTests : TestHelper
     private async Task RunTest(bool usePublishWithRID = false)
     {
         SetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED", "1");
-        const int expectedSpans = 37;
+        const int expectedSpans = 47;
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using var assert = new AssertionScope();
