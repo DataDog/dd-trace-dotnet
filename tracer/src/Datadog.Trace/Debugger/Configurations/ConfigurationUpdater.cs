@@ -130,7 +130,7 @@ namespace Datadog.Trace.Debugger.Configurations
         {
             // todo handle rate limited changes
         }
-    }
 
-    internal record UpdateResult(string Id, string? Error);
+        internal record UpdateResult(string Id, string? Error);
+    }
 }
