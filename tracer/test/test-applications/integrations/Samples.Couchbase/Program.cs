@@ -23,12 +23,6 @@ namespace Samples.Couchbase
             {
                 await p.RunAllExamples();
             }
-            catch (AuthenticationException ex)
-            {
-                Console.WriteLine("Exception during execution " + ex);
-                Console.WriteLine("Exiting with skip code (13)");
-                return 13;
-            }
             catch (AggregateException ex)
             {
                 Console.WriteLine("Exception during execution " + ex);
