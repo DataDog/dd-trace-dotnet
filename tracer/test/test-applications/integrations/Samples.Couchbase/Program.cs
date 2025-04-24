@@ -17,7 +17,6 @@ namespace Samples.Couchbase
 
         private static async Task<int> Main()
         {
-            Console.WriteLine("dsd");
             Program p = new Program();
 
             try
@@ -51,7 +50,7 @@ namespace Samples.Couchbase
         {
             var config = GetConnectionConfig();
             _cluster = new Cluster(config);
-            _cluster.Authenticate("default", "passworde");
+            _cluster.Authenticate("default", "password");
             _bucket = _cluster.OpenBucket("default");
             RetrieveAndUpdate();
             await RetrieveAndUpdateAsync();
