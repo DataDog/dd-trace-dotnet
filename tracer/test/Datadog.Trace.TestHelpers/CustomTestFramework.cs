@@ -241,11 +241,13 @@ namespace Datadog.Trace.TestHelpers
         private class CustomTestMethodRunner : XunitTestMethodRunner
         {
             private readonly IMessageSink _diagnosticMessageSink;
+            private readonly object[] _constructorArguments;
 
             public CustomTestMethodRunner(ITestMethod testMethod, IReflectionTypeInfo @class, IReflectionMethodInfo method, IEnumerable<IXunitTestCase> testCases, IMessageSink diagnosticMessageSink, IMessageBus messageBus, ExceptionAggregator aggregator, CancellationTokenSource cancellationTokenSource, object[] constructorArguments)
                 : base(testMethod, @class, method, testCases, diagnosticMessageSink, messageBus, aggregator, cancellationTokenSource, constructorArguments)
             {
                 _diagnosticMessageSink = diagnosticMessageSink;
+                _constructorArguments = constructorArguments;
             }
 
             protected override async Task<RunSummary> RunTestCaseAsync(IXunitTestCase testCase)
@@ -261,31 +263,41 @@ namespace Datadog.Trace.TestHelpers
 
                 var test = $"{TestMethod.TestClass.Class.Name}.{TestMethod.Method.Name}({parameters})";
 
-                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
-
-                var flakyAttribute = TestMethod
-                                    .Method
-                                    .GetCustomAttributes("Datadog.Trace.TestHelpers.FlakyAttribute")
-                                    .FirstOrDefault();
-
+                FlakyAttribute flakyAttribute = null;
                 try
                 {
-                    return await RunTest();
+                    flakyAttribute = Method
+                                    .MethodInfo
+                                    .GetCustomAttribute<FlakyAttribute>();
                 }
-                catch (Exception) when (flakyAttribute != null)
+                catch (Exception e)
                 {
-                    // If the test fails, we retry it once
-                    var reason = (string)flakyAttribute.GetConstructorArguments().First();
-                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"Retrying flaky test: {test} ({reason})"));
-                    var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
-
-                    await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, reason);
-
-                    // Just accept the result of this run regardless of the outcome
-                    return await RunTest();
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: Looking for FlakyAttribute {e}"));
                 }
 
-                async Task<RunSummary> RunTest()
+                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"STARTED: {test}"));
+
+                // If this throws, we just let it bubble up, regardless of whether there's a retry, as this is an infra issue
+                var delayedMessageBus = new DelayedMessageBus(MessageBus);
+                var firstResult = await RunTest(delayedMessageBus);
+                if (flakyAttribute is null || firstResult.Failed == 0)
+                {
+                    // No failures, or not allowed to retry
+                    delayedMessageBus.Dispose();
+                    return firstResult;
+                }
+
+                // Retry it once only, so we know we will always want to dispose this one
+                using var retryMessageBus = new DelayedMessageBus(MessageBus);
+                var reason = flakyAttribute.Reason;
+                _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"RETRY: Retrying flaky test: {test} ({reason})"));
+                var testFullName = $"{TestMethod.TestClass.Class.Name}.{testCase.DisplayName}";
+
+                await SendMetric(_diagnosticMessageSink, "dd_trace_dotnet.ci.tests.retries", testFullName, reason);
+
+                return await RunTest(retryMessageBus);
+
+                async Task<RunSummary> RunTest(DelayedMessageBus messageBus)
                 {
                     using var timer = new Timer(
                         _ => _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"WARNING: {test} has been running for more than 15 minutes")),
@@ -295,7 +307,7 @@ namespace Datadog.Trace.TestHelpers
 
                     try
                     {
-                        var result = await base.RunTestCaseAsync(testCase);
+                        var result = await testCase.RunAsync(_diagnosticMessageSink, messageBus, _constructorArguments, new ExceptionAggregator(Aggregator), CancellationTokenSource);
 
                         var status = result.Failed > 0 ? "FAILURE" : (result.Skipped > 0 ? "SKIPPED" : "SUCCESS");
 
@@ -316,6 +328,7 @@ namespace Datadog.Trace.TestHelpers
                     if (string.IsNullOrEmpty(envKey))
                     {
                         // We're probably not in CI
+                        outputHelper.OnMessage(new DiagnosticMessage($"No CI API Key found, skipping {metricName} metric submission"));
                         return;
                     }
 
@@ -351,15 +364,48 @@ namespace Datadog.Trace.TestHelpers
                     var response = await client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
                     var responseContent = await response.Content.ReadAsStringAsync();
 
-                    if (response.StatusCode != HttpStatusCode.Accepted)
-                    {
-                        outputHelper.OnMessage(new DiagnosticMessage($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\""));
-                    }
+                    var result = response.IsSuccessStatusCode
+                                     ? "Successfully submitted metric"
+                                     : "Failed to submit metric";
+                    outputHelper.OnMessage(new DiagnosticMessage($"{result} {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\""));
 
                     string SanitizeTagValue(string tag)
                     {
                         SpanTagHelper.TryNormalizeTagName(tag, normalizeSpaces: true, out var normalizedTag);
                         return normalizedTag;
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Used to capture messages to potentially be forwarded later. Messages are forwarded by
+            /// disposing of the message bus.
+            /// Based on https://github.com/xunit/samples.xunit/blob/main/v2/RetryFactExample/DelayedMessageBus.cs
+            /// </summary>
+            public class DelayedMessageBus : IMessageBus
+            {
+                private readonly IMessageBus _innerBus;
+                private readonly ConcurrentQueue<IMessageSinkMessage> _messages = new();
+
+                public DelayedMessageBus(IMessageBus innerBus)
+                {
+                    _innerBus = innerBus;
+                }
+
+                public bool QueueMessage(IMessageSinkMessage message)
+                {
+                    _messages.Enqueue(message);
+
+                    // No way to ask the inner bus if they want to cancel without sending them the message, so
+                    // we just go ahead and continue always.
+                    return true;
+                }
+
+                public void Dispose()
+                {
+                    while (_messages.TryDequeue(out var message))
+                    {
+                        _innerBus.QueueMessage(message);
                     }
                 }
             }
