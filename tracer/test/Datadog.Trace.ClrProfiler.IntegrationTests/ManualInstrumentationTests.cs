@@ -32,25 +32,21 @@ public class ManualInstrumentationTests : TestHelper
         SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
     }
 
-    [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task ManualAndAutomatic(bool dataPipelineEnabled) => await RunTest(dataPipelineEnabled, usePublishWithRID: false);
+    public async Task ManualAndAutomatic() => await RunTest(usePublishWithRID: false);
 
 #if NETFRAMEWORK
-    [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task NGenRunManualAndAutomatic(bool dataPipelineEnabled)
+    public async Task NGenRunManualAndAutomatic()
     {
         SetEnvironmentVariable("READY2RUN_ENABLED", "1");
         var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath();
         NgenHelper.InstallToNativeImageCache(Output, sampleAppPath);
         try
         {
-            await RunTest(dataPipelineEnabled, usePublishWithRID: false);
+            await RunTest(usePublishWithRID: false);
         }
         finally
         {
@@ -58,11 +54,9 @@ public class ManualInstrumentationTests : TestHelper
         }
     }
 #else
-    [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task ReadyToRunManualAndAutomatic(bool dataPipelineEnabled)
+    public async Task ReadyToRunManualAndAutomatic()
     {
 #if NET9_0_OR_GREATER
         // OK, I know, this is weird, but AFAICT they changed the host FX lookup logic in .NET 9,
@@ -79,7 +73,7 @@ public class ManualInstrumentationTests : TestHelper
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
 #endif
         SetEnvironmentVariable("READY2RUN_ENABLED", "1");
-        await RunTest(dataPipelineEnabled, usePublishWithRID: true);
+        await RunTest(usePublishWithRID: true);
     }
 #endif
 
@@ -99,11 +93,10 @@ public class ManualInstrumentationTests : TestHelper
         spans.Should().BeEmpty();
     }
 
-    private async Task RunTest(bool dataPipelineEnabled, bool usePublishWithRID = false)
+    private async Task RunTest(bool usePublishWithRID = false)
     {
         SetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED", "1");
-        const int expectedSpans = 47;
-        EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
+        const int expectedSpans = 37;
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
         using var assert = new AssertionScope();
