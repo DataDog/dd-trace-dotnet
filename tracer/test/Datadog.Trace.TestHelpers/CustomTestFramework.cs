@@ -289,7 +289,7 @@ namespace Datadog.Trace.TestHelpers
 
                         // If this throws, we just let it bubble up, regardless of whether there's a retry, as this indicates an xunit infra issue
                         var summary = await RunTest(messageBus);
-                        if (summary.Failed == 0 || attemptsRemaining == 0)
+                        if (summary.Failed == 0 || attemptsRemaining <= 0)
                         {
                             // No failures, or not allowed to retry
                             return summary;
