@@ -58,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             bool enable128BitInjection)
         {
             // only include loadFromConfig when >= 2.12.0 (early versions of the config package are buggy)
+            Skip.If(string.IsNullOrEmpty(packageVersion) && !EnvironmentHelper.IsCoreClr(), "Default version of Serilog for .NET Framework sample doesn't support load from config.");
             await InjectsLogsWhenEnabledBase(packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection);
         }
 
@@ -87,7 +88,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             bool loadFromConfig,
             bool enable128BitInjection)
         {
-            await DoesNotInjectLogsWhenDisabledBased(packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection);
+            Skip.If(string.IsNullOrEmpty(packageVersion) && !EnvironmentHelper.IsCoreClr(), "Default version of Serilog for .NET Framework sample doesn't support load from config.");
+            await DoesNotInjectLogsWhenDisabledBase(packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection);
         }
 
         [SkippableTheory]
@@ -98,10 +100,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task DoesNotInjectLogsWhenDisabled_Pre_2_12_0(
             [PackageVersionData(nameof(PackageVersions.Serilog), maxInclusive: "2.11.*")] string packageVersion,
             bool enableLogShipping,
-            bool loadFromConfig,
             bool enable128BitInjection)
         {
-            await DoesNotInjectLogsWhenDisabledBased(packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection);
+            await DoesNotInjectLogsWhenDisabledBase(packageVersion, enableLogShipping, loadFromConfig: false, enable128BitInjection);
         }
 
         [SkippableTheory]
@@ -114,6 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             bool loadFromConfig,
             bool enable128BitInjection)
         {
+            Skip.If(string.IsNullOrEmpty(packageVersion) && !EnvironmentHelper.IsCoreClr(), "Default version of Serilog for .NET Framework sample doesn't support load from config.");
             await DirectlyShipsLogsBase(packageVersion, loadFromConfig, enable128BitInjection);
         }
 
@@ -124,10 +126,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task DirectlyShipsLogs_Pre_2_12_0(
             [PackageVersionData(nameof(PackageVersions.Serilog), maxInclusive: "2.11.*")] string packageVersion,
-            bool loadFromConfig,
             bool enable128BitInjection)
         {
-            await DirectlyShipsLogsBase(packageVersion, loadFromConfig, enable128BitInjection);
+            await DirectlyShipsLogsBase(packageVersion, loadFromConfig: false, enable128BitInjection);
         }
 
         private async Task InjectsLogsWhenEnabledBase(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
@@ -157,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task DoesNotInjectLogsWhenDisabledBased(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
+        private async Task DoesNotInjectLogsWhenDisabledBase(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
