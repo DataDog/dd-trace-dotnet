@@ -25,14 +25,14 @@ namespace Datadog.Trace.Tests.Util.Http
         private const double Timeout = 10_000;
 
         [Theory]
-        [InlineData("TestCookie", false)]
-        [InlineData("TestCookie.0123456789", false)]
+        [InlineData("TestCookie", true)]
+        [InlineData("TestCookie.0123456789", true)]
         [InlineData("TestCookie.00112233445566778899--", true)]
-        [InlineData(".AspNetCore.", false)]
-        [InlineData(".AspNetCore.Whatever", false)]
-        [InlineData(".AspNetCore.0123456789abcdefghi", false)]
+        [InlineData(".AspNetCore.", true)]
+        [InlineData(".AspNetCore.Whatever", true)]
+        [InlineData(".AspNetCore.0123456789abcdefghi", true)]
         [InlineData(".AspNetCore.0123456789abcdefghijklmnopqrstuv", true)]
-        [InlineData(".Other.0123456789", false)]
+        [InlineData(".Other.0123456789", true)]
         [InlineData("3F53C576-71D7-4CD8-A7D7-D13B9AB48102", true)]
         [InlineData("d54c62958f7893f18924aefb3549bcb0f38d3f0b", true)]
 

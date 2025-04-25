@@ -25,7 +25,7 @@ jobs:
 
     - uses: actions/setup-dotnet@71a4fd9b27383962fc5df13a9c871636b43199b4 # v1.10.0
       with:
-        dotnet-version: '9.0.102'
+        dotnet-version: '9.0.203'
 
     - name: Download datadog-ci
       run: |
@@ -101,7 +101,7 @@ jobs:
 
     - uses: actions/setup-dotnet@71a4fd9b27383962fc5df13a9c871636b43199b4 # v1.10.0
       with:
-        dotnet-version: '9.0.102'
+        dotnet-version: '9.0.203'
 
     - name: Download datadog-ci
       run: |
