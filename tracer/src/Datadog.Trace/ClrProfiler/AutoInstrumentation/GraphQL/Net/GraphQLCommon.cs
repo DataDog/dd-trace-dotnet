@@ -183,7 +183,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     if (code != null)
                     {
                         builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
-                        eventAttributes.Add(new KeyValuePair<string, object>("code", code.ToString()));
+                        eventAttributes.Add(new KeyValuePair<string, object>("code", code));
                     }
 
                     var locations = executionError.Locations;
@@ -204,6 +204,45 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     builder.AppendLine($"{tab}}},");
+
+                    var extensions = executionError.Extensions;
+                    if (extensions != null)
+                    {
+                        var keys = extensions.Keys.ToList();
+                        for (int j = 0; j < keys.Count; j++)
+                        {
+                            var key = keys[j];
+                            var value = extensions[key];
+
+                            if (value == null)
+                            {
+                                value = "null";
+                            }
+                            else if (value is Array array)
+                            {
+                                var stringArray = new string[array.Length];
+                                for (int k = 0; k < array.Length; k++)
+                                {
+                                    stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
+                                }
+
+                                value = stringArray;
+                            }
+                            else if (!(value is int || value is double || value is float || value is bool))
+                            {
+                                value = value.ToString();
+                            }
+
+                            eventAttributes.Add(new KeyValuePair<string, object>($"extension.{key}", value));
+                        }
+                    }
+
+                    var stacktrace = executionError.StackTrace;
+                    if (stacktrace != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", stacktrace));
+                    }
+
                     spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
                 }
 
