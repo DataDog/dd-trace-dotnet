@@ -207,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogsWhenEnabled_V4_Point_6(
+        public async Task InjectsLogsWhenEnabled_V4_Point_6_And_Up(
             [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0")] string packageVersion,
             DirectLogSubmission enableLogShipping,
             [CombinatorialValues([LoggingContext.None, LoggingContext.Mdc, LoggingContext.Mdlc])] LoggingContext context,
@@ -239,6 +239,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task DirectlyShipsLogs_V4_Point_6_And_Up(
             [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0")] string packageVersion,
             [CombinatorialValues([LoggingContext.None, LoggingContext.Mdc, LoggingContext.Mdlc])] LoggingContext context,
+            ConfigurationType configType,
+            Enable128BitInjection enable128BitInjection)
+        {
+            Skip.If(packageVersion == "4.7.15" && context == LoggingContext.Mdc, "FIXME: missing injection");
+            await DirectlyShipsLogsBase(packageVersion, context, configType, enable128BitInjection);
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DirectlyShipsLogs_V5(
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "5.0.0")] string packageVersion,
+            LoggingContext context,
             ConfigurationType configType,
             Enable128BitInjection enable128BitInjection)
         {
