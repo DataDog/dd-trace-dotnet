@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net461</TargetFrameworks>
+        <NoBuild>true</NoBuild>
+
+        <!-- nuget build properties -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <NoDefaultExcludes>true</NoDefaultExcludes>
+        <SourcePath>temp/Datadog.Serverless.AzureFunctions</SourcePath>
+
+        <!-- nuget package metadata -->
+        <PackageId>Datadog.Serverless.AzureFunctions</PackageId>
+        <Version Condition="$(Version) == ''">0.0.1-alpha1</Version>
+        <Authors>Datadog</Authors>
+        <Company>Datadog</Company>
+        <Description>Datadog instrumentation library for Azure Functions</Description>
+        <Copyright>Copyright 2025 Datadog, Inc.</Copyright>
+        <RepositoryUrl>https://github.com/DataDog/dd-trace-dotnet-azure-functions</RepositoryUrl>
+        <PackageProjectUrl>https://docs.datadoghq.com/serverless/azure_functions/</PackageProjectUrl>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <PackageTags>Datadog .NET APM Tracing Tracer Monitoring AzureFunctions</PackageTags>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+
+        <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5128 -->
+        <!-- https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5100 -->
+        <NoWarn>$(NoWarn);NU5128;NU5100</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Datadog.Sma" Version="*" />
+
+        <!-- managed assemblies -->
+        <Content Include="$(SourcePath)/net6.0/Datadog.Trace.dll" Pack="true" PackagePath="content/datadog/net6.0/;contentFiles/any/any/datadog/net6.0/">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+        <Content Include="$(SourcePath)/net461/Datadog.Trace.dll" Pack="true" PackagePath="content/datadog/net461/;contentFiles/any/any/datadog/net461/">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+
+        <!-- native libraries -->
+        <Content Include="$(SourcePath)/win-x64/*.dll" Pack="true" PackagePath="content/datadog/win-x64/;contentFiles/any/any/datadog/win-x64/">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+        <Content Include="$(SourcePath)/win-x86/*.dll" Pack="true" PackagePath="content/datadog/win-x86/;contentFiles/any/any/datadog/win-x86/">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+        <Content Include="$(SourcePath)/linux-x64/*.so" Pack="true" PackagePath="content/datadog/linux-x64/;contentFiles/any/any/datadog/linux-x64/">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+        <Content Include="$(SourcePath)/linux-arm64/*.so" Pack="true" PackagePath="content/datadog/linux-arm64/;contentFiles/any/any/datadog/linux-arm64/">
+            <PackageCopyToOutput>true</PackageCopyToOutput>
+        </Content>
+
+        <!-- extras for nuget package -->
+        <Content Include="icon.png"  Pack="true" PackagePath="">
+            <PackageCopyToOutput>false</PackageCopyToOutput>
+        </Content>
+        <Content Include="README.md" Pack="true" PackagePath="">
+            <PackageCopyToOutput>false</PackageCopyToOutput>
+        </Content>
+    </ItemGroup>
+</Project>

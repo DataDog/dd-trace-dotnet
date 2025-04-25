@@ -1,0 +1,10 @@
+.idea/
+.vs/
+.vscode/
+bin/
+obj/
+temp/
+output/
+*.nupkg
+*.suo
+*.user
