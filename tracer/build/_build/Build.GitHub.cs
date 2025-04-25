@@ -868,58 +868,10 @@ partial class Build
               await ReplaceCommentInPullRequest(prNumber, "## Code Coverage Report", markdown);
           });
 
-    Target CompareBenchmarksResults => _ => _
-         .Unlisted()
-         .DependsOn(CreateRequiredDirectories)
-         .Requires(() => AzureDevopsToken)
-         .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
-         .Requires(() => BenchmarkCategory)
-         .Executes(async () =>
-         {
-             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
-             {
-                 Logger.Warning("No PR_NUMBER variable found. Skipping benchmark comparison");
-                 return;
-             }
-
-             var masterDir = BuildDataDirectory / "previous_benchmarks";
-             var prDir = BuildDataDirectory / "benchmarks";
-
-             EnsureCleanDirectory(masterDir);
-
-             // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
-
-             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
-             var artifactName = string.Empty;
-             switch (BenchmarkCategory)
-             {
-                 case  "tracer": artifactName = "benchmarks_results"; break;
-                 case  "appsec": artifactName = "benchmarks_appsec_results"; break;
-                 default: Logger.Warning("Unknown benchmark category {BenchmarkCategory}. Skipping comparison", BenchmarkCategory); break;
-             }
-
-             var (oldBuild, _) = await FindAndDownloadAzureArtifact(buildHttpClient, "refs/heads/master", _ => artifactName, masterDir, buildReason: null);
-
-             if (oldBuild is null)
-             {
-                    Logger.Warning("Old build is null");
-                    return;
-             }
-
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName, BenchmarkCategory);
-
-             await ReplaceCommentInPullRequest(prNumber, $"## Benchmarks Report for " + BenchmarkCategory, markdown);
-         });
-
     Target CompareBenchmarksResultsBP => _ => _
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => GitHubRepositoryName)
-         .Requires(() => BenchmarkCategory)
          .Executes(() =>
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
@@ -931,7 +883,7 @@ partial class Build
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
 
-             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, BenchmarkCategory);
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, "master", GitHubRepositoryName, "benchmark platform");
              string filePath = Path.Combine(Path.GetTempPath(), "benchmarks_report.md");
              Console.WriteLine($"The file was stored at: {filePath}");
              File.WriteAllText(filePath, markdown);
