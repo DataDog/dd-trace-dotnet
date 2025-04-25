@@ -1,0 +1,23 @@
+# downloads the working directory and the tracer + profiler home assets
+# Beneficial as it can avoid the need to wait for the package stage
+parameters:
+  - name: 'artifactSuffix'
+    type: 'string'
+    default: 'linux-x64'
+
+steps:
+- template: ./restore-working-directory.yml
+  parameters:
+    artifact: build-${{ parameters.artifactSuffix }}-working-directory
+
+- task: DownloadPipelineArtifact@2
+  displayName: Download linux-universal-home-${{ replace(parameters.artifactSuffix, '-musl', '') }}
+  inputs:
+    artifact: linux-universal-home-${{ replace(parameters.artifactSuffix, '-musl', '') }}
+    path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+
+- task: DownloadPipelineArtifact@2
+  displayName: Download profiler binaries
+  inputs:
+    artifact: linux-profiler-home-${{ parameters.artifactSuffix }}
+    path: $(monitoringHome)

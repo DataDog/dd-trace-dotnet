@@ -2217,7 +2217,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_linux_tracer, build_linux_universal, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2244,14 +2244,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
-        artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(artifactSuffix)
+        artifactSuffix: $(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2324,14 +2319,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
-        artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(artifactSuffix)
+        artifactSuffix: $(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2444,14 +2434,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
-        artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(artifactSuffix)
+        artifactSuffix: $(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2627,14 +2612,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
-        artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/$(artifactSuffix)
+        artifactSuffix: $(artifactSuffix)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -3045,14 +3025,9 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/restore-working-directory.yml
+        - template: steps/restore-working-directory-for-tests.yml
           parameters:
-            artifact: build-$(artifactSuffix)-working-directory
-        - task: DownloadPipelineArtifact@2
-          displayName: Download universal native binaries
-          inputs:
-            artifact: linux-universal-home-linux-arm64
-            path: $(monitoringHome)/$(artifactSuffix)
+            artifactSuffix: $(artifactSuffix)
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
@@ -3119,14 +3094,9 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/restore-working-directory.yml
+        - template: steps/restore-working-directory-for-tests.yml
           parameters:
-            artifact: build-$(artifactSuffix)-working-directory
-        - task: DownloadPipelineArtifact@2
-          displayName: Download universal native binaries
-          inputs:
-            artifact: linux-universal-home-linux-arm64
-            path: $(monitoringHome)/$(artifactSuffix)
+            artifactSuffix: $(artifactSuffix)
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
@@ -3237,14 +3207,9 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/restore-working-directory.yml
+        - template: steps/restore-working-directory-for-tests.yml
           parameters:
-            artifact: build-$(artifactSuffix)-working-directory
-        - task: DownloadPipelineArtifact@2
-          displayName: Download universal native binaries
-          inputs:
-            artifact: linux-universal-home-linux-arm64
-            path: $(monitoringHome)/$(artifactSuffix)
+            artifactSuffix: $(artifactSuffix)
 
         - template: steps/run-in-docker.yml
           parameters:
