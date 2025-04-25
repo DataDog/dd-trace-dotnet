@@ -6835,10 +6835,7 @@ stages:
       artifact: crank_throughput_report
 
 - stage: trace_pipeline
-  condition: |
-    and(
-      in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped')
-    )
+  condition: in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped')
   dependsOn:
     - merge_commit_id
     - unit_tests_linux
