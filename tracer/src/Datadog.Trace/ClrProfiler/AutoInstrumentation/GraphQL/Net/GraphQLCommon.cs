@@ -131,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out List<SpanEvent> errorSpanEvents), errorSpanEvents);
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out var errorSpanEvents), errorSpanEvents);
             }
         }
 
@@ -208,32 +208,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     var extensions = executionError.Extensions;
                     if (extensions != null)
                     {
+                        var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
+
                         var keys = extensions.Keys.ToList();
                         for (int j = 0; j < keys.Count; j++)
                         {
-                            var key = keys[j];
-                            var value = extensions[key];
+                            if (configuredExtensions.Contains(keys[j]))
+                            {
+                                var key = keys[j];
+                                var value = extensions[key];
 
-                            if (value == null)
-                            {
-                                value = "null";
-                            }
-                            else if (value is Array array)
-                            {
-                                var stringArray = new string[array.Length];
-                                for (int k = 0; k < array.Length; k++)
+                                if (value == null)
                                 {
-                                    stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
+                                    value = "null";
+                                }
+                                else if (value is Array array)
+                                {
+                                    var stringArray = new string[array.Length];
+                                    for (int k = 0; k < array.Length; k++)
+                                    {
+                                        stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
+                                    }
+
+                                    value = stringArray;
+                                }
+                                else if (!(value is int || value is double || value is float || value is bool))
+                                {
+                                    value = value.ToString();
                                 }
 
-                                value = stringArray;
+                                eventAttributes.Add(new KeyValuePair<string, object>($"extension.{key}", value));
                             }
-                            else if (!(value is int || value is double || value is float || value is bool))
-                            {
-                                value = value.ToString();
-                            }
-
-                            eventAttributes.Add(new KeyValuePair<string, object>($"extension.{key}", value));
                         }
                     }
 
