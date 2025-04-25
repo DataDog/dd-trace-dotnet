@@ -225,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task DoesNotInjectLogsWhenDisabled_V4_Point_6_And_Up(
             [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0")] string packageVersion,
             DirectLogSubmission enableLogShipping,
-            LoggingContext context,
+            [CombinatorialValues([LoggingContext.None, LoggingContext.Mdc, LoggingContext.Mdlc])] LoggingContext context,
             Enable128BitInjection enable128BitInjection)
         {
             using var logsIntake = await DoesNotInjectLogsWhenDisabledBase(packageVersion, enableLogShipping, context, enable128BitInjection);
