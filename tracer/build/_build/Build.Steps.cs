@@ -2734,11 +2734,6 @@ partial class Build
 
     private (string Arch, string Ext) GetWinArchitectureAndExtension(string fmk)
     {
-        if (fmk.StartsWith("net4"))
-        {
-            return ("win-x86", "dll");
-        }
-
         return RuntimeInformation.ProcessArchitecture switch
         {
             Architecture.X86 => ("win-x86", "dll"),
