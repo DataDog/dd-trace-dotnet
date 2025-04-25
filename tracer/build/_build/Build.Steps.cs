@@ -644,12 +644,14 @@ partial class Build
 
                 if (IsWin)
                 {
-                    var (arch, ext) = GetWinArchitectureAndExtension();
-                    var source = MonitoringHomeDirectory / arch / $"datadog_profiling_ffi.{ext}";
-                    foreach (var fmk in frameworks)
+                    foreach (var arch in WindowsArchitectureFolders)
                     {
-                        var dest = testBinFolder / fmk / $"LibDatadog.{ext}";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                        var source = MonitoringHomeDirectory / arch / $"datadog_profiling_ffi.dll";
+                        foreach (var fmk in frameworks)
+                        {
+                            var dest = testBinFolder / fmk / $"LibDatadog.dll";
+                            CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                        }
                     }
                 }
                 else
