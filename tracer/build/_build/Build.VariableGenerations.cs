@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using CodeOwners;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
@@ -45,14 +46,14 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                Datadog.Trace.Ci.CodeOwners codeOwners = new(".github/CODEOWNERS");
+                CodeOwnersParser codeOwners = new("CodeOwners/CODEOWNERS");
 
                 foreach(var variableName in _isChangedTeam.Keys)
                 {
                     GenerateConditionVariableBasedOnGitChange(variableName, codeOwners);
                 }
 
-                void GenerateConditionVariableBasedOnGitChange(string variableName, Datadog.Trace.Ci.CodeOwners codeOwners)
+                void GenerateConditionVariableBasedOnGitChange(string variableName, CodeOwnersParser codeOwners)
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
                     bool isChanged = false;

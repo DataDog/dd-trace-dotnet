@@ -10,13 +10,13 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.Ci;
+namespace CodeOwners;
 
-internal class CodeOwners
+internal class CodeOwnersParser
 {
     private List<Entry> _entriesList = new List<Entry>();
 
-    public CodeOwners(string filePath)
+    public CodeOwnersParser(string filePath)
     {
         if (string.IsNullOrEmpty(filePath))
         {
@@ -38,7 +38,7 @@ internal class CodeOwners
         return new Entry(pattern, owners);
     }
 
-    public static bool IsFileIncluded(string fileName, string pattern)
+    private static bool IsFileIncluded(string fileName, string pattern)
     {
         string regexPattern = pattern.Replace("*", @"[^/\r\n\\]*");
 
@@ -73,12 +73,12 @@ internal class CodeOwners
     internal readonly struct Entry
     {
         public readonly string Pattern;
-        public readonly IEnumerable<string> Owners;
+        public readonly string[] Owners;
 
-        public Entry(string pattern, IEnumerable<string> owners)
+        public Entry(string pattern, string[] owners)
         {
             Pattern = pattern;
-            Owners = owners;
+            Owners = owners ?? Array.Empty<string>();
         }
 
         public string? GetOwnersString()
@@ -88,7 +88,7 @@ internal class CodeOwners
                 return null;
             }
 
-            return "[\"" + string.Join("\",\"", Owners) + "\"]";
+            return Owners.Length == 0 ? null : $"[\"{string.Join("\",\"", Owners)}\"]";
         }
     }
 }

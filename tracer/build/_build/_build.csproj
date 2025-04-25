@@ -58,13 +58,9 @@
     <Content Include="..\..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
     <Content Include="..\..\build_in_docker.ps1" Link="boot\build_in_docker.ps1" />
-    <Content Include="..\..\..\.github\CODEOWNERS" Link=".github\CODEOWNERS">
+    <Content Include="..\..\..\.github\CODEOWNERS" Link="CodeOwners\CODEOWNERS">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Compile Include="..\..\..\tracer\src\Datadog.Trace\Ci\CodeOwners.cs" Link=".github\CodeOwners.cs" />
-    <Compile Include="..\..\..\tracer\src\Datadog.Trace\Util\StringExtensions.cs" Link=".github\StringExtensions.cs" />
-    <Compile Include="..\..\..\tracer\src\Datadog.Trace\Util\SpanCharSplitter.cs" Link=".github\SpanCharSplitter.cs" />
-    <Compile Include="..\..\..\tracer\src\Datadog.Trace\Util\ThrowHelper.cs" Link=".github\ThrowHelper.cs" />
    
   </ItemGroup>
 
