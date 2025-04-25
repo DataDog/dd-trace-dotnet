@@ -644,14 +644,12 @@ partial class Build
 
                 if (IsWin)
                 {
-                    foreach (var arch in WindowsArchitectureFolders)
+                    foreach (var fmk in frameworks)
                     {
+                        var (arch, ext) = GetWinArchitectureAndExtension(fmk);
                         var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
-                        foreach (var fmk in frameworks)
-                        {
-                            var dest = testBinFolder / fmk / arch / "LibDatadog.dll";
-                            CopyFile(source, dest, FileExistsPolicy.Overwrite);
-                        }
+                        var dest = testBinFolder / fmk / "LibDatadog.dll";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
                 else
@@ -2734,13 +2732,21 @@ partial class Build
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
 
-    private (string Arch, string Ext) GetWinArchitectureAndExtension() => RuntimeInformation.ProcessArchitecture switch
+    private (string Arch, string Ext) GetWinArchitectureAndExtension(string fmk)
     {
-        Architecture.X86 => ("win-x86", "dll"),
-        Architecture.X64 => ("win-x64", "dll"),
-        Architecture.Arm64 => ("win-arm64", "dll"),
-        _ => ("win-x86", "dll") // Default to x86 for unknown architectures
-    };
+        if (fmk.StartsWith("net4"))
+        {
+            return ("win-x86", "dll");
+        }
+
+        return RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X86 => ("win-x86", "dll"),
+            Architecture.X64 => ("win-x64", "dll"),
+            Architecture.Arm64 => ("win-arm64", "dll"),
+            _ => ("win-x86", "dll") // Default to x86 for unknown architectures
+        };
+    }
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
