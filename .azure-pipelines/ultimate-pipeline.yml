@@ -75,7 +75,6 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)
-  isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -3804,7 +3803,6 @@ stages:
       condition: succeededOrFailed()
 
 - stage: store_ssi_artifacts
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, package_arm64, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3851,7 +3849,6 @@ stages:
           artifact: ssi-artifacts
 
 - stage: store_serverless_artifacts
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [build_linux_tracer_r2r, build_arm64_tracer_r2r, build_linux_universal, build_arm64_universal]
   jobs:
     - job: combine
@@ -3891,7 +3888,6 @@ stages:
           artifact: serverless-artifacts
 
 - stage: upload_to_azure
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id, store_serverless_artifacts]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4179,7 +4175,7 @@ stages:
 
 # Only run these on merges to master etc
 - stage: upload_container_images
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainOrReleaseBranch, true))
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload
@@ -4262,7 +4258,6 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: execution_benchmarks
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [build_windows_tracer, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4370,7 +4365,6 @@ stages:
       artifact: execution_time_report
 
 - stage: profiler_execution_benchmarks
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [merge_commit_id, build_windows_profiler, build_linux_profiler]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
