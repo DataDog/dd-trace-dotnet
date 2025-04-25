@@ -2217,7 +2217,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [build_linux_tracer, build_linux_universal, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2247,6 +2247,11 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/$(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2259,12 +2264,6 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2328,6 +2327,11 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/$(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2340,12 +2344,6 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
 
     - script: |
         docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
@@ -2449,12 +2447,11 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
-
     - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
+      displayName: Download universal native binaries
       inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/$(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2603,7 +2600,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_universal, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2633,6 +2630,11 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
+    - task: DownloadPipelineArtifact@2
+      displayName: Download universal native binaries
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/$(artifactSuffix)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2642,12 +2644,6 @@ stages:
         baseImage: $(baseImage)
         command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -3022,7 +3018,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [build_arm64_tracer, build_arm64_universal, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3052,7 +3048,11 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
-
+        - task: DownloadPipelineArtifact@2
+          displayName: Download universal native binaries
+          inputs:
+            artifact: linux-universal-home-linux-arm64
+            path: $(monitoringHome)/$(artifactSuffix)
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
@@ -3063,12 +3063,6 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(artifactSuffix) monitoring home
-          inputs:
-            artifact: linux-monitoring-home-$(artifactSuffix)
-            path: $(monitoringHome)
 
         - script: |
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
@@ -3128,6 +3122,11 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
+        - task: DownloadPipelineArtifact@2
+          displayName: Download universal native binaries
+          inputs:
+            artifact: linux-universal-home-linux-arm64
+            path: $(monitoringHome)/$(artifactSuffix)
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
@@ -3138,12 +3137,6 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(artifactSuffix) monitoring home
-          inputs:
-            artifact: linux-monitoring-home-$(artifactSuffix)
-            path: $(monitoringHome)
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64
@@ -3218,7 +3211,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [build_arm64_tracer, build_arm64_universal, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3247,6 +3240,11 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
+        - task: DownloadPipelineArtifact@2
+          displayName: Download universal native binaries
+          inputs:
+            artifact: linux-universal-home-linux-arm64
+            path: $(monitoringHome)/$(artifactSuffix)
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -3254,12 +3252,6 @@ stages:
             baseImage: $(baseImage)
             command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(artifactSuffix) monitoring home
-          inputs:
-            artifact: linux-monitoring-home-$(artifactSuffix)
-            path: $(monitoringHome)
 
         - script: |
             docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
