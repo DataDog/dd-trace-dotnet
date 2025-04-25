@@ -39,6 +39,8 @@ namespace BuggyBits
 
     public class Program
     {
+        private static bool _disableLogs = false;
+
         public static async Task Main(string[] args)
         {
             var sw = new Stopwatch();
@@ -47,7 +49,7 @@ namespace BuggyBits
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
+            ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
 
             using (var host = CreateHostBuilder(args).Build())
             {
@@ -66,7 +68,7 @@ namespace BuggyBits
                 WriteLine($"Listening to {rootUrl}");
 
                 var cts = new CancellationTokenSource();
-                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads))
+                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, _disableLogs))
                 {
                     await host.StartAsync();
 
@@ -138,18 +140,24 @@ namespace BuggyBits
                     webBuilder.UseStartup<Startup>();
                 });
 
-        private static void ParseCommandLine(string[] args, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
+        private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
         {
             // by default, need interactive action to exit and string.Concat scenario
             timeout = TimeSpan.MinValue;
             iterations = 0;
             scenario = Scenario.StringConcat;
             nbIdleThreads = 0;
+            disableLogs = false;
 
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
 
+                if ("--disableLogs".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    disableLogs = true;
+                }
+                else
                 if ("--scenario".Equals(arg, StringComparison.OrdinalIgnoreCase))
                 {
                     int iterationsArgument = i + 1;
