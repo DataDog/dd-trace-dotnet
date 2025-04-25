@@ -646,10 +646,10 @@ partial class Build
                 {
                     foreach (var arch in WindowsArchitectureFolders)
                     {
-                        var source = MonitoringHomeDirectory / arch / $"datadog_profiling_ffi.dll";
+                        var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
                         foreach (var fmk in frameworks)
                         {
-                            var dest = testBinFolder / fmk / $"LibDatadog.dll";
+                            var dest = testBinFolder / fmk / arch / "LibDatadog.dll";
                             CopyFile(source, dest, FileExistsPolicy.Overwrite);
                         }
                     }
