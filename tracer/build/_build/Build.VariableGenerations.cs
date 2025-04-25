@@ -80,10 +80,10 @@ partial class Build : NukeBuild
 
                         foreach(var changedFile in changedFiles)
                         {
-                            var match = codeOwners.Match(changedFile);
+                            var match = codeOwners.Match("/" + changedFile);
                             if (match?.Owners.Contains(_variableTeam[variableName]) == true)
                             {
-                                Logger.Debug($"File {changedFile} is owned by {_variableTeam[variableName]}");
+                                Logger.Information($"File {changedFile} is owned by {_variableTeam[variableName]}");
                                 isChanged = true;
                                 break;
                             }

@@ -35,11 +35,11 @@
 ## sample applications
 
 /tracer/test/test-applications/integrations/dependency-libs/LogsInjectionHelper/                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper                      @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper.NetFramework20       @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper.netstandard          @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/dependency-libs/Samples.SqlServer.Vb                        @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
-/tracer/test/test-applications/integrations/dependency-libs/Samples.WebRequestHelper.NetFramework20     @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper/                     @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper.NetFramework20/      @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/dependency-libs/Samples.DatabaseHelper.netstandard/         @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/dependency-libs/Samples.SqlServer.Vb/                       @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/test-applications/integrations/dependency-libs/Samples.WebRequestHelper.NetFramework20/    @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 
 
 ## NON-IDM
@@ -94,7 +94,6 @@
 /tracer/test/snapshots/Iast*          	@DataDog/asm-dotnet
 /tracer/test/snapshots/Rasp*          	@DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/Iast/           @DataDog/asm-dotnet
-AspectsDefinitions.g.cs 				@DataDog/asm-dotnet
 /tracer/test/test-applications/integrations/Samples.InstrumentedTests/ @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/Tags.AppSec.cs @DataDog/asm-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/Asm/   @DataDog/asm-dotnet
@@ -103,11 +102,10 @@ AspectsDefinitions.g.cs 				@DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/StackTraceLeak/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RestSharp/  @DataDog/asm-dotnet
-/tracer/test/test-applications/integrations/Samples.ProcessStart  @DataDog/asm-dotnet
+/tracer/test/test-applications/integrations/Samples.ProcessStart/  @DataDog/asm-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
-.github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
 /tracer/src/Datadog.Trace/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 
@@ -121,8 +119,8 @@ debugger_*.cpp                             @DataDog/debugger-dotnet
 debugger_*.h                               @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Tests/Debugger  @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Debugger.IntegrationTests/ @DataDog/debugger-dotnet
-tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
-tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
+/tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
+/tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
 fault_tolerant_*.cpp                       @DataDog/debugger-dotnet
 fault_tolerant_*.h                         @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/FaultTolerant/   @DataDog/debugger-dotnet
