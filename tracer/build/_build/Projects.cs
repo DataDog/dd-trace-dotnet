@@ -16,6 +16,7 @@ public static class Projects
 
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
+    public const string TraceTests = "Datadog.Trace.Tests";
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
     public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
@@ -42,7 +43,8 @@ public static class Projects
     public static readonly string[] NativeFilesDependentTests = {
         AppSecUnitTests,
         ClrProfilerManagedTests,
-        TraceIntegrationTests
+        TraceIntegrationTests,
+        TraceTests
     };
 }
 
