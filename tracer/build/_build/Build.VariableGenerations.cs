@@ -18,7 +18,7 @@ partial class Build : NukeBuild
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
 
-    static private Dictionary<string, string> _variableTeam = new()
+    static private Dictionary<string, string> _isChangedTeam = new()
             {
                 { "isAppSecChanged", "@DataDog/asm-dotnet" },
                 { "isTracerChanged", "@DataDog/tracing-dotnet" },
@@ -47,7 +47,7 @@ partial class Build : NukeBuild
             {
                 Datadog.Trace.Ci.CodeOwners codeOwners = new(".github/CODEOWNERS");
 
-                foreach(var variableName in _variableTeam.Keys)
+                foreach(var variableName in _isChangedTeam.Keys)
                 {
                     GenerateConditionVariableBasedOnGitChange(variableName, codeOwners);
                 }
@@ -81,9 +81,9 @@ partial class Build : NukeBuild
                         foreach(var changedFile in changedFiles)
                         {
                             var match = codeOwners.Match("/" + changedFile);
-                            if (match?.Owners.Contains(_variableTeam[variableName]) == true)
+                            if (match?.Owners.Contains(_isChangedTeam[variableName]) == true)
                             {
-                                Logger.Information($"File {changedFile} is owned by {_variableTeam[variableName]}");
+                                Logger.Information($"File {changedFile} is owned by {_isChangedTeam[variableName]}");
                                 isChanged = true;
                                 break;
                             }
