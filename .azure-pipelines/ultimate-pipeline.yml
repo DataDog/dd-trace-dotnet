@@ -945,7 +945,6 @@ stages:
       artifact: linux-monitoring-home-$(artifactSuffix)
 
 - stage: build_macos
-  condition: and(succeeded())
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1025,7 +1024,6 @@ stages:
       artifact: macos-tracer-home
 
 - stage: package_windows
-  condition: and(succeeded())
   dependsOn: [ build_windows_tracer, build_windows_profiler, build_dd_dotnet_windows, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1079,7 +1077,6 @@ stages:
         artifact: fleet-installer
 
 - stage: build_dd_dotnet_windows
-  condition: and(succeeded())
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1115,7 +1112,6 @@ stages:
       artifact: dd-dotnet-symbols-win-x64
 
 - stage: build_dd_dotnet_linux
-  condition: and(succeeded())
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1163,7 +1159,6 @@ stages:
       artifact: dd-dotnet-symbols-$(artifactSuffix)
 
 - stage: build_dd_dotnet_linux_arm64
-  condition: and(succeeded())
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1322,7 +1317,6 @@ stages:
         retryCountOnTaskFailure: 1
 
 - stage: unit_tests_windows
-  condition: and(succeeded())
   dependsOn: [build_windows_tracer, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1365,7 +1359,6 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
-  condition: and(succeeded())
   dependsOn: [build_macos, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1418,7 +1411,6 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
-  condition: and(succeeded())
   dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1467,7 +1459,6 @@ stages:
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
-  condition: and(succeeded())
   dependsOn: [build_arm64_tracer, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1632,7 +1623,6 @@ stages:
 
 
 - stage: integration_tests_windows
-  condition: and(succeeded())
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1769,7 +1759,6 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis
-  condition: and(succeeded())
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2036,7 +2025,6 @@ stages:
       continueOnError: true
 
 - stage: msi_integration_tests_windows
-  condition: and(succeeded())
   dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2178,7 +2166,6 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
-  condition: and(succeeded())
   dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2954,7 +2941,6 @@ stages:
       continueOnError: false
 
 - stage: integration_tests_arm64
-  condition: and(succeeded())
   dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3377,7 +3363,6 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool
-  condition: and(succeeded())
   dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_linux_universal, build_arm64_universal, build_macos, build_dd_dotnet_windows, build_dd_dotnet_linux, build_dd_dotnet_linux_arm64, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4610,7 +4595,6 @@ stages:
     #   artifact: execution_time_report
 
 - stage: system_tests
-  condition: and(succeeded())
   dependsOn: [package_linux, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4788,7 +4772,6 @@ stages:
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
-  condition: and(succeeded())
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4872,7 +4855,6 @@ stages:
         apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: installer_chiseled_smoke_tests
-  condition: and(succeeded())
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5038,7 +5020,6 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: trimmed_installer_smoke_tests
-  condition: and(succeeded())
   dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5326,7 +5307,6 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: installer_smoke_tests_arm64
-  condition: and(succeeded())
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5960,7 +5940,6 @@ stages:
           displayName: CheckSmokeTestsForErrors
 
 - stage: tracer_home_smoke_tests
-  condition: and(succeeded())
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -6032,7 +6011,6 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: fleet_installer_smoke_tests
-  condition: and(succeeded())
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -6246,7 +6224,6 @@ stages:
           continueOnError: true
 
 - stage: dd_dotnet_installer_failure_tests_linux
-  condition: and(succeeded())
   dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
