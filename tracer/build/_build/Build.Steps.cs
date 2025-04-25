@@ -641,28 +641,25 @@ partial class Build
                 var testDir = project.Directory;
                 var frameworks = project.GetTargetFrameworks();
                 var testBinFolder = testDir / "bin" / BuildConfiguration;
-                var renamedLibdatadogFileName = "LibDatadog";
 
                 if (IsWin)
                 {
-                    var libdatadogFileName = "datadog_profiling_ffi";
                     var (arch, ext) = GetWinArchitectureAndExtension();
-                    var source = MonitoringHomeDirectory / arch;
+                    var source = MonitoringHomeDirectory / arch / $"datadog_profiling_ffi.{ext}";
                     foreach (var fmk in frameworks)
                     {
-                        var dest = testBinFolder / fmk;
-                        CopyFile(source / $"{libdatadogFileName}.{ext}", dest / $"{renamedLibdatadogFileName}.{ext}", FileExistsPolicy.Overwrite);
+                        var dest = testBinFolder / fmk / $"LibDatadog.{ext}";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
                 else
                 {
-                    var libdatadogFileName = $"libdatadog_profiling";
                     var (arch, ext) = GetUnixArchitectureAndExtension();
+                    var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
                     foreach (var fmk in frameworks)
                     {
-                        var dest = testBinFolder / fmk;
-                        var source = MonitoringHomeDirectory / arch;
-                        CopyFile(source / $"{libdatadogFileName}.{ext}", dest / $"{renamedLibdatadogFileName}.{ext}", FileExistsPolicy.Overwrite);
+                        var dest = testBinFolder / fmk / $"LibDatadog.{ext}";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
                 }
             }
