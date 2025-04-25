@@ -39,6 +39,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         /// <summary>
         /// Gets additional Extensions information about error.
         /// </summary>
-        IDictionary Extensions { get; }
+        Dictionary<string, object> Extensions { get; }
+
+        /// <summary>
+        /// Gets the StackTrace of the error.
+        /// </summary>
+        string StackTrace { get; }
     }
 }
