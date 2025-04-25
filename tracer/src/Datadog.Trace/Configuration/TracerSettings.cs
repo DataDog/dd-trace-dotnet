@@ -723,6 +723,10 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigTelemetryData.AasAppType, AzureAppServiceMetadata.SiteType, recordValue: true, ConfigurationOrigins.Default);
             }
 
+            GraphQLErrorExtensions = TrimSplitString(
+                config.WithKeys(ConfigurationKeys.GraphQLErrorExtensions).AsString(),
+                commaSeparator);
+
             static void RecordDisabledIntegrationsTelemetry(IntegrationSettingsCollection integrations, IConfigurationTelemetry telemetry)
             {
                 // Record the final disabled settings values in the telemetry, we can't quite get this information
@@ -1235,6 +1239,12 @@ namespace Datadog.Trace.Configuration
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
 
         internal List<string> JsonConfigurationFilePaths { get; } = new();
+
+        /// <summary>
+        /// Gets a value indicating whether GraphQL error extensions should be included in error messages.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
+        internal string[] GraphQLErrorExtensions { get; }
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
