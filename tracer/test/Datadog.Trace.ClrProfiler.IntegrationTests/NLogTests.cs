@@ -116,7 +116,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
 #if NETFRAMEWORK
-#if NLOG_4_0
         [SkippableTheory]
         [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
@@ -131,7 +130,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             await InjectsLogsWhenEnabledBase(packageVersion, enableLogShipping, context, configType, enable128BitInjection);
         }
-#endif
 
         [SkippableTheory]
         [CombinatorialOrPairwiseData]
@@ -139,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task InjectsLogsWhenEnabled_Pre_V4(
-            [PackageVersionData(nameof(PackageVersions.NLog), maxInclusive: "3.*.*")] string packageVersion,
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "2.0.0", maxInclusive: "3.*.*")] string packageVersion,
             DirectLogSubmission enableLogShipping,
             [CombinatorialValues([LoggingContext.None])] LoggingContext context,
             [CombinatorialValues([ConfigurationType.LogsInjection, ConfigurationType.Both])] ConfigurationType configType,
@@ -165,7 +163,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task DoesNotInjectLogsWhenDisabled_Pre_V4_Point_6(
-            [PackageVersionData(nameof(PackageVersions.NLog))] string packageVersion,
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "2.0.0", maxInclusive: "4.6.*")] string packageVersion,
             DirectLogSubmission enableLogShipping,
             [CombinatorialValues([LoggingContext.None])] LoggingContext context, // FIXME: ConfigurationType.Mdc is failing for NLog versions < 4.0.0
             Enable128BitInjection enable128BitInjection)
@@ -179,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task DirectlyShipsLogs_Pre_V4_Point_6(
-            [PackageVersionData(nameof(PackageVersions.NLog))] string packageVersion,
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "2.0.0", maxInclusive: "4.6.*")] string packageVersion,
             [CombinatorialValues([LoggingContext.None])] LoggingContext context,  // FIXME: ConfigurationType.Mdc is failing for NLog versions < 4.0.0 this is for logs injection
             [CombinatorialValues([ConfigurationType.LogsInjection, ConfigurationType.None])] ConfigurationType configType,
             Enable128BitInjection enable128BitInjection)
@@ -207,8 +205,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogsWhenEnabled_V4_Point_6_And_Up(
-            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0")] string packageVersion,
+        public async Task InjectsLogsWhenEnabled_V4_Point_6_To_Latest_4(
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0", maxInclusive: "4.*.*")] string packageVersion,
             DirectLogSubmission enableLogShipping,
             [CombinatorialValues([LoggingContext.None, LoggingContext.Mdc, LoggingContext.Mdlc])] LoggingContext context,
             [CombinatorialValues([ConfigurationType.LogsInjection, ConfigurationType.NoLogsInjection, ConfigurationType.Both])] ConfigurationType configType,
@@ -222,8 +220,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DoesNotInjectLogsWhenDisabled_V4_Point_6_And_Up(
-            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0")] string packageVersion,
+        public async Task DoesNotInjectLogsWhenDisabled_V4_Point_6_To_Latest_4(
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0", maxInclusive: "4.*.*")] string packageVersion,
             DirectLogSubmission enableLogShipping,
             [CombinatorialValues([LoggingContext.None, LoggingContext.Mdc, LoggingContext.Mdlc])] LoggingContext context,
             Enable128BitInjection enable128BitInjection)
@@ -236,8 +234,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DirectlyShipsLogs_V4_Point_6_And_Up(
-            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0")] string packageVersion,
+        public async Task DirectlyShipsLogs_V4_Point_6_To_Latest_4(
+            [PackageVersionData(nameof(PackageVersions.NLog), minInclusive: "4.6.0", maxInclusive: "4.*.*")] string packageVersion,
             [CombinatorialValues([LoggingContext.None, LoggingContext.Mdc, LoggingContext.Mdlc])] LoggingContext context,
             ConfigurationType configType,
             Enable128BitInjection enable128BitInjection)
