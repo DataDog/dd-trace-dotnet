@@ -228,6 +228,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task Telemetry_SendsMetrics()
         {
+            // telemetry metric events under test are send only when using managed trace exporter
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
+
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 
