@@ -97,6 +97,7 @@
 /tracer/test/test-applications/integrations/Samples.InstrumentedTests/ @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/Tags.AppSec.cs @DataDog/asm-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/Asm/   @DataDog/asm-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/Iast/   @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CryptographyAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/HashAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet
@@ -108,6 +109,7 @@
 /profiler/                                @DataDog/profiling-dotnet
 /tracer/src/Datadog.Trace/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
+/tracer/build/_build/Build.Profiler.Steps.cs @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
@@ -126,6 +128,10 @@ fault_tolerant_*.h                         @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/FaultTolerant/   @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs   @DataDog/debugger-dotnet
 Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
+/tracer/build/_build/Build.Steps.Debugger.cs @DataDog/debugger-dotnet
+
+# Exploration tests
+/tracer/build/_build/Build.ExplorationTests.cs @DataDog/debugger-dotnet @DataDog/tracing-dotnet @DataDog/profiling-dotnet
 
 # Serverless
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Lambda/    @DataDog/tracing-dotnet  @DataDog/serverless-aws
