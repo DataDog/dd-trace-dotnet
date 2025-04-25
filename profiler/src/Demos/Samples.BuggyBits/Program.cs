@@ -10,6 +10,7 @@ using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 // Those attributes are required to validate the git repository url and commit sha propagation from
 // the tracer to the profiler.
@@ -138,6 +139,13 @@ namespace BuggyBits
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                })
+                .ConfigureLogging((context, logging) =>
+                {
+                    if (_disableLogs)
+                    {
+                        logging.ClearProviders();
+                    }
                 });
 
         private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
