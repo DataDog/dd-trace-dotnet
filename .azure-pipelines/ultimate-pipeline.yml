@@ -38,7 +38,6 @@ schedules:
         - master
         - release/*
         - hotfix/*
-        - /benchmarks/*
       exclude:
         - release/1.x
     always: true
