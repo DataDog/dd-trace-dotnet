@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Serilog;
 
 namespace CodeOwners;
 
@@ -18,9 +19,11 @@ internal class CodeOwnersParser
 
     public CodeOwnersParser(string filePath)
     {
-        if (string.IsNullOrEmpty(filePath))
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
         {
-            throw new ArgumentException("The CODEOWNERS file path is invalid.", nameof(filePath));
+            Log.Error($"Current Directory: {Environment.CurrentDirectory}");
+            Log.Error(Path.GetFullPath(filePath));
+            throw new ArgumentException("The CODEOWNERS file path is invalid.", filePath);
         }
 
         _entriesList = File.ReadLines(filePath)

@@ -46,7 +46,7 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                CodeOwnersParser codeOwners = new("CodeOwners/CODEOWNERS");
+                CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
 
                 foreach(var variableName in _isChangedTeam.Keys)
                 {
