@@ -870,6 +870,7 @@ partial class Build
 
     Target CompareBenchmarksResultsBP => _ => _
          .Unlisted()
+         .Description("Runs the benchmark comparison against previous executions in the benchmarking platform")
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => GitHubRepositoryName)
          .Executes(() =>
