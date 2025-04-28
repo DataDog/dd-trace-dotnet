@@ -762,28 +762,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return;
             }
 
-            var noCaptureReason = string.Empty;
-
-            switch (exceptionPhase)
+            var noCaptureReason = exceptionPhase switch
             {
-                case ExceptionReplayDiagnosticTagNames.Eligible:
-                    break;
-                case ExceptionReplayDiagnosticTagNames.NoCustomerFrames or ExceptionReplayDiagnosticTagNames.NoFramesToInstrument:
-                    noCaptureReason = NoCaptureReason.OnlyThirdPartyCode;
-                    break;
-                case ExceptionReplayDiagnosticTagNames.InvalidatedCase or ExceptionReplayDiagnosticTagNames.InvalidatedExceptionCase:
-                    noCaptureReason = NoCaptureReason.InstrumentationFailure;
-                    break;
-                case ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType:
-                    noCaptureReason = NoCaptureReason.NonSupportedExceptionType;
-                    break;
-                case ExceptionReplayDiagnosticTagNames.NotEligible or ExceptionReplayDiagnosticTagNames.NewCase:
-                    noCaptureReason = NoCaptureReason.FirstOccurrence;
-                    break;
-                default:
-                    noCaptureReason = NoCaptureReason.GeneralError;
-                    break;
-            }
+                ExceptionReplayDiagnosticTagNames.Eligible => string.Empty,
+                ExceptionReplayDiagnosticTagNames.NoCustomerFrames or ExceptionReplayDiagnosticTagNames.NoFramesToInstrument => NoCaptureReason.OnlyThirdPartyCode,
+                ExceptionReplayDiagnosticTagNames.InvalidatedCase or ExceptionReplayDiagnosticTagNames.InvalidatedExceptionCase => NoCaptureReason.InstrumentationFailure,
+                ExceptionReplayDiagnosticTagNames.NonSupportedExceptionType => NoCaptureReason.NonSupportedExceptionType,
+                ExceptionReplayDiagnosticTagNames.NotEligible or ExceptionReplayDiagnosticTagNames.NewCase => NoCaptureReason.FirstOccurrence,
+                _ => NoCaptureReason.GeneralError,
+            };
 
             if (noCaptureReason != string.Empty)
             {
