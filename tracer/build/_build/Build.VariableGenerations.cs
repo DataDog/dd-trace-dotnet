@@ -86,7 +86,6 @@ partial class Build : NukeBuild
                             {
                                 Logger.Information($"File {changedFile} is owned by {_isChangedTeam[variableName]}");
                                 isChanged = true;
-                                break;
                             }
                         }
                     }
