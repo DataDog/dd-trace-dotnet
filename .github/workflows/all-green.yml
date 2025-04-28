@@ -1,0 +1,28 @@
+name: All Green
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  all-green:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+      contents: read
+    steps:
+      - uses: wechuli/allcheckspassed@e22f45a4f25f4cf821d1273705ac233355400db1
+        with:
+          delay: 10  # wait for this delay before starting
+          polling_interval: 1 # after a failure, how long do it wait before checking again
+          retries: 60  # how many retries before stopping 
+          # checks_exclude: ''  # comma separated list of checks to exclude, nothing right now
+
+# Why some checks are excluded?
+#
+# - 
