@@ -9,7 +9,6 @@ using System.Linq;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
-using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -45,10 +44,9 @@ internal class ImpactedTestsModule
     /// <summary>
     /// Creates an instance of the <see cref="ImpactedTestsModule"/> class.
     /// </summary>
-    /// <param name="impactedTestsDetectionResponse">Impacted tests detection backend response</param>
     /// <param name="environmentValues">CI environment values</param>
     /// <returns>ImpactedTestModule instance</returns>
-    public static ImpactedTestsModule CreateInstance(TestOptimizationClient.ImpactedTestsDetectionResponse impactedTestsDetectionResponse, CIEnvironmentValues environmentValues)
+    public static ImpactedTestsModule CreateInstance(CIEnvironmentValues environmentValues)
     {
         // Get the current commit SHA
         var currentCommitSha = environmentValues.HeadCommit ?? environmentValues.Commit ?? string.Empty;
@@ -73,19 +71,20 @@ internal class ImpactedTestsModule
             }
         }
 
-        // We don't have any modified files, let's try with the baseCommitSha from backend
+        // We don't have any modified files, let's try to calculate the PR base commit
         if (modifiedFiles.Length == 0)
         {
+            // TODO(Borja): I believe milestones as we knew them don't make sense anymore, since there is no backend now.
             // Milestone 1 : Retrieve diff files from Backend
 
             // set the new base commit SHA
-            baseCommitSha = impactedTestsDetectionResponse.BaseSha ?? string.Empty;
+            baseCommitSha = CalculateBaseCommit();
 
-            // First we try to use the base commit SHA from the backend for the diff
+            // First, we try to use the calculated base commit SHA for the diff
             if (!string.IsNullOrEmpty(baseCommitSha))
             {
                 Log.Debug("ImpactedTestsModule: Retrieving diff lines from Git CLI for {Path} from BaseCommit {BaseCommit} to {HeadCommit} (or recent)", workspacePath, baseCommitSha, currentCommitSha);
-                // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI but with the base commit from the backend (always try the maximum accuracy)
+                // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI but with the calculated base commit (always try the maximum accuracy)
                 try
                 {
                     modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, baseCommitSha);
@@ -93,25 +92,6 @@ internal class ImpactedTestsModule
                 catch (Exception ex)
                 {
                     Log.Debug(ex, "Git command failed.");
-                }
-            }
-
-            // If we still don't have any modified files, we use the ones from the backend
-            if (modifiedFiles.Length == 0)
-            {
-                Log.Debug("ImpactedTestsModule: Retrieving diff files from backend...");
-                if (impactedTestsDetectionResponse is { Files: { Length: > 0 } files })
-                {
-                    modifiedFiles = new FileCoverageInfo[files.Length];
-                    for (var x = 0; x < files.Length; x++)
-                    {
-                        if (string.IsNullOrEmpty(files[x]))
-                        {
-                            continue;
-                        }
-
-                        modifiedFiles[x] = new FileCoverageInfo(files[x]);
-                    }
                 }
             }
         }
@@ -219,5 +199,15 @@ internal class ImpactedTestsModule
         file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
         Log.Debug<string?, int, int>("ImpactedTestsModule: TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
         return [file];
+    }
+
+    /// <summary>
+    /// Attempts to calculate the base PR commit.
+    /// </summary>
+    /// <returns>Calculated commit</returns>
+    private static string CalculateBaseCommit()
+    {
+        // TODO: Add the proper implementation.
+        return string.Empty;
     }
 }
