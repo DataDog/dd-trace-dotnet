@@ -334,11 +334,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter.WritePropertyName("timestamp");
             JsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
 
-            if (_probeLocation == ProbeLocation.Method)
-            {
-                JsonWriter.WritePropertyName("duration");
-                JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
-            }
+            JsonWriter.WritePropertyName("duration");
+            JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
 
             JsonWriter.WritePropertyName("language");
             JsonWriter.WriteValue(TracerConstants.Language);
