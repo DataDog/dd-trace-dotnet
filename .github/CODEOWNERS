@@ -3,7 +3,7 @@
 # Order is important! The last matching pattern takes the most precedence.
 
 # By default every team is owner
-*                                         @DataDog/apm-dotnet
+*                                         @DataDog/dev
 
 # Tracer
 /tracer/                                  @DataDog/tracing-dotnet
