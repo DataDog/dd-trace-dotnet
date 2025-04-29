@@ -8,7 +8,6 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using Datadog.Trace.Debugger.Caching;
-using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -23,23 +22,21 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
         private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
-        private readonly DebuggerSettings _settings;
         private readonly CodeOriginTags _tags;
-		
-		private bool Disabled =>
+        private DebuggerSettings _settings;
+
+        internal SpanCodeOrigin(DebuggerSettings settings)
+        {
+            _settings = settings;
+            _tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
+        }
+
+        private bool Disabled =>
             _settings.CodeOriginForSpansEnabled == null
           || (_settings.CodeOriginForSpansEnabled.HasValue && !_settings.CodeOriginForSpansEnabled.Value)
           || (_settings.DynamicSettings.CodeOriginEnabled.HasValue && !_settings.DynamicSettings.CodeOriginEnabled.Value);
 
-
-		internal SpanCodeOrigin(DebuggerSettings settings)
-        {
-            _settings = settings;
-			_tags = new CodeOriginTags(_settings.CodeOriginMaxUserFrames);
-        }
-		
-		
-		public void UpdateConfiguration(DebuggerSettings newSettings)
+        internal void UpdateConfiguration(DebuggerSettings newSettings)
         {
             _settings = newSettings;
         }
@@ -72,7 +69,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span == null ||
                 type == null ||
                 method == null ||
-                !_settings.CodeOriginForSpansEnabled)
+                Disabled)
             {
                 return;
             }
@@ -169,7 +166,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private void AddExitSpanTags(Span span)
         {
-            var frames = ArrayPool<FrameInfo>.Shared.Rent(settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(_settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -220,6 +217,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 {
                     ArrayPool<FrameInfo>.Shared.Return(frames);
                 }
+            }
         }
 
         private int PopulateUserFrames(FrameInfo[] frames)
