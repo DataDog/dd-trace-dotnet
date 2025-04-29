@@ -5,25 +5,36 @@ parameters:
     type: 'string'
     default: 'linux-x64'
 
-variables:
-  - ${{ if eq(parameters.artifactSuffix, 'linux-musl-x64') }}:
-      - universalSuffix: 'linux-x64'
-  - ${{ elseif eq(parameters.artifactSuffix, 'linux-musl-arm64') }}:
-      - universalSuffix: 'linux-arm64'
-  - ${{ else }}:
-      - universalSuffix: ${{ parameters.artifactSuffix }}
-
-
 steps:
 - template: ./restore-working-directory.yml
   parameters:
     artifact: build-${{ parameters.artifactSuffix }}-working-directory
 
-- task: DownloadPipelineArtifact@2
-  displayName: Download linux-universal-home-$(universalSuffix)
-  inputs:
-    artifact: linux-universal-home-$(universalSuffix)
-    path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+- ${{ if eq(parameters.artifactSuffix, 'linux-musl-x64') }}:
+    - script: echo 'linux-universal-home-linux-x64' for linux-musl-x64
+- ${{ elseif eq(parameters.artifactSuffix, 'linux-musl-arm64') }}:
+    - script: echo 'linux-universal-home-linux-arm64' for linux-musl-arm64
+- ${{ else }}:
+    - script: echo 'linux-universal-home-${{ parameters.artifactSuffix }}' for default
+
+- ${{ if eq(parameters.artifactSuffix, 'linux-musl-x64') }}:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux-universal-home-linux-x64
+      inputs:
+        artifact: linux-universal-home-linux-x64
+        path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+- ${{ elseif eq(parameters.artifactSuffix, 'linux-musl-arm64') }}:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux-universal-home-linux-arm64
+      inputs:
+        artifact: linux-universal-home-linux-arm64
+        path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+- ${{ else }}:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux-universal-home-${{ parameters.artifactSuffix }}
+      inputs:
+        artifact: linux-universal-home-${{ parameters.artifactSuffix }}
+        path: $(monitoringHome)/${{ parameters.artifactSuffix }}
 
 - task: DownloadPipelineArtifact@2
   displayName: Download profiler binaries
