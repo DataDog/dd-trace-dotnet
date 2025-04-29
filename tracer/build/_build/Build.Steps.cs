@@ -646,7 +646,7 @@ partial class Build
                 {
                     foreach (var fmk in frameworks)
                     {
-                        var arch = GetOSArchitecture();
+                        var (arch, ext) = GetWinArchitectureAndExtension(fmk);
                         var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
                         var dest = testBinFolder / fmk / "LibDatadog.dll";
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
@@ -2722,22 +2722,6 @@ partial class Build
             (true) => ($"osx", "dylib"), // LibDdWaf is universal binary on osx
             (false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
         };
-
-    private string GetOSArchitecture()
-    {
-        var os = IsWin ? "win" : IsOsx ? "osx" : IsLinux ? "linux" :
-            throw new PlatformNotSupportedException("Unsupported operating system");
-
-        var arch = RuntimeInformation.OSArchitecture switch
-        {
-            Architecture.X64 => "x64",
-            Architecture.X86 => "x86",
-            Architecture.Arm64 => "arm64",
-            _ => throw new PlatformNotSupportedException($"Unsupported architecture: {RuntimeInformation.OSArchitecture}")
-        };
-
-        return $"{os}-{arch}";
-    }
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() => GetUnixArchitectureAndExtension(IsOsx, IsAlpine);
     private (string Arch, string Ext) GetUnixArchitectureAndExtension(bool isOsx, bool isAlpine) =>
