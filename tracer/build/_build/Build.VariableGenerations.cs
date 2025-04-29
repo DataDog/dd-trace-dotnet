@@ -79,12 +79,13 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
 
-                        foreach(var changedFile in changedFiles)
+                        var teamName = _isChangedTeam[variableName];
+                        foreach (var changedFile in changedFiles)
                         {
                             var match = codeOwners.Match("/" + changedFile);
-                            if (match?.Owners.Contains(_isChangedTeam[variableName]) == true)
+                            if (match?.Owners.Contains(teamName) == true)
                             {
-                                Logger.Information($"File {changedFile} is owned by {_isChangedTeam[variableName]}");
+                                Logger.Information($"File {changedFile} is owned by {teamName}");
                                 isChanged = true;
                             }
                         }
