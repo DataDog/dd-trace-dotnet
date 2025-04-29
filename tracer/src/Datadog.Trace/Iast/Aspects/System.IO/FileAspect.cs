@@ -101,7 +101,7 @@ public class FileAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(FileAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }
@@ -152,7 +152,7 @@ public class FileAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(FileAspect)}.{nameof(ReviewPathRead)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }

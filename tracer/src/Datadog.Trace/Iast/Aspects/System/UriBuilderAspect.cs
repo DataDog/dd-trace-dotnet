@@ -36,7 +36,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -61,7 +61,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -87,7 +87,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -114,7 +114,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -142,7 +142,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -171,7 +171,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -196,7 +196,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -219,7 +219,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -242,7 +242,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(SetPath)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -265,7 +265,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(GetHost)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -290,7 +290,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(GetQuery)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -315,7 +315,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(GetPath)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -341,7 +341,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(UriBuilderAspect)}.{nameof(ToString)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
