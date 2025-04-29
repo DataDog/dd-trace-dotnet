@@ -11,11 +11,10 @@ namespace Samples.Hangfire
     {
         static void Main(string[] args)
         {
-            using var tracer = Sdk
-    .CreateTracerProviderBuilder()
-        .AddHangfireInstrumentation()
-    .AddConsoleExporter()
-    .Build();
+            using var tracer = Sdk.CreateTracerProviderBuilder()
+                                  .AddHangfireInstrumentation()
+                                  .AddConsoleExporter()
+                                  .Build();
 
             GlobalConfiguration.Configuration
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
