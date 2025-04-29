@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Ci.Telemetry;
@@ -89,7 +90,7 @@ internal static class GitCommandHelper
     {
         try
         {
-            // Retrieve PR list of modified files
+            // Retrieve the PR list of modified files
             var arguments = string.IsNullOrEmpty(headCommit) ? $"diff -U0 --word-diff=porcelain {baseCommit}" : $"diff -U0 --word-diff=porcelain {baseCommit} {headCommit}";
             var output = RunGitCommand(workingDirectory, arguments, MetricTags.CIVisibilityCommands.Diff);
             if (output is { ExitCode: 0, Output.Length: > 0 })
@@ -185,6 +186,222 @@ internal static class GitCommandHelper
 
                 return bitmap.GetInternalArrayOrToArrayAndDispose();
             }
+        }
+    }
+
+    public static BaseBranchInfo? DetectBaseBranch(
+        string workingDirectory,
+        string? targetBranch = null,
+        string remoteName = "origin",
+        string branchFilterPattern = @"^(main|master|preprod|prod|release/.*|hotfix/.*)$")
+    {
+        if (string.IsNullOrEmpty(workingDirectory))
+        {
+            Log.Warning("GitCommandHelper: Cannot detect base branch because working directory is null or empty");
+            return null;
+        }
+
+        try
+        {
+            // 1. Get the target branch if not specified
+            if (string.IsNullOrEmpty(targetBranch))
+            {
+                var branchOutput = RunGitCommand(
+                    workingDirectory,
+                    "rev-parse --abbrev-ref HEAD",
+                    MetricTags.CIVisibilityCommands.GetHead);
+
+                if (branchOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(branchOutput?.Output))
+                {
+                    Log.Warning("GitCommandHelper: Failed to get current branch");
+                    return null;
+                }
+
+                targetBranch = branchOutput!.Output.Trim();
+            }
+
+            // Verify branch exists
+            var verifyBranchOutput = RunGitCommand(
+                workingDirectory,
+                $"rev-parse --verify --quiet {targetBranch}",
+                MetricTags.CIVisibilityCommands.VerifyBranchExists);
+
+            if (verifyBranchOutput is not { ExitCode: 0 })
+            {
+                Log.Warning("GitCommandHelper: Branch '{Branch}' does not exist", targetBranch);
+                return null;
+            }
+
+            // 2. Check if the target is already a main-like branch
+            string shortTargetName = targetBranch!;
+            if (shortTargetName.StartsWith($"{remoteName}/"))
+            {
+                shortTargetName = shortTargetName.Substring(remoteName.Length + 1);
+            }
+
+            if (Regex.IsMatch(shortTargetName, branchFilterPattern))
+            {
+                Log.Debug("GitCommandHelper: Branch '{Branch}' already matches branch filter → no parent needed", targetBranch);
+                return null;
+            }
+
+            // 3. Detect default branch
+            string? defaultBranch = null;
+
+            // Try to get the symbolic reference for origin/HEAD
+            var symbolicRefOutput = RunGitCommand(
+                workingDirectory,
+                $"symbolic-ref --quiet --short refs/remotes/{remoteName}/HEAD",
+                MetricTags.CIVisibilityCommands.GetSymbolicRef);
+
+            if (symbolicRefOutput is { ExitCode: 0 } && !string.IsNullOrWhiteSpace(symbolicRefOutput.Output))
+            {
+                var symbolicRef = symbolicRefOutput.Output.Trim();
+                string prefix = $"{remoteName}/";
+                if (symbolicRef.StartsWith(prefix))
+                {
+                    defaultBranch = symbolicRef.Substring(prefix.Length);
+                }
+                else
+                {
+                    defaultBranch = symbolicRef;
+                }
+            }
+            else
+            {
+                // Fallback to main or master
+                foreach (var fallback in new[] { "main", "master" })
+                {
+                    var fallbackOutput = RunGitCommand(
+                        workingDirectory,
+                        $"show-ref --verify --quiet refs/remotes/{remoteName}/{fallback}",
+                        MetricTags.CIVisibilityCommands.ShowRef);
+
+                    if (fallbackOutput is { ExitCode: 0 })
+                    {
+                        defaultBranch = fallback;
+                        break;
+                    }
+                }
+            }
+
+            // 4. Build candidate list
+            var branchesOutput = RunGitCommand(
+                workingDirectory,
+                $"for-each-ref --format='%(refname:short)' refs/heads refs/remotes/{remoteName}",
+                MetricTags.CIVisibilityCommands.BuildCandidateList);
+
+            if (branchesOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(branchesOutput?.Output))
+            {
+                Log.Warning("GitCommandHelper: Failed to get branch list");
+                return null;
+            }
+
+            var regex = new Regex(branchFilterPattern);
+            var branches = SplitLines(branchesOutput!.Output)
+                          .Select(b => b.Trim('\'', ' '))
+                          .Where(b => !string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
+                          .Where(b =>
+                           {
+                               string nameToCheck = b;
+                               if (b.StartsWith($"{remoteName}/"))
+                               {
+                                   nameToCheck = b.Substring(remoteName.Length + 1);
+                               }
+
+                               return regex.IsMatch(nameToCheck);
+                           })
+                          .ToList();
+
+            if (branches.Count == 0)
+            {
+                Log.Warning("GitCommandHelper: No candidate branches found");
+                return null;
+            }
+
+            // 5. Compute metrics for each branch
+            var metrics = new List<Tuple<string, string, int, int>>(); // Branch, MergeBase, Behind, Ahead
+
+            foreach (var branch in branches)
+            {
+                // Find merge-base (common ancestor)
+                var mergeBaseOutput = RunGitCommand(
+                    workingDirectory,
+                    $"merge-base {branch} {targetBranch}",
+                    MetricTags.CIVisibilityCommands.MergeBase);
+
+                if (mergeBaseOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(mergeBaseOutput?.Output))
+                {
+                    continue; // Skip if no common history
+                }
+
+                var mergeBaseSha = mergeBaseOutput!.Output.Trim();
+
+                // Count commits ahead and behind
+                var revListOutput = RunGitCommand(
+                    workingDirectory,
+                    $"rev-list --left-right --count {branch}...{targetBranch}",
+                    MetricTags.CIVisibilityCommands.RevList);
+
+                if (revListOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(revListOutput?.Output))
+                {
+                    continue; // Skip if it cannot get commit counts
+                }
+
+                var counts = revListOutput!.Output.Split(new[] { '\t', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (counts.Length != 2 ||
+                    !int.TryParse(counts[0], out var behind) ||
+                    !int.TryParse(counts[1], out var ahead))
+                {
+                    continue; // Skip if unexpected format or cannot parse counts
+                }
+
+                metrics.Add(Tuple.Create(branch, mergeBaseSha, behind, ahead));
+            }
+
+            if (metrics.Count == 0)
+            {
+                Log.Warning("GitCommandHelper: No metrics could be computed for any candidate branch");
+                return null;
+            }
+
+            // 6. Sort by the "behind" metric (ascending) to find the best base branch
+            metrics.Sort((a, b) => a.Item3.CompareTo(b.Item3)); // Sort by Behind (Item3)
+
+            // Find candidates with the minimum "behind" value
+            int bestBehind = metrics[0].Item3;
+            var bestCandidates = metrics.Where(m => m.Item3 == bestBehind).ToList();
+
+            // If multiple candidates with same "behind" value, prioritize default branch
+            var bestCandidate = bestCandidates[0];
+
+            if (bestCandidates.Count > 1 && !string.IsNullOrEmpty(defaultBranch))
+            {
+                foreach (var candidate in bestCandidates)
+                {
+                    if (candidate.Item1 == defaultBranch || candidate.Item1 == $"{remoteName}/{defaultBranch}")
+                    {
+                        bestCandidate = candidate;
+                        break;
+                    }
+                }
+            }
+
+            bool isDefaultBranch = !string.IsNullOrEmpty(defaultBranch) &&
+                                   (bestCandidate.Item1 == defaultBranch ||
+                                    bestCandidate.Item1 == $"{remoteName}/{defaultBranch}");
+
+            return new BaseBranchInfo(
+                bestCandidate.Item1, // Branch
+                bestCandidate.Item2, // MergeBase
+                bestCandidate.Item3, // Behind
+                bestCandidate.Item4, // Ahead
+                isDefaultBranch);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "GitCommandHelper: Error detecting base branch for '{Branch}'", targetBranch);
+            return null;
         }
     }
 

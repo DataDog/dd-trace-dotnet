@@ -78,7 +78,7 @@ internal class ImpactedTestsModule
             // Milestone 1 : Retrieve diff files from Backend
 
             // set the new base commit SHA
-            baseCommitSha = CalculateBaseCommit();
+            baseCommitSha = CalculateBaseCommit(workspacePath);
 
             // First, we try to use the calculated base commit SHA for the diff
             if (!string.IsNullOrEmpty(baseCommitSha))
@@ -205,9 +205,11 @@ internal class ImpactedTestsModule
     /// Attempts to calculate the base PR commit.
     /// </summary>
     /// <returns>Calculated commit</returns>
-    private static string CalculateBaseCommit()
+    private static string CalculateBaseCommit(string workingDirectory)
     {
-        // TODO: Add the proper implementation.
-        return string.Empty;
+        var baseBranchInfo = GitCommandHelper.DetectBaseBranch(workingDirectory);
+        return baseBranchInfo is not null
+                   ? baseBranchInfo.MergeBaseSha
+                   : string.Empty;
     }
 }
