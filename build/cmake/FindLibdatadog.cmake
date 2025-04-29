@@ -4,7 +4,7 @@ endif()
 
 include(FetchContent)
 
-set(LIBDATADOG_VERSION "v17.0.0" CACHE STRIFNG "libdatadog version")
+set(LIBDATADOG_VERSION "v17.0.0" CACHE STRING "libdatadog version")
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
     if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -18,7 +18,7 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL
         set(FILE_TO_DOWNLOAD libdatadog-aarch64-unknown-linux-gnu.tar.gz)
     endif()
 else()
-    if (CMAKE_SYSTEM_NAME STREQUAL "DarwFin")
+    if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         set(SHA256_LIBDATADOG "9cf64e45d03a6eac3d1406b0c28bdeb401ee8843d26bd7265cb48c98ec611c39" CACHE STRING "libdatadog sha256")
         set(FILE_TO_DOWNLOAD libdatadog-x86_64-apple-darwin.tar.gz)
     elseif (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")

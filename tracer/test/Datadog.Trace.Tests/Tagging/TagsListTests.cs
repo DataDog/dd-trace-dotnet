@@ -150,11 +150,11 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 6);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 2);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 2);
 
             for (int i = 0; i < customTagCount; i++)
             {
@@ -190,10 +190,10 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 5);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 1);
 
             for (int i = 0; i < customTagCount; i++)
             {

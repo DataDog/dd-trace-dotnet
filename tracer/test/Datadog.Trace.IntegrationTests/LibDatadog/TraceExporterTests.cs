@@ -24,6 +24,11 @@ public class TraceExporterTests
     [InlineData(TestTransports.WindowsNamedPipe)]
     public async Task SendsTracesUsingDataPipeline(TestTransports transport)
     {
+        if (EnvironmentTools.IsWindows() && Environment.Is64BitProcess == false)
+        {
+            throw new SkipException("Can't use data pipeline on x86, there is no good way to copy native libraries for x86");
+        }
+
         if (transport == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
         {
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");

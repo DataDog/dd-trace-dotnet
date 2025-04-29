@@ -44,6 +44,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
 
+    <None Update="ruleset.3.0-full.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
     <None Update="ruleset.blocked.users.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -75,6 +79,7 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
     <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.402.28" />
     <PackageReference Include="MailKit" Version="4.10.0" />
   </ItemGroup>

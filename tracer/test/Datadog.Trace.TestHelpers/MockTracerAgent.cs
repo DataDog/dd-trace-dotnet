@@ -38,10 +38,9 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        protected MockTracerAgent(bool telemetryEnabled, TestTransports transport, bool optionalTelemetryHeaders = false)
+        protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
             TelemetryEnabled = telemetryEnabled;
-            OptionalTelemetryHeaders = optionalTelemetryHeaders;
             TransportType = transport;
         }
 
@@ -66,8 +65,6 @@ namespace Datadog.Trace.TestHelpers
         public string Version { get; set; }
 
         public bool TelemetryEnabled { get; }
-
-        public bool OptionalTelemetryHeaders { get; }
 
         public Dictionary<MockTracerResponseType, MockTracerResponse> CustomResponses { get; } = new();
 
@@ -114,8 +111,8 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, bool optionalTelemetryHeaders = false, AgentConfiguration agentConfiguration = null)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry, optionalTelemetryHeaders) { Output = output, Configuration = agentConfiguration ?? new() };
+        public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
+            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
 
 #if NETCOREAPP3_1_OR_GREATER
         public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config, AgentConfiguration agentConfiguration = null) => new UdsAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
@@ -603,19 +600,7 @@ namespace Datadog.Trace.TestHelpers
                     request.Headers.TryGetValue(TelemetryConstants.ApiVersionHeader, out var apiVersion);
                     request.Headers.TryGetValue(TelemetryConstants.RequestTypeHeader, out var requestType);
 
-                    var body = request.ReadStreamBody();
-
-                    if (OptionalTelemetryHeaders && (apiVersion == null || requestType == null))
-                    {
-                        using var sr = new StreamReader(new MemoryStream(body));
-                        var text = sr.ReadToEnd();
-
-                        var json = JObject.Parse(text);
-                        apiVersion = json["api_version"].Value<string>();
-                        requestType = json["request_type"].Value<string>();
-                    }
-
-                    using var stream = new MemoryStream(body);
+                    using var stream = new MemoryStream(request.ReadStreamBody());
 
                     var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
                     Telemetry.Push(telemetry);
@@ -1044,6 +1029,9 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("span_meta_structs")]
             public bool SpanMetaStructs { get; set; } = true;
+
+            [JsonProperty("span_events")]
+            public bool SpanEvents { get; set; } = false;
         }
 
         public class TcpUdpAgent : MockTracerAgent
@@ -1053,8 +1041,8 @@ namespace Datadog.Trace.TestHelpers
             private readonly Task _tracesListenerTask;
             private readonly Task _statsdTask;
 
-            public TcpUdpAgent(int? port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry, bool optionalTelemetryHeaders)
-                : base(useTelemetry, TestTransports.Tcp, optionalTelemetryHeaders)
+            public TcpUdpAgent(int? port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
+                : base(useTelemetry, TestTransports.Tcp)
             {
                 port ??= TcpPortProvider.GetOpenPort();
                 if (doNotBindPorts)

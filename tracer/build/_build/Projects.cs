@@ -16,10 +16,12 @@ public static class Projects
 
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
+    public const string TraceTests = "Datadog.Trace.Tests";
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
     public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
+    public const string ClrProfilerManagedTests = "Datadog.Trace.ClrProfiler.Managed.Tests";
     public const string DdTraceIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";
     public const string DdTraceArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
     public const string DdDotnetIntegrationTests = "Datadog.Trace.Tools.dd_dotnet.IntegrationTests";
@@ -37,6 +39,13 @@ public static class Projects
     public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
     public const string RazorPages = "Samples.AspNetCoreRazorPages";
+
+    public static readonly string[] NativeFilesDependentTests = {
+        AppSecUnitTests,
+        ClrProfilerManagedTests,
+        TraceIntegrationTests,
+        TraceTests
+    };
 }
 
 public static class FileNames

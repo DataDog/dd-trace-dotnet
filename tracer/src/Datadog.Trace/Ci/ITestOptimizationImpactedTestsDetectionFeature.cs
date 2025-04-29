@@ -11,4 +11,6 @@ namespace Datadog.Trace.Ci;
 internal interface ITestOptimizationImpactedTestsDetectionFeature : ITestOptimizationFeature
 {
     TestOptimizationClient.ImpactedTestsDetectionResponse ImpactedTestsDetectionResponse { get; }
+
+    ImpactedTestsModule ImpactedTestsAnalyzer { get; }
 }

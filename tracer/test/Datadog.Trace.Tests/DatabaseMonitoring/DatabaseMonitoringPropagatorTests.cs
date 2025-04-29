@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var initialCommandText = "select * from table";
             var command = CreateCommand(initialCommandText);
 
-            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span);
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             command.CommandText.Should().StartWith(expectedComment);
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var initialCommandText = "select * from table";
             var command = CreateCommand(initialCommandText);
 
-            var traceParentInjected = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.MySql, command, "Test.Service", "MyDatabase", "MyHost", span);
+            var traceParentInjected = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.MySql, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var initialCommandText = "select * from table";
             var command = CreateCommand(initialCommandText);
 
-            var traceParentInjected = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.MySql, command, service, dbName, host, span);
+            var traceParentInjected = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.MySql, command, service, dbName, host, span, injectStoredProcedure: true);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "db.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority(samplingPriority);
 
-            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span);
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             command.CommandText.Should().StartWith(expectedComment);
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "db.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority(samplingPriority);
 
-            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span);
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             command.CommandText.Should().EndWith(expectedComment);
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var tracer = version == SchemaVersion.V1 ? _v1Tracer : _v0Tracer;
             var span = tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
 
-            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, IntegrationId.Npgsql, command, "Test.Service", "MyDatabase", "MyHost", span);
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, IntegrationId.Npgsql, command, "Test.Service", "MyDatabase", "MyHost", span, injectStoredProcedure: true);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             command.CommandText.Should().StartWith("/*dddbs='myServiceName',ddprs='myPeerService',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/");

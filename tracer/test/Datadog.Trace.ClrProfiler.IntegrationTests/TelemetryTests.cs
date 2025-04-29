@@ -138,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
         [MemberData(nameof(Data))]
         public async Task WhenUsingNamedPipesAgent_UsesNamedPipesTelemetry(bool? enableDependencies)
         {
@@ -191,7 +192,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
         [InlineData(null)]
         [InlineData(true)]
         [InlineData(false)]
@@ -228,6 +228,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task Telemetry_SendsMetrics()
         {
+            // telemetry metric events under test are sent only when using managed trace exporter
+            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, "false");
+
             using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
             Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
 

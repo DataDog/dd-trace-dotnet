@@ -8,7 +8,7 @@ stages:
   - benchmarks
 
 include:
-  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/one-pipeline.yml
+  - local: .gitlab/one-pipeline.locked.yaml
 
 variables:
   DOTNET_PACKAGE_VERSION:
@@ -112,8 +112,7 @@ download-single-step-artifacts:
   script:
     - .gitlab/download-single-step-artifacts.sh
     - cp tracer/build/artifacts/requirements.json artifacts/requirements.json
-    # We currently only copy the windows artifacts if we're _not_ building a tag, because we don't want to push these images to prod yet
-    - if [ -z "$CI_COMMIT_TAG" ]; then cp -r artifacts-out artifacts/windows; fi
+    - cp -r artifacts-out artifacts/windows
   artifacts:
     expire_in: 2 weeks
     paths:
@@ -214,4 +213,11 @@ macrobenchmarks:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
       when: always
     - when: manual
+
+microbenchmarks:
+  stage: benchmarks
+  needs: [ ]
+  trigger:
+    include: .gitlab/benchmarks/microbenchmarks.yml
+  allow_failure: true
     

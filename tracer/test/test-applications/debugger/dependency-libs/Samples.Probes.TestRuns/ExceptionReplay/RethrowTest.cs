@@ -27,7 +27,7 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                     await Task.Yield();
                     throw new Exception("Bdika");
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     await Task.Yield();
                     await Task.Yield();
@@ -41,7 +41,9 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                 await Task.Yield();
             }
 
-            _tempMethodName = methodName;            
+#pragma warning disable CS0162 // Unreachable code detected
+            _tempMethodName = methodName;
+#pragma warning restore CS0162 // Unreachable code detected
         }
 
         public async Task RunAsync2()
@@ -57,19 +59,23 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                     await Task.Yield();
                     await InTheMiddle();
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     //await Task.Yield();
                     //await Task.Yield();
                     //await Task.Yield();
                     throw;
+#pragma warning disable CS0162 // Unreachable code detected
                     await Task.Yield();
+#pragma warning restore CS0162 // Unreachable code detected
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
+#pragma warning disable CS0162 // Unreachable code detected
                 await Task.Yield();
+#pragma warning restore CS0162 // Unreachable code detected
             }
 
             _tempMethodName = methodName;
@@ -79,7 +85,6 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
         {
             var methodName = nameof(InTheMiddle);
             
-            int num = 3;
             try
             {
                 await Task.Yield();
@@ -139,7 +144,9 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
         public class RelationalDataReader : IAsyncDisposable, IDisposable
         {
             private bool _disposed = false;
+#pragma warning disable CS0414 // Assigned but never used
             private bool _disposedAsync = false;
+#pragma warning restore CS0414 // Assigned but never used
 
             public void Dispose()
             {
@@ -243,7 +250,7 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
                     RecursiveCaptureAndThrow();   
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw;
             }
@@ -282,13 +289,15 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
             {
                 throw new NotImplementedException();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Console.WriteLine(nameof(RunAsync));
                 throw;
             }
             
+#pragma warning disable CS0162 // Unreachable code detected
             _tempMethodName = methodName;
+#pragma warning restore CS0162 // Unreachable code detected
         }
     }
 }

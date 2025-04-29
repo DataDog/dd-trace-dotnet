@@ -105,7 +105,8 @@ internal static partial class DotNetSettingsExtensions
         {
             return settings
                 .SetProcessEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1")
-                .SetProcessEnvironmentVariable("COMPlus_DbgMiniDumpType", ((int) dumpType).ToString());
+                .SetProcessEnvironmentVariable("COMPlus_DbgMiniDumpType", ((int) dumpType).ToString())
+                .SetProcessEnvironmentVariable("COMPlus_EnableCrashReport", "1");
         }
 
         return settings;

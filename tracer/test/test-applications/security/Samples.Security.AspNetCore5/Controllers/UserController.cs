@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
-    public class UserController(ILogger<HomeController> logger) : Controller
+    public class UserController : Controller
     {
         public IActionResult Index(string? userId = null)
         {
