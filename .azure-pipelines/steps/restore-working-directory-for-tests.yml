@@ -5,15 +5,24 @@ parameters:
     type: 'string'
     default: 'linux-x64'
 
+variables:
+  - ${{ if eq(parameters.artifactSuffix, 'linux-musl-x64') }}:
+      - universalSuffix: 'linux-x64'
+  - ${{ elseif eq(parameters.artifactSuffix, 'linux-musl-arm64') }}:
+      - universalSuffix: 'linux-arm64'
+  - ${{ else }}:
+      - universalSuffix: ${{ parameters.artifactSuffix }}
+
+
 steps:
 - template: ./restore-working-directory.yml
   parameters:
     artifact: build-${{ parameters.artifactSuffix }}-working-directory
 
 - task: DownloadPipelineArtifact@2
-  displayName: Download linux-universal-home-${{ replace(parameters.artifactSuffix, '-musl', '') }}
+  displayName: Download linux-universal-home-$(universalSuffix)
   inputs:
-    artifact: linux-universal-home-${{ replace(parameters.artifactSuffix, '-musl', '') }}
+    artifact: linux-universal-home-$(universalSuffix)
     path: $(monitoringHome)/${{ parameters.artifactSuffix }}
 
 - task: DownloadPipelineArtifact@2
