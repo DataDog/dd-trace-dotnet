@@ -10,31 +10,17 @@ steps:
   parameters:
     artifact: build-${{ parameters.artifactSuffix }}-working-directory
 
-- ${{ if eq(parameters.artifactSuffix, 'linux-musl-x64') }}:
-    - script: echo 'linux-universal-home-linux-x64' for linux-musl-x64
-- ${{ elseif eq(parameters.artifactSuffix, 'linux-musl-arm64') }}:
-    - script: echo 'linux-universal-home-linux-arm64' for linux-musl-arm64
-- ${{ else }}:
-    - script: echo 'linux-universal-home-${{ parameters.artifactSuffix }}' for default
+- bash: |
+    input="${{ parameters.artifactSuffix }}"
+    output="${input/-musl/}"
+    echo "setting universalArtifactSuffix to ${output}"
+    echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
 
-- ${{ if eq(parameters.artifactSuffix, 'linux-musl-x64') }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux-universal-home-linux-x64
-      inputs:
-        artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/${{ parameters.artifactSuffix }}
-- ${{ elseif eq(parameters.artifactSuffix, 'linux-musl-arm64') }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux-universal-home-linux-arm64
-      inputs:
-        artifact: linux-universal-home-linux-arm64
-        path: $(monitoringHome)/${{ parameters.artifactSuffix }}
-- ${{ else }}:
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux-universal-home-${{ parameters.artifactSuffix }}
-      inputs:
-        artifact: linux-universal-home-${{ parameters.artifactSuffix }}
-        path: $(monitoringHome)/${{ parameters.artifactSuffix }}
+- task: DownloadPipelineArtifact@2
+  displayName: Download universal home binaries
+  inputs:
+    artifact: linux-universal-home-$(universalArtifactSuffix)
+    path: $(monitoringHome)/${{ parameters.artifactSuffix }}
 
 - task: DownloadPipelineArtifact@2
   displayName: Download profiler binaries
