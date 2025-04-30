@@ -418,7 +418,7 @@ internal class ProbeExpressionEvaluator
             }
             else
             {
-                when = current.Key == null // span decoration doesn't must to have a condition
+                when = current.Key == null // span decoration doesn't must have a condition
                            ? new CompiledExpression<bool>((_, _, _, _, _) => true, null, null, null)
                            : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
             }
