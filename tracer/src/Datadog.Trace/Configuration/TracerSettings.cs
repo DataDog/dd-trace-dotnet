@@ -419,7 +419,7 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
                                   .AsBool(defaultValue: false);
 
-            if ((DataPipelineEnabled && StatsComputationEnabled) || LambdaMetadata.IsRunningInLambda)
+            if (DataPipelineEnabled && StatsComputationEnabled)
             {
                 DataPipelineEnabled = false;
                 _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);

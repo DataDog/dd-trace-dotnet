@@ -33,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         }
 
         [SkippableTheory]
-        [InlineData(true)]
         [InlineData(false)]
+        [InlineData(true)]
         [Trait("Category", "ArmUnsupported")]
         [Trait("Category", "Lambda")]
         public async Task SubmitsTraces(bool dataPipelineEnabled)
@@ -92,6 +92,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 // We get different stack traces from the exception in each framework, so scrub them to all look the same
                 settings.AddRegexScrubber(StackRegex, "$1 Cannot assign requested address (SocketException)$2");
                 settings.AddRegexScrubber(ErrorMsgRegex, "$1 Cannot assign requested address$2");
+
+                foreach (var span in allSpans)
+                {
+                    Output.WriteLine(span.ToString());
+                }
 
                 await VerifyHelper.VerifySpans(allSpans, settings)
                                   .UseFileName(nameof(AwsLambdaTests));
