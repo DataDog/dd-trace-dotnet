@@ -310,7 +310,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                         cts.Token.ThrowIfCancellationRequested();
                         if (enumerator.Current == null)
                         {
-                            break;
+                            continue;
                         }
 
                         bool serialized;
@@ -338,12 +338,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                         }
                     }
 
-                    jsonWriter.WriteEndArray();
-
-                    if (enumerator.MoveNext())
+                    if (enumerator.MoveNext() && itemIndex >= limitInfo.MaxCollectionSize)
                     {
                         WriteNotCapturedReason(jsonWriter, NotCapturedReason.collectionSize);
                     }
+
+                    jsonWriter.WriteEndArray();
                 }
             }
             catch (OperationCanceledException)
@@ -354,12 +354,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             catch (InvalidOperationException e)
             {
                 // Collection was modified, enumeration operation may not execute
-                Log.Error<int>(e, "Error serializing enumerable (Collection was modified) Depth={CurrentDepth}", currentDepth);
+                Log.Error(e, "Error serializing enumerable (collection was modified or current object not set). Depth={CurrentDepth}", e.Message, property1: currentDepth);
                 jsonWriter.WriteEndArray();
             }
             catch (Exception e)
             {
-                Log.Error<int>(e, "Error serializing enumerable Depth={CurrentDepth}", currentDepth);
+                Log.Error(e, "Error serializing enumerable: {Error} Depth={CurrentDepth}", e.Message, property1: currentDepth);
             }
         }
 
