@@ -2585,7 +2585,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [build_linux_tracer, build_linux_universal, generate_variables, merge_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2998,7 +2998,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64_tracer, build_arm64_universal, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3181,7 +3181,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [build_arm64_tracer, build_arm64_universal, generate_variables, merge_commit_id]
+  dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
