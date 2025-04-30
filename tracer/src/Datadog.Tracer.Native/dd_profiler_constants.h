@@ -119,10 +119,12 @@ const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual")
 
 #ifdef _WIN32
 const shared::WSTRING nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
+const shared::WSTRING appsec_nativemethods_type = WStr("");
 const shared::WSTRING debugger_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+Windows");
 const shared::WSTRING fault_tolerant_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+Windows");
 #else
 const shared::WSTRING nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
+const shared::WSTRING appsec_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
 const shared::WSTRING debugger_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+NonWindows");
 const shared::WSTRING fault_tolerant_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+NonWindows");
 #endif

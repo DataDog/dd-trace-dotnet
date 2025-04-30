@@ -508,7 +508,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                                        const shared::WSTRING& nativemethods_type_name,
                                        const shared::WSTRING& library_path)
 {
-    HRESULT hr;
+    if (nativemethods_type_name.size() == 0)
+    {
+        return;
+    }
+
     const auto& metadata_import = module_metadata.metadata_import;
     const auto& metadata_emit = module_metadata.metadata_emit;
 
@@ -531,7 +535,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
         // Define the actual profiler file path as a ModuleRef
         mdModuleRef profiler_ref;
-        hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
+        HRESULT hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
         {
             // Enumerate all methods inside the native methods type with the PInvokes
@@ -952,6 +956,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         managedInternalModules_.push_back(module_id);
 
         RewritingPInvokeMaps(module_metadata, nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, appsec_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, debugger_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, fault_tolerant_nativemethods_type);
 
