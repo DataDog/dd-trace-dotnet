@@ -327,7 +327,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
                     catch (InvalidOperationException e)
                     {
-                        Log.Error(e, "Error serializing enumerable (collection was modified). Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                        Log.Error(e, "Error serializing enumerable when calling MoveNext. Error={Error}. Depth={CurrentDepth}", e.Message, property1: currentDepth);
                         break;
                     }
 
@@ -338,7 +338,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
                     catch (InvalidOperationException e)
                     {
-                        Log.Error(e, "Error serializing enumerable (collection was modified). Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                        Log.Error(e, "Error serializing enumerable when calling Current. Error={Error}. Depth={CurrentDepth}", e.Message, property1: currentDepth);
                         break;
                     }
 
@@ -383,6 +383,14 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 jsonWriter.WriteEndArray();
+            }
+            catch (InvalidOperationException e)
+            {
+                Log.Error(e, "Error serializing enumerable: Enumerator initialization failed. Collection may have been modified.");
+            }
+            catch (OperationCanceledException e)
+            {
+                Log.Error(e, "Error serializing enumerable: Operation was canceled during enumeration setup.");
             }
             catch (Exception e)
             {
