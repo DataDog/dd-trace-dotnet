@@ -505,7 +505,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 }
 
 void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
-                                       const shared::WSTRING& rewrite_reason,
                                        const shared::WSTRING& nativemethods_type_name,
                                        const shared::WSTRING& library_path)
 {
@@ -524,11 +523,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
         if (!fs::exists(native_profiler_file))
         {
-            Logger::Warn("Unable to rewrite PInvokes for ", rewrite_reason, ". Native library not found: ", native_profiler_file);
+            Logger::Warn("Unable to rewrite PInvokes for ", nativemethods_type_name, ". Native library not found: ", native_profiler_file);
             return;
         }
 
-        Logger::Info("Rewriting PInvokes to native for ", rewrite_reason, ": ", native_profiler_file);
+        Logger::Info("Rewriting PInvokes to native for ", nativemethods_type_name, ": ", native_profiler_file);
 
         // Define the actual profiler file path as a ModuleRef
         mdModuleRef profiler_ref;
@@ -951,25 +950,18 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
         managedInternalModules_.push_back(module_id);
-#ifdef _WIN32
-        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
-#else
-        RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
-#endif // _WIN32
+
+        RewritingPInvokeMaps(module_metadata, nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, debugger_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, fault_tolerant_nativemethods_type);
 
         auto libdatadog_library_path = GetLibDatadogFilePath();
         std::error_code ec;
         if (fs::exists(libdatadog_library_path, ec))
         {
             auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
-            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_exporter"), libdatadog_exporter_nativemethods_type, libdatadog_filepath);
-            RewritingPInvokeMaps(module_metadata, WStr("libdatadog_config"), libdatadog_config_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_exporter_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
         }
         else
         {
@@ -989,7 +981,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (fs::exists(native_loader_library_path))
         {
             auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
-            RewritingPInvokeMaps(module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
+            RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
         }
 
         if (ShouldRewriteProfilerMaps())
@@ -997,7 +989,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
             if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
             {
-                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+                RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
             }
         }
 
