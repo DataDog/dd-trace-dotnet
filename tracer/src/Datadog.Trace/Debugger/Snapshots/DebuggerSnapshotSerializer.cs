@@ -373,6 +373,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
                 }
 
+                jsonWriter.WriteEndArray();
+
                 if (cts.IsCancellationRequested)
                 {
                     WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout);
@@ -381,8 +383,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     WriteNotCapturedReason(jsonWriter, NotCapturedReason.collectionSize);
                 }
-
-                jsonWriter.WriteEndArray();
             }
             catch (InvalidOperationException e)
             {
