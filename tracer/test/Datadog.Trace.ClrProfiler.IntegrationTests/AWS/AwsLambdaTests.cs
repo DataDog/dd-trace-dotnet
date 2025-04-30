@@ -99,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 }
 
                 await VerifyHelper.VerifySpans(allSpans, settings)
+                                  .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(AwsLambdaTests));
             }
         }
