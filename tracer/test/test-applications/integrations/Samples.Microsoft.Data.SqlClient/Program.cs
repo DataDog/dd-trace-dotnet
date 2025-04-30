@@ -9,7 +9,7 @@ namespace Samples.Microsoft.Data.SqlClient
 {
     internal static class Program
     {
-        private static async Task Main()
+        private static async Task<int> Main()
         {
             var commandFactory = new DbCommandFactory($"[Microsoft-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new MicrosoftSqlCommandExecutor();
@@ -17,6 +17,12 @@ namespace Samples.Microsoft.Data.SqlClient
 
             using (var connection = OpenConnection(typeof(SqlConnection)))
             {
+                if (connection is null)
+                {
+                    Console.WriteLine("No connection could be established. Exiting with skip code (13)");
+                    return 13;
+                }
+                
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
@@ -34,6 +40,7 @@ namespace Samples.Microsoft.Data.SqlClient
 #endif
             // allow time to flush
             await Task.Delay(2000, cts.Token);
+            return 0;
         }
 
         private static DbConnection OpenConnection(Type connectionType)
@@ -59,7 +66,7 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
             }
 
-            throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
+            return null;
         }
     }
 }
