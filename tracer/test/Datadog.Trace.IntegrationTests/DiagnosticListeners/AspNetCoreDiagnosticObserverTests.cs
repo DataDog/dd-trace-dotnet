@@ -430,11 +430,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 { ConfigurationKeys.ExpandRouteTemplatesEnabled, expandRouteParameters.ToString() },
             });
             await using var tracer = GetTracer(writer, configSource);
-
             var security = new AppSec.Security();
             var iast = new Iast.Iast(new IastSettings(configSource, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
-            var liveDebugger = GetLiveDebugger();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, null) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))
             {
@@ -539,11 +537,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var samplerMock = new Mock<ITraceSampler>();
 
             return new ScopedTracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
-        }
-
-        private static LiveDebugger GetLiveDebugger()
-        {
-            return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
         }
 
         private class AgentWriterStub : IAgentWriter
