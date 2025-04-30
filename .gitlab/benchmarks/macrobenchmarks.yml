@@ -5,7 +5,7 @@
     - export AWS_PROFILE=ephemeral-infra-ci
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-    
+
 stages:
   - infra-update
   - check-azure-pipeline
@@ -13,7 +13,7 @@ stages:
   - benchmarks-win
 
 variables:
-  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-2
+  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-3
 
 check_azure_pipeline:
   stage: check-azure-pipeline
@@ -33,6 +33,8 @@ check_azure_pipeline:
   timeout: 1h
   rules:
     - when: manual
+  variables:
+    TEST_BRANCH: "master"
 
 update-bp-infra:
   stage: infra-update
