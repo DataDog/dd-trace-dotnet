@@ -13,30 +13,17 @@ using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.IntegrationTests.LibDatadog;
 
 public class TraceExporterTests
 {
-    private readonly ITestOutputHelper _output;
-
-    public TraceExporterTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [SkippableTheory]
     [InlineData(TestTransports.Tcp)]
     [InlineData(TestTransports.Uds)]
     [InlineData(TestTransports.WindowsNamedPipe)]
     public async Task SendsTracesUsingDataPipeline(TestTransports transport)
     {
-        foreach (var kvp in EnvironmentTools.GetRuntimeInfo())
-        {
-            _output.WriteLine($"{kvp.Key}: {kvp.Value}");
-        }
-
         if (EnvironmentTools.IsWindows() && Environment.Is64BitProcess == false)
         {
             throw new SkipException("Can't use data pipeline on x86, there is no good way to copy native libraries for x86");

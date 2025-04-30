@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -117,30 +115,6 @@ namespace Datadog.Trace.TestHelpers
 #else
 #error Unexpected TFM
 #endif
-        }
-
-        public static IDictionary<string, string> GetRuntimeInfo()
-        {
-            var info = new Dictionary<string, string>
-            {
-                ["Framework Description"] = RuntimeInformation.FrameworkDescription,
-                ["OS Description"] = RuntimeInformation.OSDescription,
-                ["OS Architecture"] = RuntimeInformation.OSArchitecture.ToString(),
-                ["Process Architecture"] = RuntimeInformation.ProcessArchitecture.ToString(),
-                ["Is 64-bit OS"] = Environment.Is64BitOperatingSystem.ToString(),
-                ["Is 64-bit Process"] = Environment.Is64BitProcess.ToString(),
-                ["Machine Name"] = Environment.MachineName,
-                ["User Name"] = Environment.UserName,
-                ["Current Directory"] = Environment.CurrentDirectory,
-                ["System Directory"] = Environment.SystemDirectory,
-                ["Processor Count"] = Environment.ProcessorCount.ToString(),
-                ["CLR Version"] = Environment.Version.ToString(),
-                ["GC Is Server GC"] = System.Runtime.GCSettings.IsServerGC.ToString(),
-                ["GC Latency Mode"] = System.Runtime.GCSettings.LatencyMode.ToString(),
-                ["Process Uptime (sec)"] = (DateTime.Now - Process.GetCurrentProcess().StartTime).TotalSeconds.ToString("F0")
-            };
-
-            return info;
         }
     }
 }
