@@ -143,7 +143,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for the maximum number of frames in a call stack we would like to capture values for.
             /// </summary>
             /// <seealso cref="ExceptionReplaySettings.MaximumFramesToCapture"/>
-            public const string ExceptionReplayMaxFramesToCapture = "DD_EXCEPTION_REPLAY_MAX_FRAMES_TO_CAPTURE";
+            public const string ExceptionReplayCaptureMaxFrames = "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES";
 
             /// <summary>
             /// Configuration key to enable capturing the variables of all the frames in exception call stack.

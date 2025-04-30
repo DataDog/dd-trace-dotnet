@@ -33,7 +33,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
 
             var maximumFramesToCapture = config
-                                        .WithKeys(ConfigurationKeys.Debugger.ExceptionReplayMaxFramesToCapture)
+                                        .WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureMaxFrames)
                                         .AsInt32(DefaultMaxFramesToCapture, maxDepth => maxDepth > 0)
                                         .Value;
 
