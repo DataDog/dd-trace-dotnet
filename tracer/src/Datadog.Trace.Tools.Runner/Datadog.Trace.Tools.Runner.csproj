@@ -23,6 +23,7 @@
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <BuildInParallel>false</BuildInParallel>
   </PropertyGroup>
 
   <Choose>
