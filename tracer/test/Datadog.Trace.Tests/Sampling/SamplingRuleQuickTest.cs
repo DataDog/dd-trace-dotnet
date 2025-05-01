@@ -19,28 +19,35 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData("select count ( j.Id ) from ( select top ( @limit ) Id from [ PRODUCTION.Scheduler ] . Job with ( nolock, forceseek ) where StateName = @state )", 0, 0.1)]
         [InlineData("set nocount on set xact_abort on set tran isolation level read committed update top ( ? ) JQ set FetchedAt = GETUTCDATE ( ) output INSERTED.Id, INSERTED.JobId, INSERTED.Queue, INSERTED.FetchedAt from [ PRODUCTION.Scheduler ] . JobQueue JQ with ( forceseek, readpast, updlock, rowlock ) where Queue in ( @queues0 ) and ( FetchedAt is ? or FetchedAt < DATEADD ( second, @timeoutSs, GETUTCDATE ( ) ) )", 0, 0.1)]
         [InlineData("foo", 1, 0.5)]
-        public void Constructs_With_ResourceName_Remote_Foo(string resource, int expectedRuleMatchIndex, float expectedSamplingRate)
+        public void Constructs_With_ResourceName_Remote_Foo(string resource, int expectedRuleMatchIndex, double expectedSamplingRate)
         {
-            const string config = """
-                                  [
-                                    { "service": "daybreak-worker", resource: "*PRODUCTION.Scheduler*", "sample_rate": 0.1 },
-                                    { "service": "daybreak-worker", "sample_rate": 0.5 },
-                                  ]
-                                  """;
-            var timeout = TimeSpan.FromMilliseconds(200);
-            var samplingRules = RemoteCustomSamplingRule.BuildFromConfigurationString(config, timeout);
+            const string configJson = """
+                                      [
+                                        { "service": "daybreak-worker", resource: "*PRODUCTION.Scheduler*", "sample_rate": 0.1 },
+                                        { "service": "daybreak-worker", "sample_rate": 0.5 },
+                                      ]
+                                      """;
+
+            // parse sampling rules from json
+            var regexTimeout = TimeSpan.FromMilliseconds(200);
+            var samplingRules = RemoteCustomSamplingRule.BuildFromConfigurationString(configJson, regexTimeout);
+
+            // create sampler and register sampling rules
+            var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: -1, intervalMilliseconds: null); // -1 disables rate-limiting
+            var sampler = new TraceSampler(rateLimiter);
+            sampler.RegisterRules(samplingRules);
 
             var span = new Span(new SpanContext(1, 1, serviceName: "daybreak-worker"), DateTimeOffset.Now) { ResourceName = resource };
 
-            // assert that the expected sampling rule is matched
+            // assert that the expected sampling rule is matched (by index)
             samplingRules[expectedRuleMatchIndex].IsMatch(span).Should().BeTrue();
 
-            var matchedSamplingRate = samplingRules.Where(samplingRule => samplingRule.IsMatch(span))
-                                                   .Select(samplingRule => samplingRule.GetSamplingRate(span))
-                                                   .FirstOrDefault();
+            _ = sampler.MakeSamplingDecision(span);
+            var appliedSamplingRate = span.GetMetric(Metrics.SamplingRuleDecision);
 
-            // assert that we applied the expected sampling rate
-            matchedSamplingRate.Should().Be(expectedSamplingRate);
+            // can't check for exact equality because of floating point precision.
+            // for example, we may see 0.10000000149011612 for 0.1.
+            appliedSamplingRate.Should().BeInRange(expectedSamplingRate - 0.00001, expectedSamplingRate + 0.00001);
         }
     }
 }
