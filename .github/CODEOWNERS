@@ -128,15 +128,18 @@ fault_tolerant_*.h                         @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs   @DataDog/debugger-dotnet
 Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
-# Serverless
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Lambda/    @DataDog/tracing-dotnet  @DataDog/serverless-aws
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SDK/    @DataDog/tracing-dotnet  @DataDog/serverless-aws
-/tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/   @DataDog/tracing-dotnet  @DataDog/serverless-aws
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/       @DataDog/tracing-dotnet  @DataDog/serverless-aws
-/tracer/test/test-applications/azure-functions/                    @DataDog/tracing-dotnet  @DataDog/serverless-aws
-/tracer/test/test-applications/integrations/Samples.AWS.Lambda/    @DataDog/tracing-dotnet  @DataDog/serverless-aws
-/tracer/test/test-applications/integrations/Samples.Amazon.Lambda.RuntimeSupport/        @DataDog/tracing-dotnet  @DataDog/serverless-aws
-docker-compose.serverless.yml                                      @DataDog/tracing-dotnet  @DataDog/serverless-aws
+# Serverless (AWS)
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/
+/tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/                       @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/test-applications/integrations/Samples.AWS.Lambda/                    @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/test-applications/integrations/Samples.Amazon.Lambda.RuntimeSupport/  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+docker-compose.serverless.yml                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+
+# Serverless (Azure/GCP)
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/test/test-applications/azure-functions/                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet
