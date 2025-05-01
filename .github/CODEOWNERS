@@ -128,11 +128,14 @@ fault_tolerant_*.h                         @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs   @DataDog/debugger-dotnet
 Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
+# Serverless (General)
+/tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/  @DataDog/tracing-dotnet @DataDog/apm-serverless
+
 # Serverless (AWS)
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                     @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/                       @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/tracer/test/test-applications/integrations/Samples.AWS.Lambda/                    @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/test-applications/integrations/Samples.AWS.*/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/test/test-applications/integrations/Samples.Amazon.Lambda.RuntimeSupport/  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 docker-compose.serverless.yml                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 
