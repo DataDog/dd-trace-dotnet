@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         ReturnTypeName = "Amazon.StepFunctions.Model.StartSyncExecutionResponse",
         ParameterTypeNames = new[] { "Amazon.StepFunctions.Model.StartSyncExecutionRequest" },
         MinimumVersion = "3.3.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsStepFunctionsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
