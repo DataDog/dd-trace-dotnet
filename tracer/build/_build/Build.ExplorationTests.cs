@@ -488,8 +488,7 @@ partial class Build
             tracerFramework = TargetFramework.NETSTANDARD2_0;
         }
 
-        else if (framework == TargetFramework.NET461 ||
-                 framework == TargetFramework.NET462)
+        else if (framework.ToString().StartsWith("net4"))
         {
             tracerFramework = TargetFramework.NET461;
         }
