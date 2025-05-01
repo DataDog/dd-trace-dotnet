@@ -425,7 +425,7 @@ On Windows, we _don't_ typically run multi-api-version tests. There is experimen
 # Build and run the integration tests, building only
 # your sample, and running only your new tests
 # You can choose whichever framework is appropriate
-./tracer/build.ps1 BuildAndRunWindowsIntegrationTests -buildConfiguration Debug -framework net462 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
+./tracer/build.ps1 BuildAndRunWindowsIntegrationTests -buildConfiguration Debug -framework net48 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
 ```
 
 ##### On macOs
