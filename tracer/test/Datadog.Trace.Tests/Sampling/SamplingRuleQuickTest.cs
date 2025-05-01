@@ -39,10 +39,10 @@ namespace Datadog.Trace.Tests.Sampling
 
             var span = new Span(new SpanContext(1, 1, serviceName: "daybreak-worker"), DateTimeOffset.Now) { ResourceName = resource };
 
-            // assert that the expected sampling rule is matched (by index)
+            // assert that we match the expected sampling rule
             samplingRules[expectedRuleMatchIndex].IsMatch(span).Should().BeTrue();
 
-            _ = sampler.MakeSamplingDecision(span);
+            _ = sampler.MakeSamplingDecision(span); // this adds a "_dd.rule_psr" metric with the applied sampling rate
             var appliedSamplingRate = span.GetMetric(Metrics.SamplingRuleDecision);
 
             // can't check for exact equality because of floating point precision.
