@@ -134,14 +134,19 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 # Serverless (AWS)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/                     @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsServerlessTests.cs    @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/                       @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/test/test-applications/integrations/Samples.AWS.*/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 /tracer/test/test-applications/integrations/Samples.Amazon.Lambda.RuntimeSupport/  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 docker-compose.serverless.yml                                                      @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/build/_build/docker/serverless.lambda.dockerfile                           @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/.gitlab/download-serverless-artifacts.sh                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/docs/development/Serverless.md                                                    @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
 
 # Serverless (Azure/GCP)
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/ServerlessMiniAgent.cs   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
+/tracer/test/Datadog.Trace.Tests/ServerlessMiniAgentTests.cs                             @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 /tracer/test/test-applications/azure-functions/                                          @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-gcp
 
 # Shared code we could move to the root folder
