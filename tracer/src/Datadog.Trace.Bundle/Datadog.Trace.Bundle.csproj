@@ -19,15 +19,8 @@
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
 
-    <Content Update="home\**\readme.txt" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-
-    <Content Update="home\**\*.xml" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
+    <Content Remove="home\**\readme.txt" />
+    <Content Remove="home\**\*.xml" />
 
     <ProjectReference Include="..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
   </ItemGroup>
