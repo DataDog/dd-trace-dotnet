@@ -117,19 +117,20 @@ const shared::WSTRING managed_profiler_full_assembly_version =
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
 const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual");
 
-const shared::WSTRING nonwindows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
-const shared::WSTRING windows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
+#ifdef _WIN32
+const shared::WSTRING nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
+const shared::WSTRING appsec_nativemethods_type = WStr("");
+const shared::WSTRING debugger_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+Windows");
+const shared::WSTRING fault_tolerant_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+Windows");
+#else
+const shared::WSTRING nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
+const shared::WSTRING appsec_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
+const shared::WSTRING debugger_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+NonWindows");
+const shared::WSTRING fault_tolerant_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+NonWindows");
+#endif
 
-const shared::WSTRING appsec_nonwindows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
-const shared::WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+Windows");
 const shared::WSTRING profiler_nativemethods_type = WStr("Datadog.Trace.ContinuousProfiler.NativeInterop+NativeMethods");
 const shared::WSTRING native_loader_nativemethods_type = WStr("Datadog.Trace.NativeLoader+NativeMethods");
-
-const shared::WSTRING debugger_nonwindows_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+NonWindows");
-const shared::WSTRING debugger_windows_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+Windows");
-
-const shared::WSTRING fault_tolerant_nonwindows_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+NonWindows");
-const shared::WSTRING fault_tolerant_windows_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+Windows");
 
 const shared::WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
