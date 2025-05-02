@@ -53,7 +53,7 @@ update-bp-infra:
     - export AWS_PROFILE=ephemeral-infra-ci
     - export BP_INFRA_KEY_PAIR_NAME=$(cat ~/.aws/key-pair-name.txt)
     - export BP_INFRA_KEY_PAIR_PRIVATE_KEY_PATH=~/.aws/key-pair-private-key.pem
-    - infra launch --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ami.yaml --region "${AWS_REGION}" --bypass-stack-destroy
+    - infra launch --no-cleanup --provision ./platform/ephemeral-infra/provisions/macrobenchmark-ami.yaml --region "${AWS_REGION}" --bypass-stack-destroy
   # after_script:
   #   - !reference [.setup, script]
   #   - |
