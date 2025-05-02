@@ -14,6 +14,9 @@
   <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace.Bundle\README.md" Pack="true" PackagePath="\" />
 
+    <Content Include="Datadog.Trace.Bundle.props" Pack="true" PackagePath="buildTransitive\Datadog.Trace.Bundle.props" />
+    <Content Include="Datadog.Trace.Bundle.targets" Pack="true" PackagePath="buildTransitive\Datadog.Trace.Bundle.targets" />
+
     <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <PackageCopyToOutput>true</PackageCopyToOutput>
