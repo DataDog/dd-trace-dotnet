@@ -19,6 +19,7 @@
 #include "module_metadata.h"
 #include "resource.h"
 #include "stats.h"
+#include "configuration.h"
 #include "Generated/generated_definitions.h"
 
 #include "../../../shared/src/native-src/pal.h"
@@ -44,7 +45,8 @@ namespace trace
 HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown)
 {
     auto _ = trace::Stats::Instance()->InitializeMeasure();
-
+    datadog::shared::Configuration configuration;
+    std::string res = configuration.GetValue("DD_TRACE_DEBUG");
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {

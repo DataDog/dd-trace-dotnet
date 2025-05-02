@@ -388,3 +388,4 @@ datadog-coverage-*
 
 # nuke
 .nuke/build.schema.json
+/vcpkg_installed/*
