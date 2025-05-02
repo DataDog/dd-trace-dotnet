@@ -61,7 +61,7 @@ run-benchmarks:
   after_script:
     - !reference [.setup, script]
     - |
-      infra cleanup --provision ./platform/ephemeral-infra/ephemeral-instance-main.yaml \
+      infra cleanup --provision ./platform/ephemeral-infra/ephemeral-instance-test.yaml \
         --region "${AWS_REGION}" \
         --bypass-stack-destroy
     - ./platform/steps/post-pr-comment.sh
