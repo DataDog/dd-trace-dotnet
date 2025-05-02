@@ -1,0 +1,77 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Target Name="RemoveDatadogNuGetFiles" AfterTargets="Publish" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
+    <PropertyGroup>
+      <!-- Root where Datadog bundle files are published -->
+      <BundleRoot>$(PublishDir)datadog\</BundleRoot>
+
+      <!-- Helper properties -->
+      <IsNetFramework>$(TargetFramework.StartsWith('net4'))</IsNetFramework>
+
+      <!-- Map TargetFramework to required folder -->
+      <EffectiveTargetFramework Condition="$(IsNetFramework)">net461</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.0'">netstandard2.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.1'">netstandard2.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.0'">netstandard2.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.1'">netcoreapp3.1</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net5.0'">netcoreapp3.1</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net6.0'">net6.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net7.0'">net6.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net8.0'">net6.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net9.0'">net6.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net10.0'">net6.0</EffectiveTargetFramework>
+    </PropertyGroup>
+
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] TargetFramework: $(TargetFramework) => $(EffectiveTargetFramework)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: $(RuntimeIdentifier), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' != ''" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: (not set), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' == ''" />
+
+    <ItemGroup>
+      <AllLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)'))" />
+
+      <AllManagedLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'net*'))" />
+
+      <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'win-*'))" />
+      <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'linux-*'))" />
+      <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'osx*'))" />
+
+      <!-- if .NET Framework
+             if Platform == x64, keep "win-x64"
+             if Platform == x86, keep "win-x86"
+             else keep "win-*" as fallback
+       -->
+      <KeepNativeLibDirs Include="$(BundleRoot)win-x64"
+                         Condition="$(IsNetFramework) AND '$(Platform)' == 'x64'" />
+      <KeepNativeLibDirs Include="$(BundleRoot)win-x86"
+                         Condition="$(IsNetFramework) AND '$(Platform)' == 'x86'" />
+      <KeepNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'win-*'))"
+                         Condition="$(IsNetFramework) AND '$(Platform)' != 'x64' AND'$(Platform)' != 'x86'"/>
+
+      <!-- if .NET Core
+             if $(RuntimeIdentifier) is set, keep directory "$(RuntimeIdentifier)"
+             else keep "win-*;linux-*;osx-*" as fallback -->
+      <KeepNativeLibDirs Include="$(BundleRoot)$(RuntimeIdentifier)"
+                         Condition="!$(IsNetFramework) AND '$(RuntimeIdentifier)' != ''"/>
+      <KeepNativeLibDirs Include="@(AllNativeLibDirs)"
+                         Condition="!$(IsNetFramework) AND '$(RuntimeIdentifier)' == ''"/>
+
+      <!-- if $(EffectiveTargetFramework) is set, keep directory "$(EffectiveTargetFramework)"
+           else keep "net*" as fallback -->
+      <KeepManagedLibDirs Include="$(BundleRoot)$(EffectiveTargetFramework)"
+                          Condition="'$(EffectiveTargetFramework)' != ''"/>
+      <KeepManagedLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'net*'))"
+                          Condition="'$(EffectiveTargetFramework)' == ''"/>
+
+      <DirectoriesToKeep Include="@(KeepManagedLibDirs);@(KeepNativeLibDirs)" />
+      <DirectoriesToKeepNames Include="@(DirectoriesToKeep->'$([System.IO.Path]::GetFileName('%(DirectoriesToKeep.FullPath)'))')" />
+
+      <DirectoriesToRemove Include="@(AllLibDirs)"
+                           Exclude="@(DirectoriesToKeep)" />
+      <DirectoriesToRemoveNames Include="@(DirectoriesToRemove->'$([System.IO.Path]::GetFileName('%(DirectoriesToRemove.FullPath)'))')" />
+    </ItemGroup>
+
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] Keeping directories:  @(DirectoriesToKeepNames)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] Removing directories: @(DirectoriesToRemoveNames)" />
+    <RemoveDir Directories="@(DirectoriesToRemove)" Condition="Exists('%(Identity)')" />
+  </Target>
+</Project>
