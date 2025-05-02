@@ -239,6 +239,7 @@ namespace Datadog.Trace.Debugger
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                     break;
                                 case LiveProbeResolveStatus.Error:
+                                    Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", probe.Id, message);
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
                                     break;
                             }
@@ -295,7 +296,7 @@ namespace Datadog.Trace.Debugger
                 case LogProbe logProbe:
                     ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
                     break;
-                case SpanDecorationProbe or MetricProbe:
+                case SpanDecorationProbe or MetricProbe or SpanProbe:
                     ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
                     break;
             }
