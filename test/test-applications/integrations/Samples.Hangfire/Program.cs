@@ -33,8 +33,9 @@ namespace Samples.Hangfire
 
             // Create a span for enqueuing the job
 
-            BackgroundJob.Enqueue(() => ExecuteTracedJob());
-            BackgroundJob.Schedule(() => ExecuteTracedJob(), TimeSpan.FromSeconds(10));
+            // BackgroundJob.Schedule(() => ExecuteTracedJob("scheduled-job"), TimeSpan.FromSeconds(10));
+            // BackgroundJob.Enqueue(() => ExecuteTracedJob("enqueued-job"));
+            RecurringJob.AddOrUpdate("SomeJobId",() => ExecuteTracedJob("recurring-job"), "*/5 * * * * ? ");
             using (var server = new BackgroundJobServer())
             {
                 Console.ReadLine();
@@ -42,10 +43,10 @@ namespace Samples.Hangfire
 
         }
 
-        public static void ExecuteTracedJob()
+        public static void ExecuteTracedJob(string additionText)
         {
             using var activity = ActivitySource.StartActivity("ExecuteTracedJob.Function");
-            Console.WriteLine("Hello from the Hangfire job!");
+            Console.WriteLine("Hello from the Hangfire job! " +  additionText);
             System.Threading.Thread.Sleep(1000); // Simulate work
         }
     }
