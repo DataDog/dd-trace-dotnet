@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -131,13 +132,13 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDropsOne()
         {
-            var api = new Mock<IApi>();
+            var api = new StubApi();
             var statsAggregator = new Mock<IStatsAggregator>();
             statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
             statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "operation");
-            var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
+            var agent = new AgentWriter(api, statsAggregator.Object, statsd: null, automaticFlush: false);
             var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -174,8 +175,15 @@ namespace Datadog.Trace.Tests.Agent
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 2;
-            // expecting a single trace, but there should have been two spans
-            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans), It.IsAny<bool>()), Times.Once);
+
+            api.Invocations.Should()
+               .HaveCount(1)
+               .And
+               .ContainSingle(x => x.NumberOfDroppedP0Spans == expectedDroppedP0Spans
+                                && x.ApmTracingEnabled == true
+                                && x.NumberOfTraces == 1
+                                && x.NumberOfDroppedP0Traces == expectedDroppedP0Traces
+                                && Equals(x.Traces, expectedChunk.Array));
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -558,6 +566,22 @@ namespace Datadog.Trace.Tests.Agent
             };
 
             return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
+        }
+
+        private class StubApi : IApi
+        {
+            public ConcurrentStack<(ArraySegment<byte> Traces, int NumberOfTraces, bool StatsComputationEnabled, long NumberOfDroppedP0Traces, long NumberOfDroppedP0Spans, bool ApmTracingEnabled)> Invocations { get; } = new();
+
+            public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
+            {
+                Invocations.Push((traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, apmTracingEnabled));
+                return Task.FromResult(true);
+            }
+
+            public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+            {
+                return Task.FromResult(true);
+            }
         }
     }
 }
