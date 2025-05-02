@@ -13,16 +13,12 @@
 
   <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace.Bundle\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
-  <ItemGroup>
     <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-  </ItemGroup>
 
-  <ItemGroup>
     <Content Update="home\**\readme.txt" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
@@ -32,9 +28,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
-  </ItemGroup>
 
-  <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
   </ItemGroup>
 
