@@ -17,10 +17,16 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string IsAppSecChanged = "isAppSecChanged";
+    private const string IsDebuggerChanged = "isDebuggerChanged";
+    private const string IsProfilerChanged = "isProfilerChanged";
+    private const string IsTracerChanged = "isTracerChanged";
 
     Target GenerateVariables
         => _ =>
         {
+            Dictionary<string, bool> IsChangedVariables = new();
+
             return _
                   .Unlisted()
                   .Executes(() =>
@@ -37,7 +43,7 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                GenerateConditionVariableBasedOnGitChange("isAppSecChanged",
+                GenerateConditionVariableBasedOnGitChange(IsAppSecChanged,
                 new[] {
                     "tracer/src/Datadog.Trace/Iast",
                     "tracer/src/Datadog.Tracer.Native/iast",
@@ -48,8 +54,8 @@ partial class Build : NukeBuild
                     "tracer/test/Datadog.Trace.Security.Unit.Tests",
                     "tracer/test/test-applications/security",
                 }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
-                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
+                GenerateConditionVariableBasedOnGitChange(IsTracerChanged, new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
+                GenerateConditionVariableBasedOnGitChange(IsDebuggerChanged, new[]
                 {
                     "tracer/src/Datadog.Trace/Debugger",
                     "tracer/src/Datadog.Tracer.Native",
@@ -58,7 +64,7 @@ partial class Build : NukeBuild
                     "tracer/build/_build/Build.Steps.Debugger.cs",
                     "tracer/build/_build/Build.ExplorationTests.cs",
                 }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
+                GenerateConditionVariableBasedOnGitChange(IsProfilerChanged, new[]
                 {
                     "profiler/",
                     "shared/",
@@ -101,6 +107,7 @@ partial class Build : NukeBuild
                     var variableValue = isChanged.ToString();
                     EnvironmentInfo.SetVariable(variableName, variableValue);
                     AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                    IsChangedVariables[variableName] = isChanged;
                 }
             }
 
@@ -158,7 +165,10 @@ partial class Build : NukeBuild
                     {
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                            }
                         }
                     }
                 }
@@ -166,6 +176,17 @@ partial class Build : NukeBuild
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetOutputVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
+
+            bool ShouldBeIncluded(string area)
+            {
+                if (area == AsmArea)
+                {
+                    return IsChangedVariables[IsAppSecChanged];
+                }
+
+                return true;
+            }
+
             void GenerateIntegrationTestsDebuggerWindowsMatrix()
             {
                 var targetFrameworks = TestingFrameworksDebugger;
@@ -239,7 +260,10 @@ partial class Build : NukeBuild
                         var enable32bit = targetPlatform == "x86";
                         foreach (var area in areas)
                         {
-                            matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit, area = area });
+                            }
                         }
                     }
                 }
@@ -302,7 +326,10 @@ partial class Build : NukeBuild
                             var areas = new[] { TracerArea, AsmArea };
                             foreach (var area in areas)
                             {
-                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                if (ShouldBeIncluded(area))
+                                {
+                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                }
                             }
                         }
                     }
@@ -329,7 +356,14 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        if (ShouldBeIncluded(AsmArea))
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                        }
+                        else
+                        {
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea});
+                        }
                     }
                 }
 
