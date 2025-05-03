@@ -12,6 +12,7 @@ const std::string Sample::LocalRootSpanIdLabel = "local root span id";
 const std::string Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
+const std::string Sample::ExceptionUnhandledLabel = "exception unhandled";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
 // garbage collection related labels

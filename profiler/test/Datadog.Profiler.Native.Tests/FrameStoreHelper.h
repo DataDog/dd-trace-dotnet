@@ -15,6 +15,7 @@ public:
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
     bool GetTypeName(ClassID classId, std::string_view& name) override;
+    FrameInfoView GetManagedFrame(FunctionID functionId) override;
 
 private:
     struct FrameInfo
@@ -31,6 +32,4 @@ private:
         }
     };
     std::unordered_map<uintptr_t, std::pair<bool, FrameInfo>> _mapping;
-
-    // Inherited via IFrameStore
 };

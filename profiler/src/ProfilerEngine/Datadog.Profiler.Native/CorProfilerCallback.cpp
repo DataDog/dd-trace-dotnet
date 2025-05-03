@@ -66,6 +66,9 @@
 
 #include "dd_profiler_version.h"
 
+// used for debugging unhandled exceptions processing in CLR
+#define CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS false
+
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
@@ -1966,6 +1969,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionThrown");
+    }
+
     if (false == _isInitialized.load())
     {
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
@@ -1974,7 +1982,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
-        _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
+        _pExceptionsProvider->OnExceptionThrown(thrownObjectId, { "", "", "", 0 });
     }
 
     return S_OK;
@@ -2002,6 +2010,20 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchFilterLeave()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionSearchCatcherFound(FunctionID functionId)
 {
+    Log::Debug("ExceptionSearchCatcherFound");
+
+    if (false == _isInitialized.load())
+    {
+        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    // A catch block was found for the exception
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo != nullptr)
+    {
+        threadInfo->ClearException();
+    }
     return S_OK;
 }
 
@@ -2017,11 +2039,49 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionOSHandlerLeave(UINT_PTR 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionEnter(FunctionID functionId)
 {
+    if (false == _isInitialized.load())
+    {
+        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
+        return S_OK;
+    }
+
+    auto result = _pFrameStore->GetManagedFrame(functionId);
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionUnwindFunctionEnter in ", result.Frame);
+    }
+
+    // Starting to unwind the stack after the exception has be handled... or not
+    // If the exception is not handled, ExceptionSearchCatcherFound won't be called
+    // before ExceptionUnwindFunctionEnter
+    ThreadID currentThreadId = 0;
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo != nullptr)
+    {
+        // TODO: it should be possible to "stack" all frames as this method is called for each frame from the top to the bottom of the stack.
+        //       we would need to wait until Shutdown is called to iterate on the managed thread list and find a thread
+        //       with an exception before creating the Exception sample.
+
+        // instead, immediately create a fake Exception sample right now from the method that threw the exception
+        if (threadInfo->HasException())
+        {
+            if (_pExceptionsProvider != nullptr)
+            {
+                _pExceptionsProvider->OnExceptionThrown(0, result);
+            }
+        }
+    }
+
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFunctionLeave()
 {
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionUnwindFunctionLeave");
+    }
+
     return S_OK;
 }
 
@@ -2037,11 +2097,21 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionUnwindFinallyLeave()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId)
 {
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionCatcherEnter");
+    }
+
     return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCatcherLeave()
 {
+    if (CLR_PROFILER_LOG_UNHANDLED_EXCEPTIONS)
+    {
+        Log::Debug("ExceptionCatcherLeave");
+    }
+
     return S_OK;
 }
 
