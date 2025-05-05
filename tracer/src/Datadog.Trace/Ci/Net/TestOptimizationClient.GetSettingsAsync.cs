@@ -43,7 +43,8 @@ internal sealed partial class TestOptimizationClient
                 knownTestsEnabled: false,
                 testManagement: new TestManagementSettingsResponse(
                     enabled: false,
-                    attemptToFixRetries: 0));
+                    attemptToFixRetries: 0),
+                defaultBranch: null);
         }
 
         return new SettingsResponse(
@@ -59,7 +60,8 @@ internal sealed partial class TestOptimizationClient
             knownTestsEnabled: settings.KnownTestsEnabled,
             testManagement: new TestManagementSettingsResponse(
                 enabled: settings.TestManagementEnabled,
-                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount));
+                attemptToFixRetries: settings.TestManagementAttemptToFixRetryCount),
+            defaultBranch: settings.DefaultBranch);
     }
 
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
@@ -195,11 +197,14 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("test_management")]
         public readonly TestManagementSettingsResponse TestManagement;
 
+        [JsonProperty("default_branch")]
+        public readonly string? DefaultBranch;
+
         public SettingsResponse()
         {
         }
 
-        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement)
+        public SettingsResponse(bool? codeCoverage, bool? testsSkipping, bool? requireGit, bool? impactedTestsEnabled, bool? flakyTestRetries, EarlyFlakeDetectionSettingsResponse earlyFlakeDetection, bool? knownTestsEnabled, TestManagementSettingsResponse testManagement, string? defaultBranch)
         {
             CodeCoverage = codeCoverage;
             TestsSkipping = testsSkipping;
@@ -209,6 +214,7 @@ internal sealed partial class TestOptimizationClient
             EarlyFlakeDetection = earlyFlakeDetection;
             KnownTestsEnabled = knownTestsEnabled;
             TestManagement = testManagement;
+            DefaultBranch = defaultBranch;
         }
     }
 

@@ -45,8 +45,9 @@ internal class ImpactedTestsModule
     /// Creates an instance of the <see cref="ImpactedTestsModule"/> class.
     /// </summary>
     /// <param name="environmentValues">CI environment values</param>
+    /// <param name="defaultBranch">Repository default branch</param>
     /// <returns>ImpactedTestModule instance</returns>
-    public static ImpactedTestsModule CreateInstance(CIEnvironmentValues environmentValues)
+    public static ImpactedTestsModule CreateInstance(CIEnvironmentValues environmentValues, string? defaultBranch)
     {
         // Get the current commit SHA
         var currentCommitSha = environmentValues.HeadCommit ?? environmentValues.Commit ?? string.Empty;
@@ -78,7 +79,7 @@ internal class ImpactedTestsModule
             // Milestone 1 : Retrieve diff files from Backend
 
             // set the new base commit SHA
-            baseCommitSha = CalculateBaseCommit(workspacePath);
+            baseCommitSha = CalculateBaseCommit(workspacePath, defaultBranch);
 
             // First, we try to use the calculated base commit SHA for the diff
             if (!string.IsNullOrEmpty(baseCommitSha))
@@ -205,9 +206,9 @@ internal class ImpactedTestsModule
     /// Attempts to calculate the base PR commit.
     /// </summary>
     /// <returns>Calculated commit</returns>
-    private static string CalculateBaseCommit(string workingDirectory)
+    private static string CalculateBaseCommit(string workingDirectory, string? defaultBranch)
     {
-        var baseBranchInfo = GitCommandHelper.DetectBaseBranch(workingDirectory);
+        var baseBranchInfo = GitCommandHelper.DetectBaseBranch(workingDirectory, defaultBranch: defaultBranch);
         return baseBranchInfo is not null
                    ? baseBranchInfo.MergeBaseSha
                    : string.Empty;

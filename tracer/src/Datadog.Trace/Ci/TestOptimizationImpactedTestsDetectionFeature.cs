@@ -15,11 +15,13 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationImpactedTestsDetectionFeature));
     private readonly CIEnvironmentValues _environmentValues;
+    private readonly string? _defaultBranch;
     private ImpactedTestsModule? _impactedTestsModule;
 
     private TestOptimizationImpactedTestsDetectionFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, CIEnvironmentValues environmentValues)
     {
         _environmentValues = environmentValues;
+        _defaultBranch = settings.DefaultBranch;
         if (settings.ImpactedTestsDetectionEnabled == null && clientSettingsResponse.ImpactedTestsEnabled.HasValue)
         {
             Log.Information("TestOptimizationImpactedTestsDetectionFeature: Impacted tests detection has been changed to {Value} by the settings api.", clientSettingsResponse.ImpactedTestsEnabled.Value);
@@ -50,7 +52,7 @@ internal class TestOptimizationImpactedTestsDetectionFeature : ITestOptimization
                 return _impactedTestsModule;
             }
 
-            return _impactedTestsModule = ImpactedTestsModule.CreateInstance(_environmentValues);
+            return _impactedTestsModule = ImpactedTestsModule.CreateInstance(_environmentValues, _defaultBranch);
         }
     }
 
