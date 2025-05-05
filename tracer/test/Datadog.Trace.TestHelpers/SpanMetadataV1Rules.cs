@@ -871,25 +871,21 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsProtobufV1(this MockSpan span) => Result.FromSpan(span)
             .Tags(s => s
-                .Matches(Tags.SchemaType, "protobuf")
-                .IsPresent(Tags.SchemaName)
-                .IsPresent(Tags.SchemaOperation)
-                .IsPresent(Tags.SchemaId)
-                .IsPresent(Tags.SchemaDefinition)
-                .IsPresent(Tags.SchemaWeight));
+                .Matches("schema.type", "protobuf")
+                .IsPresent("schema.name")
+                .IsPresent("schema.operation")
+                .IsPresent("schema.id")
+                .IsPresent("schema.definition")
+                .IsPresent("schema.weight"));
 
-        public static Result IsAvroV1(this MockSpan span)
-        {
-            return Result.FromSpan(span)
-                .Tags(
-                    s => s
-                        .Matches(Tags.SchemaType, "avro")
-                        .IsPresent(Tags.SchemaName)
-                        .IsPresent(Tags.SchemaOperation)
-                        .IsPresent(Tags.SchemaId)
-                        .IsPresent(Tags.SchemaDefinition)
-                        .IsPresent(Tags.SchemaWeight));
-        }
+        public static Result IsAvroV1(this MockSpan span) => Result.FromSpan(span)
+            .Tags(s => s
+                .Matches("schema.type", "avro")
+                .IsPresent("schema.name")
+                .IsPresent("schema.operation")
+                .IsPresent("schema.id")
+                .IsPresent("schema.definition")
+                .IsPresent("schema.weight"));
 
         public static Result IsRabbitMQAdminV1(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Rabbit - Admin")
