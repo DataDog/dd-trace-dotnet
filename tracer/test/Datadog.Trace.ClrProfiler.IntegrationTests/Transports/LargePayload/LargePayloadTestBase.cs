@@ -30,8 +30,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int ExpectedSpans => TracesToTrigger + (TracesToTrigger * SpansPerTrace);
 
-        protected async Task RunTest()
+        protected async Task RunTest(TestTransports transport, bool dataPipelineEnabled)
         {
+            if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
+            {
+                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+            }
+
+            EnvironmentHelper.EnableTransport(transport);
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
                 using (var sample = await RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
