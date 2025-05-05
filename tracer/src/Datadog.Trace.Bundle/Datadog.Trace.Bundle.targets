@@ -5,10 +5,10 @@
       <BundleRoot>$(PublishDir)datadog\</BundleRoot>
 
       <!-- Helper properties -->
-      <IsNetFramework>$(TargetFramework.StartsWith('net4'))</IsNetFramework>
+      <IsDotNetFramework>$(TargetFramework.StartsWith('net4'))</IsDotNetFramework>
 
-      <!-- TargetFrameworks that use directory net461/ -->
-      <EffectiveTargetFramework Condition="$(IsNetFramework)">net461</EffectiveTargetFramework>
+      <!-- TargetFrameworks that use directory net461/ (net461, net462, net47, net471, net472, net48, net481) -->
+      <EffectiveTargetFramework Condition="$(IsDotNetFramework)">net461</EffectiveTargetFramework>
 
       <!-- TargetFrameworks that use directory netstandard2.0/ -->
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</EffectiveTargetFramework>
@@ -49,19 +49,19 @@
              else keep "win-*" as fallback
        -->
       <KeepNativeLibDirs Include="$(BundleRoot)win-x64"
-                         Condition="$(IsNetFramework) AND '$(Platform)' == 'x64'" />
+                         Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x64'" />
       <KeepNativeLibDirs Include="$(BundleRoot)win-x86"
-                         Condition="$(IsNetFramework) AND '$(Platform)' == 'x86'" />
+                         Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x86'" />
       <KeepNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'win-*'))"
-                         Condition="$(IsNetFramework) AND '$(Platform)' != 'x64' AND'$(Platform)' != 'x86'"/>
+                         Condition="$(IsDotNetFramework) AND '$(Platform)' != 'x64' AND'$(Platform)' != 'x86'"/>
 
       <!-- if .NET Core
              if $(RuntimeIdentifier) is set, keep directory "$(RuntimeIdentifier)"
              else keep "win-*;linux-*;osx-*" as fallback -->
       <KeepNativeLibDirs Include="$(BundleRoot)$(RuntimeIdentifier)"
-                         Condition="!$(IsNetFramework) AND '$(RuntimeIdentifier)' != ''"/>
+                         Condition="!$(IsDotNetFramework) AND '$(RuntimeIdentifier)' != ''"/>
       <KeepNativeLibDirs Include="@(AllNativeLibDirs)"
-                         Condition="!$(IsNetFramework) AND '$(RuntimeIdentifier)' == ''"/>
+                         Condition="!$(IsDotNetFramework) AND '$(RuntimeIdentifier)' == ''"/>
 
       <!-- if $(EffectiveTargetFramework) is set, keep directory "$(EffectiveTargetFramework)"
            else keep "net*" as fallback -->
