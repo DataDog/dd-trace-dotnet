@@ -67,8 +67,8 @@
            else keep "net*" as fallback -->
       <KeepManagedLibDirs Include="$(BundleRoot)$(EffectiveTargetFramework)"
                           Condition="'$(EffectiveTargetFramework)' != ''"/>
-      <KeepManagedLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'net*'))"
-                          Condition="'$(EffectiveTargetFramework)' == ''"/>
+      <KeepManagedLibDirs Include="@(AllManagedLibDirs)"
+                          Condition="'$(EffectiveTargetFramework)' == ''" />
 
       <DirectoriesToKeep Include="@(KeepManagedLibDirs);@(KeepNativeLibDirs)" />
       <DirectoriesToKeepNames Include="@(DirectoriesToKeep->'$([System.IO.Path]::GetFileName('%(DirectoriesToKeep.FullPath)'))')" />
