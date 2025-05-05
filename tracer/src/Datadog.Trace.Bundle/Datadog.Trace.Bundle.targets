@@ -30,7 +30,8 @@
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net10.0'">net6.0</EffectiveTargetFramework>
     </PropertyGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] TargetFramework: $(TargetFramework) => $(EffectiveTargetFramework)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] BundleRoot: $(BundleRoot) during RemoveDatadogNuGetFiles" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] TargetFramework: $(TargetFramework) => $(EffectiveTargetFramework), IsDotNetFramework: $(IsDotNetFramework)" />
     <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: $(RuntimeIdentifier), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' != ''" />
     <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: (not set), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' == ''" />
 
