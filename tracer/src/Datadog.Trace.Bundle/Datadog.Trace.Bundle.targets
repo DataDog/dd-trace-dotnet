@@ -35,8 +35,6 @@
     <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: (not set), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' == ''" />
 
     <ItemGroup>
-      <AllLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)'))" />
-
       <AllManagedLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'net*'))" />
 
       <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'win-*'))" />
@@ -73,7 +71,7 @@
       <DirectoriesToKeep Include="@(KeepManagedLibDirs);@(KeepNativeLibDirs)" />
       <DirectoriesToKeepNames Include="@(DirectoriesToKeep->'$([System.IO.Path]::GetFileName('%(DirectoriesToKeep.FullPath)'))')" />
 
-      <DirectoriesToRemove Include="@(AllLibDirs)"
+      <DirectoriesToRemove Include="@(AllManagedLibDirs);@(AllNativeLibDirs)"
                            Exclude="@(DirectoriesToKeep)" />
       <DirectoriesToRemoveNames Include="@(DirectoriesToRemove->'$([System.IO.Path]::GetFileName('%(DirectoriesToRemove.FullPath)'))')" />
     </ItemGroup>
