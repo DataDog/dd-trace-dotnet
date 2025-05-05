@@ -46,7 +46,7 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
-    UpscalingInfo GetInfo() override;
+    std::list<UpscalingInfo> GetInfos() override;
 
 private:
     struct ExceptionBucket

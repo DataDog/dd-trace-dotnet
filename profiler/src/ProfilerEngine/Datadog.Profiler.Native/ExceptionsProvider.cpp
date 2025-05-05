@@ -206,9 +206,9 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-UpscalingInfo ExceptionsProvider::GetInfo()
+std::list<UpscalingInfo> ExceptionsProvider::GetInfos()
 {
-    return {GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
+    return {{GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()}};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

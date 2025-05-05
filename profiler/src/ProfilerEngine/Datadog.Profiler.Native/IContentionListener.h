@@ -14,4 +14,6 @@ public:
     virtual void OnContention(std::chrono::nanoseconds contentionDuration) = 0;
     virtual void OnContention(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, const std::vector<uintptr_t>& stack) = 0;
     virtual void SetBlockingThread(uint64_t osThreadId) = 0;
+    virtual void OnWaitStart(std::chrono::nanoseconds timestamp, uintptr_t associatedObjectId) = 0;
+    virtual void OnWaitStop(std::chrono::nanoseconds timestamp) = 0;
 };
