@@ -10,8 +10,10 @@
       <!-- Map TargetFramework to required folder -->
       <EffectiveTargetFramework Condition="$(IsNetFramework)">net461</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.1'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.0'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.1'">netstandard2.0</EffectiveTargetFramework>
+      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.2'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.0'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.1'">netcoreapp3.1</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net5.0'">netcoreapp3.1</EffectiveTargetFramework>
