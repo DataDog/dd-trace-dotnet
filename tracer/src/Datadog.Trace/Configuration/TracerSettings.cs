@@ -415,7 +415,7 @@ namespace Datadog.Trace.Configuration
 
             DataPipelineEnabled = config
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: true);
+                                  .AsBool(defaultValue: false);
 
             // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
             // as it may lead to different stats results than the managed one.

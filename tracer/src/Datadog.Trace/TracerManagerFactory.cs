@@ -363,19 +363,26 @@ namespace Datadog.Trace
         {
             if (settings.DataPipelineEnabled)
             {
-                var configuration = new TraceExporterConfiguration
+                try
                 {
-                    Url = GetUrl(settings),
-                    TraceVersion = TracerConstants.AssemblyVersion,
-                    Env = settings.Environment,
-                    Version = settings.ServiceVersion,
-                    Service = settings.ServiceName,
-                    Hostname = HostMetadata.Instance.Hostname,
-                    Language = ".NET",
-                    LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                    LanguageInterpreter = FrameworkDescription.Instance.Name
-                };
-                return new TraceExporter(configuration);
+                    var configuration = new TraceExporterConfiguration
+                    {
+                        Url = GetUrl(settings),
+                        TraceVersion = TracerConstants.AssemblyVersion,
+                        Env = settings.Environment,
+                        Version = settings.ServiceVersion,
+                        Service = settings.ServiceName,
+                        Hostname = HostMetadata.Instance.Hostname,
+                        Language = ".NET",
+                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
+                        LanguageInterpreter = FrameworkDescription.Instance.Name
+                    };
+                    return new TraceExporter(configuration);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to create native Trace Exporter, falling back to managed API");
+                }
             }
 
             return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
