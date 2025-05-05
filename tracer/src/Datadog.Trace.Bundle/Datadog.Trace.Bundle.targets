@@ -44,8 +44,8 @@
       <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'osx*'))" />
 
       <!-- if .NET Framework
-             if Platform == x64, keep "win-x64"
-             if Platform == x86, keep "win-x86"
+             if Platform == "x64", keep directory "win-x64"
+             if Platform == "x86", keep directory "win-x86"
              else keep "win-*" as fallback
        -->
       <KeepNativeLibDirs Include="$(BundleRoot)win-x64"
