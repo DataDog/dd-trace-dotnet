@@ -7,16 +7,22 @@
       <!-- Helper properties -->
       <IsNetFramework>$(TargetFramework.StartsWith('net4'))</IsNetFramework>
 
-      <!-- Map TargetFramework to required folder -->
+      <!-- TargetFrameworks that use directory net461/ -->
       <EffectiveTargetFramework Condition="$(IsNetFramework)">net461</EffectiveTargetFramework>
+
+      <!-- TargetFrameworks that use directory netstandard2.0/ -->
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.1'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.0'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.1'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.2'">netstandard2.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.0'">netstandard2.0</EffectiveTargetFramework>
+
+      <!-- TargetFrameworks that use directory netcoreapp3.1/ -->
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.1'">netcoreapp3.1</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net5.0'">netcoreapp3.1</EffectiveTargetFramework>
+
+      <!-- TargetFrameworks that use directory net6.0/ -->
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net6.0'">net6.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net7.0'">net6.0</EffectiveTargetFramework>
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net8.0'">net6.0</EffectiveTargetFramework>
