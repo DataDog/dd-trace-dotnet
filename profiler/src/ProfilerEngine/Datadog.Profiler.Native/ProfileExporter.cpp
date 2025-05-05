@@ -409,7 +409,10 @@ std::vector<UpscalingInfo> ProfileExporter::GetUpscalingInfos()
 
     for (auto& provider : _upscaledProviders)
     {
-        samplingInfos.push_back(provider->GetInfo());
+        for (auto& upscalingInfo : provider->GetInfos())
+        {
+            samplingInfos.push_back(upscalingInfo);
+        }
     }
 
     return samplingInfos;
