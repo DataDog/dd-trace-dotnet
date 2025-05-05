@@ -583,6 +583,8 @@ internal class TestOptimization : ITestOptimization
                 SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
 
+                settings.SetDefaultBranch(remoteSettings.DefaultBranch);
+
                 if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
                 {
                     Log.Information("TestOptimization: Code Coverage has been changed to {Value} by settings api.", remoteSettings.CodeCoverage.Value);
