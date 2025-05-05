@@ -363,6 +363,7 @@ namespace Datadog.Trace
         {
             if (settings.DataPipelineEnabled)
             {
+                var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                 var configuration = new TraceExporterConfiguration
                 {
                     Url = GetUrl(settings),
@@ -374,19 +375,14 @@ namespace Datadog.Trace
                     Language = ".NET",
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                     LanguageInterpreter = FrameworkDescription.Instance.Name,
-                };
-
-                var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
-                if (telemetrySettings.TelemetryEnabled)
-                {
-                    configuration.TelemetryClientConfiguration = new TelemetryClientConfiguration
+                    TelemetryClientConfiguration = telemetrySettings.TelemetryEnabled ? new TelemetryClientConfiguration
                     {
                         Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
                         RuntimeId = new CharSlice(Tracer.RuntimeId),
-                        // TODO: enable after libdatadog release
-                        // DebugEnabled = telemetrySettings.DebugEnabled
-                    };
-                }
+                        DebugEnabled = telemetrySettings.DebugEnabled
+                    }
+                                                       : null
+                };
 
                 return new TraceExporter(configuration);
             }
