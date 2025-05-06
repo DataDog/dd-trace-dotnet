@@ -2,7 +2,7 @@
   <Target Name="DatadogAfterComputeResolvedFilesToPublishList" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
     <PropertyGroup>
       <!-- Helper properties -->
-      <IsDotNetFramework>$(TargetFrameworkIdentifier)' == '.NETFramework'</IsDotNetFramework>
+      <IsDotNetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">true</IsDotNetFramework>
 
       <!-- TargetFrameworks that use directory net461/ (net461, net462, net47, net471, net472, net48, net481) -->
       <EffectiveTargetFramework Condition="$(IsDotNetFramework)">net461</EffectiveTargetFramework>
