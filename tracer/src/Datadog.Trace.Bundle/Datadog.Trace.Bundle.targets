@@ -1,8 +1,9 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="DatadogAfterComputeResolvedFilesToPublishList" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
     <PropertyGroup>
-      <!-- Helper properties -->
+      <!-- Is .NET Framework? -->
       <IsDotNetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">true</IsDotNetFramework>
+      <IsDotNetFramework Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">false</IsDotNetFramework>
 
       <!-- TargetFrameworks that use directory net461/ (net461, net462, net47, net471, net472, net48, net481) -->
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND $(IsDotNetFramework)">net461</DatadogTargetFramework>
