@@ -23,7 +23,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net462" })]
+        [TestAppFact("Samples.Computer01", new[] { "net48" })]
         public void CheckErrorWhenNoAgentIsAvailable(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");

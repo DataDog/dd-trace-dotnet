@@ -58,7 +58,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net462" })]
+        [TestAppFact("Samples.Computer01", new[] { "net48" })]
         public void ShouldGetGarbageCollectionSamplesViaEtw(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);

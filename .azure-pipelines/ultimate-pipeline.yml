@@ -1592,8 +1592,8 @@ stages:
       strategy:
         # TODO: we could move this generation to the generate_variables stage but it would delay this starting, so just hardcode it for now
         matrix:
-          net462:
-            framework: net462
+          net48:
+            framework: net48
           netcoreapp2.1:
             framework: netcoreapp2.1
           netcoreapp3.0:
@@ -2175,7 +2175,7 @@ stages:
     pool:
       name: azure-windows-scale-set-2
     variables:
-      framework: net462
+      framework: net48
 
     steps:
     - template: steps/clone-repo.yml
@@ -3928,7 +3928,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462 --TargetPlatform $(targetPlatform)
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net48 --TargetPlatform $(targetPlatform)
       displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
