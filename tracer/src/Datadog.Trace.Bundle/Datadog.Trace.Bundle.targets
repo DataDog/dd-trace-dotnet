@@ -1,12 +1,8 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="DatadogAfterComputeResolvedFilesToPublishList" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
     <PropertyGroup>
-      <!-- Is .NET Framework? -->
-      <IsDotNetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">true</IsDotNetFramework>
-      <IsDotNetFramework Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'">false</IsDotNetFramework>
-
       <!-- TargetFrameworks that use directory net461/ (net461, net462, net47, net471, net472, net48, net481) -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND $(IsDotNetFramework)">net461</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework'">net461</DatadogTargetFramework>
 
       <!-- TargetFrameworks that use directory netstandard2.0/ -->
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</DatadogTargetFramework>
@@ -27,9 +23,9 @@
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net9.0'">net6.0</DatadogTargetFramework>
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net10.0'">net6.0</DatadogTargetFramework>
 
-      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(PlatformTarget)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
-      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(PlatformTarget)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
-      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework)">win-</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework'">win-</DatadogRuntimeIdentifier>
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DatadogRuntimeIdentifier>
     </PropertyGroup>
 
