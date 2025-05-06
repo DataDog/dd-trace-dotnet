@@ -29,7 +29,7 @@ partial class Build : NukeBuild
         public bool IsChanged { get; set; }
     }
 
-    static private ChangedTeamValue[] _changedVariables = new ChangedTeamValue[]
+    static private ChangedTeamValue[] _changedTeamValue = new ChangedTeamValue[]
     {
         new ChangedTeamValue { VariableName = "isAsmChanged", TeamName = ASMDotnet},
         new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
@@ -90,9 +90,9 @@ partial class Build : NukeBuild
             {
                 CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
 
-                foreach(var variableName in _changedVariables)
+                foreach(var changedTeamValue in _changedTeamValue)
                 {
-                    GenerateConditionVariableBasedOnGitChange(variableName, codeOwners);
+                    GenerateConditionVariableBasedOnGitChange(changedTeamValue, codeOwners);
                 }
 
                 void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
@@ -186,7 +186,7 @@ partial class Build : NukeBuild
             {
                 if (area == AsmArea)
                 {
-                    return _changedVariables.First(x => x.TeamName == ASMDotnet).IsChanged;
+                    return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
                 }
 
                 return true;
