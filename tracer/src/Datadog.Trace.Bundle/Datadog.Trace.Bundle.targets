@@ -26,30 +26,23 @@
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net9.0'">net6.0</DatadogTargetFramework>
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net10.0'">net6.0</DatadogTargetFramework>
 
-      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(Platform)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
-      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(Platform)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(PlatformTarget)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(PlatformTarget)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework)">win-</DatadogRuntimeIdentifier>
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DatadogRuntimeIdentifier>
     </PropertyGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework)" />
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier), Platform: $(Platform), PlatformTarget: $(PlatformTarget)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework), DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier)" />
 
     <!-- ResolvedFileToPublish is populated in target ComputeResolvedFilesToPublishList,
          see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
          The following lines remove the files we DON'T want published from ResolvedFileToPublish -->
     <ItemGroup>
-      <!-- .NET Framework: always remove native files in "linux-*" and "osx*"
-            note: currently there are two osx directories: "osx" and "osx-x64", so we can't use "osx-*" -->
+      <!-- if $(DatadogRuntimeIdentifier) is set, remove files that don't match -->
+      <!-- note: currently there are two osx directories: "osx" and "osx-x64", so we can't use "osx-*" -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="$(IsDotNetFramework) AND
-                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-'))" />
-      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="$(IsDotNetFramework) AND
-                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))" />
-
-      <!-- .NET Core: if $(DatadogRuntimeIdentifier) is set, remove the native library directories that don't match -->
-      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="!$(IsDotNetFramework) AND '$(DatadogRuntimeIdentifier)' != '' AND
+                            Condition="!$(IsDotNetFramework) AND
+                                       '$(DatadogRuntimeIdentifier)' != '' AND
                                          ($([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
                                           $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
                                           $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
