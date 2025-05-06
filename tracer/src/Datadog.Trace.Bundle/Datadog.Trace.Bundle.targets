@@ -71,7 +71,6 @@
       <ResolvedFileToPublish Remove="@(DatadogFilesToRemove)" />
     </ItemGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogFilesToRemove:  %(DatadogFilesToRemove.RelativePath)" />
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] ResolvedFileToPublish: %(ResolvedFileToPublish.RelativePath)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] Removed file from ResolvedFileToPublish:  %(DatadogFilesToRemove.RelativePath)" />
   </Target>
 </Project>
