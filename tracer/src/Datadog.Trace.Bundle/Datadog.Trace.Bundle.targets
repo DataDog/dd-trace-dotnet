@@ -35,6 +35,9 @@
 
     <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework), DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier)" />
 
+    <Error Condition="'$(DatadogTargetFramework)' == ''"
+           Text="[Datadog.Trace.Bundle] TargetFramework &quot;$(TargetFramework)&quot; is not supported. For more compatiblity details, see https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core and https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-framework. For assistance, contact our support team at https://www.datadoghq.com/support/." />
+
     <!-- ResolvedFileToPublish is populated in target ComputeResolvedFilesToPublishList,
          see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
          The following lines remove the files we DON'T want published from ResolvedFileToPublish -->
@@ -49,7 +52,6 @@
                                        !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogRuntimeIdentifier)'))" />
 
       <!-- if $(DatadogTargetFramework) is set, remove the managed library directories that don't match -->
-      <!-- TODO: should we throw error if unsupported TargetFramework? -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="'$(DatadogTargetFramework)' != '' AND
                                         $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
