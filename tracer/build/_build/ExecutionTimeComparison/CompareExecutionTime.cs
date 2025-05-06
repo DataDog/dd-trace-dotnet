@@ -144,12 +144,12 @@ public class CompareExecutionTime
     static readonly (string Path, ExecutionTimeSample Sample, (string Filename, ExecutionTimeFramework Framework)[] TestRuns)[] ExpectedTestRuns =
     {
         ("execution_time_benchmarks_windows_x64_FakeDbCommand_1", ExecutionTimeSample.FakeDbCommand, new[] { 
-            ("results_Samples.FakeDbCommand.windows.netfx.json", ExecutionTimeFramework.NetFramework),
+            ("results_Samples.FakeDbCommand.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.FakeDbCommand.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.FakeDbCommand.windows.net60.json", ExecutionTimeFramework.Net6),
         }),
         ("execution_time_benchmarks_windows_x64_HttpMessageHandler_1", ExecutionTimeSample.HttpMessageHandler, new[] { 
-            ("results_Samples.HttpMessageHandler.windows.netfx.json", ExecutionTimeFramework.NetFramework),
+            ("results_Samples.HttpMessageHandler.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.HttpMessageHandler.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
         }),

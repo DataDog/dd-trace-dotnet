@@ -1,6 +1,6 @@
 {
   "enableDatadog": true,
-  "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.netfx.json",
+  "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.net48.json",
   "warmUpCount": 5,
   "count": 180,
   "acceptableRelativeWidth": 0.005,
