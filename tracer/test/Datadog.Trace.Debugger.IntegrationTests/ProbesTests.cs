@@ -311,7 +311,7 @@ public class ProbesTests : TestHelper
         }
     }
 
-#if NET462
+#if NETFRAMEWORK
     [Fact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <!-- .NET Core 2.0/3.0/3.1 and .NET Framework don't have the Activity* APIs -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)'=='netcoreapp2.1' OR '$(TargetFramework)'=='netcoreapp3.0' OR '$(TargetFramework)'=='netcoreapp3.1' OR '$(TargetFramework)'=='net5.0'">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) OR '$(TargetFramework)'=='netcoreapp2.1' OR '$(TargetFramework)'=='netcoreapp3.0' OR '$(TargetFramework)'=='netcoreapp3.1' OR '$(TargetFramework)'=='net5.0'">
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="6.0.0" />
   </ItemGroup>
 

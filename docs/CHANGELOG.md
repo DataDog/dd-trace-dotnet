@@ -18,6 +18,73 @@
 
 
 
+
+## [Release 3.16.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.16.0)
+
+## Summary
+
+- [IAST] Add support for .NET 9 `ReadOnlySpan<T>` overloads for `string`  manipulation
+- [IAST] Change cookie filter default value to avoid flooding
+- [Continuous Profiler] Add WaitHandle wait duration profiling
+- [Continuous Profiler] Fix possible shut down crash scenarios
+- [Exception Replay] Added support for top-most failing local root span
+
+## Changes
+
+### Tracer
+* [Tracer] update sampling formula (#6866)
+
+### ASM
+* [ASM] Removed unneeded rewrite PInvoke call for ASM (#6914)
+* [IAST] Add support for Dotnet 9 ReadOnlySpan String overloads (#6846)
+* [IAST] Change cookie filter default value (#6889)
+* [IAST] Iast Aspects logs refactor (#6888)
+
+### Continuous Profiler
+* [Profiler] Implement WaitHandle wait duration profiling (#6426)
+* [Profiler] Bump libdatadog to v17.0.0 (#6805)
+* [Profiler] Fix timer_create bug (#6811)
+* [Profiler] Fix short lived threads scenario (#6864)
+* [Profiler] Fix missing http profiler in profiler_list tag (#6865)
+* [Profiler] Remove logs in buggybits if needed (#6898)
+* [Profiler] Fix IpcServer for .NET Framework (#6903)
+* [Tracer] Fix possible crash in ContextTracker on shutdown (#6893)
+
+### Debugger
+* [Exception Replay] Added support for top-most failing local root span + Communicating failure to capture errors (#6859)
+
+### Fixes
+* Remove not required samples (#6862)
+
+### Miscellaneous
+* Add readme for MacOS development (#6018)
+* Add documentation around Xunit.Combinatorial (#6880)
+* [Dynamic Instrumentation] DEBUG-3492 Remove duration from non method snapshots (#6735)
+* Revert "[Dynamic Instrumentation] DEBUG-3492 Remove duration from non… (#6902)
+
+### Build / Test
+* Bump Microsoft.Azure.Functions.Worker.Extensions.Http from 3.2.0 to 3.3.0 in /tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated (#6605)
+* Add `Xunit.Combinatorial` for Combinatorial/Pairwise testing (#6847)
+* Add traits to exclude tests that will not run anyway (#6858)
+* Fix build warnings in debugger and ASM samples (#6867)
+* [Test Package Versions Bump] Updating package versions (#6874)
+* Expand ownership of Version Bump related files (#6877)
+* Add "all-green" job to enfore green CI policy (#6879)
+* [CI] Use public symbol org API KEY (#6881)
+* Update to use `9.0.203` of the .NET SDK (#6883)
+* Don't run throughput tests on PRs (#6884)
+* Dump the docker compose logs to try to see what's going on (#6886)
+* Adds a "flaky" attribute, that we can use to automatically retry flaky tests (#6891)
+* Fix Couchbase flaky tests (#6892)
+* Use code owners in build variable generation (#6896)
+* [Test Package Versions Bump] Updating package versions (#6900)
+* Try to fix flake in building runner tool (#6905)
+* Use mirrored, latest, image in GitLab build (#6906)
+* Update Serverless teams in `CODEOWNERS` (#6918)
+
+
+[Changes since 3.15.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.15.0...v3.16.0)
+
 ## [Release 3.15.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.15.0)
 
 ## Summary

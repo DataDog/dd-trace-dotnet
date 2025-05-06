@@ -34,7 +34,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckAppDomain(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -46,7 +46,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckGenerics(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -58,7 +58,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckPi(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -70,7 +70,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }

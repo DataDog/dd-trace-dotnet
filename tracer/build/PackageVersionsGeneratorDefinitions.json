@@ -12,7 +12,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "3.3.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -28,7 +28,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "3.3.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -58,7 +58,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "3.3.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -75,7 +75,7 @@
     "VersionConditions": [
       {
         "MaxVersionExclusive": "3.3.0",
-        "IncludeOnlyTargetFrameworks": ["net462"]
+        "IncludeOnlyTargetFrameworks": ["net48"]
       }
     ]
   },
@@ -93,7 +93,7 @@
     "VersionConditions": [
       {
         "MaxVersionExclusive": "3.3.0",
-        "IncludeOnlyTargetFrameworks": ["net462"]
+        "IncludeOnlyTargetFrameworks": ["net48"]
       }
     ]
   },
@@ -111,7 +111,7 @@
     "VersionConditions": [
       {
         "MaxVersionExclusive": "3.3.0",
-        "IncludeOnlyTargetFrameworks": ["net462"]
+        "IncludeOnlyTargetFrameworks": ["net48"]
       }
     ]
   },
@@ -129,7 +129,7 @@
     "VersionConditions": [
       {
         "MaxVersionExclusive": "3.3.0",
-        "IncludeOnlyTargetFrameworks": ["net462"]
+        "IncludeOnlyTargetFrameworks": ["net48"]
       }
     ]
   },
@@ -148,10 +148,10 @@
     ],
     "VersionConditions": [{
       "MinVersion": "3.0.0",
-      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1"]
+      "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1"]
     },{
       "MaxVersionExclusive": "2.3.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -205,10 +205,10 @@
     "VersionConditions": [{
       "MinVersion": "5.0.0",
       "MaxVersionExclusive": "5.1.1",
-      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+      "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
     },{
       "MaxVersionExclusive": "6.0.0",
-      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0"]
+      "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {
@@ -223,7 +223,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "8.0.0",
-      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0"]
+      "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {
@@ -244,10 +244,10 @@
       "ExcludeTargetFrameworks": [ "netcoreapp3.1", "net5.0" ]
     },{
       "MaxVersionExclusive": "15.0.0",
-      "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0" ]
+      "ExcludeTargetFrameworks": [ "net48", "netcoreapp2.1", "netcoreapp3.0" ]
     },{
       "MinVersion": "15.0.0",
-      "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0" ]
+      "ExcludeTargetFrameworks": [ "net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0" ]
     }]
   },
   {
@@ -264,7 +264,7 @@
     ],
     "VersionConditions": [{
       "MinVersion": "9.0.0",
-      "ExcludeTargetFrameworks": ["net462","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+      "ExcludeTargetFrameworks": ["net48","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     },{
       "MinVersion": "6.0.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
@@ -295,7 +295,7 @@
     ],
     "VersionConditions": [{
       "MinVersion": "7.0.0",
-      "ExcludeTargetFrameworks": ["net462"]
+      "ExcludeTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -313,7 +313,7 @@
     ],
     "VersionConditions": [{
       "MinVersion": "7.0.0",
-      "ExcludeTargetFrameworks": ["net462"]
+      "ExcludeTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -363,7 +363,7 @@
     "MaxVersionExclusive": "3.0.0",
     "VersionConditions": [{
       "MaxVersionExclusive": "1.1.700",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     },{
       "MinVersion": "2.2.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1"]
@@ -391,7 +391,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     },{
       "MinVersion": "6.2.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
@@ -502,7 +502,7 @@
     "VersionConditions": [
       {
         "MinVersion": "1.0.0",
-        "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+        "ExcludeTargetFrameworks": [ "net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
       }
     ]
   },
@@ -519,7 +519,7 @@
     "VersionConditions": [
       {
         "MinVersion": "1.0.0",
-        "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+        "ExcludeTargetFrameworks": [ "net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
       }
     ]
   },
@@ -639,7 +639,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     },{
       "MinVersion": "3.1.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
@@ -660,7 +660,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "4.5.0",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -676,7 +676,7 @@
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.6",
-      "IncludeOnlyTargetFrameworks": ["net462"]
+      "IncludeOnlyTargetFrameworks": ["net48"]
     }]
   },
   {
@@ -712,10 +712,10 @@
     ],
     "VersionConditions": [{
       "MinVersion": "6.0.0",
-      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+      "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     },{
       "MinVersion": "5.0.0",
-      "ExcludeTargetFrameworks": ["net462"]
+      "ExcludeTargetFrameworks": ["net48"]
     }]
   },
   {
