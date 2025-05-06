@@ -169,6 +169,17 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
 
+void AllocationsProvider::OnAllocationSampled(
+    uint32_t allocationKind,
+    ClassID classId,
+    const WCHAR* typeName,
+    uintptr_t address,
+    uint64_t objectSize,
+    uint64_t allocationByteOffset)
+{
+    // TODO: deal with .NET+ AllocationSampled event and find a way to upscale the values
+}
+
 void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
                                        uint32_t threadId,
                                        uint32_t allocationKind,
