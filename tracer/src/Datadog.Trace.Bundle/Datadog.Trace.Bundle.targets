@@ -41,8 +41,7 @@
       <!-- if $(DatadogRuntimeIdentifier) is set, remove files that don't match -->
       <!-- note: currently there are two osx directories: "osx" and "osx-x64", so we can't use "osx-*" -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="!$(IsDotNetFramework) AND
-                                       '$(DatadogRuntimeIdentifier)' != '' AND
+                            Condition="'$(DatadogRuntimeIdentifier)' != '' AND
                                          ($([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
                                           $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
                                           $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
