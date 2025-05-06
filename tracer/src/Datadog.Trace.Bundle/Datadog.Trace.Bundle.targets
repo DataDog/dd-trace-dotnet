@@ -1,9 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Target Name="RemoveDatadogNuGetFiles" AfterTargets="Publish" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
+  <Target Name="DatadogAfterComputeResolvedFilesToPublishList" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
     <PropertyGroup>
-      <!-- Root where Datadog bundle files are published -->
-      <BundleRoot>$(PublishDir)datadog\</BundleRoot>
-
       <!-- Helper properties -->
       <IsDotNetFramework>$(TargetFramework.StartsWith('net4'))</IsDotNetFramework>
 
@@ -30,55 +27,51 @@
       <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net10.0'">net6.0</EffectiveTargetFramework>
     </PropertyGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] BundleRoot: $(BundleRoot) during RemoveDatadogNuGetFiles" />
     <Message Importance="High" Text="[Datadog.Trace.Bundle] TargetFramework: $(TargetFramework) => $(EffectiveTargetFramework), IsDotNetFramework: $(IsDotNetFramework)" />
     <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: $(RuntimeIdentifier), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' != ''" />
     <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: (not set), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' == ''" />
 
+    <!-- ResolvedFileToPublish is populated in target ComputeResolvedFilesToPublishList,
+         see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
+         The following lines remove the files we DON'T want published from ResolvedFileToPublish -->
     <ItemGroup>
-      <AllManagedLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'net*'))" />
+      <!-- .NET Framework: always remove native files in "linux-*" -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="$(IsDotNetFramework) AND
+                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-'))" />
+      <!-- .NET Framework: always remove native files in "osx*"
+           note: currently there are two osx directories: "osx" and "osx-x64", so we can't match "osx-*" -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="$(IsDotNetFramework) AND
+                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))" />
+      <!-- .NET Framework: if Platform == "x64", remove native files in "win-x86" -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x64' AND
+                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-x86\'))" />
+      <!-- .NET Framework: if Platform == "x86", remove native files in "win-x64" -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x86' AND
+                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-x64\'))" />
 
-      <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'win-*'))" />
-      <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'linux-*'))" />
-      <AllNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'osx*'))" />
+      <!-- .NET Core: if $(RuntimeIdentifier) is set, remove the native library directories that don't match -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="!$(IsDotNetFramework) AND '$(RuntimeIdentifier)' != '' AND
+                                         ($([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
+                                          $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
+                                          $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
+                                       !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(RuntimeIdentifier)'))" />
 
-      <!-- if .NET Framework
-             if Platform == "x64", keep directory "win-x64"
-             if Platform == "x86", keep directory "win-x86"
-             else keep "win-*" as fallback
-       -->
-      <KeepNativeLibDirs Include="$(BundleRoot)win-x64"
-                         Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x64'" />
-      <KeepNativeLibDirs Include="$(BundleRoot)win-x86"
-                         Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x86'" />
-      <KeepNativeLibDirs Include="$([System.IO.Directory]::GetDirectories('$(BundleRoot)', 'win-*'))"
-                         Condition="$(IsDotNetFramework) AND '$(Platform)' != 'x64' AND'$(Platform)' != 'x86'"/>
+      <!-- if $(EffectiveTargetFramework) is set, remove the managed library directories that don't match -->
+      <!-- TODO: should we throw error if unsupported TargetFramework? -->
+      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
+                            Condition="'$(EffectiveTargetFramework)' != '' AND
+                                        $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
+                                        !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(EffectiveTargetFramework)'))" />
 
-      <!-- if .NET Core
-             if $(RuntimeIdentifier) is set, keep directory "$(RuntimeIdentifier)"
-             else keep "win-*;linux-*;osx-*" as fallback -->
-      <KeepNativeLibDirs Include="$(BundleRoot)$(RuntimeIdentifier)"
-                         Condition="!$(IsDotNetFramework) AND '$(RuntimeIdentifier)' != ''"/>
-      <KeepNativeLibDirs Include="@(AllNativeLibDirs)"
-                         Condition="!$(IsDotNetFramework) AND '$(RuntimeIdentifier)' == ''"/>
-
-      <!-- if $(EffectiveTargetFramework) is set, keep directory "$(EffectiveTargetFramework)"
-           else keep "net*" as fallback -->
-      <KeepManagedLibDirs Include="$(BundleRoot)$(EffectiveTargetFramework)"
-                          Condition="'$(EffectiveTargetFramework)' != ''"/>
-      <KeepManagedLibDirs Include="@(AllManagedLibDirs)"
-                          Condition="'$(EffectiveTargetFramework)' == ''" />
-
-      <DirectoriesToKeep Include="@(KeepManagedLibDirs);@(KeepNativeLibDirs)" />
-      <DirectoriesToKeepNames Include="@(DirectoriesToKeep->'$([System.IO.Path]::GetFileName('%(DirectoriesToKeep.FullPath)'))')" />
-
-      <DirectoriesToRemove Include="@(AllManagedLibDirs);@(AllNativeLibDirs)"
-                           Exclude="@(DirectoriesToKeep)" />
-      <DirectoriesToRemoveNames Include="@(DirectoriesToRemove->'$([System.IO.Path]::GetFileName('%(DirectoriesToRemove.FullPath)'))')" />
+      <ResolvedFileToPublish Remove="@(DatadogFilesToRemove)" />
     </ItemGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] Keeping directories:  @(DirectoriesToKeepNames)" />
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] Removing directories: @(DirectoriesToRemoveNames)" />
-    <RemoveDir Directories="@(DirectoriesToRemove)" Condition="Exists('%(Identity)')" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogFilesToRemove:  %(DatadogFilesToRemove.RelativePath)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] ResolvedFileToPublish: %(ResolvedFileToPublish.RelativePath)" />
   </Target>
 </Project>
