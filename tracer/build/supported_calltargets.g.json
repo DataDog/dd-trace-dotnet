@@ -2802,6 +2802,30 @@
   {
     "IntegrationName": "AwsSdk",
     "AssemblyName": "AWSSDK.Core",
+    "TargetTypeName": "Amazon.Runtime.HttpWebRequestMessage",
+    "TargetMethodName": "ProcessHttpResponseMessage",
+    "TargetReturnType": "Amazon.Runtime.Internal.Transform.HttpClientResponseData",
+    "TargetParameterTypes": [
+      "System.Net.Http.HttpResponseMessage"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.HttpWebRequestMessageProcessHttpResponseMessageIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsSdk",
+    "AssemblyName": "AWSSDK.Core",
     "TargetTypeName": "Amazon.Runtime.Internal.RuntimePipeline",
     "TargetMethodName": "InvokeAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
