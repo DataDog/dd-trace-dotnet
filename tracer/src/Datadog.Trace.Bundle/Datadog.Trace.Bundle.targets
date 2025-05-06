@@ -5,68 +5,62 @@
       <IsDotNetFramework Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">true</IsDotNetFramework>
 
       <!-- TargetFrameworks that use directory net461/ (net461, net462, net47, net471, net472, net48, net481) -->
-      <EffectiveTargetFramework Condition="$(IsDotNetFramework)">net461</EffectiveTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND $(IsDotNetFramework)">net461</DatadogTargetFramework>
 
       <!-- TargetFrameworks that use directory netstandard2.0/ -->
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netstandard2.1'">netstandard2.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.0'">netstandard2.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.1'">netstandard2.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp2.2'">netstandard2.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.0'">netstandard2.0</EffectiveTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netstandard2.1'">netstandard2.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp2.0'">netstandard2.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp2.1'">netstandard2.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp2.2'">netstandard2.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp3.0'">netstandard2.0</DatadogTargetFramework>
 
       <!-- TargetFrameworks that use directory netcoreapp3.1/ -->
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'netcoreapp3.1'">netcoreapp3.1</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net5.0'">netcoreapp3.1</EffectiveTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp3.1'">netcoreapp3.1</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net5.0'">netcoreapp3.1</DatadogTargetFramework>
 
       <!-- TargetFrameworks that use directory net6.0/ -->
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net6.0'">net6.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net7.0'">net6.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net8.0'">net6.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net9.0'">net6.0</EffectiveTargetFramework>
-      <EffectiveTargetFramework Condition="'$(TargetFramework)' == 'net10.0'">net6.0</EffectiveTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net6.0'">net6.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net7.0'">net6.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net8.0'">net6.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net9.0'">net6.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net10.0'">net6.0</DatadogTargetFramework>
+
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(Platform)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND $(IsDotNetFramework) AND '$(Platform)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
+      <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DatadogRuntimeIdentifier>
     </PropertyGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] TargetFramework: $(TargetFramework) => $(EffectiveTargetFramework), IsDotNetFramework: $(IsDotNetFramework)" />
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: $(RuntimeIdentifier), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' != ''" />
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] RuntimeIdentifier: (not set), Platform: $(Platform)" Condition="'$(RuntimeIdentifier)' == ''" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier), Platform: $(Platform), PlatformTarget: $(PlatformTarget)" />
 
     <!-- ResolvedFileToPublish is populated in target ComputeResolvedFilesToPublishList,
          see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
          The following lines remove the files we DON'T want published from ResolvedFileToPublish -->
     <ItemGroup>
-      <!-- .NET Framework: always remove native files in "linux-*" -->
+      <!-- .NET Framework: always remove native files in "linux-*" and "osx*"
+            note: currently there are two osx directories: "osx" and "osx-x64", so we can't use "osx-*" -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="$(IsDotNetFramework) AND
                                        $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-'))" />
-      <!-- .NET Framework: always remove native files in "osx*"
-           note: currently there are two osx directories: "osx" and "osx-x64", so we can't match "osx-*" -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="$(IsDotNetFramework) AND
                                        $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))" />
-      <!-- .NET Framework: if Platform == "x64", remove native files in "win-x86" -->
-      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x64' AND
-                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-x86\'))" />
-      <!-- .NET Framework: if Platform == "x86", remove native files in "win-x64" -->
-      <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="$(IsDotNetFramework) AND '$(Platform)' == 'x86' AND
-                                       $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-x64\'))" />
 
-      <!-- .NET Core: if $(RuntimeIdentifier) is set, remove the native library directories that don't match -->
+      <!-- .NET Core: if $(DatadogRuntimeIdentifier) is set, remove the native library directories that don't match -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="!$(IsDotNetFramework) AND '$(RuntimeIdentifier)' != '' AND
+                            Condition="!$(IsDotNetFramework) AND '$(DatadogRuntimeIdentifier)' != '' AND
                                          ($([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
                                           $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
                                           $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
-                                       !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(RuntimeIdentifier)'))" />
+                                       !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogRuntimeIdentifier)'))" />
 
-      <!-- if $(EffectiveTargetFramework) is set, remove the managed library directories that don't match -->
+      <!-- if $(DatadogTargetFramework) is set, remove the managed library directories that don't match -->
       <!-- TODO: should we throw error if unsupported TargetFramework? -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
-                            Condition="'$(EffectiveTargetFramework)' != '' AND
+                            Condition="'$(DatadogTargetFramework)' != '' AND
                                         $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
-                                        !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(EffectiveTargetFramework)'))" />
+                                        !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogTargetFramework)'))" />
 
       <ResolvedFileToPublish Remove="@(DatadogFilesToRemove)" />
     </ItemGroup>
