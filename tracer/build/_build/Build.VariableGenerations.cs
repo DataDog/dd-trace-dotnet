@@ -61,7 +61,7 @@ partial class Build : NukeBuild
                 {
                     "tracer/test/",
                     "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/",
-                    "tracer/src/Datadog.Trace.",
+                    "tracer/src/Datadog.Trace.", // Does not match the main tracer project
                     "tracer/src/Datadog.Trace/Agent/",
                     "tracer/src/Datadog.Trace/ContinuousProfiler/",
                     "tracer/src/Datadog.Trace/Generated/",
@@ -131,8 +131,7 @@ partial class Build : NukeBuild
                         {
                             foreach (var changedFile in changedFiles)
                             {
-                                var match = codeOwners.Match("/" + changedFile);
-                                if (match?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
                                 {
                                     Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
                                     isChanged = true;
@@ -182,6 +181,7 @@ partial class Build : NukeBuild
                 }
             }
 
+            // We only call this method for the tracer and ASM areas
             bool ShouldBeIncluded(string area)
             {
                 if (area == AsmArea)
