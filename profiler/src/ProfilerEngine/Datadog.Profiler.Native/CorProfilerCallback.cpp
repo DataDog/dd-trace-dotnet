@@ -1350,7 +1350,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - ContentionStop_V1
         //  - GC related events
         //  - WaitHandle events for .NET 9+
-
+        //  - AllocationSampled events for .NET+ 10 (AllocationTick will not be received)
+        //
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
 
@@ -1361,8 +1362,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
 
-            // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-            verbosity = VerboseVerbosity;
+            if (major >= 10)
+            {
+                activatedKeywords |= ClrEventsParser::KEYWORD_ALLOCATION_SAMPLING;
+            }
+            else
+            {
+                // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                verbosity = VerboseVerbosity;
+            }
         }
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
