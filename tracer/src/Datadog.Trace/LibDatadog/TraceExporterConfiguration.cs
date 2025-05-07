@@ -105,6 +105,20 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
+    public TelemetryClientConfiguration? TelemetryClientConfiguration
+    {
+        init
+        {
+            if (value == null)
+            {
+                return;
+            }
+
+            using var error = NativeInterop.Config.EnableTelemetry(this, value.Value);
+            error.ThrowIfError();
+        }
+    }
+
     public bool ComputeStats
     {
         init
