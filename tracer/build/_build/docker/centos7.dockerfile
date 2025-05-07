@@ -16,7 +16,9 @@ ENV \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
     NUGET_XMLDOC_MODE=skip \
     # Disable LTTng tracing with QUIC
-    QUIC_LTTng=0
+    QUIC_LTTng=0 \
+    DOCKER_BUILDKIT=1 \
+    COMPOSE_DOCKER_CLI_BUILD=1
 
 # replace the centos repository with vault.centos.org because they shut down the original
 RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
