@@ -33,7 +33,6 @@ jobs:
             profiler_execution_benchmarks
             dd-gitlab/download-serverless-artifacts
             dd-gitlab/download-single-step-artifacts
-            integration_tests_arm64_debugger
 
 # Why some checks are excluded? Success ratio are too low :
 # - consolidated-pipeline : 10%
