@@ -18,6 +18,10 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
+# Check BuildKit and Docker CLI build variables
+RUN echo "DOCKER_BUILDKIT is set to ${DOCKER_BUILDKIT}" && \
+    echo "COMPOSE_DOCKER_CLI_BUILD is set to ${COMPOSE_DOCKER_CLI_BUILD}"
+
 RUN apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \

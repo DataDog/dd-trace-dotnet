@@ -18,6 +18,10 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
+# Check BuildKit and Docker CLI build variables
+RUN echo "DOCKER_BUILDKIT is set to ${DOCKER_BUILDKIT}" && \
+    echo "COMPOSE_DOCKER_CLI_BUILD is set to ${COMPOSE_DOCKER_CLI_BUILD}"
+
     # Add nfpm source
 RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
     && apt-get update \
