@@ -29,9 +29,12 @@ internal struct TelemetryClientConfiguration
     /// </summary>
     public CharSlice RuntimeId;
 
+    /*
+    /// TODO: enable with v18
     /// <summary>
     /// Whether to enable debug mode for telemetry. When enabled, sets the dd-telemetry-debug-enabled header to true.
     /// Defaults to false.
     /// </summary>
-    public bool DebugEnabled;
+    /// public bool DebugEnabled;
+    */
 }

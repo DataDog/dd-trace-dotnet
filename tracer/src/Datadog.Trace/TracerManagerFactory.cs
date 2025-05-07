@@ -378,11 +378,11 @@ namespace Datadog.Trace
                     ComputeStats = settings.StatsComputationEnabled,
                     // We don't know how to handle telemetry in Agentless mode yet
                     // so we disable telemetry in this case
-                    TelemetryClientConfiguration = telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null ? new TelemetryClientConfiguration
+                    TelemetryClientConfiguration = (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null) ? new TelemetryClientConfiguration
                     {
                         Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
                         RuntimeId = new CharSlice(Tracer.RuntimeId),
-                        DebugEnabled = telemetrySettings.DebugEnabled
+                        // DebugEnabled = telemetrySettings.DebugEnabled
                     }
                                                        : null
                 };
