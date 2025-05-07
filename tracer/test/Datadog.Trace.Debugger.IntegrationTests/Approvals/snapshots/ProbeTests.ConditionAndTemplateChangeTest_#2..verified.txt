@@ -51,6 +51,10 @@
               "@return": {
                 "type": "Int32",
                 "value": "2"
+              },
+              "localInt": {
+                "type": "Int32",
+                "value": "2"
               }
             },
             "staticFields": {
