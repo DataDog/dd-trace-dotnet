@@ -158,10 +158,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static void ProcessException(Exception exception, int normalizedExHash, ErrorOriginKind errorOrigin, Span? rootSpan)
         {
             var allParticipatingFrames = GetAllExceptionRelatedStackFrames(exception);
-            
-            // Add defensive null checks to prevent ArgumentNullException
-            IEnumerable<ParticipatingFrame> flattenedFrames = allParticipatingFrames?.GetAllFlattenedFrames() ?? Enumerable.Empty<ParticipatingFrame>();
-            var allParticipatingFramesFlattened = flattenedFrames.Reverse().ToArray();
+            var allParticipatingFramesFlattened = allParticipatingFrames.GetAllFlattenedFrames().Reverse().ToArray();
 
             normalizedExHash = normalizedExHash != 0 ? normalizedExHash : ExceptionNormalizer.Instance.NormalizeAndHashException(exception.ToString(), exception.GetType().Name, exception.InnerException?.GetType().Name);
 
@@ -279,20 +276,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
 
                 var resultCallStackTree = shouldCheckWhyThereAreNoFrames ? null : ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
-                if (resultCallStackTree == null || resultCallStackTree.Frames == null || !resultCallStackTree.Frames.Any())
+                if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
                 {
                     Log.Warning("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
                     // Check if we failed to instrument all the probes.
 
-                    if (trackedExceptionCase?.ExceptionCase?.Probes != null && 
-                        trackedExceptionCase.ExceptionCase.Probes.Any(p => p != null && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)))
+                    if (trackedExceptionCase.ExceptionCase.Probes.Any(p => p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED))
                     {
                         // Determine if there are any errored probe statuses by P/Invoking the native for RECEIVED/INSTALLED probes.
 
-                        var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes
-                            .Where(p => p != null && p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED))
-                            .ToList();
+                        var receivedOrRequestedRejitStatusProbeIds = trackedExceptionCase.ExceptionCase.Probes.Where(p => p.IsInstrumented && (p.ProbeStatus == Status.RECEIVED || p.ProbeStatus == Status.INSTALLED)).ToList();
 
                         if (receivedOrRequestedRejitStatusProbeIds.Any())
                         {
@@ -311,9 +305,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                         }
                     }
 
-                    if (trackedExceptionCase?.ExceptionCase?.Probes != null && 
-                        trackedExceptionCase.ExceptionCase.Probes.All(p => p != null && p.IsInstrumented && 
-                        (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.ProbeStatus == Status.RECEIVED || p.MayBeOmittedFromCallStack)))
+                    if (trackedExceptionCase.ExceptionCase.Probes.All(p => p.IsInstrumented && (p.ProbeStatus == Status.ERROR || p.ProbeStatus == Status.BLOCKED || p.ProbeStatus == Status.RECEIVED || p.MayBeOmittedFromCallStack)))
                     {
                         Log.Information("Invalidating the exception case of the empty stack tree since none of the methods were instrumented, for exception: {Name}, Message: {Message}, StackTrace: {StackTrace}", exception.GetType().Name, exception.Message, exception.StackTrace);
                         trackedExceptionCase.InvalidateCase();
@@ -353,16 +345,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_hash", trackedExceptionCase.ErrorHash);
                     rootSpan.Tags.SetTag($"{debugErrorPrefix}.exception_id", exceptionCaptureId);
 
-                    var @case = trackedExceptionCase?.ExceptionCase;
-                    var capturedFrames = resultCallStackTree?.Frames;
+                    var @case = trackedExceptionCase.ExceptionCase;
+                    var capturedFrames = resultCallStackTree.Frames;
                     var allFrames = StackTraceProcessor.ParseFrames(exception.ToString());
                     var frameIndex = allFrames.Count - 1;
                     var uploadedHeadFrame = false;
 
                     // Upload head frame
-                    if (capturedFrames != null && @case?.Probes != null && capturedFrames.Count > 0 && @case.Probes.Length > 0 && 
-                        capturedFrames[0]?.MethodInfo?.Method != null && @case.Probes[0]?.Method?.Method != null &&
-                        capturedFrames[0].MethodInfo.Method.Equals(@case.Probes[0].Method.Method))
+                    if (capturedFrames[0].MethodInfo.Method.Equals(@case.Probes[0].Method.Method))
                     {
                         while (frameIndex >= 0 && !MethodMatcher.IsMethodMatch(allFrames[frameIndex], capturedFrames[0].MethodInfo.Method))
                         {
@@ -585,7 +575,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            bool AtLeastOneFrameBelongToUserCode() => framesToRejit != null && framesToRejit.Any(f => f != null && FrameFilter.IsUserCode(f));
+            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(f));
         }
 
         private static bool IsSupportedExceptionType(Exception ex) =>
