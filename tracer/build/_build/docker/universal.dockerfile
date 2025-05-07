@@ -9,15 +9,15 @@ ENV \
     ASPNETCORE_URLS= \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
-    # Do not show first run text
-    DOTNET_NOLOGO=true \
-    # Skip first-time experience for quicker startup
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true \
-    # Disable telemetry to reduce overhead
-    DOTNET_CLI_TELEMETRY_OPTOUT=true \
-    # Ensure single-level SDK lookup
-    DOTNET_MULTILEVEL_LOOKUP=false \
-    # Set CLI language to English for consistent logs
+    # Disable logo
+    DOTNET_NOLOGO=1 \
+    # Disable first time experience
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    # Disable telemetry
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    # Disable the SDK from picking up a global install
+    DOTNET_MULTILEVEL_LOOKUP=0 \
+    # Set language
     DOTNET_CLI_UI_LANGUAGE="en" \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \

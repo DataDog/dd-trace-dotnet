@@ -10,13 +10,13 @@ ENV \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
-    DOTNET_NOLOGO=true \
+    DOTNET_NOLOGO=1 \
     # Skip first-time experience for quicker startup
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
     # Disable telemetry to reduce overhead
-    DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     # Ensure single-level SDK lookup
-    DOTNET_MULTILEVEL_LOOKUP=false \
+    DOTNET_MULTILEVEL_LOOKUP=0 \
     # Set CLI language to English for consistent logs
     DOTNET_CLI_UI_LANGUAGE="en" \
     # Enable correct mode for dotnet watch (only mode supported in a container)
@@ -63,7 +63,7 @@ RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
 
 RUN curl -Ol https://raw.githubusercontent.com/llvm-mirror/clang-tools-extra/master/clang-tidy/tool/run-clang-tidy.py \
     && mv run-clang-tidy.py /usr/bin/ \
-    && chmod +x /usr/bin/run-clang-tidy.py \ 
+    && chmod +x /usr/bin/run-clang-tidy.py \
     && ln -s /usr/bin/run-clang-tidy.py /usr/bin/run-clang-tidy
 
 # Install CppCheck
