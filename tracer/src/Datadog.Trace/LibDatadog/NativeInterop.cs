@@ -63,5 +63,8 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
         internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_compute_stats")]
+        internal static extern ErrorHandle SetComputeStats(SafeHandle config, bool isEnabled);
     }
 }

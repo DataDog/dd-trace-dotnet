@@ -105,6 +105,15 @@ internal class TraceExporterConfiguration : SafeHandle
         }
     }
 
+    public bool ComputeStats
+    {
+        init
+        {
+            using var error = NativeInterop.Config.SetComputeStats(this, value);
+            error.ThrowIfError();
+        }
+    }
+
     protected override bool ReleaseHandle()
     {
         NativeInterop.Config.Free(handle);
