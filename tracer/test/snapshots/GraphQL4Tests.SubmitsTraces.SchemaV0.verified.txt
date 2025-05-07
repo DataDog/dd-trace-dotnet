@@ -374,6 +374,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Argument 'id' has invalid value. Expected type 'String', found 1.","code":"ARGUMENTS_OF_CORRECT_TYPE","locations":["1:24"]}},{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Cannot query field 'apearsIn' on type 'Human'. Did you mean 'appearsIn'?","code":"FIELDS_ON_CORRECT_TYPE","locations":["1:35"]}}],
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
@@ -421,7 +422,7 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "Error trying to resolve field 'throwNotImplementedException'.",
+"message": "This API purposely throws a NotImplementedException",
 "path": "System.Object[]",
 "code": "NOT_IMPLEMENTED",
 "locations": [
@@ -434,6 +435,7 @@ errors: [
 ]
 ,
       error.type: GraphQL.ExecutionError,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"This API purposely throws a NotImplementedException","path":["throwNotImplementedException"],"code":"NOT_IMPLEMENTED","locations":["1:32"],"stacktrace":"   at Samples.GraphQL4.StarWarsExtensions.StarWarsSubscription.ThrowNotImplementedException(IResolveFieldContext context) in C:\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.GraphQL4\\StarWarsExtensions\\StarWarsSubscription.cs:line 128\r\n   at GraphQL.Resolvers.SourceStreamResolver`1.<>c__DisplayClass1_0.<.ctor>b__0(IResolveFieldContext context) in /_/src/GraphQL/Resolvers/SourceStreamResolver.cs:line 21\r\n   at GraphQL.Resolvers.SourceStreamResolver`1.ResolveAsync(IResolveFieldContext context) in /_/src/GraphQL/Resolvers/SourceStreamResolver.cs:line 38\r\n   at GraphQL.Execution.SubscriptionExecutionStrategy.ResolveResponseStreamAsync(ExecutionContext context, ExecutionNode node) in /_/src/GraphQL/Execution/SubscriptionExecutionStrategy.cs:line 99"}}],
       graphql.operation.name: NotImplementedSub,
       graphql.operation.type: Subscription,
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
