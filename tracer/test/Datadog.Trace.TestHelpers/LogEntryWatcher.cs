@@ -22,6 +22,7 @@ public class LogEntryWatcher : IDisposable
     // When the log file gets too big, the logger will roll over and create a new file, but we may still be reading from the old file
     // We must finish reading from the old one before switching to the new one, hence the queue
     private readonly ConcurrentQueue<StreamReader> _readers;
+    private readonly DateTime _initialLogFileWriteTime;
 
     private StreamReader _activeReader;
 
@@ -31,13 +32,10 @@ public class LogEntryWatcher : IDisposable
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
         _readers = new();
 
-        var dir = new DirectoryInfo(logPath);
-        var lastFile = dir
-                      .GetFiles(logFilePattern)
-                      .OrderBy(info => info.LastWriteTime)
-                      .LastOrDefault();
-
-        if (lastFile != null && lastFile.LastWriteTime.Date == DateTime.Today)
+        var lastFile = GetLastWrittenLogFile(logFilePattern, logPath);
+        _initialLogFileWriteTime = DateTime.Now;
+        
+        if (lastFile != null && lastFile.LastWriteTime.Date.Day == _initialLogFileWriteTime.Day)
         {
             var reader = OpenStream(lastFile.FullName);
             reader.ReadToEnd();
@@ -46,6 +44,16 @@ public class LogEntryWatcher : IDisposable
         }
 
         _fileWatcher.Created += NewLogFileCreated;
+    }
+
+    private static FileInfo GetLastWrittenLogFile(string logFilePattern, string logPath)
+    {
+        var dir = new DirectoryInfo(logPath);
+        var lastFile = dir
+                      .GetFiles(logFilePattern)
+                      .OrderBy(info => info.LastWriteTime)
+                      .LastOrDefault();
+        return lastFile;
     }
 
     public void Dispose()
@@ -110,7 +118,23 @@ public class LogEntryWatcher : IDisposable
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_readers.IsEmpty ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}. Logs read so far: {string.Join("\r\n", foundLogs)}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
+            var foundEntries = foundLogs.Take(i).Where(log => log != null).ToArray();
+            var missingEntries = logEntries.Skip(i).ToArray();
+    
+            var lastFile = GetLastWrittenLogFile(_fileWatcher.Filter, _fileWatcher.Path);
+    
+            var lastFileName = lastFile != null && lastFile.LastWriteTime > _initialLogFileWriteTime
+                                   ? $"{lastFile.Name} (Last write: {lastFile.LastWriteTime})" 
+                                   : "No relevant log files found. No new entries have been written since monitoring began.";
+    
+            var message = _readers.IsEmpty 
+                              ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}. Timeout: {timeout?.TotalSeconds ?? 20}s. Found {i}/{logEntries.Length} expected log entries. Last file: {lastFileName}"
+                              : $"Timed out waiting for log entries in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Found {i}/{logEntries.Length} expected entries. Timeout: {timeout?.TotalSeconds ?? 20}s. Cancellation: {cancellationSource.IsCancellationRequested}. Last file: {lastFileName}";
+    
+            message += $"\n\nFound entries ({foundEntries.Length}):\n{string.Join("\n", foundEntries.Select((log, index) => $"[{index}] {log}"))}";
+            message += $"\n\nMissing entries ({missingEntries.Length}):\n{string.Join("\n", missingEntries.Select((entry, index) => $"[{i + index}] {entry}"))}";
+    
+            throw new InvalidOperationException(message);
         }
 
         return foundLogs;
