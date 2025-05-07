@@ -7,6 +7,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Nuke.Common.IO;
 
 namespace GenerateSpanDocumentation
@@ -20,6 +24,8 @@ The Integration Name (used for configuring individual integrations) of each span
 - The `AspNetCoreMvc` span has the Integration Name `AspNetCore`";
         private readonly AbsolutePath _spanModelRulesFilePath;
         private readonly AbsolutePath _outputFilePath;
+
+        readonly Regex methodNameRegex = new("^Is([a-zA-Z0-9]+)V[0-9]+$");
 
         public SpanDocumentationGenerator(
             AbsolutePath spanModelRulesFilePath,
@@ -37,133 +43,61 @@ The Integration Name (used for configuring individual integrations) of each span
         public void Run()
         {
             var contents = File.ReadAllText(_spanModelRulesFilePath);
-            if (contents == null)
-            {
-                return;
-            }
 
             var sb = new StringBuilder();
             sb.AppendLine("# Span Metadata");
             sb.AppendLine(HeaderConst);
 
-            var reader = new StringReader(contents);
-            var currentModel = new SpanModel();
-            while (true)
+            // parse C# into an AST
+            var tree = CSharpSyntaxTree.ParseText(contents);
+            var root = tree.GetCompilationUnitRoot();
+
+            // iterate on all methods declared in the file
+            var methods = root.DescendantNodes().OfType<MethodDeclarationSyntax>();
+            foreach (var method in methods)
             {
-                string line = reader.ReadLine();
-
-                if (line == null)
+                // get the name of section (in the markdown, usually the integration) from the name of the method
+                var match = methodNameRegex.Match(method.Identifier.ValueText);
+                if (!match.Success)
                 {
-                    if (currentModel.State == SpanModel.ModelState.Initialized)
+                    Console.WriteLine($"Ignoring method {method.Identifier.ValueText}");
+                    continue;
+                }
+
+                var model = new SpanModel { SectionName = match.Groups[1].Value };
+
+                // now get all the method invocations in the body of that method
+                // (we get a lot more than we need at this step, so we filter in the switch)
+                var calls = method.DescendantNodes().OfType<InvocationExpressionSyntax>();
+                foreach (var call in calls)
+                {
+                    // We need the InvocationExpressionSyntax to access the arguments,
+                    // and the MemberAccessExpressionSyntax to access the name of the method
+                    if (call.Expression is not MemberAccessExpressionSyntax memberAccess) { continue; }
+
+                    var propertyType = memberAccess.Name.ToString();
+                    switch (propertyType)
                     {
-                        GenerateSectionMarkdown(sb, currentModel);
+                        case "Properties":
+                        case "Tags":
+                        case "AdditionalTags":
+                        case "Metrics":
+                            model.ParseRequirements(call.ArgumentList, Enum.Parse<SpanModel.PropertyType>(propertyType));
+                            break;
+                        case "WithIntegrationName":
+                            model.IntegrationName = call.ArgumentList.Arguments[0].ToString().Trim('"');
+                            break;
+                        case "WithMarkdownSection":
+                            model.SectionName = call.ArgumentList.Arguments[0].ToString().Trim('"');
+                            break;
+                        default:
+                            // we fall here for all the "Matches", "isOptional", etc. that we handle in SpanModel.ParseRequirements
+                            break;
                     }
-
-                    break;
                 }
 
-                int functionStartIndex;
-                int functionEndIndex;
-
-                switch (currentModel.State)
-                {
-                    case SpanModel.ModelState.Missing:
-                        functionStartIndex = line.IndexOf("public static Result Is");
-                        if (functionStartIndex > -1)
-                        {
-                            functionStartIndex += 23;
-                            functionEndIndex = line.IndexOf("(", functionStartIndex);
-                            functionEndIndex -= 2; // Subtract two indices for the version number
-                            currentModel.SectionName = line.Substring(functionStartIndex, functionEndIndex - functionStartIndex).TrimEnd();
-                            currentModel.State = SpanModel.ModelState.Initialized;
-                        }
-                        break;
-                    case SpanModel.ModelState.Initialized:
-                    case SpanModel.ModelState.ParsingProperties:
-                    case SpanModel.ModelState.ParsingTags:
-                    case SpanModel.ModelState.ParsingAdditionalTags:
-                    case SpanModel.ModelState.ParsingMetrics:
-                    case SpanModel.ModelState.ParsingDescription:
-                        var trimmedLine = line.Trim();
-
-                        // Finish the section
-                        if (string.IsNullOrWhiteSpace(trimmedLine)
-                            || trimmedLine.StartsWith("}"))
-                        {
-                            GenerateSectionMarkdown(sb, currentModel);
-                            currentModel = new SpanModel();
-                        }
-                        else if (trimmedLine.StartsWith("//"))
-                        {
-                            // Do nothing
-                        }
-                        // Add requirements
-                        else
-                        {
-                            bool processRequirement = true;
-                            functionStartIndex = line.IndexOf("Properties(");
-                            if (functionStartIndex > -1)
-                            {
-                                processRequirement = false;
-                                currentModel.State = SpanModel.ModelState.ParsingProperties;
-                            }
-
-                            functionStartIndex = line.IndexOf("Tags(");
-                            if (functionStartIndex > -1)
-                            {
-                                processRequirement = false;
-                                currentModel.State = SpanModel.ModelState.ParsingTags;
-                            }
-
-                            functionStartIndex = line.IndexOf("AdditionalTags(");
-                            if (functionStartIndex > -1)
-                            {
-                                processRequirement = false;
-                                currentModel.State = SpanModel.ModelState.ParsingAdditionalTags;
-                            }
-
-                            functionStartIndex = line.IndexOf("Metrics(");
-                            if (functionStartIndex > -1)
-                            {
-                                processRequirement = false;
-                                currentModel.State = SpanModel.ModelState.ParsingMetrics;
-                            }
-
-                            functionStartIndex = line.IndexOf("WithIntegrationName(");
-                            if (functionStartIndex > -1)
-                            {
-                                processRequirement = false;
-                                var nameStart = line.IndexOf("\"", functionStartIndex) + 1;
-                                var nameEnd = line.IndexOf("\"", nameStart) - 1;
-                                currentModel.IntegrationName = line.Substring(nameStart, nameEnd - nameStart + 1);
-                                currentModel.State = SpanModel.ModelState.ParsingDescription;
-                            }
-
-                            functionStartIndex = line.IndexOf("WithMarkdownSection(");
-                            if (functionStartIndex > -1)
-                            {
-                                processRequirement = false;
-                                var nameStart = line.IndexOf("\"", functionStartIndex) + 1;
-                                var nameEnd = line.IndexOf("\"", nameStart) - 1;
-                                currentModel.SectionName = line.Substring(nameStart, nameEnd - nameStart + 1);
-                                currentModel.State = SpanModel.ModelState.ParsingDescription;
-                            }
-
-                            if (processRequirement)
-                            {
-                                functionStartIndex = line.IndexOf(".");
-                                functionStartIndex += 1;
-                                var newRequirement = SpanModel.Requirement.GenerateRequirement(line.Substring(functionStartIndex), currentModel.State);
-                                currentModel.Requirements.Add(newRequirement);
-                            }
-                        }
-
-                        break;
-                    default:
-                        break;
-                }
+                GenerateSectionMarkdown(sb, model);
             }
-
             File.WriteAllText(_outputFilePath, sb.ToString());
         }
 
@@ -179,7 +113,7 @@ The Integration Name (used for configuring individual integrations) of each span
             // Add span properties first
             bool spanHeaderAdded = false;
             foreach (var requirement in model.Requirements
-                                        .Where(r => r.PropertyType == SpanModel.PropertyType.Span)
+                         .Where(r => r.PropertyType == SpanModel.PropertyType.Properties)
                                         .OrderBy(r => r.Property))
             {
                 if (!spanHeaderAdded)
@@ -196,7 +130,7 @@ The Integration Name (used for configuring individual integrations) of each span
             // Add Tags next
             bool tagsHeaderAdded = false;
             foreach (var requirement in model.Requirements
-                                        .Where(r => r.PropertyType == SpanModel.PropertyType.Tag)
+                         .Where(r => r.PropertyType == SpanModel.PropertyType.Tags)
                                         .OrderBy(r => r.Property))
             {
                 if (!tagsHeaderAdded)
@@ -230,7 +164,7 @@ The Integration Name (used for configuring individual integrations) of each span
             // Add Metrics next
             bool metricsHeaderAdded = false;
             foreach (var requirement in model.Requirements
-                                        .Where(r => r.PropertyType == SpanModel.PropertyType.Metric)
+                         .Where(r => r.PropertyType == SpanModel.PropertyType.Metrics)
                                         .OrderBy(r => r.Property))
             {
                 if (!metricsHeaderAdded)
@@ -249,132 +183,73 @@ The Integration Name (used for configuring individual integrations) of each span
 
         public class SpanModel
         {
-            public ModelState State = SpanModel.ModelState.Missing;
             public string SectionName;
             public string IntegrationName;
 
-            public List<Requirement> Requirements = new List<Requirement>();
-
-            public enum ModelState
-            {
-                Missing,
-                Initialized,
-                ParsingDescription,
-                ParsingProperties,
-                ParsingTags,
-                ParsingAdditionalTags,
-                ParsingMetrics,
-            }
+            public List<Requirement> Requirements = new();
 
             public enum PropertyType
             {
-                Span,
-                Tag,
+                Properties,
+                Tags,
                 AdditionalTags,
-                Metric,
+                Metrics
             }
 
             public record Requirement
             {
-                private static readonly Requirement Unknown = new Requirement
-                {
-                    PropertyType = PropertyType.Span,
-                    Property = "unknown",
-                    OperationName = null,
-                    RequiredValue = "unknown",
-                };
-
                 public PropertyType PropertyType { get; init; }
                 public string Property { get; init; }
                 public string OperationName { get; init; }
                 public string RequiredValue { get; init; }
 
                 public override string ToString()
-                    => PropertyType switch
-                    {
-                        PropertyType.AdditionalTags => $"{Property} | {OperationName} | {RequiredValue}",
-                        _ => $"{Property} | {RequiredValue}",
-                    };
-
-                public static Requirement GenerateRequirement(string line, ModelState state)
                 {
-                    var parts = line.Replace(";", "")
-                                    .Replace(",", "")
-                                    .Replace("(", " ")
-                                    .Replace(")", "")
-                                    .Split(" ", StringSplitOptions.RemoveEmptyEntries);
-                    if (parts is null || parts.Length == 0)
+                    return OperationName != null
+                               ? $"{Property} | {OperationName} | {RequiredValue}"
+                               : $"{Property} | {RequiredValue}";
+                }
+            }
+
+            public void ParseRequirements(ArgumentListSyntax arg, PropertyType propertyType)
+            {
+                var requirements = arg.DescendantNodes().OfType<InvocationExpressionSyntax>();
+                foreach (var requirement in requirements)
+                {
+                    if (requirement.Expression is not MemberAccessExpressionSyntax memberAccess) { continue; }
+
+                    var parameters = requirement.ArgumentList.Arguments.Select(x => x.ToString().Trim('"')).ToArray();
+
+                    string property = parameters[0], operationName = null, requiredValue;
+                    switch (memberAccess.Name.Identifier.Value)
                     {
-                        return Unknown;
+                        case "Matches":
+                            requiredValue = $"`{parameters[1]}`";
+                            break;
+                        case "IfPresentMatches":
+                            requiredValue = $"Optional: `{parameters[1]}`";
+                            break;
+                        case "MatchesOneOf":
+                            requiredValue = string.Join("; ", parameters.Skip(1).Select(s => $"`{s}`"));
+                            break;
+                        case "IfPresentMatchesOneOf":
+                            requiredValue = "Optional: " + string.Join("; ", parameters.Skip(1).Select(s => $"`{s}`"));
+                            break;
+                        case "IsOptional": // only for tags
+                            requiredValue = "No";
+                            break;
+                        case "IsPresent": // only for tags
+                            requiredValue = "Yes";
+                            break;
+                        case "PassesThroughSource": // only for additional tags
+                            operationName = "PassThru";
+                            requiredValue = "No";
+                            break;
+                        default:
+                            throw new Exception($"Invalid requirement:{memberAccess.Name.Identifier.Value}");
                     }
 
-                    for (int i = 0; i < parts.Length; i++)
-                    {
-                        parts[i] = parts[i].Replace("`", "").Trim('"');
-                    }
-
-                    var propertyType = state switch
-                    {
-                        ModelState.ParsingProperties => PropertyType.Span,
-                        ModelState.ParsingTags => PropertyType.Tag,
-                        ModelState.ParsingAdditionalTags => PropertyType.AdditionalTags,
-                        ModelState.ParsingMetrics => PropertyType.Metric,
-                        _ => throw new ArgumentException()
-                    };
-
-                    return (state, parts[0]) switch
-                    {
-                        (_, "Matches") => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = propertyType,
-                                OperationName = null,
-                                RequiredValue = $"`{parts[2]}`",
-                            },
-                        (_, "IfPresentMatches") => new Requirement
-                        {
-                            Property = $"{parts[1]}",
-                            PropertyType = propertyType,
-                            OperationName = null,
-                            RequiredValue = $"Optional: `{parts[2]}`",
-                        },
-                        (_, "MatchesOneOf") => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = propertyType,
-                                OperationName = null,
-                                RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
-                            },
-                        (_, "IfPresentMatchesOneOf") => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = propertyType,
-                                OperationName = null,
-                                RequiredValue = "Optional: " + string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
-                            },
-                        (ModelState.ParsingTags, "IsOptional") or (ModelState.ParsingMetrics, "IsOptional")  => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = propertyType,
-                                OperationName = null,
-                                RequiredValue = "No",
-                            },
-                        (ModelState.ParsingTags, "IsPresent") or (ModelState.ParsingMetrics, "IsPresent") => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = propertyType,
-                                OperationName = null,
-                                RequiredValue = "Yes",
-                            },
-                        (ModelState.ParsingAdditionalTags, "PassesThroughSource") => new Requirement
-                            {
-                                Property = $"{string.Join(" ", parts.Skip(1).Take(parts.Length - 2))}",
-                                PropertyType = propertyType,
-                                OperationName = "PassThru",
-                                RequiredValue = "No",
-                        },
-                        (_, _) => throw new Exception($"Invalid requirement. RequirementName:{parts[0]}, State:{state}"),
-                    };
+                    Requirements.Add(new Requirement { PropertyType = propertyType, Property = property, OperationName = operationName, RequiredValue = requiredValue });
                 }
             }
         }
