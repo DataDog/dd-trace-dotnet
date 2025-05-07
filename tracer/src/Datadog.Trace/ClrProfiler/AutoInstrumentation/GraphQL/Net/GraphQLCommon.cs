@@ -153,8 +153,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
-                    var executionError = executionErrors[i];
                     var eventAttributes = new List<KeyValuePair<string, object>>();
+                    var executionError = executionErrors[i];
+
+                    if (executionErrors[i].Instance.TryDuckCast<IExecutionErrorExtensions>(out var executionErrorExtensions))
+                    {
+                        var extensions = executionErrorExtensions.Extensions;
+                        if (extensions != null)
+                        {
+                            var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
+
+                            var keys = extensions.Keys.ToList();
+                            for (int j = 0; j < keys.Count; j++)
+                            {
+                                if (configuredExtensions.Contains(keys[j]))
+                                {
+                                    var key = keys[j];
+                                    var value = extensions[key];
+
+                                    if (value == null)
+                                    {
+                                        value = "null";
+                                    }
+                                    else if (value is Array array)
+                                    {
+                                        var stringArray = new string[array.Length];
+                                        for (int k = 0; k < array.Length; k++)
+                                        {
+                                            stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
+                                        }
+
+                                        value = stringArray;
+                                    }
+                                    else if (!(value is int || value is double || value is float || value is bool))
+                                    {
+                                        value = value.ToString();
+                                    }
+
+                                    eventAttributes.Add(new KeyValuePair<string, object>($"extensions.{key}", value));
+                                }
+                            }
+                        }
+                    }
 
                     builder.AppendLine($"{tab}{{");
 
@@ -204,43 +244,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     }
 
                     builder.AppendLine($"{tab}}},");
-
-                    var extensions = executionError.Extensions;
-                    if (extensions != null)
-                    {
-                        var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
-
-                        var keys = extensions.Keys.ToList();
-                        for (int j = 0; j < keys.Count; j++)
-                        {
-                            if (configuredExtensions.Contains(keys[j]))
-                            {
-                                var key = keys[j];
-                                var value = extensions[key];
-
-                                if (value == null)
-                                {
-                                    value = "null";
-                                }
-                                else if (value is Array array)
-                                {
-                                    var stringArray = new string[array.Length];
-                                    for (int k = 0; k < array.Length; k++)
-                                    {
-                                        stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
-                                    }
-
-                                    value = stringArray;
-                                }
-                                else if (!(value is int || value is double || value is float || value is bool))
-                                {
-                                    value = value.ToString();
-                                }
-
-                                eventAttributes.Add(new KeyValuePair<string, object>($"extension.{key}", value));
-                            }
-                        }
-                    }
 
                     var stacktrace = executionError.StackTrace;
                     if (stacktrace != null)

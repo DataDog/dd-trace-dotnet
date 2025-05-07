@@ -4,14 +4,14 @@
 // </copyright>
 
 using System.Collections;
-using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     /// <summary>
     /// GraphQL.ExecutionError interface for ducktyping
     /// </summary>
-    internal interface IExecutionError
+    internal interface IExecutionError : IDuckType
     {
         /// <summary>
         /// Gets a code for the error
@@ -33,13 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         /// Gets the path in the document where the error applies
         /// </summary>
         // GraphQL2 uses IEnumerable<string> and GraphQL3 uses IEnumerable<object>
-        // Declaring the property as IEnumerable allows to support both at once
+        // Declaring the property as IEnumerable allows supporting both at once
         IEnumerable Path { get; }
-
-        /// <summary>
-        /// Gets additional Extensions information about error.
-        /// </summary>
-        Dictionary<string, object> Extensions { get; }
 
         /// <summary>
         /// Gets the StackTrace of the error.
