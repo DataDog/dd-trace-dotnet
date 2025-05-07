@@ -26,7 +26,6 @@ jobs:
           max-retries: 60  # how many retries before stopping 
           ignored-name-patterns: |
             consolidated-pipeline
-            throughput
             dd-gitlab/run-benchmarks
             .github/dependabot.yml
             dd-gitlab/default-pipeline
@@ -34,7 +33,6 @@ jobs:
             profiler_execution_benchmarks
             dd-gitlab/download-serverless-artifacts
             dd-gitlab/download-single-step-artifacts
-            throughput_profiler
             integration_tests_arm64_debugger
 
 # Why some checks are excluded? Success ratio are too low :
