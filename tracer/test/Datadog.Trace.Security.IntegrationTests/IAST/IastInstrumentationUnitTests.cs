@@ -377,7 +377,7 @@ public class IastInstrumentationUnitTests : TestHelper
             SetDumpInfo(logDirectory);
             EnableEvidenceRedaction(false);
             string arguments = string.Empty;
-#if NET462
+#if NETFRAMEWORK
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
             if (!EnvironmentTools.IsWindows())

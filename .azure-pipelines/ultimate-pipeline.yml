@@ -1,6 +1,7 @@
 # Change the default BuildId to not include a '.' in the name (use '_' instead)
 name: $(Date:yyyyMMdd)-$(Rev:rr)
 
+# master/hotfix branches should always run
 trigger:
   branches:
     include:
@@ -9,47 +10,14 @@ trigger:
       - hotfix/*
     exclude:
       - refs/pull/*/head
-  paths:
-    exclude:
-      - .azure-pipelines/noop-pipeline.yml
-      - .azure-pipelines/monitoring.yml
-      - .github/
-      - docs/
-      - tracer/README.MD
-      - tracer/dependabot/
-      - tracer/tools/PipelineMonitor
-      - LICENSE
-      - LICENSE-3rdparty.csv
-      - NOTICE
-      - .vsconfig
-# The following is a list of shared asset locations.
-# This is the config for the Tracer CI pipeline,
-# so we are excluding shared assets that are not currently used by the Tracer.
-# We make this list granular, rather than catch-all, on purpose.
-# It makes it easier to selectively remove items from the list, once the Tracer starts using them.
-#     - The Managed Loader:
-      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/
-      - shared/src/managed-lib/ManagedLoader/
-#     - Dynamic Bindings for DiagnosticSource:
-      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/
-      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/
-#     - Logging damo samples:
-      - shared/samples/Datadog.Logging.Demo/
-#     - Managed utility APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Collections/
-      - shared/src/managed-src/Datadog.Util/
-#     - Managed Logging APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Logging.Emission/
-      - shared/src/managed-src/Datadog.Logging.Composition/
-      - shared/src/managed-src/Datadog.Logging/
-#     - Fmt lib:
-      - shared/src/native-lib/fmt_x64-windows-static/
-      - shared/src/native-lib/fmt_x86-windows-static/
-#     - Spdlob lib:
-      - shared/src/native-lib/spdlog/
-#     - Mics common native sources:
-      - shared/src/native-src/
 
+# Changes in PRs and other branches need to run, if
+# - There were any code changes
+# - There were any changes to the AzDo or GitLab builds
+# They don't need to run if there are changes to
+# - Standalone samples
+# - Docs
+# - Any other non-build related files (but these rarely change, so just suck it up)
 pr:
   branches:
     include:
@@ -57,21 +25,10 @@ pr:
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
-      - .azure-pipelines/monitoring.yml
       - .github/
-      - .gitlab-ci.yml
-      - blog/
       - docs/
-      - tracer/dependabot/
       - tracer/README.MD
-      - tracer/src/Datadog.Trace/DuckTyping/README.md
-      - tracer/samples
-      - tracer/build/_build/Build.GitHub.cs
-      - tracer/build/_build/Build.Gitlab.cs
-      - tracer/tools/PipelineMonitor
-      - LICENSE
-      - LICENSE-3rdparty.csv
-      - NOTICE
+      - tracer/samples/
 
 schedules:
   - cron: "0 3 * * *"
@@ -86,6 +43,9 @@ schedules:
         - release/1.x
     always: true
 
+  # The name of this schedule is checked from within Nuke, and is used
+  # to ensure we do a run in which we set DD_TRACE_DEBUG=1 in integration tests
+  # to catch any debug-specific issues
   - cron: "0 4 * * *"
     displayName: Daily Debug Run
     branches:
@@ -116,7 +76,6 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)
-  slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
@@ -172,7 +131,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.16.0
+  ToolVersion: 3.17.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -1592,8 +1551,8 @@ stages:
       strategy:
         # TODO: we could move this generation to the generate_variables stage but it would delay this starting, so just hardcode it for now
         matrix:
-          net462:
-            framework: net462
+          net48:
+            framework: net48
           netcoreapp2.1:
             framework: netcoreapp2.1
           netcoreapp3.0:
@@ -2175,7 +2134,7 @@ stages:
     pool:
       name: azure-windows-scale-set-2
     variables:
-      framework: net462
+      framework: net48
 
     steps:
     - template: steps/clone-repo.yml
@@ -2217,7 +2176,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2244,9 +2203,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
+        artifactSuffix: $(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2259,12 +2218,6 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2325,9 +2278,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
+        artifactSuffix: $(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2340,12 +2293,6 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
 
     - script: |
         docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
@@ -2446,15 +2393,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
+        artifactSuffix: $(artifactSuffix)
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
@@ -2603,7 +2544,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2630,9 +2571,9 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/restore-working-directory.yml
+    - template: steps/restore-working-directory-for-tests.yml
       parameters:
-        artifact: build-$(artifactSuffix)-working-directory
+        artifactSuffix: $(artifactSuffix)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2642,12 +2583,6 @@ stages:
         baseImage: $(baseImage)
         command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
-        artifact: linux-monitoring-home-$(artifactSuffix)
-        path: $(monitoringHome)
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -3022,7 +2957,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, merge_commit_id, build_samples]
+  dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3049,10 +2984,9 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/restore-working-directory.yml
+        - template: steps/restore-working-directory-for-tests.yml
           parameters:
-            artifact: build-$(artifactSuffix)-working-directory
-
+            artifactSuffix: $(artifactSuffix)
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
@@ -3063,12 +2997,6 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(artifactSuffix) monitoring home
-          inputs:
-            artifact: linux-monitoring-home-$(artifactSuffix)
-            path: $(monitoringHome)
 
         - script: |
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
@@ -3125,9 +3053,9 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/restore-working-directory.yml
+        - template: steps/restore-working-directory-for-tests.yml
           parameters:
-            artifact: build-$(artifactSuffix)-working-directory
+            artifactSuffix: $(artifactSuffix)
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
@@ -3138,12 +3066,6 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(artifactSuffix) monitoring home
-          inputs:
-            artifact: linux-monitoring-home-$(artifactSuffix)
-            path: $(monitoringHome)
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64
@@ -3218,7 +3140,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3244,9 +3166,9 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - template: steps/restore-working-directory.yml
+        - template: steps/restore-working-directory-for-tests.yml
           parameters:
-            artifact: build-$(artifactSuffix)-working-directory
+            artifactSuffix: $(artifactSuffix)
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -3254,12 +3176,6 @@ stages:
             baseImage: $(baseImage)
             command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(artifactSuffix) monitoring home
-          inputs:
-            artifact: linux-monitoring-home-$(artifactSuffix)
-            path: $(monitoringHome)
 
         - script: |
             docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -3328,7 +3244,7 @@ stages:
 
     # Enable the Datadog Agent service for this job
     services:
-      dd_agent: dd_agent
+      dd_agent: dd_agent_no_pull
 
     steps:
     - template: steps/clone-repo.yml
@@ -3971,7 +3887,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462 --TargetPlatform $(targetPlatform)
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net48 --TargetPlatform $(targetPlatform)
       displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -4513,189 +4429,6 @@ stages:
         condition: eq(variables['isMainBranch'], true)
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
-
-- stage: throughput
-  # By default throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
-  condition: and(succeeded(), eq(variables.isMainRepository, true), or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true')))
-  dependsOn: [package_linux, package_arm64, build_windows_tracer, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
-    runExtendedThroughputTests: true
-    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [Linux64, LinuxArm64]
-      allowSkipped: true
-  #### Throughput Linux 64, Windows 64, Linux arm 64
-
-  - job: Linux64
-    timeoutInMinutes: 90
-    pool: Throughput
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux native binary
-      inputs:
-        artifact: linux-monitoring-home-linux-x64
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace.Manual
-      inputs:
-        artifact: build-windows-working-directory
-        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
-        path: $(Agent.TempDirectory)
-
-    - script: |
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
-        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
-        mkdir -p $(CrankDir)/results/logs
-        cd $(CrankDir)
-        chmod +x ./run.sh
-        ./run.sh "linux" "$(runExtendedThroughputTests)"
-      displayName: Crank tracer
-      env:
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
-
-    - script: |
-        cp $(CrankDir)/*.json $(CrankDir)/results
-      displayName: Copy the results to results dir
-
-    - publish: "$(CrankDir)/results"
-      displayName: Publish results
-      # We don't include the JobAttempt in this case, because we rely on a specific name
-      # and an error in the throughput tests probably means no usable data, so dont
-      # bother trying to upload these in case of failure, which means we can retry the
-      # stages without issue
-      artifact: crank_linux_x64_1
-
-  - job: LinuxArm64
-    timeoutInMinutes: 90
-    pool: Throughput
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download arm64 native binary
-      inputs:
-        artifact: linux-monitoring-home-linux-arm64
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace.Manual
-      inputs:
-        artifact: build-windows-working-directory
-        itemPattern: tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll
-        path: $(Agent.TempDirectory)
-
-    - script: |
-        mkdir -p tracer/bin/netcoreapp3.1
-        cp $(Agent.TempDirectory)/tracer/src/Datadog.Trace.Manual/bin/Release/netcoreapp3.1/Datadog.Trace.Manual.dll tracer/bin/netcoreapp3.1/
-        test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
-        test ! -s "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll" && echo "tracer/bin/netcoreapp3.1/Datadog.Trace.Manual.dll does not exist" && exit 1
-        mkdir -p $(CrankDir)/results
-        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
-        chmod +x ./run.sh
-        ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"
-      displayName: Crank
-      env:
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
-
-    - script: |
-        cp $(CrankDir)/*.json $(CrankDir)/results
-      displayName: Copy the results to results dir
-
-    - publish: "$(CrankDir)/results"
-      displayName: Publish results
-      # We don't include the JobAttempt in this case, because we rely on a specific name
-      # and an error in the throughput tests probably means no usable data, so dont
-      # bother trying to upload these in case of failure, which means we can retry the
-      # stages without issue
-      artifact: crank_linux_arm64_1
-
-- stage: throughput_profiler
-  condition: >
-    and(succeeded(), 
-        eq(variables.isMainRepository, true),
-        or(
-          eq(variables.isMainOrReleaseBranch, true),
-          eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')))
-  dependsOn: [package_linux, generate_variables, build_windows_tracer, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    crankDir: $(System.DefaultWorkingDirectory)/profiler/build/crank
-  pool: Throughput-profiler
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [Linux64]
-  #### Throughput Linux 64, windows 64, linux arm 64
-
-  - job: Linux64
-    timeoutInMinutes: 90
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux native binary
-      inputs:
-        artifact: linux-monitoring-home-linux-x64
-        path: $(System.DefaultWorkingDirectory)/monitoring-home-linux
-
-    - script: |
-        test ! -s "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
-        test ! -s "monitoring-home-linux/linux-x64/libddwaf.so" && echo "monitoring-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        mkdir -p $(crankDir)/results
-        cd $(crankDir)
-        chmod +x ./run.sh
-        ./run.sh "linux"
-      displayName: Crank profiler
-      env:
-        DD_SERVICE: dd-trace-dotnet-profiler
-        DD_ENV: CI
-        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
-        DD_API_KEY: $(ddApiKey)
-
-    - script: |
-        cp $(crankDir)/*.json $(crankDir)/results
-      displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
-
-    - publish: "$(crankDir)/results"
-      displayName: Publish results
-      artifact: crank_profiler_linux_x64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
@@ -5252,10 +4985,8 @@ stages:
         workingDirectory: system-tests
         displayName: Run tests
         env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+          DD_API_KEY: 00000000000000000000000000000000 # Doesn't need to be a valid key (except for e2e, but they don't run here)
           TEST_LIBRARY: dotnet
-          SYSTEM_TESTS_AWS_ACCESS_KEY_ID: $(SYSTEM_TESTS_IDM_AWS_ACCESS_KEY_ID)
-          SYSTEM_TESTS_AWS_SECRET_ACCESS_KEY: $(SYSTEM_TESTS_IDM_AWS_SECRET_ACCESS_KEY)
 
       - script: |
           mkdir -p all_logs
@@ -6834,155 +6565,3 @@ stages:
             echo $result
 
           displayName: Run artifact test (expecting failure)
-
-- stage: compare_throughput
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [throughput, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - job: compare
-    timeoutInMinutes: 60 #default value
-    pool:
-      vmImage: windows-2022
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/install-latest-dotnet-sdk.yml
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download crank_linux_arm64_1
-      continueOnError: true
-      inputs:
-        artifact: crank_linux_arm64_1
-        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/current/crank_linux_arm64_1
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download crank_linux_x64_1
-      continueOnError: true
-      inputs:
-        artifact: crank_linux_x64_1
-        path: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/current/crank_linux_x64_1
-
-    - script: tracer\build.cmd CompareThroughputResults
-      displayName: Compare Crank results
-      env:
-        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
-
-    - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/throughput/throughput_report.md
-      displayName: Upload report
-      artifact: crank_throughput_report
-
-- stage: trace_pipeline
-  condition: |
-    and(
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped')
-    )
-  dependsOn:
-    - merge_commit_id
-    - unit_tests_linux
-    - unit_tests_macos
-    - unit_tests_windows
-    - unit_tests_arm64
-    - integration_tests_windows
-    - integration_tests_windows_debugger
-    - integration_tests_windows_iis
-    - integration_tests_azure_functions
-    - msi_integration_tests_windows
-    - integration_tests_linux
-    - integration_tests_linux_debugger
-    - integration_tests_arm64
-    - integration_tests_arm64_debugger
-    - static_analysis_checks_tracer
-    - exploration_tests_windows
-    - exploration_tests_linux
-    - benchmarks
-    - throughput
-    - tool_artifacts_tests_windows
-    - tool_artifacts_tests_linux
-    - upload_to_azure
-    - upload_container_images
-    - execution_benchmarks
-    - installer_smoke_tests
-    - installer_smoke_tests_arm64
-    - nuget_installer_smoke_tests
-    - nuget_installer_smoke_tests_arm64
-    - nuget_installer_smoke_tests_windows
-    - dotnet_tool_nuget_smoke_tests_linux
-    - dotnet_tool_nuget_smoke_tests_macos
-    - dotnet_tool_smoke_tests_linux
-    - dotnet_tool_self_instrument_smoke_tests_linux
-    - dotnet_tool_smoke_tests_arm64
-    - dotnet_tool_smoke_tests_windows
-    - dd_dotnet_msi_installer_smoke_tests
-    - dd_dotnet_installer_failure_tests_linux
-    - dd_dotnet_installer_failure_tests_linux_arm64
-    - msi_installer_smoke_tests
-    - tracer_home_smoke_tests
-    - coverage
-    - compare_throughput
-    - system_tests
-  jobs:
-  - job: build_and_run
-    timeoutInMinutes: 60 #default value
-
-    pool:
-      vmImage: ubuntu-latest
-
-    services:
-      dd_agent: dd_agent
-
-    steps:
-    - template: steps/install-latest-dotnet-sdk.yml
-
-    - bash: dotnet tool install dd-trace --global --prerelease --allow-roll-forward
-      displayName: "Install dd-trace"
-      retryCountOnTaskFailure: 2
-
-    - bash: |
-        mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
-        dotnet build
-        dd-trace run --dd-env "apm-dotnet-pipeline-monitoring" --set-env "DD_TRACE_SAMPLE_RATE=1" --set-env "DD_TRACE_PARTIAL_FLUSH_ENABLED=1" --set-env "DD_INSTRUMENTATION_TELEMETRY_ENABLED=1" --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
-        exit $?
-      displayName: "Run"
-      workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
-
-    - bash: sleep 20
-      displayName: Wait 20 seconds to agent flush before finishing pipeline
-
-    - publish: $(Build.SourcesDirectory)/artifacts/build_data
-      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: always()
-      continueOnError: true
-
-- stage: notify_slack_on_failures
-  condition: >
-    and(
-      failed(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      eq(variables['isMainOrReleaseBranch'], true)
-    )
-  dependsOn: [trace_pipeline] # so it runs last
-  jobs:
-  - job: notify
-    timeoutInMinutes: 10
-    pool:
-      vmImage: ubuntu-latest
-
-    steps:
-    - checkout: none
-    - bash: |
-        sha=$(echo $(OriginalCommitId) | head -c 7)
-        curl -X POST \
-        -H "Content-Type: application/json" \
-        -d '{"commit": "'$sha'"}' \
-          $(slackWebhookUrl)
-      displayName: "notify"

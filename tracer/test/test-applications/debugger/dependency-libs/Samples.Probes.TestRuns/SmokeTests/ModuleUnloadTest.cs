@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-#if NET462
+#if NETFRAMEWORK
     /// <summary>
     /// Important: This test has two phases. Upon first execution, it will create a new appdomain, execute some code inside of it and then destroy it & load the assembly `Samples.Probes.Unreferenced.External.dll`
     /// and upon second execution it will execute code from inside that assembly (namely Samples.Probes.Unreferenced.External.ExternalTest.InstrumentMe).

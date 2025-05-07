@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
 #if NET5_0_OR_GREATER
             fileName = fileName + ".Net";
-#elif NET462
+#elif NETFRAMEWORK
             fileName = fileName + ".Net462";
 #else
             fileName = fileName + ".NetCore";

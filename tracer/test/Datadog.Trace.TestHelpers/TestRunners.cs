@@ -17,6 +17,8 @@ namespace Datadog.Trace.TestHelpers
                                                                     "testhost.net461.x86",
                                                                     "testhost.net462",
                                                                     "testhost.net462.x86",
+                                                                    "testhost.net48",
+                                                                    "testhost.net48.x86",
                                                                     "vstest.console",
                                                                     "xunit.console.x86",
                                                                     "xunit.console.x64",

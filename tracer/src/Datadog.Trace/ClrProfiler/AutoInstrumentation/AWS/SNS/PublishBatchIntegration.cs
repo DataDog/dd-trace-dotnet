@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         ReturnTypeName = "Amazon.SimpleNotificationService.Model.PublishBatchResponse",
         ParameterTypeNames = new[] { "Amazon.SimpleNotificationService.Model.PublishBatchRequest" },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsSnsCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

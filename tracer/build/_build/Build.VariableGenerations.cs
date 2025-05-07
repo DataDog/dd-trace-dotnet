@@ -103,7 +103,7 @@ partial class Build : NukeBuild
             void GenerateUnitTestFrameworkMatrices()
             {
                 GenerateTfmsMatrix("unit_tests_windows_matrix", TestingFrameworks);
-                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }).ToList();
+                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 }).ToList();
                 GenerateTfmsMatrix("unit_tests_macos_matrix", unixFrameworks);
                 GenerateLinuxMatrix("x64", unixFrameworks);
                 GenerateLinuxMatrix("arm64", unixFrameworks);
@@ -136,8 +136,8 @@ partial class Build : NukeBuild
             {
                 GenerateIntegrationTestsWindowsMatrix();
                 GenerateIntegrationTestsDebuggerWindowsMatrix();
-                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
-                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
+                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET48);
+                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET48);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
@@ -282,7 +282,7 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
-                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -318,7 +318,7 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
 
-                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -336,7 +336,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48 });
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-x64"),
@@ -423,7 +423,7 @@ partial class Build : NukeBuild
             void GenerateExplorationTestsLinuxMatrix(IEnumerable<global::ExplorationTestUseCase> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new []
                 {
@@ -1526,7 +1526,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-arm64"),
