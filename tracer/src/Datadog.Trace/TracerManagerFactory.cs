@@ -376,7 +376,9 @@ namespace Datadog.Trace
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                     LanguageInterpreter = FrameworkDescription.Instance.Name,
                     ComputeStats = settings.StatsComputationEnabled,
-                    TelemetryClientConfiguration = telemetrySettings.TelemetryEnabled ? new TelemetryClientConfiguration
+                    // We don't know how to handle telemetry in Agentless mode yet
+                    // so we disable telemetry in this case
+                    TelemetryClientConfiguration = telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null ? new TelemetryClientConfiguration
                     {
                         Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
                         RuntimeId = new CharSlice(Tracer.RuntimeId),
