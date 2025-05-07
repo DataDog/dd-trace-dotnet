@@ -170,6 +170,10 @@ variables:
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
   ToolVersion: 3.17.0
+  
+  # Add BuildKit configuration
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
