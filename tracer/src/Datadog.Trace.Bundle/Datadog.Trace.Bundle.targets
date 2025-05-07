@@ -1,24 +1,25 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="DatadogAfterComputeResolvedFilesToPublishList" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
+    <ItemGroup>
+      <!-- These are the .NET Core/5+ runtimes we target in Datadog.Trace.dll (we handle .NET Framework separately).
+           When we add new TFMs, add them here as well. Keep these in order from most oldest to newest. We will select the last compatible TFM from this list. -->
+      <DotNetCoreLibDirectories Include="netstandard2.0;netcoreapp3.1;net6.0" Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'" />
+
+      <CompatibleDotNetCoreLibDirectories Include="@(DotNetCoreLibDirectories)"
+                                          Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', '%(DotNetCoreLibDirectories.Identity)'))" />
+    </ItemGroup>
+
     <PropertyGroup>
-      <!-- TargetFrameworks that use directory net461/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND
-                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</DatadogTargetFramework>
+      <!-- .NET Framework -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">
+        net461
+      </DatadogTargetFramework>
 
-      <!-- NOTE: keep the <DatadogTargetFramework> below in order from newest .NET runtime to oldest, and netstandard2.0 last.
-           This way we use the most recent runtime that is compatible. -->
-
-      <!-- TargetFrameworks that use directory net6.0/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' AND
-                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">net6.0</DatadogTargetFramework>
-
-      <!-- TargetFrameworks that use directory netcoreapp3.1/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' AND
-                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">netcoreapp3.1</DatadogTargetFramework>
-
-      <!-- TargetFrameworks that use directory netstandard2.0/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' AND
-                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard2.0'))">netstandard2.0</DatadogTargetFramework>
+      <!-- .NET Core/5+ -->
+      <!-- Using an ItemGroup as a property value selects the last time from the list. The order of DotNetCoreLibDirectories is important. -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework'">
+        %(CompatibleDotNetCoreLibDirectories.Identity)
+      </DatadogTargetFramework>
 
       <!-- special DatadogRuntimeIdentifier handling for in .NET Framework -->
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
@@ -27,6 +28,7 @@
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DatadogRuntimeIdentifier>
     </PropertyGroup>
 
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] ManagedLibDirectories: @(CompatibleDotNetCoreLibDirectories)" />
     <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework), DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier)" />
 
     <Error Condition="'$(DatadogTargetFramework)' == ''"
