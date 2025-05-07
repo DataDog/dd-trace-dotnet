@@ -575,7 +575,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            bool AtLeastOneFrameBelongToUserCode() => framesToRejit != null && framesToRejit.Any(f => f != null && FrameFilter.IsUserCode(f));
+            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(f));
         }
 
         private static bool IsSupportedExceptionType(Exception ex) =>
