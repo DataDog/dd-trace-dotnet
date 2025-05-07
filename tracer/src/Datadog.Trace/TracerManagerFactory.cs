@@ -375,6 +375,7 @@ namespace Datadog.Trace
                     Language = ".NET",
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                     LanguageInterpreter = FrameworkDescription.Instance.Name,
+                    ComputeStats = settings.StatsComputationEnabled,
                     TelemetryClientConfiguration = telemetrySettings.TelemetryEnabled ? new TelemetryClientConfiguration
                     {
                         Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
