@@ -4985,10 +4985,8 @@ stages:
         workingDirectory: system-tests
         displayName: Run tests
         env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+          DD_API_KEY: 00000000000000000000000000000000 # Doesn't need to be a valid key (except for e2e, but they don't run here)
           TEST_LIBRARY: dotnet
-          SYSTEM_TESTS_AWS_ACCESS_KEY_ID: $(SYSTEM_TESTS_IDM_AWS_ACCESS_KEY_ID)
-          SYSTEM_TESTS_AWS_SECRET_ACCESS_KEY: $(SYSTEM_TESTS_IDM_AWS_SECRET_ACCESS_KEY)
 
       - script: |
           mkdir -p all_logs
