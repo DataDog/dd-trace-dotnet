@@ -8,6 +8,14 @@ ENV \
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
     DOTNET_NOLOGO=true \
+    # Skip first-time experience for quicker startup
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true \
+    # Disable telemetry to reduce overhead
+    DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    # Ensure single-level SDK lookup
+    DOTNET_MULTILEVEL_LOOKUP=false \
+    # Set CLI language to English for consistent logs
+    DOTNET_CLI_UI_LANGUAGE="en" \
     # SDK version
     DOTNET_SDK_VERSION=$DOTNETSDK_VERSION \
     # Disable the invariant mode (set in base image)

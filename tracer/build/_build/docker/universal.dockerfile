@@ -11,6 +11,14 @@ ENV \
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
     DOTNET_NOLOGO=true \
+    # Skip first-time experience for quicker startup
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true \
+    # Disable telemetry to reduce overhead
+    DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    # Ensure single-level SDK lookup
+    DOTNET_MULTILEVEL_LOOKUP=false \
+    # Set CLI language to English for consistent logs
+    DOTNET_CLI_UI_LANGUAGE="en" \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
