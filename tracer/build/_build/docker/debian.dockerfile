@@ -15,7 +15,7 @@ ENV \
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
     # Disable telemetry to reduce overhead
     DOTNET_CLI_TELEMETRY_OPTOUT=1 \
-    # Ensure single-level SDK lookup
+    # Disable the SDK from picking up a global install
     DOTNET_MULTILEVEL_LOOKUP=0 \
     # Set CLI language to English for consistent logs
     DOTNET_CLI_UI_LANGUAGE="en" \
