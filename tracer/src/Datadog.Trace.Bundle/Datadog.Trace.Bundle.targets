@@ -1,28 +1,26 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Target Name="DatadogAfterComputeResolvedFilesToPublishList" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
     <PropertyGroup>
-      <!-- TargetFrameworks that use directory net461/ (net461, net462, net47, net471, net472, net48, net481) -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework'">net461</DatadogTargetFramework>
+      <!-- TargetFrameworks that use directory net461/ -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND
+                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</DatadogTargetFramework>
 
-      <!-- TargetFrameworks that use directory netstandard2.0/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netstandard2.0'">netstandard2.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netstandard2.1'">netstandard2.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp2.0'">netstandard2.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp2.1'">netstandard2.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp2.2'">netstandard2.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp3.0'">netstandard2.0</DatadogTargetFramework>
-
-      <!-- TargetFrameworks that use directory netcoreapp3.1/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'netcoreapp3.1'">netcoreapp3.1</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net5.0'">netcoreapp3.1</DatadogTargetFramework>
+      <!-- NOTE: keep the <DatadogTargetFramework> below in order from newest .NET runtime to oldest, and netstandard2.0 last.
+           This way we use the most recent runtime that is compatible. -->
 
       <!-- TargetFrameworks that use directory net6.0/ -->
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net6.0'">net6.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net7.0'">net6.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net8.0'">net6.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net9.0'">net6.0</DatadogTargetFramework>
-      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFramework)' == 'net10.0'">net6.0</DatadogTargetFramework>
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' AND
+                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">net6.0</DatadogTargetFramework>
 
+      <!-- TargetFrameworks that use directory netcoreapp3.1/ -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' AND
+                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">netcoreapp3.1</DatadogTargetFramework>
+
+      <!-- TargetFrameworks that use directory netstandard2.0/ -->
+      <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework' AND
+                                         $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard2.0'))">netstandard2.0</DatadogTargetFramework>
+
+      <!-- special DatadogRuntimeIdentifier handling for in .NET Framework -->
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x64'">win-x64</DatadogRuntimeIdentifier>
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework' AND '$(PlatformTarget)' == 'x86'">win-x86</DatadogRuntimeIdentifier>
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == '' AND '$(TargetFrameworkIdentifier)' == '.NETFramework'">win-</DatadogRuntimeIdentifier>
