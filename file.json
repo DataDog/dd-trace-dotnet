@@ -1,0 +1,11 @@
+{
+  "supportedConfigurations": {
+    "DD_TRACE_ENABLED": ["DEF", "LET"],
+    "DD_LOG_LEVEL": ["versionB"],
+    "BRYANS_NEW_ENV": ["versionA"]
+  },
+  "aliases": {
+    "DD_TRACE": "DD_TRACE_ENABLED",
+    "DD_ENABLED_TRACE": "DD_TRACE_ENABLED"
+  }
+}
