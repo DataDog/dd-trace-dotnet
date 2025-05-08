@@ -11,8 +11,8 @@ ENV \
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
     DOTNET_NOLOGO=1 \
-    # Skip first-time experience for quicker startup
-    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    # We build the images ahead of time, so the first-time experience, which should speed up subsequent execution, is run at VM build time
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=0 \
     # Disable telemetry to reduce overhead
     DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     # Ensure single-level SDK lookup
