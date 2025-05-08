@@ -589,6 +589,109 @@ partial class Build : NukeBuild
             }
         });
 
+    Target RunOpenTelemetryBenchmarks => _ => _
+        .After(BuildTracerHome)
+        .After(BuildProfilerHome)
+        .Description("Runs the OpenTelemetry Benchmarks projects")
+        .Executes(() =>
+        {
+            var benchmarksOpenTelemetryApiProject = Solution.GetProject(Projects.BenchmarksOpenTelemetryApi);
+            var benchmarksOpenTelemetryApiResultsDirectory = benchmarksOpenTelemetryApiProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+            EnsureCleanDirectory(benchmarksOpenTelemetryApiResultsDirectory);
+
+            try
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(benchmarksOpenTelemetryApiProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoDependencies()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+
+                var (framework, runtimes) = IsOsx switch
+                {
+                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
+                };
+
+                DotNetRun(s => s
+                    .SetProjectFile(benchmarksOpenTelemetryApiProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(framework)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
+                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
+                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+            }
+            finally
+            {
+                if (Directory.Exists(benchmarksOpenTelemetryApiResultsDirectory))
+                {
+                    CopyDirectoryRecursively(benchmarksOpenTelemetryApiResultsDirectory, BuildDataDirectory / "benchmarks",
+                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                }
+
+                CopyDumpsToBuildData();
+            }
+
+            var benchmarksOpenTelemetryInstrumentedApiProject = Solution.GetProject(Projects.BenchmarksOpenTelemetryInstrumentedApi);
+            var benchmarksOpenTelemetryInstrumentedApiResultsDirectory = benchmarksOpenTelemetryInstrumentedApiProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+            EnsureCleanDirectory(benchmarksOpenTelemetryInstrumentedApiResultsDirectory);
+
+            try
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(benchmarksOpenTelemetryInstrumentedApiProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoDependencies()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+
+                var (framework, runtimes) = IsOsx switch
+                {
+                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
+                };
+
+                DotNetRun(s => s
+                    .SetProjectFile(benchmarksOpenTelemetryInstrumentedApiProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(framework)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
+                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
+                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                    .SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
+                    .SetProcessEnvironmentVariable("DD_TRACE_ENABLED", "false")
+                    .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
+                    .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
+
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+            }
+            finally
+            {
+                if (Directory.Exists(benchmarksOpenTelemetryInstrumentedApiResultsDirectory))
+                {
+                    CopyDirectoryRecursively(benchmarksOpenTelemetryInstrumentedApiResultsDirectory, BuildDataDirectory / "benchmarks",
+                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                }
+
+                CopyDumpsToBuildData();
+            }
+
+
+        });
+
     /// <summary>
     /// Run the default build
     /// </summary>
