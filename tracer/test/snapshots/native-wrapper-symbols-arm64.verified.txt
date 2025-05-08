@@ -1,6 +1,4 @@
 __errno_location
-__stack_chk_fail
-__stack_chk_guard
 access
 asprintf
 free
