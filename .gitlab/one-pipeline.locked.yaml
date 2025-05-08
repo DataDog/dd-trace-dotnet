@@ -1,2 +1,2 @@
 include:
-  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include-wip/dd00ad9d608919e958e7128496ef78131c7d0a59/one-pipeline.yml
+  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include-wip/anna/config-inversion-add-step/one-pipeline.yml
