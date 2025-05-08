@@ -56,13 +56,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
     ]
 }";
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void Run()
         {
             var result = Method(1);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [LogMethodProbeTestData(phase: 1)]
         string Method(double arg)
         {
@@ -71,16 +71,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
             return $"Result is: {arg} + {local}";
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [LogMethodProbeTestData(phase: 2)]
         int GetInt(double d)
         {
-            int localInt = (int)d;
-            localInt += 1;
-            Console.WriteLine(localInt);
-            int stam = (int)d * localInt;
-            Console.WriteLine(stam);
-            return localInt;
+            var local = (int)(d + 1);
+            Console.WriteLine(local);
+            return local;
         }
     }
 }
