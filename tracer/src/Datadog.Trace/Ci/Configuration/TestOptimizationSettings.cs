@@ -280,6 +280,11 @@ namespace Datadog.Trace.Ci.Configuration
         public int? TestManagementAttemptToFixRetryCount { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating the default branch for the repository.
+        /// </summary>
+        public string? DefaultBranch { get; private set; }
+
+        /// <summary>
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
@@ -322,6 +327,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetTestManagementEnabled(bool value)
         {
             TestManagementEnabled = value;
+        }
+
+        internal void SetDefaultBranch(string? value)
+        {
+            DefaultBranch = value;
         }
 
         internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)
