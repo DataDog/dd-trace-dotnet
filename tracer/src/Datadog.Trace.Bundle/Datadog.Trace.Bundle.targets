@@ -16,7 +16,7 @@
       </DatadogTargetFramework>
 
       <!-- .NET Core/5+ -->
-      <!-- Using an ItemGroup as a property value selects the last time from the list. The order of DotNetCoreLibDirectories is important. -->
+      <!-- This syntax select the last item from the CompatibleDotNetCoreLibDirectories list, so the order of DotNetCoreLibDirectories is important. -->
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND '$(TargetFrameworkIdentifier)' != '.NETFramework'">
         %(CompatibleDotNetCoreLibDirectories.Identity)
       </DatadogTargetFramework>
@@ -28,8 +28,8 @@
       <DatadogRuntimeIdentifier Condition="'$(DatadogRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</DatadogRuntimeIdentifier>
     </PropertyGroup>
 
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] ManagedLibDirectories: @(CompatibleDotNetCoreLibDirectories)" />
-    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework), DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] CompatibleDotNetCoreLibDirectories: @(CompatibleDotNetCoreLibDirectories)" />
+    <Message Importance="High" Text="[Datadog.Trace.Bundle] DatadogTargetFramework: $(DatadogTargetFramework.Trim()), DatadogRuntimeIdentifier: $(DatadogRuntimeIdentifier)" />
 
     <Error Condition="'$(DatadogTargetFramework)' == ''"
            Text="[Datadog.Trace.Bundle] TargetFramework &quot;$(TargetFramework)&quot; is not supported. To ignore this error and include all files, set build property RemoveUnusedDatadogFiles=false. For more compatiblity details, see https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core and https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-framework. For assistance, contact our support team at https://www.datadoghq.com/support/." />
