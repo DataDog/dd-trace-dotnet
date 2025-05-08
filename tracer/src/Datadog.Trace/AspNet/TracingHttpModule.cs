@@ -85,6 +85,22 @@ namespace Datadog.Trace.AspNet
         {
         }
 
+        private static string BuildResourceName(Tracer tracer, HttpRequest httpRequest)
+        {
+            var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                               ? RequestDataHelper.BuildUrl(httpRequest)
+                               : RequestDataHelper.GetUrl(httpRequest);
+            if (url is not null)
+            {
+                var path = UriHelpers.GetCleanUriPath(url, httpRequest.ApplicationPath);
+                return $"{httpRequest.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+            }
+            else
+            {
+                return $"{httpRequest.HttpMethod.ToUpperInvariant()}";
+            }
+        }
+
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
             if (!Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty() &&
@@ -174,7 +190,12 @@ namespace Datadog.Trace.AspNet
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
-                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
+
+                // Attempt to set Resource Name to something that will be close to what is expected
+                // Note: we will go and re-do it in OnEndRequest, but doing it here will allow for resource-based sampling
+                // this likely won't be perfect - but we need something to try and allow resource-based sampling to function
+                var resourceName = BuildResourceName(tracer, httpRequest);
+                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
@@ -386,18 +407,7 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
-                                ? RequestDataHelper.BuildUrl(app.Request)
-                                : RequestDataHelper.GetUrl(app.Request);
-                            if (url is not null)
-                            {
-                                string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
-                                currentSpan.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
-                            }
-                            else
-                            {
-                                currentSpan.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()}";
-                            }
+                            currentSpan.ResourceName = BuildResourceName(tracer, app.Request);
                         }
                     }
                     finally
