@@ -358,9 +358,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             if (_headersInjectionEnabled && exception is not null && exception.Message.Contains("Unknown broker error"))
             {
-                // If we get this exception, it means that the broker version is too old to support headers
-                // and we should disable headers injection for this producer instance
-                // These are broker versions prior to 0.11, which is quite old
+                // If we get this exception, it likely means that the message format being used is pre-0.11
                 // We do not retry the failed message, we think this will have unnecessary complexity due to the likely rarity of this error
                 // We do not selectively disable headers injection, we disable it globally due to the likely rarity of this error
                 _headersInjectionEnabled = false;
