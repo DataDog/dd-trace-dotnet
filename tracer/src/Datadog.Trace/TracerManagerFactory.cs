@@ -364,6 +364,16 @@ namespace Datadog.Trace
             if (settings.DataPipelineEnabled)
             {
                 var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
+                TelemetryClientConfiguration? telemetryClientConfiguration = null;
+                if (telemetrySettings.TelemetryEnabled)
+                {
+                    telemetryClientConfiguration = new TelemetryClientConfiguration
+                    {
+                        Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                        RuntimeId = new CharSlice(Tracer.RuntimeId)
+                    };
+                }
+
                 var configuration = new TraceExporterConfiguration
                 {
                     Url = GetUrl(settings),
@@ -376,15 +386,7 @@ namespace Datadog.Trace
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                     LanguageInterpreter = FrameworkDescription.Instance.Name,
                     ComputeStats = settings.StatsComputationEnabled,
-                    // We don't know how to handle telemetry in Agentless mode yet
-                    // so we disable telemetry in this case
-                    TelemetryClientConfiguration = telemetrySettings.TelemetryEnabled ? new TelemetryClientConfiguration
-                    {
-                        Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
-                        RuntimeId = new CharSlice(Tracer.RuntimeId),
-                        // DebugEnabled = telemetrySettings.DebugEnabled
-                    }
-                                                       : null
+                    TelemetryClientConfiguration = telemetryClientConfiguration
                 };
 
                 return new TraceExporter(configuration);

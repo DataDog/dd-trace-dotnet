@@ -15,6 +15,8 @@ namespace Datadog.Trace.LibDatadog;
 /// </summary>
 internal class TraceExporterConfiguration : SafeHandle
 {
+    private readonly IntPtr _telemetryClientConfigurationHandle;
+
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
     {
@@ -109,13 +111,14 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            if (value == null)
+            if (value.HasValue)
             {
-                return;
-            }
+                _telemetryClientConfigurationHandle = Marshal.AllocHGlobal(Marshal.SizeOf(value.Value));
+                Marshal.StructureToPtr(value.Value, _telemetryClientConfigurationHandle, true);
 
-            using var error = NativeInterop.Config.EnableTelemetry(this, value.Value);
-            error.ThrowIfError();
+                using var error = NativeInterop.Config.EnableTelemetry(this, _telemetryClientConfigurationHandle);
+                error.ThrowIfError();
+            }
         }
     }
 
@@ -131,6 +134,7 @@ internal class TraceExporterConfiguration : SafeHandle
     protected override bool ReleaseHandle()
     {
         NativeInterop.Config.Free(handle);
+        Marshal.FreeHGlobal(_telemetryClientConfigurationHandle);
         return true;
     }
 }
