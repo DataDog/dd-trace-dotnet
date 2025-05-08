@@ -41,16 +41,16 @@
       <!-- note: currently there are two osx directories: "osx" and "osx-x64", so we can't use "osx-*" -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="'$(DatadogRuntimeIdentifier)' != '' AND
-                                         ($([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
-                                          $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
-                                          $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
-                                       !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogRuntimeIdentifier)'))" />
+                                         ($([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
+                                          $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\linux-')) OR
+                                          $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
+                                       !$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogRuntimeIdentifier)'))" />
 
       <!-- if $(DatadogTargetFramework) is set, remove the managed library directories that don't match -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="'$(DatadogTargetFramework)' != '' AND
-                                        $([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
-                                        !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogTargetFramework)'))" />
+                                        $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
+                                        !$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogTargetFramework)'))" />
 
       <ResolvedFileToPublish Remove="@(DatadogFilesToRemove)" />
     </ItemGroup>
