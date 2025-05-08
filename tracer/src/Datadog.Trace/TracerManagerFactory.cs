@@ -365,7 +365,10 @@ namespace Datadog.Trace
             {
                 var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
                 TelemetryClientConfiguration? telemetryClientConfiguration = null;
-                if (telemetrySettings.TelemetryEnabled)
+
+                // We don't know how to handle telemetry in Agentless mode yet
+                // so we disable telemetry in this case
+                if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
                 {
                     telemetryClientConfiguration = new TelemetryClientConfiguration
                     {
