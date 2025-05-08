@@ -138,6 +138,8 @@ variables:
   DOTNET_NOLOGO: 1
   DOTNET_CLI_UI_LANGUAGE: 'en'
   DOTNET_MULTILEVEL_LOOKUP: 0
+  NUGET_XMLDOC_MODE: 'skip'
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
