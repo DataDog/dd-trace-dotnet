@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Benchmarks.OpenTelemetry.Api.Setup
+namespace Benchmarks.OpenTelemetry.InstrumentedApi.Setup
 {
     internal class TracerBenchmarkSetup
     {
