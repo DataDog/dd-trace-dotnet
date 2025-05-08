@@ -16,7 +16,13 @@ ENV \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
     NUGET_XMLDOC_MODE=skip \
     # Disable LTTng tracing with QUIC
-    QUIC_LTTng=0
+    QUIC_LTTng=0 \
+    DOCKER_BUILDKIT=1 \
+    COMPOSE_DOCKER_CLI_BUILD=1
+
+# Check BuildKit and Docker CLI build variables
+RUN echo "DOCKER_BUILDKIT is set to ${DOCKER_BUILDKIT}" && \
+    echo "COMPOSE_DOCKER_CLI_BUILD is set to ${COMPOSE_DOCKER_CLI_BUILD}"
 
 RUN apt-get update \
     && apt-get -y upgrade \

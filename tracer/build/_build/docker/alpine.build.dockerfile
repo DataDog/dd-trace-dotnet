@@ -2,6 +2,10 @@
 
 FROM alpine:3.14 as base
 
+# Check BuildKit and Docker CLI build variables
+RUN echo "DOCKER_BUILDKIT is set to ${DOCKER_BUILDKIT}" && \
+    echo "COMPOSE_DOCKER_CLI_BUILD is set to ${COMPOSE_DOCKER_CLI_BUILD}"
+
 RUN apk update \
         && apk upgrade \
         && apk add --no-cache \
