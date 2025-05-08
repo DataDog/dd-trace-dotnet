@@ -132,6 +132,14 @@ variables:
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
   ToolVersion: 3.17.0
+  # .NET SDK performance optimization variables
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_UI_LANGUAGE: 'en'
+  DOTNET_MULTILEVEL_LOOKUP: 0
+  NUGET_XMLDOC_MODE: 'skip'
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:

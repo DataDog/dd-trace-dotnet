@@ -7,7 +7,15 @@ ENV \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
-    DOTNET_NOLOGO=true \
+    DOTNET_NOLOGO=1 \
+    # We build the images ahead of time, so the first-time experience, which should speed up subsequent execution, is run at VM build time
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=0 \
+    # Disable telemetry to reduce overhead
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    # Disable the SDK from picking up a global install
+    DOTNET_MULTILEVEL_LOOKUP=0 \
+    # Set CLI language to English for consistent logs
+    DOTNET_CLI_UI_LANGUAGE="en" \
     # SDK version
     DOTNET_SDK_VERSION=$DOTNETSDK_VERSION \
     # Disable the invariant mode (set in base image)
