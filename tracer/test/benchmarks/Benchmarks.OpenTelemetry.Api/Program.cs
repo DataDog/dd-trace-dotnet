@@ -1,12 +1,14 @@
 using System;
+using System.Collections;
 using System.Globalization;
 using System.Linq;
-using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Running;
-using BenchmarkDotNet.Attributes;
 using System.Reflection;
-using System.Collections;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Exporters.Json;
+using BenchmarkDotNet.Running;
 using Benchmarks.OpenTelemetry.Api.Trace;
+using Datadog.Trace.BenchmarkDotNet;
 
 namespace Benchmarks.OpenTelemetry.Api
 {
@@ -23,10 +25,13 @@ namespace Benchmarks.OpenTelemetry.Api
             // Debug benchmark classes here
             // Example: return Debug<TracerBenchmark>("StartActiveSpan");
             // return Debug<TracerBenchmark>("StartActiveSpan");
-            
+
             // be able to debug benchmarks if started in debug mode
             config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
 #endif
+
+            config = config.WithDatadog()
+                           .AddExporter(JsonExporter.FullCompressed);
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
