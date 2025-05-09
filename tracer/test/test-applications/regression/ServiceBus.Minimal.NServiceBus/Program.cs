@@ -107,18 +107,26 @@ namespace ServiceBus.Minimal.NServiceBus
 
             var masterConnection = connectionString.Replace(builder.InitialCatalog, "master");
 
-            using (var connection = new SqlConnection(masterConnection))
+            try
             {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
+                using (var connection = new SqlConnection(masterConnection))
                 {
-                    command.CommandText = $@"
+                    connection.Open();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = $@"
     if(db_id('{database}') is null)
         create database [{database}]
     ";
-                    command.ExecuteNonQuery();
+                        command.ExecuteNonQuery();
+                    }
                 }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex);
+                Console.WriteLine($"Unable to open connection to connection string {connectionString}");
             }
         }
     }
