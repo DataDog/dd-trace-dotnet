@@ -122,7 +122,7 @@ check_config_inversion_local_file:
   rules:
     - when: on_success
   variables:
-    LOCAL_JSON_PATH: "file.json" # must be set in implementing libray e.g. "tracer/build/artifacts/local_config_inversion.json"
+    LOCAL_JSON_PATH: "tracer/build/artifacts/file.json" # must be set in implementing libray e.g. "tracer/build/artifacts/local_config_inversion.json"
     CONFIG_INVERSION_URL: "test"
     STUB: "true"
 
