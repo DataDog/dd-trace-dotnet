@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using Hangfire;
+using Hangfire.Common;
 using Hangfire.MemoryStorage;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
@@ -11,15 +12,15 @@ namespace Samples.Hangfire
     internal class Program
     {
         // Define a shared ActivitySource for tracing
-        private static readonly ActivitySource ActivitySource = new("Samples.Hangfire");
+        //private static readonly ActivitySource ActivitySource = new("Samples.Hangfire");
 
         static void Main(string[] args)
         {
             // Set up OpenTelemetry
-            using var tracer = Sdk.CreateTracerProviderBuilder()
-                                  .AddHangfireInstrumentation()
-                                  .AddConsoleExporter()
-                                  .Build();
+            // using var tracer = Sdk.CreateTracerProviderBuilder()
+            //                       .AddHangfireInstrumentation()
+            //                       .AddConsoleExporter()
+            //                       .Build();
 
             // Configure Hangfire
             GlobalConfiguration.Configuration
@@ -28,6 +29,8 @@ namespace Samples.Hangfire
                                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                                .UseSimpleAssemblyNameTypeSerializer()
                                .UseRecommendedSerializerSettings();
+            //
+            //GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute());
 
             // Start Hangfire server
 
@@ -35,7 +38,10 @@ namespace Samples.Hangfire
 
             // BackgroundJob.Schedule(() => ExecuteTracedJob("scheduled-job"), TimeSpan.FromSeconds(10));
             // BackgroundJob.Enqueue(() => ExecuteTracedJob("enqueued-job"));
-            RecurringJob.AddOrUpdate("SomeJobId",() => ExecuteTracedJob("recurring-job"), "*/5 * * * * ? ");
+            BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
+            BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world 2!"));
+
+            // RecurringJob.AddOrUpdate("SomeJobId",() => ExecuteTracedJob("recurring-job"), "*/5 * * * * ? ");
             using (var server = new BackgroundJobServer())
             {
                 Console.ReadLine();
@@ -45,9 +51,9 @@ namespace Samples.Hangfire
 
         public static void ExecuteTracedJob(string additionText)
         {
-            using var activity = ActivitySource.StartActivity("ExecuteTracedJob.Function");
+            //using var activity = ActivitySource.StartActivity("ExecuteTracedJob.Function");
             Console.WriteLine("Hello from the Hangfire job! " +  additionText);
-            System.Threading.Thread.Sleep(1000); // Simulate work
+            //System.Threading.Thread.Sleep(1000); // Simulate work
         }
     }
 }
