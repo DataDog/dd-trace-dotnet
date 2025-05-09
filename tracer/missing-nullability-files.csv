@@ -468,6 +468,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/ErrorLocationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/GraphQLCommonBase.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/GraphQLTags.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/OperationTypeProxy.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IJobFilterCollectionProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/CachedMessageHeadersHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/IConsumeException.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/IConsumeResult.cs
