@@ -1,41 +1,32 @@
 @echo off
-REM ---------------------------------------------------------------
-REM Exit immediately if a command fails
-REM (CMD doesn’t have a direct equivalent of bash -e; we check errorlevel manually)
-REM ---------------------------------------------------------------
+setlocal enabledelayedexpansion
 
-REM Change to the directory where this script resides:
-cd /d "%~dp0"
-set "SCRIPT_DIR=%CD%"
+rem --- 1. Setup ---
+set "DOTNETSDK_VERSION=9.0.100"
 
-REM Go up one level to get the root directory:
-cd ..
-set "ROOT_DIR=%CD%"
+rem --- 2. Dynamic Directories ---
+set "SCRIPT_DIR=%~dp0"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+for %%I in ("%SCRIPT_DIR%\..") do set "ROOT_DIR=%%~fI"
+set "BUILD_DIR=%ROOT_DIR%\..\tracer\build\_build"
 
-REM Define build directory and Docker image name:
-set "BUILD_DIR=%ROOT_DIR%\tracer\build\_build"
-set "IMAGE_NAME=dd-trace-dotnet/alpine-base-debug"
-
-REM ---------------------------------------------------------------
-REM Build the Docker image for linux/arm64
-REM ---------------------------------------------------------------
+rem --- 3. Docker Image & Platform ---
+set "IMAGE_NAME=tonyredondo504/dd-trace-dotnet_alpine-base-debug-%DOTNETSDK_VERSION%"
 set "DOCKER_DEFAULT_PLATFORM=linux/arm64"
-docker build ^
-  --build-arg DOTNETSDK_VERSION=9.0.100 ^
-  --tag %IMAGE_NAME% ^
-  --file "%BUILD_DIR%\docker\alpine_debug.dockerfile" ^
-  "%BUILD_DIR%"
-if errorlevel 1 (
-  echo ERROR: Docker build failed.
-  exit /b 1
+
+rem --- 4. Pull or Build Image ---
+echo Pulling image %IMAGE_NAME%...
+docker pull %IMAGE_NAME%
+if %ERRORLEVEL% NEQ 0 (
+  echo Image %IMAGE_NAME% not found on registry. Building locally...
+  docker build ^
+    --build-arg DOTNETSDK_VERSION=%DOTNETSDK_VERSION% ^
+    --tag %IMAGE_NAME% ^
+    --file "%BUILD_DIR%\docker\alpine_debug.dockerfile" ^
+    "%BUILD_DIR%"
 )
-REM Clear the override so it doesn’t leak into your environment
-set "DOCKER_DEFAULT_PLATFORM="
 
-REM ---------------------------------------------------------------
-REM Run the container interactively, mounting your project and logs
-REM ---------------------------------------------------------------
-set "DOCKER_DEFAULT_PLATFORM=linux/arm64"
+rem --- 5. Run Container ---
 docker run -it --rm ^
   --mount type=bind,source="%ROOT_DIR%",target=/project ^
   --env NugetPackageDirectory=/project/packages ^
@@ -43,14 +34,6 @@ docker run -it --rm ^
   --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 ^
   --env NUKE_TELEMETRY_OPTOUT=1 ^
   -p 5003:5003 ^
-  -v "%ROOT_DIR%\var\log\datadog":"/var/log/datadog/dotnet" ^
+  -v /var/log/datadog:/var/log/datadog/dotnet ^
   %IMAGE_NAME% ^
   /bin/bash
-if errorlevel 1 (
-  echo ERROR: Docker run failed.
-  exit /b 1
-)
-REM Clear the override again
-set "DOCKER_DEFAULT_PLATFORM="
-
-endlocal
