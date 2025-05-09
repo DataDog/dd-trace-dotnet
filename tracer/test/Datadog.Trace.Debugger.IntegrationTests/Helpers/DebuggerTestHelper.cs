@@ -202,22 +202,27 @@ internal static class DebuggerTestHelper
     {
         DatadogMetadataReader.DatadogSequencePoint[] sequencePoints = null;
         using var reader = DatadogMetadataReader.CreatePdbReader(type.Assembly);
+        if (reader == null || !reader.IsPdbExist)
+        {
+            throw new Exception($"Can't find pdb file for type: {type.FullName}");
+        }
+
         foreach (var method in type.GetMethods())
         {
             sequencePoints = reader?.GetMethodSequencePoints(method.MetadataToken);
-            if (sequencePoints != null)
+            if (sequencePoints != null && sequencePoints.Any(sp => !string.IsNullOrEmpty(sp.URL)))
             {
                 break;
             }
         }
 
-        var filePath = sequencePoints?.First().URL;
-        if (string.IsNullOrEmpty(filePath))
+        var sp = sequencePoints?.FirstOrDefault(sp => !string.IsNullOrEmpty(sp.URL));
+        if (sp == null || string.IsNullOrEmpty(sp.Value.URL))
         {
-            throw new Exception("Can't find source file for line probe");
+            throw new Exception($"Can't find source file for line probe. Type is: {type.FullName}");
         }
 
-        var where = new Where { SourceFile = filePath, Lines = [line.LineNumber.ToString()] };
+        var where = new Where { SourceFile = sp.Value.URL, Lines = [line.LineNumber.ToString()] };
         snapshot.Where = where;
         return snapshot;
     }
