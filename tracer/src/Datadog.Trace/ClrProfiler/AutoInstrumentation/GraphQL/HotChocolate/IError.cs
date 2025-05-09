@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
@@ -13,13 +14,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     internal interface IError
     {
         /// <summary>
-        /// Gets the error message
+        /// Gets a code for the error
         /// </summary>
-        string Message { get; }
+        string Code { get; }
 
         /// <summary>
         /// Gets a list of locations in the document where the error applies
         /// </summary>
         IEnumerable Locations { get; }
+
+        /// <summary>
+        /// Gets a message for the error
+        /// </summary>
+        string Message { get; }
+
+        /// <summary>
+        /// Gets the path in the document where the error applies
+        /// </summary>
+        // GraphQL2 uses IEnumerable<string> and GraphQL3 uses IEnumerable<object>
+        // Declaring the property as IEnumerable allows supporting both at once
+        IEnumerable Path { get; }
+
+        /// <summary>
+        /// Gets the StackTrace of the error.
+        /// </summary>
+        string StackTrace { get; }
+
+        /// <summary>
+        /// Gets additional Extensions information about error.
+        /// </summary>
+        Dictionary<string, object> Extensions { get; }
     }
 }
