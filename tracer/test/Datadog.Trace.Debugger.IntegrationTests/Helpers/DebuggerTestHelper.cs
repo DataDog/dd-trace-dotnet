@@ -202,7 +202,7 @@ internal static class DebuggerTestHelper
     {
         DatadogMetadataReader.DatadogSequencePoint[] sequencePoints = null;
         using var reader = DatadogMetadataReader.CreatePdbReader(type.Assembly);
-        if (reader == null || !reader.IsPdbExist)
+        if (reader is not { IsPdbExist: true })
         {
             throw new Exception($"Can't find pdb file for type: {type.FullName}");
         }
