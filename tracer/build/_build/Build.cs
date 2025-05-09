@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -659,6 +661,29 @@ partial class Build : NukeBuild
                     false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
                 };
 
+                var platformName = (Platform, TargetPlatform.ToString()) switch
+                {
+                    (PlatformFamily.Linux, "x64") => IsAlpine ? "linux-musl-x64" : "linux-x64",
+                    (PlatformFamily.Linux, "ARM64") => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
+                    (PlatformFamily.OSX, "x64") => "osx",
+                    (PlatformFamily.OSX, "ARM64") => "osx",
+                    (PlatformFamily.Windows, "ARM64" or "ARM64EC") => "win-ARM64EC",
+                    (PlatformFamily.Windows, "x64") => "win-x64",
+                    (PlatformFamily.Windows, "x86") => "win-x86",
+                    _ => throw new InvalidOperationException($"Unknown platform {Platform} ({RuntimeInformation.ProcessArchitecture})"),
+                };
+
+                var profilerPath = platformName switch
+                {
+                    "osx" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.dylib",
+                    "linux-x64" or "linux-musl-x64" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.so",
+                    "linux-arm64" or "linux-musl-arm64" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.so",
+                    "win-x64" or "win-x86" or "win-ARM64EC" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.dll",
+                    _ => throw new InvalidOperationException($"Unknown platformName {platformName} for native path"),
+                };
+
+                var dotnetRunEnvironmentVariablesString = string.Join(" ", dotnetRunEnvironmentVariables.Select(env => $"-e {env}").ToArray());
+
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksOpenTelemetryInstrumentedApiProject)
                     .SetConfiguration(BuildConfiguration)
@@ -668,10 +693,16 @@ partial class Build : NukeBuild
                     .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
-                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("COR_ENABLE_PROFILING", "1")
+                    .SetProcessEnvironmentVariable("COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}")
+                    .SetProcessEnvironmentVariable("COR_PROFILER_PATH", profilerPath)
+                    .SetProcessEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1")
+                    .SetProcessEnvironmentVariable("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}")
+                    .SetProcessEnvironmentVariable("CORECLR_PROFILER_PATH", profilerPath)
                     .SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
-                    .SetProcessEnvironmentVariable("DD_TRACE_ENABLED", "false")
+                    // .SetProcessEnvironmentVariable("DD_TRACE_ENABLED", "false")
                     .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                     .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
 
@@ -688,8 +719,6 @@ partial class Build : NukeBuild
 
                 CopyDumpsToBuildData();
             }
-
-
         });
 
     /// <summary>
