@@ -84,18 +84,17 @@ RUN if [ "$(uname -m)" != "aarch64" ]; then \
     && rm dotnet-install.sh
 
 ENV PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet tool install --global dotnet-counters &&\
-    dotnet tool install --global dotnet-coverage &&\
-    dotnet tool install --global dotnet-dump &&\
-    dotnet tool install --global dotnet-gcdump &&\
-    dotnet tool install --global dotnet-monitor &&\
-    dotnet tool install --global dotnet-trace &&\
-    dotnet tool install --global dotnet-stack &&\
-    dotnet tool install --global dotnet-symbol &&\
-    dotnet tool install --global dotnet-debugger-extensions &&\
-    dotnet tool install --global dotnet-sos &&\
-    dotnet tool install --global dotnet-dsrouter &&\
-    dotnet sos install &&\
-    dotnet debugger-extensions install --accept-license-agreement
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-counters
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-coverage
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-dump
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-gcdump
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-monitor
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-trace
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-stack
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-symbol
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-debugger-extensions
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-sos
+RUN DOTNET_EnableWriteXorExecute=0 dotnet tool install --global dotnet-dsrouter
+RUN DOTNET_EnableWriteXorExecute=0 dotnet sos install
 
 WORKDIR /project
