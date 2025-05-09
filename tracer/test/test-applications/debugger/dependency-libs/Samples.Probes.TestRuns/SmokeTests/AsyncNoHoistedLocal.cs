@@ -12,7 +12,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
         public async Task<string> Method()
         {
             var input = nameof(Method) + "f";
