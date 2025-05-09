@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -114,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out List<SpanEvent> errorSpanEvents), errorSpanEvents);
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out var errorSpanEvents), errorSpanEvents);
             }
         }
 
@@ -136,6 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
+                    var eventAttributes = new List<KeyValuePair<string, object>>();
                     var executionError = executionErrors[i];
 
                     builder.Append(tab).AppendLine("{");
@@ -144,10 +146,90 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     if (message != null)
                     {
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                        eventAttributes.Add(new KeyValuePair<string, object>("message", message));
                     }
 
-                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
+                        ConstructErrorLocationsMessage(builder, tab, locations);
+
+                        var joinedLocations = new List<string>();
+                        foreach (var location in (System.Collections.IEnumerable)locations)
+                        {
+                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
+                            {
+                                joinedLocations.Add($"{locationProxy.Line}:{locationProxy.Column}");
+                            }
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
+                    }
+
                     builder.AppendLine($"{tab}}},");
+
+                    var paths = executionError.Path;
+                    if (paths != null)
+                    {
+                        var pathAttribute = new List<string>();
+                        foreach (var path in paths)
+                        {
+                            pathAttribute.Add(path.ToString());
+                        }
+
+                        eventAttributes.Add(new KeyValuePair<string, object>("path", pathAttribute.ToArray()));
+                    }
+
+                    var code = executionError.Code;
+                    if (code != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("code", code));
+                    }
+
+                    var stacktrace = executionError.StackTrace;
+                    if (stacktrace != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", stacktrace));
+                    }
+
+                    var extensions = executionError.Extensions;
+                    if (extensions != null)
+                    {
+                        var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
+
+                        var keys = extensions.Keys.ToList();
+                        for (int j = 0; j < keys.Count; j++)
+                        {
+                            if (configuredExtensions.Contains(keys[j]))
+                            {
+                                var key = keys[j];
+                                var value = extensions[key];
+
+                                if (value == null)
+                                {
+                                    value = "null";
+                                }
+                                else if (value is Array array)
+                                {
+                                    var stringArray = new string[array.Length];
+                                    for (int k = 0; k < array.Length; k++)
+                                    {
+                                        stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
+                                    }
+
+                                    value = stringArray;
+                                }
+                                else if (!(value is int || value is double || value is float || value is bool))
+                                {
+                                    value = value.ToString();
+                                }
+
+                                eventAttributes.Add(new KeyValuePair<string, object>($"extensions.{key}", value));
+                            }
+                        }
+                    }
+
+                    spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
                 }
 
                 builder.AppendLine("]");
