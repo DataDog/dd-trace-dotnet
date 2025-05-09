@@ -200,10 +200,29 @@ internal static class DebuggerTestHelper
 
     private static ProbeDefinition WithLineProbeWhere(this ProbeDefinition snapshot, Type type, LineProbeTestDataAttribute line)
     {
+        DatadogMetadataReader.DatadogSequencePoint[] sequencePoints = null;
         using var reader = DatadogMetadataReader.CreatePdbReader(type.Assembly);
-        var sequencePoints = reader?.GetMethodSequencePoints(type.GetMethods().First().MetadataToken);
-        var filePath = sequencePoints?.First().URL;
-        var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
+        if (reader is not { IsPdbExist: true })
+        {
+            throw new Exception($"Can't find pdb file for type: {type.FullName}");
+        }
+
+        foreach (var method in type.GetMethods())
+        {
+            sequencePoints = reader?.GetMethodSequencePoints(method.MetadataToken);
+            if (sequencePoints != null && sequencePoints.Any(sp => !string.IsNullOrEmpty(sp.URL)))
+            {
+                break;
+            }
+        }
+
+        var sp = sequencePoints?.FirstOrDefault(sp => !string.IsNullOrEmpty(sp.URL));
+        if (sp == null || string.IsNullOrEmpty(sp.Value.URL))
+        {
+            throw new Exception($"Can't find source file for line probe. Type is: {type.FullName}");
+        }
+
+        var where = new Where { SourceFile = sp.Value.URL, Lines = [line.LineNumber.ToString()] };
         snapshot.Where = where;
         return snapshot;
     }

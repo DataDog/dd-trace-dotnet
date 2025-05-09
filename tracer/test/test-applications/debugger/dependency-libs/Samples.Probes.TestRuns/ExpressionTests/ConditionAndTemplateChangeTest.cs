@@ -71,10 +71,13 @@ namespace Samples.Probes.TestRuns.ExpressionTests
             return $"Result is: {arg} + {local}";
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         [LogMethodProbeTestData(phase: 2)]
         int GetInt(double d)
         {
-            return (int)(d + 1);
+            var local = (int)(d + 1);
+            Console.WriteLine(local);
+            return local;
         }
     }
 }
