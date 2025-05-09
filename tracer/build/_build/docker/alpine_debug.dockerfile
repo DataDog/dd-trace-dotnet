@@ -17,7 +17,9 @@ ENV \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
     NUGET_XMLDOC_MODE=skip \
     # Disable LTTng tracing with QUIC
-    QUIC_LTTng=0
+    QUIC_LTTng=0 \
+    # https://github.com/dotnet/runtime/issues/13648
+    DOTNET_EnableWriteXorExecute=0
     
 RUN apk update \
         && apk upgrade \
@@ -96,9 +98,4 @@ RUN dotnet tool install --global dotnet-counters &&\
     dotnet sos install &&\
     dotnet debugger-extensions install --accept-license-agreement
 
-# Copy the build project in and build it
-COPY *.csproj *.props *.targets /build/
-RUN dotnet restore /build
-COPY . /build
-RUN dotnet build /build --no-restore
 WORKDIR /project
