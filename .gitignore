@@ -388,3 +388,6 @@ datadog-coverage-*
 
 # nuke
 .nuke/build.schema.json
+
+# tools/dumps
+tools/dumps/
