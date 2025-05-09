@@ -103,6 +103,7 @@ RUN dotnet tool install --global dotnet-symbol
 RUN dotnet tool install --global dotnet-debugger-extensions
 RUN dotnet tool install --global dotnet-sos
 RUN dotnet tool install --global dotnet-dsrouter
-RUN dotnet sos install
+RUN dotnet sos install &&\
+    dotnet debugger-extensions install --accept-license-agreement
 
 WORKDIR /project
