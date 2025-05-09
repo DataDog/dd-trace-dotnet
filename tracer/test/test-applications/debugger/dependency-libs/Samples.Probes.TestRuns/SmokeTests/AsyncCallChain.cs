@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -22,9 +23,12 @@ namespace Samples.Probes.TestRuns.SmokeTests
             var result = await Async2(chain);
             if (result > chain.ToString().Length + 10)
             {
-                return result - 2;
+                result -= 2;
+                Console.WriteLine(result);
+                return result;
             }
 
+            Console.WriteLine(result);
             return result;
         }
 
