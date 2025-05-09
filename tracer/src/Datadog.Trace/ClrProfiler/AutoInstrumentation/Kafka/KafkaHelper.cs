@@ -356,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
         {
-            if (_headersInjectionEnabled && exception is not null && exception.Message.Contains("Unknown broker error"))
+            if (_headersInjectionEnabled && exception is not null && exception.Message.IndexOf("Unknown broker error", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 // If we get this exception, it likely means that the message format being used is pre-0.11
                 // We do not retry the failed message, we think this will have unnecessary complexity due to the likely rarity of this error
