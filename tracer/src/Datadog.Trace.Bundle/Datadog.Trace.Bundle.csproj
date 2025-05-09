@@ -1,13 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- do not build this project, only pack -->
+    <NoBuild>true</NoBuild>
+
     <Version>3.17.0</Version>
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>$(NoWarn);NU5100;NU5128;NU1901;NU1902;NU1903;NU1904</NoWarn>
@@ -16,28 +18,18 @@
 
   <ItemGroup>
     <None Include="..\..\..\docs\Datadog.Trace.Bundle\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
-  <ItemGroup>
+    <Content Include="Datadog.Trace.Bundle.props" Pack="true" PackagePath="buildTransitive\Datadog.Trace.Bundle.props" />
+    <Content Include="Datadog.Trace.Bundle.targets" Pack="true" PackagePath="buildTransitive\Datadog.Trace.Bundle.targets" />
+
     <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
-  </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="home\**\readme.txt" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
+    <Content Remove="home\**\readme.txt" Pack="false" />
+    <Content Remove="home\**\*.xml" Pack="false" />
 
-    <Content Update="home\**\*.xml" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
   </ItemGroup>
 
