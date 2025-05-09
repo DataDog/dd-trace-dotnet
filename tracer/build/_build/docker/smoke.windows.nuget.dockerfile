@@ -44,6 +44,7 @@ ENV CORECLR_ENABLE_PROFILING=1 \
     DD_DOTNET_TRACER_HOME="c:\app\datadog" \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
     DD_PROFILING_ENABLED=1 \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore
