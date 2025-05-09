@@ -7,8 +7,8 @@ set "DOTNETSDK_VERSION=9.0.100"
 rem --- 2. Dynamic Directories ---
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
-for %%I in ("%SCRIPT_DIR%\..") do set "ROOT_DIR=%%~fI"
-set "BUILD_DIR=%ROOT_DIR%\..\tracer\build\_build"
+for %%I in ("%SCRIPT_DIR%\..\..") do set "ROOT_DIR=%%~fI"
+set "BUILD_DIR=%ROOT_DIR%\tracer\build\_build"
 
 rem --- 3. Docker Image & Platform ---
 set "IMAGE_NAME=tonyredondo504/dd-trace-dotnet_alpine-base-debug-%DOTNETSDK_VERSION%"
