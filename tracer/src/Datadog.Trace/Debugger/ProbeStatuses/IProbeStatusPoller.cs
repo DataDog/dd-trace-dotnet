@@ -19,6 +19,6 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
         void UpdateProbe(string probeId, FetchProbeStatus newProbeStatus);
 
-        string[] GetBoundedProbes(string[] candidateProbeIds);
+        string[] GetBoundedProbes();
     }
 }
