@@ -12,4 +12,5 @@ public:
     void Info(std::string line) const override;
     void Warn(std::string line) const override;
     void Error(std::string line) const override;
+    bool IsDebugEnabled() const override;
 };

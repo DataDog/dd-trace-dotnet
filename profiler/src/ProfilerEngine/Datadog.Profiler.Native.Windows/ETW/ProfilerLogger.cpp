@@ -18,3 +18,8 @@ void ProfilerLogger::Error(std::string line) const
 {
     Log::Error(std::move(line));
 }
+
+bool ProfilerLogger::IsDebugEnabled() const
+{
+    return Log::IsDebugEnabled();
+}
