@@ -12,4 +12,5 @@ public:
     virtual void Info(std::string line) const = 0;
     virtual void Warn(std::string line) const = 0;
     virtual void Error(std::string line) const = 0;
+    virtual bool IsDebugEnabled() const = 0;
 };

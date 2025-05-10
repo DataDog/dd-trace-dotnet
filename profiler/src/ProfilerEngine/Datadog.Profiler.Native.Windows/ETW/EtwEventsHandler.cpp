@@ -87,9 +87,12 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         if (_pEventsFile != nullptr)
         {
             fwrite(buffer.get(), sizeof(uint8_t), readSize, _pEventsFile);
-            std::stringstream builder;
-            builder << "Read size = " << readSize << " bytes -- Message size = " << message->Size << " | Event payload size = " << message->Payload.EtwUserDataLength;
-            _logger->Info(builder.str());
+            if (_logger->IsDebugEnabled())
+            {
+                std::stringstream builder;
+                builder << "Read size = " << readSize << " bytes -- Message size = " << message->Size << " | Event payload size = " << message->Payload.EtwUserDataLength;
+                _logger->Info(builder.str());
+            }
         }
 
         // check the message based on the expected command
@@ -102,9 +105,12 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         {
             if (message->Size > readSize)
             {
-                std::stringstream builder;
-                builder << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader);
-                _logger->Error(builder.str());
+                if (_logger->IsDebugEnabled())
+                {
+                    std::stringstream builder;
+                    builder << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader);
+                    _logger->Info(builder.str());
+                }
 
                 // TODO: maybe we should stop the communication???
                 continue;
@@ -133,9 +139,12 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             {
                 _pReceiver->OnEvent(timestamp, tid, version, keyword, level, id, userDataLength, pUserData);
 
-                std::stringstream builder;
-                builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
-                _logger->Info(builder.str());
+                if (_logger->IsDebugEnabled())
+                {
+                    std::stringstream builder;
+                    builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
+                    _logger->Info(builder.str());
+                }
             }
 
             // fire and forget so no need to answer

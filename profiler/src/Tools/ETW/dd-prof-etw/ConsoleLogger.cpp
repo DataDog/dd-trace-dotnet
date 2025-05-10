@@ -18,3 +18,8 @@ void ConsoleLogger::Error(std::string line) const
 {
     std::cout << line << std::endl;
 }
+
+bool ConsoleLogger::IsDebugEnabled() const
+{
+    return false;
+}
