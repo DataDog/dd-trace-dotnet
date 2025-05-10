@@ -41,6 +41,8 @@ services:
     - serverless-lambda-generic-complex
     - serverless-lambda-generic-complex-nested
     - serverless-lambda-toplevel-statement
+    - serverless-lambda-disabled-no-param-sync
+    - serverless-lambda-disabled-toplevel-statement
     - serverless-dummy-api
     environment:
     - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC=http://serverless-lambda-no-param-sync:8080
@@ -81,6 +83,8 @@ services:
     - AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX=http://serverless-lambda-generic-complex:8080
     - AWS_LAMBDA_ENDPOINT_GENERICBASE_COMPLEX_NESTED=http://serverless-lambda-generic-complex-nested:8080
     - AWS_LAMBDA_ENDPOINT_TOPLEVEL_STATEMENT=http://serverless-lambda-toplevel-statement:8080
+    - AWS_LAMBDA_ENDPOINT_DISABLED_NO_PARAM_SYNC=http://serverless-lambda-disabled-no-param-sync:8080
+    - AWS_LAMBDA_ENDPOINT_DISABLED_TOPLEVEL_STATEMENT=http://serverless-lambda-disabled-toplevel-statement:8080
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
 
   StartDependencies.Serverless:
@@ -124,6 +128,8 @@ services:
     - serverless-lambda-generic-complex
     - serverless-lambda-generic-complex-nested
     - serverless-lambda-toplevel-statement
+    - serverless-lambda-disabled-no-param-sync
+    - serverless-lambda-disabled-toplevel-statement
     - serverless-dummy-api
     environment:
       - TIMEOUT_LENGTH=120
@@ -166,6 +172,8 @@ services:
       serverless-lambda-generic-complex:8080
       serverless-lambda-generic-complex-nested:8080
       serverless-lambda-toplevel-statement:8080
+      serverless-lambda-disabled-no-param-sync:8080
+      serverless-lambda-disabled-toplevel-statement:8080
       serverless-dummy-api:9005
 
   serverless-lambda-no-param-sync:
@@ -1041,6 +1049,55 @@ services:
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs/serverless-lambda-toplevel-statement:/var/log/datadog/dotnet
+
+  serverless-lambda-disabled-no-param-sync:
+    build:
+      context: ./artifacts/bin/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:6}
+        - framework=${framework:-net6.0}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSync"
+    image: dd-trace-dotnet/serverless-lambda-disabled-no-param-sync
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_DEBUG=1
+      - DD_TRACE_AwsLambda_ENABLED=0
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./artifacts/build_data/logs/serverless-lambda-disabled-no-param-sync:/var/log/datadog/dotnet
+
+  serverless-lambda-disabled-toplevel-statement:
+    build:
+      context: ./artifacts/bin/Samples.Amazon.Lambda.RuntimeSupport
+      dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:6}
+        - framework=${framework:-net6.0}
+    depends_on:
+      - serverless-dummy-api
+    command: "Samples.Amazon.Lambda.RuntimeSupport"
+    image: dd-trace-dotnet/serverless-lambda-disabled-toplevel-statement
+    environment:
+      - DD_TRACE_AGENT_URL=http://integrationtests:5002
+      - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+      - DUMMY_API_HOST=http://serverless-dummy-api:9005
+      - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+      - DD_TRACE_ENABLED=0
+      - DD_TRACE_DEBUG=1
+      - DD_TRACE_AwsLambda_ENABLED=0
+    ports:
+      - "8080"
+    volumes:
+      - ./:/project
+      - ./artifacts/build_data/logs/serverless-lambda-disabled-toplevel-statement:/var/log/datadog/dotnet
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:
