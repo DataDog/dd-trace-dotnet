@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger
 
         private const int DefaultUploadBatchSize = 100;
         public const int DefaultSymbolBatchSizeInBytes = 100000;
-        private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
+        private const double DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
         public const int DefaultCodeOriginExitSpanFrames = 8;
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Debugger
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
-                                        .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
+                                        .AsDouble(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
                                         .Value;
 
             UploadFlushIntervalMilliseconds = config
@@ -163,7 +163,7 @@ namespace Datadog.Trace.Debugger
 
         public ImmutableHashSet<string> SymDbThirdPartyDetectionExcludes { get; }
 
-        public int DiagnosticsIntervalSeconds { get; }
+        public double DiagnosticsIntervalSeconds { get; }
 
         public int UploadFlushIntervalMilliseconds { get; }
 
