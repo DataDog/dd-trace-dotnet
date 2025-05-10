@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// Duck Type for Producer[TKey, TValue]+Config
 /// Interface, as used in generic constraint
 /// </summary>
-internal interface IProducerBuilder
+internal interface IProducerBuilder : IDuckType
 {
     IEnumerable<KeyValuePair<string, string>> Config { get; }
 }
