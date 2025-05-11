@@ -836,6 +836,7 @@ services:
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
+        # - ADDITIONAL_INSTALL=
     image: dd-trace-dotnet/${dockerTag:-not-set}-tester
     init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
