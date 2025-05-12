@@ -233,6 +233,13 @@ public:
                               const std::string& typeName,
                               uint64_t allocationAmount,
                               const std::vector<uintptr_t>& stack), (override));
+
+    MOCK_METHOD(void, OnAllocationSampled, (uint32_t allocationKind,
+                              ClassID classId,
+                              const WCHAR* typeName,
+                              uintptr_t address,
+                              uint64_t objectSize,
+                              uint64_t allocationByteOffset), (override));
 };
 
 template <typename T, typename U, typename... Args>
