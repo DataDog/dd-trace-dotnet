@@ -53,6 +53,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
+                .IsOptional("dd.original_resource_name")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
