@@ -27,11 +27,7 @@ internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider val
         Tag = ValueProvider.GetValue(Constants.TravisTag);
         if (string.IsNullOrEmpty(Tag))
         {
-            Branch = ValueProvider.GetValue(Constants.TravisPullRequestBranch);
-            if (string.IsNullOrWhiteSpace(Branch))
-            {
-                Branch = ValueProvider.GetValue(Constants.TravisBranch);
-            }
+            Branch = ValueProvider.GetValue(Constants.TravisBranch);
         }
 
         SourceRoot = ValueProvider.GetValue(Constants.TravisBuildDir);
@@ -43,5 +39,8 @@ internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider val
         JobUrl = ValueProvider.GetValue(Constants.TravisJobWebUrl);
 
         Message = ValueProvider.GetValue(Constants.TravisCommitMessage);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.TravisPullRequestBranch);
+        PrBaseCommit = ValueProvider.GetValue(Constants.TravisPullRequestSha);
     }
 }

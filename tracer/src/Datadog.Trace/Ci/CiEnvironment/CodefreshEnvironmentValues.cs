@@ -41,5 +41,7 @@ internal sealed class CodefreshEnvironmentValues<TValueProvider>(TValueProvider 
         SetVariablesIfNotEmpty(
             VariablesToBypass,
             Constants.CodefreshBuildId);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.CodefreshPullRequestTarget);
     }
 }
