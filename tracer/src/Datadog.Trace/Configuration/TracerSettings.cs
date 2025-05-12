@@ -488,12 +488,12 @@ namespace Datadog.Trace.Configuration
 
             if (EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")?.Contains("tracer") == true)
             {
-                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "ssi", recordValue: true, ConfigurationOrigins.EnvVars);
+                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "ssi", recordValue: true, ConfigurationOrigins.Default);
             }
             else
             {
-                // TODO: capture `cmd_line` and `manual` values
-                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "unknown", recordValue: true, ConfigurationOrigins.EnvVars);
+                // TODO: capture `cmd_line/dd-trace tool` and `env_var` values
+                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "unknown", recordValue: true, ConfigurationOrigins.Default);
             }
 
             if (AzureAppServiceMetadata is not null)
