@@ -23,7 +23,7 @@ jobs:
       - uses: DataDog/ensure-ci-success@f40e6ffd8e60280d478b9b92209aaa30d3d56895
         with:
           initial-delay-seconds: 10  # wait for this delay before starting
-          max-retries: 60  # how many retries before stopping 
+          max-retries: 120  # how many retries before stopping 
           ignored-name-patterns: |
             consolidated-pipeline
             dd-gitlab/run-benchmarks
