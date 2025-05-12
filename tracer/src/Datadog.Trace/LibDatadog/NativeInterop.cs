@@ -69,5 +69,8 @@ internal class NativeInterop
 
         [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_enable_telemetry")]
         internal static extern ErrorHandle EnableTelemetry(SafeHandle config, IntPtr telemetryConfig);
+
+        [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_client_computed_stats")]
+        internal static extern ErrorHandle SetClientComputedStats(SafeHandle config, bool clientComputedStats);
     }
 }

@@ -377,6 +377,11 @@ namespace Datadog.Trace
                     };
                 }
 
+                // When APM is disabled, we don't want to compute stats at all
+                // A common use case is in Application Security Monitoring (ASM) scenarios:
+                // when APM is disabled but ASM is enabled.
+                var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabledInternal;
+
                 var configuration = new TraceExporterConfiguration
                 {
                     Url = GetUrl(settings),
@@ -389,7 +394,8 @@ namespace Datadog.Trace
                     LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                     LanguageInterpreter = FrameworkDescription.Instance.Name,
                     ComputeStats = settings.StatsComputationEnabled,
-                    TelemetryClientConfiguration = telemetryClientConfiguration
+                    TelemetryClientConfiguration = telemetryClientConfiguration,
+                    ClientComputedStats = clientComputedStats
                 };
 
                 return new TraceExporter(configuration);
