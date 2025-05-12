@@ -116,14 +116,14 @@ namespace Datadog.Profiler.SmokeTests
 
         private void RunChecks(MockDatadogAgent agent, string[] errorExceptions)
         {
-            CheckLogFiles(errorExceptions);
+            CheckLogFiles(agent.ProfiledProcessId, errorExceptions);
             CheckPprofFiles();
             CheckAgent(agent);
         }
 
-        private void CheckLogFiles(string[] errorExceptions)
+        private void CheckLogFiles(int profiledProcessId, string[] errorExceptions)
         {
-            CheckLogFiles("DD-DotNet-Profiler-Native*.*", errorExceptions);
+            CheckLogFiles($"DD-DotNet-Profiler-Native*-{profiledProcessId}.log", errorExceptions);
             CheckNoLogFiles("DD-DotNet-Profiler-Managed*.*");
             CheckNoLogFiles("DD-DotNet-Common-ManagedLoader*.*");
         }

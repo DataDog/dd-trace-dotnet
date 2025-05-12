@@ -265,7 +265,7 @@ void CorProfilerCallback::InitializeServices()
             }
             else
             {
-                Log::Warn("Live Heap profiling is disabled: .NET 7+ is required.");
+                Log::Warn("Live Heap profiling is disabled for .NET ", _pRuntimeInfo->GetDotnetMajorVersion(), ":.NET 7 + is required.");
             }
         }
 
@@ -289,7 +289,10 @@ void CorProfilerCallback::InitializeServices()
             );
         }
 
-        if (_pConfiguration->IsContentionProfilingEnabled())
+        if (
+            (_pConfiguration->IsContentionProfilingEnabled()) ||
+            (_pConfiguration->IsWaitHandleProfilingEnabled())
+            )
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
                 valueTypeProvider,
@@ -334,21 +337,29 @@ void CorProfilerCallback::InitializeServices()
             _pGarbageCollectionProvider = nullptr;
         }
 
+        // HTTP profiler is only supported in .NET 7+
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-            _pNetworkProvider = RegisterService<NetworkProvider>(
-                valueTypeProvider,
-                _pCorProfilerInfo,
-                _pManagedThreadList,
-                _pFrameStore.get(),
-                _pThreadsCpuManager,
-                _pAppDomainStore.get(),
-                _pRuntimeIdStore,
-                _pConfiguration.get(),
-                _metricsRegistry,
-                CallstackProvider(_memoryResourceManager.GetDefault()),
-                MemoryResourceManager::GetDefault()
-            );
+            if (_pRuntimeInfo->GetDotnetMajorVersion() >= 7)
+            {
+                _pNetworkProvider = RegisterService<NetworkProvider>(
+                    valueTypeProvider,
+                    _pCorProfilerInfo,
+                    _pManagedThreadList,
+                    _pFrameStore.get(),
+                    _pThreadsCpuManager,
+                    _pAppDomainStore.get(),
+                    _pRuntimeIdStore,
+                    _pConfiguration.get(),
+                    _metricsRegistry,
+                    CallstackProvider(_memoryResourceManager.GetDefault()),
+                    MemoryResourceManager::GetDefault()
+                );
+            }
+            else
+            {
+                Log::Warn("Outgoing HTTP profiling is disabled for .NET ", _pRuntimeInfo->GetDotnetMajorVersion(), ": .NET 7 + is required.");
+            }
         }
 
         // TODO: add new CLR events-based providers to the event parser
@@ -392,6 +403,7 @@ void CorProfilerCallback::InitializeServices()
                 MemoryResourceManager::GetDefault());
         }
 
+        // WaitHandle profiling is not supported in .NET Framework
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             _pContentionProvider = RegisterService<ContentionProvider>(
@@ -465,9 +477,10 @@ void CorProfilerCallback::InitializeServices()
             || _pEtwEventsManager != nullptr, // .NET Framework CLR events-based profilers
         _pLiveObjectsProvider != nullptr);
 
-    // disable profilers if the connection with the agent failed
+    // disable providers depending on current CLR type/version
     if (_pRuntimeInfo->IsDotnetFramework())
     {
+        // disable profilers if the connection with the agent failed
         if (_pEtwEventsManager == nullptr)
         {
             // keep track that event-based profilers are disabled
@@ -477,6 +490,17 @@ void CorProfilerCallback::InitializeServices()
 
             // these profilers are not supported in .NET Framework anyway
             _pEnabledProfilers->Disable(RuntimeProfiler::Heap);
+        }
+
+        // http profiling is not supported in .NET Framework
+        _pEnabledProfilers->Disable(RuntimeProfiler::Network);
+    }
+    else
+    {
+        // http profiling requires .NET 7+
+        if (_pRuntimeInfo->GetDotnetMajorVersion() < 7)
+        {
+            _pEnabledProfilers->Disable(RuntimeProfiler::Network);
         }
     }
 
@@ -588,7 +612,10 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->RegisterBatchedProvider(_pLiveObjectsProvider);
         }
 
-        if (_pConfiguration->IsContentionProfilingEnabled())
+        if (
+            (_pConfiguration->IsContentionProfilingEnabled()) ||
+            (_pConfiguration->IsWaitHandleProfilingEnabled())
+            )
         {
             _pSamplesCollector->Register(_pContentionProvider);
         }
@@ -599,7 +626,8 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
 
-        if (_pConfiguration->IsHttpProfilingEnabled())
+        // HTTP profiling is only available for .NET 7+
+        if (_pConfiguration->IsHttpProfilingEnabled() && (_pNetworkProvider != nullptr))
         {
             _pSamplesCollector->Register(_pNetworkProvider);
         }
@@ -1171,7 +1199,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
-        _pConfiguration->IsHttpProfilingEnabled()
+        _pConfiguration->IsHttpProfilingEnabled() ||
+        _pConfiguration->IsWaitHandleProfilingEnabled()
         ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
@@ -1239,6 +1268,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
+    if (_pConfiguration->IsWaitHandleProfilingEnabled())
+    {
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
+    }
+
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
     {
         //              for GC                              for JIT
@@ -1261,6 +1295,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - AllocationTick_V4
         //  - ContentionStop_V1
         //  - GC related events
+        //  - WaitHandle events for .NET 9+
 
         UINT64 activatedKeywords = 0;
         uint32_t verbosity = InformationalVerbosity;
@@ -1282,6 +1317,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
             activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
+        }
+        if (_pConfiguration->IsWaitHandleProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_WAITHANDLE;
+            verbosity = VerboseVerbosity;
         }
 
         std::array<COR_PRF_EVENTPIPE_PROVIDER_CONFIG, 6> providers;

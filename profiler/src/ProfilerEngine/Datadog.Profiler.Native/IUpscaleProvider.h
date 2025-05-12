@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <list>
 #include <string>
 #include <vector>
 
@@ -25,5 +26,5 @@ class IUpscaleProvider
 public:
     virtual ~IUpscaleProvider() = default;
 
-    virtual UpscalingInfo GetInfo() = 0;
+    virtual std::list<UpscalingInfo> GetInfos() = 0;
 };

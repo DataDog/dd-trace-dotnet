@@ -41,5 +41,7 @@ internal sealed class BuddyEnvironmentValues<TValueProvider>(TValueProvider valu
 
         SourceRoot = gitInfo.SourceRoot;
         WorkspacePath = gitInfo.SourceRoot;
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.BuddyPullRequestBaseBranch);
     }
 }

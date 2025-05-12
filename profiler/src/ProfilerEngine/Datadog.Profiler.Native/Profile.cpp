@@ -47,7 +47,6 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         location.mapping = {};
         location.mapping.filename = to_char_slice(frame.ModuleName);
         location.function.filename = to_char_slice(frame.Filename);
-        location.function.start_line = frame.StartLine;
         location.line = frame.StartLine; // For now we only have the start line of the function.
         location.function.name = to_char_slice(frame.Frame);
         location.address = 0; // TODO check if we can get that information in the provider
@@ -176,7 +175,7 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     period.type_ = period_value_type;
     period.value = 1;
 
-    auto res = ddog_prof_Profile_new(sample_types, &period, nullptr);
+    auto res = ddog_prof_Profile_new(sample_types, &period);
     if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
     {
         return nullptr;

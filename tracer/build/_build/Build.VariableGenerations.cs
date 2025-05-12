@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using CodeOwners;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
@@ -17,6 +18,14 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+
+    static private Dictionary<string, string> _isChangedTeam = new()
+            {
+                { "isAppSecChanged", "@DataDog/asm-dotnet" },
+                { "isTracerChanged", "@DataDog/tracing-dotnet" },
+                { "isDebuggerChanged", "@DataDog/debugger-dotnet" },
+                { "isProfilerChanged", "@DataDog/profiling-dotnet" }
+            };
 
     Target GenerateVariables
         => _ =>
@@ -37,40 +46,17 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                GenerateConditionVariableBasedOnGitChange("isAppSecChanged",
-                new[] {
-                    "tracer/src/Datadog.Trace/Iast",
-                    "tracer/src/Datadog.Tracer.Native/iast",
-                    "tracer/src/Datadog.Trace/AppSec",
-                    "tracer/test/benchmarks/Benchmarks.Trace/Asm",
-                    "tracer/test/benchmarks/Benchmarks.Trace/Iast",
-                    "tracer/test/Datadog.Trace.Security.IntegrationTests",
-                    "tracer/test/Datadog.Trace.Security.Unit.Tests",
-                    "tracer/test/test-applications/security",
-                }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
-                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
-                {
-                    "tracer/src/Datadog.Trace/Debugger",
-                    "tracer/src/Datadog.Tracer.Native",
-                    "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
-                    "tracer/test/test-applications/debugger",
-                    "tracer/build/_build/Build.Steps.Debugger.cs",
-                    "tracer/build/_build/Build.ExplorationTests.cs",
-                }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
-                {
-                    "profiler/",
-                    "shared/",
-                    "build/",
-                    "tracer/build/_build/Build.Shared.Steps.cs",
-                    "tracer/build/_build/Build.Profiler.Steps.cs",
-                }, new string[] { });
+                CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
 
-                void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
+                foreach(var variableName in _isChangedTeam.Keys)
+                {
+                    GenerateConditionVariableBasedOnGitChange(variableName, codeOwners);
+                }
+
+                void GenerateConditionVariableBasedOnGitChange(string variableName, CodeOwnersParser codeOwners)
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
-                    bool isChanged;
+                    bool isChanged = false;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
 
                     if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
@@ -91,9 +77,19 @@ partial class Build : NukeBuild
                     else
                     {
                         var changedFiles = GetGitChangedFiles(baseBranch);
-
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
-                        isChanged = changedFiles.Any(s => filters.Any(filter => s.StartsWith(filter, StringComparison.OrdinalIgnoreCase)) && !exclusionFilters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+
+                        var teamName = _isChangedTeam[variableName];
+                        foreach (var changedFile in changedFiles)
+                        {
+                            var match = codeOwners.Match("/" + changedFile);
+                            if (match?.Owners.Contains(teamName) == true)
+                            {
+                                Logger.Information($"File {changedFile} is owned by {teamName}");
+                                isChanged = true;
+                                break;
+                            }
+                        }
                     }
 
                     Logger.Information($"{variableName} - {isChanged}");
@@ -107,7 +103,7 @@ partial class Build : NukeBuild
             void GenerateUnitTestFrameworkMatrices()
             {
                 GenerateTfmsMatrix("unit_tests_windows_matrix", TestingFrameworks);
-                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }).ToList();
+                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 }).ToList();
                 GenerateTfmsMatrix("unit_tests_macos_matrix", unixFrameworks);
                 GenerateLinuxMatrix("x64", unixFrameworks);
                 GenerateLinuxMatrix("arm64", unixFrameworks);
@@ -140,8 +136,8 @@ partial class Build : NukeBuild
             {
                 GenerateIntegrationTestsWindowsMatrix();
                 GenerateIntegrationTestsDebuggerWindowsMatrix();
-                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET462);
-                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET462);
+                GenerateIntegrationTestsWindowsIISMatrix(TargetFramework.NET48);
+                GenerateIntegrationTestsWindowsMsiMatrix(TargetFramework.NET48);
                 GenerateIntegrationTestsWindowsAzureFunctionsMatrix();
             }
 
@@ -286,7 +282,7 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
-                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -322,7 +318,7 @@ partial class Build : NukeBuild
                     (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
 
-                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0 });
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -340,7 +336,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48 });
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-x64"),
@@ -427,7 +423,7 @@ partial class Build : NukeBuild
             void GenerateExplorationTestsLinuxMatrix(IEnumerable<global::ExplorationTestUseCase> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET48, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new []
                 {
@@ -1530,7 +1526,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
-                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
+                var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-arm64"),

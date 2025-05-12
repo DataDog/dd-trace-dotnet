@@ -85,11 +85,21 @@ namespace Datadog.Trace.ContinuousProfiler
             WriteToNative(SpanContext.Zero);
         }
 
-        private void EnsureIsInitialized()
+        private bool EnsureIsInitialized()
         {
-            if (_traceContextPtr.IsValueCreated)
+            try
             {
-                return;
+                if (_traceContextPtr.IsValueCreated)
+                {
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                // seen in a crash: weird but possible on shutdown probably if the object is disposed
+                Log.Warning(e, "Disposed tracing context pointer wrapper for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
+                _traceContextPtr.Value = IntPtr.Zero;
+                return false;
             }
 
             try
@@ -100,7 +110,10 @@ namespace Datadog.Trace.ContinuousProfiler
             {
                 Log.Warning(e, "Unable to get the tracing context pointer for the thread {ThreadID}", Environment.CurrentManagedThreadId.ToString());
                 _traceContextPtr.Value = IntPtr.Zero;
+                return false;
             }
+
+            return true;
         }
 
         private void WriteToNative(in SpanContext ctx)
@@ -110,7 +123,10 @@ namespace Datadog.Trace.ContinuousProfiler
                 return;
             }
 
-            EnsureIsInitialized();
+            if (!EnsureIsInitialized())
+            {
+                return;
+            }
 
             var ctxPtr = _traceContextPtr.Value;
 

@@ -423,6 +423,7 @@
   "DD_TRACE_COMPUTE_STATS": "dd_trace_compute_stats",
   "DD_EXCEPTION_DEBUGGING_ENABLED": "dd_exception_debugging_enabled",
   "DD_EXCEPTION_DEBUGGING_MAX_FRAMES_TO_CAPTURE": "dd_exception_debugging_max_frames_to_capture",
+  "DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES": "dd_exception_replay_capture_max_frames",
   "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK_ENABLED": "dd_exception_debugging_capture_full_callstack_enabled",
   "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS": "dd_exception_debugging_rate_limit_seconds",
   "DD_EXCEPTION_DEBUGGING_MAX_EXCEPTION_ANALYSIS_LIMIT": "dd_exception_debugging_max_exception_analysis_limit",

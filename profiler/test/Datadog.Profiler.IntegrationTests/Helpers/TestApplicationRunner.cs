@@ -188,6 +188,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
 
+            agent.ProfiledProcessId = process.Id;
+
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
             ProcessOutput = standardOutput;

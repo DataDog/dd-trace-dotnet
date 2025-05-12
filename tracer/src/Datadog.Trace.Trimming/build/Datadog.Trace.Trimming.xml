@@ -742,6 +742,7 @@
       <type fullname="System.Runtime.CompilerServices.CallerArgumentExpressionAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerFilePathAttribute" />
       <type fullname="System.Runtime.CompilerServices.CallerLineNumberAttribute" />
+      <type fullname="System.Runtime.CompilerServices.CallerMemberNameAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" />
       <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" />
       <type fullname="System.Runtime.CompilerServices.ConditionalWeakTable`2" />
@@ -869,6 +870,7 @@
       <type fullname="System.UriFormat" />
       <type fullname="System.UriHostNameType" />
       <type fullname="System.UriKind" />
+      <type fullname="System.UriPartial" />
       <type fullname="System.ValueTuple`1" />
       <type fullname="System.ValueTuple`2" />
       <type fullname="System.ValueTuple`3" />

@@ -64,7 +64,7 @@ std::unique_ptr<libdatadog::AgentProxy> ExporterBuilder::CreateAgentProxy()
         static_cast<ddog_Vec_Tag*>(*_tags._impl),
         endpoint.inner);
 
-    if (result.tag == DDOG_PROF_EXPORTER_NEW_RESULT_ERR)
+    if (result.tag == DDOG_PROF_PROFILE_EXPORTER_RESULT_ERR_HANDLE_PROFILE_EXPORTER)
     {
         throw Exception(std::make_unique<SuccessImpl>(result.err));
     }

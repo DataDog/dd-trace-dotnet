@@ -34,7 +34,7 @@ public class HttpUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(HttpUtilityAspect)}.{nameof(XssEscape)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -58,7 +58,7 @@ public class HttpUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(HttpUtilityAspect)}.{nameof(SsrfEscape)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -83,7 +83,7 @@ public class HttpUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(HttpUtilityAspect)}.{nameof(SsrfEscape)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

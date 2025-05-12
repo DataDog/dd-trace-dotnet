@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.BucketManagement;
     ReturnTypeName = "Amazon.S3.Model.DeleteBucketResponse",
     ParameterTypeNames = ["Amazon.S3.Model.DeleteBucketRequest"],
     MinimumVersion = "3.3.0",
-    MaximumVersion = "3.*.*",
+    MaximumVersion = "4.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
