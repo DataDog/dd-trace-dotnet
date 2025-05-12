@@ -201,9 +201,9 @@ namespace Datadog.Trace.AspNet
                 // Since the resource name does go through some processing here we also are preserving
                 // the original resource name in a tag so that it can be easily used for sampling decisions.
                 // Otherwise customers would have to look at the "http.url" tag and parse it in the same way to get the resource name.
+                // Setting the tag happens on the OnEndRequest if the resource name was changed
                 var resourceName = BuildResourceName(tracer, httpRequest);
                 scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
-                scope.Span.SetTag("dd.orignal_resource_name", resourceName); // "dd" to mark it as a "Datadog" tag, visible in the UI (non "_dd")
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
@@ -408,6 +408,8 @@ namespace Datadog.Trace.AspNet
                             AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
                         }
 
+                        var currentResourceName = currentSpan.ResourceName;
+
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
                          && !string.IsNullOrEmpty(resourceName))
                         {
@@ -416,6 +418,15 @@ namespace Datadog.Trace.AspNet
                         else
                         {
                             currentSpan.ResourceName = BuildResourceName(tracer, app.Request);
+                        }
+
+                        if (!string.Equals(currentResourceName, currentSpan.ResourceName))
+                        {
+                            // if the resource name changed we add this tag to allow customers an easier time
+                            // of configuring resource-based sampling decisions as it may not be apparent that
+                            // we are changing the resource name
+                            // "dd" to mark it as a "Datadog" tag, visible in the UI (non "_dd")
+                            currentSpan.SetTag("dd.orignal_resource_name", currentResourceName);
                         }
                     }
                     finally
