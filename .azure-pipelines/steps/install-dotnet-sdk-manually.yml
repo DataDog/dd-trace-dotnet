@@ -21,7 +21,8 @@ steps:
 
       echo "Downloading dotnet-install.ps1"
       Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1" -OutFile dotnet-install.ps1
-      $dotnetInstall = ./dotnet-install.ps1
+      $dotnetInstall = "./dotnet-install.ps1"
+      echo "Downloaded dotnet-install.ps1 to $dotnetInstall"
 
       if( "${{ parameters.is64bit }}" -eq "true") {
         $path = "$HOME\AppData\Local\Microsoft\dotnet"
