@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
         public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, please use dd-trace check iis <site name> instead.";
         public const string MissingGac = "The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
-        public const string NoWorkerProcess = "No worker process found, to perform additional checks make sure the application is active";
+        public const string NoWorkerProcess = "No worker process found. To perform additional checks, make sure the application is active.";
         public const string IisNoIssue = "No issue found with the IIS site.";
         public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflict: https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.1#create-the-iis-site:~:text=CLR%20version%20to-,No%20Managed%20Code,-%3A";
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
