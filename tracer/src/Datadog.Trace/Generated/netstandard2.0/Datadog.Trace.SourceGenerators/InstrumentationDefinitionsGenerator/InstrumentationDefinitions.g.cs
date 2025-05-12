@@ -148,7 +148,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsS3,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.HttpWebRequestMessageProcessHttpResponseMessageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSdk,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.PublishIntegration"

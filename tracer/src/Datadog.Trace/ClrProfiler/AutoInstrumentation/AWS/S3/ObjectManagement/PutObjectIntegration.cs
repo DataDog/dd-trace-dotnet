@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.ObjectManagement;
     ReturnTypeName = "Amazon.S3.Model.PutObjectResponse",
     ParameterTypeNames = ["Amazon.S3.Model.PutObjectRequest"],
     MinimumVersion = "3.3.0",
-    MaximumVersion = "3.*.*",
+    MaximumVersion = "4.*.*",
     IntegrationName = AwsS3Common.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

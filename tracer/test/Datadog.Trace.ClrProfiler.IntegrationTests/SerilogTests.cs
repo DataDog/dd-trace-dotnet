@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -35,22 +36,94 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        // exclude loadFromConfig from v1.x as it's not available
-        public static IEnumerable<object[]> GetTestData()
-            => from packageVersion in PackageVersions.Serilog.SelectMany(x => x).Select(x => (string)x)
-               from enableLogShipping in new[] { true, false }
-               from enable128BitInjection in new[] { true, false }
-               from loadFromConfig in new[] { true, false }
-               where !loadFromConfig // only include loadFromConfig when >= 2.12.0 (early versions of the config package are buggy)
-                  || (!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("2.12.0"))
-               select new object[] { packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection };
-
         [SkippableTheory]
-        [MemberData(nameof(GetTestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
+        public async Task InjectsLogsWhenEnabled(
+            [PackageVersionData(nameof(PackageVersions.Serilog), minInclusive: "2.12.0")] string packageVersion,
+            bool enableLogShipping,
+            bool loadFromConfig,
+            bool enable128BitInjection)
+        {
+            // only include loadFromConfig when >= 2.12.0 (early versions of the config package are buggy)
+            Skip.If(string.IsNullOrEmpty(packageVersion) && !EnvironmentHelper.IsCoreClr(), "Default version of Serilog for .NET Framework sample doesn't support load from config.");
+            await InjectsLogsWhenEnabledBase(packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection);
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DoesNotInjectLogsWhenDisabled(
+            [PackageVersionData(nameof(PackageVersions.Serilog), minInclusive: "2.12.0")] string packageVersion,
+            bool enableLogShipping,
+            bool loadFromConfig,
+            bool enable128BitInjection)
+        {
+            Skip.If(string.IsNullOrEmpty(packageVersion) && !EnvironmentHelper.IsCoreClr(), "Default version of Serilog for .NET Framework sample doesn't support load from config.");
+            await DoesNotInjectLogsWhenDisabledBase(packageVersion, enableLogShipping, loadFromConfig, enable128BitInjection);
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DirectlyShipsLogs(
+            [PackageVersionData(nameof(PackageVersions.Serilog), minInclusive: "2.12.0")] string packageVersion,
+            bool loadFromConfig,
+            bool enable128BitInjection)
+        {
+            Skip.If(string.IsNullOrEmpty(packageVersion) && !EnvironmentHelper.IsCoreClr(), "Default version of Serilog for .NET Framework sample doesn't support load from config.");
+            await DirectlyShipsLogsBase(packageVersion, loadFromConfig, enable128BitInjection);
+        }
+
+#if NETFRAMEWORK
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task InjectsLogsWhenEnabled_Pre_2_12_0(
+            [PackageVersionData(nameof(PackageVersions.Serilog), maxInclusive: "2.11.*")] string packageVersion,
+            bool enableLogShipping,
+            bool enable128BitInjection)
+        {
+            // loadFromConfig = true and false are covered in 2.12.0 and later
+            // loadFromConfig = false needs to be covered for anything below 2.12.0 - that is what this does
+            await InjectsLogsWhenEnabledBase(packageVersion, enableLogShipping, loadFromConfig: false, enable128BitInjection);
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DoesNotInjectLogsWhenDisabled_Pre_2_12_0(
+            [PackageVersionData(nameof(PackageVersions.Serilog), maxInclusive: "2.11.*")] string packageVersion,
+            bool enableLogShipping,
+            bool enable128BitInjection)
+        {
+            await DoesNotInjectLogsWhenDisabledBase(packageVersion, enableLogShipping, loadFromConfig: false, enable128BitInjection);
+        }
+
+        [SkippableTheory]
+        [CombinatorialOrPairwiseData]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DirectlyShipsLogs_Pre_2_12_0(
+            [PackageVersionData(nameof(PackageVersions.Serilog), maxInclusive: "2.11.*")] string packageVersion,
+            bool enable128BitInjection)
+        {
+            await DirectlyShipsLogsBase(packageVersion, loadFromConfig: false, enable128BitInjection);
+        }
+#endif
+
+        private async Task InjectsLogsWhenEnabledBase(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
@@ -77,12 +150,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [SkippableTheory]
-        [MemberData(nameof(GetTestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
+        private async Task DoesNotInjectLogsWhenDisabledBase(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
             SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", enable128BitInjection ? "true" : "false");
@@ -109,19 +177,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [SkippableTheory]
-        [MemberData(nameof(GetTestData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task DirectlyShipsLogs(string packageVersion, bool enableLogShipping, bool loadFromConfig, bool enable128BitInjection)
+        private async Task DirectlyShipsLogsBase(string packageVersion, bool loadFromConfig, bool enable128BitInjection)
         {
-            if (!enableLogShipping)
-            {
-                // invalid config, just easier than creating another test data configuration
-                return;
-            }
-
             var hostName = "integration_serilog_tests";
             using var logsIntake = new MockLogsIntake();
 

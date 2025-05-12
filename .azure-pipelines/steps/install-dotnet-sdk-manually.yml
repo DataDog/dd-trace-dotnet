@@ -19,14 +19,10 @@ steps:
       $channel = "${{ parameters.channel }}"
       $sdkVersion = "${{ parameters.sdkVersion }}"
 
-      $dotnetInstall = "$(System.DefaultWorkingDirectory)\tracer\build\_build\bootstrap\dotnet-install.ps1"
-      if (Test-Path $dotnetInstall -PathType Leaf) {
-        echo "Found dotnet-install.ps1 at '$dotnetInstall', skipping download"
-      } else {
-        echo "Downloading dotnet-install.ps1"
-        Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
-        $dotnetInstall = ./dotnet-install.ps1
-      }
+      echo "Downloading dotnet-install.ps1"
+      Invoke-WebRequest -Uri "https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1" -OutFile dotnet-install.ps1
+      $dotnetInstall = "./dotnet-install.ps1"
+      echo "Downloaded dotnet-install.ps1 to $dotnetInstall"
 
       if( "${{ parameters.is64bit }}" -eq "true") {
         $path = "$HOME\AppData\Local\Microsoft\dotnet"
