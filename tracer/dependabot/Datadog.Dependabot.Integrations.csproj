@@ -38,8 +38,8 @@
 
     <!-- Integration: AWSSDK.S3 -->
     <!--    Assembly: AWSSDK.S3 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.0.2 -->
-    <PackageReference Include="AWSSDK.S3" Version="4.0.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.S3/4.0.0.3 -->
+    <PackageReference Include="AWSSDK.S3" Version="4.0.0.3" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
@@ -68,8 +68,8 @@
 
     <!-- Integration: Couchbase.NetClient -->
     <!--    Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.7.0 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.7.0" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.7.1 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.7.1" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!--    Assembly: Elasticsearch.Net -->
@@ -175,8 +175,8 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.49.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.49.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.50.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.50.0" />
 
     <!-- Integration: Microsoft.Azure.Functions.Worker.Core -->
     <!--    Assembly: Microsoft.Azure.Functions.Worker.Core -->
