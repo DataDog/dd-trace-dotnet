@@ -16,6 +16,12 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 {
     internal class DataStreamsMessagePackFormatter
     {
+        // extend the list as needed
+        private const int ApmProduct = 1; // 00000001
+        private const int DsmProduct = 2; // 00000010
+        private const int DjmProduct = 4; // 00000100, not used in .NET, but needs to be in sync with other languages, hence the unused constant
+        private const int ProfilingProduct = 8; // 00001000
+
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
         private readonly byte[] _environmentValueBytes;
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
@@ -46,6 +52,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
         private readonly byte[] _backlogTagsBytes = StringEncoding.UTF8.GetBytes("Tags");
         private readonly byte[] _backlogValueBytes = StringEncoding.UTF8.GetBytes("Value");
+        private readonly byte[] _productMaskBytes = StringEncoding.UTF8.GetBytes("ProductMask");
 
         public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, string defaultServiceName)
             : this(tracerSettings.Environment, defaultServiceName)
@@ -62,14 +69,31 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
         }
 
+        public static long GetProductsMask()
+        {
+            long productsMask = ApmProduct;
+            if (Tracer.Instance.Settings.IsDataStreamsMonitoringEnabled)
+            {
+                productsMask |= DsmProduct;
+            }
+
+            if (Tracer.Instance.Settings.ProfilingEnabledInternal)
+            {
+                productsMask |= ProfilingProduct;
+            }
+
+            return productsMask;
+        }
+
         public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets, List<SerializableBacklogBucket> backlogsBuckets)
         {
             var bytesWritten = 0;
 
-            // 6 entries in StatsPayload:
+            // Should be in sync with Java
+            // https://github.com/DataDog/dd-trace-java/blob/a4b7a7b177709e6bdfd9261904cb9a777e4febbe/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java#L35
             // -1 because we don't have a primary tag
-            // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L11
-            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 5);
+            // -1 because service name override is not supported
+            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 6);
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentBytes);
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentValueBytes);
@@ -159,6 +183,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                     }
                 }
             }
+
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _productMaskBytes);
+            bytesWritten += MessagePackBinary.WriteInt64(stream, GetProductsMask());
 
             return bytesWritten;
         }
