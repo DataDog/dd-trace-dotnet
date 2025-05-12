@@ -326,21 +326,19 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            // Sort by the "behind" metric (ascending) to find the best base branch
-            metrics.Sort((a, b) => a.Behind.CompareTo(b.Behind));
+            // Sort by "ahead" metric
+            metrics.Sort((a, b) => a.Ahead.CompareTo(b.Ahead));
 
-            // Find candidates with the minimum "behind" value
-            // Find the minimum "behind" value
-            int bestBehind = metrics[0].Behind;
+            int bestAhead = metrics[0].Ahead;
             var bestCandidate = metrics[0]; // Default to first
 
             // Check for collision and handle accordingly
-            if (metrics.Skip(1).Any(m => m.Behind == bestBehind))
+            if (metrics.Skip(1).Any(m => m.Ahead == bestAhead))
             {
                 // Collision exists, find the best candidate
                 foreach (var candidate in metrics)
                 {
-                    if (candidate.Behind == bestBehind)
+                    if (candidate.Ahead == bestAhead)
                     {
                         bestCandidate = candidate;
 
