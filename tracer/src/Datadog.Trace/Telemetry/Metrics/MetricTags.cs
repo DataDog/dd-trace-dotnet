@@ -617,4 +617,34 @@ internal static class MetricTags
         [Description("")] NotEnabled,
         [Description("agentless_log_submission_enabled:true")] Enabled,
     }
+
+    public enum CIVisibilityCommitShaMatch
+    {
+        [Description("matched:true")] Match,
+        [Description("matched:false")] NoMatch
+    }
+
+    public enum CIVisibilityExpectedProvider
+    {
+        [Description("expected_provider:user_supplied")] UserSupplied,
+        [Description("expected_provider:ci_provider")] CIProvider,
+        [Description("expected_provider:local_git")] LocalGit,
+        [Description("expected_provider:git_client")] GitClient,
+        [Description("expected_provider:embedded")] Embedded
+    }
+
+    public enum CIVisibilityDiscrepantProvider
+    {
+        [Description("discrepant_provider:user_supplied")] UserSupplied,
+        [Description("discrepant_provider:ci_provider")] CIProvider,
+        [Description("discrepant_provider:local_git")] LocalGit,
+        [Description("discrepant_provider:git_client")] GitClient,
+        [Description("discrepant_provider:embedded")] Embedded
+    }
+
+    public enum CIVisibilityShaDiscrepancyType
+    {
+        [Description("type:repository_discrepancy")] RepositoryDiscrepancy,
+        [Description("type:commit_discrepancy")] CommitDiscrepancy
+    }
 }

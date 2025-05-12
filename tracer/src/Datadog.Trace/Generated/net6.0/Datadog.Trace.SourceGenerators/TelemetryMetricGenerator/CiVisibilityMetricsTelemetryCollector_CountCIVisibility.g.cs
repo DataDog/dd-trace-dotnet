@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountCIVisibilityLength = 3115;
+    private const int CountCIVisibilityLength = 3167;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
@@ -3169,6 +3169,60 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
+            // git.commit_sha_match, index = 3115
+            new(new[] { "matched:true" }),
+            new(new[] { "matched:false" }),
+            // git.commit_sha_discrepancy, index = 3117
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:user_supplied", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:user_supplied", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:ci_provider", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:ci_provider", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:local_git", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:local_git", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:git_client", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:git_client", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:embedded", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:user_supplied", "discrepant_provider:embedded", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:user_supplied", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:user_supplied", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:ci_provider", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:ci_provider", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:local_git", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:local_git", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:git_client", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:git_client", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:embedded", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:ci_provider", "discrepant_provider:embedded", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:user_supplied", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:user_supplied", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:ci_provider", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:ci_provider", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:local_git", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:local_git", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:git_client", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:git_client", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:embedded", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:local_git", "discrepant_provider:embedded", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:user_supplied", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:user_supplied", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:ci_provider", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:ci_provider", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:local_git", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:local_git", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:git_client", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:git_client", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:embedded", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:git_client", "discrepant_provider:embedded", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:user_supplied", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:user_supplied", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:ci_provider", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:ci_provider", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:local_git", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:local_git", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:git_client", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:git_client", "type:commit_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:embedded", "type:repository_discrepancy" }),
+            new(new[] { "expected_provider:embedded", "discrepant_provider:embedded", "type:commit_discrepancy" }),
         };
 
     /// <summary>
@@ -3177,7 +3231,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
-        = new int[]{ 40, 2700, 60, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 64, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, 2, 11, };
+        = new int[]{ 40, 2700, 60, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 64, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, 2, 11, 2, 50, };
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
@@ -3380,6 +3434,18 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     public void RecordCountCIVisibilityTestManagementTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 3104 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitCommitShaMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommitShaMatch tag, int increment = 1)
+    {
+        var index = 3115 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitCommitShaDiscrepancy(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExpectedProvider tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityDiscrepantProvider tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityShaDiscrepancyType tag3, int increment = 1)
+    {
+        var index = 3117 + ((int)tag1 * 10) + ((int)tag2 * 2) + (int)tag3;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 }

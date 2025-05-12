@@ -13,6 +13,8 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -108,7 +110,11 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         // Add Author, Committer and Message from git
         // **********
         // Merge commits have a different commit hash from the one reported by the CI.
-        if (gitInfo.Commit == Commit)
+
+        // TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommitShaMatch(MetricTags.CIVisibilityCommitShaMatch.Match);
+        // TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommitShaDiscrepancy(MetricTags.CIVisibilityExpectedProvider.CIProvider, MetricTags.CIVisibilityDiscrepantProvider.GitClient, MetricTags.CIVisibilityShaDiscrepancyType.CommitDiscrepancy);
+
+        if (gitInfo.Branch == Branch && gitInfo.Commit == Commit)
         {
             if (string.IsNullOrWhiteSpace(AuthorName) || string.IsNullOrWhiteSpace(AuthorEmail))
             {

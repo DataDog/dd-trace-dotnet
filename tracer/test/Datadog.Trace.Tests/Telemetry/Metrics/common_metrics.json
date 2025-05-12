@@ -1121,6 +1121,28 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "git.commit_sha_match": {
+      "data_type": "command",
+      "description": "The number of times a git information was built for a repository. Tagged with a boolean flag set to false if there was any discrepancy found in commit shas when building the information, true otherwise",
+      "metric_type": "count",
+      "send_to_user": false,
+      "tags": [
+        "matched"
+      ],
+      "user_tags": []
+    },
+    "git.commit_sha_discrepancy": {
+      "data_type": "error",
+      "description": "The number of sha discrepancies found when building git information for a repository. Tagged by the `expected_provider` (with possible values `user_supplied`, `ci_provider`, `local_git`, `git_client`, `embedded`), `discrepant_provider` (with same values) and `type` (with possible values `repository_discrepancy` and `commit_discrepancy`)",
+      "metric_type": "count",
+      "send_to_user": false,
+      "tags": [
+        "expected_provider",
+        "discrepant_provider",
+        "type"
+      ],
+      "user_tags": []
+    },
     "git_requests.search_commits": {
       "tags": [
         "rq_compressed"

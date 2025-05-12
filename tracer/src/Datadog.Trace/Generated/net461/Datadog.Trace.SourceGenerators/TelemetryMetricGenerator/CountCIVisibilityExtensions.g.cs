@@ -12,7 +12,7 @@ internal static partial class CountCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 35;
+    public const int Length = 37;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -57,6 +57,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "impacted_tests_detection.is_modified",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequest => "test_management_tests.request",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequestErrors => "test_management_tests.request_errors",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommitShaMatch => "git.commit_sha_match",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommitShaDiscrepancy => "git.commit_sha_discrepancy",
             _ => null!,
         };
 
@@ -114,6 +116,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequest => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.TestManagementTestsRequestErrors => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommitShaMatch => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommitShaDiscrepancy => "civisibility",
             _ => null,
         };
 }

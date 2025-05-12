@@ -151,4 +151,12 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordCountCIVisibilityTestManagementTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
     }
+
+    public void RecordCountCIVisibilityGitCommitShaMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommitShaMatch tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitCommitShaDiscrepancy(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExpectedProvider tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityDiscrepantProvider tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityShaDiscrepancyType tag3, int increment = 1)
+    {
+    }
 }

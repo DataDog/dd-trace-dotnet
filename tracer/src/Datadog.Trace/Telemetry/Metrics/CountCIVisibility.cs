@@ -268,4 +268,16 @@ internal enum CountCIVisibility
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>("test_management_tests.request_errors", isCommon: true, NS.CIVisibility)]
     TestManagementTestsRequestErrors,
+
+    /// <summary>
+    /// git.commit_sha_match with tag matched with value “true” or “false”, depending on whether a mismatch was encountered or not when building a repository’s git information.
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityCommitShaMatch>
+        ("git.commit_sha_match", isCommon: true, NS.CIVisibility)] GitCommitShaMatch,
+
+    /// <summary>
+    /// This metric should be sent for each mismatch encountered when building a repository’s git information
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityExpectedProvider, MetricTags.CIVisibilityDiscrepantProvider, MetricTags.CIVisibilityShaDiscrepancyType>
+        ("git.commit_sha_discrepancy", isCommon: true, NS.CIVisibility)] GitCommitShaDiscrepancy,
 }
