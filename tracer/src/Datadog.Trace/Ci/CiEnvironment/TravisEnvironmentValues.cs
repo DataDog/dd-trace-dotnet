@@ -27,7 +27,11 @@ internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider val
         Tag = ValueProvider.GetValue(Constants.TravisTag);
         if (string.IsNullOrEmpty(Tag))
         {
-            Branch = ValueProvider.GetValue(Constants.TravisBranch);
+            Branch = ValueProvider.GetValue(Constants.TravisPullRequestBranch);
+            if (string.IsNullOrWhiteSpace(Branch))
+            {
+                Branch = ValueProvider.GetValue(Constants.TravisBranch);
+            }
         }
 
         SourceRoot = ValueProvider.GetValue(Constants.TravisBuildDir);
