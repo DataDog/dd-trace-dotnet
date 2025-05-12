@@ -492,13 +492,8 @@ namespace Datadog.Trace.Configuration
             }
             else
             {
-                string? value = EnvironmentHelpers.GetEnvironmentVariable("DD_INSTRUMENTATION_INSTALL_TYPE");
-                if (value != null)
-                {
-                    telemetry.Record(ConfigTelemetryData.InstrumentationSource, value, recordValue: true, ConfigurationOrigins.EnvVars);
-                } else {
-                    telemetry.Record(ConfigTelemetryData.InstrumentationSource, "unknown", recordValue: true, ConfigurationOrigins.EnvVars);
-                }
+                // TODO: capture `cmd_line` and `manual` values
+                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "unknown", recordValue: true, ConfigurationOrigins.EnvVars);
             }
 
             if (AzureAppServiceMetadata is not null)
