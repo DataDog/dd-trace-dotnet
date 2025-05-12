@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Benchmarks.OpenTelemetry.InstrumentedApi.Setup;
 
-internal class TracerBenchmarkSetup
+internal class ActivityBenchmarkSetup
 {
     internal void GlobalSetup()
     {

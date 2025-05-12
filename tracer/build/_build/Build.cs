@@ -622,6 +622,7 @@ partial class Build : NukeBuild
                     .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .EnableNoLaunchProfile()
                     .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
@@ -682,27 +683,19 @@ partial class Build : NukeBuild
                     _ => throw new InvalidOperationException($"Unknown platformName {platformName} for native path"),
                 };
 
-                var dotnetRunEnvironmentVariablesString = string.Join(" ", dotnetRunEnvironmentVariables.Select(env => $"-e {env}").ToArray());
-
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksOpenTelemetryInstrumentedApiProject)
                     .SetConfiguration(BuildConfiguration)
                     .SetFramework(framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .EnableNoLaunchProfile()
                     .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
                     .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                     .SetProcessEnvironmentVariable("DD_ENV", "CI")
                     .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHomeDirectory)
-                    .SetProcessEnvironmentVariable("COR_ENABLE_PROFILING", "1")
-                    .SetProcessEnvironmentVariable("COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}")
-                    .SetProcessEnvironmentVariable("COR_PROFILER_PATH", profilerPath)
-                    .SetProcessEnvironmentVariable("CORECLR_ENABLE_PROFILING", "1")
-                    .SetProcessEnvironmentVariable("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}")
-                    .SetProcessEnvironmentVariable("CORECLR_PROFILER_PATH", profilerPath)
                     .SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
-                    // .SetProcessEnvironmentVariable("DD_TRACE_ENABLED", "false")
                     .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                     .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
 

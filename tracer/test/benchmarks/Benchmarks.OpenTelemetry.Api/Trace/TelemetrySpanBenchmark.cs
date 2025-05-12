@@ -74,7 +74,7 @@ public class TelemetrySpanBenchmark
     public bool StartSpan_GetContext_Sampled()
     {
         using var span = this.alwaysSampleTracer.StartSpan("operation");
-        var result = span.Context.IsValid;
+        var result = span.Context.IsRemote;
         span.End();
 
         return result;
@@ -84,7 +84,7 @@ public class TelemetrySpanBenchmark
     public bool StartSpan_GetContext_NotSampled()
     {
         using var span = this.neverSampleTracer.StartSpan("operation");
-        var result = span.Context.IsValid;
+        var result = span.Context.IsRemote;
         span.End();
 
         return result;
@@ -94,7 +94,7 @@ public class TelemetrySpanBenchmark
     public bool StartSpan_GetContext_Noop()
     {
         using var span = this.noopTracer.StartSpan("operation");
-        var result = span.Context.IsValid;
+        var result = span.Context.IsRemote;
         span.End();
 
         return result;

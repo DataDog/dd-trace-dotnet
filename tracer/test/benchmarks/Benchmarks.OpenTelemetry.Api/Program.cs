@@ -27,7 +27,7 @@ internal class Program
 #if DEBUG
         // Debug benchmark classes here
         // Example: return Debug<TracerBenchmark>("StartActiveSpan");
-        // return Debug<TracerBenchmark>("StartActiveSpan");
+        // return Debug<Trace.ActivityBenchmark>("StartSpan");
 
         // be able to debug benchmarks if started in debug mode
         config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
