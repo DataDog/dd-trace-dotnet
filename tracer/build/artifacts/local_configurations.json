@@ -2,15 +2,15 @@
   "supportedConfigurations": [
     {
       "name" : "DD_TRACE_DEBUG",
-      "version" : "3"
+      "versions" : [ "ABC" ]
     },
     {
       "name" : "DD_TRACE_DEBUG2",
-      "version" : "3"
+      "versions" : [ "AB", "BC" ]
     },
     {
       "name" : "DD_TRACE_ENABLED",
-      "version" : "true"
+      "versions" :  [ "ABE", "BCD" ]
     }
   ],
   "aliases": {
