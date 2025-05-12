@@ -189,13 +189,21 @@ namespace Datadog.Trace.AspNet
                 var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
-                // Leave resourceName blank for now - we'll update it in OnEndRequest
 
-                // Attempt to set Resource Name to something that will be close to what is expected
-                // Note: we will go and re-do it in OnEndRequest, but doing it here will allow for resource-based sampling
-                // this likely won't be perfect - but we need something to try and allow resource-based sampling to function
+                // Set an initial resource name for sampling decisions
+                // At this stage in the request pipeline we don't yet have to MVC routing data
+                // such as controller or action route templates (e.g., "api/products/{id}")
+                //
+                // While this initial resource name may difer from the final one set in OnEndRequest,
+                // which will include the routing information, providing a resource name here is critical to
+                // allow resource-based sampling to work correctly.
+                //
+                // Since the resource name does go through some processing here we also are preserving
+                // the original resource name in a tag so that it can be easily used for sampling decisions.
+                // Otherwise customers would have to look at the "http.url" tag and parse it in the same way to get the resource name.
                 var resourceName = BuildResourceName(tracer, httpRequest);
                 scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
+                scope.Span.SetTag("dd.orignal_resource_name", resourceName); // "dd" to mark it as a "Datadog" tag, visible in the UI (non "_dd")
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
