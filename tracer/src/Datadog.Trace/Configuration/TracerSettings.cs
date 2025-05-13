@@ -317,7 +317,6 @@ namespace Datadog.Trace.Configuration
 
             // If CI Visibility is enabled then we should enable tracing.
             _traceEnabled = _traceEnabled || ciVisibilityEnabled;
-            _apmTracingEnabled = _apmTracingEnabled || ciVisibilityEnabled;
 
             if (AzureAppServiceMetadata?.IsUnsafeToTrace == true)
             {
