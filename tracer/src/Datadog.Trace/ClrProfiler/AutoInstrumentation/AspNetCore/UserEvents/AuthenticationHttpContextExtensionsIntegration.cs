@@ -3,14 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Security.Claims;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -22,11 +26,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
     [InstrumentMethod(
         AssemblyName = AssemblyName,
         TypeName = HttpContextExtensionsTypeName,
-        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties" },
+        ParameterTypeNames = ["Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties"],
         MethodName = "SignInAsync",
         ReturnTypeName = ClrNames.Task,
         MinimumVersion = Major2,
-        MaximumVersion = "8",
+        MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -37,63 +41,100 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";
 
+        // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+        private static readonly HashSet<string> LoginsClaimsToTest =
+        [
+            ClaimTypes.Name,
+            ClaimTypes.Email,
+            "sub",
+        ];
+
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
             var security = Security.Instance;
-            if (security.TrackUserEvents)
+            if (security.IsTrackUserEventsEnabled)
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
-                return new CallTargetState(scope, claimPrincipal);
+                return new CallTargetState(scope, new ClaimsAndHttpContext(httpContext as HttpContext, claimPrincipal));
             }
 
             return CallTargetState.GetDefault();
         }
 
-        internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
+        internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
         {
-            var claimsPrincipal = state.State as ClaimsPrincipal;
-            // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-            var claimsToTestInSafeMode = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
-            if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
+            if (state.State is ClaimsAndHttpContext stateTuple
+             && Security.Instance is { IsTrackUserEventsEnabled: true } security
+             && state.Scope is { } scope)
             {
-                var span = state.Scope.Span;
+                var span = scope.Span;
+                string? userId = null;
+                string? userLogin = null;
+                Func<string, string>? processPii = null;
+                string successAutoMode;
+                if (security.IsAnonUserTrackingMode)
+                {
+                    processPii = UserEventsCommon.Anonymize;
+                    successAutoMode = SecuritySettings.UserTrackingAnonMode;
+                }
+                else
+                {
+                    successAutoMode = SecuritySettings.UserTrackingIdentMode;
+                }
+
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutomatedTracking);
-                foreach (var claim in claimsPrincipal.Claims)
+                foreach (var claim in stateTuple.ClaimsPrincipal.Claims)
                 {
-                    if (security.IsExtendedUserTrackingEnabled)
+                    if (string.IsNullOrEmpty(claim.Value))
                     {
-                        switch (claim.Type)
-                        {
-                            case ClaimTypes.NameIdentifier or "sub":
-                                tryAddTag(Tags.User.Id, claim.Value);
-                                break;
-                            case ClaimTypes.Email:
-                                tryAddTag(Tags.User.Email, claim.Value);
-                                break;
-                            case ClaimTypes.Name:
-                                tryAddTag(Tags.User.Name, claim.Value);
-                                break;
-                        }
+                        continue;
                     }
-                    else if (claimsToTestInSafeMode.Contains(claim.Type))
+
+                    if (claim.Type is ClaimTypes.NameIdentifier && userId is null)
                     {
-                        if (Guid.TryParse(claim.Value, out _))
-                        {
-                            tryAddTag(Tags.User.Id, claim.Value);
-                            break;
-                        }
+                        userId = processPii?.Invoke(claim.Value) ?? claim.Value;
+                        tryAddTag(Tags.User.Id, userId);
+                        setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                    }
+                    else if (LoginsClaimsToTest.Contains(claim.Type) && userLogin is null)
+                    {
+                        userLogin = processPii?.Invoke(claim.Value) ?? claim.Value;
+                        setTag(Tags.AppSec.EventsUsers.InternalLogin, userLogin);
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, userLogin);
+                    }
+
+                    if (userId is not null && userLogin is not null)
+                    {
+                        break;
                     }
                 }
 
+                var foundUserId = userId is not null;
+                var foundLogin = userLogin is not null;
+                UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
                 security.SetTraceSamplingPriority(span);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
+
+                if (stateTuple.HttpContext is { } httpContext)
+                {
+                    var secCoordinator = SecurityCoordinator.Get(security, span, httpContext);
+                    secCoordinator.Reporter.CollectHeaders();
+                    if (userId is not null || userLogin is not null)
+                    {
+                        // if the current collection mode is anonymization, the ID must be provided after anonymization, instead of the original one.
+                        var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } });
+                        secCoordinator.BlockAndReport(result);
+                    }
+                }
             }
 
             return returnValue;
         }
+
+        private record ClaimsAndHttpContext(HttpContext? HttpContext, ClaimsPrincipal ClaimsPrincipal);
     }
 }
 #endif

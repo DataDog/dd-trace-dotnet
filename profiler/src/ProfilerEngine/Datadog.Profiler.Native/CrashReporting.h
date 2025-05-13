@@ -4,16 +4,24 @@
 #pragma once
 
 #include <stdint.h>
+#include <iomanip>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <memory>
 #include <optional>
+#include <utility>
 
 #include "cor.h"
 #include "corprof.h"
 
+#include "shared/src/native-src/dd_span.hpp"
+
 extern "C"
 {
+#ifdef LINUX
+#include "datadog/blazesym.h"
+#endif
 #include "datadog/common.h"
 #include "datadog/profiling.h"
 }
@@ -30,6 +38,37 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
+struct BuildId
+{
+public:
+#ifdef LINUX
+    static BuildId From(const char* path);
+#else
+    static BuildId From(GUID guid, DWORD age);
+#endif
+
+    BuildId() :
+        _buildId{}
+    {
+    }
+
+    operator std::string_view() const
+    {
+        return _buildId;
+    }
+
+    BuildId(BuildId const&) = delete;
+    BuildId& operator=(BuildId const&) = delete;
+    BuildId(BuildId&&) = default;
+    BuildId& operator=(BuildId&&) = default;
+
+private:
+    BuildId(std::string buildId) : _buildId{std::move(buildId)}
+    {}
+
+    std::string _buildId;
+};
+
 struct StackFrame 
 {
     uint64_t ip;    
@@ -38,6 +77,7 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
+    std::string_view buildId;
 };
 
 struct Tag
@@ -62,7 +102,8 @@ public:
     virtual ULONG STDMETHODCALLTYPE Release() = 0;
     virtual int32_t STDMETHODCALLTYPE Initialize() = 0;
     virtual int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) = 0;
-    virtual int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) = 0;
+    // only for tests
+    virtual int32_t STDMETHODCALLTYPE Panic() = 0;
     virtual int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) = 0;
     virtual int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) = 0;
     virtual int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) = 0;
@@ -84,7 +125,7 @@ public:
     ULONG STDMETHODCALLTYPE Release() override;
     int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) override;
     int32_t STDMETHODCALLTYPE Initialize() override;
-    int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) override;
+    int32_t STDMETHODCALLTYPE Panic() override;
     int32_t STDMETHODCALLTYPE SetSignalInfo(int32_t signal, const char* description) override;
     int32_t STDMETHODCALLTYPE ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious) override;
     int32_t STDMETHODCALLTYPE SetMetadata(const char* libraryName, const char* libraryVersion, const char* family, Tag* tags, int32_t tagCount) override;
@@ -93,15 +134,21 @@ public:
     int32_t STDMETHODCALLTYPE CrashProcess() override;
 
 protected:
-    int32_t _pid;
+    uint32_t _pid;
     int32_t _signal;
     std::optional<ddog_Error> _error;
-    ddog_prof_CrashInfo _crashInfo;
+    ddog_crasht_Handle_CrashInfoBuilder _builder;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
     virtual std::string GetSignalInfo(int32_t signal) = 0;
 
+    static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 private:
+    int32_t ExportImpl(ddog_Endpoint* endpoint);
+    
+    template <typename T>
+    std::pair<decltype(T::ok), bool> ExtractResult(T v);
+
     int32_t _refCount;
 };

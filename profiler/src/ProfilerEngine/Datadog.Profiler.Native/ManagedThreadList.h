@@ -15,13 +15,16 @@
 #include "ManagedThreadInfo.h"
 #include "shared/src/native-src/string.h"
 #include "IManagedThreadList.h"
+#include "ServiceBase.h"
 
-
-class ManagedThreadList : public IManagedThreadList
+class ManagedThreadList
+    :
+    public IManagedThreadList,
+    public ServiceBase
 {
 public:
     ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo);
-    ~ManagedThreadList() override;
+    ~ManagedThreadList();
 
 private:
     ManagedThreadList() = delete;
@@ -37,7 +40,6 @@ public:
     uint32_t GetLowCountAndReset() override;
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
-    HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) override;
     bool TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     void ForEach(std::function<void (ManagedThreadInfo*)> callback) override;

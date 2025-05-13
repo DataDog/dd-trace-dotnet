@@ -159,6 +159,7 @@ namespace datadog::shared::nativeloader
             // We don't want to instrument _build_ processes in dotnet by default, as they generally
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
+            // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
            const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
             Log::Info("Process CommandLine: ", process_command_line);
 
@@ -1115,7 +1116,7 @@ namespace datadog::shared::nativeloader
         }
         else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
         {
-            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
+            Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
             tstVerProfilerInfo->Release();
             return "2.1.0";
         }

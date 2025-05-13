@@ -28,18 +28,13 @@ public class AspNetFxWebApiApiSecurityDisabled(IisFixture iisFixture, ITestOutpu
 public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
 
     internal AspNetFxWebApiApiSecurity(IisFixture iisFixture, ITestOutputHelper output, bool enableApiSecurity)
         : base("WebApi", output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         SetSecurity(true);
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, "ApiSecurity\\ruleset-with-block.json");
-
-        if (enableApiSecurity)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
-        }
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
 
         _iisFixture = iisFixture;
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });

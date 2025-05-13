@@ -22,8 +22,6 @@ namespace Datadog.Trace.Iast.Aspects;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HashAlgorithmAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmAspect));
-
     /// <summary>
     /// ComputeHash not static
     /// </summary>
@@ -38,14 +36,13 @@ public class HashAlgorithmAspect
         try
         {
             var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
-            scope?.Dispose();
+            return target;
         }
-        catch (Exception ex)
+        catch (global::System.Exception ex)
         {
-            Log.Error(ex, "Error in HashAlgorithmAspect.");
+            IastModule.LogAspectException(ex);
+            return target;
         }
-
-        return target;
     }
 }
 #endif

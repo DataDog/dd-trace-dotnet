@@ -24,6 +24,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-post-0587c50e--8a8abefe,
+      _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-3-4d739311,
+      _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["ctl00$MainContent$testBox"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -36,6 +39,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
     }
   },
   {
@@ -63,6 +69,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-post-0587c50e--8a8abefe,
+      _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-3-4d739311,
+      _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["ctl00$MainContent$testBox"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -75,6 +84,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
     }
   },
   {
@@ -102,6 +114,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-post-0587c50e--8a8abefe,
+      _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-3-4d739311,
+      _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["ctl00$MainContent$testBox"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -114,6 +129,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
     }
   },
   {
@@ -141,6 +159,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-post-0587c50e--8a8abefe,
+      _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-3-4d739311,
+      _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["ctl00$MainContent$testBox"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -153,6 +174,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
     }
   },
   {
@@ -180,6 +204,9 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-post-0587c50e--8a8abefe,
+      _dd.appsec.fp.http.header: hdr-0000000100-3626b5f8-3-4d739311,
+      _dd.appsec.fp.http.network: net-1-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["ctl00$MainContent$testBox"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -192,6 +219,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      appsec: 
     }
   }
 ]

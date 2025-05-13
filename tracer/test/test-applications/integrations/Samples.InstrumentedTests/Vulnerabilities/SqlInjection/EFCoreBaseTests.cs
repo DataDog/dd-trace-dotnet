@@ -11,6 +11,9 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SqlInjection;
 
 public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
 {
+    [CollectionDefinition("IastEfCoreSqliteTests", DisableParallelization = true)]
+    public class NonParallelCollectionDefinition { }
+
     protected string taintedTitle = "Think_Python";
     protected string notTaintedValue = "nottainted";
     protected string commandUnsafe;

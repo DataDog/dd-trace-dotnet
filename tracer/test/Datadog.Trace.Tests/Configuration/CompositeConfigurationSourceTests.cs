@@ -124,19 +124,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("string4", "source4_value4")]
     public void GetsTheExpectedStringInAllCases(string key, string expected)
     {
-        var actual = ((ITelemeteredConfigurationSource)_source).GetString(key, _telemetry, validator: null, recordValue: true);
-        actual.Result.Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData("string1")]
-    [InlineData("string2")]
-    [InlineData("string3")]
-    [InlineData("string4")]
-    public void GetsTheSameStringInAllCases(string key)
-    {
-        var expected = ((IConfigurationSource)_source).GetString(key);
-        var actual = ((ITelemeteredConfigurationSource)_source).GetString(key, _telemetry, validator: null, recordValue: true);
+        var actual = _source.GetString(key, _telemetry, validator: null, recordValue: true);
         actual.Result.Should().Be(expected);
     }
 
@@ -148,7 +136,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabStringFromEverySource(string key)
     {
         var telemetry = new StubTelemetry();
-        var actual = ((ITelemeteredConfigurationSource)_source).GetString(key, telemetry, validator: null, recordValue: true);
+        var actual = _source.GetString(key, telemetry, validator: null, recordValue: true);
         telemetry.Accesses[key].Should().Be(1);
     }
 
@@ -159,19 +147,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("int4", 44)]
     public void GetsTheExpectedIntInAllCases(string key, int expected)
     {
-        var actual = ((ITelemeteredConfigurationSource)_source).GetInt32(key, _telemetry, validator: null);
-        actual.Result.Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData("int1")]
-    [InlineData("int2")]
-    [InlineData("int3")]
-    [InlineData("int4")]
-    public void GetsTheSameIntInAllCases(string key)
-    {
-        var expected = ((IConfigurationSource)_source).GetInt32(key);
-        var actual = ((ITelemeteredConfigurationSource)_source).GetInt32(key, _telemetry, validator: null);
+        var actual = _source.GetInt32(key, _telemetry, validator: null);
         actual.Result.Should().Be(expected);
     }
 
@@ -183,7 +159,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabIntFromEverySource(string key)
     {
         var telemetry = new StubTelemetry();
-        var actual = ((ITelemeteredConfigurationSource)_source).GetInt32(key, telemetry, validator: null);
+        var actual = _source.GetInt32(key, telemetry, validator: null);
         telemetry.Accesses[key].Should().Be(1);
     }
 
@@ -194,19 +170,7 @@ public class CompositeConfigurationSourceTests
     [InlineData("double4", 4.4)]
     public void GetsTheExpectedDoubleInAllCases(string key, double expected)
     {
-        var actual = ((ITelemeteredConfigurationSource)_source).GetDouble(key, _telemetry, validator: null);
-        actual.Result.Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData("double1")]
-    [InlineData("double2")]
-    [InlineData("double3")]
-    [InlineData("double4")]
-    public void GetsTheSameDoubleInAllCases(string key)
-    {
-        var expected = ((IConfigurationSource)_source).GetDouble(key);
-        var actual = ((ITelemeteredConfigurationSource)_source).GetDouble(key, _telemetry, validator: null);
+        var actual = _source.GetDouble(key, _telemetry, validator: null);
         actual.Result.Should().Be(expected);
     }
 
@@ -218,7 +182,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabDoubleFromEverySource(string key)
     {
         var telemetry = new StubTelemetry();
-        var actual = ((ITelemeteredConfigurationSource)_source).GetDouble(key, telemetry, validator: null);
+        var actual = _source.GetDouble(key, telemetry, validator: null);
         telemetry.Accesses[key].Should().Be(1);
     }
 
@@ -229,20 +193,8 @@ public class CompositeConfigurationSourceTests
     [InlineData("bool4", false)]
     public void GetsTheExpectedBoolInAllCases(string key, bool expected)
     {
-        var actual = ((ITelemeteredConfigurationSource)_source).GetBool(key, _telemetry, validator: null);
+        var actual = _source.GetBool(key, _telemetry, validator: null);
         actual.Result.Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData("bool1")]
-    [InlineData("bool2")]
-    [InlineData("bool3")]
-    [InlineData("bool4")]
-    public void GetsTheSameBoolInAllCases(string key)
-    {
-        var expected = ((IConfigurationSource)_source).GetBool(key);
-        var actual = ((ITelemeteredConfigurationSource)_source).GetBool(key, _telemetry, validator: null);
-        ((bool?)actual.Result).Should().Be(expected);
     }
 
     [Theory]
@@ -253,7 +205,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabBoolFromEverySource(string key)
     {
         var telemetry = new StubTelemetry();
-        var actual = ((ITelemeteredConfigurationSource)_source).GetBool(key, telemetry, validator: null);
+        var actual = _source.GetBool(key, telemetry, validator: null);
         telemetry.Accesses[key].Should().Be(1);
     }
 
@@ -264,20 +216,8 @@ public class CompositeConfigurationSourceTests
     [InlineData("dict4", "source4_a", "source4_b")]
     public void GetsTheExpectedDictionaryInAllCases(string key, params string[] expectedKeys)
     {
-        var actual = ((ITelemeteredConfigurationSource)_source).GetDictionary(key, _telemetry, validator: null);
+        var actual = _source.GetDictionary(key, _telemetry, validator: null);
         actual.Result.Should().ContainKeys(expectedKeys);
-    }
-
-    [Theory]
-    [InlineData("dict1")]
-    [InlineData("dict2")]
-    [InlineData("dict3")]
-    [InlineData("dict4")]
-    public void GetsTheSameDictionaryInAllCases(string key)
-    {
-        var expected = ((IConfigurationSource)_source).GetDictionary(key);
-        var actual = ((ITelemeteredConfigurationSource)_source).GetDictionary(key, _telemetry, validator: null);
-        actual.Result.Should().Equal(expected);
     }
 
     [Theory]
@@ -288,7 +228,7 @@ public class CompositeConfigurationSourceTests
     public void AttemptsToGrabDictionaryFromEverySource(string key)
     {
         var telemetry = new StubTelemetry();
-        var actual = ((ITelemeteredConfigurationSource)_source).GetDictionary(key, telemetry, validator: null);
+        var actual = _source.GetDictionary(key, telemetry, validator: null);
         telemetry.Accesses[key].Should().Be(1);
     }
 

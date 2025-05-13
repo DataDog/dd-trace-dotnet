@@ -12,22 +12,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -82,7 +74,7 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
-        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false)
+        public async Task<Process> StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool forceVsTestParam = false, bool useDotnetExec = false)
         {
             // get path to sample app that the profiler will attach to
             string sampleAppPath = EnvironmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, framework);
@@ -92,9 +84,16 @@ namespace Datadog.Trace.TestHelpers
             }
 
             Output.WriteLine($"Starting Application: {sampleAppPath} {arguments ?? string.Empty}");
-            string testCli = forceVsTestParam ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
+            string testCli = forceVsTestParam || useDotnetExec ? EnvironmentHelper.GetDotnetExe() : EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
-            string appPath = testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam ? $"vstest {sampleAppPath}" : sampleAppPath;
+            bool usesVsTest = testCli.StartsWith("dotnet") || testCli.Contains("dotnet.exe") || forceVsTestParam;
+            string appPath = (useDotnetExec, usesVsTest) switch
+            {
+                (true, _) => $"exec {sampleAppPath}",
+                (_, true) => $"vstest {sampleAppPath}",
+                _ => sampleAppPath,
+            };
+
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
             var process = await ProfilerHelper.StartProcessWithProfiler(
@@ -103,62 +102,22 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 $"{appPath} {arguments ?? string.Empty}",
                 aspNetCorePort: aspNetCorePort,
-                processToProfile: exec + ";testhost.exe;testhost.x86.exe");
+                ignoreProfilerProcessesVar: true);
 
             Output.WriteLine($"ProcessId: {process.Id}");
 
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0, bool useDotnetExec = false)
         {
-            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
+            var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam, useDotnetExec);
 
             using var helper = new ProcessHelper(process);
-
-            process.WaitForExit();
-            helper.Drain();
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"Exit Code: " + exitCode);
-
-            if (helper.EnvironmentVariables is { } environmentVariables)
-            {
-                var strEnvironmentVariables = new StringBuilder();
-                foreach (var envVar in environmentVariables)
-                {
-                    strEnvironmentVariables.AppendLine($"\t{envVar.Key}={envVar.Value}");
-                }
-
-                Output.WriteLine($"Environment Variables:{Environment.NewLine}{strEnvironmentVariables}");
-            }
-
-            var standardOutput = helper.StandardOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardOutput))
-            {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            }
-            else
-            {
-                Output.WriteLine($"StandardOutput: (empty)");
-            }
-
-            var standardError = helper.ErrorOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-            }
-            else
-            {
-                Output.WriteLine($"StandardError: (empty)");
-            }
-
-            return new ProcessResult(process, standardOutput, standardError, exitCode);
+            return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
         }
 
-        public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false)
+        public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
             // get path to sample app that the profiler will attach to
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework, usePublishWithRID);
@@ -167,9 +126,20 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
+            var runtimeArgs = string.Empty;
+            if (!string.IsNullOrEmpty(dotnetRuntimeArgs))
+            {
+                if (!EnvironmentHelper.IsCoreClr() || usePublishWithRID)
+                {
+                    throw new Exception($"Cannot use {nameof(dotnetRuntimeArgs)} with .NET Framework or when publishing with RID");
+                }
+
+                runtimeArgs = $"{dotnetRuntimeArgs} ";
+            }
+
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             var executable = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
-            var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+            var args = EnvironmentHelper.IsCoreClr() && !usePublishWithRID ? $"{runtimeArgs}{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 executable,
@@ -187,15 +157,15 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false)
+        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
         {
-            var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID);
+            var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID, dotnetRuntimeArgs: dotnetRuntimeArgs);
             using var helper = new ProcessHelper(process);
 
             return WaitForProcessResult(helper);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
+        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
@@ -220,7 +190,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!ranToCompletion && !process.HasExited)
             {
-                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process);
+                var tookMemoryDump = MemoryDumpHelper.CaptureMemoryDump(process, includeChildProcesses: dumpChildProcesses);
                 process.Kill();
                 throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
             }
@@ -395,6 +365,17 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
+        public void ConfigureContainers(params ContainerFixture[] containers)
+        {
+            foreach (var container in containers)
+            {
+                foreach (var variable in container.GetEnvironmentVariables())
+                {
+                    SetEnvironmentVariable(variable.Key, variable.Value);
+                }
+            }
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
@@ -504,6 +485,15 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.ApiKey, "DUMMY_KEY_REQUIRED_FOR_DIRECT_SUBMISSION");
         }
 
+        /// <summary>
+        /// Creates a new <see cref="HttpRequestMessage"/> to use in the test.
+        /// Derived tests can override this to customize the request (e.g. add headers).
+        /// </summary>
+        protected virtual HttpRequestMessage CreateHttpRequestMessage(HttpMethod method, string requestUri, DateTimeOffset testStart)
+        {
+            return new HttpRequestMessage(method, requestUri);
+        }
+
         protected async Task<IImmutableList<MockSpan>> GetWebServerSpans(
             string path,
             MockTracerAgent agent,
@@ -518,10 +508,11 @@ namespace Datadog.Trace.TestHelpers
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTimeOffset.UtcNow;
-            var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
+            using var request = CreateHttpRequestMessage(HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
+            using var response = await httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {content}");
-            Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+            response.StatusCode.Should().Be(expectedHttpStatusCode);
 
             if (filterServerSpans)
             {

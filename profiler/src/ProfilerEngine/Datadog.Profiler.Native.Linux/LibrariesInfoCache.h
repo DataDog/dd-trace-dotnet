@@ -4,28 +4,60 @@
 
 #include "DlPhdrInfoWrapper.h"
 
+#include "AutoResetEvent.h"
+#include "MemoryResourceManager.h"
+#include "ServiceBase.h"
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
+
+#include <atomic>
 #include <libunwind.h>
 #include <link.h>
+#include <memory>
 #include <shared_mutex>
+#include <thread>
 #include <vector>
 
-class LibrariesInfoCache
+class LibrariesInfoCache : public ServiceBase
 {
 public:
-    static LibrariesInfoCache* Get();
+    LibrariesInfoCache(shared::pmr::memory_resource* resource);
     ~LibrariesInfoCache();
 
-    void UpdateCache();
+    LibrariesInfoCache(LibrariesInfoCache const&) = delete;
+    LibrariesInfoCache& operator=(LibrariesInfoCache const&) = delete;
+
+    LibrariesInfoCache(LibrariesInfoCache&&) = delete;
+    LibrariesInfoCache& operator=(LibrariesInfoCache&&) = delete;
+
+    const char* GetName() final override;
+
+protected:
+    bool StartImpl() final override;
+    bool StopImpl() final override;
 
 private:
-    LibrariesInfoCache();
-
     static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
-    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+    static void NotifyCacheUpdate();
 
-    std::shared_mutex _cacheLock;
-    std::vector<DlPhdrInfoWrapper> LibrariesInfo;
+    void UpdateCache();
+    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+#ifdef DD_TEST
+public:
+#endif
+    void NotifyCacheUpdateImpl();
+#ifdef DD_TEST
+private:
+#endif
+    void Work(std::shared_ptr<AutoResetEvent> startEvent);
 
     static LibrariesInfoCache* s_instance;
-    unsigned long long NbCallsToDlopenDlclose;
+
+    std::shared_mutex _cacheLock;
+    std::vector<DlPhdrInfoWrapper> _librariesInfo;
+
+    std::thread _worker;
+    std::atomic<bool> _stopRequested;
+    AutoResetEvent _event;
+    shared::pmr::memory_resource* _wrappersAllocator;
 };

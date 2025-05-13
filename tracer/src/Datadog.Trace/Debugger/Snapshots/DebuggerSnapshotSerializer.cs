@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             try
             {
-                if (Redaction.ShouldRedact(variableName, type, out var redactionReason))
+                if (Redaction.Instance.ShouldRedact(variableName, type, out var redactionReason))
                 {
                     if (variableName != null)
                     {
@@ -398,7 +399,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return match.Success ? match.Groups[1].Value : fieldName;
         }
 
-        internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, out Type type)
+        internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type)
         {
             value = null;
             type = null;
@@ -410,13 +411,32 @@ namespace Datadog.Trace.Debugger.Snapshots
                         {
                             if (field.FieldType.ContainsGenericParameters ||
                                 field.DeclaringType?.ContainsGenericParameters == true ||
-                                field.ReflectedType?.ContainsGenericParameters == true)
+                                field.ReflectedType?.ContainsGenericParameters == true ||
+                                field.FieldType.IsGenericTypeDefinition ||
+                                field is System.Reflection.Emit.FieldBuilder)
+                            {
+                                return false;
+                            }
+
+                            if (field.IsStatic && field.DeclaringType is { IsGenericType: true, IsConstructedGenericType: false })
                             {
                                 return false;
                             }
 
                             type = field.FieldType;
-                            if (source != null || field.IsStatic)
+
+                            if (field.IsStatic)
+                            {
+                                value = field.GetValue(null);
+                                return true;
+                            }
+
+                            if (field.DeclaringType == null || (source != null && !field.DeclaringType.IsInstanceOfType(source)))
+                            {
+                                return false;
+                            }
+
+                            if (source != null)
                             {
                                 value = field.GetValue(source);
                                 return true;
@@ -427,10 +447,36 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                     case PropertyInfo property:
                         {
-                            type = property.PropertyType;
-                            if (source != null || property.GetMethod?.IsStatic == true)
+                            if (property.PropertyType.ContainsGenericParameters ||
+                                property.DeclaringType?.ContainsGenericParameters == true ||
+                                property.ReflectedType?.ContainsGenericParameters == true ||
+                                property.PropertyType.IsGenericTypeDefinition)
                             {
-                                value = property.GetMethod.Invoke(source, Array.Empty<object>());
+                                return false;
+                            }
+
+                            var getMethod = property.GetGetMethod(true);
+                            if (getMethod == null || getMethod is System.Reflection.Emit.MethodBuilder)
+                            {
+                                return false;
+                            }
+
+                            type = property.PropertyType;
+
+                            if (getMethod.IsStatic)
+                            {
+                                value = property.GetValue(null);
+                                return true;
+                            }
+
+                            if (property.DeclaringType == null || (source != null && !property.DeclaringType.IsInstanceOfType(source)))
+                            {
+                                return false;
+                            }
+
+                            if (source != null)
+                            {
+                                value = property.GetValue(source);
                                 return true;
                             }
 
@@ -439,17 +485,39 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                     default:
                         {
-                            Log.Error(nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Name}. Unsupported member info {Type}", fieldOrProp.Name, fieldOrProp.GetType());
+                            Log.Error(nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Member} from {Source}. Unsupported member info.", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
                             break;
                         }
                 }
             }
             catch (Exception e)
             {
-                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue));
+                Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Member} from {Source}", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
             }
 
             return false;
+
+            string GetMemberInfo(MemberInfo memberInfo)
+            {
+                try
+                {
+                    if (memberInfo is FieldInfo field)
+                    {
+                        return $"Type: {field.FieldType.FullName}, Name: {field.Name}, Attributes: {field.Attributes.ToString()}";
+                    }
+
+                    if (memberInfo is PropertyInfo property)
+                    {
+                        return $"Type: {property.PropertyType.FullName}, Name: {property.Name}, Attributes: {property.Attributes.ToString()}";
+                    }
+
+                    return $"Type: {memberInfo.MemberType}, Name: {memberInfo.Name}";
+                }
+                catch
+                {
+                    return "Unknown";
+                }
+            }
         }
 
         private static CancellationTokenSource CreateCancellationTimeout()

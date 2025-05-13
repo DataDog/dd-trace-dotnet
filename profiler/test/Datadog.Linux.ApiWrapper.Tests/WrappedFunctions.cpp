@@ -36,7 +36,13 @@ INSTANTIATE_TEST_SUITE_P(
         (void*)::pthread_attr_init,
         (void*)::pthread_getattr_default_np,
         (void*)::pthread_setattr_default_np,
-        (void*)::fork,
+        // Remove the wrapping around fork because in Universal this cause deadlock on 
+        // debian stretch slim
+        // In debian stretch slim, it's impossible to install gdb and other tools to
+        // investigate the deadlock.
+        // Since this wrapping was done for safety but no actual issue, we remove it for now.
+        // But we leave the code for documentation or if we need to reactivate it.
+        // (void*)::fork,
 #endif
         (void*)::dl_iterate_phdr,
         (void*)::dlopen,

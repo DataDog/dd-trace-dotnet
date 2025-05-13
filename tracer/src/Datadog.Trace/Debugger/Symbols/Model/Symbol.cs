@@ -20,10 +20,10 @@ internal record struct Symbol
 
     [JsonProperty("symbol_type")]
     [JsonConverter(typeof(StringEnumConverter), converterParameters: typeof(SnakeCaseNamingStrategy))]
-    internal SymbolType SymbolType { get; set; }
+    internal SymbolType? SymbolType { get; set; }
 
     [JsonProperty("line")]
-    internal int Line { get; set; }
+    internal int? Line { get; set; }
 
     [JsonProperty("language_specifics")]
     internal LanguageSpecifics? LanguageSpecifics { get; set; }

@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
    MethodName = "ComputeHashAsync",
    ReturnTypeName = ClrNames.Task,
    MinimumVersion = "7.0.0",
-   MaximumVersion = "8.*.*",
+   MaximumVersion = SupportedVersions.LatestDotNet,
    InstrumentationCategory = InstrumentationCategory.Iast,
    IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 
@@ -52,7 +52,7 @@ public class HashAlgorithmIntegrationTer
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream data, CancellationToken token)
     {
-        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance));
+        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, false));
     }
 
     /// <summary>

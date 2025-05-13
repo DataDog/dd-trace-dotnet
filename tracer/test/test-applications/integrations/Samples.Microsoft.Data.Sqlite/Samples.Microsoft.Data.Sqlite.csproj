@@ -6,6 +6,10 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <!-- Ignore unnecessary warning: Found version-specific or distribution-specific runtime 
+     identifier(s): alpine-x64. Affected libraries: SQLitePCLRaw.lib.e_sqlite3. In .NET 8.0 and higher,
+     assets for version-specific and distribution-specific runtime identifiers will not be found by default.  -->
+    <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
 
   </PropertyGroup>
 

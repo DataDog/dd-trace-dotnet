@@ -22,6 +22,9 @@ namespace Samples.Computer01
                 Console.WriteLine("--> Thread 1");
                 Thread.Sleep(500);
                 Thread.CurrentThread.Name = String.Empty;
+
+                Thread.Sleep(10000);
+
                 Console.WriteLine("<-- Thread 1");
             });
             var t2 = new Thread(() =>
@@ -29,6 +32,9 @@ namespace Samples.Computer01
                 Console.WriteLine("--> Thread 2");
                 Thread.Sleep(500);
                 Thread.CurrentThread.Name = null;
+
+                Thread.Sleep(10000);
+
                 Console.WriteLine("<-- Thread 2");
             });
 

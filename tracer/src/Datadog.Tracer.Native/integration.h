@@ -339,7 +339,7 @@ enum class CallTargetKind : UINT8
     Interface = 2
 };
 
-typedef struct _CallTargetDefinition2
+typedef struct _CallTargetDefinition3
 {
     WCHAR* targetAssembly;
     WCHAR* targetType;
@@ -357,6 +357,7 @@ typedef struct _CallTargetDefinition2
 
     CallTargetKind kind;
     UINT32 categories;
+    UINT32 tfms;
 
     inline CallTargetDefinition ToCallTargetDefinition() const
     {
@@ -389,7 +390,7 @@ typedef struct _CallTargetDefinition2
     {
         return kind == CallTargetKind::Interface;
     }
-} CallTargetDefinition2;
+} CallTargetDefinition3;
 
 struct MethodIdentifier
 {

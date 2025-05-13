@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -22,6 +23,7 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.Telemetry
 {
@@ -34,7 +36,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void RecordsRelevantTelemetry()
         {
-            var settings = new TracerSettings() { ServiceName = "DefaultService" };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "DefaultService" } });
             var telemetry = new TestTelemetryController();
             var tracer = new Tracer(
                 settings,
@@ -120,11 +122,15 @@ namespace Datadog.Trace.Tests.Telemetry
                 ErrorInvocations.Add((info, error));
             }
 
-            public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
+            public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
             {
             }
 
             public void RecordProfilerSettings(Profiler profiler)
+            {
+            }
+
+            public void RecordTestOptimizationSettings(TestOptimizationSettings settings)
             {
             }
 
@@ -144,6 +150,10 @@ namespace Datadog.Trace.Tests.Telemetry
             public Task DumpTelemetry(string filePath) => Task.CompletedTask;
 
             public void RecordGitMetadata(GitMetadata gitMetadata)
+            {
+            }
+
+            public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
             {
             }
         }

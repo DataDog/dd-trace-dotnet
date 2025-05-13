@@ -9,6 +9,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Iast;
@@ -47,7 +48,7 @@ namespace Datadog.Trace.AppSec
             }
 
             // if neither iast or security is enabled leave
-            if (!security.Enabled && !runIast)
+            if (!security.AppsecEnabled && !runIast)
             {
                 return;
             }
@@ -63,7 +64,7 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     // We exclude the query string params
-                    if (!QueryStringHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
+                    if (!RequestDataHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
                     {
                         bodyDic[item.Key] = item.Value;
                     }
@@ -76,9 +77,9 @@ namespace Datadog.Trace.AppSec
                 requestBody = ObjectExtractor.Extract(bodyDic);
             }
 
-            if (security.Enabled)
+            if (security.AppsecEnabled)
             {
-                var securityTransport = new Coordinator.SecurityCoordinator(security, scope.Span!);
+                var securityTransport = SecurityCoordinator.Get(security, scope.Span!, context);
                 if (!securityTransport.IsBlocked)
                 {
                     var inputData = new Dictionary<string, object>();

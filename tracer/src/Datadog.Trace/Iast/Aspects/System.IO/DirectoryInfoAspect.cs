@@ -5,14 +5,15 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> DirectoryInfoAspect class aspects </summary>
-[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.RaspIastSink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class DirectoryInfoAspect
@@ -60,7 +61,15 @@ public class DirectoryInfoAspect
 #endif
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            IastModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return path;
+        }
     }
 }

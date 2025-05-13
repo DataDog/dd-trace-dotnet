@@ -20,13 +20,17 @@ namespace BuggyBits
         private readonly HttpClient _httpClient;
         private readonly Scenario _scenario;
         private readonly int _nbIdleThreads;
+        private readonly int _nbNewsThreads;
+        private readonly bool _disableLogs;
 
-        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreds)
+        public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreads, bool disableLogs)
         {
             _exitToken = token;
             _httpClient = new HttpClient();
             _scenario = scenario;
-            _nbIdleThreads = nbIdleThreds;
+            _nbIdleThreads = nbIdleThreads;
+            _nbNewsThreads = 6;
+            _disableLogs = disableLogs;
         }
 
         public void Dispose()
@@ -36,7 +40,7 @@ namespace BuggyBits
 
         public async Task RunAsync(string rootUrl, int iterations = 0)
         {
-            Console.WriteLine($"{this.GetType().Name} started.");
+            WriteLine($"{this.GetType().Name} started.");
 
             CreateIdleThreads();
 
@@ -46,6 +50,8 @@ namespace BuggyBits
             }
             else
             {
+                StartThreadsForLeaks(rootUrl, iterations);
+
                 try
                 {
                     List<string> asyncEndpoints = GetEndpoints(rootUrl);
@@ -72,7 +78,49 @@ namespace BuggyBits
                 }
             }
 
-            Console.WriteLine($"{this.GetType().Name} stopped.");
+            WriteLine($"{this.GetType().Name} stopped.");
+        }
+
+        private void StartThreadsForLeaks(string rootUrl, int iterations)
+        {
+            if ((_scenario & Scenario.MemoryLeak) == 0)
+            {
+                return;
+            }
+
+            // Each LOH region is 32 MB so if we want to see the RSS/committed bytes to grow,
+            // it is needed to allocate 32 x 100 KB. But this is not correct because the GC will
+            // use 1 LOH heap per core. So, we need to allocate 32 x 100 KB x nbCores.
+            // Let's tune it for a slower growth. Remove the LOH buffer to allow longer lived application.
+            // Note: use DOTNET_GCHeapCount=nbHeaps to set a limited number of heaps and see the RSS/Private bytes grow.
+            // Also, we don't want to allocate the same object too many time in a row to avoid
+            // forcing the sampling of these allocations.
+            for (var i = 0; i < _nbNewsThreads; i++)
+            {
+                Task.Factory.StartNew(
+                    async () =>
+                    {
+                        var guid = Guid.NewGuid();
+                        var bytes = guid.ToByteArray();
+                        int randomIncrement = bytes[0];
+                        TimeSpan delay = TimeSpan.FromMilliseconds(300 + randomIncrement);
+                        WriteLine($"Delay for leak = {delay}");
+                        await Task.Delay(delay);
+
+                        // Run for the given number of iterations
+                        // 0 means wait for cancellation
+                        int current = 0;
+                        while (
+                            ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
+                            (iterations > current))
+                        {
+                            await ExecuteIterationAsync($"{rootUrl}/News");
+                            await Task.Delay(TimeSpan.FromMilliseconds(1000 + delay.TotalMilliseconds));
+                            current++;
+                        }
+                    },
+                    creationOptions: TaskCreationOptions.LongRunning);
+            }
         }
 
         private void CreateIdleThreads()
@@ -82,7 +130,7 @@ namespace BuggyBits
                 return;
             }
 
-            Console.WriteLine($"----- Creating {_nbIdleThreads} idle threads");
+            WriteLine($"----- Creating {_nbIdleThreads} idle threads");
 
             for (var i = 0; i < _nbIdleThreads; i++)
             {
@@ -129,11 +177,6 @@ namespace BuggyBits
                     urls.Add($"{rootUrl}/Products/ParallelLock");
                 }
 
-                if ((_scenario & Scenario.MemoryLeak) == Scenario.MemoryLeak)
-                {
-                    urls.Add($"{rootUrl}/News");
-                }
-
                 if ((_scenario & Scenario.EndpointsCount) == Scenario.EndpointsCount)
                 {
                     urls.Add($"{rootUrl}/End.Point.With.Dots");
@@ -142,6 +185,26 @@ namespace BuggyBits
                 if ((_scenario & Scenario.Spin) == Scenario.Spin)
                 {
                     urls.Add($"{rootUrl}/Products/IndexSlow");
+                }
+
+                if ((_scenario & Scenario.Redirect) == Scenario.Redirect)
+                {
+                    urls.Add($"{rootUrl}/CompanyInformation");
+                }
+
+                if ((_scenario & Scenario.GetAwaiterGetResult) == Scenario.GetAwaiterGetResult)
+                {
+                    urls.Add($"{rootUrl}/Products/GetAwaiterGetResult");
+                }
+
+                if ((_scenario & Scenario.UseResultProperty) == Scenario.UseResultProperty)
+                {
+                    urls.Add($"{rootUrl}/Products/WithResult");
+                }
+
+                if ((_scenario & Scenario.ShortLived) == Scenario.ShortLived)
+                {
+                    urls.Add($"{rootUrl}/CompanyInformation?ShortLived=true");
                 }
             }
 
@@ -156,20 +219,35 @@ namespace BuggyBits
                 var response = await _httpClient.GetAsync(endpointUrl, _exitToken);
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[Error] Request '{endpointUrl}' failed {response.StatusCode}");
+                    WriteLine($"[Error] Request '{endpointUrl}' failed {response.StatusCode}");
                     return;
                 }
 
                 string responsePayload = await response.Content.ReadAsStringAsync();
                 int responseLen = responsePayload.Length;
                 sw.Stop();
-                Console.WriteLine($"{endpointUrl} | response length = {responseLen} in {sw.ElapsedMilliseconds} ms");
+
+                // hide traces when memory leaks
+                if ((_scenario & Scenario.MemoryLeak) == 0)
+                {
+                    WriteLine($"{endpointUrl} | response length = {responseLen} in {sw.ElapsedMilliseconds} ms");
+                }
             }
             catch (TaskCanceledException)
             {
                 // Excepted when the application exits
-                Console.WriteLine($"SelfInvokerService: {endpointUrl} request cancelled.");
+                WriteLine($"SelfInvokerService: {endpointUrl} request cancelled.");
             }
+        }
+
+        private void WriteLine(string message)
+        {
+            if (_disableLogs)
+            {
+                return;
+            }
+
+            Console.WriteLine(message);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -393,6 +393,7 @@
     Service: Samples.NetActivitySdk,
     Type: custom,
     Tags: {
+      custom.opentelemetry.defaulttextmappropagator.baggage: key=value,
       env: integration_tests,
       language: dotnet,
       otel.library.name: Samples.NetActivitySdk,

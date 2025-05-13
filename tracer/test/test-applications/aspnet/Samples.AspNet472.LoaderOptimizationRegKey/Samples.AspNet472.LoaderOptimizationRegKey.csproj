@@ -140,7 +140,7 @@
     <Content Include="Default.aspx" />
     <Content Include="Global.asax" />
     <Content Include="log4net.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="Properties\PublishProfiles\FolderProfile.pubxml" />
     <Content Include="Site.Master" />

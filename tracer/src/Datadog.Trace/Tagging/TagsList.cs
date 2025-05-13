@@ -243,7 +243,7 @@ namespace Datadog.Trace.Tagging
 
         public override string ToString()
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
 
             var tags = Volatile.Read(ref _tags);
 

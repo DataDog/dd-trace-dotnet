@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             runner.Environment.SetVariable(EnvironmentVariables.ThreadLifetimeEnabled, "1");
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));
@@ -48,7 +48,7 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             EnvironmentHelper.DisableDefaultProfilers(runner);
 
             // only thread lifetime profiler is enabled so should only see the corresponding samples
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.False(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.False(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));

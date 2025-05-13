@@ -11,13 +11,18 @@ namespace Datadog.Trace.Debugger.Symbols.Model
 {
     internal enum SymbolType
     {
+        Field,
+        StaticField,
+        Arg,
+        Local
+    }
+
+    internal enum ScopeType
+    {
         Assembly,
         Class,
         Method,
         Closure,
-        Field,
-        StaticField,
-        Arg,
         Local
     }
 

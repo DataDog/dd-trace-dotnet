@@ -8,9 +8,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
@@ -26,16 +24,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
             var tracer = Tracer.Instance;
             var headers = requestMessage.Headers;
-            if (IsTracingEnabled(headers, implementationIntegrationId) &&
-                ScopeFactory.CreateOutboundHttpScope(tracer, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out var tags) is { } scope)
+
+            if (IsTracingEnabled(headers, implementationIntegrationId))
             {
-                tags.HttpClientHandlerType = instance.GetType().FullName;
+                var scope = ScopeFactory.CreateOutboundHttpScope(
+                    tracer,
+                    requestMessage.Method.Method,
+                    requestMessage.RequestUri,
+                    integrationId,
+                    out var tags);
 
-                // add distributed tracing headers to the HTTP request
-                SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(headers));
+                if (scope is not null)
+                {
+                    tags.HttpClientHandlerType = instance.GetType().FullName;
 
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
-                return new CallTargetState(scope);
+                    // add propagation headers to the HTTP request
+                    var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
+
+                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
+                    return new CallTargetState(scope);
+                }
             }
 
             return CallTargetState.GetDefault();

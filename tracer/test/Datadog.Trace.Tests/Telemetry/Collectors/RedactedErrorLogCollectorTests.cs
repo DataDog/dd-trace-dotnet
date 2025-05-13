@@ -378,6 +378,23 @@ public class RedactedErrorLogCollectorTests
             .OnlyContain(x => x.Count == null);
     }
 
+    [Fact]
+    public void AddsTagsToLogDuringSerialization()
+    {
+        var tagBuilder = new TelemetryController.TagBuilder();
+        var collector = new RedactedErrorLogCollector();
+        collector.EnqueueLog(new($"Some log", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow));
+
+        var logTags = tagBuilder.GetLogTags();
+        var logs = collector.GetLogs(logTags);
+        logs.Should()
+            .ContainSingle()
+            .Which.Should()
+            .ContainSingle()
+            .Which.Tags.Should()
+            .Be(logTags);
+    }
+
     private static string RandomString(int length)
     {
         const string options = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ,!\"£$%^&*()[]{}<>`¬";

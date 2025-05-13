@@ -28,8 +28,12 @@ namespace Samples.MongoDB
             // Further details about binary types: https://studio3t.com/knowledge-base/articles/mongodb-best-practices-uuid-data/#binary-subtypes-0x03-and-0x04
             var guidByteArray = Guid.Parse("6F88CE3F-BEBE-41F6-8E72-BB168A05E07A").ToByteArray();
             var genericBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.Binary);
-            
+
+#if MONGODB_3
+            var uuidLegacyBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidLegacy);
+#else
             var uuidLegacyBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
+#endif
             // We'd like to test with the following two, but you're only allowed one type of UUID
             // in a collection in some versions of mongo
             // var uuidStandardBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidStandard);
@@ -67,8 +71,11 @@ namespace Samples.MongoDB
                 newDocument.Add("largeKey",  largeTagValue);
                 
                 Run(collection, newDocument);
+#if MONGODB_2_2 || MONGODB_2_7 || MONGODB_2_15
+                // Not available in <2.2.0
                 collection.FindSync(newDocument).FirstOrDefault();
-                
+#endif
+
 #if MONGODB_2_2 && !MONGODB_2_15
                 WireProtocolExecuteIntegrationTest(client);
 #endif

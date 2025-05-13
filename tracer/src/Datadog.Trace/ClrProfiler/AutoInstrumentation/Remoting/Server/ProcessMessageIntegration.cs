@@ -68,23 +68,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
             }
 
             // Extract span context
-            SpanContext? propagatedContext = null;
+            PropagationContext extractedContext = default;
+
             try
             {
-                propagatedContext = SpanContextPropagator.Instance.Extract(requestHeaders, (headers, key) =>
-                {
-                    var value = headers[key];
-                    return value is null ?
-                        Array.Empty<string>() :
-                        new string[] { value.ToString() };
-                });
+                extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator
+                                                        .Extract(requestHeaders, (headers, key) => headers[key] is { } value ? [value.ToString()] : [])
+                                                        .MergeBaggageInto(Baggage.Current);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated headers.");
             }
 
-            var scope = RemotingIntegration.CreateServerScope(requestMsg, propagatedContext);
+            var scope = RemotingIntegration.CreateServerScope(requestMsg, extractedContext);
             return new CallTargetState(scope);
         }
 

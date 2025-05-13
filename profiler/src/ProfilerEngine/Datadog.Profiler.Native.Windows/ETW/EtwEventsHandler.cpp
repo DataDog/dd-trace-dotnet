@@ -5,6 +5,9 @@
 #include "Protocol.h"
 #include "IpcClient.h"
 #include "../../Datadog.Profiler.Native/ClrEventsParser.h"
+
+#include "../chrono_helper.hpp"
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -13,35 +16,45 @@
 EtwEventsHandler::EtwEventsHandler()
     :
     _showMessages {false},
-    _pReceiver {nullptr}
+    _pReceiver {nullptr},
+    _pEventsFile {nullptr},
+    _logger {nullptr}
 {
 }
 
-EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver)
+EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile)
     :
     _logger {logger},
-    _pReceiver {pClrEventsReceiver}
+    _showMessages {false},
+    _pReceiver {pClrEventsReceiver},
+    _pEventsFile {pEventsFile}
 {
 }
 
 EtwEventsHandler::~EtwEventsHandler()
 {
-    Stop();
+    Cleanup();
 }
 
-void EtwEventsHandler::Stop()
+void EtwEventsHandler::Cleanup()
 {
+    if (_pEventsFile != nullptr)
+    {
+        fclose(_pEventsFile);
+        _pEventsFile = nullptr;
+    }
+
     _stopRequested.store(true);
 }
 
 void EtwEventsHandler::OnStartError()
 {
-    Stop();
+    Cleanup();
 }
 
 void EtwEventsHandler::OnConnectError()
 {
-    Stop();
+    Cleanup();
 }
 
 void EtwEventsHandler::WriteSuccessResponse(HANDLE hPipe)
@@ -60,6 +73,7 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
     auto message = reinterpret_cast<ClrEventsMessage*>(buffer.get());
 
     DWORD readSize;
+    DWORD eventsCount = 0;
     while (!_stopRequested.load())
     {
         readSize = 0;
@@ -67,6 +81,15 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         {
             _logger->Info("Stop reading events");
             break;
+        }
+
+        // serialize the event to file if needed
+        if (_pEventsFile != nullptr)
+        {
+            fwrite(buffer.get(), sizeof(uint8_t), readSize, _pEventsFile);
+            std::stringstream builder;
+            builder << "Read size = " << readSize << " bytes -- Message size = " << message->Size << " | Event payload size = " << message->Payload.EtwUserDataLength;
+            _logger->Info(builder.str());
         }
 
         // check the message based on the expected command
@@ -87,13 +110,15 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
                 continue;
             }
 
+            eventsCount++;
+
             const EVENT_HEADER* pHeader = &(message->EtwHeader);
             uint32_t tid = pHeader->ThreadId;
             uint8_t version = pHeader->EventDescriptor.Version;
             uint64_t keyword = pHeader->EventDescriptor.Keyword;
             uint8_t level = pHeader->EventDescriptor.Level;
             uint16_t id = pHeader->EventDescriptor.Id;
-            uint64_t timestamp = pHeader->TimeStamp.QuadPart;
+            auto timestamp = etw_timestamp(pHeader->TimeStamp.QuadPart);
 
             ClrEventPayload* pPayload = (ClrEventPayload*)(&(message->Payload));
             uint16_t userDataLength = pPayload->EtwUserDataLength;
@@ -107,6 +132,10 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             if (_pReceiver != nullptr)
             {
                 _pReceiver->OnEvent(timestamp, tid, version, keyword, level, id, userDataLength, pUserData);
+
+                std::stringstream builder;
+                builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
+                _logger->Info(builder.str());
             }
 
             // fire and forget so no need to answer
@@ -123,6 +152,9 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             break;
         }
     }
+
+    // close the event file if needed
+    Cleanup();
 }
 
 bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize)

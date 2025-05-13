@@ -63,6 +63,11 @@ namespace Datadog.Trace
         internal const string RedisDatabaseIndex = "db.redis.database_index";
 
         /// <summary>
+        /// A boolean indicating whether APM tracing is disabled. When APM is disabled, this metric is set to 0.
+        /// </summary>
+        internal const string ApmEnabled = "_dd.apm.enabled";
+
+        /// <summary>
         /// Whether the libraries application security features are enabled.
         /// </summary>
         public const string AppSecEnabled = "_dd.appsec.enabled";
@@ -93,6 +98,11 @@ namespace Datadog.Trace
         public const string RaspWafAndBindingsDuration = "_dd.appsec.rasp.duration_ext";
 
         /// <summary>
+        /// Is set to 1 if there was a RASP timeout.
+        /// </summary>
+        public const string RaspWafTimeout = "_dd.appsec.rasp.timeout";
+
+        /// <summary>
         /// Counts the number of times a rule type is evaluated.
         /// </summary>
         public const string RaspRuleEval = "_dd.appsec.rasp.rule.eval";
@@ -106,6 +116,9 @@ namespace Datadog.Trace
         /// Float representing the number of rules which failed to load
         /// </summary>
         public const string AppSecWafInitRulesErrorCount = "_dd.appsec.event_rules.error_count";
+
+        // inferred proxy tags
+        public const string InferredSpan = "_dd.inferred_span";
 
         /// <summary>
         /// Contains tag names that are associated with Single Span Sampling.

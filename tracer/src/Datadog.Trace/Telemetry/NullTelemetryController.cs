@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 
@@ -25,11 +27,15 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
+        public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
         {
         }
 
         public void RecordProfilerSettings(Profiler profiler)
+        {
+        }
+
+        public void RecordTestOptimizationSettings(TestOptimizationSettings settings)
         {
         }
 
@@ -49,6 +55,10 @@ namespace Datadog.Trace.Telemetry
         public Task DumpTelemetry(string filePath) => Task.CompletedTask;
 
         public void RecordGitMetadata(GitMetadata gitMetadata)
+        {
+        }
+
+        public void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints)
         {
         }
     }

@@ -46,7 +46,7 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
         {
             _api = api;
             _processExit = new TaskCompletionSource<bool>();
@@ -65,8 +65,8 @@ namespace Datadog.Trace.Agent
 
             var header = new ClientStatsPayload
             {
-                Environment = settings.EnvironmentInternal,
-                Version = settings.ServiceVersionInternal,
+                Environment = settings.Environment,
+                Version = settings.ServiceVersion,
                 HostName = HostMetadata.Instance.Hostname
             };
 
@@ -91,9 +91,9 @@ namespace Datadog.Trace.Agent
 
         public bool? CanComputeStats { get; private set; } = null;
 
-        public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService)
         {
-            return settings.StatsComputationEnabledInternal ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()

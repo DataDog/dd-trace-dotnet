@@ -25,6 +25,9 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-0587c50e-8e35c2cd-,
+      _dd.appsec.fp.http.header: <HeaderPrint>
+      _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -65,6 +68,9 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-0587c50e-8e35c2cd-,
+      _dd.appsec.fp.http.header: <HeaderPrint>
+      _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -105,6 +111,9 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-0587c50e-8e35c2cd-,
+      _dd.appsec.fp.http.header: <HeaderPrint>
+      _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -145,6 +154,9 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-0587c50e-8e35c2cd-,
+      _dd.appsec.fp.http.header: <HeaderPrint>
+      _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -185,6 +197,9 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.endpoint: http-get-0587c50e-8e35c2cd-,
+      _dd.appsec.fp.http.header: <HeaderPrint>
+      _dd.appsec.fp.http.network: <NetworkPrint>,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet

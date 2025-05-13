@@ -12,7 +12,14 @@
     prices.
 </p>
 <p></p>
-<p><b>Send us a mesasge</b></p>
+<p>
+   Look at Tess Ferrandez's Github for more details
+</p>
+<p>
+    @Html.Raw(@ViewData["TessGithubPage"]))
+</p>
+<p></p>
+<p><b>Send us a message</b></p>
 @using (Html.BeginForm("Contact", "CompanyInformation", FormMethod.Post))
 {
     @Html.TextBoxFor(m => m.Message)

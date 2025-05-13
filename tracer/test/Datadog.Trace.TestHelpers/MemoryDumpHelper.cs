@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.TestHelpers
         private static string _path;
 
         private static IProgress<string> _output;
+
+        private static bool _isCrashMonitoringAvailable = true;
 
         public static bool IsAvailable => _path != null;
 
@@ -34,7 +37,7 @@ namespace Datadog.Trace.TestHelpers
             if (!EnvironmentTools.IsTestTarget64BitProcess())
             {
                 // We currently have an issue with procdump on x86
-                return;
+                _isCrashMonitoringAvailable = false;
             }
 
             // We don't know if procdump is available, so download it fresh
@@ -60,7 +63,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Task MonitorCrashes(int pid)
         {
-            if (!EnvironmentTools.IsWindows() || !IsAvailable)
+            if (!EnvironmentTools.IsWindows() || !IsAvailable || !_isCrashMonitoringAvailable)
             {
                 return Task.CompletedTask;
             }
@@ -124,23 +127,37 @@ namespace Datadog.Trace.TestHelpers
             return tcs.Task;
         }
 
-        public static bool CaptureMemoryDump(Process process, IProgress<string> output = null)
+        public static bool CaptureMemoryDump(Process process, IProgress<string> output = null, bool includeChildProcesses = false)
+        {
+            return CaptureMemoryDump(process.Id, output, includeChildProcesses);
+        }
+
+        private static bool CaptureMemoryDump(int pid, IProgress<string> output = null, bool includeChildProcesses = false)
         {
             if (!IsAvailable)
             {
+                _output?.Report("Memory dumps not enabled");
                 return false;
             }
 
-            try
+            // children first and then the parent process last
+            IEnumerable<int> pids = includeChildProcesses ? [..ProcessHelper.GetChildrenIds(pid), pid] : [pid];
+            var atLeastOneDump = false;
+            foreach (var cPid in pids)
             {
-                var args = EnvironmentTools.IsWindows() ? $"-ma -accepteula {process.Id} {Path.GetTempPath()}" : process.Id.ToString();
-                return CaptureMemoryDump(args, output ?? _output);
+                try
+                {
+                    var args = EnvironmentTools.IsWindows() ? $"-ma -accepteula {cPid} {Path.GetTempPath()}" : cPid.ToString();
+                    atLeastOneDump |= CaptureMemoryDump(args, output ?? _output);
+                }
+                catch (Exception ex)
+                {
+                    _output?.Report("Error taking memory dump: " + ex);
+                    return false;
+                }
             }
-            catch (Exception ex)
-            {
-                _output?.Report("Error taking memory dump: " + ex);
-                return false;
-            }
+
+            return atLeastOneDump;
         }
 
         private static bool CaptureMemoryDump(string args, IProgress<string> output)

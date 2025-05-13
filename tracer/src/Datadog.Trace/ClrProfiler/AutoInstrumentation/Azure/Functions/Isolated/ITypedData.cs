@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 #if !NETFRAMEWORK
 #nullable enable
 
@@ -13,8 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 /// Interface because used in integration definition
 /// https://github.com/Azure/azure-functions-host/blob/8ceb05a89a4337f07264d4991545538a3e8b58a0/src/WebJobs.Script.Grpc/azure-functions-language-worker-protobuf/src/proto/FunctionRpc.proto#L443
 /// </summary>
-internal interface ITypedData
+///
+internal interface ITypedData : IDuckType
 {
-    public RpcHttpStruct Http { get; }
+    public IRpcHttp Http { get; set; }
 }
 #endif

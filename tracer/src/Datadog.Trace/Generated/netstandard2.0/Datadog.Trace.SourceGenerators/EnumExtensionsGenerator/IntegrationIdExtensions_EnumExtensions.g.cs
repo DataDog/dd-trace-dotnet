@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 69;
+    public const int Length = 75;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -55,9 +55,12 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Msmq => nameof(Datadog.Trace.Configuration.IntegrationId.Msmq),
             Datadog.Trace.Configuration.IntegrationId.Kafka => nameof(Datadog.Trace.Configuration.IntegrationId.Kafka),
             Datadog.Trace.Configuration.IntegrationId.CosmosDb => nameof(Datadog.Trace.Configuration.IntegrationId.CosmosDb),
+            Datadog.Trace.Configuration.IntegrationId.AwsS3 => nameof(Datadog.Trace.Configuration.IntegrationId.AwsS3),
             Datadog.Trace.Configuration.IntegrationId.AwsSdk => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSdk),
             Datadog.Trace.Configuration.IntegrationId.AwsSqs => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSqs),
             Datadog.Trace.Configuration.IntegrationId.AwsSns => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSns),
+            Datadog.Trace.Configuration.IntegrationId.AwsEventBridge => nameof(Datadog.Trace.Configuration.IntegrationId.AwsEventBridge),
+            Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions => nameof(Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions),
             Datadog.Trace.Configuration.IntegrationId.AwsLambda => nameof(Datadog.Trace.Configuration.IntegrationId.AwsLambda),
             Datadog.Trace.Configuration.IntegrationId.ILogger => nameof(Datadog.Trace.Configuration.IntegrationId.ILogger),
             Datadog.Trace.Configuration.IntegrationId.Aerospike => nameof(Datadog.Trace.Configuration.IntegrationId.Aerospike),
@@ -99,6 +102,9 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Selenium => nameof(Datadog.Trace.Configuration.IntegrationId.Selenium),
             Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak => nameof(Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak),
             Datadog.Trace.Configuration.IntegrationId.SessionTimeout => nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
+            Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
+            Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection => nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
+            Datadog.Trace.Configuration.IntegrationId.Protobuf => nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
             _ => value.ToString(),
         };
 
@@ -137,9 +143,12 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Msmq,
             Datadog.Trace.Configuration.IntegrationId.Kafka,
             Datadog.Trace.Configuration.IntegrationId.CosmosDb,
+            Datadog.Trace.Configuration.IntegrationId.AwsS3,
             Datadog.Trace.Configuration.IntegrationId.AwsSdk,
             Datadog.Trace.Configuration.IntegrationId.AwsSqs,
             Datadog.Trace.Configuration.IntegrationId.AwsSns,
+            Datadog.Trace.Configuration.IntegrationId.AwsEventBridge,
+            Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions,
             Datadog.Trace.Configuration.IntegrationId.AwsLambda,
             Datadog.Trace.Configuration.IntegrationId.ILogger,
             Datadog.Trace.Configuration.IntegrationId.Aerospike,
@@ -181,6 +190,9 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Selenium,
             Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak,
             Datadog.Trace.Configuration.IntegrationId.SessionTimeout,
+            Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
+            Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection,
+            Datadog.Trace.Configuration.IntegrationId.Protobuf,
         };
 
     /// <summary>
@@ -219,9 +231,12 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Msmq),
             nameof(Datadog.Trace.Configuration.IntegrationId.Kafka),
             nameof(Datadog.Trace.Configuration.IntegrationId.CosmosDb),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AwsS3),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSdk),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSqs),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSns),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AwsEventBridge),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsLambda),
             nameof(Datadog.Trace.Configuration.IntegrationId.ILogger),
             nameof(Datadog.Trace.Configuration.IntegrationId.Aerospike),
@@ -263,5 +278,8 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Selenium),
             nameof(Datadog.Trace.Configuration.IntegrationId.DirectoryListingLeak),
             nameof(Datadog.Trace.Configuration.IntegrationId.SessionTimeout),
+            nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual),
+            nameof(Datadog.Trace.Configuration.IntegrationId.EmailHtmlInjection),
+            nameof(Datadog.Trace.Configuration.IntegrationId.Protobuf),
         };
 }

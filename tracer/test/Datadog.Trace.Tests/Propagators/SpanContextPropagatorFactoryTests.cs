@@ -81,4 +81,15 @@ public class SpanContextPropagatorFactoryTests
 
         propagators.Should().HaveCount(1).And.AllBeOfType<B3SingleHeaderContextPropagator>();
     }
+
+    [Theory]
+    [InlineData("baggage")]
+    [InlineData("Baggage")]         // case-insensitive
+    [InlineData("baggage,Baggage")] // multiple entries returns one instance
+    public void W3CBaggagePropagator(string headerStyles)
+    {
+        var propagators = SpanContextPropagatorFactory.GetPropagators<IContextExtractor>(headerStyles.Split(','));
+
+        propagators.Should().HaveCount(1).And.AllBeOfType<W3CBaggagePropagator>();
+    }
 }

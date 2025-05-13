@@ -18,16 +18,22 @@
     <CopySQLiteInteropFiles>false</CopySQLiteInteropFiles>
     <CleanSQLiteInteropFiles>false</CleanSQLiteInteropFiles>
     <CollectSQLiteInteropFiles>false</CollectSQLiteInteropFiles>
+    <!-- Forcing C#12 so we don't opt-in to the .NET 9/C#13 new overload resolution rules   -->
+    <!-- as those force choosing the span overloads (which we currently don't support)   -->
+    <!-- Once we add support for those overloads, we should remove this   -->
+    <LangVersion>12.0</LangVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net462'">
+  <PropertyGroup Condition=" $(TargetFramework.StartsWith('net4'))">
     <GenerateTargetFrameworkAttribute>true</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.SimpleEmail" Version="3.7.402.28" />
+    <PackageReference Include="MailKit" Version="4.10.0" />
     <PackageReference Include="Azure.Data.Tables" Version="12.8.3" />
     <PackageReference Include="DelegateDecompiler" Version="0.32.0" />
-    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
     <PackageReference Include="Moq" Version="4.16.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
@@ -46,13 +52,13 @@
     <PackageReference Include="NHibernate" Version="5.5.0" />
   </ItemGroup>
   
-  <ItemGroup Condition="'$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
+  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.8" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
@@ -62,6 +68,8 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
     <PackageReference Include="Npgsql" Version="4.0.11" />
     <PackageReference Include="RestSharp" Version="110.2.0" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
@@ -80,11 +88,11 @@
     <PackageReference Include="RestSharp" Version="108.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
+  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
     <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>  
   
-  <ItemGroup Condition="'$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
+  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.8" />
@@ -92,7 +100,7 @@
     <PackageReference Include="Npgsql" Version="7.0.4" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR $(TargetFramework.StartsWith('net4'))">
+  <ItemGroup Condition="'$(TargetFramework)'=='net9.0' OR '$(TargetFramework)'=='net8.0' OR '$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR $(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />
@@ -103,10 +111,4 @@
     <PackageReference Include="System.DirectoryServices.Protocols" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System.Web.Extensions" />
-  </ItemGroup>
-
-
 </Project>

@@ -22,9 +22,9 @@ namespace Datadog.Trace.Debugger.Upload
             return DiagnosticsUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
-        internal static IBatchUploadApi CreateSymbolsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, string serviceName)
+        internal static IBatchUploadApi CreateSymbolsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, string serviceName, bool enableCompression)
         {
-            return SymbolUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, serviceName);
+            return SymbolUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, serviceName, enableCompression);
         }
     }
 }

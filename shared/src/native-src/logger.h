@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -195,18 +196,36 @@ concept IsWstring = same_as<T, ::shared::WSTRING> ||
 template <IsWstring T>
 void WriteToStream(std::ostringstream& oss, T const& x)
 {
-    if constexpr (std::is_same_v<T, ::shared::WSTRING>)
+    oss << ::shared::ToString(x);
+}
+
+template <class Period>
+const char* time_unit_str()
+{
+    if constexpr(std::is_same_v<Period, std::nano>)
     {
-        oss << ::shared::ToString(x);
+        return "ns";
     }
-    else if constexpr (std::is_array_v<T>)
+    else if constexpr(std::is_same_v<Period, std::micro>)
     {
-        oss << ::shared::ToString(x, std::extent_v<T>);
+        return "us";
     }
-    else
+    else if constexpr(std::is_same_v<Period, std::milli>)
     {
-        oss << ::shared::ToString(x);
+        return "ms";
     }
+    else if constexpr(std::is_same_v<Period, std::ratio<1>>)
+    {
+        return "s";
+    }
+
+    return "<unknown unit of time>";
+}
+
+template <class Rep, class Period>
+void WriteToStream(std::ostringstream& oss, std::chrono::duration<Rep, Period> const& x)
+{
+    oss << x.count() << time_unit_str<Period>();
 }
 
 template <class T>

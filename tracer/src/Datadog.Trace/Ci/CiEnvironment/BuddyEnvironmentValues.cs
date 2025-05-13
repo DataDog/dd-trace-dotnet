@@ -4,17 +4,20 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class BuddyEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Buddy detected");
 
         IsCI = true;
         Provider = "buddy";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.BuddyCi;
         Repository = ValueProvider.GetValue(Constants.BuddyScmUrl);
         Commit = ValueProvider.GetValue(Constants.BuddyExecutionRevision);
         Branch = ValueProvider.GetValue(Constants.BuddyExecutionBranch);
@@ -38,5 +41,7 @@ internal sealed class BuddyEnvironmentValues<TValueProvider>(TValueProvider valu
 
         SourceRoot = gitInfo.SourceRoot;
         WorkspacePath = gitInfo.SourceRoot;
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.BuddyPullRequestBaseBranch);
     }
 }

@@ -20,7 +20,7 @@ public:
     Success(Success&& o) noexcept;
     Success& operator=(Success&& o) noexcept;
 
-    std::string message() const noexcept;
+    std::string const& message() const noexcept;
 
     inline operator bool() const noexcept
     {

@@ -1,11 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <RootNamespace>Datadog.Dependabot.Honeypot</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- https://www.nuget.org/packages/Microsoft.OpenApi/1.6.23 -->
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.23" />
+
     <!-- https://www.nuget.org/packages/Serilog/2.10.0 -->
     <PackageReference Include="Serilog" Version="2.10.0" />
 
@@ -30,14 +33,23 @@
     <!-- https://www.nuget.org/packages/IndieSystem.Text.RegularExpressions/0.6 -->
     <PackageReference Include="IndieSystem.Text.RegularExpressions" Version="0.6" />
 
-    <!-- https://www.nuget.org/packages/System.Collections.Immutable/1.0.0 -->
+    <!-- https://www.nuget.org/packages/System.Collections.Immutable/7.0.0 -->
     <PackageReference Include="System.Collections.Immutable" Version="7.0.0" />
 
-    <!-- https://www.nuget.org/packages/System.Memory/1.0.0 -->
+    <!-- https://www.nuget.org/packages/System.Memory/4.5.5 -->
     <PackageReference Include="System.Memory" Version="4.5.5" />
 
-    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/1.0.0 -->
+    <!-- https://www.nuget.org/packages/System.Private.CoreLib/1.0.0 -->
+    <PackageReference Include="System.Private.CoreLib" Version="1.0.0" />
+
+    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/7.0.2 -->
     <PackageReference Include="System.Reflection.Metadata" Version="7.0.2" />
+
+    <!-- https://www.nuget.org/packages/ICSharpCode.SharpZipLib/1.3.3 -->
+    <PackageReference Include="ICSharpCode.SharpZipLib" Version="1.3.3" />
+
+    <!-- https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe/1.0.0 -->
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="1.0.0" />
 
   </ItemGroup>
 

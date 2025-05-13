@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
@@ -31,18 +32,25 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private int _isFinished;
-        private bool _baseServiceTagSet;
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
         {
             Tags = tags ?? new CommonTags();
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
+
+            if (links is not null)
+            {
+                foreach (var link in links)
+                {
+                    AddLink(link);
+                }
+            }
 
             if (IsLogLevelDebugEnabled)
             {
@@ -77,17 +85,10 @@ namespace Datadog.Trace
         /// </summary>
         internal string ServiceName
         {
-            get => Context.ServiceNameInternal;
+            get => Context.ServiceName;
             set
             {
-                // Ignore case because service name and _dd.base_service are normalized in the agent and backend
-                if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal, StringComparison.OrdinalIgnoreCase))
-                {
-                    Tags.SetTag(Trace.Tags.BaseService, Context.ServiceNameInternal);
-                    _baseServiceTagSet = true;
-                }
-
-                Context.ServiceNameInternal = value;
+                Context.ServiceName = value;
             }
         }
 
@@ -123,6 +124,8 @@ namespace Datadog.Trace
 
         internal List<SpanLink> SpanLinks { get; private set; }
 
+        internal List<SpanEvent> SpanEvents { get; private set; }
+
         internal DateTimeOffset StartTime { get; private set; }
 
         internal TimeSpan Duration { get; private set; }
@@ -135,11 +138,11 @@ namespace Datadog.Trace
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => Context.ParentInternal == null
-                                 || Context.ParentInternal.SpanId == 0
-                                 || Context.ParentInternal switch
+        internal bool IsTopLevel => Context.Parent == null
+                                 || Context.Parent.SpanId == 0
+                                 || Context.Parent switch
                                  {
-                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     SpanContext s => s.ServiceName != ServiceName,
                                      { } s => s.ServiceName != ServiceName,
                                  };
 
@@ -160,11 +163,11 @@ namespace Datadog.Trace
         /// </returns>
         public override string ToString()
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
             sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
-            sb.AppendLine($"ParentId: {Context.ParentIdInternal}");
+            sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
             sb.AppendLine($"RawSpanId: {Context.RawSpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
@@ -429,10 +432,7 @@ namespace Datadog.Trace
                     SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
                     SetTag(Trace.Tags.ErrorStack, exception.ToString());
 
-                    if (IsRootSpan)
-                    {
-                        ExceptionDebugging.Report(this, exception);
-                    }
+                    ExceptionDebugging.Report(this, exception);
                 }
                 catch (Exception ex)
                 {
@@ -535,7 +535,7 @@ namespace Datadog.Trace
 
             Log.Debug(
                 "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, Tags, tagsType });
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -543,27 +543,41 @@ namespace Datadog.Trace
         {
             Log.Debug(
                 "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
-                new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
 
         /// <summary>
         /// Adds a SpanLink to the current Span if the Span is active.
         /// </summary>
-        /// <param name="spanLinkToAdd">The Span to add as a SpanLink</param>
-        /// <param name="attributes">List of KeyValue pairings of attributes to add to the SpanLink. Defaults to null</param>
-        /// <returns>returns the SpanLink on success or null on failure (span is closed already)</returns>
-        internal SpanLink AddSpanLink(Span spanLinkToAdd, List<KeyValuePair<string, string>> attributes = null)
+        /// <param name="spanLink">The SpanLink to add</param>
+        /// <returns>This span to allow method chaining.</returns>
+        internal Span AddLink(SpanLink spanLink)
         {
             if (IsFinished)
             {
-                Log.Warning("AddSpanLink should not be called after the span was closed");
-                return null;
+                Log.Warning("AddLink should not be called after the span was closed");
+                return this;
             }
 
             SpanLinks ??= new List<SpanLink>();
-            var spanLink = new SpanLink(spanLinkToAdd, this, attributes);
             SpanLinks.Add(spanLink);
-            return spanLink;
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a SpanEvent to the current Span if the Span is active.
+        /// </summary>
+        /// <param name="spanEvent">The SpanEvent to add</param>
+        internal void AddEvent(SpanEvent spanEvent)
+        {
+            if (IsFinished)
+            {
+                Log.Warning("Attempted to add an event to a finished span");
+                return;
+            }
+
+            SpanEvents ??= new List<SpanEvent>();
+            SpanEvents.Add(spanEvent);
         }
     }
 }

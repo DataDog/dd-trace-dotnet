@@ -148,11 +148,13 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 5);
+            deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
+            deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 2);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 2);
 
             for (int i = 0; i < customTagCount; i++)
             {
@@ -186,10 +188,12 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialize first in the trace chunk
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 4);
+            deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
+            deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 1);
 
             for (int i = 0; i < customTagCount; i++)
             {
@@ -233,12 +237,13 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Theory]
-        [InlineData(SpanKinds.Client, null)]
-        [InlineData(SpanKinds.Server, TracerConstants.Language)]
-        [InlineData(SpanKinds.Producer, null)]
-        [InlineData(SpanKinds.Consumer, TracerConstants.Language)]
-        [InlineData("other", TracerConstants.Language)]
-        public async Task Serialize_LanguageTag_AutomaticInstrumentation(string spanKind, string expectedLanguage)
+        [InlineData(SpanKinds.Client)]
+        [InlineData(SpanKinds.Server)]
+        [InlineData(SpanKinds.Producer)]
+        [InlineData(SpanKinds.Consumer)]
+        [InlineData(SpanKinds.Internal)]
+        [InlineData("other")]
+        public async Task Serialize_LanguageTag_AutomaticInstrumentation(string spanKind)
         {
             const int customTagCount = 15;
 
@@ -253,15 +258,7 @@ namespace Datadog.Trace.Tests.Tagging
             await _tracer.FlushAsync();
             var traceChunks = _testApi.Wait();
             var deserializedSpan = traceChunks.Single().Single();
-
-            if (expectedLanguage == null)
-            {
-                deserializedSpan.Tags.Should().NotContainKey(Tags.Language);
-            }
-            else
-            {
-                deserializedSpan.Tags.Should().Contain(Tags.Language, expectedLanguage);
-            }
+            deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
         }
 
         private static void SetupForSerializationTest(Span span, int customTagCount)

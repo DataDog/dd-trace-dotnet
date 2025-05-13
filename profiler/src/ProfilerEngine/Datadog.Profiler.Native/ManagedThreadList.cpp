@@ -276,38 +276,6 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::LoopNext(uint32_t iterator
     return pInfo;
 }
 
-HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& pThreadInfo)
-{
-    // in case of tests, no ICorProfilerInfo is provided
-    if (_pCorProfilerInfo == nullptr)
-    {
-        return E_FAIL;
-    }
-
-    ThreadID clrThreadId;
-    HRESULT hr = _pCorProfilerInfo->GetCurrentThreadID(&clrThreadId);
-    if (FAILED(hr))
-    {
-        return hr;
-    }
-
-    if (clrThreadId == 0)
-    {
-        return E_FAIL;
-    }
-
-    std::lock_guard<std::recursive_mutex> lock(_mutex);
-    pThreadInfo = FindByClrId(clrThreadId);
-    if (pThreadInfo != nullptr)
-    {
-        return S_OK;
-    }
-    else
-    {
-        return E_FAIL;
-    }
-}
-
 bool ManagedThreadList::TryGetThreadInfo(uint32_t osThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);

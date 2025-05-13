@@ -53,6 +53,9 @@ namespace Datadog.Trace.Pdb
             IsPdbExist = PdbReader != null || DnlibPdbReader != null;
         }
 
+        /// <summary>
+        /// Gets the pdb path if exists, otherwise the assembly location
+        /// </summary>
         internal string? PdbFullPath { get; }
 
         internal MetadataReader MetadataReader { get; }
@@ -76,7 +79,7 @@ namespace Datadog.Trace.Pdb
             if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
             {
                 pdbReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath, null, null);
+                return new DatadogMetadataReader(peReader, metadataReader, pdbReader, pdbPath ?? assembly.Location, null, null);
             }
 
             if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
@@ -200,9 +203,9 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal DatadogSequencePoint[]? GetMethodSequencePoints(int rowId, bool searchMoveNext = true)
+        internal DatadogSequencePoint[]? GetMethodSequencePoints(int methodRid, bool searchMoveNext = true)
         {
-            using var memory = GetMethodSequencePointsAsMemoryOwner(rowId, searchMoveNext, out var count);
+            using var memory = GetMethodSequencePointsAsMemoryOwner(methodRid, searchMoveNext, out var count);
             if (count == 0 || memory == null)
             {
                 return null;
@@ -273,6 +276,55 @@ namespace Datadog.Trace.Pdb
                 }
 
                 return memory;
+            }
+
+            return null;
+        }
+
+        internal DatadogSequencePoint? GetMethodSourceLocation(int methodToken, bool searchMoveNext = true)
+        {
+            if (_isDnlibPdbReader)
+            {
+                return this.GetMethodSourceLocationDnlib(methodToken & RidMask, searchMoveNext);
+            }
+
+            if (PdbReader != null)
+            {
+                var methodDef = GetMethodDef(methodToken & RidMask);
+                if (methodDef.Handle.IsNil)
+                {
+                    return null;
+                }
+
+                MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
+                if (methodDebugInformation.SequencePointsBlob.IsNil && searchMoveNext)
+                {
+                    var moveNext = GetMoveNextMethod(methodDef);
+                    if (moveNext.IsNil)
+                    {
+                        return null;
+                    }
+
+                    methodDebugInformation = PdbReader.GetMethodDebugInformation(moveNext.ToDebugInformationHandle());
+                    if (methodDebugInformation.SequencePointsBlob.IsNil)
+                    {
+                        return null;
+                    }
+                }
+
+                foreach (var sp in methodDebugInformation.GetSequencePoints())
+                {
+                    if (sp.IsHidden)
+                    {
+                        continue;
+                    }
+
+                    var filePath = GetDocumentName(sp.Document);
+                    if (!string.IsNullOrEmpty(filePath) && sp.StartLine > 0)
+                    {
+                        return new DatadogSequencePoint { URL = filePath, StartLine = sp.StartLine, StartColumn = sp.StartColumn };
+                    }
+                }
             }
 
             return null;
@@ -366,6 +418,12 @@ namespace Datadog.Trace.Pdb
 
             if (PdbReader != null)
             {
+                var normalizeFilePath = GetNormalizedPath(filePath);
+                if (string.IsNullOrEmpty(normalizeFilePath))
+                {
+                    return null;
+                }
+
                 const int methodDefTablePrefix = 0x06000000;
                 foreach (MethodDefinitionHandle methodDefinitionHandle in MetadataReader.MethodDefinitions)
                 {
@@ -373,9 +431,15 @@ namespace Datadog.Trace.Pdb
 
                     foreach (VendoredMicrosoftCode.System.Reflection.Metadata.SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
                     {
-                        if (sequencePoint.IsHidden || GetDocumentName(sequencePoint.Document) != filePath)
+                        if (sequencePoint.IsHidden)
                         {
                             continue;
+                        }
+
+                        var normalizeDocumentPath = GetNormalizedPath(GetDocumentName(sequencePoint.Document));
+                        if (!string.Equals(normalizeDocumentPath, normalizeFilePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            break;
                         }
 
                         // Check if the line and column match
@@ -390,6 +454,11 @@ namespace Datadog.Trace.Pdb
             }
 
             return null;
+
+            string? GetNormalizedPath(string? path)
+            {
+                return path == null ? null : Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }
         }
 
         internal IList<string>? GetDocuments()
@@ -454,14 +523,14 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        private string[]? GetLocalVariableNames(int rowId, bool searchMoveNext)
+        private string[]? GetLocalVariableNames(int methodRid, bool searchMoveNext)
         {
             if (PdbReader == null)
             {
                 return null;
             }
 
-            var method = GetMethodDef(rowId);
+            var method = GetMethodDef(methodRid);
             int localsCount = 0;
             var methodLocalsCount = GetLocalVariablesCount(method);
             if (methodLocalsCount == 0)
@@ -562,20 +631,16 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsCompilerGeneratedAttributeDefinedOnMethod(int methodRid)
         {
-            if (_isDnlibPdbReader)
-            {
-                var attributes = _dnlibModule!.ResolveMethod((uint)methodRid)?.CustomAttributes;
-                return attributes?.IsDefined(CompilerGeneratedAttribute) ?? false;
-            }
+            var method = GetMethodDef(methodRid);
+            var attributes = method.GetCustomAttributes();
+            return IsCompilerGeneratedAttributeDefine(attributes);
+        }
 
-            if (PdbReader != null)
-            {
-                var method = GetMethodDef(methodRid);
-                var attributes = method.GetCustomAttributes();
-                return IsCompilerGeneratedAttributeDefine(attributes);
-            }
-
-            return false;
+        internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeRid)
+        {
+            var nestedType = MetadataReader.GetTypeDefinition(TypeDefinitionHandle.FromRowId(typeRid));
+            var attributes = nestedType.GetCustomAttributes();
+            return IsCompilerGeneratedAttributeDefine(attributes);
         }
 
         private bool IsCompilerGeneratedAttributeDefine(CustomAttributeHandleCollection attributes)
@@ -610,24 +675,6 @@ namespace Datadog.Trace.Pdb
                 {
                     return true;
                 }
-            }
-
-            return false;
-        }
-
-        internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeRid)
-        {
-            if (_isDnlibPdbReader)
-            {
-                var attributes = _dnlibModule!.ResolveTypeDefOrRef((uint)typeRid).CustomAttributes;
-                return attributes.IsDefined(CompilerGeneratedAttribute);
-            }
-
-            if (PdbReader != null)
-            {
-                var nestedType = MetadataReader.GetTypeDefinition(TypeDefinitionHandle.FromRowId(typeRid));
-                var attributes = nestedType.GetCustomAttributes();
-                return IsCompilerGeneratedAttributeDefine(attributes);
             }
 
             return false;

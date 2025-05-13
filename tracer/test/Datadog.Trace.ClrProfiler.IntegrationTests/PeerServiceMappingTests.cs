@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public async Task RenamesService()
         {
-            var expectedSpanCount = 87;
+            var expectedSpanCount = 91;
 
             SetInstrumentationVerification();
             const string expectedOperationName = "http.request";

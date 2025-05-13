@@ -17,6 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         /// <summary>
         /// Gets or sets the SNS Batch Request Entries.
         /// </summary>
-        IList PublishBatchRequestEntries { get; set; }
+        IList? PublishBatchRequestEntries { get; set; }
     }
 }

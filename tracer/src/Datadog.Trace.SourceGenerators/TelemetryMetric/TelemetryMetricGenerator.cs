@@ -136,15 +136,16 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
             {
                 locations[i] = index;
                 var (_, metric) = names[i];
-                var tag1Count = metric.Tag1FullyQualifiedName is { } tag1Type && enumDictionary[tag1Type].AsArray() is { } tag1Values
-                                    ? tag1Values.Length
-                                    : 1;
 
-                var tag2Count = metric.Tag2FullyQualifiedName is { } tag2Type && enumDictionary[tag2Type].AsArray() is { } tag2Values
-                                    ? tag2Values.Length
-                                    : 1;
+                var entryCount = 1;
+                foreach (var tagType in metric.TagFullyQualifiedNames.AsArray() ?? [])
+                {
+                    if (enumDictionary[tagType].AsArray() is { } tagValues)
+                    {
+                        entryCount *= tagValues.Length;
+                    }
+                }
 
-                var entryCount = tag1Count * tag2Count;
                 entryCounts[i] = entryCount;
                 index += entryCount;
             }
@@ -224,8 +225,7 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
             string? metricName = null;
             bool isCommon = true;
             string? nameSpace = null;
-            string? tag1FullyQualifiedName = null;
-            string? tag2FullyQualifiedName = null;
+            string[]? tagFullyQualifiedNames = null;
             foreach (var attribute in memberSymbol.GetAttributes())
             {
                 if (attribute.AttributeClass?.Name is "TelemetryMetricAttribute" or "TelemetryMetric"
@@ -245,24 +245,20 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
                         nameSpace = args[2].Value?.ToString();
                     }
 
-                    var tagCount = attribute.AttributeClass.TypeParameters.Length;
-                    if (tagCount > 0)
+                    var typeArgCount = attribute.AttributeClass.TypeParameters.Length;
+                    if (typeArgCount > 0)
                     {
-                        var tag1TypeParameter = attribute.AttributeClass.TypeArguments[0];
-                        tag1FullyQualifiedName = tag1TypeParameter.ToString();
-                        if (!enumTypeDictionary.ContainsKey(tag1FullyQualifiedName))
+                        tagFullyQualifiedNames ??= new string[typeArgCount];
+                        for (var typeArg = 0; typeArg < typeArgCount; typeArg++)
                         {
-                            enumTypeDictionary[tag1FullyQualifiedName] = GetTagValues(tag1TypeParameter, ref diagnostics);
-                        }
-                    }
+                            var tagType = attribute.AttributeClass.TypeArguments[typeArg];
+                            var tagFullyQualifiedName = tagType.ToString();
+                            if (!enumTypeDictionary.ContainsKey(tagFullyQualifiedName))
+                            {
+                                enumTypeDictionary[tagFullyQualifiedName] = GetTagValues(tagType, ref diagnostics);
+                            }
 
-                    if (tagCount == 2)
-                    {
-                        var tag2TypeParameter = attribute.AttributeClass.TypeArguments[1];
-                        tag2FullyQualifiedName = tag2TypeParameter.ToString();
-                        if (!enumTypeDictionary.ContainsKey(tag2FullyQualifiedName))
-                        {
-                            enumTypeDictionary[tag2FullyQualifiedName] = GetTagValues(tag2TypeParameter, ref diagnostics);
+                            tagFullyQualifiedNames[typeArg] = tagFullyQualifiedName;
                         }
                     }
                 }
@@ -276,7 +272,8 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
                 continue;
             }
 
-            members.Add((memberSymbol.Name, new MetricDetails(metricName!, isCommon, nameSpace, tag1FullyQualifiedName, tag2FullyQualifiedName)));
+            var tagNames = tagFullyQualifiedNames is not null ? new EquatableArray<string>(tagFullyQualifiedNames) : new();
+            members.Add((memberSymbol.Name, new MetricDetails(metricName!, isCommon, nameSpace, tagNames)));
             if (!uniqueValues.Add($"{metricName} {nameSpace ?? string.Empty} {(isCommon ? "true" : "false")}"))
             {
                 diagnostics ??= new List<DiagnosticInfo>();
@@ -388,16 +385,14 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
         public readonly string MetricName;
         public readonly bool IsCommon;
         public readonly string? NameSpace;
-        public readonly string? Tag1FullyQualifiedName;
-        public readonly string? Tag2FullyQualifiedName;
+        public readonly EquatableArray<string> TagFullyQualifiedNames;
 
-        public MetricDetails(string metricName, bool isCommon, string? nameSpace, string? tag1FullyQualifiedName, string? tag2FullyQualifiedName)
+        public MetricDetails(string metricName, bool isCommon, string? nameSpace, EquatableArray<string> tagFullyQualifiedNames)
         {
             MetricName = metricName;
             IsCommon = isCommon;
             NameSpace = nameSpace;
-            Tag1FullyQualifiedName = tag1FullyQualifiedName;
-            Tag2FullyQualifiedName = tag2FullyQualifiedName;
+            TagFullyQualifiedNames = tagFullyQualifiedNames;
         }
     }
 }

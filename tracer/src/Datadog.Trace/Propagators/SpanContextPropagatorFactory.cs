@@ -13,12 +13,12 @@ namespace Datadog.Trace.Propagators
 {
     internal static class SpanContextPropagatorFactory
     {
-        public static SpanContextPropagator GetSpanContextPropagator(string[] requestedInjectors, string[] requestedExtractors, bool propagationExtractFirst)
+        public static SpanContextPropagator GetSpanContextPropagator(string[] requestedInjectors, string[] requestedExtractors, bool propagationExtractFirst, ExtractBehavior extractBehavior = default)
         {
             var injectors = GetPropagators<IContextInjector>(requestedInjectors);
             var extractors = GetPropagators<IContextExtractor>(requestedExtractors);
 
-            return new SpanContextPropagator(injectors, extractors, propagationExtractFirst);
+            return new SpanContextPropagator(injectors, extractors, propagationExtractFirst, extractBehavior);
         }
 
         public static IEnumerable<TPropagator> GetPropagators<TPropagator>(string[] headerStyles)
@@ -48,6 +48,11 @@ namespace Datadog.Trace.Propagators
                 string.Equals(headerStyle, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, StringComparison.OrdinalIgnoreCase))
             {
                 return W3CTraceContextPropagator.Instance;
+            }
+
+            if (string.Equals(headerStyle, ContextPropagationHeaderStyle.W3CBaggage, StringComparison.OrdinalIgnoreCase))
+            {
+                return W3CBaggagePropagator.Instance;
             }
 
             if (string.Equals(headerStyle, ContextPropagationHeaderStyle.B3MultipleHeaders, StringComparison.OrdinalIgnoreCase) ||

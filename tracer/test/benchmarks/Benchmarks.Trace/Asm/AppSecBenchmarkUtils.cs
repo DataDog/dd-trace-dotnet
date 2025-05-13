@@ -15,7 +15,13 @@ internal class AppSecBenchmarkUtils
 {
     internal static void SetupDummyAgent()
     {
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false, MaxTracesSubmittedPerSecond = 0 };
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+#pragma warning disable CS0618 // Type or member is obsolete
+            { ConfigurationKeys.MaxTracesSubmittedPerSecond, 0 },
+#pragma warning restore CS0618 // Type or member is obsolete
+        });
         Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
     }
 

@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Data.Common;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -14,7 +15,7 @@ namespace Datadog.Trace.Iast.Aspects;
 #nullable enable
 
 /// <summary> DbCommandAspect class aspect </summary>
-[AspectClass("System.Data,System.Data.Common", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
+[AspectClass("System.Data,System.Data.Common", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class DbCommandAspect
@@ -28,12 +29,20 @@ public class DbCommandAspect
     [AspectMethodInsertBefore("System.Data.Common.DbCommand::ExecuteNonQueryAsync()")]
     public static object ReviewExecuteNonQuery(object command)
     {
-        if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
+        try
         {
-            var commandText = entityCommand.CommandText;
-            VulnerabilitiesModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
-        }
+            if (command is DbCommand entityCommand && command.GetType().Name == "EntityCommand")
+            {
+                var commandText = entityCommand.CommandText;
+                VulnerabilitiesModule.OnSqlQuery(commandText, IntegrationId.SqlClient);
+            }
 
-        return command;
+            return command;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return command;
+        }
     }
 }

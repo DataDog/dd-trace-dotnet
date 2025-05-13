@@ -14,6 +14,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
+using System.Net.Mail;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -76,7 +79,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                dbConnection = dbConnection ?? IastControllerHelper.CreateDatabase();
+                dbConnection = dbConnection ?? IastControllerHelper.CreateSystemDataDatabase();
                 return Content("OK");
             }
             catch (SQLiteException ex)
@@ -92,7 +95,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (dbConnection is null)
                 {
-                    dbConnection = IastControllerHelper.CreateDatabase();
+                    dbConnection = IastControllerHelper.CreateSystemDataDatabase();
                 }
 
                 if (!string.IsNullOrEmpty(username))
@@ -157,18 +160,23 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         [Route("ExecuteCommand")]
-        public ActionResult ExecuteCommand(string file, string argumentLine)
+        public ActionResult ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
-            return ExecuteCommandInternal(file, argumentLine);
+            return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
-        private ActionResult ExecuteCommandInternal(string file, string argumentLine)
+        private ActionResult ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
         {
             try
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    var result = Process.Start(file, argumentLine);
+                    ProcessStartInfo startInfo = new ProcessStartInfo();
+                    startInfo.FileName = file;
+                    startInfo.Arguments = argumentLine;
+                    startInfo.UseShellExecute = fromShell;
+                    var result = Process.Start(startInfo);
+
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -180,10 +188,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
             }
-            catch (Exception ex)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, IastControllerHelper.ToFormattedString(ex));
-            }
         }
 
         // Uses JavaScriptSerializer
@@ -194,7 +198,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (dbConnection is null)
                 {
-                    dbConnection = IastControllerHelper.CreateDatabase();
+                    dbConnection = IastControllerHelper.CreateSystemDataDatabase();
                 }
 
                 return Query(queryInstance);
@@ -303,6 +307,64 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content("The provided directory could not be opened");
             }
+        }
+
+        // This method actually performs some file operations after the request has been normally closed.
+        [Route("GetFileContentThread")]
+        public ActionResult GetFileContentThread(string file, int numThreads = 100, int delayPerThread = 50)
+        {
+            for (int i = 0; i < numThreads; i++)
+            {
+                var thread = new Thread(() => { GetFileAux(file, i * delayPerThread); });
+                thread.Start();
+            }
+
+            return Content("Ok");
+        }
+
+        private void GetFileAux(string file, int i)
+        {
+            try
+            {
+                Thread.Sleep(i);
+                GetFileContent(file);
+            }
+            catch (Exception ex)
+            {
+                if (!ex.Message.Contains("BlockException"))
+                {
+                    throw;
+                }
+            }
+        }
+
+        // This method tests some edge conditions that can happen
+        [Route("GetFileContentEdgeConditions")]
+        public ActionResult GetFileContentEdgeConditions(string file, bool endRequest = true, bool setStatusCode = true, bool setContent = true)
+        {
+            if (setStatusCode)
+            {
+                Response.StatusCode = 200;
+            }
+
+            if (setContent)
+            {
+                Response.ContentType = "text/plain";
+                Response.Write("This is a dummy content.");
+            }
+
+            if (endRequest)
+            {
+                Response.Flush();
+                Response.End();
+                Response.Close();
+                HttpContext.ApplicationInstance.CompleteRequest();
+            }
+
+            // call RASP and IAST
+            GetFileAux(file, 0);
+
+            return Content("Ok");
         }
 
         [Route("GetFileContent")]
@@ -487,7 +549,32 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("LDAP")]
         public ActionResult Ldap(string path, string userName)
         {
+            string resultString = string.Empty;
+
             try
+            {
+                var task = Task.Factory.StartNew(() =>
+                {
+                    PerformLdapQuery();
+                });
+
+                if (!task.Wait(5000))
+                {
+                    // Custom code to signal the client to skip the test
+                    Response.StatusCode = 513;
+                    return Content($"Skip due to timeout (513)");
+                }
+            }
+            catch (System.AggregateException err) when (err.InnerExceptions[0] is System.Runtime.InteropServices.COMException)
+            {
+                // Custom code to signal the client to skip the test
+                Response.StatusCode = 513;
+                return Content($"Skip due to timeout (513)");
+            }
+
+            return Content($"Result: " + resultString);
+
+            void PerformLdapQuery()
             {
                 DirectoryEntry entry = null;
                 try
@@ -506,18 +593,10 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
                 var result = search.FindAll();
 
-                string resultString = string.Empty;
-
                 for (int i = 0; i < result.Count; i++)
                 {
                     resultString += result[i].Path + Environment.NewLine;
                 }
-
-                return Content($"Result: " + resultString);
-            }
-            catch
-            {
-                return Content($"Result: Not connected");
             }
         }
 
@@ -692,6 +771,93 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             var result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
             return Content(result);
+        }
+
+        [Route("SendEmailSmtpData")]
+        public ActionResult SendEmailSmtpData(string email, string name, string lastname,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587)
+        {
+            return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
+        }
+
+        [Route("SendEmail")]
+        public ActionResult SendEmail(string email, string name, string lastname)
+        {
+            return SendMailAux(name, lastname, email);
+        }
+
+        private ActionResult SendMailAux(string firstName, string lastName, string email,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587, bool escape = false)
+        {
+            var contentHtml = $"Hi " + firstName + " " + lastName + ", <br />" +
+                "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
+                "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
+
+            if (escape)
+            {
+                contentHtml = WebUtility.HtmlEncode(contentHtml);
+            }
+
+            var subject = $"{firstName}, welcome!";
+
+            if (string.IsNullOrEmpty(smtpUsername))
+            {
+                smtpUsername = email;
+            }
+
+            try
+            {
+
+                var mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress(smtpUsername);
+                mailMessage.To.Add(email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = contentHtml;
+                mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
+
+                var client = new SmtpClient(smtpserver, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                    EnableSsl = true,
+                    Timeout = 10000
+                };
+                client.Send(mailMessage);
+            }
+            catch (SmtpException)
+            {
+                return new HttpStatusCodeResult(200, "Mail message was not sent");
+            }
+
+            return Content("Email sent");
+        }
+        
+        [Route("Print")]
+        public ActionResult Print(
+            bool Encrypt,
+            string ClientDatabase,
+            int p,
+            int ID,
+            int EntityType,
+            bool Print,
+            string OutputType,
+            int SSRSReportID)
+        {
+            var key = Request.QueryString.AllKeys.ElementAt(1);
+            var query1 = string.Format("\r\nDECLARE @{0}ID INT = (SELECT {0}ID FROM[Get{0}]('", key);
+            var query2 = string.Format("'))\r\n\r\nSELECT SSRSReports FROM [ClientCentral].[dbo].[ClientDatabases] WHERE {0}ID = @{0}ID)", key);
+            var query = query1 + query2;
+
+            try
+            {
+                var rname = ExecuteQuery(query);
+                return Content($"Result: " + rname);
+            }
+            catch
+            {
+                return Content("Nothing to display.");
+            }
         }
     }
 }

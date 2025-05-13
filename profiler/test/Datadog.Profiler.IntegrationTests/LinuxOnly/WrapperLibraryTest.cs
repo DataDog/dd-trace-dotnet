@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
@@ -32,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -52,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", "/mnt/does_not_exist/Datadog.Linux.Wrapper.x64.so");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -71,7 +72,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -82,53 +83,73 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
-        public void RedirectCrashHandler(string appName, string framework, string appAssembly)
+        public void GenerateDumpIfDbgRequested(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
+            // The continuous profiler is disabled for this test because it's not needed and it *might* be causing some failures
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, enableProfiler: false, commandLine: "--scenario 7");
 
-            runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
-
-            RegisterCrashHandler(runner);
-
-            using var processHelper = runner.LaunchProcess();
-
-            runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000).Should().BeTrue();
-            processHelper.Drain();
-            processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
-            processHelper.StandardOutput.Should().MatchRegex(@"createdump [\w\.\/]+createdump \d+")
-                .And.NotContain("Writing minidump");
-        }
-
-        [TestAppFact("Samples.ExceptionGenerator")]
-        public void DontRedirectCrashHandlerIfPathNotSet(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
-
-            // Don't set DD_TRACE_CRASH_HANDLER. In that case, the call to createdump shouldn't be redirected
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
+            runner.Environment.SetVariable("COMPlus_CreateDumpDiagnostics", "1");
 
             using var processHelper = runner.LaunchProcess();
 
-            runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000).Should().BeTrue();
+            var success = processHelper.Process.WaitForExit(30_000);
+            if (!success)
+            {
+                var logger = runner.XUnitLogger;
+
+                // Note: we don't drain because the process hasn't exited, but it means the output may be incomplete
+                logger.WriteLine("Standard output:");
+                logger.WriteLine(processHelper.StandardOutput);
+
+                logger.WriteLine("Error output:");
+                logger.WriteLine(processHelper.ErrorOutput);
+
+                var pid = processHelper.Process.Id;
+
+                var status = File.ReadAllText($"/proc/{pid}/status");
+
+                logger.WriteLine("Process status:");
+                logger.WriteLine(status);
+
+                logger.WriteLine("************************");
+
+                // Enumerating status for each thread
+                var threads = Directory.GetDirectories($"/proc/{pid}/task");
+
+                foreach (var thread in threads)
+                {
+                    logger.WriteLine($"**** {thread}:");
+                    try
+                    {
+                        var threadStatus = File.ReadAllText($"{thread}/status");
+                        logger.WriteLine(threadStatus);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.WriteLine(ex.Message);
+                    }
+                }
+
+                logger.WriteLine("************************");
+
+                var processes = Process.GetProcesses();
+
+                logger.WriteLine("Processes:");
+
+                foreach (var process in processes)
+                {
+                    logger.WriteLine($"Process: {process.ProcessName} ({process.Id})");
+                }
+            }
+
+            success.Should().BeTrue();
             processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().NotMatchRegex(@"createdump [\w\.\/]+createdump \d+")
                 .And.Contain("Writing minidump");
-        }
-
-        private void RegisterCrashHandler(TestApplicationRunner runner)
-        {
-            var crashHandler = "/bin/echo";
-
-            if (!File.Exists(crashHandler))
-            {
-                _output.WriteLine($"Crash handler {crashHandler} does not exist.");
-                throw new FileNotFoundException($"Crash handler {crashHandler} does not exist.");
-            }
-
-            runner.Environment.SetVariable("DD_TRACE_CRASH_HANDLER", crashHandler);
         }
     }
 }

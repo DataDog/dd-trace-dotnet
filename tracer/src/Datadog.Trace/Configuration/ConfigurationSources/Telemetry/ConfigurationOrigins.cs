@@ -10,8 +10,11 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
+/// <summary>
+/// The origin of a configuration value
+/// </summary>
 [EnumExtensions]
-internal enum ConfigurationOrigins
+public enum ConfigurationOrigins
 {
     /// <summary>
     /// Configuration that is set through environment variables

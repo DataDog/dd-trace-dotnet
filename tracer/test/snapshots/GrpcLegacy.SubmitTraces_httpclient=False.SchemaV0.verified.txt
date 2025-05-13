@@ -42,11 +42,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -130,11 +132,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -224,11 +228,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -320,11 +326,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -416,11 +424,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -512,11 +522,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -608,11 +620,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -704,11 +718,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -800,11 +816,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -896,11 +914,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -986,11 +1006,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -1074,11 +1096,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -1162,11 +1186,13 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,
@@ -1252,10 +1278,12 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcLegacy
     },
     Metrics: {
       process_id: 0,

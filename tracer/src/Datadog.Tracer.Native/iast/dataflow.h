@@ -52,7 +52,7 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler);
+        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
@@ -72,9 +72,11 @@ namespace iast
         std::vector<WSTRING> _methodAttributeIncludeFilters;
         std::vector<WSTRING> _methodAttributeExcludeFilters;
 
+        void LoadSecurityControls();
     protected:
         bool _initialized = false;
         bool _loaded = false;
+        bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
         std::vector<DataflowAspect*> _aspects;
@@ -95,7 +97,7 @@ namespace iast
         HRESULT ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo = nullptr);
         HRESULT ModuleUnloaded(ModuleID moduleId);
 
-        void LoadAspects(WCHAR** aspects, int aspectsLength);
+        void LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform);
 
         ICorProfilerInfo* GetCorProfilerInfo();
 

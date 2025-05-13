@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
@@ -13,25 +14,31 @@ namespace Datadog.Trace.Headers.Ip
     internal static class RequestIpExtractor
     {
         private static readonly IReadOnlyList<string> IpHeaders =
-            new[]
-            {
-                "x-forwarded-for",
-                "x-real-ip",
-                "true-client-ip",
-                "x-client-ip",
-                "x-forwarded",
-                "forwarded-for",
-                "x-cluster-client-ip",
-                "fastly-client-ip",
-                "cf-connecting-ip",
-                "cf-connecting-ipv6",
-            };
+        [
+            "x-forwarded-for",
+            "x-real-ip",
+            "true-client-ip",
+            "x-client-ip",
+            "forwarded-for",
+            "x-cluster-client-ip",
+            "fastly-client-ip",
+            "cf-connecting-ip",
+            "cf-connecting-ipv6"
+        ];
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
 
-        internal static IpInfo ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo peerIpFallback)
+        /// <summary>
+        /// Extract ip and port following https://datadoghq.atlassian.net/wiki/spaces/SAAL/pages/2118779066/Client+IP+addresses+resolution
+        /// </summary>
+        /// <param name="getHeader">way to extract the header core/fmk</param>
+        /// <param name="customIpHeader">if a custom header has been set</param>
+        /// <param name="isSecureConnection">if it's a secure connection</param>
+        /// <param name="peerIpFallback">peer ip fallback, can be null if none has been found</param>
+        /// <returns>the found ip, custom ip if a header has been specified, public / private ip in the order of headers above, if nothing found and no custom header is specified, falls back on the peer ip</returns>
+        internal static IpInfo? ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo? peerIpFallback)
         {
-            IpInfo extractedCustomIp = null;
+            IpInfo? extractedCustomIp = null;
             if (!string.IsNullOrEmpty(customIpHeader))
             {
                 var value = getHeader(customIpHeader);
@@ -40,13 +47,16 @@ namespace Datadog.Trace.Headers.Ip
                     extractedCustomIp = IpExtractor.RealIpFromValue(value, isSecureConnection);
                     if (extractedCustomIp == null)
                     {
-                        Log.Warning("A custom header for ip with value {Value} was configured but no correct ip could be extracted", value);
+                        Log.Debug("A custom header for ip with value {Value} was configured but no correct ip could be extracted", value);
                     }
-
-                    return extractedCustomIp;
+                }
+                else
+                {
+                    Log.Debug("A custom header for ip {CustomIpHeader} was configured but there was no such header in the request", customIpHeader);
                 }
 
-                Log.Warning("A custom header for ip {CustomIpHeader} was configured but there was no such header in the request", customIpHeader);
+                // don't fall back on other headers as per requirements
+                return extractedCustomIp;
             }
 
             foreach (var headerIp in IpHeaders)
@@ -65,16 +75,25 @@ namespace Datadog.Trace.Headers.Ip
             return peerIpFallback;
         }
 
-        internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
+        internal static void AddIpToTags(string? peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
         {
-            var peerIp = IpExtractor.ExtractAddressAndPort(peerIpAddress, https: isSecureConnection);
+            IpInfo? peerIp = null;
+            if (!string.IsNullOrEmpty(peerIpAddress))
+            {
+                peerIp = IpExtractor.ExtractAddressAndPort(peerIpAddress!, https: isSecureConnection);
+            }
+
             AddIpToTags(peerIp, isSecureConnection, getRequestHeaderFromKey, customIpHeader, tags);
         }
 
-        internal static void AddIpToTags(IpInfo peerIp, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
+        internal static void AddIpToTags(IpInfo? peerIp, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
         {
             var ipInfo = ExtractIpAndPort(getRequestHeaderFromKey, customIpHeader, isSecureConnection, peerIp);
-            tags.NetworkClientIp = peerIp?.IpAddress;
+
+            if (peerIp is not null)
+            {
+                tags.NetworkClientIp = peerIp.IpAddress;
+            }
 
             if (ipInfo != null)
             {

@@ -550,8 +550,7 @@ protected:
     const WSTRING& GetCallTargetRefStructType() override;
 
     void AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                             COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
-                             ULONG& signatureSize, bool isAsyncMethod) override;
+        SignatureBuilder& signatureBuffer, bool isAsyncMethod) override;
     
 public:
     DebuggerTokens(ModuleMetadata* module_metadata_ptr);

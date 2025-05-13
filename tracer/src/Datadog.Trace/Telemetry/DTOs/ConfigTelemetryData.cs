@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using Datadog.Trace.ClrProfiler;
+
 namespace Datadog.Trace.Telemetry
 {
     internal static class ConfigTelemetryData
@@ -28,12 +30,16 @@ namespace Datadog.Trace.Telemetry
         // We intentionally are using specific values here, not OR_GREATER_THAN
 #if NET6_0
         public const string ManagedTracerTfmValue = "net6.0";
+        public const TargetFrameworks TargetFramework = TargetFrameworks.NET6_0;
 #elif NETCOREAPP3_1
         public const string ManagedTracerTfmValue = "netcoreapp3.1";
+        public const TargetFrameworks TargetFramework = TargetFrameworks.NETCOREAPP3_1;
 #elif NETSTANDARD2_0
         public const string ManagedTracerTfmValue = "netstandard2.0";
+        public const TargetFrameworks TargetFramework = TargetFrameworks.NETSTANDARD2_0;
 #elif NETFRAMEWORK
         public const string ManagedTracerTfmValue = "net461";
+        public const TargetFrameworks TargetFramework = TargetFrameworks.NET461;
 #else
 #error Unexpected TFM
 #endif

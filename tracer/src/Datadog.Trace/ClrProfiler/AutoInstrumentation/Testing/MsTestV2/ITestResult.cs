@@ -14,20 +14,25 @@ internal interface ITestResult : IDuckType
     /// <summary>
     /// Gets or sets the outcome enum
     /// </summary>
-    public UnitTestOutcome Outcome { get; set; }
+    UnitTestOutcome Outcome { get; set; }
 
     /// <summary>
     /// Gets or sets the test failure exception
     /// </summary>
-    public Exception? TestFailureException { get; set; }
+    Exception? TestFailureException { get; set; }
 
     /// <summary>
     /// Gets or sets the inner results count of the result.
     /// </summary>
-    public int InnerResultsCount { get; set; }
+    int InnerResultsCount { get; set; }
 
     /// <summary>
     /// Gets or sets the duration of test execution.
     /// </summary>
-    public TimeSpan Duration { get; set; }
+    TimeSpan Duration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the display name
+    /// </summary>
+    public string? DisplayName { get; set; }
 }

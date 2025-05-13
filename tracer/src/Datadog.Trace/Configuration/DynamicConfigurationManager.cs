@@ -67,7 +67,7 @@ namespace Datadog.Trace.Configuration
         {
             var oldSettings = Tracer.Instance.Settings;
 
-            var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, oldSettings.HeaderTagsNormalizationFixEnabled);
+            var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
             // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
             var globalTags = settings.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
                 // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
-                HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
+                HeaderTags = headerTags,
                 // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
                 GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string>(globalTags)
             };
@@ -138,11 +138,11 @@ namespace Datadog.Trace.Configuration
                 }
                 else
                 {
-                    var compositeConfigurationSource = new CompositeConfigurationSourceInternal();
+                    var compositeConfigurationSource = new CompositeConfigurationSource();
 
                     foreach (var item in apmLibrary)
                     {
-                        compositeConfigurationSource.AddInternal(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
+                        compositeConfigurationSource.Add(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
                     }
 
                     configurationSource = compositeConfigurationSource;

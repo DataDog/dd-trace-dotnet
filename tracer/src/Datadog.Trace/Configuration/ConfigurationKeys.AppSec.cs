@@ -71,6 +71,11 @@ namespace Datadog.Trace.Configuration
             internal const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
 
             /// <summary>
+            /// with a default value of 75, defines the percentage of frames taken from the top of the stack when trimming. Min 0, Max 100
+            /// </summary>
+            internal const string MaxStackTraceDepthTopPercent = "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT";
+
+            /// <summary>
             /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
@@ -91,12 +96,23 @@ namespace Datadog.Trace.Configuration
             internal const string JsonBlockedTemplate = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
 
             /// <summary>
-            /// Automatic tracking of user events mode. Values can be disabled, safe or extended.
+            /// Deprecate. Automatic tracking of user events mode. Values can be disabled, safe or extended.
+            /// This config is in the process of being deprecated. Please use DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE
+            /// instead.
+            /// Values will be automatically translated:
+            /// disabled = disabled
+            /// safe = anon
+            /// extended = ident
             /// </summary>
             internal const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
 
             /// <summary>
-            /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
+            /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
+            /// </summary>
+            internal const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
+
+            /// <summary>
+            /// When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
             /// </summary>
             internal const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
 
@@ -104,6 +120,16 @@ namespace Datadog.Trace.Configuration
             /// Api security sample delay in seconds , should be a float. Set to 0 for testing purposes. default value of 30.
             /// </summary>
             internal const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
+
+            /// <summary>
+            /// with a default value of false, it allows a customer to disable the collection of endpoints for API Security.
+            /// </summary>
+            internal const string ApiSecurityEndpointCollectionEnabled = "DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED";
+
+            /// <summary>
+            /// with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
+            /// </summary>
+            internal const string ApiSecurityEndpointCollectionMessageLimit = "DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT";
 
             /// <summary>
             /// Use new unsafe encoder for the waf

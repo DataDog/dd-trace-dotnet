@@ -4,10 +4,11 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System.Net;
-using System.Security.Policy;
+using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,9 +20,34 @@ namespace Datadog.Trace.Security.IntegrationTests
     [Collection("IisTests")]
     public class AspNetWebFormsIntegratedWithSecurity : AspNetWebForms
     {
+        private readonly IisFixture _iisFixture;
+
         public AspNetWebFormsIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
             : base(iisFixture, output, classicMode: false, enableSecurity: true)
         {
+            _iisFixture = iisFixture;
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        }
+
+        [SkippableTheory]
+        [InlineData(200, 303)]
+        [InlineData(302, 302)]
+        public async Task TestBlockingRedirectInvalidStatusCode(int ruleTriggerStatusCode, int returnedStatusCode)
+        {
+            SetHttpPort(_iisFixture.HttpPort);
+            var agent = _iisFixture.Agent;
+
+            const string url = "/";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(ruleTriggerStatusCode, returnedStatusCode);
+            var userAgent = "Canary/v3_" + ruleTriggerStatusCode;
+
+            var minDateTime = DateTime.UtcNow;
+            var (statusCode, _) = await SubmitRequest(url, body: null, contentType: null, userAgent: userAgent);
+            ((int)statusCode).Should().Be(returnedStatusCode);
+
+            var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
+            await VerifySpans(spans, settings);
         }
     }
 
@@ -56,13 +82,13 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         private readonly IisFixture _iisFixture;
         private readonly bool _classicMode;
-        private readonly string _testName;
 
         public AspNetWebForms(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-            : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet")
+            : base("WebForms", output, "/home/shutdown", @"test\test-applications\security\aspnet", allowAutoRedirect: false)
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
             _iisFixture = iisFixture;
             _classicMode = classicMode;

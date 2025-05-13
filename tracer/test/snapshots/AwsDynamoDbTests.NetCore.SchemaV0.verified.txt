@@ -32,9 +32,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -59,9 +61,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -86,9 +90,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -113,13 +119,25 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -132,7 +150,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteItem,
-      aws.requestId: Guid_5,
+      aws.requestId: Guid_6,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -140,13 +158,25 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
+    },
+    SpanLinks: [
+      {
+        Attributes: {
+          link.kind: span-pointer,
+          ptr.dir: d,
+          ptr.hash: Guid_5,
+          ptr.kind: aws.dynamodb.item
+        }
+      }
+    ]
   },
   {
     TraceId: Id_1,
@@ -159,7 +189,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_6,
+      aws.requestId: Guid_7,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -167,9 +197,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -186,7 +218,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchGetItem,
-      aws.requestId: Guid_7,
+      aws.requestId: Guid_8,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -194,9 +226,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -213,7 +247,7 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: BatchWriteItem,
-      aws.requestId: Guid_8,
+      aws.requestId: Guid_9,
       aws.service: DynamoDB,
       aws_service: DynamoDB,
       component: aws-sdk,
@@ -221,9 +255,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -244,9 +280,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -267,9 +305,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -290,9 +330,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -313,9 +355,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -336,9 +380,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -359,9 +405,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -382,9 +430,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -405,9 +455,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0

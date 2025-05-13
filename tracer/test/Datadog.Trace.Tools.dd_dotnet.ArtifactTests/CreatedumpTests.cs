@@ -3,17 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
+using ELFSharp.ELF;
+using ELFSharp.ELF.Sections;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Newtonsoft.Json.Linq;
@@ -24,8 +28,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 
 public class CreatedumpTests : ConsoleTestHelper
 {
-    private const string CreatedumpExpectedOutput = "Writing minidump";
+#if !NETFRAMEWORK // Createdump is not supported on .NET Framework
+    private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
+#endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
+    private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled";
 
     public CreatedumpTests(ITestOutputHelper output)
         : base(output)
@@ -34,6 +41,9 @@ public class CreatedumpTests : ConsoleTestHelper
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", string.Empty);
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", string.Empty);
         SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", string.Empty);
+
+        // Don't let the EnvironmentHelper override our environment variables
+        EnvironmentHelper.UseCrashTracking = false;
     }
 
     private static (string Key, string Value) LdPreloadConfig
@@ -42,7 +52,7 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             var path = Utils.GetApiWrapperPath();
 
-            if (!File.Exists(path))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !File.Exists(path))
             {
                 throw new FileNotFoundException($"LD wrapper not found at path {path}. Ensure you have built the profiler home directory using BuildProfilerHome");
             }
@@ -53,6 +63,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
     private static (string Key, string Value)[] CreatedumpConfig => [("COMPlus_DbgEnableMiniDump", "1"), ("COMPlus_DbgMiniDumpName", "/dev/null")];
 
+#if !NETFRAMEWORK
     [SkippableTheory]
     [InlineData("1", true)]
     [InlineData("0", false)]
@@ -64,16 +75,17 @@ public class CreatedumpTests : ConsoleTestHelper
         // If it wasn't set, then we set it so that dd-dotnet will be invoked in case of crash.
         // If a child dotnet process is spawned, we may then mistakenly think that COMPlus_DbgEnableMiniDump
         // was set from the environment, even though it was set by us. To prevent that, we set the
-        // DD_TRACE_CRASH_HANDLER_PASSTHROUGH environment variable, which codifies the result of the
+        // DD_INTERNAL_CRASHTRACKING_PASSTHROUGH environment variable, which codifies the result of the
         // "was COMPlus_DbgEnableMiniDump set?" check.
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Windows); // This test is not needed on Windows because we don't hook createdump
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
 
         await helper.Task;
 
@@ -82,6 +94,7 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
         helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+
         File.Exists(reportFile.Path).Should().BeTrue();
 
         if (shouldCallCreatedump)
@@ -94,23 +107,28 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
-    [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
+    [SkippableFact]
+    public async Task BashScript()
     {
+        // This tests the case when an app is called through a bash script
+        // This scenario has unique challenges because:
+        //   - The COMPlus_DbgMiniDumpName environment variable that we override is then inherited by the child
+        //   - Bash overrides the getenv/setenv functions, which cause some unexpected behaviors
+
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ("DD_TRACE_CRASH_HANDLER_ENABLED", "0")];
+        (string, string)[] environment = [LdPreloadConfig, .. CreatedumpConfig, CrashReportConfig(reportFile)];
 
-        if (enableCrashDumps)
-        {
-            args = [.. args, .. CreatedumpConfig];
-        }
+        var (executable, args) = PrepareSampleApp(EnvironmentHelper);
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
+        var bashScript = $"#!/bin/bash\n{executable} {args} crash-datadog\n";
+        using var bashFile = new TemporaryFile();
+        bashFile.SetContent(bashScript);
+
+        using var helper = await StartConsole("/bin/bash", bashFile.Path, EnvironmentHelper, false, environment);
 
         await helper.Task;
 
@@ -118,8 +136,49 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        File.Exists(reportFile.Path).Should().BeTrue();
 
+        helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+    }
+#endif
+
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        if (enableCrashDumps)
+        {
+            // Crashtracking is not supported on Windows x86
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+        }
+
+        using var reportFile = new TemporaryFile();
+
+        (string, string)[] args = [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_ENABLED", "0")];
+
+        if (enableCrashDumps)
+        {
+            args = [.. args, .. CreatedumpConfig];
+        }
+
+        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+        }
+
+#if !NETFRAMEWORK
         if (enableCrashDumps)
         {
             helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
@@ -128,6 +187,7 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
+#endif
 
         File.Exists(reportFile.Path).Should().BeFalse();
     }
@@ -139,6 +199,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task DisableTelemetry(bool telemetryEnabled, bool crashdumpEnabled)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
@@ -151,7 +212,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         args = [.. args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
 
         await helper.Task;
 
@@ -159,6 +220,7 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
+#if !NETFRAMEWORK
         if (crashdumpEnabled)
         {
             helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
@@ -167,15 +229,24 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
+#endif
 
         if (telemetryEnabled)
         {
-            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            }
+
             File.Exists(reportFile.Path).Should().BeTrue();
         }
         else
         {
-            helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+            }
+
             File.Exists(reportFile.Path).Should().BeFalse();
         }
     }
@@ -184,12 +255,13 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task WriteCrashReport()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               false,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -198,20 +270,29 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         File.Exists(reportFile.Path).Should().BeTrue();
 
+        assertionScope.AddReportable("Report", reportFile.GetContent());
         var report = JObject.Parse(reportFile.GetContent());
+        report["error"]["is_crash"].Value<bool>().Should().Be(true);
 
-        var metadataTags = (JArray)report["metadata"]!["tags"];
+        var metadataTags = (JArray)(report["metadata"]!["tags"]);
 
         var exception = metadataTags
                        .Select(t => t.Value<string>())
                        .FirstOrDefault(t => t.StartsWith("exception:"));
 
         exception.Should().NotBeNull().And.StartWith("exception:Type: System.BadImageFormatException\nMessage: Expected\nStack Trace:\n");
-        report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
+        }
     }
 
 #if !NETFRAMEWORK
@@ -242,7 +323,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             using var helper = await StartConsoleWithArgs(
                                    "crash-datadog",
-                                   false,
+                                   enableProfiler: true,
                                    [("LD_PRELOAD", newApiWrapperPath), CrashReportConfig(reportFile)]);
 
             await helper.Task;
@@ -251,7 +332,10 @@ public class CreatedumpTests : ConsoleTestHelper
             assertionScope.AddReportable("stdout", helper.StandardOutput);
             assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            }
 
             File.Exists(reportFile.Path).Should().BeTrue();
         }
@@ -266,6 +350,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task NativeCrash()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         if (Utils.IsAlpine())
         {
@@ -276,7 +361,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-native",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -285,9 +370,34 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         File.Exists(reportFile.Path).Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public async Task ResumeProcessWhenCrashing()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-native",
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_INTERNAL_CRASHTRACKING_CRASH", "1")]);
+
+        var completion = await Task.WhenAny(helper.Task, Task.Delay(TimeSpan.FromMinutes(1)));
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        Assert.Equal(completion, helper.Task);
     }
 
     [SkippableFact]
@@ -296,12 +406,13 @@ public class CreatedumpTests : ConsoleTestHelper
         // Test that threads prefixed with DD_ are marked as suspicious even if they have nothing of Datadog in the stacktrace
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
-                               "crash-thread",
-                               true,
+                               "crash-thread-datadog",
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -310,7 +421,10 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         File.Exists(reportFile.Path).Should().BeTrue();
     }
@@ -319,13 +433,12 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task SendReportThroughTelemetry()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-
-        using var agent = new MockTelemetryAgent(TcpPortProvider.GetOpenPort()) { OptionalHeaders = true };
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               false,
-                               [LdPreloadConfig, ("DD_TRACE_AGENT_URL", $"http://localhost:{agent.Port}")]);
+                               enableProfiler: true,
+                               [LdPreloadConfig]);
 
         await helper.Task;
 
@@ -333,49 +446,103 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
-        var data = agent.WaitForLatestTelemetry(d => d.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs));
-        data.Should().NotBeNull();
+        bool IsCrashReport(object payload)
+        {
+            if (payload is not TelemetryData data)
+            {
+                return false;
+            }
 
-        var log = (LogsPayload)data.Payload;
-        log.Logs.Should().HaveCount(1);
-        var report = JObject.Parse(log.Logs[0].Message);
+            if (data.TryGetPayload<LogsPayload>(TelemetryRequestTypes.RedactedErrorLogs) is not { } log)
+            {
+                return false;
+            }
 
-        report["additional_stacktraces"].Should().NotBeNull();
+            if (log.Logs.Count != 1)
+            {
+                return false;
+            }
+
+            var report = JObject.Parse(log.Logs[0].Message);
+            return report["error"]["threads"] != null;
+        }
+
+        var agent = helper.Agent;
+
+        agent.WaitForLatestTelemetry(IsCrashReport).Should().NotBeNull();
+    }
+
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task IgnoreNonDatadogCrashes(bool mainThread)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        var arg = mainThread ? "crash" : "crash-thread";
+
+        using var helper = await StartConsoleWithArgs(
+                               arg,
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should()
+              .NotContain(CrashReportExpectedOutput)
+              .And.EndWith("Crashing...\n"); // Making sure there is no additional output
+        }
+
+        File.Exists(reportFile.Path).Should().BeFalse();
     }
 
     [SkippableFact]
-    public async Task IgnoreNonDatadogCrashes()
+    public async Task OptionallyReportNonDatadogCrashes()
     {
+        // This test only validates the case where DD_CRASHTRACKING_FILTERING_ENABLED is set to 0
+        // The default case is tested by IgnoreNonDatadogCrashes
+
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
                                "crash",
-                               false,
-                               [LdPreloadConfig, CrashReportConfig(reportFile)]);
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_FILTERING_ENABLED", "0")]);
 
         await helper.Task;
 
-        helper.StandardOutput.Should()
-              .NotContain(CrashReportExpectedOutput)
-              .And.EndWith("Crashing...\n"); // Making sure there is no additional output
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportUnfilteredExpectedOutput);
+        }
 
-        File.Exists(reportFile.Path).Should().BeFalse();
+        File.Exists(reportFile.Path).Should().BeTrue();
     }
 
     [SkippableFact]
     public async Task ReportedStacktrace()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               false,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -384,18 +551,18 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var reader = new StringReader(helper.StandardOutput);
 
-        int? expectedPid = null;
+        int? mainThreadId = null;
         var expectedCallstack = new List<string>();
 
-        var pidRegex = "PID: (?<pid>[0-9]+)";
+        var tidRegex = "Main thread: (?<tid>[0-9]+)";
 
         while (reader.ReadLine() is { } line)
         {
-            var pidMatch = Regex.Match(line, pidRegex);
+            var tidMatch = Regex.Match(line, tidRegex);
 
-            if (pidMatch.Success)
+            if (tidMatch.Success)
             {
-                expectedPid = int.Parse(pidMatch.Groups["pid"].Value);
+                mainThreadId = int.Parse(tidMatch.Groups["tid"].Value);
                 continue;
             }
 
@@ -405,7 +572,7 @@ public class CreatedumpTests : ConsoleTestHelper
             }
         }
 
-        expectedPid.Should().NotBeNull();
+        mainThreadId.Should().NotBeNull();
         expectedCallstack.Should().HaveCountGreaterOrEqualTo(2);
 
         var report = JObject.Parse(reportFile.GetContent());
@@ -413,20 +580,19 @@ public class CreatedumpTests : ConsoleTestHelper
         using var assertionScope = new AssertionScope();
         assertionScope.AddReportable("Report", report.ToString());
 
-        ValidateStacktrace(report["stacktrace"]);
-        ValidateStacktrace(report["additional_stacktraces"][expectedPid.Value.ToString()]);
+        ValidateStacktrace(report["error"]["stack"]);
 
         void ValidateStacktrace(JToken callstack)
         {
-            callstack.Should().BeOfType<JArray>();
+            callstack["frames"].Should().BeOfType<JArray>();
 
-            var frames = (JArray)callstack;
+            var frames = (JArray)callstack["frames"];
 
             using var assertionScope = new AssertionScope();
 
             try
             {
-                assertionScope.AddReportable("Frames", string.Join(Environment.NewLine, frames.Select(f => f["names"][0]["name"].Value<string>())));
+                assertionScope.AddReportable("Frames", string.Join(Environment.NewLine, frames.Select(f => f["function"].Value<string>())));
             }
             catch (Exception e)
             {
@@ -435,16 +601,89 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var expectedFrame in expectedCallstack)
             {
-                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["names"][0]["name"].Value<string>()));
+                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["function"].Value<string>()));
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
             }
+
+            var validatedModules = new HashSet<string>();
+
+            foreach (var frame in frames)
+            {
+                var moduleName = frame["function"].Value<string>().Split('!').First();
+
+                if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
+                {
+                    if (!validatedModules.Add(moduleName))
+                    {
+                        continue;
+                    }
+
+                    var expectedBuildId = string.Empty;
+
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        // Open the PE file
+                        using var file = File.OpenRead(moduleName);
+                        using var peReader = new PEReader(file);
+
+                        var debugDirectoryEntries = peReader.ReadDebugDirectory();
+                        var codeViewEntry = debugDirectoryEntries.Single(e => e.Type == DebugDirectoryEntryType.CodeView);
+                        var pdbInfo = peReader.ReadCodeViewDebugDirectoryData(codeViewEntry);
+
+                        frame["build_id_type"].Value<string>().Should().Be("PDB");
+                        expectedBuildId = $"{pdbInfo.Guid.ToString("N")}{unchecked((uint)pdbInfo.Age)}".ToLower();
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        if (frame["build_id"] == null)
+                        {
+                            // On linux we can face cases where the build_id is not available:
+                            // - specifically on alpine, /lib/ld-musl-XX do not have a build_id.
+                            // - We are looking at a frame for which the library was unloaded /memfd:doublemapper (deleted)
+                            continue;
+                        }
+
+                        frame["build_id_type"].Value<string>().Should().Be("GNU"); // or SHA1??
+
+                        using var elf = ELFReader.Load(moduleName);
+                        var buildIdNote = elf.GetSection(".note.gnu.build-id") as INoteSection;
+                        expectedBuildId = ToHexString(buildIdNote.Description).ToLower();
+                    }
+
+                    frame["build_id"].Value<string>().Should().BeEquivalentTo(expectedBuildId);
+                }
+            }
+
+            validatedModules.Should().NotBeEmpty();
+
+#if NETFRAMEWORK
+            var clrModuleName = "clr.dll";
+#else
+            var clrModuleName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcoreclr.so" : "coreclr.dll";
+#endif
+
+            if (!Utils.IsAlpine())
+            {
+                validatedModules.Should().ContainMatch($@"*{Path.DirectorySeparatorChar}{clrModuleName}");
+            }
+        }
+
+        string ToHexString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+            {
+                hex.AppendFormat("{0:x2}", b);
+            }
+
+            return hex.ToString();
         }
     }
 
     private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {
-        return ("DD_TRACE_CRASH_OUTPUT", reportFile.Url);
+        return ("DD_INTERNAL_CRASHTRACKING_OUTPUT", reportFile.Url);
     }
 
     private static void CopyDirectory(string source, string destination)
@@ -479,9 +718,11 @@ public class CreatedumpTests : ConsoleTestHelper
 
         public string Path { get; }
 
-        public string Url => $"file:/{Path}";
+        public string Url => $"file://{Path}";
 
         public string GetContent() => File.ReadAllText(Path);
+
+        public void SetContent(string content) => File.WriteAllText(Path, content);
 
         public void Dispose()
         {
@@ -489,5 +730,3 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 }
-
-#endif

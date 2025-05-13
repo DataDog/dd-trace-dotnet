@@ -1,0 +1,11 @@
+parameters:
+  - name: 'path'
+    type: 'string'
+    default: 'artifacts/build_data/*'
+
+steps:
+  - script: |
+      sudo chmod -R 755 ${{ parameters.path }} || true
+    displayName: Make ${{ parameters.path }} uploadable to AzDo
+    condition: always()
+

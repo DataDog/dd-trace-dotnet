@@ -7,9 +7,6 @@
 
 using System;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -17,28 +14,13 @@ namespace Datadog.Trace.Configuration
     /// Represents a configuration source that
     /// retrieves values from environment variables.
     /// </summary>
-    public class EnvironmentConfigurationSource : StringConfigurationSource
+    internal class EnvironmentConfigurationSource : StringConfigurationSource
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EnvironmentConfigurationSource"/> class.
-        /// </summary>
-        [PublicApi]
-        public EnvironmentConfigurationSource()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.EnvironmentConfigurationSource_Ctor);
-        }
-
-        private protected EnvironmentConfigurationSource(bool unusedParamNotToUsePublicApi)
-        {
-            // unused parameter is to give us a non-public API we can use
-        }
+        /// <inheritdoc />
+        internal override ConfigurationOrigins Origin => ConfigurationOrigins.EnvVars;
 
         /// <inheritdoc />
-        internal override ConfigurationOrigins Origin { get; } = ConfigurationOrigins.EnvVars;
-
-        /// <inheritdoc />
-        [PublicApi]
-        public override string? GetString(string key)
+        protected override string? GetString(string key)
         {
             try
             {

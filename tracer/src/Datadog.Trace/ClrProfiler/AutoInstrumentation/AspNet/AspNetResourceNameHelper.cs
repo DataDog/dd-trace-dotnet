@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // route values provided, comparing the parameter sizes to the parameter values
             // (only action/controller/area unless expandRouteParameters = true,
             // but doesn't seem worth it
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
 
             sb.Append(httpMethod)
               .Append(' ');

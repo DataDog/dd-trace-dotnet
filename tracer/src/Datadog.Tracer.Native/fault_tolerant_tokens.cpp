@@ -5,6 +5,8 @@
 
 HRESULT fault_tolerant::FaultTolerantTokens::EnsureBaseCalltargetTokens()
 {
+    std::lock_guard<std::recursive_mutex> guard(metadata_mutex);
+
     auto hr = CallTargetTokens::EnsureBaseCalltargetTokens();
 
     IfFailRet(hr);

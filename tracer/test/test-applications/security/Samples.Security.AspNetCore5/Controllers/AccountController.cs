@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Samples.Security.AspNetCore5.Models;
@@ -10,13 +12,11 @@ public class AccountController : Controller
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly IUserStore<IdentityUser> _userStore;
 
     public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IUserStore<IdentityUser> userStore)
     {
         _signInManager = signInManager;
         _userManager = userManager;
-        _userStore = userStore;
     }
 
     [HttpGet]
@@ -28,6 +28,13 @@ public class AccountController : Controller
         }
 
         return View(new LoginModel { Input = new LoginModel.InputModel { UserName = "TestUser", Password = "test" } });
+    }
+
+    [HttpGet]
+    [Authorize]
+    public IActionResult SomeAuthenticatedAction()
+    {
+        return Content("Authorized content");
     }
 
     [HttpPost]
@@ -57,7 +64,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Index(LoginModel model, string returnUrl = null)
+    public async Task<IActionResult> Index(LoginModel model, string userIdSdk = null, string returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
 
@@ -66,6 +73,12 @@ public class AccountController : Controller
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
             var result = await _signInManager.PasswordSignInAsync(model.Input.UserName, model.Input.Password, model.Input.RememberMe, lockoutOnFailure: false);
+            
+            if (userIdSdk is not null)
+            {
+                SampleHelpers.TrackUserLoginSuccessEvent(userIdSdk, new Dictionary<string, string> { { "some-metadata", "some-value" } });
+            }
+
             if (result.Succeeded)
             {
                 return LocalRedirect(returnUrl);

@@ -1,0 +1,29 @@
+name: Publish debug symbols
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'An already released version of .NET APM, without the "v" suffix, e.g. "3.3.1"'
+        required: true
+
+jobs:
+  publish_native_debug_symbols:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - name: Download Linux native symbols v${{ github.event.inputs.version }}
+        shell: bash
+        run: |
+          mkdir debug_symbols
+          curl -s -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/linux-native-symbols.tar.gz | tar zxvf - -C debug_symbols 
+      - name: 'Push debug symbols to datadog'
+        uses: ./.github/actions/publish-debug-symbols
+        with:
+          symbols_folder: "debug_symbols"
+          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
+          prod_key: "${{ secrets.DD_PUBLIC_SYMBOL_API_KEY }}"

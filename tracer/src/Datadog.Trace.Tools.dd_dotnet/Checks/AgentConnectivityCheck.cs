@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                             ConnectCallback = async (context, token) =>
                             {
                                 var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
-                                var endpoint = new UnixDomainSocketEndPoint(settings.TracesUnixDomainSocketPathInternal!);
+                                var endpoint = new UnixDomainSocketEndPoint(settings.TracesUnixDomainSocketPath!);
                                 await socket.ConnectAsync(endpoint, token).ConfigureAwait(false);
                                 return new NetworkStream(socket, ownsSocket: false);
                             }
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                         {
                             ConnectCallback = async (context, token) =>
                             {
-                                var pipeStream = new NamedPipeClientStream(".", settings.TracesPipeNameInternal!, PipeDirection.InOut, PipeOptions.Asynchronous);
+                                var pipeStream = new NamedPipeClientStream(".", settings.TracesPipeName!, PipeDirection.InOut, PipeOptions.Asynchronous);
                                 await pipeStream.ConnectAsync(500, token).ConfigureAwait(false);
                                 return pipeStream;
                             }
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             if (settings.TracesTransport == TracesTransportType.UnixDomainSocket)
             {
                 transport = "domain sockets";
-                endpoint = settings.TracesUnixDomainSocketPathInternal ?? "<not set>";
+                endpoint = settings.TracesUnixDomainSocketPath ?? "<not set>";
             }
             else
             {

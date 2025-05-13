@@ -57,14 +57,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
-        internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception? exception, in CallTargetState state)
             where TResult : IBasicGetResult, IDuckType
         {
             string? queue = (string?)state.State;
             DateTimeOffset? startTime = state.StartTime;
 
-            SpanContext? propagatedContext = null;
-            IBasicProperties? basicProperties = null;
+            PropagationContext extractedContext = default;
+            IReadOnlyBasicProperties? basicProperties = null;
             string? messageSize = null;
 
             if (basicGetResult.Instance != null)
@@ -78,7 +78,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     try
                     {
                         basicProperties = basicGetResult.BasicProperties;
-                        propagatedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, default(ContextPropagation));
+
+                        extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(basicPropertiesHeaders, default(ContextPropagation)).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -87,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
+            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, context: extractedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
             {
                 if (scope != null)
                 {

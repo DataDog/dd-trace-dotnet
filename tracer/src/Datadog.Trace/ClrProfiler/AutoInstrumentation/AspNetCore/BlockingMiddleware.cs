@@ -11,9 +11,13 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 
+/// <summary>
+/// Note that this middleware will be shortcircuited by the DeveloperMiddleware which is inserted at aspnetcore startup in development mode in general : app.UseDeveloperExceptionPage();
+/// </summary>
 internal class BlockingMiddleware
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<BlockingMiddleware>();
@@ -43,19 +47,18 @@ internal class BlockingMiddleware
             httpResponse.Headers.Clear();
             httpResponse.StatusCode = action.StatusCode;
 
+            endedResponse = true;
+
             if (action.IsRedirect)
             {
-                httpResponse.Redirect(action.RedirectLocation, action.IsPermanentRedirect);
-                endedResponse = true;
-            }
-            else
-            {
-                httpResponse.ContentType = action.ContentType;
-                endedResponse = true;
-                return httpResponse.WriteAsync(action.ResponseContent);
+                httpResponse.Headers[HeaderNames.Location] = action.RedirectLocation;
+
+                return Task.CompletedTask;
             }
 
-            return Task.CompletedTask;
+            httpResponse.ContentType = action.ContentType;
+
+            return httpResponse.WriteAsync(action.ResponseContent);
         }
 
         try
@@ -76,11 +79,11 @@ internal class BlockingMiddleware
         var security = Security.Instance;
         var endedResponse = false;
 
-        if (security.Enabled)
+        if (security.AppsecEnabled)
         {
             if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
-                var securityCoordinator = new SecurityCoordinator(security, span, new SecurityCoordinator.HttpTransport(context));
+                var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
                 if (_endPipeline && !context.Response.HasStarted)
                 {
                     context.Response.StatusCode = 404;
@@ -97,7 +100,7 @@ internal class BlockingMiddleware
                         securityCoordinator.MarkBlocked();
                     }
 
-                    securityCoordinator.TryReport(result, endedResponse);
+                    securityCoordinator.Reporter.TryReport(result, endedResponse);
                     // security will be disposed in endrequest of diagnostic observer in any case
                 }
             }
@@ -119,17 +122,17 @@ internal class BlockingMiddleware
                 // Use blockinfo here
                 var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
-                        var securityCoordinator = new SecurityCoordinator(security, span, new SecurityCoordinator.HttpTransport(context));
+                        var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context));
                         if (!blockException.Reported)
                         {
-                            securityCoordinator.TryReport(blockException.Result, endedResponse);
+                            securityReporter.TryReport(blockException.Result, endedResponse);
                         }
 
-                        securityCoordinator.AddResponseHeadersToSpanAndCleanup();
+                        securityReporter.AddResponseHeadersToSpan();
                     }
                     else
                     {

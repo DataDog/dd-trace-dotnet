@@ -7,12 +7,13 @@
 
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> StreamWriterAspect class aspects </summary>
-[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.RaspIastSink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class StreamWriterAspect
@@ -32,7 +33,15 @@ public class StreamWriterAspect
     [AspectMethodInsertBefore("System.IO.StreamWriter::.ctor(System.String,System.Boolean,System.Text.Encoding,System.Int32)", 3)]
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            IastModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return path;
+        }
     }
 }

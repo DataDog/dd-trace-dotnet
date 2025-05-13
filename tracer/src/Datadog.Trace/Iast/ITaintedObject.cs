@@ -17,4 +17,6 @@ internal interface ITaintedObject
     public ITaintedObject? Next { get; set; }
 
     public int PositiveHashCode { get; }
+
+    public void Invalidate();
 }

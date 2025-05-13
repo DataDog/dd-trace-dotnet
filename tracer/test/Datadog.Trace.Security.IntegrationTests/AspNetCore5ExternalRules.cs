@@ -5,8 +5,10 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -15,7 +17,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5ExternalRules : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
         public AspNetCore5ExternalRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExternalRules))
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5ExternalRules), allowAutoRedirect: false)
         {
             Fixture = fixture;
             Fixture.SetOutput(outputHelper);
@@ -40,6 +42,28 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             await TestAppSecRequestWithVerifyAsync(agent, DefaultAttackUrl, null, 5, 1, settings);
+        }
+
+        [SkippableTheory]
+        [InlineData(200, 303)]
+        [InlineData(302, 302)]
+        public async Task TestBlockingRedirectInvalidStatusCode(int ruleTriggerStatusCode, int returnedStatusCode)
+        {
+            await Fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            SetHttpPort(Fixture.HttpPort);
+            var agent = Fixture.Agent;
+
+            const string url = "/";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(ruleTriggerStatusCode, returnedStatusCode);
+            var userAgent = "Canary/v3_" + ruleTriggerStatusCode;
+
+            var minDateTime = DateTime.UtcNow;
+            var (statusCode, _) = await SubmitRequest(url, body: null, contentType: null, userAgent: userAgent);
+            ((int)statusCode).Should().Be(returnedStatusCode);
+
+            var spans = WaitForSpans(agent, 1, string.Empty, minDateTime, url);
+            await VerifySpans(spans, settings);
         }
     }
 }

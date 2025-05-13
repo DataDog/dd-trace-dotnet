@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -14,7 +15,9 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDdProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    internal const string DefaultConfigKey = "datadog/00/ASM_DD/default/config";
+
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         var firstFile = files.First();
         var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
@@ -33,26 +36,15 @@ internal class AsmDdProduct : IAsmConfigUpdater
                 ruleSet = RuleSet.From(result.TypedFile);
             }
 
-            configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.RulesetConfigs[firstFile.Path.Path] = ruleSet;
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var oneRemoved = false;
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
-            oneRemoved |= configurationStatus.RulesByFile.Remove(removedConfig.Path);
-        }
-
-        if (configurationStatus.RulesByFile.Count == 0)
-        {
-            configurationStatus.IncomingUpdateState.FallbackToEmbeddedRuleset();
-        }
-        else if (oneRemoved)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.RulesetConfigs.Remove(removedConfig.Path);
         }
     }
 }

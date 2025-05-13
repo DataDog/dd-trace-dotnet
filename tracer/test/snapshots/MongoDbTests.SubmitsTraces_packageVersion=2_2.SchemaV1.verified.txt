@@ -1,8 +1,8 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Main(),
+    Name: internal,
     Resource: Main(),
     Service: Samples.MongoDB,
     Type: custom,
@@ -14,9 +14,7 @@
       otel.trace_id: Guid_1,
       runtime-id: Guid_2,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -28,7 +26,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: sync-calls,
+    Name: internal,
     Resource: sync-calls,
     Service: Samples.MongoDB,
     Type: custom,
@@ -40,15 +38,13 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: async-calls,
+    Name: internal,
     Resource: async-calls,
     Service: Samples.MongoDB,
     Type: custom,
@@ -60,15 +56,13 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: sync-calls,
+    Name: internal,
     Resource: sync-calls,
     Service: Samples.MongoDB,
     Type: custom,
@@ -80,9 +74,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -104,15 +96,13 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: sync-calls-execute,
+    Name: internal,
     Resource: sync-calls-execute,
     Service: Samples.MongoDB,
     Type: custom,
@@ -124,15 +114,13 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: async-calls-execute,
+    Name: internal,
     Resource: async-calls-execute,
     Service: Samples.MongoDB,
     Type: custom,
@@ -144,9 +132,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
       span.kind: internal,
-      version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      version: 1.0.0
     }
   },
   {
@@ -167,8 +153,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -190,8 +174,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -214,8 +196,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -238,8 +218,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -259,8 +237,6 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -282,8 +258,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -305,8 +279,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -329,8 +301,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -353,8 +323,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -376,8 +344,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -399,8 +365,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -423,8 +387,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -447,8 +409,6 @@
       peer.service: test-db,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: db.name
     }
   },
@@ -468,8 +428,6 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -489,8 +447,6 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -510,8 +466,6 @@
       peer.service: mongo,
       span.kind: client,
       version: 1.0.0,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   }

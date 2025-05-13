@@ -15,7 +15,7 @@
       http.request.headers.host: localhost:00000,
       http.route: iast/ldap,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/Ldap?userName=Babs%20Jensen,
+      http.url: http://localhost:00000/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
@@ -26,23 +26,17 @@
   "vulnerabilities": [
     {
       "type": "LDAP_INJECTION",
-      "hash": 941004385,
+      "hash": 9515978
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "Ldap"
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController+"
+        "method": "<Ldap>g__PerformLdapQuery|0"
       },
       "evidence": {
         "valueParts": [
           {
-            "value": "(uid="
-          },
-          {
-            "value": "Babs Jensen",
+            "value": "LDAP://ldap.forumsys.com:389/dc=example,dc=com",
             "source": 0
-          },
-          {
-            "value": ")"
           }
         ]
       }
@@ -51,8 +45,8 @@
   "sources": [
     {
       "origin": "http.request.parameter",
-      "name": "userName",
-      "value": "Babs Jensen"
+      "name": "path",
+      "value": "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
     }
   ]
 }
@@ -61,7 +55,10 @@
       process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {

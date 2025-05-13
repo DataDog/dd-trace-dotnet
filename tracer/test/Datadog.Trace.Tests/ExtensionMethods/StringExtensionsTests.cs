@@ -5,6 +5,8 @@
 
 using System;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Tagging;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.ExtensionMethods
@@ -22,50 +24,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("", "", "")]
         public void TrimEnd(string original, string suffix, string expected)
         {
-            string actual = original.TrimEnd(suffix, StringComparison.Ordinal);
-            Assert.Equal(expected, actual);
-        }
-
-        [Theory]
-        [InlineData("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:/-.", true, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789_:/-.")]
-        [InlineData("Content-Type", true, "content-type")]
-        [InlineData(" Content-Type ", true, "content-type")]
-        [InlineData("C!!!ont_____ent----tYp!/!e", true, "c___ont_____ent----typ_/_e")]
-        [InlineData("Some.Header", true, "some.header")]
-        [InlineData("9invalidtagname", false, null)]
-        [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
-        [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", true, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
-        [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
-        public void TryConvertToNormalizedTagName(string input, bool expectedConversionSuccess, string expectedTagName)
-        {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizePeriods: false, out string actualTagName);
-            Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
-
-            if (actualConversionSuccess)
-            {
-                Assert.Equal(expectedTagName, actualTagName);
-            }
-        }
-
-        [Theory]
-        [InlineData("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:/-.", true, "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789_:/-_")]
-        [InlineData("Content-Type", true, "content-type")]
-        [InlineData(" Content-Type ", true, "content-type")]
-        [InlineData("C!!!ont_____ent----tYp!/!e", true, "c___ont_____ent----typ_/_e")]
-        [InlineData("Some.Header", true, "some_header")]
-        [InlineData("9invalidtagname", false, null)]
-        [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
-        [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", true, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
-        [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
-        public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
-        {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizePeriods: true, out string actualTagName);
-            Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
-
-            if (actualConversionSuccess)
-            {
-                Assert.Equal(expectedTagName, actualTagName);
-            }
+            original.TrimEnd(suffix, StringComparison.Ordinal).Should().Be(expected);
         }
     }
 }

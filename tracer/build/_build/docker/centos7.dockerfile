@@ -10,7 +10,15 @@ ENV \
     # Do not generate certificate
     DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
     # Do not show first run text
-    DOTNET_NOLOGO=true \
+    DOTNET_NOLOGO=1 \
+    # We build the images ahead of time, so the first-time experience, which should speed up subsequent execution, is run at VM build time
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=0 \
+    # Disable telemetry to reduce overhead
+    DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    # Disable the SDK from picking up a global install
+    DOTNET_MULTILEVEL_LOOKUP=0 \
+    # Set CLI language to English for consistent logs
+    DOTNET_CLI_UI_LANGUAGE="en" \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
@@ -18,7 +26,12 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-RUN yum update -y \
+# replace the centos repository with vault.centos.org because they shut down the original
+RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
+    && sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo \
+    && sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo \
+    && printf '[goreleaser]\nname=GoReleaser\nbaseurl=https://repo.goreleaser.com/yum/\nenabled=1\ngpgcheck=0' | tee /etc/yum.repos.d/goreleaser.repo \
+    && yum update -y \
     && yum install -y centos-release-scl \
     && yum install -y\
         git \
@@ -28,9 +41,6 @@ RUN yum update -y \
         gcc \
         build-essential \
         rpm \
-        ruby \
-        ruby-devel \
-        rubygems \
         uuid-dev \
         autoconf \
         libtool \
@@ -48,21 +58,12 @@ RUN yum update -y \
         sudo \
         gawk \
         libasan6 \
-        libubsan1
-
-# Install newer version of fpm and specific version of dotenv 
-RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
-    gem install --version 1.12.2 --user-install ffi && \
-    gem install --version 1.6.0 --user-install git && \
-    gem install --version 0.9.10 --user-install rb-inotify && \
-    gem install --version 3.2.3  --user-install rexml && \
-    gem install backports -v 3.21.0 && \
-    gem install --version 2.7.6 dotenv && \
-    gem install --version 1.14.2 --minimal-deps fpm
+        libubsan1 \
+        nfpm
 
 RUN curl -Ol https://raw.githubusercontent.com/llvm-mirror/clang-tools-extra/master/clang-tidy/tool/run-clang-tidy.py \
     && mv run-clang-tidy.py /usr/bin/ \
-    && chmod +x /usr/bin/run-clang-tidy.py \ 
+    && chmod +x /usr/bin/run-clang-tidy.py \
     && ln -s /usr/bin/run-clang-tidy.py /usr/bin/run-clang-tidy
 
 # Install CppCheck
@@ -71,7 +72,7 @@ RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependen
     && sudo yum localinstall -y cppcheck-2.7-1.el7.x86_64.rpm
 
 # Install the .NET SDK
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
+RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
@@ -86,32 +87,7 @@ ENV \
 
 FROM base as builder
 
-# Copy the build project in and build it
-COPY *.csproj *.props *.targets /build/
-RUN dotnet restore /build
-COPY . /build
-RUN dotnet build /build --no-restore
-WORKDIR /project
-
-FROM base as tester
-
-# Install ASP.NET Core runtimes using install script
-# There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
-
-RUN if [ "$(uname -m)" = "x86_64" ]; \
-    then export NETCORERUNTIME2_1=aspnetcore; \
-    else export NETCORERUNTIME2_1=dotnet; \
-    fi \
-    && curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
-    && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
-    && rm dotnet-install.sh
-
+ENV USE_NATIVE_SDK_VERSION=true
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/

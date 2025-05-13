@@ -17,6 +17,14 @@
     "send_to_user": false,
     "user_tags":[]
   },
+  "unsupported_custom_instrumentation_services": {
+    "tags": [],
+    "metric_type": "count",
+    "data_type": "services",
+    "description": "The number of services in which the customer has installed manual instrumentation that is greater than the automatic instrumentation (and so won't work)",
+    "send_to_user": false,
+    "user_tags":[]
+  },
   "instrumentations": {
     "tags": [
       "component_name"

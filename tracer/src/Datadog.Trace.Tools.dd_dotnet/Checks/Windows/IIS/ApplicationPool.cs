@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1108 // BlockStatementsMustNotContainEmbeddedComments
+
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 {
@@ -55,14 +58,21 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
         {
             var result = new Dictionary<string, string>();
 
-            using var environmentVariables = _applicationPool.GetElementByName("environmentVariables");
-            using var collection = environmentVariables.Collection();
-            var count = collection.Count();
-
-            for (int i = 0; i < count; i++)
+            try
             {
-                using var item = collection.GetItem(i);
-                result.Add(item.GetStringProperty("name"), item.GetStringProperty("value"));
+                using var environmentVariables = _applicationPool.GetElementByName("environmentVariables");
+                using var collection = environmentVariables.Collection();
+                var count = collection.Count();
+
+                for (int i = 0; i < count; i++)
+                {
+                    using var item = collection.GetItem(i);
+                    result.Add(item.GetStringProperty("name"), item.GetStringProperty("value"));
+                }
+            }
+            catch (Win32Exception ex) when ((uint)ex.NativeErrorCode == 0x80070585) // Invalid index
+            {
+                Utils.WriteWarning("Could not read IIS environment variables. This is expected if using a version of IIS prior to 10.");
             }
 
             return result;

@@ -23,6 +23,8 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string ProcessMetrics = $"{MetricsNames.ThreadsCount}, {MetricsNames.CommittedMemory}, {MetricsNames.CpuUserTime}, {MetricsNames.CpuSystemTime}, {MetricsNames.CpuPercentage}";
 #endif
 
+        private const string OutOfMemoryExceptionName = "System.OutOfMemoryException";
+
         private static readonly Version Windows81Version = new(6, 3, 9600);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
@@ -50,6 +52,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
+        private int _outOfMemoryCount;
 
         // The time when the runtime metrics were last pushed
         private DateTime _lastUpdate;
@@ -179,17 +182,30 @@ namespace Datadog.Trace.RuntimeMetrics
                     Log.Debug("Sent the following metrics to the DD agent: {Metrics}", ProcessMetrics);
                 }
 
+                bool sentExceptionCount = false;
+
+                if (Volatile.Read(ref _outOfMemoryCount) > 0)
+                {
+                    var oomCount = Interlocked.Exchange(ref _outOfMemoryCount, 0);
+                    _statsd.Increment(MetricsNames.ExceptionsCount, oomCount, tags: [$"exception_type:{OutOfMemoryExceptionName}"]);
+                    sentExceptionCount = true;
+                }
+
                 if (!_exceptionCounts.IsEmpty)
                 {
                     foreach (var element in _exceptionCounts)
                     {
-                        _statsd.Increment(MetricsNames.ExceptionsCount, element.Value, tags: new[] { $"exception_type:{element.Key}" });
+                        _statsd.Increment(MetricsNames.ExceptionsCount, element.Value, tags: [$"exception_type:{element.Key}"]);
                     }
 
                     // There's a race condition where we could clear items that haven't been pushed
                     // Having an exact exception count is probably not worth the overhead required to fix it
                     _exceptionCounts.Clear();
+                    sentExceptionCount = true;
+                }
 
+                if (sentExceptionCount)
+                {
                     Log.Debug("Sent the following metrics to the DD agent: {Metrics}", MetricsNames.ExceptionsCount);
                 }
                 else
@@ -260,6 +276,20 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
         {
+            if (e == null)
+            {
+                // All hope is lost, stand back and watch the world burn
+                return;
+            }
+
+            if (e.Exception is OutOfMemoryException)
+            {
+                // We have a special path for OOM because we can't allocate
+                // Apparently, even reading the _inspectingFirstChanceException threadstatic field can throw
+                Interlocked.Increment(ref _outOfMemoryCount);
+                return;
+            }
+
             if (_inspectingFirstChanceException)
             {
                 // In rare occasions, inspecting an exception could throw another exception

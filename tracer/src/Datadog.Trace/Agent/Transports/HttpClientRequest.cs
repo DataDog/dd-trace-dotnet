@@ -6,15 +6,12 @@
 #if NETCOREAPP
 using System;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -46,35 +43,6 @@ namespace Datadog.Trace.Agent.Transports
             _getRequest.Content = null;
 
             return new HttpClientResponse(await _client.SendAsync(_getRequest).ConfigureAwait(false));
-        }
-
-        public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
-        {
-            var memoryStream = new MemoryStream();
-            var sw = new StreamWriter(memoryStream, leaveOpen: true);
-            using (var content = new StreamContent(memoryStream))
-            {
-                using (JsonWriter writer = new JsonTextWriter(sw) { CloseOutput = true })
-                {
-                    serializer.Serialize(writer, events);
-                    content.Headers.ContentType = new MediaTypeHeaderValue(MimeTypes.Json);
-                    _postRequest.Content = content;
-                    await writer.FlushAsync().ConfigureAwait(false);
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    var response = new HttpClientResponse(await _client.SendAsync(_postRequest).ConfigureAwait(false));
-                    if (response.StatusCode != 200 && response.StatusCode != 202)
-                    {
-                        memoryStream.Seek(0, SeekOrigin.Begin);
-                        using var sr = new StreamReader(memoryStream);
-                        var headers = string.Join(", ", _postRequest.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
-
-                        var payload = await sr.ReadToEndAsync().ConfigureAwait(false);
-                        Log.Warning("AppSec event not correctly sent to backend {StatusCode} by class {ClassName} with response {ResponseText}, request headers: were {Headers}, payload was: {Payload}", new object[] { response.StatusCode, nameof(HttpClientRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
-                    }
-
-                    return response;
-                }
-            }
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)

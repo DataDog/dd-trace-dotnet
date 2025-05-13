@@ -36,14 +36,11 @@ internal static class SqlDDBBCreator
         return connection;
     }
 
-    private static void ExecuteCommand(SqlConnection connection, string booksCommand)
+    private static void ExecuteCommand(SqlConnection connection, string sql)
     {
-        using (var command1 = new SqlCommand(booksCommand, connection))
+        using (var command1 = new SqlCommand(sql, connection))
         {
-            using (var reader1 = command1.ExecuteReader())
-            {
-                reader1.Close();
-            }
+            command1.ExecuteNonQuery();
         }
     }
 

@@ -29,6 +29,9 @@ internal static class MessagePackStringCache
     [ThreadStatic]
     private static CachedBytes _origin;
 
+    [ThreadStatic]
+    private static CachedBytes _service;
+
     private static CachedBytes _gitCommitSha;
     private static CachedBytes _gitRepositoryUrl;
     private static CachedBytes _aasSiteNameBytes;
@@ -48,6 +51,7 @@ internal static class MessagePackStringCache
         _env = default;
         _version = default;
         _origin = default;
+        _service = default;
         _gitCommitSha = default;
         _gitRepositoryUrl = default;
         _aasSiteNameBytes = default;
@@ -86,6 +90,11 @@ internal static class MessagePackStringCache
     public static byte[]? GetOriginBytes(string? origin)
     {
         return GetBytes(origin, ref _origin);
+    }
+
+    public static byte[]? GetServiceBytes(string? service)
+    {
+        return GetBytes(service, ref _service);
     }
 
     public static byte[]? GetAzureAppServiceKeyBytes(string key, string? value)

@@ -7,18 +7,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Buildkite detected");
 
         IsCI = true;
         Provider = "buildkite";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.BuildKite;
         Repository = ValueProvider.GetValue(Constants.BuildKiteRepo);
         Commit = ValueProvider.GetValue(Constants.BuildKiteCommit);
         Branch = ValueProvider.GetValue(Constants.BuildKiteBranch);
@@ -60,5 +62,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
             VariablesToBypass,
             Constants.BuildKiteBuildId,
             Constants.BuildKiteJobId);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.BuildKitePullRequestBaseBranch);
     }
 }

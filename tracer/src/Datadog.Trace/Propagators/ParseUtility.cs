@@ -5,13 +5,10 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
 {
@@ -67,9 +64,15 @@ namespace Datadog.Trace.Propagators
             return null;
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out ulong result)
+            static bool TryParse(IEnumerable<string?>? headerValues, ref bool hasValue, out ulong result)
             {
                 result = 0;
+
+                if (headerValues is null)
+                {
+                    return false;
+                }
+
                 foreach (string? headerValue in headerValues)
                 {
                     if (ulong.TryParse(headerValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out result))
@@ -133,9 +136,15 @@ namespace Datadog.Trace.Propagators
             return null;
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static bool TryParse(IEnumerable<string?> headerValues, ref bool hasValue, out int result)
+            static bool TryParse(IEnumerable<string?>? headerValues, ref bool hasValue, out int result)
             {
                 result = 0;
+
+                if (headerValues is null)
+                {
+                    return false;
+                }
+
                 foreach (string? headerValue in headerValues)
                 {
                     if (int.TryParse(headerValue, out result))
@@ -175,8 +184,13 @@ namespace Datadog.Trace.Propagators
             return ParseStringIEnumerable(headerValues);
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
+            static string? ParseStringIEnumerable(IEnumerable<string?>? headerValues)
             {
+                if (headerValues is null)
+                {
+                    return null;
+                }
+
                 foreach (string? headerValue in headerValues)
                 {
                     if (!string.IsNullOrEmpty(headerValue))
@@ -211,8 +225,13 @@ namespace Datadog.Trace.Propagators
             return ParseStringIEnumerable(headerValues);
 
             // IEnumerable version (different method to avoid try/finally in the caller)
-            static string? ParseStringIEnumerable(IEnumerable<string?> headerValues)
+            static string? ParseStringIEnumerable(IEnumerable<string?>? headerValues)
             {
+                if (headerValues is null)
+                {
+                    return null;
+                }
+
                 foreach (string? headerValue in headerValues)
                 {
                     if (!string.IsNullOrEmpty(headerValue))

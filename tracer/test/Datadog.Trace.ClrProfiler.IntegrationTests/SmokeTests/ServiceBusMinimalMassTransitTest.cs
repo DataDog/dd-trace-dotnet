@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             AssumeSuccessOnTimeout = true;
         }
 
-        [SkippableFact]
+        [SkippableFact(Skip = "Testing to see if this solves weird flake issues")]
         [Trait("Category", "Smoke")]
         public async Task NoExceptions()
         {

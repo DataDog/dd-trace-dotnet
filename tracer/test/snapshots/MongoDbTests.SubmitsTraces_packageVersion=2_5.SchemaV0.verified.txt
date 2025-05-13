@@ -89,12 +89,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 }, "genericBinary" : "<Truncated>", "uuidLegacyBinary" : CSUUID("Guid_3"), "largeKey" : "Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Te,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -148,12 +150,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true, "deletes" : [{ "q" : { }, "limit" : 0 }] },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -171,12 +175,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true, "documents" : [{ "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 } }] },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -194,12 +200,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -217,12 +225,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -239,10 +249,12 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
+      language: dotnet,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -260,12 +272,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true, "deletes" : [{ "q" : { }, "limit" : 0 }] },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -283,12 +297,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true, "documents" : [{ "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 } }] },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -306,12 +322,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -329,12 +347,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -352,12 +372,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true, "deletes" : [{ "q" : { }, "limit" : 0 }] },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -375,12 +397,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "insert" : "employees", "ordered" : true, "documents" : [{ "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 }, "genericBinary" : "<Truncated>", "uuidLegacyBinary" : CSUUID("Guid_3"), "largeKey" : "Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Tes,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -398,12 +422,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "count" : "employees", "query" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -421,12 +447,14 @@
       component: MongoDb,
       db.name: test-db,
       env: integration_tests,
+      language: dotnet,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -443,10 +471,12 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
+      language: dotnet,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -463,10 +493,12 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
+      language: dotnet,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -483,10 +515,12 @@
     Tags: {
       component: MongoDb,
       env: integration_tests,
+      language: dotnet,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.MongoDB
     },
     Metrics: {
       _dd.top_level: 1.0

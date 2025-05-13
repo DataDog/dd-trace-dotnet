@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,21 +29,20 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void RulesUpdate()
         {
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
-            Execute(waf, new[] { "testrule", "testrule", "none" }, false);
+            Execute(waf, ["testrule", "testrule", "none"], false);
+            var configurationState = UpdateConfigurationState();
 
             var result = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
             result.Should().NotBeNull();
             var ruleSet = RuleSet.From(result!);
             ruleSet.Should().NotBeNull();
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesByFile = { ["test"] = ruleSet! } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
-            var res = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            AddAsmDDRemoteConfig(configurationState, ruleSet, "update1");
+            var res = UpdateWaf(configurationState, waf);
             res.Success.Should().BeTrue();
-            res.LoadedRules.Should().Be(1);
-            res.Errors.Should().BeEmpty();
+            res.ReportedDiagnostics.Rules.Loaded.Should().Be(1);
+            res.RuleErrors.Should().BeNullOrEmpty();
             Execute(waf, new[] { "testrule", "testrule", "crs-942-290-new" }, true, BlockingAction.BlockRequestType);
         }
 
@@ -55,47 +55,41 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
-            var ruleOverrides = new List<RuleOverride>();
+            var configurationState = UpdateConfigurationState();
 
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
 
-            var ruleOverride = new RuleOverride { Enabled = false, Id = attackParts1[2] };
-            ruleOverrides.Add(ruleOverride);
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-            var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
-            result.Success.Should().BeTrue();
-            result.HasErrors.Should().BeFalse();
+            var ruleOverride1 = new RuleOverride { Enabled = false, Id = attackParts1[2] };
+            AddAsmRemoteConfig(configurationState, new Payload { RuleOverrides = [ruleOverride1] }, "update1");
+            var result1 = UpdateWaf(configurationState, waf);
+            result1.Success.Should().BeTrue();
+            result1.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
-            ruleOverrides.Add(new RuleOverride { Enabled = false, Id = attackParts2[2] });
-            configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
-            result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
-            result.Success.Should().BeTrue();
-            result.HasErrors.Should().BeFalse();
+            var ruleOverride2 = new RuleOverride { Enabled = false, Id = attackParts2[2] };
+            AddAsmRemoteConfig(configurationState, new Payload { RuleOverrides = [ruleOverride2] }, "update2");
+            var result2 = UpdateWaf(configurationState, waf);
+            result2.Success.Should().BeTrue();
+            result2.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, false);
 
-            ruleOverrides.RemoveAt(1);
-            ruleOverrides.Add(new RuleOverride { Enabled = true, Id = attackParts2[2] });
-            configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
-            result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
-            result.Success.Should().BeTrue();
-            result.HasErrors.Should().BeFalse();
+            RemoveAsmRemoteConfig(configurationState, "update2");
+            var result3 = UpdateWaf(configurationState, waf);
+            result3.Success.Should().BeTrue();
+            result3.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
-            ruleOverrides.RemoveAt(0);
-            ruleOverrides.Add(new RuleOverride { Enabled = true, Id = attackParts1[2] });
-            configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
-            result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
-            result.Success.Should().BeTrue();
-            result.HasErrors.Should().BeFalse();
+            RemoveAsmRemoteConfig(configurationState, "update1");
+            var result4 = UpdateWaf(configurationState, waf);
+            result4.Success.Should().BeTrue();
+            result4.HasRuleErrors.Should().BeFalse();
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
         }
@@ -109,22 +103,20 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
+            var configurationState = UpdateConfigurationState();
             using (var waf = initResult.Waf)
             {
                 waf.Should().NotBeNull();
-                var ruleOverrides = new List<RuleOverride>();
 
                 Execute(waf, attackParts1, true);
                 Execute(waf, attackParts2, true);
 
-                var ruleOverride = new RuleOverride { OnMatch = new[] { "block" }, Id = attackParts1[2] };
-                ruleOverrides.Add(ruleOverride);
-                var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-                var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+                var ruleOverride = new RuleOverride { OnMatch = ["block"], Id = attackParts1[2] };
+                AddAsmRemoteConfig(configurationState, new Payload { RuleOverrides = [ruleOverride] }, "update1");
+                var result = UpdateWaf(configurationState, waf);
                 result.Success.Should().BeTrue();
-                result.HasErrors.Should().BeFalse();
+                result.HasRuleErrors.Should().BeFalse();
                 Execute(waf, attackParts1, true, BlockingAction.BlockRequestType);
                 Execute(waf, attackParts2, true);
             }

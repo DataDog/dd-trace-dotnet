@@ -21,8 +21,6 @@ namespace Datadog.Trace.Iast.Aspects.System.Web.Extensions;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class JavaScriptSerializerAspects
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JavaScriptSerializerAspects>();
-
     /// <summary>
     /// DeserializeObject aspect
     /// </summary>
@@ -31,6 +29,7 @@ public class JavaScriptSerializerAspects
     /// <returns> The target url </returns>
     [AspectMethodReplace("System.Web.Script.Serialization.JavaScriptSerializer::DeserializeObject(System.String)")]
     public static object? DeserializeObject(object instance, string input)
+#pragma warning disable DD0005
     {
         IJavaScriptSerializer? serializer;
         try
@@ -39,7 +38,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while casting JavaScriptSerializer");
+            IastModule.LogAspectException(ex, "(DuckCast)");
             return null;
         }
 
@@ -58,11 +57,12 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while tainting json in DeserializeObject");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
     }
+#pragma warning restore DD0005
 
     private static void TaintObject(object obj, TaintedObjects taintedObjects)
     {

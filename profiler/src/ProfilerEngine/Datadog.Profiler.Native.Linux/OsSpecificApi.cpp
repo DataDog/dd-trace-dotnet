@@ -27,7 +27,6 @@
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
-#include "LibrariesInfoCache.h"
 #include "LinuxStackFramesCollector.h"
 #include "LinuxThreadInfo.h"
 #include "Log.h"
@@ -61,9 +60,11 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     ICorProfilerInfo4* pCorProfilerInfo,
     IConfiguration const* const pConfiguration,
-    CallstackProvider* callstackProvider)
+    CallstackProvider* callstackProvider,
+    MetricsRegistry& metricsRegistry)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, LibrariesInfoCache::Get());
+    return std::make_unique<LinuxStackFramesCollector>(
+        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry);
 }
 
 // https://linux.die.net/man/5/proc
@@ -173,30 +174,29 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     return true;
 }
 
-uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
+std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
     uint64_t cpuTime = 0;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
-        return 0;
+        return 0ms;
     }
 
-    return cpuTime;
+    return std::chrono::milliseconds(cpuTime);
 }
 
-bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+//    isRunning,        cpu time          , failed 
+std::tuple<bool, std::chrono::milliseconds, bool> IsRunning(IThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
+    uint64_t cpuTime = 0;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
-        cpuTime = 0;
-        failed = true;
-        return false;
+        return {false, 0ms, true};
     }
 
-    failed = false;
-    return isRunning;
+    return {isRunning, std::chrono::milliseconds(cpuTime), false};
 }
 
 // from https://linux.die.net/man/3/get_nprocs
@@ -235,13 +235,9 @@ std::vector<int32_t> GetProcessThreads(int32_t pid)
     }
     else
     {
-        static bool alreadyLogged = false;
-        if (!alreadyLogged)
-        {
-            alreadyLogged = true;
-            auto errorNumber = errno;
-            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
-        }
+        auto errorNumber = errno;
+        //NOLINTNEXTLINE
+        LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
     return threads;
@@ -272,13 +268,9 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     }
     else
     {
-        static bool alreadyLogged = false;
-        if (!alreadyLogged)
-        {
-            alreadyLogged = true;
-            auto errorNumber = errno;
-            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
-        }
+        auto errorNumber = errno;
+        //NOLINTNEXTLINE
+        LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
     return threads;
@@ -308,11 +300,12 @@ std::chrono::seconds GetMachineBootTime()
         auto pos = sv.find("btime");
         if (std::string_view::npos != pos)
         {
-            auto pos2 = strchr(sv.data() + pos, ' ') + 1;
+            auto pos2 = strchr(sv.data() + pos, ' ');
             if (pos2 == nullptr)
                 break;
 
             // skip whitespaces
+            pos2++;
             pos2 = pos2 + strspn(pos2, " ");
             machineBootTime = std::atoll(pos2);
             break;
@@ -405,4 +398,24 @@ std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
     // No ETW implementation on Linux
     return nullptr;
 }
+
+double GetProcessLifetime()
+{
+    auto machineBootTime = GetMachineBootTime();
+    if (machineBootTime == -1s)
+    {
+        return 0;
+    }
+
+    auto processStartTimeSinceBoot = GetProcessStartTimeSinceBoot();
+    if (processStartTimeSinceBoot == -1s)
+    {
+        return 0;
+    }
+
+    std::chrono::seconds now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
+    auto startTimeIsSeconds = now.count() - (machineBootTime.count() + processStartTimeSinceBoot.count());
+    return startTimeIsSeconds;
+}
+
 } // namespace OsSpecificApi

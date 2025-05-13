@@ -1,3 +1,4 @@
+#if !RABBITMQ_7_0
 using System;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -55,3 +56,4 @@ namespace Samples.RabbitMQ
         public void HandleModelShutdown(object model, ShutdownEventArgs reason) => _consumer.HandleModelShutdown(model, reason);
     }
 }
+#endif

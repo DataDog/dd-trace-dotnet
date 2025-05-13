@@ -4,17 +4,20 @@
 // </copyright>
 #nullable enable
 
+using Datadog.Trace.Telemetry.Metrics;
+
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class TeamcityEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: TeamCity detected");
 
         IsCI = true;
         Provider = "teamcity";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Teamcity;
         JobName = ValueProvider.GetValue(Constants.TeamCityBuildConfName);
         JobUrl = ValueProvider.GetValue(Constants.TeamCityBuildUrl);
     }

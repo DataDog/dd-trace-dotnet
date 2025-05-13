@@ -597,11 +597,10 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var apiVersion = request.Headers.GetValue(TelemetryConstants.ApiVersionHeader);
-                    var requestType = request.Headers.GetValue(TelemetryConstants.RequestTypeHeader);
+                    request.Headers.TryGetValue(TelemetryConstants.ApiVersionHeader, out var apiVersion);
+                    request.Headers.TryGetValue(TelemetryConstants.RequestTypeHeader, out var requestType);
 
-                    var body = request.ReadStreamBody();
-                    using var stream = new MemoryStream(body);
+                    using var stream = new MemoryStream(request.ReadStreamBody());
 
                     var telemetry = MockTelemetryAgent.DeserializeResponse(stream, apiVersion, requestType);
                     Telemetry.Push(telemetry);
@@ -1027,6 +1026,12 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("version")]
             public string AgentVersion { get; set; }
+
+            [JsonProperty("span_meta_structs")]
+            public bool SpanMetaStructs { get; set; } = true;
+
+            [JsonProperty("span_events")]
+            public bool SpanEvents { get; set; } = false;
         }
 
         public class TcpUdpAgent : MockTracerAgent
@@ -1109,7 +1114,7 @@ namespace Datadog.Trace.TestHelpers
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");
-                        _tracesListenerTask = Task.Factory.StartNew(HandleHttpRequests, TaskCreationOptions.LongRunning);
+                        _tracesListenerTask = HandleHttpRequests();
 
                         return;
                     }
@@ -1148,13 +1153,13 @@ namespace Datadog.Trace.TestHelpers
                 _udpClient?.Close();
             }
 
-            private void HandleHttpRequests()
+            private async Task HandleHttpRequests()
             {
                 while (_listener.IsListening)
                 {
                     try
                     {
-                        var ctx = _listener.GetContext();
+                        var ctx = await _listener.GetContextAsync();
                         try
                         {
                             if (Version != null)

@@ -9,8 +9,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -42,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodAttributeExecuteIntegration
 {
+    private static int _totalRetries = -1;
+
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -53,7 +55,7 @@ public static class TestMethodAttributeExecuteIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
         where TTestMethod : ITestMethod
     {
-        if (!MsTestIntegration.IsEnabled || instance is ItrSkipTestMethodExecutor)
+        if (!MsTestIntegration.IsEnabled || instance is SkipTestMethodExecutor)
         {
             return CallTargetState.GetDefault();
         }
@@ -77,81 +79,115 @@ public static class TestMethodAttributeExecuteIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        if (state.State is TestRunnerState testMethodState)
+        var testOptimization = TestOptimization.Instance;
+        if (state.State is TestRunnerState { Test: not null } testMethodState)
         {
             var duration = testMethodState.Elapsed;
             var testMethod = testMethodState.TestMethod;
-            var isTestNew = false;
+            var isEfdTest = false;
+            var isAttemptToFix = false;
             var allowRetries = false;
-            if (returnValue is IList { Count: > 0 } returnValueList)
+            var resultStatus = TestStatus.Skip;
+
+            if (!(returnValue is IList { Count: > 0 } returnValueList))
             {
-                MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
-                for (var i = 0; i < returnValueList.Count; i++)
+                Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to extract TestResult from return value");
+                testMethodState.Test.Close(TestStatus.Fail);
+                return new CallTargetReturn<TReturn?>(returnValue);
+            }
+
+            MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
+            for (var i = 0; i < returnValueList.Count; i++)
+            {
+                var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
+                if (test?.GetTags() is { } testTags)
                 {
-                    var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
-                    if (test.GetTags() is { } testTags)
+                    if (testOptimization.EarlyFlakeDetectionFeature?.Enabled == true)
                     {
-                        isTestNew = isTestNew || testTags.EarlyFlakeDetectionTestIsNew == "true";
-                        if (isTestNew && duration.TotalMinutes >= 5)
+                        isEfdTest = isEfdTest || testTags.TestIsNew == "true";
+                        if (isEfdTest && duration.TotalMinutes >= 5)
                         {
                             testTags.EarlyFlakeDetectionTestAbortReason = "slow";
                         }
                     }
 
-                    var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
-                    allowRetries = allowRetries || result != TestStatus.Skip;
+                    if (testOptimization.TestManagementFeature?.Enabled == true)
+                    {
+                        isAttemptToFix = isAttemptToFix || testTags.IsAttemptToFix == "true";
+                    }
+
+                    if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
+                    {
+                        resultStatus = HandleTestResult(test, testMethod, testResult, exception);
+                        allowRetries = allowRetries || resultStatus != TestStatus.Skip;
+                    }
+                    else
+                    {
+                        Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to cast {TestResultObject} to TestResultStruct", returnValueList[i]);
+                        test.Close(TestStatus.Fail);
+                    }
                 }
             }
-            else
-            {
-                Common.Log.Warning("Failed to extract TestResult from return value");
-                testMethodState.Test.Close(TestStatus.Fail);
-                return new CallTargetReturn<TReturn>(returnValue);
-            }
 
-            if (isTestNew && allowRetries)
+            if ((isEfdTest || isAttemptToFix) && allowRetries)
             {
-                // Get retries number
-                var remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
+                var remainingRetries = 0;
+                var retryReason = string.Empty;
+
+                // Get retries number and reason
+                if (isEfdTest)
+                {
+                    remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
+                    retryReason = "Early flake detection";
+                }
+                else if (isAttemptToFix)
+                {
+                    remainingRetries = testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount - 1 ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault;
+                    retryReason = "Attempt to fix";
+                }
+
                 if (remainingRetries > 0)
                 {
                     // Handle retries
-                    var results = new IList[remainingRetries + 1];
-                    results[0] = returnValueList;
-                    Common.Log.Debug<int>("EFD: We need to retry {Times} times", remainingRetries);
+                    List<IList> results = [returnValueList];
+                    Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: We need to retry {Times} times", retryReason, remainingRetries);
                     for (var i = 0; i < remainingRetries; i++)
                     {
-                        Common.Log.Debug<int>("EFD: Retry number: {RetryNumber}", i);
-                        var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
-                        object? retryTestResult = null;
-                        Exception? retryException = null;
-                        try
-                        {
-                            retryTestResult = testMethodState.TestMethod.Invoke(null);
-                        }
-                        catch (Exception ex)
-                        {
-                            retryException = ex;
-                        }
-                        finally
-                        {
-                            if (retryTestResult is IList { Count: > 0 } retryTestResultList)
-                            {
-                                for (var j = 0; j < retryTestResultList.Count; j++)
-                                {
-                                    var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
-                                    HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
-                                }
+                        Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: Retry number: {RetryNumber}", retryReason, i);
+                        RunRetry(testMethod, testMethodState, results, out _);
+                    }
 
-                                results[i + 1] = retryTestResultList;
-                            }
-                            else
-                            {
-                                HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
-                                results[i + 1] = new List<object?> { retryTestResult };
-                            }
+                    // Calculate final results
+                    returnValue = (TReturn?)GetFinalResults(results);
+                }
+            }
+            else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
+            {
+                // Flaky retry is enabled and the test failed
+                Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
+                var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
+                if (remainingRetries > 0)
+                {
+                    // Handle retries
+                    var results = new List<IList> { returnValueList };
+                    for (var i = 0; i < remainingRetries; i++)
+                    {
+                        if (Interlocked.Decrement(ref _totalRetries) <= 0)
+                        {
+                            Common.Log.Debug("TestMethodAttributeExecuteIntegration: FlakyRetry: Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
+                            break;
+                        }
+
+                        Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
+                        RunRetry(testMethod, testMethodState, results, out var failedResult);
+
+                        // If the retried test passed, we can stop the retries
+                        if (!failedResult)
+                        {
+                            Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Test passed in retry.", i + 1);
+                            break;
                         }
                     }
 
@@ -161,36 +197,84 @@ public static class TestMethodAttributeExecuteIntegration
             }
         }
 
-        return new CallTargetReturn<TReturn>(returnValue);
-    }
+        return new CallTargetReturn<TReturn?>(returnValue);
 
-    private static TestStatus HandleTestResult(Test test, ITestMethod testMethod, object? testResultObject, Exception? exception)
-    {
-        if (testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
+        static void RunRetry(ITestMethod testMethod, TestRunnerState testMethodState, List<IList> resultsCollection, out bool hasFailed)
         {
-            var testException = testResult.TestFailureException?.InnerException ??
-                                testResult.TestFailureException ??
-                                exception;
-            if (testException != null)
+            var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
+            object? retryTestResult = null;
+            Exception? retryException = null;
+            hasFailed = false;
+            try
             {
-                var testExceptionType = testException.GetType();
-                var testExceptionName = testExceptionType.Name;
-                if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+                retryTestResult = testMethodState.TestMethod.Invoke(null);
+            }
+            catch (Exception ex)
+            {
+                retryException = ex;
+            }
+            finally
+            {
+                if (retryTestResult is IList { Count: > 0 } retryTestResultList)
                 {
-                    test.SetErrorInfo(testException);
+                    for (var j = 0; j < retryTestResultList.Count; j++)
+                    {
+                        var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest?.StartTime);
+                        if (ciRetryTest is null)
+                        {
+                            continue;
+                        }
+
+                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException) == TestStatus.Fail)
+                        {
+                            hasFailed = true;
+                        }
+                    }
+
+                    resultsCollection.Add(retryTestResultList);
                 }
                 else
                 {
-                    test.SetErrorInfo(testExceptionType.ToString(), testException.Message, testException.ToString());
+                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException) == TestStatus.Fail)
+                    {
+                        hasFailed = true;
+                    }
+
+                    resultsCollection.Add(new List<object?> { retryTestResult });
                 }
             }
+        }
+    }
 
-            if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
+    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception)
+        where TTestMethod : ITestMethod
+        where TTestResult : ITestResult
+    {
+        var testException = testResult.TestFailureException?.InnerException ??
+                            testResult.TestFailureException ??
+                            exception;
+        if (testException != null)
+        {
+            var testExceptionType = testException.GetType();
+            var testExceptionName = testExceptionType.Name;
+            if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
             {
-                test.SetName(testResult.DisplayName!);
-                MsTestIntegration.UpdateTestParameters(test, testMethod, testResult.DisplayName);
+                test.SetErrorInfo(testException);
             }
+            else
+            {
+                test.SetErrorInfo(testExceptionType.ToString(), testException.Message, testException.ToString());
+            }
+        }
 
+        if (!string.IsNullOrEmpty(testResult.DisplayName) && test.Name != testResult.DisplayName)
+        {
+            test.SetName(testResult.DisplayName!);
+            MsTestIntegration.UpdateTestParameters(test, testMethod, testResult.DisplayName);
+        }
+
+        try
+        {
             if (exception is not null)
             {
                 test.Close(TestStatus.Fail);
@@ -209,18 +293,29 @@ public static class TestMethodAttributeExecuteIntegration
                     test.Close(TestStatus.Pass);
                     return TestStatus.Pass;
                 default:
-                    Common.Log.Warning("Failed to handle the test status: {Outcome}", testResult.Outcome);
+                    Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to handle the test status: {Outcome}", testResult.Outcome);
                     test.Close(TestStatus.Fail);
                     return TestStatus.Fail;
             }
         }
-
-        Common.Log.Warning("Failed to cast {TestResultObject} to TestResultStruct", testResultObject);
-        test.Close(TestStatus.Fail);
-        return TestStatus.Fail;
+        finally
+        {
+            if (TestOptimization.Instance.TestManagementFeature?.Enabled == true)
+            {
+                var testTags = test.GetTags();
+                var isQuarantined = testTags.IsQuarantined == "true";
+                var isAttemptToFix = testTags.IsAttemptToFix == "true";
+                if (isQuarantined || isAttemptToFix)
+                {
+                    Common.Log.Debug("TestMethodAttributeExecuteIntegration: Test is quarantined or is an attempt to fix. Skipping test.");
+                    testResult.Outcome = UnitTestOutcome.Ignored;
+                    testResult.TestFailureException = null;
+                }
+            }
+        }
     }
 
-    private static IList GetFinalResults(IList[] executionStatuses)
+    private static IList GetFinalResults(List<IList> executionStatuses)
     {
         var lstExceptions = new List<Exception>();
         var initialResults = executionStatuses[0];
@@ -290,10 +385,10 @@ public static class TestMethodAttributeExecuteIntegration
     {
         private readonly TraceClock _clock;
         public readonly ITestMethod TestMethod;
-        public readonly Test Test;
+        public readonly Test? Test;
         public readonly DateTimeOffset StartTime;
 
-        public TestRunnerState(ITestMethod testMethod, Test test)
+        public TestRunnerState(ITestMethod testMethod, Test? test)
         {
             TestMethod = testMethod;
             Test = test;

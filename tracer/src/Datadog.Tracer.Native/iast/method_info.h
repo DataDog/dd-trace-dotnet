@@ -38,7 +38,6 @@ namespace iast
     protected:
         ModuleInfo* _module = nullptr;
         WSTRING _name = EmptyWStr;
-        WSTRING _fullName = EmptyWStr;
 
         mdTypeDef _typeDef = 0;
         TypeInfo* _typeInfo = nullptr;
@@ -47,7 +46,6 @@ namespace iast
         SignatureInfo* _pSignature = nullptr;
         PCCOR_SIGNATURE _pSig = nullptr;
         ULONG _nSig = 0;
-
     public:
         mdMemberRef GetMemberId();
 
@@ -56,8 +54,8 @@ namespace iast
 
         ModuleInfo* GetModuleInfo();
         WSTRING& GetName();
-        WSTRING& GetFullName();
-        WSTRING GetFullNameWithReturnType();
+        WSTRING GetFullName();
+        WSTRING GetFullyQualifiedName();
         WSTRING& GetTypeName();
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
@@ -74,9 +72,11 @@ namespace iast
     public:
         MethodSpec(ModuleInfo* pModuleInfo, mdMethodSpec methodSpec);
 
-        mdMethodSpec GetMethodSpecId();
         SignatureInfo* GetSignature() override;
         MemberRefInfo* GetGenericMethod();
+
+        mdMethodSpec GetMethodSpecId();
+        SignatureInfo* GetMethodSpecSignature();
     };
 
     class FieldInfo : public MemberRefInfo

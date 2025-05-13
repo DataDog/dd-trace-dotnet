@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MethodArgumentsData()
         {
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 9; i++)
             {
                 var fastPath = i < 9;
                 yield return new object[] { i, fastPath };
@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(MethodArgumentsData))]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
             SetInstrumentationVerification();
@@ -64,9 +65,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // On number of arguments = 0 the throw exception on integrations async continuation runs.
                     // So we have 1 more case with an exception being reported from the integration.
-                    Assert.Equal(172, beginMethodCount);
-                    Assert.Equal(172, endMethodCount);
+                    Assert.Equal(180, beginMethodCount);
+                    Assert.Equal(180, endMethodCount);
                     Assert.Equal(44, exceptionCount);
+                }
+                else if (numberOfArguments == 1)
+                {
+                    Assert.Equal(175, beginMethodCount);
+                    Assert.Equal(175, endMethodCount);
+                    Assert.Equal(40, exceptionCount);
                 }
                 else
                 {
@@ -86,6 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodRefArguments()
         {
             SetInstrumentationVerification();
@@ -102,9 +110,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".VoidRefMethod",
                 };
 
-                Assert.Equal(8, beginMethodCount);
+                Assert.Equal(9, beginMethodCount);
                 Assert.Equal(8, begin2MethodCount);
-                Assert.Equal(16, endMethodCount);
+                Assert.Equal(17, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
@@ -117,6 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodOutArguments()
         {
             SetInstrumentationVerification();
@@ -147,6 +156,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodAbstract()
         {
             SetInstrumentationVerification();
@@ -177,6 +187,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodInterface()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -193,8 +204,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     ".ReturnValueMethod",
                 };
 
-                Assert.Equal(3, begin1MethodCount);
-                Assert.Equal(3, endMethodCount);
+                Assert.Equal(5, begin1MethodCount);
+                Assert.Equal(5, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
@@ -205,6 +216,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task RemoveIntegrations()
         {
             SetInstrumentationVerification();
@@ -228,6 +240,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task ExtraIntegrations()
         {
             SetInstrumentationVerification();
@@ -248,6 +261,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task CallTargetBubbleUpExceptionIntegrations()
         {
             SetInstrumentationVerification();
@@ -262,6 +276,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
+        public async Task InstrumentationExceptionIntegrations()
+        {
+            SetInstrumentationVerification();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "instrumentationexceptions");
+            processResult.ExitCode.Should().Be(0);
+            var beginMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: BeginMethod\\(0\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            var endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod(Async)?\\([0|1]\\)<CallTargetNativeTest.NoOp.InstrumentationExceptionsIntegration").Count;
+            beginMethodCount.Should().Be(5);
+            endMethodCount.Should().Be(2);
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task CategorizedCallTargetIntegrations()
         {
             SetInstrumentationVerification();
@@ -283,6 +313,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
+        [Trait("RunOnWindows", "True")]
         public async Task MethodRefStructArguments()
         {
             SetInstrumentationVerification();

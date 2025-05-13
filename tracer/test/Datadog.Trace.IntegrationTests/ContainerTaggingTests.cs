@@ -31,7 +31,7 @@ namespace Datadog.Trace.IntegrationTests
 
             using (var agent = MockTracerAgent.Create(_output, agentPort))
             {
-                var settings = new TracerSettings { Exporter = new ExporterSettings() { AgentUri = new Uri($"http://localhost:{agent.Port}") } };
+                var settings = TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" } });
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
                 using (var scope = tracer.StartActive("operationName"))
@@ -72,7 +72,7 @@ namespace Datadog.Trace.IntegrationTests
 
                 if (expectedContainedId is not null && expectedEntitydId is not null)
                 {
-                    expectedEntitydId.Should().Be($"cid-{expectedContainedId}");
+                    expectedEntitydId.Should().Be($"ci-{expectedContainedId}");
                 }
                 else if (expectedEntitydId is not null)
                 {

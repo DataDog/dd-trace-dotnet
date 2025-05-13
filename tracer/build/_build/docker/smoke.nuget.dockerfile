@@ -8,14 +8,12 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
 WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
-# do an initial restore
-RUN dotnet restore "AspNetCoreSmokeTest.csproj"
-
-# install the package
-RUN dotnet add package "Datadog.Trace.Bundle" --source /src/artifacts
-
+ARG TOOL_VERSION
 ARG PUBLISH_FRAMEWORK
-RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
+RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
+    && dotnet nuget add source /src/artifacts \
+    && dotnet add package "Datadog.Trace.Bundle" --version $TOOL_VERSION \
+    && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
 
 FROM $RUNTIME_IMAGE AS publish
 
@@ -39,6 +37,7 @@ ENV DD_DOTNET_TRACER_HOME=/app/datadog
 ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
+ENV DD_REMOTE_CONFIGURATION_ENABLED=0
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer
@@ -57,6 +56,6 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
-
+ENV DOTNET_EnableCrashReport=1
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]

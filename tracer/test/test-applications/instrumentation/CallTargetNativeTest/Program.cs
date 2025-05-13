@@ -36,6 +36,18 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsStructParentType.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
 
+            // task definitions
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasks).FullName, nameof(With0ArgumentsTasks.ReturnTaskSync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasks).FullName, nameof(With0ArgumentsTasks.ReturnTaskAsync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasks).FullName, nameof(With0ArgumentsTasks.ReturnValueTaskSync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasks).FullName, nameof(With0ArgumentsTasks.ReturnValueTaskAsync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+
+            // generic task definitions
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasksGeneric<>).FullName, nameof(With0ArgumentsTasksGeneric<int>.ReturnTaskSync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasksGeneric<>).FullName, nameof(With0ArgumentsTasksGeneric<int>.ReturnTaskAsync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasksGeneric<>).FullName, nameof(With0ArgumentsTasksGeneric<int>.ReturnValueTaskSync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsTasksGeneric<>).FullName, nameof(With0ArgumentsTasksGeneric<int>.ReturnValueTaskAsync), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+
             for (var i = 0; i < 10; i++)
             {
                 var signaturesArray = Enumerable.Range(0, i + 1).Select(i => "_").ToArray();
@@ -115,6 +127,13 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd).FullName, nameof(CallTargetNativeTest.CallTargetBubbleUpExceptionsThrowNestedBubbleUpOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(CallTargetBubbleUpExceptionsIntegrationAsync).FullName));
+
+            // instrumnentation exceptions
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionDuckTypeExceptionThrowOnBegin).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionDuckTypeExceptionThrowOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionMissingMethodExceptionThrowOnBegin).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionMissingMethodExceptionThrowOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionCallTargetInvokerExceptionThrowOnBegin).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionCallTargetInvokerExceptionThrowOnBegin.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionDuckTypeExceptionThrowOnEnd).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionDuckTypeExceptionThrowOnEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(InstrumentationExceptionDuckTypeExceptionThrowOnAsyncEnd).FullName, nameof(CallTargetNativeTest.InstrumentationExceptionDuckTypeExceptionThrowOnAsyncEnd.DoSomething), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(InstrumentationExceptionsIntegrationAsync).FullName));
 
             // Add Ref Struct integrations
             definitionsList.Add(new(TargetAssembly, typeof(WithRefStructArguments).FullName, "VoidReadOnlySpanMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(RefStructOneParametersVoidIntegration).FullName));
@@ -314,6 +333,11 @@ namespace CallTargetNativeTest
                     CallTargetBubbleUpExceptions();
                     break;
                 }
+                case "instrumentationexceptions":
+                {
+                    InstrumentationExceptions();
+                    break;
+                }
                 case "all":
                     {
                         Argument0();
@@ -393,6 +417,8 @@ namespace CallTargetNativeTest
                         //.
                         CallTargetBubbleUpExceptions();
                         //.
+                        InstrumentationExceptions();
+                        //.
                         CallSite();
                         // .
                         WithRefStructArguments();
@@ -409,7 +435,7 @@ namespace CallTargetNativeTest
 #endif
         }
 
-        private static void RunMethod(Action action, bool checkInstrumented = true, bool bubblingUpException = false)
+        private static void RunMethod(Action action, bool checkInstrumented = true, bool bubblingUpException = false, bool asyncMethod = false, bool expectEndMethodExecution = true)
         {
             var cOut = Console.Out;
             Console.SetOut(sWriter);
@@ -440,9 +466,18 @@ namespace CallTargetNativeTest
                 {
                     throw new Exception("The profiler is not connected or is not compiled as DEBUG with the DD_CTARGET_TESTMODE=True environment variable.");
                 }
-                if (!str.Contains("ProfilerOK: BeginMethod") || !str.Contains("ProfilerOK: EndMethod"))
+                if (!str.Contains("ProfilerOK: BeginMethod"))
                 {
                     throw new Exception("Profiler didn't return a valid ProfilerOK: BeginMethod string.");
+                }
+
+                if (expectEndMethodExecution)
+                {
+                    var endMethodString = asyncMethod ? "ProfilerOK: EndMethodAsync(" : "ProfilerOK: EndMethod(";
+                    if (!str.Contains(endMethodString))
+                    {
+                        throw new Exception($"Profiler didn't return a valid {endMethodString} string.");
+                    }
                 }
             }
             else 

@@ -7,18 +7,17 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
-using System.Text;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Util;
+
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#else
+using System.Web;
+#endif
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -27,39 +26,19 @@ namespace Datadog.Trace.AppSec.Coordinator;
 /// </summary>
 internal readonly partial struct SecurityCoordinator
 {
+    private const string ReportedExternalWafsRequestHeadersStr = "ReportedExternalWafsRequestHeaders";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
+    private static bool _nullContextReported = false;
     private readonly Security _security;
     private readonly Span _localRootSpan;
     private readonly HttpTransportBase _httpTransport;
+    private readonly AppSecRequestContext _appsecRequestContext;
 
     public bool IsBlocked => _httpTransport.IsBlocked;
 
-    public void MarkBlocked() => _httpTransport.MarkBlocked();
+    public SecurityReporter Reporter { get; }
 
-    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
-    {
-        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
-        {
-            foreach (var result in results)
-            {
-                if (result is Dictionary<string, object?> match)
-                {
-                    if (blocked)
-                    {
-                        Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match["rule"]);
-                    }
-                    else
-                    {
-                        Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match["rule"]);
-                    }
-                }
-                else
-                {
-                    Log.Debug("{Result} not of expected type", result);
-                }
-            }
-        }
-    }
+    public void MarkBlocked() => _httpTransport.MarkBlocked();
 
     public IResult? Scan(bool lastTime = false)
     {
@@ -67,71 +46,120 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public bool HasContext()
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
     {
-        return _httpTransport.Context is not null;
-    }
-
-    public bool IsAdditiveContextDisposed()
-    {
-        return _httpTransport.IsAdditiveContextDisposed();
-    }
-
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
-    {
-        if (!HasContext())
-        {
-            return null;
-        }
-
-        LogAddressIfDebugEnabled(args);
+        SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
+
         try
         {
-            var additiveContext = _httpTransport.GetAdditiveContext();
+            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security);
 
-            if (additiveContext == null)
+            if (additiveContext is null)
             {
-                additiveContext = _security.CreateAdditiveContext();
-                // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
-                if (additiveContext != null)
-                {
-                    _httpTransport.SetAdditiveContext(additiveContext);
-                }
+                return null;
             }
 
-            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
-
-            if (additiveContext != null)
+            var shouldAddSessionId = additiveContext.ShouldRunWithSession(_security, sessionId);
+            if (shouldAddSessionId)
             {
-                // run the WAF and execute the results
-                if (runWithEphemeral)
-                {
-                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp);
-                }
-                else
-                {
-                    result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
-                }
-
-                RecordTelemetry(result);
+                args[AddressesConstants.UserSessionId] = sessionId!;
             }
+
+            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode?.ToString(), _httpTransport.RouteData);
+
+            // run the WAF and execute the results
+            result = runWithEphemeral
+                         ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
+                         : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+
+            SetErrorInformation(isRasp, result);
+            SecurityReporter.RecordTelemetry(result);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            var stringBuilder = new StringBuilder();
+            var stringBuilder = StringBuilderCache.Acquire();
             foreach (var kvp in args)
             {
                 stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
             }
 
-            Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
         }
-        finally
+
+        if (_localRootSpan.Context.TraceContext is not null)
         {
-            // annotate span
-            _localRootSpan.SetMetric(Metrics.AppSecEnabled, 1.0);
-            _localRootSpan.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            _localRootSpan.Context.TraceContext.WafExecuted = true;
+        }
+
+        return result;
+    }
+
+    private void SetErrorInformation(bool isRasp, IResult? result)
+    {
+        if (result is not null)
+        {
+            _localRootSpan.Context.TraceContext.AppSecRequestContext.CheckWAFError((int)result.ReturnCode, isRasp);
+        }
+    }
+
+    internal static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
+
+    public IResult? RunWafForUser(string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false, Dictionary<string, string>? otherTags = null)
+    {
+        if (_httpTransport.IsBlocked)
+        {
+            return null;
+        }
+
+        IResult? result = null;
+        Dictionary<string, object>? addresses = null;
+        try
+        {
+            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security);
+            if (additiveContext?.FilterAddresses(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
+            {
+                if (otherTags is not null)
+                {
+                    foreach (var kvp in otherTags)
+                    {
+#if NETCOREAPP
+                        userAddresses.TryAdd(kvp.Key, kvp.Value);
+#else
+                        if (!userAddresses.ContainsKey(kvp.Key))
+                        {
+                            userAddresses.Add(kvp.Key, kvp.Value);
+                        }
+#endif
+                    }
+                }
+
+                SecurityReporter.LogAddressIfDebugEnabled(userAddresses);
+
+                // run the WAF and execute the results
+                result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
+                SetErrorInformation(false, result);
+                additiveContext.CommitUserRuns(userAddresses, fromSdk);
+                RecordTelemetry(result);
+
+                if (_localRootSpan.Context.TraceContext is not null)
+                {
+                    _localRootSpan.Context.TraceContext.WafExecuted = true;
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            if (addresses is not null)
+            {
+                var stringBuilder = StringBuilderCache.Acquire();
+                foreach (var kvp in addresses)
+                {
+                    stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
+                }
+
+                Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
+            }
         }
 
         return result;
@@ -144,33 +172,98 @@ internal readonly partial struct SecurityCoordinator
             return;
         }
 
-        if (result.Timeout)
+        var metric = result switch
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
-        }
-        else if (result.ShouldBlock)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
-        }
-        else if (result.ShouldReportSecurityResult)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
-        }
-        else
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
-        }
+            { Timeout: true } => MetricTags.WafAnalysis.WafTimeout,
+            { ShouldBlock: true } => MetricTags.WafAnalysis.RuleTriggeredAndBlocked,
+            { ShouldReportSecurityResult: true } => MetricTags.WafAnalysis.RuleTriggered,
+            _ => MetricTags.WafAnalysis.Normal,
+        };
+
+        TelemetryFactory.Metrics.RecordCountWafRequests(metric);
     }
 
-    public void AddResponseHeadersToSpanAndCleanup()
+    public void AddResponseHeadersToSpan()
     {
         if (_localRootSpan.IsAppsecEvent())
         {
-            AddResponseHeaderTags(CanAccessHeaders);
+            Reporter.AddResponseHeaderTags();
         }
-
-        _httpTransport.DisposeAdditiveContext();
     }
 
-    private static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
+    internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
+    {
+        var cookies = RequestDataHelper.GetCookies(request);
+
+        if (cookies is { Count: > 0 })
+        {
+            var cookiesCount = cookies.Count;
+            var cookiesDic = new Dictionary<string, object>(cookiesCount);
+            for (var i = 0; i < cookiesCount; i++)
+            {
+                GetCookieKeyValueFromIndex(cookies, i, out var keyForDictionary, out var cookieValue);
+
+                if (cookieValue is not null && keyForDictionary is not null)
+                {
+                    if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
+                    {
+                        cookiesDic.Add(keyForDictionary, cookieValue);
+                    }
+                    else
+                    {
+                        if (value is string stringValue)
+                        {
+                            cookiesDic[keyForDictionary] = new List<string> { stringValue, cookieValue };
+                        }
+                        else if (value is List<string> valueList)
+                        {
+                            valueList.Add(cookieValue);
+                        }
+                        else
+                        {
+                            Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
+                        }
+                    }
+                }
+            }
+
+            return cookiesDic;
+        }
+
+        return null;
+    }
+
+    private static Dictionary<string, object>? ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
+    {
+        if (keys.Count > 0)
+        {
+            var headersDic = new Dictionary<string, object>(keys.Count);
+            foreach (var key in keys)
+            {
+                var currentKey = key ?? string.Empty;
+                if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
+                {
+                    currentKey = currentKey.ToLowerInvariant();
+                    var value = getHeaderValue(currentKey);
+#if NETCOREAPP
+                    if (!headersDic.TryAdd(currentKey, value))
+                    {
+#else
+                    if (!headersDic.ContainsKey(currentKey))
+                    {
+                        headersDic.Add(currentKey, value);
+                    }
+                    else
+                    {
+#endif
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                    }
+                }
+            }
+
+            return headersDic;
+        }
+
+        return null;
+    }
 }

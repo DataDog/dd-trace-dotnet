@@ -12,6 +12,7 @@
 #include "clr_helpers.h"
 #include "il_rewriter.h"
 #include "integration.h"
+#include "signature_builder.h"
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/com_ptr.h"
 
@@ -26,7 +27,6 @@ class CallTargetTokens
 {
 private:
     ModuleMetadata* module_metadata_ptr = nullptr;
-    std::mutex metadata_mutex;
 
     // CorLib tokens
     volatile mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
@@ -36,6 +36,7 @@ private:
 
     volatile mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
     volatile mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
+    volatile mdMemberRef callTargetStateTypeSkipMethodBodyMemberRef = mdMemberRefNil;
     volatile mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
     mdTypeRef GetTargetStateTypeRef();
@@ -53,6 +54,8 @@ private:
 protected:
     // CallTarget tokens
     volatile mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
+
+    std::recursive_mutex metadata_mutex;
 
     const bool enable_by_ref_instrumentation = false;
     const bool enable_calltarget_state_by_ref = false;
@@ -76,8 +79,7 @@ protected:
     virtual const shared::WSTRING& GetCallTargetRefStructType() = 0;
 
     virtual void AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                                     COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
-                                     ULONG& signatureSize, bool isAsyncMethod);
+        SignatureBuilder& signatureBuffer, bool isAsyncMethod);
 
     CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
                      bool enableCallTargetStateByRef);
@@ -92,6 +94,8 @@ public:
     mdTypeRef GetRuntimeMethodHandleTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
+
+    mdMethodDef GetCallTargetStateSkipMethodBodyMemberRef();
 
     HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType, std::vector<TypeSignature>* methodTypeArguments,
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex, ULONG* callTargetReturnIndex, ULONG* returnValueIndex,

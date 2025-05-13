@@ -81,20 +81,6 @@
           }
         ]
       }
-    },
-    {
-      "type": "NO_SAMESITE_COOKIE",
-      "hash": -1222453805,
-      "evidence": {
-        "value": ".AspNetCore.Session"
-      }
-    },
-    {
-      "type": "INSECURE_COOKIE",
-      "hash": 1343789722,
-      "evidence": {
-        "value": ".AspNetCore.Session"
-      }
     }
   ],
   "sources": [
@@ -115,7 +101,10 @@
       process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      iast: 
     }
   },
   {

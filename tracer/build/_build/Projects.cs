@@ -1,9 +1,9 @@
 public static class Projects
 {
     public const string DatadogTrace = "Datadog.Trace";
+    public const string DatadogTraceManual = "Datadog.Trace.Manual";
     public const string ManagedLoader = "Datadog.Trace.ClrProfiler.Managed.Loader";
     public const string DatadogTraceAnnotations = "Datadog.Trace.Annotations";
-    public const string DatadogTraceAspNet = "Datadog.Trace.AspNet";
     public const string DatadogTraceBundle = "Datadog.Trace.Bundle";
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
     public const string DatadogTraceBenchmarkDotNet = "Datadog.Trace.BenchmarkDotNet";
@@ -13,13 +13,12 @@ public static class Projects
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
     public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
     public const string DatadogTraceTrimming = "Datadog.Trace.Trimming";
-    
+
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
     public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
-    public const string OpenTracingIntegrationTests = "Datadog.Trace.OpenTracing.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
     public const string DdTraceIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";
     public const string DdTraceArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
@@ -33,6 +32,7 @@ public static class Projects
 
     public const string DebuggerIntegrationTests = "Datadog.Trace.Debugger.IntegrationTests";
     public const string DebuggerSamples = "Samples.Probes";
+    public const string ExceptionReplaySamples = "Samples.Debugger.AspNetCore5";
     public const string DebuggerSamplesTestRuns = "Samples.Probes.TestRuns";
     public const string DebuggerUnreferencedExternal = "Samples.Probes.Unreferenced.External";
 
@@ -54,4 +54,5 @@ public static class FileNames
     public const string AfterInstallScript = "after-install.sh";
     public const string AfterRemoveScript = "after-remove.sh";
 
+    public const string DefinitionsJson = "supported_calltargets.g.json";
 }

@@ -3,10 +3,8 @@
 
 #pragma once
 #include "ManagedThreadInfo.h"
-#include "ServiceBase.h"
 
-
-class IStackSamplerLoopManager : public ServiceBase
+class IStackSamplerLoopManager
 {
 public:
     virtual bool AllowStackWalk(std::shared_ptr<ManagedThreadInfo> pThreadInfo) = 0;

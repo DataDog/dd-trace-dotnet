@@ -15,39 +15,39 @@ namespace Datadog.Trace.Configuration.Telemetry;
 internal readonly struct ConfigurationBuilder
 {
     // static accessor functions
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, bool, ConfigurationResult<string>> AsStringSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, bool, ConfigurationResult<string>> AsStringSelector
         = (source, key, telemetry, validator, recordValue) => source.GetString(key, telemetry, validator, recordValue);
 
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, bool, ConfigurationResult<bool>> AsBoolSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, bool, ConfigurationResult<bool>> AsBoolSelector
         = (source, key, telemetry, validator, _) => source.GetBool(key, telemetry, validator);
 
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, bool, ConfigurationResult<int>> AsInt32Selector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, bool, ConfigurationResult<int>> AsInt32Selector
         = (source, key, telemetry, validator, _) => source.GetInt32(key, telemetry, validator);
 
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, bool, ConfigurationResult<double>> AsDoubleSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, bool, ConfigurationResult<double>> AsDoubleSelector
         = (source, key, telemetry, validator, _) => source.GetDouble(key, telemetry, validator);
 
     // static accessor functions with converters
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, Func<string, ParsingResult<string>>, bool, ConfigurationResult<string>> AsStringWithConverterSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<string, bool>?, Func<string, ParsingResult<string>>, bool, ConfigurationResult<string>> AsStringWithConverterSelector
         = (source, key, telemetry, validator, converter, recordValue) => source.GetAs(key, telemetry, converter, validator, recordValue);
 
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, Func<string, ParsingResult<bool>>, bool, ConfigurationResult<bool>> AsBoolWithConverterSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<bool, bool>?, Func<string, ParsingResult<bool>>, bool, ConfigurationResult<bool>> AsBoolWithConverterSelector
         = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
 
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, Func<string, ParsingResult<int>>, bool, ConfigurationResult<int>> AsInt32WithConverterSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<int, bool>?, Func<string, ParsingResult<int>>, bool, ConfigurationResult<int>> AsInt32WithConverterSelector
         = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
 
-    private static readonly Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, Func<string, ParsingResult<double>>, bool, ConfigurationResult<double>> AsDoubleWithConverterSelector
+    private static readonly Func<IConfigurationSource, string, IConfigurationTelemetry, Func<double, bool>?, Func<string, ParsingResult<double>>, bool, ConfigurationResult<double>> AsDoubleWithConverterSelector
         = (source, key, telemetry, validator, converter, _) => source.GetAs(key, telemetry, converter, validator, recordValue: true);
 
-    private readonly ITelemeteredConfigurationSource _source;
+    private readonly IConfigurationSource _source;
     private readonly IConfigurationTelemetry _telemetry;
 
     public ConfigurationBuilder(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
-        // If the source _isn't_ an ITelemeteredConfigurationSource, it's because it's a custom
+        // If the source _isn't_ an IConfigurationSource, it's because it's a custom
         // IConfigurationSource implementation, so we treat that as a "Code" origin.
-        _source = source as ITelemeteredConfigurationSource ?? new CustomTelemeteredConfigurationSource(source);
+        _source = source;
         _telemetry = telemetry;
     }
 
@@ -58,32 +58,6 @@ internal readonly struct ConfigurationBuilder
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2);
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
-
-    private static bool TryHandleOverrides<T>(
-        ConfigurationResult<T> datadogConfigResult,
-        ConfigurationResult<T> otelConfigResult,
-        [NotNullWhen(true)] out T? value)
-    {
-        if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
-        {
-            // TODO Log to user and report "otel.env.hiding" telemetry metric
-        }
-        else if (otelConfigResult is { IsPresent: true } config)
-        {
-            if (config is { Result: { } openTelemetryValue, IsValid: true })
-            {
-                {
-                    value = openTelemetryValue;
-                    return true;
-                }
-            }
-
-            // TODO Log to user and report "otel.env.invalid" telemetry metric
-        }
-
-        value = default;
-        return false;
-    }
 
     private static bool TryHandleResult<T>(
         IConfigurationTelemetry telemetry,
@@ -140,7 +114,7 @@ internal readonly struct ConfigurationBuilder
 
     internal readonly struct HasKeys
     {
-        public HasKeys(ITelemeteredConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
+        public HasKeys(IConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
         {
             Source = source;
             Telemetry = telemetry;
@@ -150,7 +124,7 @@ internal readonly struct ConfigurationBuilder
             FallbackKey3 = fallbackKey3;
         }
 
-        private ITelemeteredConfigurationSource Source { get; }
+        private IConfigurationSource Source { get; }
 
         private IConfigurationTelemetry Telemetry { get; }
 
@@ -397,6 +371,9 @@ internal readonly struct ConfigurationBuilder
         public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings, char separator)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator));
 
+        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(Func<string, IDictionary<string, string>> parser)
+            => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(parser));
+
         private ConfigurationResult<string> GetStringResult(Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
             => converter is null
                    ? GetResult(AsStringSelector, validator, recordValue)
@@ -432,7 +409,7 @@ internal readonly struct ConfigurationBuilder
         /// <param name="recordValue">If applicable, whether to record the value in configuration</param>
         /// <typeparam name="T">The type being retrieved</typeparam>
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
-        private ConfigurationResult<T> GetResult<T>(Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, bool recordValue)
+        private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, bool recordValue)
         {
             var result = selector(Source, Key, Telemetry, validator, recordValue);
             if (result.ShouldFallBack && FallbackKey1 is not null)
@@ -458,11 +435,11 @@ internal readonly struct ConfigurationBuilder
         /// </summary>
         /// <param name="selector">The method to invoke to retrieve the parameter</param>
         /// <param name="validator">The validator to call to decide if a provided value is valid</param>
-        /// <param name="converter">The converter to run when calling <see cref="ITelemeteredConfigurationSource.GetAs{T}"/></param>
+        /// <param name="converter">The converter to run when calling <see cref="IConfigurationSource.GetAs{T}"/></param>
         /// <param name="recordValue">If applicable, whether to record the value in configuration</param>
         /// <typeparam name="T">The type being retrieved</typeparam>
         /// <returns>The raw <see cref="ConfigurationResult{T}"/></returns>
-        private ConfigurationResult<T> GetResult<T>(Func<ITelemeteredConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, Func<string, ParsingResult<T>>, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, bool recordValue)
+        private ConfigurationResult<T> GetResult<T>(Func<IConfigurationSource, string, IConfigurationTelemetry, Func<T, bool>?, Func<string, ParsingResult<T>>, bool, ConfigurationResult<T>> selector, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter, bool recordValue)
         {
             var result = selector(Source, Key, Telemetry, validator, converter, recordValue);
             if (result.ShouldFallBack && FallbackKey1 is not null)
@@ -503,6 +480,27 @@ internal readonly struct ConfigurationBuilder
 
             return result;
         }
+
+        private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(Func<string, IDictionary<string, string>> parser)
+        {
+            var result = Source.GetDictionary(Key, Telemetry, validator: null, parser);
+            if (result.ShouldFallBack && FallbackKey1 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey1, Telemetry, validator: null, parser);
+            }
+
+            if (result.ShouldFallBack && FallbackKey2 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey2, Telemetry, validator: null, parser);
+            }
+
+            if (result.ShouldFallBack && FallbackKey3 is not null)
+            {
+                result = Source.GetDictionary(FallbackKey3, Telemetry, validator: null, parser);
+            }
+
+            return result;
+        }
     }
 
     internal readonly struct StructConfigurationResultWithKey<T>(IConfigurationTelemetry telemetry, string key, bool recordValue, ConfigurationResult<T> configurationResult)
@@ -526,19 +524,19 @@ internal readonly struct ConfigurationBuilder
             return default; // should never be invoked because we have a value for getDefaultValue
         }
 
-        public T? OverrideWith(in StructConfigurationResultWithKey<T> otelConfig)
-            => CalculateOverrides(in otelConfig, getDefaultValue: null);
+        public T? OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: null);
 
-        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, T defaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue: () => defaultValue).Value;
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: () => defaultValue).Value;
 
-        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>> getDefaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue).Value;
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>> getDefaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue).Value;
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private T? CalculateOverrides(in StructConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>>? getDefaultValue)
+        private T? CalculateOverrides(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>>? getDefaultValue)
         {
-            if (TryHandleOverrides(ConfigurationResult, otelConfig.ConfigurationResult, out var overridden))
+            if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
             {
                 return overridden;
             }
@@ -574,19 +572,19 @@ internal readonly struct ConfigurationBuilder
             return default!; // should never be invoked because we have a value for getDefaultValue
         }
 
-        public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig)
-            => CalculateOverrides(in otelConfig, getDefaultValue: null);
+        public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: null);
 
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, T defaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue: () => defaultValue);
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: () => defaultValue);
 
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>> getDefaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue);
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>> getDefaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>>? getDefaultValue)
+        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>>? getDefaultValue)
         {
-            if (TryHandleOverrides(ConfigurationResult, otelConfig.ConfigurationResult, out var overridden))
+            if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
             {
                 return overridden;
             }

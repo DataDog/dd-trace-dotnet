@@ -13,8 +13,12 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -426,7 +430,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var tracer = GetTracer(writer, configSource);
 
             var security = new AppSec.Security();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security) };
+            var iast = new Iast.Iast(new IastSettings(configSource, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
+            var liveDebugger = GetLiveDebugger();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security, iast, liveDebugger, null) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))
             {
@@ -531,6 +537,11 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var samplerMock = new Mock<ITraceSampler>();
 
             return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
+        }
+
+        private static LiveDebugger GetLiveDebugger()
+        {
+            return LiveDebuggerFactory.Create(null, null, new TracerSettings(), null, null, DebuggerSettings.FromDefaultSource(), null);
         }
 
         private class AgentWriterStub : IAgentWriter

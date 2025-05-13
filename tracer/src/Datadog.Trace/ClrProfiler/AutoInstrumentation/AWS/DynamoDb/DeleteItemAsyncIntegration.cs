@@ -6,8 +6,10 @@
 using System;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
@@ -22,13 +24,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.DeleteItemResponse]",
         ParameterTypeNames = new[] { "Amazon.DynamoDBv2.Model.DeleteItemRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class DeleteItemAsyncIntegration
     {
         private const string Operation = "DeleteItem";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DeleteItemAsyncIntegration>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -40,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TDeleteItemRequest>(TTarget instance, TDeleteItemRequest request, CancellationToken cancellationToken)
-            where TDeleteItemRequest : IAmazonDynamoDbRequestWithTableName, IDuckType
+            where TDeleteItemRequest : IAmazonDynamoDbRequestWithKnownKeys, IDuckType
         {
             if (request.Instance is null)
             {
@@ -49,6 +52,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
             AwsDynamoDbCommon.TagTableNameAndResourceName(request.TableName, tags, scope);
+
+            if (!Tracer.Instance.Settings.SpanPointersEnabled)
+            {
+                return new CallTargetState(scope);
+            }
+
+            var tableName = request.TableName;
+            try
+            {
+                var keys = request.Keys.DuckCast<IDynamoDbKeysObject>();
+                SpanPointers.AddDynamoDbSpanPointer(scope.Span, tableName, keys);
+            }
+            catch (Exception exception)
+            {
+                Log.Debug(exception, "Unable to add span pointer");
+            }
 
             return new CallTargetState(scope);
         }

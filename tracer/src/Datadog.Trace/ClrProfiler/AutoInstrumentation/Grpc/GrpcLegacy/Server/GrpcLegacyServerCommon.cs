@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
+// <copyright file="GrpcLegacyServerCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,6 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -33,9 +32,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 // If we have a local span (e.g. from aspnetcore) then use that as the parent
                 // Otherwise, use the distributed context as the parent
                 var spanContext = tracer.ActiveScope?.Span.Context;
+
                 if (spanContext is null)
                 {
-                    spanContext = ExtractPropagatedContext(metadata);
+                    var extractedContext = ExtractPropagatedContext(tracer, metadata).MergeBaggageInto(Baggage.Current);
+                    spanContext = extractedContext.SpanContext;
                 }
 
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (metadata?.Count > 0)
                 {
-                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
+                    span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
                 }
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
@@ -61,13 +62,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             return scope;
         }
 
-        private static SpanContext? ExtractPropagatedContext(IMetadata? metadata)
+        private static PropagationContext ExtractPropagatedContext(Tracer tracer, IMetadata? metadata)
         {
             try
             {
                 if (metadata is not null)
                 {
-                    return SpanContextPropagator.Instance.Extract(new MetadataHeadersCollection(metadata));
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new MetadataHeadersCollection(metadata));
                 }
             }
             catch (Exception ex)
@@ -75,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 Log.Error(ex, "Error extracting propagated HTTP headers.");
             }
 
-            return null;
+            return default;
         }
     }
 }

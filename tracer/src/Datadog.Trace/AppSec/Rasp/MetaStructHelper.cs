@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
+using Datadog.Trace.Vendors.MessagePack.Resolvers;
 
 #nullable enable
 
@@ -80,6 +82,81 @@ internal static class MetaStructHelper
         return dict;
     }
 
+    public static Dictionary<string, object> VulnerabilityBatchToDictionary(VulnerabilityBatch vulnerabilityBatch)
+    {
+        var result = new Dictionary<string, object>(2);
+
+        var truncationMaxValueLength = vulnerabilityBatch.GetTruncationMaxValueLength();
+        var redactionEnabled = vulnerabilityBatch.IsRedactionEnabled();
+
+        if (vulnerabilityBatch.Vulnerabilities.Count > 0)
+        {
+            var vulnerabilitiesList = new List<Dictionary<string, object>>(vulnerabilityBatch.Vulnerabilities.Count);
+            foreach (var vulnerability in vulnerabilityBatch.Vulnerabilities)
+            {
+                var vulnerabilityDictionary = new Dictionary<string, object>();
+
+                vulnerabilityDictionary["type"] = vulnerability.Type;
+                vulnerabilityDictionary["hash"] = vulnerability.Hash;
+
+                if (vulnerability.Location.HasValue)
+                {
+                    var locationDict = new Dictionary<string, object>();
+                    var location = vulnerability.Location.Value;
+
+                    if (location.SpanId.HasValue)
+                    {
+                        locationDict["spanId"] = location.SpanId.Value;
+                    }
+
+                    if (location.Path is { Length: > 0 })
+                    {
+                        locationDict["path"] = location.Path;
+                    }
+
+                    if (location.Method is { Length: > 0 })
+                    {
+                        locationDict["method"] = location.Method;
+                    }
+
+                    if (location.Line.HasValue)
+                    {
+                        locationDict["line"] = location.Line.Value;
+                    }
+
+                    if (location.StackId is { Length: > 0 })
+                    {
+                        locationDict["stackId"] = location.StackId;
+                    }
+
+                    vulnerabilityDictionary["location"] = locationDict;
+                }
+
+                if (vulnerability.Evidence.HasValue)
+                {
+                    vulnerabilityDictionary["evidence"] = new EvidenceDictionaryConverter(truncationMaxValueLength, redactionEnabled).EvidenceToDictionary(vulnerability.Evidence.Value);
+                }
+
+                vulnerabilitiesList.Add(vulnerabilityDictionary);
+            }
+
+            result["vulnerabilities"] = vulnerabilitiesList;
+        }
+
+        if (vulnerabilityBatch.Sources != null)
+        {
+            var sourcesList = new List<Dictionary<string, object>>(vulnerabilityBatch.Sources.Count);
+            foreach (var source in vulnerabilityBatch.Sources)
+            {
+                sourcesList.Add(source.ToDictionary(truncationMaxValueLength));
+            }
+
+            result["sources"] = sourcesList;
+        }
+
+        return result;
+    }
+
     public static byte[] ObjectToByteArray(object? value)
     {
         // 256 is the size that the serializer would reserve initially for empty arrays, so we create
@@ -91,5 +168,11 @@ internal static class MetaStructHelper
         Array.Resize(ref buffer, bytesCopied);
 
         return buffer;
+    }
+
+    public static object ByteArrayToObject(byte[] value)
+    {
+        var formatterResolver = StandardResolver.Instance;
+        return PrimitiveObjectFormatter.Instance.Deserialize(value, 0, formatterResolver, out _);
     }
 }

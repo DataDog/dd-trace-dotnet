@@ -1,0 +1,51 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LibDatadogDependencies>PowrProf.lib;NtDll.lib;UserEnv.lib;Bcrypt.lib;crypt32.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;Secur32.lib;Ncrypt.lib</LibDatadogDependencies>
+    <VcpkgIntermediateFolder>$(VcpkgManifestRoot)\artifacts\obj\vcpkg</VcpkgIntermediateFolder>
+    <VcpkgDepsDir>$(VcpkgManifestRoot)\artifacts\deps\vcpkg\</VcpkgDepsDir>
+    <!-- trying mimicking what's vcpkg does by default but redirecting where we want the final files -->
+    <VcpkgInstalledDir>$(VcpkgDepsDir)$(VcpkgTriplet)</VcpkgInstalledDir>
+    <VcpkgAdditionalInstallOptions>--downloads-root $(VcpkgIntermediateFolder)/downloads --x-packages-root $(VcpkgIntermediateFolder)/packages --x-buildtrees-root $(VcpkgIntermediateFolder)/buildtrees  --clean-after-build</VcpkgAdditionalInstallOptions>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(VcpkgUseStatic)' == 'true' and '$(VcpkgEnabled)' == 'true' and '$(MSBuildProjectExtension)' == '.vcxproj'">
+    <Link>
+      <AdditionalDependencies>$(LibDatadogDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup>
+    <TopLevelDeployDirectoryBase Condition="'$(DeployToMonitoringHome)' == 'True'">$(EnlistmentRoot)\shared\bin\monitoring-home</TopLevelDeployDirectoryBase>
+    <TopLevelDeployDirectoryBase Condition="'$(DeployToMonitoringHome)' != 'True'">$(BuildOutputRoot)\DDProf-Deploy</TopLevelDeployDirectoryBase>
+
+    <!-- In Linux case, we test against $(Platform), while on Windows case, we test against $(PlatformShortName). The reason is that for Windows, for   -->
+    <!-- 64bit, $(PlatformShortName) == to x64. But on Linux, $(PlatformShortName) == x86_64.                        -->
+    <DDPlatform Condition=" '$(PlatformShortName)' != '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-$(PlatformShortName)</DDPlatform>
+    <DDPlatform Condition=" '$(PlatformShortName)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-unknown</DDPlatform>
+    <DDPlatform Condition=" '$(Platform)' != '' AND $([MSBuild]::IsOSPlatform('Linux')) ">linux-$(Platform)</DDPlatform>
+    <DDPlatform Condition=" '$(Platform)' == '' AND $([MSBuild]::IsOSPlatform('Linux')) ">linux-unknown</DDPlatform>
+
+    <DeployDirectoryBase >$(TopLevelDeployDirectoryBase)\$(DDPlatform)</DeployDirectoryBase>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NativeWindowsDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsDeployFilesSrcDir>
+    <NativeLinuxDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxDeployFilesSrcDir>
+  </PropertyGroup>
+
+  <Target Name="CopyVcpkgPDBs" AfterTargets="Build">
+    <Message Text="[PrepareDeployDirectory] NativeWindowsDeployFilesSrcDir: '$(NativeWindowsDeployFilesSrcDir)'" Importance="high" />
+    <Message Text="[PrepareDeployDirectory] NativeLinuxDeployFilesSrcDir: '$(NativeLinuxDeployFilesSrcDir)'" Importance="high" />
+    <ItemGroup>
+      <VcpkgPDBs Condition="'$(Configuration)'=='Release'" Include="$(VcpkgInstalledDir)\$(VcpkgTriplet)\bin\*.pdb" />
+      <VcpkgPDBs Condition="'$(Configuration)'=='Debug'" Include="$(VcpkgInstalledDir)\$(VcpkgTriplet)\debug\bin\*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="@(VcpkgPDBs)" DestinationFiles="@(VcpkgPDBs->'$(DeployDirectoryBase)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(VcpkgPDBs)" DestinationFiles="@(VcpkgPDBs->'$(NativeWindowsDeployFilesSrcDir)\%(Filename)%(Extension)')" />
+  </Target>
+  <Target Name="CleanVcpkPDBs" AfterTargets="Clean">
+    <ItemGroup>
+      <PDBsToDelete Include="$(NativeWindowsDeployFilesSrcDir)\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(PDBsToDelete)" />
+  </Target>
+</Project>

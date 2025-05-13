@@ -666,7 +666,7 @@ namespace iast
     WSTRING GetMemberName(ILRewriter* body, mdToken token)
     {
         auto memberRef = body->GetMethodInfo()->GetModuleInfo()->GetMemberRefInfo(token);
-        WSTRING memberName = memberRef != nullptr ? memberRef->GetFullNameWithReturnType() : WStr("Unknown");
+        WSTRING memberName = memberRef != nullptr ? memberRef->GetFullyQualifiedName() : WStr("Unknown");
         return memberName;
     }
     std::string GetString(ILRewriter* body, mdString token)
@@ -736,17 +736,31 @@ namespace iast
         default:
             break;
         }
-        auto res = "IL" + Hex(instruction->m_offset) + " : " + _instructionNames[instruction->m_opcode] + " " + argument;
+        auto sep = instruction->IsDirty() ? "*: " : " : ";
+        auto res = "IL" + Hex(instruction->m_offset) + sep + _instructionNames[instruction->m_opcode] + " " + argument;
         return res;
     }
 
-    void ILAnalysis::Dump(const std::string& extraMessage)
+    template <typename... Args>
+    static void Log(bool debugLevel, const Args&... args)
+    {
+        if (debugLevel)
+        {
+            trace::Logger::Debug(args...);
+        }
+        else
+        {
+            trace::Logger::Info(args...);
+        }
+    }
+
+    void ILAnalysis::Dump(bool debugLevel, const std::string& extraMessage)
     {
         try
         {
             auto method = _body->GetMethodInfo();
             auto module = method->GetModuleInfo();
-            trace::Logger::Info("Dumping IL ", extraMessage, " : ", method->GetFullName(), " ",
+            Log(debugLevel, "Dumping IL ", extraMessage, " : ", method->GetFullName(), " ",
                                  module->GetModuleFullName(), " ... ");
 
             std::unordered_map<ILInstr*, std::vector<EHClause*>*> handlers;
@@ -787,7 +801,6 @@ namespace iast
             for (ILInstr* instruction = _body->GetILList()->m_pNext; instruction != _body->GetILList(); instruction = instruction->m_pNext)
             {
                 if (instruction->m_opcode == CEE_SWITCH_ARG) { continue; }
-                bool written = false;
                 EHClause* exitBlock = nullptr;
                 auto hs = Get<ILInstr*, std::vector<EHClause*>>(handlers, instruction);
                 if (hs != nullptr)
@@ -802,37 +815,37 @@ namespace iast
                         bool lastCommonTry = lastCommonTryIt != hs->rend() && *lastCommonTryIt == h;
                         if (h->m_pTryBegin == instruction && firstCommonTry)
                         {
-                            trace::Logger::Info(indent, "try");
-                            trace::Logger::Info(indent, "{");
+                            Log(debugLevel, indent, "try");
+                            Log(debugLevel, indent, "{");
                             indent = HandlerEnter(nesting, h);
                         }
                         else if (h->m_pTryEnd == instruction && firstCommonTry && CommonTry(h, lastBlock))
                         {
                             indent = HandlerExit(nesting, &exitBlock);
-                            trace::Logger::Info(indent, "}");
+                            Log(debugLevel, indent, "}");
                         }
 
                         if (h->m_pFilter == instruction)
                         {
-                            trace::Logger::Info(indent, "filter");
-                            trace::Logger::Info(indent, "{");
+                            Log(debugLevel, indent, "filter");
+                            Log(debugLevel, indent, "{");
                             indent = HandlerEnter(nesting, h);
                         }
                         else if (h->m_pHandlerBegin == instruction)
                         {
-                            trace::Logger::Info(indent, (IsFinally(h) ? WStr("finally") : WStr("catch")));
-                            trace::Logger::Info(indent, "{");
+                            Log(debugLevel, indent, (IsFinally(h) ? WStr("finally") : WStr("catch")));
+                            Log(debugLevel, indent, "{");
                             indent = HandlerEnter(nesting, h);
                         }
                     }
                 }
-                if (!written) { trace::Logger::Info(indent, ToString(_body, instruction)); } // Write current instruction
+                Log(debugLevel, indent, ToString(_body, instruction)); // Write current instruction
                 if (instruction->m_opcode == CEE_ENDFILTER || instruction->m_opcode == CEE_ENDFINALLY || instruction->m_opcode == CEE_LEAVE || instruction->m_opcode == CEE_LEAVE_S)
                 {
                     if (nesting.size() > 0)
                     {
                         indent = HandlerExit(nesting);
-                        trace::Logger::Info(indent, "}");
+                        Log(debugLevel, indent, "}");
                     }
                 }
             }
@@ -840,11 +853,11 @@ namespace iast
             {
                 EHClause* exitBlock = nullptr;
                 indent = HandlerExit(nesting, &exitBlock);
-                trace::Logger::Info(indent, "}");
+                Log(debugLevel, indent, "}");
             }
 
             DEL_MAP_VALUES(handlers);
-            trace::Logger::Info("Dump end");
+            Log(debugLevel, "Dump end");
         }
         catch (std::exception err)
         {

@@ -5,6 +5,7 @@
 
 #include "EnvironmentVariables.h"
 
+#include <mutex>
 #include <string>
 
 #include "shared/src/native-src/logger.h"
@@ -68,3 +69,11 @@ public:
         Instance->Error<Args...>(args...);
     }
 };
+
+#define LogOnce(level, ...)                                                                                                \
+    do                                                                                                                     \
+    {                                                                                                                      \
+        static std::once_flag UNIQUE_ONCE_FLAG_##__COUNTER__;                                                              \
+        std::call_once(                                                                                                    \
+            UNIQUE_ONCE_FLAG_##__COUNTER__, [](auto&&... args) { Log::level(std::forward<decltype(args)>(args)...); }, __VA_ARGS__); \
+    } while (0) // NOLINT

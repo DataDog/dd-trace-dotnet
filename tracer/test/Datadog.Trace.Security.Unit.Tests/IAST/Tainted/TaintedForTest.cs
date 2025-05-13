@@ -15,7 +15,7 @@ public class TaintedForTest : ITaintedObject
 {
     private bool _alive = true;
     private Range[] _ranges;
-    private object _value;
+    private object? _value;
 
     internal TaintedForTest(object value, Range[] ranges)
     {
@@ -28,13 +28,18 @@ public class TaintedForTest : ITaintedObject
 
     ITaintedObject? ITaintedObject.Next { get; set; }
 
-    public object Value => _value;
+    public object? Value => _value;
 
     public int PositiveHashCode { get; set; }
 
     public void SetAlive(bool isAlive)
     {
         _alive = isAlive;
+    }
+
+    public void Invalidate()
+    {
+        _alive = false;
     }
 
     internal Range[]? GetRanges()

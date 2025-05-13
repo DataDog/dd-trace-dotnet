@@ -3,17 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
@@ -23,10 +28,10 @@ internal static class MsTestIntegration
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-    internal static readonly ThreadLocal<MethodInfoCacheItem> IsTestMethodRunnableThreadLocal = new();
+    internal static readonly ThreadLocal<MethodInfoCacheItem?> IsTestMethodRunnableThreadLocal = new();
 
-    internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
-    internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
+    internal static readonly ConditionalWeakTable<object, TestModule?> TestModuleByTestAssemblyInfos = new();
+    internal static readonly ConditionalWeakTable<object, TestSuite?> TestSuiteByTestClassInfos = new();
 
     private static readonly Dictionary<string, string> MsTestVersionByModuleId = new()
     {
@@ -55,19 +60,39 @@ internal static class MsTestIntegration
         ["601b9a9e-4ec5-4d00-bd02-b9990a2ef6c1"] = "3.2.1",
         ["82f48315-774a-4e06-afb3-f1f684eca38d"] = "3.2.2",
         ["82c42f21-febe-4eb2-80ad-8e793eabd8f2"] = "3.3.0",
-        ["139449f1-8ab4-46b1-bf76-1a0e70ed75c7"] = "3.3.1"
+        ["139449f1-8ab4-46b1-bf76-1a0e70ed75c7"] = "3.3.1",
+        ["545e509a-217d-4ae4-8e9c-44db060476bd"] = "3.4.0",
+        ["1f5cd8fe-a77b-4cea-820e-edc966404148"] = "3.4.1",
+        ["9ea7951a-d348-4320-add8-5f252ef638f5"] = "3.4.2",
+        ["7e686320-f8ad-4bc0-bba1-924a5f80997a"] = "3.4.3",
+        ["f97b48eb-3d66-49ec-883e-024105346c6a"] = "3.5.0",
+        ["a27d601a-225f-46ac-a239-5cd1eb8f0e94"] = "3.5.1",
+        ["809c6892-a3d4-4d2c-a814-f5161e1be707"] = "3.5.2",
+        ["f5fedf4d-dd4d-4086-956b-a288dfe47482"] = "3.6.0",
+        ["bfa965bf-7fea-4f88-a983-13899039abb0"] = "3.6.1",
+        ["6996b6b2-0966-4698-a69e-2adc20bda49f"] = "3.6.2",
+        ["cebe03e2-ed3e-4b48-889d-87bbe5c46fca"] = "3.6.3",
+        ["ea501b1a-9500-43b9-9f3d-f638f1824d61"] = "3.6.4",
+        ["931a3acb-90ac-4596-8d38-205ed6130bb8"] = "3.7.0",
+        ["cc38e312-58a9-4de7-a090-66bf379cb735"] = "3.7.1",
+        ["1413c06e-64df-4d94-bb85-a2dc568260d5"] = "3.7.2",
+        ["1c2a401f-8769-4295-a96e-b842f45bbeac"] = "3.7.3",
+        ["b754cc51-34ed-419c-8582-bff04c3db05f"] = "3.8.0",
+        ["2b3d62e3-5607-4ebd-840e-ee80475cc0bc"] = "3.8.1",
+        ["3fe23123-93a2-4c44-8219-0a5f27a10316"] = "3.8.2",
     };
 
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => TestOptimization.Instance.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
+    internal static Test? OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
     {
+        Common.Log.Debug("{Value}", Environment.StackTrace);
         var testMethod = testMethodInstance.MethodInfo;
-        var testName = testMethodInstance.TestMethodName;
+        var testName = testMethodInstance.TestMethodName ?? string.Empty;
 
         var suite = TestSuite.Current;
         if (suite is null && testMethodInstance.Instance.TryDuckCast<ITestMethodInfo>(out var testMethodInfo))
@@ -82,6 +107,7 @@ internal static class MsTestIntegration
         }
 
         var test = startDate is null ? suite.InternalCreateTest(testName) : suite.InternalCreateTest(testName, startDate.Value);
+        var testTags = test.GetTags();
 
         // Get test parameters
         UpdateTestParameters(test, testMethodInstance);
@@ -90,34 +116,46 @@ internal static class MsTestIntegration
         if (GetTraits(testMethod) is { } testTraits)
         {
             // Unskippable tests
-            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
             {
                 ShouldSkip(testMethodInstance, out var isUnskippable, out var isForcedRun, testTraits);
-                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                testTags.Unskippable = isUnskippable ? "true" : "false";
+                testTags.ForcedRun = isForcedRun ? "true" : "false";
                 testTraits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
             }
 
             test.SetTraits(testTraits);
         }
-        else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+        else if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled)
         {
             // Unskippable tests
-            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
-            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+            testTags.Unskippable = "false";
+            testTags.ForcedRun = "false";
         }
+
+        // Set known tests feature tags
+        Common.SetKnownTestsFeatureTags(test);
 
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
 
+        // Flaky retry
+        Common.SetFlakyRetryTags(test, isRetry);
+
+        // Test management feature
+        Common.SetTestManagementFeature(test, isRetry);
+
         // Set test method
-        test.SetTestMethodInfo(testMethod);
+        if (testMethod is not null)
+        {
+            test.SetTestMethodInfo(testMethod);
+        }
 
         test.ResetStartTime();
         return test;
     }
 
-    internal static void UpdateTestParameters<TTestMethod>(Test test, TTestMethod testMethodInstance, string displayName = null)
+    internal static void UpdateTestParameters<TTestMethod>(Test test, TTestMethod testMethodInstance, string? displayName = null)
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
@@ -125,13 +163,13 @@ internal static class MsTestIntegration
         var testName = testMethodInstance.TestMethodName;
 
         // Get test parameters
-        var methodParameters = testMethod.GetParameters();
+        var methodParameters = testMethod?.GetParameters();
         if (methodParameters?.Length > 0)
         {
             var testParameters = new TestParameters
             {
-                Metadata = new Dictionary<string, object>(),
-                Arguments = new Dictionary<string, object>()
+                Metadata = new Dictionary<string, object?>(),
+                Arguments = new Dictionary<string, object?>()
             };
 
             if (!string.IsNullOrEmpty(displayName) && displayName != testName)
@@ -155,9 +193,14 @@ internal static class MsTestIntegration
         }
     }
 
-    private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)
+    private static Dictionary<string, List<string>?>? GetTraits(MethodInfo? methodInfo)
     {
-        Dictionary<string, List<string>> testProperties = null;
+        if (methodInfo is null)
+        {
+            return null;
+        }
+
+        Dictionary<string, List<string>?>? testProperties = null;
         try
         {
             var testAttributes = methodInfo.GetCustomAttributes(true);
@@ -168,31 +211,31 @@ internal static class MsTestIntegration
 
                 if (tAttrName == "TestCategoryAttribute")
                 {
-                    testProperties ??= new Dictionary<string, List<string>>();
+                    testProperties ??= new Dictionary<string, List<string>?>();
                     if (!testProperties.TryGetValue("Category", out var categoryList))
                     {
-                        categoryList = new List<string>();
+                        categoryList = [];
                         testProperties["Category"] = categoryList;
                     }
 
                     if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
                     {
-                        categoryList.AddRange(tattrStruct.TestCategories);
+                        categoryList?.AddRange(tattrStruct.TestCategories ?? []);
                     }
                 }
 
                 if (tAttrName == "TestPropertyAttribute")
                 {
-                    testProperties ??= new Dictionary<string, List<string>>();
+                    testProperties ??= new Dictionary<string, List<string>?>();
                     if (tattr.TryDuckCast<TestPropertyAttributeStruct>(out var tattrStruct) && tattrStruct.Name != null)
                     {
                         if (!testProperties.TryGetValue(tattrStruct.Name, out var propertyList))
                         {
-                            propertyList = new List<string>();
+                            propertyList = [];
                             testProperties[tattrStruct.Name] = propertyList;
                         }
 
-                        propertyList.Add(tattrStruct.Value ?? "(empty)");
+                        propertyList?.Add(tattrStruct.Value ?? "(empty)");
                     }
                 }
             }
@@ -205,16 +248,16 @@ internal static class MsTestIntegration
                     var tAttrName = tattr.GetType().Name;
                     if (tAttrName == "TestCategoryAttribute")
                     {
-                        testProperties ??= new Dictionary<string, List<string>>();
+                        testProperties ??= new Dictionary<string, List<string>?>();
                         if (!testProperties.TryGetValue("Category", out var categoryList))
                         {
-                            categoryList = new List<string>();
+                            categoryList = [];
                             testProperties["Category"] = categoryList;
                         }
 
-                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
+                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct) && tattrStruct.TestCategories != null)
                         {
-                            categoryList.AddRange(tattrStruct.TestCategories);
+                            categoryList?.AddRange(tattrStruct.TestCategories);
                         }
                     }
                 }
@@ -228,13 +271,13 @@ internal static class MsTestIntegration
         return testProperties;
     }
 
-    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>> traits = null)
+    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
         where TTestMethod : ITestMethod
     {
         isUnskippable = false;
         isForcedRun = false;
 
-        if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+        if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
         }
@@ -248,29 +291,59 @@ internal static class MsTestIntegration
         return itrShouldSkip && !isUnskippable;
     }
 
-    internal static TestModule GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo, string assemblyName = null)
+    internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties<TTestMethod>(TTestMethod testMethodInfo)
+        where TTestMethod : ITestMethod
+    {
+        var testManagementFeature = TestOptimization.Instance.TestManagementFeature;
+        if (testManagementFeature?.Enabled != true)
+        {
+            return new TestOptimizationClient.TestManagementResponseTestPropertiesAttributes();
+        }
+
+        var testModule = testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
+        var testClass = testMethodInfo.TestClassName ?? string.Empty;
+        var testMethod = testMethodInfo.MethodInfo?.Name ?? string.Empty;
+        return testManagementFeature.GetTestProperties(testModule, testClass, testMethod);
+    }
+
+    internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)
         where TAsmInfo : ITestAssemblyInfo
     {
-        if (testAssemblyInfo.Instance is not { } objTestAssemblyInfo)
+        if (testAssemblyInfo?.Instance is not { } objTestAssemblyInfo)
         {
             return default;
         }
 
-        CIVisibility.WaitForSkippableTaskToFinish();
+        TestOptimization.Instance.SkippableFeature?.WaitForSkippableTaskToFinish();
 
         return TestModuleByTestAssemblyInfos.GetValue(
             objTestAssemblyInfo,
             key =>
             {
+                // assemblyName??? MsTest lies about this, if we check the usage it always use the Assembly.Location or similar...
+                // eg:
+                // https://github.com/microsoft/testfx/blob/5c829c1633fdca211c4a96a52a200f61ec85bd5c/src/Adapter/MSTest.TestAdapter/Discovery/AssemblyEnumerator.cs#L379
+                // https://github.com/microsoft/testfx/blob/5c829c1633fdca211c4a96a52a200f61ec85bd5c/src/Adapter/MSTest.TestAdapter/Discovery/TypeEnumerator.cs#L145
                 if (assemblyName is not null)
                 {
-                    assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
-                }
-                else
-                {
-                    assemblyName = string.Empty;
+                    try
+                    {
+                        if (File.Exists(assemblyName))
+                        {
+                            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name;
+                        }
+                        else
+                        {
+                            assemblyName = new AssemblyName(assemblyName).Name;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.Log.Warning(ex, "Error getting assembly name from {AssemblyName}", assemblyName);
+                    }
                 }
 
+                assemblyName ??= string.Empty;
                 var testAssembly = testAssemblyInfo.Type.Assembly;
                 var frameworkVersion = testAssembly.GetName().Version?.ToString() ?? string.Empty;
                 foreach (var module in testAssembly.Modules)
@@ -291,10 +364,10 @@ internal static class MsTestIntegration
             });
     }
 
-    internal static TestSuite GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo testClassInfo)
+    internal static TestSuite? GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo? testClassInfo)
         where TClassInfo : ITestClassInfo
     {
-        if (testClassInfo.Instance is not { } objTestClassInfo)
+        if (testClassInfo?.Instance is not { } objTestClassInfo)
         {
             return default;
         }
@@ -303,7 +376,7 @@ internal static class MsTestIntegration
             objTestClassInfo,
             key =>
             {
-                var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
+                var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType?.Assembly.FullName);
                 if (module is null)
                 {
                     Common.Log.Error("There is no current module, a new suite cannot be created.");

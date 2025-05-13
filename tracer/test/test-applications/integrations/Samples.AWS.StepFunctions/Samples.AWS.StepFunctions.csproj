@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.7.403.32</ApiVersion>
+    <DefineConstants Condition="$(ApiVersion) &gt;= 3.7.0">$(DefineConstants);STEPFUNCTIONS_3_7_0</DefineConstants>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.StepFunctions" Version="$(ApiVersion)" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Net.Requests" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

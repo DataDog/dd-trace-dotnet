@@ -35,6 +35,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
     public async Task HandleProduceAndConsume(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, "1");
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -58,6 +59,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
     public async Task ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, "1");
 
         using var assertionScope = new AssertionScope();
         using var agent = EnvironmentHelper.GetMockAgent();

@@ -1,8 +1,15 @@
-cmake_minimum_required (VERSION 3.8..3.19)
+cmake_minimum_required (VERSION 3.13.4)
 cmake_policy(SET CMP0015 NEW)
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
+endif()
+
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
 endif()
 
 # ******************************************************
@@ -14,6 +21,13 @@ project("Datadog.APM.Native" VERSION 2.18.0)
 # ******************************************************
 # Environment detection
 # ******************************************************
+
+option(UNIVERSAL "Build as Universal binary" ON)
+message(STATUS "Building Native Loader and Wrapper as Universal binary: " ${UNIVERSAL})
+
+if (CMAKE_TOOLCHAIN_FILE)
+    message(STATUS "Using toolchain file ${CMAKE_TOOLCHAIN_FILE}")
+endif()
 
 SET(OSX_ARCH ${CMAKE_OSX_ARCHITECTURES})
 

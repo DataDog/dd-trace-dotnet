@@ -32,6 +32,20 @@
     "debugger": {
       "diagnostics": {
         "exception": null,
+        "probeId": "22df6346-f993-1027-bd1a-f25f3a06ca56",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "EMITTING"
+      }
+    },
+    "message": "Emitted probe 22df6346-f993-1027-bd1a-f25f3a06ca56.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": null,
         "probeId": "23827d5e-fc78-6898-4039-dec54409f8c4",
         "probeVersion": 0,
         "runtimeId": "scrubbed",
@@ -102,20 +116,6 @@
     "debugger": {
       "diagnostics": {
         "exception": null,
-        "probeId": "b16773f7-ded8-a522-43ce-b51d18f9205e",
-        "probeVersion": 0,
-        "runtimeId": "scrubbed",
-        "status": "EMITTING"
-      }
-    },
-    "message": "Emitted probe b16773f7-ded8-a522-43ce-b51d18f9205e.",
-    "service": "probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "exception": null,
         "probeId": "f23aa325-ec46-b774-3f32-a89b9879ce7d",
         "probeVersion": 0,
         "runtimeId": "scrubbed",
@@ -123,24 +123,6 @@
       }
     },
     "message": "Emitted probe f23aa325-ec46-b774-3f32-a89b9879ce7d.",
-    "service": "probes"
-  },
-  {
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "diagnostics": {
-        "exception": {
-          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
-          "stacktrace": null,
-          "type": "NO_TYPE"
-        },
-        "probeId": "22df6346-f993-1027-bd1a-f25f3a06ca56",
-        "probeVersion": 0,
-        "runtimeId": "scrubbed",
-        "status": "ERROR"
-      }
-    },
-    "message": "Error installing probe 22df6346-f993-1027-bd1a-f25f3a06ca56.",
     "service": "probes"
   },
   {
@@ -202,6 +184,24 @@
     "debugger": {
       "diagnostics": {
         "exception": {
+          "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
+          "stacktrace": null,
+          "type": "NO_TYPE"
+        },
+        "probeId": "b16773f7-ded8-a522-43ce-b51d18f9205e",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
+        "status": "ERROR"
+      }
+    },
+    "message": "Error installing probe b16773f7-ded8-a522-43ce-b51d18f9205e.",
+    "service": "probes"
+  },
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "exception": {
           "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
@@ -220,7 +220,7 @@
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
+          "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
           "stacktrace": null,
           "type": "NO_TYPE"
         },

@@ -33,8 +33,8 @@ public:
     inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
         assert(valueOffsets.size() == 1);
-        sample->AddValue(Duration, valueOffsets[0]);
+        sample->AddValue(Duration.count(), valueOffsets[0]);
     }
 
-    std::uint64_t Duration; // in nanoseconds
+    std::chrono::nanoseconds Duration;
 };

@@ -45,10 +45,31 @@ public abstract class AzureFunctionsTests : TestHelper
         SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
 
+    protected static IList<MockSpan> FilterOutSocketsHttpHandler(IImmutableList<MockSpan> spans)
+    {
+        IList<MockSpan> filteredSpans = new List<MockSpan>();
+        foreach (var span in spans)
+        {
+            if (span.Tags.TryGetValue("http-client-handler-type", out var val))
+            {
+                if (val != "System.Net.Http.SocketsHttpHandler")
+                {
+                    filteredSpans.Add(span);
+                }
+            }
+            else
+            {
+                filteredSpans.Add(span);
+            }
+        }
+
+        return filteredSpans;
+    }
+
     protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, string framework = null, int expectedExitCode = 0)
     {
         // run the azure function
-        var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework, usePublishFolder: false);
+        var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
         Output.WriteLine("Using binFolder: " + binFolder);
         var process = await ProfilerHelper.StartProcessWithProfiler(
             executable: "func",
@@ -84,7 +105,7 @@ public abstract class AzureFunctionsTests : TestHelper
                           .DisableRequireUniquePrefix();
     }
 
-    protected async Task AssertIsolatedSpans(IImmutableList<MockSpan> spans)
+    protected async Task AssertIsolatedSpans(IImmutableList<MockSpan> spans, string filename = null)
     {
         // AAS _potentially_ attaches extra tags here, depending on exactly where in the trace the tags are
         // so can't easily validate
@@ -99,8 +120,11 @@ public abstract class AzureFunctionsTests : TestHelper
             new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
             @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
 
+        settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
+
+        filename ??= $"{nameof(AzureFunctionsTests)}.Isolated";
         await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated")
+                          .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
 
@@ -168,6 +192,71 @@ public abstract class AzureFunctionsTests : TestHelper
     }
 #endif
 
+// v1 is only supported on .NET 6 - .NET 8 - they won't build on .NET 9
+#if NET6_0 || NET7_0 || NET8_0
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4SdkV1 : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4SdkV1(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.SdkV1", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 21;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+
+                await AssertIsolatedSpans(spans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
+            }
+        }
+    }
+
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4AspNetCoreV1 : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4AspNetCoreV1(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.AspNetCore.SdkV1", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 26;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                var filteredSpans = FilterOutSocketsHttpHandler(spans);
+
+                using var s = new AssertionScope();
+
+                await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
+
+                spans.Count.Should().Be(expectedSpanCount);
+            }
+        }
+    }
+#endif
+
 #if NET6_0_OR_GREATER
     [UsesVerify]
     [Collection(nameof(AzureFunctionsTestsCollection))]
@@ -194,6 +283,47 @@ public abstract class AzureFunctionsTests : TestHelper
                 using var s = new AssertionScope();
 
                 await AssertIsolatedSpans(spans);
+
+                spans.Count.Should().Be(expectedSpanCount);
+            }
+        }
+    }
+
+    [UsesVerify]
+    [Collection(nameof(AzureFunctionsTestsCollection))]
+    public class IsolatedRuntimeV4AspNetCore : AzureFunctionsTests
+    {
+        public IsolatedRuntimeV4AspNetCore(ITestOutputHelper output)
+            : base("AzureFunctions.V4Isolated.AspNetCore", output)
+        {
+            SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "AzureFunctions")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTraces()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
+            {
+                const int expectedSpanCount = 26;
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                // There are _additional_ spans created for these compared to the non-AspNetCore version
+                // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
+                // the same time as some of the `azure-functions.invoke` spans
+                // because of this they cause a lot of flake in the snapshots where they shift places
+                // opting to just scrub them from the snapshots - we also don't think that the spans provide much
+                // value so they may be removed from being traced.
+                var filteredSpans = FilterOutSocketsHttpHandler(spans);
+
+                using var s = new AssertionScope();
+
+                await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
+
+                spans.Count.Should().Be(expectedSpanCount);
             }
         }
     }

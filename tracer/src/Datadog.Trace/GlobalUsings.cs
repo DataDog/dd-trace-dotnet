@@ -10,3 +10,5 @@ global using ThrowHelper = Datadog.Trace.Util.ThrowHelper;
 #if NETFRAMEWORK || NETSTANDARD2_0
 global using Datadog.Trace.VendoredMicrosoftCode.System;
 #endif
+
+global using Datadog.Trace.ExtensionMethods;

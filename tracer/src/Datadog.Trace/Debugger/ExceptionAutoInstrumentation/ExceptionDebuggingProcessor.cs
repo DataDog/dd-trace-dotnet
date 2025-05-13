@@ -19,6 +19,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebuggingProcessor));
         private readonly object _lock = new();
         private readonly int _maxFramesToCapture;
+        private readonly bool _isMisleadingMethod;
         private ExceptionProbeProcessor[] _processors;
 
         internal ExceptionDebuggingProcessor(string probeId, MethodUniqueIdentifier method)
@@ -27,6 +28,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             ProbeId = probeId;
             Method = method;
             _maxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
+            _isMisleadingMethod = method.IsMisleadMethod();
         }
 
         public string ProbeId { get; }
@@ -68,7 +70,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     case MethodState.EntryStart:
                     case MethodState.EntryAsync:
                         shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
-                        snapshotCreator.EnterHash = shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias;
+                        var currentFrame = shadowStack.CurrentStackFrameNode;
+                        snapshotCreator.EnterHash = Fnv1aHash.Combine(info.Method.MetadataToken, shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias);
+
+                        if (currentFrame?.Method == info.Method && _isMisleadingMethod)
+                        {
+                            // Methods marked as `misleading` are methods we tolerate being in the shadow stack multiple times.
+                            // We flatten those methods due to `ExceptionDispatchInfo.Capture(X).Throw()` API causing frames to appear twice
+                            // while in reality they were involved only once.
+                            snapshotCreator.TrackedStackFrameNode = shadowStack.EnterFake(info.Method);
+                            return true;
+                        }
 
                         var shouldProcess = false;
                         foreach (var processor in snapshotCreator.Processors)
@@ -113,7 +125,15 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                         var exception = info.Value as Exception;
                         snapshotCreator.TrackedStackFrameNode.LeavingException = exception;
-                        snapshotCreator.LeaveHash = shadowStack.CurrentStackFrameNode?.LeaveSequenceHash ?? Fnv1aHash.FnvOffsetBias;
+                        snapshotCreator.LeaveHash = shadowStack.CurrentStackFrameNode!.LeaveSequenceHash;
+
+                        if (snapshotCreator.TrackedStackFrameNode is FakeTrackedStackFrameNode)
+                        {
+                            shadowStack.Leave(snapshotCreator.TrackedStackFrameNode, exception);
+                            snapshotCreator.TrackedStackFrameNode.CapturingStrategy = SnapshotCapturingStrategy.FullSnapshot;
+                            snapshotCreator.TrackedStackFrameNode.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
+                            return true;
+                        }
 
                         var leavingExceptionType = info.Value.GetType();
 

@@ -49,9 +49,11 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/api/trigger,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -141,9 +143,11 @@
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/api/simple,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -166,9 +170,11 @@
       http.method: GET,
       http.status_code: 500,
       http.url: http://localhost:00000/api/exception,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -191,9 +197,11 @@
       http.method: GET,
       http.status_code: 500,
       http.url: http://localhost:00000/api/error,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -218,9 +226,11 @@
       http.method: GET,
       http.status_code: 400,
       http.url: http://localhost:00000/api/badrequest,
+      language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0

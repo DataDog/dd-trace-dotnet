@@ -19,6 +19,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -68,7 +69,6 @@ partial class Build
     readonly IEnumerable<string> GacProjects = new []
     {
         Projects.DatadogTrace,
-        Projects.DatadogTraceAspNet
     };
 
     Target GacAdd => _ => _
@@ -225,6 +225,7 @@ partial class Build
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
            var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
                                          {
@@ -246,7 +247,7 @@ partial class Build
                            .Select(x => x.ToString())
                            .ToList();
 
-           var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+           var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
            await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
@@ -298,9 +299,9 @@ partial class Build
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            if (NewVersion == Version)
+            if (NewVersion == Version && IsPrerelease == NewIsPrerelease)
             {
-                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version}");
+                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
             }
 
             // Samples need to use the latest version (i.e. the _current_ build version, before updating)
@@ -311,9 +312,32 @@ partial class Build
 
     Target AnalyzePipelineCriticalPath => _ => _
        .Description("Perform critical path analysis on the consolidated pipeline stages")
+       .Requires(() => TargetBranch)
        .Executes(async () =>
         {
-            await CriticalPathAnalysis.CriticalPathAnalyzer.AnalyzeCriticalPath(RootDirectory);
+            // Visit https://app.datadoghq.com/dashboard/49i-n6n-9jq and download the results you require as a csv file
+            // Save the results in build_data/stages.csv, and then run this task, specifying 'master' or 'branch'.
+            // e.g.
+            //
+            // ./tracer/build.ps1 AnalyzePipelineCriticalPath --TargetBranch master
+            // ./tracer/build.ps1 AnalyzePipelineCriticalPath --TargetBranch branch
+            //
+            // This task
+            // - Loads the list of pipelines and their dependencies
+            // - Sorts the list by "dependency" order, i.e. each stage can only depend on stages earlier in the list
+            // - Calculates the earliest and latest times that a dependency can run without making the project longer
+            // - Visualizes the results as a mermaid diagram and writes to a markdown doc (trying to write to the console gives errors due to wrapping)
+            //
+            // The markdown doc can be found at `build_data/pipeline_critical_path.md`
+            // Copy the contents of the diagram and paste into the text box at https://mermaid.live/ to visualize it.
+            //
+            // The different colours indicate the following:
+            // - Stages on the critical path, which are required for merging PRs (Red box)
+            // - Stages on the critical path, which are not required for merging PRs (Grey box with red outline)
+            // - Stages not on the critical path, which are required for merging PRs (Blue box)
+            // - Stages not on the critical path, which are not required for merging PRs (Grey box)
+            var isMasterRun = TargetBranch == "master";
+            await CriticalPathAnalysis.CriticalPathAnalyzer.AnalyzeCriticalPath(RootDirectory, isMasterRun);
         });
 
     Target UpdateSnapshots => _ => _
@@ -338,39 +362,7 @@ partial class Build
               var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
 
-              foreach (var t in diff)
-              {
-                  if (t.operation != Operation.EQUAL)
-                  {
-                      var str = DiffToString(t);
-                      if (str.Contains(value: '\n'))
-                      {
-                          // if the diff is multiline, start with a newline so that all changes are aligned
-                          // otherwise it's easy to miss the first line of the diff
-                          str = "\n" + str;
-                      }
-
-                      Logger.Information(str);
-                  }
-              }
-          }
-
-          string DiffToString(Diff diff)
-          {
-              if (diff.operation == Operation.EQUAL)
-              {
-                  return string.Empty;
-              }
-
-              var symbol = diff.operation switch
-              {
-                  Operation.DELETE => '-',
-                  Operation.INSERT => '+',
-                  _ => throw new Exception("Unknown value of the Option enum.")
-              };
-              // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
-              var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
-              return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
+              PrintDiff(diff);
           }
       });
 
@@ -409,16 +401,23 @@ partial class Build
 
                 listTasks.Add(Task.Run(async () =>
                 {
-                    await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+                    try
+                    {
+                        await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                    CopyDirectoryRecursively(
-                        source: extractLocation,
-                        target: snapshotsDirectory,
-                        DirectoryExistsPolicy.Merge,
-                        FileExistsPolicy.Skip,
-                        excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                        CopyDirectoryRecursively(
+                            source: extractLocation,
+                            target: snapshotsDirectory,
+                            DirectoryExistsPolicy.Merge,
+                            FileExistsPolicy.Skip,
+                            excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                    DeleteDirectory(extractLocation);
+                        DeleteDirectory(extractLocation);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Warning(e, $"Ignoring issue downloading: '{artifact}'");
+                    }
                 }));
             }
 
@@ -426,6 +425,75 @@ partial class Build
 
             ReplaceReceivedFilesInSnapshots();
       });
+
+    Target RegenerateSolutions
+        => _ => _
+               .Description("Regenerates the 'build' solutions based on the 'master' solution")
+               .Executes(() =>
+                {
+                    // Create a copy of the "full solution"
+                    var sln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
+                        solutions: new[] { Solution },
+                        randomizeProjectIds: false);
+
+                    // Remove everything except the standalone test-application projects
+                    sln.AllProjects
+                       .Where(x => !IsTestApplication(x))
+                       .ForEach(x =>
+                        {
+                            Logger.Information("Removing project '{Name}'", x.Name);
+                            sln.RemoveProject(x);
+                        });
+                    
+                    sln.Save();
+
+                    bool IsTestApplication(Project x)
+                    {
+                        // We explicitly don't build some of these because
+                        // 1. They're a pain to build
+                        // 2. They aren't actually run in the CI (something we should address in the future)
+                        if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject" or "_build")
+                        {
+                            return false;
+                        }
+
+                        // Include test-applications, but exclude the following for now:
+                        // - test-applications/aspnet
+                        // - test-applications/security/aspnet
+                        // These currently aren't published to separate folders, are minimal, can't be
+                        // built on macos, and don't take long to build, so not a big value in building
+                        // them separately currently
+                        var solutionFolder = x.SolutionFolder;
+                        while (solutionFolder is not null)
+                        {
+                            if(solutionFolder.Name == "aspnet"
+                                && solutionFolder.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if(solutionFolder.Name == "aspnet"
+                                && solutionFolder.SolutionFolder?.Name == "security"
+                                && solutionFolder.SolutionFolder?.SolutionFolder?.Name == "test-applications")
+                            {
+                                return false;
+                            }
+
+                            if (solutionFolder.Name == "test-applications")
+                            {
+                                // Exclude projects which directly reference Datadog.Trace - these need to be
+                                // built with the "main" solution as they're inherently not standalone
+                                return !x.ReferencesDatadogTrace();
+                            }
+
+                            solutionFolder = solutionFolder.SolutionFolder;
+                        }
+
+                        return false;
+                    }
+                });
+
 
     private void ReplaceReceivedFilesInSnapshots()
     {
@@ -453,7 +521,7 @@ partial class Build
         }
     }
 
-    private async Task<bool> IsDebugRun()
+    private bool IsDebugRun()
     {
         var forceDebugRun = Environment.GetEnvironmentVariable("ForceDebugRun");
         if (!string.IsNullOrEmpty(forceDebugRun)
@@ -462,36 +530,14 @@ partial class Build
             return true;
         }
 
-        var buildId = Environment.GetEnvironmentVariable("BUILD_BUILDID");
-        if (string.IsNullOrEmpty(buildId))
+        var scheduleName = Environment.GetEnvironmentVariable("BUILD_CRONSCHEDULE_DISPLAYNAME");
+        if (string.IsNullOrEmpty(scheduleName))
         {
             // not in CI
             return false;
         }
-
-        try
-        {
-            var azDoApi = $"https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/{buildId}";
-            using var client = new HttpClient();
-            using var stream = await client.GetStreamAsync(azDoApi);
-            using var json = await JsonDocument.ParseAsync(stream);
-            var triggerInfo = json.RootElement.GetProperty("triggerInfo");
-            if (triggerInfo.TryGetProperty("scheduleName", out var scheduleNameElement))
-            {
-                var scheduleName = scheduleNameElement.ToString();
-                return scheduleName == "Daily Debug Run";
-            }
-            else
-            {
-                // scheduleName not found - this will happen on PRs etc
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "Error calling Azdo API to check for debug run");
-            return false;
-        }
+        
+        return scheduleName == "Daily Debug Run";
     } 
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
@@ -508,7 +554,61 @@ partial class Build
 
         return MSBuildTargetPlatform.x64;
     }
+    
+    private static string GetDefaultRuntimeIdentifier(bool isAlpine)
+    {
+        // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
+        return (Platform, (string)GetDefaultTargetPlatform()) switch
+        {
+            (PlatformFamily.Windows, "x86") => "win-x86",
+            (PlatformFamily.Windows, "x64") => "win-x64",
+
+            (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
+            (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
+            
+            (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
+            _ => null
+        };
+    }
 
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
     private static MSBuildTargetPlatform ARM64ECTargetPlatform = (MSBuildTargetPlatform)"ARM64EC";
+
+    private static void PrintDiff(List<Diff> diff, bool printEqual = false)
+    {
+        foreach (var t in diff)
+        {
+            if (printEqual || t.operation != Operation.EQUAL)
+            {
+                var str = DiffToString(t);
+                if (str.Contains(value: '\n'))
+                {
+                    // if the diff is multiline, start with a newline so that all changes are aligned
+                    // otherwise it's easy to miss the first line of the diff
+                    str = "\n" + str;
+                }
+
+                Logger.Information(str);
+            }
+        }
+
+        string DiffToString(Diff diff)
+        {
+            if (diff.operation == Operation.EQUAL)
+            {
+                return string.Empty;
+            }
+
+            var symbol = diff.operation switch
+            {
+                Operation.DELETE => '-',
+                Operation.INSERT => '+',
+                _ => throw new Exception("Unknown value of the Option enum.")
+            };
+            // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
+            var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
+            return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
+        }
+
+    }
 }

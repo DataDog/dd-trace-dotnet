@@ -251,18 +251,30 @@ TEST_F(CLRHelperTest, FindNestedTypeDefsByName) {
   }
 }
 
-TEST_F(CLRHelperTest, DoesNotFindDoubleNestedTypeDefsByName) {
+TEST_F(CLRHelperTest, FindDoubleNestedTypeDefsByName) {
   std::vector<shared::WSTRING> expected_types = {
-      WStr("Samples.ExampleLibrary.NotARealClass"),
       WStr("Samples.ExampleLibrary.FakeClient.Biscuit+Cookie+Raisin")};
 
   for (auto& def : expected_types) {
     mdTypeDef typeDef = mdTypeDefNil;
     auto found = FindTypeDefByName(def, WStr("Samples.ExampleLibrary"),
                                    metadata_import_, typeDef);
-    EXPECT_FALSE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
-    EXPECT_EQ(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
+    EXPECT_TRUE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
+    EXPECT_NE(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
   }
+}
+
+TEST_F(CLRHelperTest, DoesNotFindDoubleNestedTypeDefsByName)
+{
+    std::vector<shared::WSTRING> expected_types = {WStr("Samples.ExampleLibrary.NotARealClass")};
+
+    for (auto& def : expected_types)
+    {
+        mdTypeDef typeDef = mdTypeDefNil;
+        auto found = FindTypeDefByName(def, WStr("Samples.ExampleLibrary"), metadata_import_, typeDef);
+        EXPECT_FALSE(found) << "Failed type is : " << shared::ToString(def) << std::endl;
+        EXPECT_EQ(typeDef, mdTypeDefNil) << "Failed type is : " << shared::ToString(def) << std::endl;
+    }
 }
 
 TEST_F(CLRHelperTest, TypeSignatureGetTypeTokName) {

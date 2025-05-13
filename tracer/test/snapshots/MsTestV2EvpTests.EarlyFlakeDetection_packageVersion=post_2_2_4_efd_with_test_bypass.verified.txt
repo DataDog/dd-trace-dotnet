@@ -57,12 +57,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -114,6 +122,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -121,12 +130,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -178,6 +195,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -185,12 +203,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -242,6 +268,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -249,12 +276,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -306,6 +341,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -313,12 +349,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -370,6 +414,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -377,12 +422,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -434,6 +487,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -441,12 +495,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -498,6 +560,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -505,12 +568,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -562,6 +633,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -569,12 +641,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -626,6 +706,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomMultipleResultsTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -633,12 +714,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -696,12 +785,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -759,12 +856,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -816,6 +921,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -823,12 +929,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -880,6 +994,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -887,12 +1002,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -944,6 +1067,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -951,12 +1075,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1008,6 +1140,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1015,12 +1148,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1072,6 +1213,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1079,12 +1221,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1136,6 +1286,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1143,12 +1294,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1200,6 +1359,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1207,12 +1367,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1264,6 +1432,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1271,12 +1440,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1328,6 +1505,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomRenameTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1335,12 +1513,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1398,12 +1584,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1455,6 +1649,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1462,12 +1657,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1519,6 +1722,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1526,12 +1730,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1583,6 +1795,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1590,12 +1803,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1647,6 +1868,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1654,12 +1876,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1711,6 +1941,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1718,12 +1949,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1775,6 +2014,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1782,12 +2022,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1839,6 +2087,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1846,12 +2095,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1903,6 +2160,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1910,12 +2168,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -1967,6 +2233,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: CustomTestMethodAttributeTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -1974,12 +2241,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2037,12 +2312,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2105,12 +2388,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2167,6 +2458,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2174,12 +2466,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2236,6 +2536,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2243,12 +2544,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2305,6 +2614,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2312,12 +2622,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2374,6 +2692,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2381,12 +2700,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2443,6 +2770,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2450,12 +2778,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2512,6 +2848,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2519,12 +2856,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2581,6 +2926,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2588,12 +2934,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2650,6 +3004,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2657,12 +3012,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2719,6 +3082,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"0","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2726,12 +3090,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2794,12 +3166,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2856,6 +3236,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2863,12 +3244,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2925,6 +3314,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -2932,12 +3322,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -2994,6 +3392,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3001,12 +3400,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3063,6 +3470,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3070,12 +3478,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3132,6 +3548,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3139,12 +3556,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3201,6 +3626,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3208,12 +3634,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3270,6 +3704,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3277,12 +3712,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3339,6 +3782,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3346,12 +3790,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3408,6 +3860,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"0","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3415,12 +3868,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3483,12 +3944,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3545,6 +4014,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3552,12 +4022,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3614,6 +4092,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3621,12 +4100,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3683,6 +4170,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3690,12 +4178,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3752,6 +4248,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3759,12 +4256,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3821,6 +4326,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3828,12 +4334,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3890,6 +4404,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3897,12 +4412,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -3959,6 +4482,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -3966,12 +4490,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4028,6 +4560,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4035,12 +4568,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4097,6 +4638,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"0","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4104,12 +4646,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4171,12 +4721,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4232,6 +4790,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4239,12 +4798,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4300,6 +4867,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4307,12 +4875,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4368,6 +4944,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4375,12 +4952,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4436,6 +5021,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4443,12 +5029,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4504,6 +5098,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4511,12 +5106,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4572,6 +5175,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4579,12 +5183,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4640,6 +5252,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4647,12 +5260,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4708,6 +5329,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4715,12 +5337,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4776,6 +5406,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimpleErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4783,12 +5414,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4847,12 +5486,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4905,6 +5552,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4912,12 +5560,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -4970,6 +5626,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -4977,12 +5634,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5035,6 +5700,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5042,12 +5708,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5100,6 +5774,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5107,12 +5782,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5165,6 +5848,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5172,12 +5856,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5230,6 +5922,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5237,12 +5930,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5295,6 +5996,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5302,12 +6004,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5360,6 +6070,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5367,12 +6078,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5425,6 +6144,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"1","yValue":"1","expectedResult":"2"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5432,12 +6152,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5496,12 +6224,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5554,6 +6290,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5561,12 +6298,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5619,6 +6364,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5626,12 +6372,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5684,6 +6438,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5691,12 +6446,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5749,6 +6512,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5756,12 +6520,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5814,6 +6586,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5821,12 +6594,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5879,6 +6660,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5886,12 +6668,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -5944,6 +6734,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -5951,12 +6742,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6009,6 +6808,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6016,12 +6816,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6074,6 +6882,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"2","yValue":"2","expectedResult":"4"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6081,12 +6890,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6145,12 +6962,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6203,6 +7028,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6210,12 +7036,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6268,6 +7102,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6275,12 +7110,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6333,6 +7176,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6340,12 +7184,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6398,6 +7250,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6405,12 +7258,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6463,6 +7324,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6470,12 +7332,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6528,6 +7398,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6535,12 +7406,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6593,6 +7472,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6600,12 +7480,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6658,6 +7546,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6665,12 +7554,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6723,6 +7620,7 @@
       test.module: Samples.MSTestTests,
       test.name: SimpleParameterizedTest,
       test.parameters: {"metadata":{},"arguments":{"xValue":"3","yValue":"3","expectedResult":"6"}},
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6730,12 +7628,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6793,12 +7699,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6850,6 +7764,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6857,12 +7772,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6914,6 +7837,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6921,12 +7845,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -6978,6 +7910,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -6985,12 +7918,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7042,6 +7983,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7049,12 +7991,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7106,6 +8056,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7113,12 +8064,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7170,6 +8129,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7177,12 +8137,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7234,6 +8202,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7241,12 +8210,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7298,6 +8275,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7305,12 +8283,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7362,6 +8348,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: SimplePassTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7369,12 +8356,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7434,12 +8429,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7500,12 +8503,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7566,12 +8577,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7632,12 +8651,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7697,12 +8724,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7765,12 +8800,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7826,6 +8869,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7834,12 +8878,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7895,6 +8947,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7903,12 +8956,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -7964,6 +9025,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -7972,12 +9034,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8033,6 +9103,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8041,12 +9112,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8102,6 +9181,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8110,12 +9190,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8171,6 +9259,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8179,12 +9268,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8240,6 +9337,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8248,12 +9346,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8309,6 +9415,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8317,12 +9424,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8378,6 +9493,7 @@
       test.itr.unskippable: false,
       test.module: Samples.MSTestTests,
       test.name: TraitErrorTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: fail,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8386,12 +9502,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8449,12 +9573,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8515,12 +9647,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8578,12 +9718,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8635,6 +9783,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8642,12 +9791,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8699,6 +9856,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8706,12 +9864,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8763,6 +9929,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8770,12 +9937,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8827,6 +10002,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8834,12 +10010,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8891,6 +10075,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8898,12 +10083,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -8955,6 +10148,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -8962,12 +10156,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -9019,6 +10221,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -9026,12 +10229,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -9083,6 +10294,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -9090,12 +10302,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   },
@@ -9147,6 +10367,7 @@
       test.itr.unskippable: true,
       test.module: Samples.MSTestTests,
       test.name: UnskippableTest,
+      test.retry_reason: efd,
       test.source.file: tracer/test/test-applications/integrations/Samples.MSTestTests/TestSuite.cs,
       test.status: pass,
       test.suite: Samples.MSTestTests.TestSuite,
@@ -9154,12 +10375,20 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.library_capabilities.auto_test_retries: 1,
+      _dd.library_capabilities.early_flake_detection: 1,
+      _dd.library_capabilities.test_impact_analysis: 1,
+      _dd.library_capabilities.test_management.attempt_to_fix: 2,
+      _dd.library_capabilities.test_management.disable: 1,
+      _dd.library_capabilities.test_management.quarantine: 1,
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _sampling_priority_v1: 1.0
     }
   }

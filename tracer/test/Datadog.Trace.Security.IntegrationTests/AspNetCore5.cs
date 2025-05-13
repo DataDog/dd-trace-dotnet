@@ -92,6 +92,20 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base("AspNetCore5", fixture, outputHelper, "/shutdown", ruleFile: DefaultRuleFile, testName: "AspNetCore5.SecurityEnabled")
         {
         }
+
+        [Trait("RunOnWindows", "True")]
+        [SkippableFact]
+        public async Task TestAppsecMetaStruct()
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var url = "/health?q=fun";
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
+            var spans = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty);
+            await VerifySpans(spans, settings, testName: Prefix + "AspNetCore5.SecurityEnabled.MetaStruct", forceMetaStruct: true);
+        }
     }
 
     [Collection("IisTests")]

@@ -35,7 +35,7 @@ public class CoverageGetCoverageResultIntegration
 {
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
-        if (!DotnetCommon.IsDataCollectorDomain)
+        if (!DotnetCommon.IsDataCollectorDomain && !DotnetCommon.IsMsBuildTask)
         {
             return new CallTargetReturn<TReturn>(returnValue);
         }
@@ -64,10 +64,11 @@ public class CoverageGetCoverageResultIntegration
             var percentage = coverageDetails.Percent;
             DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
 
-            // Extract session variables (from out of process sessions)
-            if (SpanContextPropagator.Instance.Extract(
-                    EnvironmentHelpers.GetEnvironmentVariables(),
-                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
+            var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                EnvironmentHelpers.GetEnvironmentVariables(),
+                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (context.SpanContext is { } sessionContext)
             {
                 try
                 {

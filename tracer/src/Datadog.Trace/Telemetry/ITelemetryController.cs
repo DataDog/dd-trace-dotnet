@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
@@ -33,12 +35,17 @@ namespace Datadog.Trace.Telemetry
         /// Called when a tracer is initialized to record the tracer's settings
         /// Only the first tracer registered is recorded
         /// </summary>
-        void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName);
+        void RecordTracerSettings(TracerSettings settings, string defaultServiceName);
 
         /// <summary>
         /// Called to record profiler-related telemetry
         /// </summary>
         public void RecordProfilerSettings(Profiler profiler);
+
+        /// <summary>
+        /// Called to record test-optimization-related telemetry
+        /// </summary>
+        public void RecordTestOptimizationSettings(TestOptimizationSettings settings);
 
         /// <summary>
         /// Dispose resources for sending telemetry
@@ -64,5 +71,10 @@ namespace Datadog.Trace.Telemetry
         /// Updates Git metadata for telemetry
         /// </summary>
         void RecordGitMetadata(GitMetadata gitMetadata);
+
+        /// <summary>
+        /// Called to record endpoints of the current application for API Security,
+        /// </summary>
+        void RecordAppEndpoints(ICollection<AppEndpointData> appEndpoints);
     }
 }

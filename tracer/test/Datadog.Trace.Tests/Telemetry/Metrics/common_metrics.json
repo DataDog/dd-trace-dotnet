@@ -37,6 +37,38 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "otel.env.hiding": {
+      "tags": [
+        "config_datadog",
+        "config_opentelemetry"
+      ],
+      "metric_type": "count",
+      "data_type": "configuration keys",
+      "description": "The number of Opentelemetry configuration keys, configured and supported, but overridden by its counterpart Datadog Configuration key, tagged by Datadog configuration key and Opentelemetry configuration key",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "otel.env.invalid": {
+      "tags": [
+        "config_datadog",
+        "config_opentelemetry"
+      ],
+      "metric_type": "count",
+      "data_type": "configuration keys",
+      "description": "The number of configured supported Opentelemetry configuration keys that we fail to map its value to the Datadog form, tagged by Datadog configuration key and Opentelemetry configuration key",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "otel.env.unsupported": {
+      "tags": [
+        "config_opentelemetry"
+      ],
+      "metric_type": "count",
+      "data_type": "configuration keys",
+      "description": "The number of unsupported (not having a mapping with any Datadog configuration key) configured Opentelemetry Configuration keys, tagged by Opentelemetry configuration key",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "spans_created": {
       "tags": [
         "integration_name"
@@ -248,7 +280,7 @@
       ],
       "metric_type": "count",
       "data_type": "instances",
-      "description": "The number of times distributed context is injected into an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
+      "description": "The number of times distributed context is injected into an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`, `header_style:baggage`)",
       "send_to_user": false,
       "user_tags": []
     },
@@ -258,7 +290,17 @@
       ],
       "metric_type": "count",
       "data_type": "instances",
-      "description": "The number of times distributed context is successfully extracted from an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
+      "description": "The number of times distributed context is successfully extracted from an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`, `header_style:baggage`)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "context_header.truncated": {
+      "tags": [
+        "truncation_reason"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:string_too_long`, `truncation_reason:list_or_map_too_large`)",
       "send_to_user": false,
       "user_tags": []
     },
@@ -314,28 +356,100 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "inject.success": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "platform",
+        "injecter_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful injections of APM libraries",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "inject.skip": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version",
+        "platform",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of skipped injections of APM libraries",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "inject.error": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version",
+        "platform",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of erroneous injections of APM libraries",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "host_lib_injection.success": {
       "tags": [
         "language",
         "version",
+        "injector_version",
         "injecter_version"
       ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful host lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "host_lib_injection.failure": {
       "tags": [
         "language",
         "version",
+        "injector_version",
         "injecter_version"
       ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of failed host lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "k8s_lib_injection.success": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful k8s lib injection",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "k8s_lib_injection.failure": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of failed host k8s injection",
+      "send_to_user": false,
       "user_tags": []
     },
     "docker_lib_injection.success": {
@@ -346,7 +460,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful docker lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "docker_lib_injection.failure": {
@@ -357,7 +471,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of failed docker lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.abort": {
@@ -369,7 +483,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to checks not passing",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.abort.runtime": {
@@ -380,7 +494,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to runtime version not supported",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.abort.integration": {
@@ -393,7 +507,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to integration version not supported",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.error": {
@@ -407,7 +521,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to an error",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.complete": {
@@ -419,7 +533,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful library entrypoint injections",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "entry.process.running.1s": {
@@ -430,7 +544,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections that are still running after 1s",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "entry.process.running.5s": {
@@ -441,7 +555,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections that are still running after 5s",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "entry.process.running.10s": {
@@ -452,7 +566,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections that are still running after 10s",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "exporter_fallback": {
@@ -522,7 +636,8 @@
     "waf.init": {
       "tags": [
         "waf_version",
-        "event_rules_version"
+        "event_rules_version",
+        "success"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -533,7 +648,8 @@
     "waf.updates": {
       "tags": [
         "waf_version",
-        "event_rules_version"
+        "event_rules_version",
+        "success"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -614,7 +730,9 @@
     "rasp.rule.eval": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "event_rules_version",
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "requests",
@@ -625,7 +743,10 @@
     "rasp.rule.match": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "event_rules_version",
+        "rule_type",
+        "rule_variant",
+        "block"
       ],
       "metric_type": "count",
       "data_type": "matches",
@@ -636,7 +757,9 @@
     "rasp.timeout": {
       "tags": [
         "waf_version",
-        "rule_type"
+        "event_rules_version",
+        "rule_type",
+        "rule_variant"
       ],
       "metric_type": "count",
       "data_type": "timeouts",
@@ -646,11 +769,34 @@
     },
     "instrum.user_auth.missing_user_id": {
       "tags": [
-        "framework"
+        "framework",
+        "event_type"
       ],
       "metric_type": "count",
       "data_type": "events",
-      "description": "Number of user events skipped due to not having a user id",
+      "description": "The library was unable to obtain a user ID as part of the login success or failure event. This should only be sent if the user login was also unavailable.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "instrum.user_auth.missing_user_login": {
+      "tags": [
+        "framework",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The library was unable to obtain a user login as part of the login success, login failure or signup event.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "sdk.event": {
+      "tags": [
+        "event_type",
+        "sdk_version"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "This metric count should be sent whenever either the new or old SDK methods are invoked",
       "send_to_user": false,
       "user_tags": []
     }
@@ -735,6 +881,24 @@
       "description": "Number of times that _dd.iast.json tag exceeds the maximum span tag size",
       "send_to_user": false,
       "user_tags": []
+    },
+    "suppressed.vulnerabilities": {
+        "tags": [
+            "vulnerability_type"
+        ],
+        "metric_type": "count",
+        "data_type": "event",
+        "description": "Number of vulnerabilities suppressed",
+        "send_to_user": false,
+        "user_tags":[]
+    },
+    "metastruct.tag.size.exceeded": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "operations",
+      "description": "Number of times that iast data in meta struct tag exceeds the maximum span tag size",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "sidecar": {
@@ -767,7 +931,8 @@
     "test_session": {
       "tags": [
         "provider",
-        "auto_injected"
+        "auto_injected",
+        "agentless_log_submission_enabled"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -799,7 +964,12 @@
         "is_new",
         "is_rum",
         "browser_driver",
-        "early_flake_detection_abort_reason"
+        "early_flake_detection_abort_reason",
+        "retry_reason",
+        "is_quarantined",
+        "is_disabled",
+        "is_attempt_to_fix",
+        "has_failed_all_retries"
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1058,7 +1228,10 @@
       "tags": [
         "coverage_enabled",
         "itrskip_enabled",
-        "early_flake_detection_enabled"
+        "flaky_test_retries_enabled",
+        "early_flake_detection_enabled",
+        "known_tests_enabled",
+        "test_management_enabled"
       ],
       "metric_type": "count",
       "data_type": "response",
@@ -1175,7 +1348,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request": {
+    "known_tests.request": {
       "tags": [
         "rq_compressed"
       ],
@@ -1185,7 +1358,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request_ms": {
+    "known_tests.request_ms": {
       "tags": [],
       "metric_type": "distribution",
       "data_type": "milliseconds",
@@ -1193,7 +1366,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.request_errors": {
+    "known_tests.request_errors": {
       "tags": [
         "error_type",
         "status_code"
@@ -1204,7 +1377,7 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.response_bytes": {
+    "known_tests.response_bytes": {
       "tags": [
         "rs_compressed"
       ],
@@ -1214,11 +1387,113 @@
       "send_to_user": false,
       "user_tags": []
     },
-    "early_flake_detection.response_tests": {
+    "known_tests.response_tests": {
       "tags": [],
       "metric_type": "distribution",
       "data_type": "tests",
       "description": "The number of known tests returned by the endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.request": {
+      "tags": [
+        "rq_compressed"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the test management tests endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the test management tests endpoint request in ms",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.request_errors": {
+      "tags": [
+        "error_type",
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of test management tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.response_bytes": {
+      "tags": [
+        "rs_compressed"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "test_management_tests.response_tests": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "tests",
+      "description": "The number of test management tests returned by the endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.request": {
+      "tags": [
+        "rq_compressed"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the modified files endpoint, regardless of success. Tagged with a boolean flag set to true if request body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the modified files endpoint request in ms",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.request_errors": {
+      "tags": [
+        "error_type",
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of known modified files requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`) and status code (400,401,403,404,408,429)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.response_bytes": {
+      "tags": [
+        "rs_compressed"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The number of bytes received by the endpoint. Tagged with a boolean flag set to true if response body is compressed",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.response_files": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "files",
+      "description": "The number of modified files received by the endpoint",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "impacted_tests_detection.is_modified": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "tests",
+      "description": "The number of tests detected as modified",
       "send_to_user": false,
       "user_tags": []
     }

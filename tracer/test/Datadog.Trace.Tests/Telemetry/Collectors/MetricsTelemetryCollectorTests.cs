@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -82,10 +83,18 @@ public class MetricsTelemetryCollectorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion)
+    [InlineData(null, null)]
+    [InlineData("1.2.4", null)]
+    [InlineData("1.2.3", "10.2")]
+    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion, string rulesVersion)
     {
+        static void IncrementOpenTelemetryConfigMetrics(MetricsTelemetryCollector collector, string openTelemetryKey)
+        {
+            OpenTelemetryHelpers.GetConfigurationMetricTags(openTelemetryKey, out var openTelemetryConfig, out var datadogConfig);
+            collector.RecordCountOpenTelemetryConfigHiddenByDatadogConfig(datadogConfig, openTelemetryConfig);
+            collector.RecordCountOpenTelemetryConfigInvalid(datadogConfig, openTelemetryConfig);
+        }
+
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -95,20 +104,31 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
-        collector.RecordCountWafInit(4);
+        collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
-        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleType.Lfi, 3);
+        collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleTypeMatch.LfiSuccess, 3);
         collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 52);
 
+        // Record OpenTelemetry => Datadog configuration error metrics
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_SERVICE_NAME");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_LOG_LEVEL");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_PROPAGATORS");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_TRACES_SAMPLER");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_TRACES_SAMPLER_ARG");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_TRACES_EXPORTER");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_METRICS_EXPORTER");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_RESOURCE_ATTRIBUTES");
+        IncrementOpenTelemetryConfigMetrics(collector, "OTEL_SDK_DISABLED");
+
         // These aren't applicable in non-ci visibility
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test, MetricTags.CIVisibilityTestingEventTypeRetryReason.None, MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None, MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         collector.AggregateMetrics();
 
@@ -127,13 +147,13 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        var expectedWafTag = "waf_version:unknown";
-
         if (wafVersion is not null)
         {
-            collector.SetWafVersion(wafVersion);
-            expectedWafTag = $"waf_version:{wafVersion}";
+            collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
         }
+
+        var expectedWafTag = $"waf_version:{wafVersion ?? "unknown"}";
+        var expectedRulesetTag = $"event_rules_version:{rulesVersion ?? "unknown"}";
 
         using var scope = new AssertionScope();
         scope.FormattingOptions.MaxLines = 1000;
@@ -223,7 +243,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafInit.GetName(),
                 Points = new[] { new { Value = 4 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "success:true" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -232,7 +252,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafRequests.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -241,7 +261,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleEval.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -250,7 +270,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleMatch.GetName(),
                 Points = new[] { new { Value = 3 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "block:success", "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -259,7 +279,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspTimeout.GetName(),
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -289,6 +309,168 @@ public class MetricsTelemetryCollectorTests
                 Tags = (string[])null,
                 Common = false,
                 Namespace = (string)null,
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_service_name", "config_datadog:dd_service" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_service_name", "config_datadog:dd_service" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_log_level", "config_datadog:dd_trace_debug" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_log_level", "config_datadog:dd_trace_debug" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_propagators", "config_datadog:dd_trace_propagation_style" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_propagators", "config_datadog:dd_trace_propagation_style" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_traces_sampler", "config_datadog:dd_trace_sample_rate" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_traces_sampler", "config_datadog:dd_trace_sample_rate" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_traces_sampler_arg", "config_datadog:dd_trace_sample_rate" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_traces_sampler_arg", "config_datadog:dd_trace_sample_rate" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_traces_exporter", "config_datadog:dd_trace_enabled" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_traces_exporter", "config_datadog:dd_trace_enabled" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_metrics_exporter", "config_datadog:dd_runtime_metrics_enabled" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_metrics_exporter", "config_datadog:dd_runtime_metrics_enabled" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_resource_attributes", "config_datadog:dd_tags" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_resource_attributes", "config_datadog:dd_tags" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigHiddenByDatadogConfig.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_sdk_disabled", "config_datadog:dd_trace_otel_enabled" },
+                Common = true,
+                Namespace = "tracers",
+            },
+            new
+            {
+                Metric = Count.OpenTelemetryConfigInvalid.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "config_opentelemetry:otel_sdk_disabled", "config_datadog:dd_trace_otel_enabled" },
+                Common = true,
+                Namespace = "tracers",
             },
         });
 
@@ -323,9 +505,10 @@ public class MetricsTelemetryCollectorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion)
+    [InlineData(null, null)]
+    [InlineData("1.2.3", null)]
+    [InlineData("1.2.3", "10.2")]
+    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion, string rulesVersion)
     {
         var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -338,7 +521,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
-        collector.RecordCountWafInit(4);
+        collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
@@ -348,7 +531,7 @@ public class MetricsTelemetryCollectorTests
         // these ones are
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
-        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetectionAndRum.Test, MetricTags.CIVisibilityTestingEventTypeRetryReason.None, MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None, MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None);
 
         collector.AggregateMetrics();
 
@@ -370,12 +553,9 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        var expectedWafTag = "waf_version:unknown";
-
         if (wafVersion is not null)
         {
-            collector.SetWafVersion(wafVersion);
-            expectedWafTag = $"waf_version:{wafVersion}";
+            collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
         }
 
         using var scope = new AssertionScope();

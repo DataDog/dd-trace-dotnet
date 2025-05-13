@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 namespace Datadog.Trace.Ci.Tags;
 
@@ -139,4 +140,49 @@ internal static class TestTags
     /// Test command working directory
     /// </summary>
     public const string CommandWorkingDirectory = "test.working_directory";
+
+    /// <summary>
+    /// Test is new flag
+    /// </summary>
+    public const string TestIsNew = "test.is_new";
+
+    /// <summary>
+    /// Test is retry flag
+    /// </summary>
+    public const string TestIsRetry = "test.is_retry";
+
+    /// <summary>
+    /// Test retry reason
+    /// </summary>
+    public const string TestRetryReason = "test.retry_reason";
+
+    /// <summary>
+    /// Test is quarantined flag
+    /// </summary>
+    public const string TestIsQuarantined = "test.test_management.is_quarantined";
+
+    /// <summary>
+    /// Test is disabled flag
+    /// </summary>
+    public const string TestIsDisabled = "test.test_management.is_test_disabled";
+
+    /// <summary>
+    /// Test is attempt to fix flag
+    /// </summary>
+    public const string TestIsAttemptToFix = "test.test_management.is_attempt_to_fix";
+
+    /// <summary>
+    /// Test has failed all retries flag
+    /// </summary>
+    public const string TestHasFailedAllRetries = "test.has_failed_all_retries";
+
+    /// <summary>
+    /// Test attempt to fix passed flag
+    /// </summary>
+    public const string TestAttemptToFixPassed = "test.test_management.attempt_to_fix_passed";
+
+    /// <summary>
+    /// Test management enabled flag
+    /// </summary>
+    public const string TestManagementEnabled = "test.test_management.enabled";
 }

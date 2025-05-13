@@ -11,12 +11,12 @@
 
 namespace libdatadog {
 
-Tags::Tags() :
-    _impl{std::make_unique<TagsImpl>()}
+Tags::Tags(bool releaseOnClose) :
+    _impl{std::make_unique<TagsImpl>(releaseOnClose)}
 {
 }
-Tags::Tags(std::initializer_list<std::pair<std::string, std::string>> tags) :
-    Tags()
+Tags::Tags(std::initializer_list<std::pair<std::string, std::string>> tags, bool releaseOnClose) :
+    Tags(releaseOnClose)
 {
     for (auto&& [name, value] : tags)
     {
@@ -43,8 +43,8 @@ Tags& Tags::operator=(Tags&& tags) noexcept
 
 libdatadog::Success Tags::Add(std::string const& name, std::string const& value)
 {
-    auto ffiName = FfiHelper::StringToCharSlice(name);
-    auto ffiValue = FfiHelper::StringToCharSlice(value);
+    auto ffiName = to_char_slice(name);
+    auto ffiValue = to_char_slice(value);
 
     auto pushResult = ddog_Vec_Tag_push(&_impl->_tags, ffiName, ffiValue);
     if (pushResult.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)

@@ -18,8 +18,6 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class MongoDatabaseAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MongoDatabaseAspect));
-
     /// <summary>
     ///     MongoDB Driver aspect
     /// </summary>
@@ -31,13 +29,13 @@ public class MongoDatabaseAspect
     [AspectMethodInsertBefore("MongoDB.Driver.IMongoCollectionExtensions::FindAsync(MongoDB.Driver.IMongoCollection`1<!!0>,MongoDB.Driver.FilterDefinition`1<!!0>,MongoDB.Driver.FindOptions`2<!!0,!!0>,System.Threading.CancellationToken)", 2)]
     public static object? AnalyzeCommand(object? command)
     {
-        if (command == null || !Iast.Instance.Settings.Enabled)
-        {
-            return command;
-        }
-
         try
         {
+            if (command == null || !Iast.Instance.Settings.Enabled)
+            {
+                return command;
+            }
+
             var commandType = command.GetType().Name;
             switch (commandType)
             {
@@ -50,12 +48,13 @@ public class MongoDatabaseAspect
                     MongoDbHelper.AnalyzeJsonCommand(command);
                     break;
             }
+
+            return command;
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to analyze the command");
+            IastModule.LogAspectException(ex);
+            return command;
         }
-
-        return command;
     }
 }

@@ -71,6 +71,8 @@ namespace Datadog.Trace.Tools.Runner
                 return;
             }
 
+            await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
+
             if (!TryExtractCiName(name, out var ciName))
             {
                 context.ExitCode = 1;

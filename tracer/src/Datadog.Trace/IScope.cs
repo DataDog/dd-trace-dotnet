@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace
@@ -13,7 +15,7 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    public interface IScope : IDisposable
+    public partial interface IScope : IDisposable
     {
         /// <summary>
         /// Gets the active span wrapped in this scope

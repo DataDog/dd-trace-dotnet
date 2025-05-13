@@ -30,14 +30,11 @@ namespace Datadog.Trace.Tests
         {
             _output = output;
 
-            var settings = new TracerSettings(
-                new NameValueConfigurationSource(
-                    new NameValueCollection
-                    {
-                        { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
-                        { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
-                    }),
-                new ConfigurationTelemetry());
+            var settings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
+                { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
+            });
 
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
@@ -70,6 +67,38 @@ namespace Datadog.Trace.Tests
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
             span.GetTag(Tags.PeerService).Should().Be("a-remmaped-peer-service");
             span.GetTag(Tags.PeerServiceRemappedFrom).Should().Be("a-peer-service");
+        }
+
+        [Fact]
+        public void AddLink_BeforeSpanFinished_IsSuccessful()
+        {
+            var parentScope = (Scope)_tracer.StartActive("Parent");
+            var childScope = (Scope)_tracer.StartActive("Child");
+
+            var parentSpan = parentScope.Span;
+            var childSpan = childScope.Span;
+            var spanLink = new SpanLink(parentSpan.Context);
+
+            childSpan.AddLink(spanLink);
+            childSpan.Finish();
+
+            childSpan.SpanLinks.Should().ContainSingle().Which.Should().Match<SpanLink>(spanLink => spanLink.Context.TraceId128 == parentSpan.TraceId128 && spanLink.Context.SpanId == parentSpan.SpanId);
+        }
+
+        [Fact]
+        public void AddLink_AfterSpanFinished_IsNoOp()
+        {
+            var parentScope = (Scope)_tracer.StartActive("Parent");
+            var childScope = (Scope)_tracer.StartActive("Child");
+
+            var parentSpan = parentScope.Span;
+            var childSpan = childScope.Span;
+            var spanLink = new SpanLink(parentSpan.Context);
+
+            childSpan.Finish();
+            childSpan.AddLink(spanLink);
+
+            childSpan.SpanLinks.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -362,61 +391,37 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void ServiceOverride_WhenSet_HasBaseService()
+        public void AddEvent_BeforeSpanFinished_IsSuccessful()
         {
-            var origName = "MyServiceA";
-            var newName = "MyServiceB";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = newName;
+            var span = _tracer.StartSpan("Operation");
+            var eventName = "test_event";
+            var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var eventAttributes = new List<KeyValuePair<string, object>> { new("key", "value") };
+            var spanEvent = new SpanEvent(eventName, eventTimestamp, eventAttributes);
 
-            span.ServiceName.Should().Be(newName);
-            span.GetTag(Tags.BaseService).Should().Be(origName);
+            span.AddEvent(spanEvent);
+            span.Finish();
+
+            span.SpanEvents.Should().ContainSingle().Which.Should().Match<SpanEvent>(e =>
+                e.Name == eventName &&
+                e.Timestamp == eventTimestamp &&
+                e.Attributes == eventAttributes);
         }
 
         [Fact]
-        public void ServiceOverride_WhenNotSet_HasNoBaseService()
+        public void AddEvent_AfterSpanFinished_IsNoOp()
         {
-            var origName = "MyServiceA";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            var span = _tracer.StartSpan("Operation");
+            span.Finish();
 
-            span.ServiceName.Should().Be(origName);
-            span.GetTag(Tags.BaseService).Should().BeNull();
+            var eventName = "test_event";
+            var eventTimestamp = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var eventAttributes = new List<KeyValuePair<string, object>> { new("key", "value") };
+            var spanEvent = new SpanEvent(eventName, eventTimestamp, eventAttributes);
+
+            span.AddEvent(spanEvent);
+
+            span.SpanEvents.Should().BeNullOrEmpty();
         }
-
-        [Fact]
-        public void ServiceOverride_WhenSetSame_HasNoBaseService()
-        {
-            var origName = "MyServiceA";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = origName;
-
-            span.ServiceName.Should().Be(origName);
-            span.GetTag(Tags.BaseService).Should().BeNull();
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenSetSameWithDifferentCase_HasNoBaseService()
-        {
-            var origName = "MyServiceA";
-            var newName = origName.ToUpper();
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = newName;
-
-            span.ServiceName.Should().Be(newName); // ServiceName should change although _dd.base_service has not been added
-            span.GetTag(Tags.BaseService).Should().BeNull();
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenSetTwice_HasBaseService()
-        {
-            var origName = "MyServiceA";
-            var newName = "MyServiceC";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = "MyServiceB";
-            span.ServiceName = newName;
-
-            span.ServiceName.Should().Be(newName);
-            span.GetTag(Tags.BaseService).Should().Be(origName);
-        }
-    }
+  }
 }

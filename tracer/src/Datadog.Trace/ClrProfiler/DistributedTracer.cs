@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -58,7 +59,9 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static object GetDistributedTracer() => Instance;
+        // [Instrumented] This is auto-rewritten, not instrumented with calltarget
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static object GetDistributedTracer() => Instance;
 
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {

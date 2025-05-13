@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Just temporary, until v3 -->
-    <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
+    <IsOsxArm64 Condition="$([MSBuild]::IsOsPlatform('OSX')) And $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) == Arm64">true</IsOsxArm64>
   </PropertyGroup>
-
+  
+  <PropertyGroup>
+    <TargetFrameworks Condition="$(IsOsxArm64) == true AND $(PublishReadyToRun) == true">net6.0;net7.0;net8.0</TargetFrameworks>
+  </PropertyGroup>
+  
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
   </ItemGroup>
 
   <ItemGroup>

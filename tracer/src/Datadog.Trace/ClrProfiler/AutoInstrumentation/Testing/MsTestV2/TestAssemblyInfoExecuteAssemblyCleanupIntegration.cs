@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -50,7 +51,7 @@ public static class TestAssemblyInfoExecuteAssemblyCleanupIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
         if (state.State is TestModule module)
         {
@@ -62,7 +63,7 @@ public static class TestAssemblyInfoExecuteAssemblyCleanupIntegration
             module.Close();
 
             // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
-            CIVisibility.Close();
+            TestOptimization.Instance.Close();
         }
 
         return CallTargetReturn.GetDefault();

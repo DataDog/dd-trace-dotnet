@@ -3,12 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text.Json;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -33,11 +29,11 @@ namespace Datadog.Profiler.IntegrationTests
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasMetrics = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
-                hasMetrics = GetMetrics(ctx.Value.Request);
+                hasMetrics = MetricHelper.GetMetrics(ctx.Value.Request);
             };
 
             runner.Run(agent);
@@ -49,21 +45,6 @@ namespace Datadog.Profiler.IntegrationTests
             ValidateMetrics(runner.Environment.PprofDir);
         }
 
-        private static List<Tuple<string, double>> GetMetrics(string metricsFile)
-        {
-            var metrics = new List<Tuple<string, double>>();
-            var jsonContent = System.IO.File.ReadAllText(metricsFile);
-
-            var doc = JsonDocument.Parse(jsonContent);
-            _ = doc.RootElement.EnumerateArray().All(element =>
-            {
-                var kvp = element.EnumerateArray().ToArray();
-                metrics.Add(new Tuple<string, double>(kvp[0].ToString(), kvp[1].GetDouble()));
-                return true;
-            });
-            return metrics;
-        }
-
         private static void ValidateMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
@@ -71,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests
             foreach (var metricsFile in metricsFiles)
             {
                 // get the metrics from the local json file
-                var metrics = GetMetrics(metricsFile);
+                var metrics = MetricHelper.GetMetrics(metricsFile);
                 double threadCount = -1;
                 double threadCountLow = -1;
                 double threadCountHigh = -1;
@@ -99,33 +80,6 @@ namespace Datadog.Profiler.IntegrationTests
                 Assert.True(threadCountLow <= threadCount);
                 Assert.True(threadCount <= threadCountHigh);
             }
-        }
-
-        private static bool GetMetrics(HttpListenerRequest request)
-        {
-            if (!request.ContentType.StartsWith("multipart/form-data"))
-            {
-                return false;
-            }
-
-            var mpReader = new MultiPartReader(request);
-            if (!mpReader.Parse())
-            {
-                return false;
-            }
-
-            var files = mpReader.Files;
-            var metricsFileInfo = files.FirstOrDefault(f => f.FileName == "metrics.json");
-            if (metricsFileInfo == null)
-            {
-                return false;
-            }
-
-            // TODO: when the file will be generated the right way, parse the json content to ensure that at least 1 metrics is sent
-            var metricsFileContent = mpReader.GetStringFile(metricsFileInfo.BytesPos, metricsFileInfo.BytesSize);
-            // Today, the content is not correct and with a binary format
-
-            return true;
         }
     }
 }

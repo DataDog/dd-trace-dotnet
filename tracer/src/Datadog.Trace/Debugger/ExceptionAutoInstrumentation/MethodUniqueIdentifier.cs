@@ -8,15 +8,28 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal readonly record struct MethodUniqueIdentifier(Guid Mvid, int MethodToken, MethodBase Method)
     {
+        internal static readonly ConcurrentDictionary<MethodUniqueIdentifier, bool> MightMisleadStacktrace = new();
+
         public override int GetHashCode()
         {
             return HashCode.Combine(Mvid, MethodToken);
+        }
+
+        public bool IsMisleadMethod()
+        {
+            return MightMisleadStacktrace.GetOrAdd(
+                this,
+                identifier => ILAnalyzer.HasDirectCallTo(
+                    identifier.Method,
+                    typeof(System.Runtime.ExceptionServices.ExceptionDispatchInfo),
+                    "Throw"));
         }
     }
 
@@ -24,14 +37,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private readonly int _hashCode;
 
-        public ExceptionCase(ExceptionIdentifier exceptionId, ExceptionDebuggingProbe[] probes)
+        public ExceptionCase(HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] probes)
         {
-            ExceptionId = exceptionId;
+            ExceptionTypes = exceptionTypes;
             Probes = probes;
             _hashCode = ComputeHashCode();
         }
 
-        public ExceptionIdentifier ExceptionId { get; }
+        public HashSet<Type> ExceptionTypes { get; }
 
         public ExceptionDebuggingProbe[] Probes { get; }
 
@@ -68,7 +81,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var probesInfo = Probes == null ? "null" : $"{Probes.Length} probes";
             var processorsCount = Processors?.Count ?? 0;
-            return $"ExceptionCase: ExceptionId={ExceptionId}, Probes=[{probesInfo}], Processors={processorsCount}";
+            return $"ExceptionCase: Probes=[{probesInfo}], Processors={processorsCount}";
         }
     }
 

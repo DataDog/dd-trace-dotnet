@@ -7,12 +7,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Helpers;
 
 namespace Datadog.Trace.Iast.Dataflow;
 
 [AttributeUsage(AttributeTargets.Class)]
-internal sealed class AspectClassAttribute : Attribute
+internal class AspectClassAttribute : Attribute
 {
     private readonly List<object> parameters = new List<object>();
 
@@ -21,17 +22,22 @@ internal sealed class AspectClassAttribute : Attribute
     {
     }
 
-    public AspectClassAttribute(string defaultAssembly)
-        : this(defaultAssembly, new AspectFilter[0], AspectType.Propagation)
+    public AspectClassAttribute(string defaultAssembly, InstrumentationCategory category = InstrumentationCategory.Iast)
+        : this(defaultAssembly, new AspectFilter[0], category, AspectType.Propagation)
     {
     }
 
     public AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
-        : this(defaultAssembly, new AspectFilter[0], defaultAspectType, defaultVulnerabilityTypes)
+        : this(defaultAssembly, new AspectFilter[0], InstrumentationCategory.Iast, defaultAspectType, defaultVulnerabilityTypes)
     {
     }
 
-    public AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
+    public AspectClassAttribute(string defaultAssembly, InstrumentationCategory category, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
+        : this(defaultAssembly, new AspectFilter[0], category, defaultAspectType, defaultVulnerabilityTypes)
+    {
+    }
+
+    public AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, InstrumentationCategory category = InstrumentationCategory.Iast, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
     {
         if (filters.Length == 0) { filters = new AspectFilter[] { AspectFilter.None }; }
 

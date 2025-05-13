@@ -184,6 +184,24 @@ namespace Datadog.Trace.Tests.Telemetry
             }
         }
 
+        [Theory]
+        [InlineData("454845b558934321ad350977dd095960")]
+        [InlineData("41e68894e3e54239abe61eb16cb0e158")]
+        [InlineData("a1bc683e730d425c9de5fdf00dbdc003")]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndHas32CharName(string name)
+        {
+            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(ignoredName, "some-guid");
+
+            collector.HasChanges().Should().BeFalse($"{name} has a zero version");
+
+            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
+            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
+            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
+        }
+
         [Fact]
         public void HasChangesWhenAddingSameAssemblyWithDifferentVersion()
         {

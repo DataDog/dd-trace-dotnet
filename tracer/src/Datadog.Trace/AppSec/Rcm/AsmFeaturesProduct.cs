@@ -13,27 +13,32 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmFeaturesProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
             var asmFeatures = new NamedRawFile(file.Path, file.Contents).Deserialize<AsmFeatures>();
             if (asmFeatures.TypedFile != null)
             {
-                configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
-            }
+                if (asmFeatures.TypedFile.Asm?.Enabled is not null)
+                {
+                    configurationStatus.AsmFeaturesByFile[file.Path.Path] = asmFeatures.TypedFile.Asm;
+                }
 
-            configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
+                if (asmFeatures.TypedFile.AutoUserInstrum?.Mode is not null)
+                {
+                    configurationStatus.AutoUserInstrumByFile[file.Path.Path] = asmFeatures.TypedFile.AutoUserInstrum;
+                }
+            }
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
             configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
+            configurationStatus.AutoUserInstrumByFile.Remove(removedConfig.Path);
         }
-
-        configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
     }
 }

@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
+        [Trait("Category", "LinuxUnsupported")]
         [Trait("RunOnWindows", "True")]
         public async Task NamedPipesSubmitsMetrics()
         {

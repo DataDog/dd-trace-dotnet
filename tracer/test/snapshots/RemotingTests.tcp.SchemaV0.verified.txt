@@ -28,10 +28,12 @@
     Tags: {
       component: Remoting,
       env: integration_tests,
+      language: dotnet,
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Remoting
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -47,10 +49,12 @@
     Tags: {
       component: Remoting,
       env: integration_tests,
+      language: dotnet,
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Remoting
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -54,7 +54,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 
         public override T[] Rent(int minimumLength)
         {
-            ArrayPoolEventSource log = ArrayPoolEventSource.Log;
             T[]? buffer;
 
             // Get the bucket number for the array length. The result may be out of range of buckets,
@@ -68,11 +67,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 buffer = tlsBuckets[bucketIndex].Array;
                 if (buffer is not null)
                 {
-                    tlsBuckets[bucketIndex].Array = null;
-                    if (log.IsEnabled())
-                    {
-                        log.BufferRented(buffer.GetHashCode(), buffer.Length, Id, bucketIndex);
-                    }
+                    tlsBuckets[bucketIndex].Array = null;                    
                     return buffer;
                 }
             }
@@ -87,10 +82,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     buffer = b.TryPop();
                     if (buffer is not null)
                     {
-                        if (log.IsEnabled())
-                        {
-                            log.BufferRented(buffer.GetHashCode(), buffer.Length, Id, bucketIndex);
-                        }
                         return buffer;
                     }
                 }
@@ -118,14 +109,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 
             buffer = new T[minimumLength];
             //buffer = GC.AllocateUninitializedArray<T>(minimumLength);
-            if (log.IsEnabled())
-            {
-                int bufferId = buffer.GetHashCode();
-                log.BufferRented(bufferId, buffer.Length, Id, ArrayPoolEventSource.NoBucketId);
-                log.BufferAllocated(bufferId, buffer.Length, Id, ArrayPoolEventSource.NoBucketId, bucketIndex >= _buckets.Length ?
-                    ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize :
-                    ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);
-            }
             return buffer;
         }
 
@@ -145,12 +128,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             // rare, given a max size of 1B elements.
             ThreadLocalArray[] tlsBuckets = t_tlsBuckets ?? InitializeTlsBucketsAndTrimming();
 
-            bool haveBucket = false;
             bool returned = true;
             if ((uint)bucketIndex < (uint)tlsBuckets.Length)
             {
-                haveBucket = true;
-
                 // Clear the array if the user requested it.
                 if (clearArray)
                 {
@@ -174,19 +154,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 {
                     Partitions partitionsForArraySize = _buckets[bucketIndex] ?? CreatePerCorePartitions(bucketIndex);
                     returned = partitionsForArraySize.TryPush(prev);
-                }
-            }
-
-            // Log that the buffer was returned
-            ArrayPoolEventSource log = ArrayPoolEventSource.Log;
-            if (log.IsEnabled() && array.Length != 0)
-            {
-                log.BufferReturned(array.GetHashCode(), array.Length, Id);
-                if (!(haveBucket & returned))
-                {
-                    log.BufferDropped(array.GetHashCode(), array.Length, Id,
-                        haveBucket ? bucketIndex : ArrayPoolEventSource.NoBucketId,
-                        haveBucket ? ArrayPoolEventSource.BufferDroppedReason.Full : ArrayPoolEventSource.BufferDroppedReason.OverMaximumSize);
                 }
             }
         }
@@ -465,7 +432,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     // We've elapsed enough time since the first item went into the partition.
                     // Drop the top item so it can be collected and make the partition look a little newer.
 
-                    ArrayPoolEventSource log = ArrayPoolEventSource.Log;
                     int trimCount = LowTrimCount;
                     switch (pressure)
                     {
@@ -502,11 +468,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                         T[]? array = _arrays[--_count];
                         Debug.Assert(array is not null, "No nulls should have been present in slots < _count.");
                         _arrays[_count] = null;
-
-                        if (log.IsEnabled())
-                        {
-                            log.BufferTrimmed(array.GetHashCode(), array.Length, id);
-                        }
                     }
 
                     _millisecondsTimestamp = _count > 0 ?

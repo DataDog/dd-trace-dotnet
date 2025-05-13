@@ -46,7 +46,7 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);
 
-    UpscalingInfo GetInfo() override;
+    std::list<UpscalingInfo> GetInfos() override;
 
 private:
     struct ExceptionBucket
@@ -79,4 +79,5 @@ private:
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
     CallstackProvider _callstackProvider;
+    MetricsRegistry& _metricsRegistry;
 };

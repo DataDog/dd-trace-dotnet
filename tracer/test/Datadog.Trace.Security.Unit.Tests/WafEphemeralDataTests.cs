@@ -100,9 +100,8 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private void ExecuteInternal(string address, object[] values, bool[] matches, string flow, string rule, bool newEncoder)
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, useUnsafeEncoder: newEncoder);
+            var initResult = CreateWaf(newEncoder);
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
             using var context = waf.CreateContext();
 
             for (var i = 0; i < values.Length; i++)

@@ -11,6 +11,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
     internal class TargetCustom
     {
         [JsonProperty("v")]
-        public int V { get; set; }
+        public long V { get; set; }
     }
 }

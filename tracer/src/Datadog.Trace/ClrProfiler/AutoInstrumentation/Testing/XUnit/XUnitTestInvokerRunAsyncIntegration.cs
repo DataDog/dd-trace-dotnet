@@ -43,7 +43,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var invokerInstance = instance.DuckCast<TestInvokerStruct>();
+        var invokerInstance = instance.DuckCast<ITestInvoker>();
         var runnerInstance = new TestRunnerStruct
         {
             Aggregator = invokerInstance.Aggregator,
@@ -57,8 +57,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
             null,
             XUnitIntegration.CreateTest(
                 ref runnerInstance,
-                instance.GetType(),
-                retryMessageBus: (invokerInstance.MessageBus as IDuckType)?.Instance as RetryMessageBus));
+                testCaseMetadata: ((invokerInstance.MessageBus as IDuckType)?.Instance as RetryMessageBus)?.GetMetadata(invokerInstance.TestCase.UniqueID)));
     }
 
     /// <summary>
@@ -98,8 +97,8 @@ public static class XUnitTestInvokerRunAsyncIntegration
     {
         if (state.State is Test test)
         {
-            var invokerInstance = instance.DuckCast<TestInvokerStruct>();
-            XUnitIntegration.FinishTest(test, invokerInstance.Aggregator);
+            var invokerInstance = instance.DuckCast<ITestInvoker>();
+            XUnitIntegration.FinishTest(test, invokerInstance!.Aggregator);
         }
 
         return returnValue;

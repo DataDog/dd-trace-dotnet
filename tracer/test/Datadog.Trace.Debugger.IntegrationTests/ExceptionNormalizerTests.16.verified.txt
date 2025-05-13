@@ -1,0 +1,4 @@
+System.Threading.Tasks.TaskCanceledException
+   at MyApp.Services.HttpService.GetDataAsync(String url)
+   at MyApp.Controllers.DataController.GetData(String id)
+Resulting Hash: -1447256799

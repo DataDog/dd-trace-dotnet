@@ -18,10 +18,10 @@ using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Debugger.Upload;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Symbols
@@ -38,8 +38,8 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
         private readonly SemaphoreSlim _enablementSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
-        private readonly HashSet<string> _symDb3rdPartyIncludes;
-        private readonly HashSet<string> _symDb3rdPartyExcludes;
+        private readonly ImmutableHashSet<string> _symDb3rdPartyIncludes;
+        private readonly ImmutableHashSet<string> _symDb3rdPartyExcludes;
         private readonly long _thresholdInBytes;
         private readonly CancellationTokenSource _cancellationToken;
         private readonly IBatchUploadApi _api;
@@ -55,13 +55,13 @@ namespace Datadog.Trace.Debugger.Symbols
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             DebuggerSettings settings,
-            ImmutableTracerSettings tracerSettings,
+            TracerSettings tracerSettings,
             string serviceName)
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
-            _environment = tracerSettings.EnvironmentInternal;
-            _serviceVersion = tracerSettings.ServiceVersionInternal;
+            _environment = tracerSettings.Environment;
+            _serviceVersion = tracerSettings.ServiceVersion;
             _serviceName = serviceName;
             _discoveryService = discoveryService;
             _api = api;
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService = null;
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, TracerSettings tracerSettings, string serviceName)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
@@ -213,7 +213,10 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
-            var assemblyScope = symbolsExtractor.GetAssemblySymbol();
+            if (!symbolsExtractor.TryGetAssemblySymbol(out var assemblyScope))
+            {
+                return;
+            }
 
             var root = new Root
             {
@@ -221,40 +224,58 @@ namespace Datadog.Trace.Debugger.Symbols
                 Env = _environment,
                 Language = "dotnet",
                 Version = _serviceVersion,
-                Scopes = new[] { assemblyScope }
+                Scopes = [assemblyScope]
             };
 
             await UploadClasses(root, symbolsExtractor.GetClassSymbols()).ConfigureAwait(false);
         }
 
-        private async Task UploadClasses(Root root, IEnumerable<Model.Scope?> classes)
+        private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
+            var rootAsString = JsonConvert.SerializeObject(root);
+            var rootBytes = Encoding.UTF8.GetByteCount(rootAsString);
+            var builder = StringBuilderCache.Acquire((int)_thresholdInBytes + rootBytes + 4);
             var accumulatedBytes = 0;
-            var builder = StringBuilderCache.Acquire((int)_thresholdInBytes);
 
             try
             {
                 foreach (var classSymbol in classes)
                 {
-                    if (classSymbol == null)
+                    if (classSymbol == default)
                     {
                         continue;
                     }
 
-                    accumulatedBytes += SerializeClass(classSymbol.Value, builder);
-                    if (accumulatedBytes < _thresholdInBytes)
+                    // Try to serialize and append the class
+                    if (!TrySerializeClass(classSymbol, builder, accumulatedBytes, out var newByteCount))
                     {
-                        continue;
+                        // If we couldn't append because it would exceed capacity,
+                        // upload current batch first
+                        bool succeeded = false;
+                        if (builder.Length > 0)
+                        {
+                            await Upload(rootAsString, builder).ConfigureAwait(false);
+                            builder.Clear();
+                            accumulatedBytes = 0;
+                            // Try again with empty builder
+                            succeeded = TrySerializeClass(classSymbol, builder, accumulatedBytes, out newByteCount);
+                        }
+
+                        if (!succeeded)
+                        {
+                            // If it still doesn't fit, this single class is too large
+                            Log.Warning("Class {Name} exceeds maximum capacity", classSymbol.Name);
+                            continue;
+                        }
                     }
 
-                    await Upload(root, builder).ConfigureAwait(false);
-                    builder.Clear();
-                    accumulatedBytes = 0;
+                    accumulatedBytes = newByteCount;
                 }
 
-                if (accumulatedBytes > 0)
+                // Upload any remaining data
+                if (builder.Length > 0)
                 {
-                    await Upload(root, builder).ConfigureAwait(false);
+                    await Upload(rootAsString, builder).ConfigureAwait(false);
                 }
             }
             finally
@@ -266,9 +287,9 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private async Task Upload(Root root, StringBuilder builder)
+        private async Task Upload(string rootAsString, StringBuilder builder)
         {
-            FinalizeSymbolForSend(root, builder);
+            FinalizeSymbolForSend(rootAsString, builder);
             await SendSymbol(builder.ToString()).ConfigureAwait(false);
             ResetPayload();
         }
@@ -293,32 +314,38 @@ namespace Datadog.Trace.Debugger.Symbols
             return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
         }
 
-        private int SerializeClass(Model.Scope classScope, StringBuilder sb)
+        private bool TrySerializeClass(Model.Scope classScope, StringBuilder sb, int currentBytes, out int newTotalBytes)
         {
-            if (sb.Length != 0)
+            // Calculate the serialized string first
+            var symbolAsString = JsonConvert.SerializeObject(classScope, _jsonSerializerSettings);
+            var classBytes = Encoding.UTF8.GetByteCount(symbolAsString);
+
+            newTotalBytes = currentBytes;
+            if (sb.Length > 0)
+            {
+                classBytes += 1; // for comma
+            }
+
+            newTotalBytes += classBytes;
+
+            if (newTotalBytes > _thresholdInBytes)
+            {
+                return false;
+            }
+
+            // Safe to append
+            if (sb.Length > 0)
             {
                 sb.Append(',');
             }
 
-            var symbolAsString = JsonConvert.SerializeObject(classScope, _jsonSerializerSettings);
-
-            try
-            {
-                sb.Append(symbolAsString);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return 0;
-            }
-
-            return Encoding.UTF8.GetByteCount(symbolAsString);
+            sb.Append(symbolAsString);
+            return true;
         }
 
-        private void FinalizeSymbolForSend(Root root, StringBuilder sb)
+        private void FinalizeSymbolForSend(string rootAsString, StringBuilder sb)
         {
             const string classScopeString = "\"scopes\":null";
-
-            var rootAsString = JsonConvert.SerializeObject(root);
 
             var classesIndex = rootAsString.IndexOf(classScopeString, StringComparison.Ordinal);
 

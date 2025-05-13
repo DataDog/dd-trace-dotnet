@@ -4,6 +4,10 @@
 #include "ManagedThreadInfo.h"
 #include "shared/src/native-src/string.h"
 
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 std::atomic<std::uint32_t> ManagedThreadInfo::s_nextProfilerThreadInfoId{1};
 thread_local std::shared_ptr<ManagedThreadInfo> ManagedThreadInfo::CurrentThreadInfo{nullptr};
 
@@ -31,20 +35,21 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _osThreadId(osThreadId),
     _osThreadHandle(osThreadHandle),
     _pThreadName(std::move(pThreadName)),
-    _lastSampleHighPrecisionTimestampNanoseconds{0},
-    _cpuConsumptionMilliseconds{0},
-    _timestamp{0},
-    _lastKnownSampleUnixTimeUtc{0},
-    _highPrecisionNanosecsAtLastUnixTimeUpdate{0},
-    _snapshotsPerformedSuccessCount{0},
-    _snapshotsPerformedFailureCount{0},
+    _lastSampleHighPrecisionTimestamp{0ns},
+    _cpuConsumption{0ms},
+    _timestamp{0ns},
     _deadlockTotalCount{0},
     _deadlockInPeriodCount{0},
     _deadlockDetectionPeriod{0},
-    _stackWalkLock(1),
     _isThreadDestroyed{false},
-    _traceContextTrackingInfo{},
+    _traceContext{},
+#ifdef LINUX
     _sharedMemoryArea{nullptr},
-    _info{pCorProfilerInfo}
+    _timerId{-1},
+#endif
+    _info{pCorProfilerInfo},
+    _blockingThreadId{0},
+    _waitStartTimestamp{0ns},
+    _contentionType{ContentionType::Unknown}
 {
 }

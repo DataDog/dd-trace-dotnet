@@ -7,6 +7,10 @@
 #include "OpSysTools.h"
 #include "SamplesEnumerator.h"
 
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 SamplesCollector::SamplesCollector(
     IConfiguration* configuration,
     IThreadsCpuManager* pThreadsCpuManager,
@@ -16,7 +20,7 @@ SamplesCollector::SamplesCollector(
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
     _exporter{exporter},
-    _cachedSample{std::make_shared<Sample>(0, std::string_view{}, 2048)}
+    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, 2048)}
 {
 }
 
@@ -48,6 +52,8 @@ bool SamplesCollector::StartImpl()
 
 bool SamplesCollector::StopImpl()
 {
+    Log::Info("Stopping the samples collector");
+
     _workerThreadPromise.set_value();
     _workerThread.join();
 
@@ -56,7 +62,7 @@ bool SamplesCollector::StopImpl()
 
     // Export the leftover samples
     CollectSamples(_samplesProviders);
-    Export();
+    Export(true);
 
     return true;
 }
@@ -90,7 +96,7 @@ void SamplesCollector::ExportWork()
     }
 }
 
-void SamplesCollector::Export()
+void SamplesCollector::Export(bool lastCall)
 {
     bool success = false;
 
@@ -115,12 +121,12 @@ void SamplesCollector::Export()
             batchedSamplesProvider.second = 0;
         }
 
-        success = _exporter->Export();
+        success = _exporter->Export(lastCall);
     }
     catch (std::exception const& ex)
     {
         SendHeartBeatMetric(false);
-        Log::Error("An exception occured during export: ", ex.what());
+        Log::Error("An exception occurred during export: ", ex.what());
     }
 
     SendHeartBeatMetric(success);
@@ -148,7 +154,7 @@ void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvid
         }
         catch (std::exception const& ex)
         {
-            Log::Error("An exception occured while collecting samples: ", ex.what());
+            Log::Error("An exception occurred while collecting samples: ", ex.what());
         }
     }
 }

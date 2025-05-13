@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 
 #include "cor.h"
@@ -14,7 +15,7 @@
 class LiveObjectInfo
 {
 public:
-    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, int64_t timestamp);
+    LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp);
 
     // accessors
     void SetHandle(ObjectHandleID handle);
@@ -28,9 +29,9 @@ private:
     std::shared_ptr<Sample> _sample;
     uintptr_t _address;
     ObjectHandleID _weakHandle;
-    // TODO This field is not yet used because the current implementation is incomple.
+    // TODO This field is not yet used because the current implementation is incomplete.
     // Just keep to remind us to finish the implementation.
-    int64_t _timestamp;
+    std::chrono::nanoseconds _timestamp;
     uint64_t _gcCount;
 
     static std::atomic<uint64_t> s_nextObjectId;

@@ -35,7 +35,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         public CiRunCommandTests()
             : base("ci run", enableCiVisibilityMode: true)
         {
-            CIVisibility.UseLockedTracerManager = false;
         }
 
         [Fact]
@@ -56,7 +55,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private void RunExternalCoverageTest(string filePath)
         {
-            CIVisibility.Reset();
+            TestOptimization.Instance.Reset();
             EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
             string command = null;
             string arguments = null;
@@ -118,7 +117,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().NotBeNull();
 
             testSession.Should().NotBeNull();
-            testSession.Meta.Should().Contain(new KeyValuePair<string, string>(CodeCoverageTags.Enabled, "true"));
+            testSession.Meta.Should().NotContain(new KeyValuePair<string, string>(CodeCoverageTags.Enabled, "true"));
             testSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 83.33));
         }
     }

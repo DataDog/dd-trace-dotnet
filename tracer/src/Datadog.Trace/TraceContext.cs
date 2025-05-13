@@ -6,7 +6,9 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
@@ -27,11 +29,11 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private IastRequestContext? _iastRequestContext;
-        private AppSecRequestContext? _appSecRequestContext;
-
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
+
+        private IastRequestContext? _iastRequestContext;
+        private AppSecRequestContext? _appSecRequestContext;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -53,8 +55,8 @@ namespace Datadog.Trace
             if (tracer.Settings is { } settings)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.EnvironmentInternal;
-                ServiceVersion = settings.ServiceVersionInternal;
+                Environment = settings.Environment;
+                ServiceVersion = settings.ServiceVersion;
             }
 
             Tracer = tracer;
@@ -96,45 +98,28 @@ namespace Datadog.Trace
         /// </summary>
         internal string? AdditionalW3CTraceState { get; set; }
 
-        /// <summary>
-        /// Gets the IAST context.
-        /// </summary>
+        /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
 
+        /// <summary> Gets the AppSec context </summary>
+        internal AppSecRequestContext AppSecRequestContext
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (Volatile.Read(ref _appSecRequestContext) is null)
+                {
+                    Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+                }
+
+                return _appSecRequestContext!;
+            }
+        }
+
+        internal bool WafExecuted { get; set; }
+
         internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
-            spans.Count > 0 ?
-                spans.Array![spans.Offset].Context.TraceContext :
-                null;
-
-        internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
-        {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            _appSecRequestContext!.AddWafSecurityEvents(events);
-        }
-
-        internal void AddStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
-        {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            _appSecRequestContext!.AddRaspStackTrace(stack, maxStackTraces);
-        }
-
-        internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
-        {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            _appSecRequestContext!.AddRaspSpanMetrics(duration, durationWithBindings);
-        }
+            spans.Count > 0 ? spans.Array![spans.Offset].Context.TraceContext : null;
 
         internal void EnableIastInRequest()
         {
@@ -160,30 +145,37 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.ExporterInternal.PartialFlushEnabledInternal && _spans.Count >= Tracer.Settings.ExporterInternal.PartialFlushMinSpansInternal;
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
 
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
+            if (span.IsRootSpan)
             {
-                Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
-
-                var iastInstance = Iast.Iast.Instance;
-                if (iastInstance.Settings.Enabled)
+                if (span.Type == SpanTypes.Web)
                 {
-                    if (_iastRequestContext is { } iastRequestContext)
+                    Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
+
+                    var iastInstance = Iast.Iast.Instance;
+                    if (iastInstance.Settings.Enabled)
                     {
-                        iastRequestContext.AddIastVulnerabilitiesToSpan(span);
-                        iastInstance.OverheadController.ReleaseRequest();
+                        if (_iastRequestContext is { } iastRequestContext)
+                        {
+                            iastRequestContext.AddIastVulnerabilitiesToSpan(span);
+                            iastInstance.OverheadController.ReleaseRequest();
+                        }
+                        else
+                        {
+                            IastRequestContext.AddIastDisabledFlagToSpan(span);
+                        }
                     }
-                    else
+
+                    if (_appSecRequestContext is not null)
                     {
-                        IastRequestContext.AddIastDisabledFlagToSpan(span);
+                        _appSecRequestContext.CloseWebSpan(Tags, span);
+                        _appSecRequestContext.DisposeAdditiveContext();
                     }
                 }
-
-                _appSecRequestContext?.CloseWebSpan(Tags, span);
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -202,7 +194,7 @@ namespace Datadog.Trace
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
-                else if (CIVisibility.IsRunning && span.IsCiVisibilitySpan())
+                else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
                 {
                     // TestSession, TestModule, TestSuite, Test and Browser spans are part of CI Visibility
                     // all of them are known to be Root spans, so we can flush them as soon as they are closed
@@ -265,12 +257,12 @@ namespace Datadog.Trace
                 return samplingPriority;
             }
 
-            return GetOrMakeSamplingDecisionSlow();
+            return GetOrMakeSamplingDecision(_rootSpan);
         }
 
-        private int GetOrMakeSamplingDecisionSlow()
+        public int GetOrMakeSamplingDecision(Span? span)
         {
-            if (_rootSpan is null)
+            if (span is null)
             {
                 // we can't make a sampling decision without a root span because:
                 // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
@@ -282,7 +274,7 @@ namespace Datadog.Trace
             }
 
             var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
-                                       ? sampler.MakeSamplingDecision(_rootSpan)
+                                       ? sampler.MakeSamplingDecision(span)
                                        : SamplingDecision.Default;
 
             SetSamplingPriority(samplingDecision.Priority, samplingDecision.Mechanism);

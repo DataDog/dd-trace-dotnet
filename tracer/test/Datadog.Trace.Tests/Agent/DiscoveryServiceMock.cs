@@ -25,7 +25,9 @@ internal class DiscoveryServiceMock : IDiscoveryService
         string eventPlatformProxyEndpoint = "eventPlatformProxyEndpoint",
         string telemetryProxyEndpoint = "telemetryProxyEndpoint",
         string tracerFlareEndpoint = "tracerFlareEndpoint",
-        bool clientDropP0 = true)
+        bool clientDropP0 = true,
+        bool spanMetaStructs = true,
+        bool spanEvents = true)
         => TriggerChange(
             new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
@@ -38,7 +40,9 @@ internal class DiscoveryServiceMock : IDiscoveryService
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 telemetryProxyEndpoint: telemetryProxyEndpoint,
                 tracerFlareEndpoint: tracerFlareEndpoint,
-                clientDropP0: clientDropP0));
+                clientDropP0: clientDropP0,
+                spanMetaStructs: spanMetaStructs,
+                spanEvents: spanEvents));
 
     public void TriggerChange(AgentConfiguration config)
     {

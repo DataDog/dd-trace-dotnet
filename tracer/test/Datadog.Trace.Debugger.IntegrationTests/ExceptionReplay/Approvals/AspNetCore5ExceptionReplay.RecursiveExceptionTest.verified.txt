@@ -1,0 +1,26 @@
+﻿Iteration 0:
+     _dd.di._eh : -362102791
+     _dd.di._er : NotEligible
+Iteration 1:
+     _dd.debug.error.0.frame_data.class_name : <Recursive>d__1
+     _dd.debug.error.0.frame_data.function : MoveNext
+     _dd.debug.error.0.snapshot_id : <Redacted>
+     _dd.debug.error.1.frame_data.class_name : <<Recursive>b__1_0>d
+     _dd.debug.error.1.frame_data.function : MoveNext
+     _dd.debug.error.1.snapshot_id : <Redacted>
+     _dd.debug.error.2.frame_data.class_name : <Me>d__0
+     _dd.debug.error.2.frame_data.function : MoveNext
+     _dd.debug.error.2.snapshot_id : <Redacted>
+     _dd.debug.error.3.frame_data.class_name : <Recursive>d__1
+     _dd.debug.error.3.frame_data.function : MoveNext
+     _dd.debug.error.3.snapshot_id : <Redacted>
+     _dd.debug.error.exception_hash : <Redacted>
+     _dd.debug.error.exception_id : <Redacted>
+     _dd.di._eh : -362102791
+     _dd.di._er : Eligible
+Iteration 2:
+     _dd.di._eh : -362102791
+     _dd.di._er : CachedDoneExceptionCase
+Iteration 3:
+     _dd.di._eh : -362102791
+     _dd.di._er : CachedDoneExceptionCase

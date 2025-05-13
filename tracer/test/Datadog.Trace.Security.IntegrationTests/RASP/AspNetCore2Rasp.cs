@@ -7,6 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -46,6 +47,7 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         EnableRasp();
         SetSecurity(true);
         EnableIast(enableIast);
+        AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
@@ -78,9 +80,18 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
+    [InlineData("/Iast/ExecuteCommand?file=/bin/rebootCommand&argumentLine=-f&fromShell=false", "CmdI")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var testName = IastEnabled ? "RaspIast.AspNetCore2" : "Rasp.AspNetCore2";
         IncludeAllHttpSpans = true;
         await TryStartApp();

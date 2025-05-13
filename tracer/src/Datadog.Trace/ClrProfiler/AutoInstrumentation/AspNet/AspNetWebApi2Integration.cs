@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
-                SpanContext propagatedContext = null;
+                PropagationContext extractedContext = default;
                 HttpHeadersCollection? headersCollection = null;
                 tags = new AspNetTags();
 
@@ -57,16 +57,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     try
                     {
                         // extract propagated http headers
-                        var headers = request.Headers;
-                        headersCollection = new HttpHeadersCollection(headers);
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value);
+                        headersCollection = new HttpHeadersCollection(request.Headers);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(headersCollection.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
-                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {
                         const string httpContextKey = "MS_HttpContext";
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
@@ -82,9 +81,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                                     tags);
                             }
                         }
-                        else if (request.Properties.ContainsKey(httpContextKey))
+                        else if (request.Properties.TryGetValue(httpContextKey, out var property))
                         {
-                            if (request.Properties[httpContextKey] is HttpContextWrapper objectCtx)
+                            if (property is HttpContextWrapper objectCtx)
                             {
                                 Headers.Ip.RequestIpExtractor.AddIpToTags(
                                     objectCtx.Request.UserHostAddress,
@@ -97,11 +96,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags);
                 UpdateSpan(controllerContext, scope.Span, tags);
+
                 if (headersCollection is not null)
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
+                    tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

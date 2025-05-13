@@ -5,13 +5,191 @@
   },
   "actions": [
     {
-      "id": "customblock",
-      "type": "block_request",
+      "id": "redirectstatuscode_200",
+      "type": "redirect_request",
       "parameters": {
-        "status_code": 403,
-        "grpc_status_code": "10",
-        "type": "auto"
+        "status_code": 200,
+        "location": "/you-have-been-blocked"
       }
+    },
+    {
+      "id": "redirectstatuscode_302",
+      "type": "redirect_request",
+      "parameters": {
+        "status_code": 302,
+        "location": "/you-have-been-blocked"
+      }
+    }
+  ],
+  "processors": [
+    {
+      "id": "http-endpoint-fingerprint",
+      "generator": "http_endpoint_fingerprint",
+      "conditions": [
+        {
+          "operator": "exists",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
+              }
+            ]
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "method": [
+              {
+                "address": "server.request.method"
+              }
+            ],
+            "uri_raw": [
+              {
+                "address": "server.request.uri.raw"
+              }
+            ],
+            "body": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "query": [
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.endpoint"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    },
+    {
+      "id": "http-header-fingerprint",
+      "generator": "http_header_fingerprint",
+      "conditions": [
+        {
+          "operator": "exists",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
+              }
+            ]
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.header"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    },
+    {
+      "id": "http-network-fingerprint",
+      "generator": "http_network_fingerprint",
+      "conditions": [
+        {
+          "operator": "exists",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
+              }
+            ]
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.network"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
+    },
+    {
+      "id": "session-fingerprint",
+      "generator": "session_fingerprint",
+      "conditions": [
+        {
+          "operator": "exists",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
+              }
+            ]
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "cookies": [
+              {
+                "address": "server.request.cookies"
+              }
+            ],
+            "session_id": [
+              {
+                "address": "usr.session_id"
+              }
+            ],
+            "user_id": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "output": "_dd.appsec.fp.session"
+          }
+        ]
+      },
+      "evaluate": false,
+      "output": true
     }
   ],
   "rules": [
@@ -148,6 +326,9 @@
               },
               {
                 "address": "server.request.path_params"
+              },
+              {
+                "address": "server.response.headers.no_cookies"
               }
             ],
             "list": [
@@ -5774,6 +5955,132 @@
       "transformers": [],
       "on_match": [
         "block"
+      ]
+    },
+    {
+      "id": "block-on-path-params",
+      "name": "Block on path params",
+      "tags": {
+        "type": "nosql_injection",
+        "crs_id": "000009",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "regex": "(?i:(?:\\[blocking_test\\]))",
+            "options": {
+              "case_sensitive": true,
+              "min_length": 5
+            }
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "customblock"
+      ]
+    },
+    {
+      "id": "block-on-path-params-redirect",
+      "name": "Block on path params with block redirection",
+      "tags": {
+        "type": "nosql_injection",
+        "crs_id": "000010",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "regex": "(?i:(?:\\[block_redir\\]))",
+            "options": {
+              "case_sensitive": true,
+              "min_length": 5
+            }
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "blockredir"
+      ]
+    },
+    {
+      "id": "canary_rule_redirect_200",
+      "name": "Canary rule redirect 200",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent"
+                ]
+              }
+            ],
+            "regex": "Canary\\/v3_200"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "on_match": [
+        "redirectstatuscode_200"
+      ]
+    },
+    {
+      "id": "canary_rule_redirect_302",
+      "name": "Canary rule redirect 302",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent"
+                ]
+              }
+            ],
+            "regex": "Canary\\/v3_302"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "on_match": [
+        "redirectstatuscode_302"
       ]
     }
   ]

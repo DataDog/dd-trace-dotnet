@@ -17,7 +17,7 @@ namespace Datadog.Trace.Configuration
     /// Represents a configuration source that retrieves
     /// values from the provided <see cref="NameValueCollection"/>.
     /// </summary>
-    public class NameValueConfigurationSource : StringConfigurationSource
+    internal class NameValueConfigurationSource : StringConfigurationSource
     {
         private readonly NameValueCollection _nameValueCollection;
 
@@ -42,8 +42,7 @@ namespace Datadog.Trace.Configuration
         internal override ConfigurationOrigins Origin { get; }
 
         /// <inheritdoc />
-        [PublicApi]
-        public override string? GetString(string key)
+        protected override string? GetString(string key)
         {
             return _nameValueCollection[key];
         }

@@ -18,10 +18,19 @@ namespace Datadog.Profiler.SmokeTests
             _output = output;
         }
 
+        // NOTE: now that .NET Framework is supported by default, the profiler tries to connect
+        //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
+        //       the ETW support is disabled in the tests for .NET Framework.
+
         [TestAppFact("Samples.ExceptionGenerator")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            if (framework == "net48")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
             runner.RunAndCheck();
         }
 
@@ -30,6 +39,11 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckSmokeForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            if (framework == "net48")
+            {
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
+            }
+
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }

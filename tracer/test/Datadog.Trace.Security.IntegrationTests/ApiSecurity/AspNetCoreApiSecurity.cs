@@ -11,10 +11,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,13 +29,8 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         _fixture.SetOutput(outputHelper);
         Directory.CreateDirectory(LogDirectory);
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, Path.Combine("ApiSecurity", "ruleset-with-block.json"));
-        // necessary as the developer middleware prevents the right blocking response
-        EnvironmentHelper.CustomEnvironmentVariables.Add("ASPNETCORE_ENVIRONMENT", "Production");
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
-        if (enableApiSecurity)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
-        }
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
     }
 
     public override void Dispose()
@@ -66,8 +58,8 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         // Simple scrubber for the response content type in .NET 8
         // .NET 8 doesn't add the content-length header, whereas previous versions do
         settings.AddSimpleScrubber(
-            """_dd.appsec.s.res.headers: [{"content-length":[[[8]],{"len":1}]}],""",
-            """_dd.appsec.s.res.headers: [{}],""");
+            """_dd.appsec.s.res.headers: [{"content-length":[8]}],""",
+            string.Empty);
 #endif
         await VerifySpans(spans, settings);
     }

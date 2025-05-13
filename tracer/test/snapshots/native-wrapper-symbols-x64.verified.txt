@@ -1,0 +1,14 @@
+__errno_location
+__tls_get_addr
+access
+asprintf
+free
+getenv
+malloc
+strcasecmp
+strcmp
+strcpy
+strlen
+strncmp
+strncpy
+strrchr

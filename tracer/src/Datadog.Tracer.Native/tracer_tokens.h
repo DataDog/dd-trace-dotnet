@@ -34,8 +34,7 @@ protected:
 
     HRESULT EnsureBaseCalltargetTokens() override;
     void AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                             COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
-                             ULONG& signatureSize, bool isAsyncMethod) override;
+                             SignatureBuilder& signature, bool isAsyncMethod) override;
 
 public:
     TracerTokens(ModuleMetadata* module_metadata_ptr, bool enableByRefInstrumentation,

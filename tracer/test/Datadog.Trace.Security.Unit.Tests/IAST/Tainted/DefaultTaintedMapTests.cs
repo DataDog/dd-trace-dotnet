@@ -235,7 +235,7 @@ public class DefaultTaintedMapTests
 
         foreach (var item in disposedObjects)
         {
-            (map.Get(item) as TaintedForTest).SetAlive(false);
+            (map.Get(item) as TaintedForTest).Invalidate();
         }
 
         map.Purge();
@@ -263,7 +263,7 @@ public class DefaultTaintedMapTests
         var tainted = new TaintedForTest(testString, null);
         map.Put(tainted);
         map.Get(testString).Should().NotBeNull();
-        (map.Get(testString) as TaintedForTest).SetAlive(false);
+        (map.Get(testString) as TaintedForTest).Invalidate();
         map.Purge();
         map.Get(testString).Should().BeNull();
     }
@@ -279,7 +279,7 @@ public class DefaultTaintedMapTests
             testString.Hash = 1;
             var tainted = new TaintedForTest(testString, null);
             map.Put(tainted);
-            tainted.SetAlive(false);
+            tainted.Invalidate();
             map.Get(testString).Should().NotBeNull();
         }
 
@@ -313,7 +313,7 @@ public class DefaultTaintedMapTests
             addedObjects.Add(testString);
         }
 
-        (map.Get(addedObjects[disposedIndex]) as TaintedForTest).SetAlive(false);
+        (map.Get(addedObjects[disposedIndex]) as TaintedForTest).Invalidate();
         map.Purge();
 
         for (int i = 0; i < totalObjects; i++)

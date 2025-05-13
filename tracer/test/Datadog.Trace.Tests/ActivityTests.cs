@@ -30,9 +30,13 @@ namespace Datadog.Trace.Tests
             _fixture = fixture;
         }
 
-        [Fact]
+        [SkippableFact]
         public void SimpleActivitiesAndSpansTest()
         {
+            // macos 12 is crazy flaky around timings
+            // We should unskip this once we have resolved the issues around Hierarchical IDs
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
             var settings = new TracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);

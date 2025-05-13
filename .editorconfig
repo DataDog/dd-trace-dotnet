@@ -78,3 +78,7 @@ csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_members_in_anonymous_types = true
+
+# Rider
+csharp_keep_existing_initializer_arrangement=true
+csharp_keep_existing_arrangement=true

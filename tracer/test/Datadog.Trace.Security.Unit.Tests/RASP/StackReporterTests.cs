@@ -20,7 +20,7 @@ public class StackReporterTests
     {
         int maxStackTraceDepth = 10;
         var mockFrames = CreateStackForTests(2);
-        var result = StackReporter.GetStack(maxStackTraceDepth, "test", mockFrames);
+        var result = StackReporter.GetStack(maxStackTraceDepth, 100, "test", mockFrames);
 
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
@@ -33,11 +33,11 @@ public class StackReporterTests
     }
 
     [Fact]
-    public void GivenMultipleFrames_WhenMaxDepthIsSet_ThenReturnsTop25AndBottom75Percent()
+    public void GivenMultipleFrames_WhenMaxDepthIsSet_ThenReturnsTop75AndBottom25Percent()
     {
         int maxStackTraceDepth = 2;
         var mockFrames = CreateStackForTests(4);
-        var result = StackReporter.GetStack(maxStackTraceDepth, "test", mockFrames);
+        var result = StackReporter.GetStack(maxStackTraceDepth, 75, "test", mockFrames);
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
 
@@ -49,11 +49,11 @@ public class StackReporterTests
     }
 
     [Fact]
-    public void GivenMultipleFrames_WhenMaxDepthIsSetTo4_ThenReturnsTop25AndBottom75Percent()
+    public void GivenMultipleFrames_WhenMaxDepthIsSetTo4_ThenReturnsTop75AndBottom25Percent()
     {
         int maxStackTraceDepth = 4;
         var mockFrames = CreateStackForTests(40);
-        var result = StackReporter.GetStack(maxStackTraceDepth, "test", mockFrames);
+        var result = StackReporter.GetStack(maxStackTraceDepth, 75, "test", mockFrames);
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
 
@@ -61,8 +61,8 @@ public class StackReporterTests
         Assert.NotNull(frames);
         Assert.Equal(maxStackTraceDepth, frames.Count);
         Assert.Equal("file1.cs", frames[0]["file"]);
-        Assert.Equal("file38.cs", frames[1]["file"]);
-        Assert.Equal("file39.cs", frames[2]["file"]);
+        Assert.Equal("file2.cs", frames[1]["file"]);
+        Assert.Equal("file3.cs", frames[2]["file"]);
         Assert.Equal("file40.cs", frames[3]["file"]);
     }
 
@@ -71,7 +71,7 @@ public class StackReporterTests
     {
         var mockFrames = CreateStackForTests(40);
 
-        var result = StackReporter.GetStack(0, "test", mockFrames);
+        var result = StackReporter.GetStack(0, 0, "test", mockFrames);
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
 
@@ -82,7 +82,7 @@ public class StackReporterTests
     public void GivenNoStackFrames_WhenGetStackIsCalled_ThenReturnsNull()
     {
         StackFrame[] mockFrames = [];
-        var result = StackReporter.GetStack(5, "test", mockFrames);
+        var result = StackReporter.GetStack(5, 100, "test", mockFrames);
         Assert.Null(result);
     }
 

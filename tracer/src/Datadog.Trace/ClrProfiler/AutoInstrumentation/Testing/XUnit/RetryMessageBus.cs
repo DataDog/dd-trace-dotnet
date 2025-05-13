@@ -5,32 +5,47 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 internal class RetryMessageBus : IMessageBus
 {
+    private readonly Dictionary<string, RetryTestCaseMetadata> _testMethodMetadata = new();
     private readonly IMessageBus _innerMessageBus;
-    private List<object>?[]? _listOfMessages;
+    private readonly int _totalExecutions;
+    private readonly int _executionNumber;
 
     public RetryMessageBus(IMessageBus innerMessageBus, int totalExecutions, int executionNumber)
     {
         _innerMessageBus = innerMessageBus;
-        TotalExecutions = totalExecutions;
-        ExecutionNumber = executionNumber;
+        _totalExecutions = totalExecutions;
+        _executionNumber = executionNumber;
     }
 
-    public int TotalExecutions { get; set; }
+    public TestCaseMetadata GetMetadata(string uniqueID)
+    {
+        Common.Log.Debug("RetryMessageBus.GetMetadata: Looking for: {Id}", uniqueID);
+#if NET6_0_OR_GREATER
+        ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(_testMethodMetadata, uniqueID, out _);
+        if (value is null)
+        {
+            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", uniqueID);
+            value = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
+        }
+#else
+        if (!_testMethodMetadata.TryGetValue(uniqueID, out var value))
+        {
+            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", uniqueID);
+            value = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
+            _testMethodMetadata[uniqueID] = value;
+        }
+#endif
 
-    public int ExecutionNumber { get; set; }
-
-    public int ExecutionIndex => TotalExecutions - (ExecutionNumber + 1);
-
-    public bool? TestIsNew { get; set; }
-
-    public bool AbortByThreshold { get; set; }
+        return value;
+    }
 
     [DuckReverseMethod]
     public void Dispose()
@@ -46,46 +61,89 @@ internal class RetryMessageBus : IMessageBus
             return false;
         }
 
-        var messageType = message.GetType();
-        var totalExecutions = TotalExecutions;
-
-        // Let's store all messages for all executions of the given test, when the test case is finished,
-        // we will try to find a passing execution to flush, if not we will flush the first one.
-        var currentExecutionNumber = ExecutionNumber + 1;
-        var index = totalExecutions - currentExecutionNumber;
-        if (_listOfMessages is null)
+        string? uniqueID;
+        if (message.TryDuckCast<ITestCaseMessage>(out var testCaseMessage))
         {
-            Common.Log.Debug<int>("EFD: RetryMessageBus.QueueMessage: Creating list of messages for {Executions} executions.", totalExecutions);
-            _listOfMessages = new List<object>[totalExecutions];
+            uniqueID = testCaseMessage.TestCase.UniqueID;
         }
-        else if (_listOfMessages.Length < totalExecutions)
+        else if (message.TryDuckCast<ITestCaseMessageV3>(out var testCaseMessageV3))
         {
-            Common.Log.Debug<int>("EFD: RetryMessageBus.QueueMessage: Resizing array with list of messages for {Executions} executions.", totalExecutions);
-            Array.Resize(ref _listOfMessages, totalExecutions);
+            uniqueID = testCaseMessageV3.TestMethodUniqueID;
         }
-
-        if (_listOfMessages[index] is not { } lstRetryInstance)
+        else if (message.TryDuckCast<ITestMethodMetadataV3>(out var testMethodMetadataV3))
         {
-            lstRetryInstance = [];
-            _listOfMessages[index] = lstRetryInstance;
+            uniqueID = testMethodMetadataV3.TestMethodUniqueID;
+        }
+        else
+        {
+            Common.Log.Debug("RetryMessageBus.QueueMessage: Message is not a supported message. Flushing: {Message}", message);
+            return _innerMessageBus.QueueMessage(message);
         }
 
-        lstRetryInstance.Add(message);
+        Common.Log.Debug("RetryMessageBus.QueueMessage: Message: {Message} | UniqueID: {UniqueID}", message, uniqueID);
 
-        return true;
+        if (uniqueID is not null)
+        {
+            var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
+            if (metadata.Disposed)
+            {
+                Common.Log.Debug("RetryMessageBus.QueueMessage: Metadata is disposed for: {UniqueID} direct flush of the message.", uniqueID);
+                return _innerMessageBus.QueueMessage(message);
+            }
+
+            var totalExecutions = metadata.TotalExecutions;
+
+            // Let's store all messages for all executions of the given test, when the test case is finished,
+            // we will try to find a passing execution to flush, if not we will flush the first one.
+            var currentExecutionNumber = metadata.CountDownExecutionNumber + 1;
+            var index = totalExecutions - currentExecutionNumber;
+            if (metadata.ListOfMessages is null)
+            {
+                Common.Log.Debug<int>("RetryMessageBus.QueueMessage: Creating list of messages for {Executions} executions.", totalExecutions);
+                metadata.ListOfMessages = new List<object>[totalExecutions];
+            }
+            else if (metadata.ListOfMessages.Length < totalExecutions)
+            {
+                Common.Log.Debug<int>("RetryMessageBus.QueueMessage: Resizing array with list of messages for {Executions} executions.", totalExecutions);
+                metadata.ResizeListOfMessages(totalExecutions);
+            }
+
+            if (index < 0)
+            {
+                Common.Log.Error<int>("RetryMessageBus.QueueMessage: Execution index {Index} is less than 0.", index);
+                FlushMessages(uniqueID);
+                throw new Exception($"Execution index {index} is less than 0.");
+            }
+
+            if (metadata.ListOfMessages[index] is not { } lstRetryInstance)
+            {
+                lstRetryInstance = [];
+                metadata.ListOfMessages[index] = lstRetryInstance;
+            }
+
+            lstRetryInstance.Add(message);
+            return true;
+        }
+
+        Common.Log.Error("RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Flushing: {Message}", message);
+        return _innerMessageBus.QueueMessage(message);
     }
 
-    public bool FlushMessages()
+    public bool FlushMessages(string uniqueID)
     {
-        Common.Log.Debug("EFD: RetryMessageBus.FlushMessages: Flushing messages");
-        if (_listOfMessages is null || _listOfMessages.Length == 0)
+        Common.Log.Debug("RetryMessageBus.FlushMessages: Flushing messages for: {UniqueID}", uniqueID);
+
+        var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
+        var listOfMessages = metadata.ListOfMessages;
+        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed)
         {
+            Common.Log.Debug("RetryMessageBus.FlushMessages: Nothing to flush for: {UniqueID}", uniqueID);
             return true;
         }
 
         // Let's check for a passing execution to flush that one.
         List<object>? defaultMessages = null;
-        foreach (var messages in _listOfMessages)
+        foreach (var messages in listOfMessages)
         {
             if (messages is not null)
             {
@@ -116,12 +174,49 @@ internal class RetryMessageBus : IMessageBus
                 retValue = retValue && _innerMessageBus.QueueMessage(messageInList);
             }
 
-            if (_listOfMessages is not null)
-            {
-                Array.Clear(_listOfMessages, 0, _listOfMessages.Length);
-            }
+            Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, uniqueID);
 
+            Array.Clear(listOfMessages, 0, listOfMessages.Length);
             return retValue;
+        }
+    }
+
+#pragma warning disable SA1201 // ElementsMustAppearInTheCorrectOrder
+    internal interface ITestCaseMessage
+    {
+        ITestCase TestCase { get; }
+    }
+
+    internal interface ITestMethodMetadataV3
+    {
+        string TestMethodUniqueID { get; }
+    }
+
+    internal interface ITestCaseMessageV3 : ITestMethodMessageV3
+    {
+        string? TestCaseUniqueID { get; set; }
+    }
+
+    internal interface ITestMethodMessageV3
+    {
+        string? TestMethodUniqueID { get; set; }
+    }
+
+    private class RetryTestCaseMetadata(string uniqueID, int totalExecution, int executionNumber) : TestCaseMetadata(uniqueID, totalExecution, executionNumber)
+    {
+        private List<object>?[]? _listOfMessages;
+
+        public List<object>?[]? ListOfMessages
+        {
+            get => _listOfMessages;
+            set => _listOfMessages = value;
+        }
+
+        public bool Disposed { get; set; }
+
+        public void ResizeListOfMessages(int totalExecutions)
+        {
+            Array.Resize(ref _listOfMessages, totalExecutions);
         }
     }
 }

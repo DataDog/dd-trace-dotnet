@@ -51,10 +51,14 @@ namespace AspNetCoreSmokeTest
                 var server = serviceScope.ServiceProvider.GetRequiredService<IServer>();
                 var addressFeature = server.Features.Get<IServerAddressesFeature>();
                 var address = addressFeature!.Addresses.First();
+                _logger.LogInformation("Found server address: {address}", address);
 
                 var client = new HttpClient();
 
-                _logger.LogInformation("Sending request to self");
+                // By default, IIS uses a wildcard host, so switch that out for localhost
+                address = address.Replace("http://*", "http://localhost").TrimEnd('/');
+
+                _logger.LogInformation("Sending request to self with address {address}", address);
                 var response = await client.GetAsync($"{address}/api/values", stoppingToken);
 
                 if (!response.IsSuccessStatusCode)
@@ -79,8 +83,8 @@ namespace AspNetCoreSmokeTest
                 Program.ExitCode = 1;
             }
 
+            _logger.LogInformation("Shutting down application");
             _lifetime.StopApplication();
-
         }
     }
 }

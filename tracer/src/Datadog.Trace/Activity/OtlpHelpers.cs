@@ -62,7 +62,7 @@ namespace Datadog.Trace.Activity
             // Fixup "version" tag
             // Fallback to static instance if no tracer associated with the trace
             var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
-            if (tracer.Settings.ServiceVersionInternal is null
+            if (tracer.Settings.ServiceVersion is null
              && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
@@ -77,8 +77,6 @@ namespace Datadog.Trace.Activity
                 {
                     OtlpHelpers.SetTagObject(span, activityTag.Key, activityTag.Value);
                 }
-
-                OtlpHelpers.SerializeEventsToJson(span, activity5.Events);
             }
             else
             {
@@ -99,18 +97,7 @@ namespace Datadog.Trace.Activity
 
             // Later: Support config 'span_name_as_resource_name'
             // Later: Support config 'span_name_remappings'
-            if (tracer.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null && string.IsNullOrEmpty(span.OperationName))
-            {
-                span.OperationName = activity5.Source.Name switch
-                {
-                    string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
-                    _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
-                };
-            }
-            else
-            {
-                OperationNameMapper.MapToOperationName(span);
-            }
+            OperationNameMapper.MapToOperationName(span);
 
             // TODO: Add container tags from attributes if the tag isn't already in the span
 
@@ -204,8 +191,9 @@ namespace Datadog.Trace.Activity
                 span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
 
-            // extract any ActivityLinks
+            // extract any ActivityLinks and ActivityEvents
             ExtractActivityLinks<TInner>(span, activity5);
+            ExtractActivityEvents<TInner>(span, activity5);
         }
 
         private static void ExtractActivityLinks<TInner>(Span span, IActivity5? activity5)
@@ -265,15 +253,13 @@ namespace Datadog.Trace.Activity
                 spanContext.LastParentId = traceState.LastParent;
                 spanContext.PropagatedTags = traceTags;
 
-                var extractedSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
-                var spanLink = span.AddSpanLink(extractedSpan);
-
+                List<KeyValuePair<string, string>> attributes = new();
                 if (duckLink.Tags is not null)
                 {
                     foreach (var kvp in duckLink.Tags)
                     {
                         if (!string.IsNullOrEmpty(kvp.Key)
-                         && IsAllowedAtributeType(kvp.Value))
+                         && IsAllowedAttributeType(kvp.Value))
                         {
                             if (kvp.Value is Array array)
                             {
@@ -282,18 +268,48 @@ namespace Datadog.Trace.Activity
                                 {
                                     if (item?.ToString() is { } value)
                                     {
-                                        spanLink.AddAttribute($"{kvp.Key}.{index}", value);
+                                        attributes.Add(new($"{kvp.Key}.{index}", value));
                                         index++;
                                     }
                                 }
                             }
                             else if (kvp.Value?.ToString() is { } kvpValue)
                             {
-                                spanLink.AddAttribute(kvp.Key, kvpValue);
+                                attributes.Add(new(kvp.Key, kvpValue));
                             }
                         }
                     }
                 }
+
+                span.AddLink(new SpanLink(spanContext, attributes));
+            }
+        }
+
+        private static void ExtractActivityEvents<TInner>(Span span, IActivity5? activity5)
+            where TInner : IActivity
+        {
+            if (activity5 is null)
+            {
+                return;
+            }
+
+            foreach (var activityEvent in activity5.Events)
+            {
+                if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
+                {
+                    continue;
+                }
+
+                var eventAttributes = new List<KeyValuePair<string, object>>();
+                foreach (var kvp in duckEvent.Tags)
+                {
+                    if (!string.IsNullOrEmpty(kvp.Key) && kvp.Value is not null)
+                    {
+                        eventAttributes.Add(new(kvp.Key, kvp.Value));
+                    }
+                }
+
+                span.AddEvent(new SpanEvent(duckEvent.Name, duckEvent.Timestamp, eventAttributes));
             }
         }
 
@@ -339,8 +355,8 @@ namespace Datadog.Trace.Activity
                     span.SetMetric(key, us);
                     break;
                 case int i: // TODO: Can't get here from OTEL API, test with Activity API
-                    // special case where we need to remap "http.response.status_code"
-                    if (key == "http.response.status_code")
+                    // special case where we need to remap "http.response.status_code" and the deprecated "http.status_code"
+                    if (key == "http.response.status_code" || key == "http.status_code")
                     {
                         span.SetTag(Tags.HttpStatusCode, i.ToString(CultureInfo.InvariantCulture));
                     }
@@ -545,28 +561,6 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        internal static void SerializeEventsToJson(Span span, IEnumerable events)
-        {
-            var eventsList = new List<ActivityEvent>();
-
-            foreach (var activityEvent in events)
-            {
-                if (activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
-                {
-                    eventsList.Add(duckEvent);
-                }
-            }
-
-            if (eventsList.Count <= 0)
-            {
-                return;
-            }
-
-            var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new ActivityEventConverter() }, Formatting = Formatting.None };
-            var eventsJson = JsonConvert.SerializeObject(eventsList, settings);
-            span.SetTag("events", eventsJson);
-        }
-
         // See trace agent func spanKind2Type: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L621
         internal static string AgentSpanKind2Type(ActivityKind kind, Span span) => kind switch
         {
@@ -620,7 +614,7 @@ namespace Datadog.Trace.Activity
             return null;
         }
 
-        private static bool IsAllowedAtributeType(object? value)
+        private static bool IsAllowedAttributeType(object? value)
         {
             if (value is null)
             {

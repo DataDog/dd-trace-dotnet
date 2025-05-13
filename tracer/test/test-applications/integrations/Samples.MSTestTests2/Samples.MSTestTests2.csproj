@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.2.8</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.8.1</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -15,11 +15,23 @@
     <When Condition="'$(TargetFramework)' == 'netcoreapp2.1' OR '$(TargetFramework)' == 'netcoreapp3.0'">
       <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+        <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
+        <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->
+        <!-- platforms. By excluding this, we use the same dll on all platforms instead -->
+        <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="16.11.0">
+          <ExcludeAssets>build;buildtransitive</ExcludeAssets>
+        </PackageReference>
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+        <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
+        <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->
+        <!-- platforms. By excluding this, we use the same dll on all platforms instead -->
+        <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="17.9.0">
+          <ExcludeAssets>build;buildtransitive</ExcludeAssets>
+        </PackageReference>
       </ItemGroup>
     </Otherwise>
   </Choose>

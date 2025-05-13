@@ -222,11 +222,6 @@ namespace PrepareRelease
                     "samples/WindowsContainer/Dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
-                // Pipeline monitor
-                SynchronizeVersion(
-                    "tools/PipelineMonitor/PipelineMonitor.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
-
                 Console.WriteLine($"Completed synchronizing package versions to {VersionString()}");
             }
 
@@ -242,6 +237,11 @@ namespace PrepareRelease
             public override void Run()
             {
                 Console.WriteLine($"Updating source version instances to {VersionString()}");
+
+                // Pipeline
+                SynchronizeVersion(
+                    "../.azure-pipelines/ultimate-pipeline.yml",
+                    text => Regex.Replace(text, $"ToolVersion: {VersionPattern(withPrereleasePostfix: true)}", $"ToolVersion: {VersionString(withPrereleasePostfix: true)}"));
 
                 // Nuke build
                 SynchronizeVersion(
@@ -262,11 +262,11 @@ namespace PrepareRelease
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                    "src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
@@ -312,15 +312,10 @@ namespace PrepareRelease
                     // upgrading four part, then three part *seems* safe
                     text => ThreePartVersionReplace(FourPartVersionReplace(text)));
 
-                // Top-level CMakeLists.txt
-                SynchronizeVersion(
-                    "CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
-
                 // Native clr profiler updates
                 SynchronizeVersion(
                     "src/Datadog.Tracer.Native/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Tracer.Native\" VERSION "));
 
                 SynchronizeVersion(
                     "src/Datadog.Tracer.Native/Resource.rc",
@@ -344,11 +339,11 @@ namespace PrepareRelease
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Profiler.Native.Linux\" VERSION "));
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Linux.ApiWrapper\" VERSION "));
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
@@ -367,7 +362,7 @@ namespace PrepareRelease
 
                 SynchronizeVersion(
                     "../shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+                    text => FullVersionReplace(text, ".", prefix: "\"Datadog.Trace.ClrProfiler.Native\" VERSION "));
 
                 SynchronizeVersion(
                     "../shared/src/native-src/version.h",

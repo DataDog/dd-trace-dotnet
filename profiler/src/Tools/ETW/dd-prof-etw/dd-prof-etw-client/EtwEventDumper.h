@@ -11,7 +11,7 @@ class EtwEventDumper : public IEtwEventsReceiver
 public:
     // Inherited via IEtwEventsReceiver
     void OnEvent(
-        uint64_t timestamp,
+        etw_timestamp timestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,

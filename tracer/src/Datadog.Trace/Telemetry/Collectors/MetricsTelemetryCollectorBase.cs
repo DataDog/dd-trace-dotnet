@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricsTelemetryCollectorBase.cs" company="Datadog">
+// <copyright file="MetricsTelemetryCollectorBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,12 +14,12 @@ namespace Datadog.Trace.Telemetry;
 
 internal abstract partial class MetricsTelemetryCollectorBase
 {
+    private static readonly string[] _unknownWafAndRulesVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
     private readonly TimeSpan _aggregationInterval;
     private readonly Action? _aggregationNotification;
-    private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
-    private string[]? _wafVersionTags;
+    private string[]? _wafAndRulesVersionTags;
 
     protected MetricsTelemetryCollectorBase()
         : this(TimeSpan.FromSeconds(10))
@@ -31,6 +31,13 @@ internal abstract partial class MetricsTelemetryCollectorBase
         _aggregationInterval = aggregationInterval;
         _aggregationNotification = aggregationNotification;
         _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
+        _aggregateTask
+           .ContinueWith(
+                t =>
+                {
+                    // There's a complex relationship between metrics and logs initialization, so we don't log anything in this case
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
     }
 
     /// <summary>
@@ -46,10 +53,10 @@ internal abstract partial class MetricsTelemetryCollectorBase
         return _aggregateTask;
     }
 
-    public void SetWafVersion(string wafVersion)
+    public void SetWafAndRulesVersion(string wafVersion, string? eventRulesVersion)
     {
         // Setting this an array so we can reuse it for multiple metrics
-        _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
+        _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion ?? "unknown"}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()
@@ -213,12 +220,19 @@ internal abstract partial class MetricsTelemetryCollectorBase
 
         if (metricKeyTags is null)
         {
-            return _wafVersionTags ?? _unknownWafVersionTags;
+            return _wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags;
         }
 
-        var wafVersionTag = (_wafVersionTags ?? _unknownWafVersionTags)[0];
+        if (metricKeyTags[0].StartsWith("waf_version", StringComparison.Ordinal))
+        {
+            metricKeyTags[0] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[0];
+        }
 
-        metricKeyTags[0] = wafVersionTag;
+        if (metricKeyTags.Length > 1 && metricKeyTags[1].StartsWith("event_rules_version", StringComparison.Ordinal))
+        {
+            metricKeyTags[1] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[1];
+        }
+
         return metricKeyTags;
     }
 

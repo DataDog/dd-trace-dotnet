@@ -1,0 +1,20 @@
+parameters:
+  - name: 'framework'
+    type: 'string'
+    default: ''
+
+steps:
+- task: DownloadPipelineArtifact@2
+  displayName: Download standalone samples
+  inputs:
+    artifact: samples-standalone
+    path: $(outputDir)/bin
+  retryCountOnTaskFailure: 5
+
+- ${{ if ne(parameters.framework, '') }}:
+  - task: DownloadPipelineArtifact@2
+    displayName: Download multi-version samples
+    inputs:
+      artifact: samples-multi-version-${{ parameters.framework }}
+      path: $(outputDir)/publish
+    retryCountOnTaskFailure: 5

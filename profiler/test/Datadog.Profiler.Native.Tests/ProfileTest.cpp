@@ -27,7 +27,7 @@ TEST(ProfileTest, AddSample)
     auto p = CreateProfile(configuration);
 
     Sample::ValuesCount = 1;
-    auto s = std::make_shared<Sample>(1, "1", 2);
+    auto s = std::make_shared<Sample>(1ns, "1", 2);
     s->AddFrame({"", "", "", 1});
     s->AddFrame({"", "", "", 2});
     s->AddValue(42, 0);
@@ -69,7 +69,7 @@ TEST(ProfileTest, EnsureAddFailIfWrongNumberOfValues)
 
     // change number of values to fail the Add
     Sample::ValuesCount = 2;
-    auto s = std::make_shared<Sample>(1, "1", 2);
+    auto s = std::make_shared<Sample>(1ns, "1", 2);
     s->AddFrame({"", "", "", 1});
     s->AddFrame({"", "", "", 2});
     s->AddValue(42, 0);

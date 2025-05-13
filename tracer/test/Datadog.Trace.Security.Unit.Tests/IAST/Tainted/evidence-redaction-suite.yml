@@ -6,6 +6,7 @@ suite:
       $1:
         - access_key_id
         - accessKeyId
+        - address
         - apikey
         - api_key
         - apiToken
@@ -19,8 +20,11 @@ suite:
         - consumer_key
         - consumerSecret
         - consumer_secret
+        - email
         - expirationToken
         - expiration_token
+        - lastname
+        - mail
         - pass
         - passwd
         - password
@@ -41,7 +45,10 @@ suite:
         - sign
         - signature
         - signed
+        - surname
         - token
+        - user
+        - username
     input: >
       [
         { "origin": "http.request.parameter", "name": "$1", "value": "table" }
@@ -113,6 +120,7 @@ suite:
           GBudByVPLqUDB5nvcDxTTsDP+gPFQtQ1mAWB1r18s9x4OioqvoV/6Q==
           -----END OPENSSH PRIVATE KEY-----
         - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCRUM4Ax6c9yVDvPlTeLdBjDiVC6KMTLGcSBNeSTzwvbSagUFTi8mRKC69ResbM2If5YxZZZMBcFMN204cClAlJ1TQ/iVj7Q/cvDdZ5lp60+bnzdpwOVoKT0Nqo9CeOln/0MuqbHWvklgBlsKK5dYwDSXMlQ46eLC33gFYKfPf7QtusLuM2yJoLtxFzWSaP82a7zJ0Dh6inji0kyVpdv2edQjGCVSbTIvU0M5POiRM/TcVrsla3jqAyjpyjvnWdibjczA5v9xjRSHr6Ln1zNe4KzSEWlbISRAkONxA1eDL1y0jRH8mcFtDKRIkbwLRwH2ex/Bu25EhBWuCiPrl6uVdr
+        - mail@to.net
     input: >
       [
         { "origin": "http.request.parameter", "name": "name", "value": "$1" }
@@ -1636,7 +1644,7 @@ suite:
             }
           }
         ]
-      }   
+      }
 
   - type: 'VULNERABILITIES'
     description: 'SQLi exploited'
@@ -1647,7 +1655,7 @@ suite:
           "evidence": {
             "value": "SELECT * FROM Users WHERE email = '' OR TRUE --' AND password = '81dc9bdb52d04dc20036dbd8313ed055' AND deletedAt IS NULL",
             "ranges": [
-              { "start" : 35, "length" : 12, "source": { "origin": "http.request.parameter", "name": "email", "value": "' OR TRUE --" } }
+              { "start" : 35, "length" : 12, "source": { "origin": "http.request.parameter", "name": "param", "value": "' OR TRUE --" } }
             ]
           }
         }
@@ -1655,7 +1663,7 @@ suite:
     expected: >
       {
         "sources": [
-          { "origin": "http.request.parameter", "name": "email", "value": "' OR TRUE --" }
+          { "origin": "http.request.parameter", "name": "param", "value": "' OR TRUE --" }
         ],
         "vulnerabilities": [
           {
@@ -1671,6 +1679,7 @@ suite:
           }
         ]
       }
+
   - type: 'VULNERABILITIES'
     description: 'Consecutive ranges - at the beginning'
     input: >
@@ -1721,10 +1730,14 @@ suite:
 
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction '
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS vulnerability but can be extended to future ones",
             "ranges": [
@@ -1740,7 +1753,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "redacted": true },
@@ -1750,14 +1763,17 @@ suite:
             }
           }
         ]
-      } 
-
+      }
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction - with redactable source '
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS vulnerability but can be extended to future ones",
             "ranges": [
@@ -1773,7 +1789,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "redacted": true },
@@ -1788,10 +1804,14 @@ suite:
 
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction - with null source '
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS vulnerability but can be extended to future ones",
             "ranges": [
@@ -1807,7 +1827,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "redacted": true },
@@ -1821,10 +1841,14 @@ suite:
 
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction - multiple ranges'
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS vulnerability but can be extended to future ones",
             "ranges": [
@@ -1842,7 +1866,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "redacted": true },
@@ -1854,14 +1878,17 @@ suite:
             }
           }
         ]
-      } 
-
+      }
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction - first range at the beginning '
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS vulnerability but can be extended to future ones",
             "ranges": [
@@ -1879,7 +1906,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "source": 0, "value": "this" },
@@ -1890,14 +1917,17 @@ suite:
             }
           }
         ]
-      } 
-
+      }
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction - last range at the end '
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS",
             "ranges": [
@@ -1915,7 +1945,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "source": 0, "value": "this" },
@@ -1925,14 +1955,17 @@ suite:
             }
           }
         ]
-      } 
-
+      }
   - type: 'VULNERABILITIES'
     description: 'Tainted range based redaction - whole text '
+    parameters:
+      $1:
+        - XSS
+        - EMAIL_HTML_INJECTION
     input: >
       [
         {
-          "type": "XSS",
+          "type": "$1",
           "evidence": {
             "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS",
             "ranges": [
@@ -1948,7 +1981,7 @@ suite:
         ],
         "vulnerabilities": [
           {
-            "type": "XSS",
+            "type": "$1",
             "evidence": {
               "valueParts": [
                 { "source": 0, "value": "this could be a super long text, so we need to reduce it before send it to the backend. This redaction strategy applies to XSS" }
@@ -1956,7 +1989,7 @@ suite:
             }
           }
         ]
-      } 
+      }
 
   - type: 'VULNERABILITIES'
     description: 'Mongodb json query with sensitive source'
@@ -2033,7 +2066,7 @@ suite:
           "evidence": {
             "value": "{\n  \"username\": \"user\"\n}",
             "ranges": [
-              { "start" : 17, "length" : 4, "source": { "origin": "http.request.parameter", "name": "username", "value": "PREFIX_user" } }
+              { "start" : 17, "length" : 4, "source": { "origin": "http.request.parameter", "name": "param", "value": "PREFIX_user" } }
             ]
           }
         }
@@ -2041,7 +2074,7 @@ suite:
     expected: >
       {
         "sources": [
-          { "origin": "http.request.parameter", "name": "username", "redacted": true, "pattern": "abcdefghijk" }
+          { "origin": "http.request.parameter", "name": "param", "redacted": true, "pattern": "abcdefghijk" }
         ],
         "vulnerabilities": [
           {

@@ -23,9 +23,8 @@ internal class HardcodedSecretsAnalyzer : IDisposable
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
     private static HardcodedSecretsAnalyzer? _instance = null;
 
-    private readonly ManualResetEventSlim _waitEvent = new(false);
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
     private readonly TimeSpan _regexTimeout;
-    private bool _started = false;
     private List<SecretRegex>? _secretRules = null;
 
     // Internal for testing
@@ -33,18 +32,17 @@ internal class HardcodedSecretsAnalyzer : IDisposable
     {
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
         _regexTimeout = regexTimeout;
-        _started = true;
-        Task.Run(() => PoolingThread())
-                    .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
+        Task.Run(() => PollingThread(_cancellationTokenSource.Token))
+            .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    private void PoolingThread()
+    private async Task PollingThread(CancellationToken cancellationToken)
     {
         try
         {
             Log.Debug("HardcodedSecretsAnalyzer polling thread -> Started");
             var userStrings = new UserStringInterop[UserStringsArraySize];
-            while (_started)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
@@ -74,14 +72,14 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
                                     Log.Debug("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret", match);
                                     IastModule.OnHardcodedSecret(new Vulnerability(
-                                        VulnerabilityTypeName.HardcodedSecret,
-                                        (VulnerabilityTypeName.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
+                                        VulnerabilityTypeUtils.HardcodedSecret,
+                                        (VulnerabilityTypeUtils.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
                                         new Location(location!),
                                         new Evidence(match!),
                                         IntegrationId.HardcodedSecret));
                                 }
                             }
-                            catch (Exception err)
+                            catch (Exception err) when (!(err is OperationCanceledException))
                             {
                                 Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread loop.");
                             }
@@ -94,12 +92,11 @@ internal class HardcodedSecretsAnalyzer : IDisposable
                     }
                 }
 
-                _waitEvent.Wait(2_000);
+                await Task.Delay(2_000, cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (Exception err)
+        catch (Exception err) when (!(err is OperationCanceledException))
         {
-            _started = false;
             Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread. Disabling feature.");
         }
 
@@ -127,9 +124,16 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
         foreach (var rule in _secretRules)
         {
-            if (rule.Regex.IsMatch(secret))
+            try
             {
-                return rule.Rule;
+                if (rule.Regex.IsMatch(secret))
+                {
+                    return rule.Rule;
+                }
+            }
+            catch (RegexMatchTimeoutException err)
+            {
+                IastModule.LogTimeoutError(err);
             }
         }
 
@@ -215,12 +219,8 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
     public void Dispose()
     {
-        try
-        {
-            _started = false;
-            _waitEvent.Set();
-        }
-        catch { }
+        _cancellationTokenSource.Cancel();
+        Log.Debug("HardcodedSecretsAnalyzer -> Disposed");
     }
 
     private readonly struct SecretRegex

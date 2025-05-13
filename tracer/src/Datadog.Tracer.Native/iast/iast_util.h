@@ -60,10 +60,12 @@ namespace iast
 
     VersionInfo GetVersionInfo(const shared::WSTRING& versionW);
     VersionInfo GetVersionInfo(const std::string& version);
+    int Compare(const VersionInfo& v1, const VersionInfo& v2);
     
     std::string GetDatadogVersion();
     shared::WSTRING GetDatadogVersionW();
     ASSEMBLYMETADATA* GetDatadogAssemblyMetadata();
+
 
     ////////////////////// Container Utils ///////////////////
     template <class Container>
@@ -150,16 +152,41 @@ namespace iast
     std::string TrimEnd(const std::string& str, const std::string& c = " \t\r\n");
     std::string TrimStart(const std::string& str, const std::string& c = " \t\r\n");
 
-    int ConvertToInt(const WSTRING& str);
+    int ConvertToInt(const WSTRING& str, int defaultValue = 0);
+    UINT32 ConvertToUint(const WSTRING& str, UINT32 defaultValue = 0);
     bool ConvertToBool(const WSTRING& str);
-    bool TryParseInt(const std::string& str, int* pValue);
-    int ConvertToInt(const std::string& str);
+    bool TryParseInt(const WSTRING& str, int* pValue);
+    bool TryParseUint(const WSTRING& str, UINT32* pValue);
+
+
+    int ConvertToInt(const std::string& str, int defaultValue = 0);
+    UINT32 ConvertToUint(const std::string& str, UINT32 defaultValue = 0);
     bool ConvertToBool(const std::string& str);
+    bool TryParseInt(const std::string& str, int* pValue);
+    bool TryParseUint(const std::string& str, UINT32* pValue);
 
     std::vector<int> ConvertToIntVector(const WSTRING& str);
     std::vector<bool> ConvertToBoolVector(const WSTRING& str);
 
-    std::string Join(const std::vector<std::string>& cont, const std::string& delim = ";");
+    template <typename T>
+    std::string Join(const std::vector<T>& cont, const std::string& delim = ";")
+    {
+        std::stringstream res;
+        bool first = true;
+        for (auto it = cont.begin(); it != cont.end(); it++)
+        {
+            if (!first)
+            {
+                res << delim;
+            }
+            else
+            {
+                first = false;
+            }
+            res << shared::ToString(*it);
+        }
+        return res.str();
+    }
 
     bool BeginsWith(const WSTRING& str, const WSTRING& begining);
     bool EndsWith(const WSTRING& str, const WSTRING& ending);
@@ -276,8 +303,10 @@ namespace iast
 #define CSLEAVE(x) __csGuard_##x.Leave();
 
     /////////////////////// Enum Utils /////////////////////////////
+#ifndef BEGIN_ENUM_PARSE
 #define BEGIN_ENUM_PARSE(enumName) std::unordered_map<enumName, std::string> enumName##_Values = {
 #define ENUM_VALUE(enumName, enumValue) {enumName::enumValue, STR(enumValue)},
+#define ENUM_VALUE_TEXT(enumName, enumValue, enumValueText) {enumName::enumValue, STR(enumValueText)},
 #define END_ENUM_PARSE(enumName)                                                                                       \
     };                                                                                                                 \
     enumName Parse##enumName(const std::string& txt)                                                                   \
@@ -298,3 +327,4 @@ namespace iast
         return "";                                                                                                     \
     }
 }
+#endif

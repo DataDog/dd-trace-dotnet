@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Text;
+using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
@@ -61,7 +62,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public string GetArrayType(string elementType, ArrayShape shape)
         {
-            var builder = new StringBuilder();
+            var builder = StringBuilderCache.Acquire();
 
             builder.Append(elementType);
             builder.Append('[');
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             builder.Append(']');
-            return builder.ToString();
+            return StringBuilderCache.GetStringAndRelease(builder);
         }
 
         public string GetByReferenceType(string elementType)
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var requiredParameterCount = signature.RequiredParameterCount;
 
-            var builder = new StringBuilder();
+            var builder = StringBuilderCache.Acquire();
             builder.Append("method ");
             builder.Append(signature.ReturnType);
             builder.Append(" *(");
@@ -155,7 +156,10 @@ namespace Datadog.Trace.Debugger.Symbols
         internal static string ParseTypeReference(MetadataReader reader, TypeReferenceHandle handle, bool includeResScope)
         {
             var reference = reader.GetTypeReference(handle);
-            Handle scope = reference.ResolutionScope;
+            if (reference.Name.IsNil)
+            {
+                return string.Empty;
+            }
 
             var name = reference.Namespace.IsNil
                            ? reader.GetString(reference.Name)
@@ -166,6 +170,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 return name;
             }
 
+            Handle scope = reference.ResolutionScope;
             switch (scope.Kind)
             {
                 case HandleKind.ModuleReference:
@@ -187,6 +192,11 @@ namespace Datadog.Trace.Debugger.Symbols
         internal static string ParseTypeDefinition(MetadataReader reader, TypeDefinitionHandle handle)
         {
             var typeDef = reader.GetTypeDefinition(handle);
+            if (typeDef.Name.IsNil)
+            {
+                return string.Empty;
+            }
+
             var name = typeDef.Namespace.IsNil
                            ? reader.GetString(typeDef.Name)
                            : reader.GetString(typeDef.Namespace) + "." + reader.GetString(typeDef.Name);
@@ -197,6 +207,11 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             var enclosing = ParseTypeDefinition(reader, typeDef.GetDeclaringType());
+            if (string.IsNullOrEmpty(enclosing))
+            {
+                return string.Empty;
+            }
+
             return $"{enclosing}+{name}";
         }
 
@@ -223,7 +238,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 PrimitiveTypeCode.IntPtr => "System.IntPtr",
                 PrimitiveTypeCode.UIntPtr => "System.UIntPtr",
                 PrimitiveTypeCode.Object => "System.Object",
-                _ => "UNKNOWN"
+                _ => string.Empty
             };
         }
 

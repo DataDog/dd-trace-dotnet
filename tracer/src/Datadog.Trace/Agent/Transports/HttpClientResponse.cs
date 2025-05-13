@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 #if NETCOREAPP
 using System.IO;
 using System.Linq;
@@ -26,9 +28,9 @@ namespace Datadog.Trace.Agent.Transports
 
         public long ContentLength => _response.Content.Headers.ContentLength ?? -1;
 
-        public string ContentEncodingHeader => string.Join(',', _response.Content.Headers.ContentEncoding);
+        public string? ContentEncodingHeader => string.Join(',', _response.Content.Headers.ContentEncoding);
 
-        public string ContentTypeHeader => _response.Content.Headers.ContentType?.ToString();
+        public string? ContentTypeHeader => _response.Content.Headers.ContentType?.ToString();
 
         public ContentEncodingType GetContentEncodingType() =>
             _response.Content.Headers.ContentEncoding.Count switch
@@ -40,7 +42,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public Encoding GetCharsetEncoding()
         {
-            var charset = _response.Content.Headers.ContentType.CharSet;
+            var charset = _response.Content.Headers.ContentType?.CharSet;
             if (string.IsNullOrEmpty(charset))
             {
                 return EncodingHelpers.Utf8NoBom;
@@ -61,7 +63,7 @@ namespace Datadog.Trace.Agent.Transports
             _response.Dispose();
         }
 
-        public string GetHeader(string headerName)
+        public string? GetHeader(string headerName)
         {
             if (_response.Headers.TryGetValues(headerName, out var headers))
             {

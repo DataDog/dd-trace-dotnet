@@ -60,6 +60,7 @@ private:
     bool first_jit_compilation_completed = false;
 
     bool corlib_module_loaded = false;
+    ModuleID corlib_module_id = 0;
     AppDomainID corlib_app_domain_id = 0;
     bool managed_profiler_loaded_domain_neutral = false;
     std::unordered_map<AppDomainID, Version> managed_profiler_loaded_app_domains;
@@ -77,6 +78,7 @@ private:
     bool trace_annotations_enabled = false;
     bool call_target_bubble_up_exception_available = false;
     bool call_target_bubble_up_exception_function_available = false;
+    bool call_target_state_skip_method_body_function_available = false;
 
     //
     // Debugger Members
@@ -98,11 +100,13 @@ private:
     std::vector<std::string> opcodes_names;
 
     //
-    // Module helper variables
+    // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
     //
     Synchronized<std::vector<ModuleID>> module_ids;
-
-    ModuleID managedProfilerModuleId_;
+    std::vector<ModuleID> managedInternalModules_;
+    mdMethodDef getDistributedTraceMethodDef_;
+    mdMethodDef getNativeTracerVersionMethodDef_;
+    mdMethodDef isManualInstrumentationOnlyMethodDef_;
 
     //
     // Dataflow members
@@ -112,9 +116,10 @@ private:
     //
     // Helper methods
     //
-    static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
-                                     const shared::WSTRING& nativemethods_type_name,
-                                     const shared::WSTRING& library_path = shared::WSTRING());
+    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
+                              const shared::WSTRING& nativemethods_type_name,
+                              const shared::WSTRING& library_path = shared::WSTRING());
+    static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
@@ -122,12 +127,13 @@ private:
                            const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
+    HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
-    
+    static bool EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //
@@ -168,18 +174,12 @@ public:
     HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
 
     HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline) override;
+
     //
     // ReJIT Methods
     //
-
-    HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
-                                                      BOOL fIsSafeToBlock) override;
-
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                  ICorProfilerFunctionControl* pFunctionControl) override;
-
-    HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
-                                                       BOOL fIsSafeToBlock) override;
 
     HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                          HRESULT hrStatus) override;
@@ -207,16 +207,14 @@ public:
     //
     // Tracer Integration methods #2
     //
-    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size,
-                                       UINT32 enabledCategories = -1);
+    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, int size, UINT32 enabledCategories, UINT32 platform);
     long EnableCallTargetDefinitions(UINT32 enabledCategories);
     long DisableCallTargetDefinitions(UINT32 disabledCategories);
 
     //
     // Register Aspects into Dataflow
     //
-    int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
-
+    int RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories = 0xFFFFFFFF, UINT32 platform = 0xFFFFFFFF);
 
     //
     // Live Debugger Integration methods
@@ -255,7 +253,6 @@ public:
     //
     // Getters for exception filter
     //
-
     bool IsCallTargetBubbleUpExceptionTypeAvailable() const;
     bool IsCallTargetBubbleUpFunctionAvailable() const;
 };

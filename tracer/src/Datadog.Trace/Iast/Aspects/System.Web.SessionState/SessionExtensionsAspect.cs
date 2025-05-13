@@ -32,12 +32,20 @@ public class SessionExtensionsAspect
     [AspectMethodInsertBefore("Microsoft.AspNetCore.Http.SessionExtensions::SetInt32(Microsoft.AspNetCore.Http.ISession,System.String,System.Int32)", 1)]
     public static string ReviewTbv(string value)
     {
-        if (value != null)
+        try
         {
-            IastModule.OnTrustBoundaryViolation(value);
-        }
+            if (value != null)
+            {
+                IastModule.OnTrustBoundaryViolation(value);
+            }
 
-        return value;
+            return value;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return value;
+        }
     }
 }
 #endif

@@ -28,7 +28,9 @@ namespace Datadog.Trace.Debugger.Snapshots
         private const string DDSource = "dd_debugger";
         private const string UnknownValue = "Unknown";
 
-        private readonly JsonTextWriter _jsonWriter;
+#pragma warning disable SA1401
+        protected readonly JsonTextWriter JsonWriter;
+#pragma warning restore SA1401
         private readonly StringBuilder _jsonUnderlyingString;
         private readonly bool _isFullSnapshot;
         private readonly ProbeLocation _probeLocation;
@@ -40,13 +42,14 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _message;
         private List<EvaluationError> _errors;
         private string _snapshotId;
+        private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
-            _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
+            _jsonUnderlyingString = StringBuilderCache.Acquire();
+            JsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
             MethodScopeMembers = default;
             _captureBehaviour = CaptureBehaviour.Capture;
             _errors = null;
@@ -55,6 +58,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             Tags = tags;
             _limitInfo = limitInfo;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
+            _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
@@ -182,11 +186,14 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             if (info.IsAsyncCapture())
             {
-                MethodScopeMembers = new MethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length + (info.LocalsCount ?? 0), info.AsyncCaptureInfo.HoistedArguments.Length + (info.ArgumentsCount ?? 0));
+                MethodScopeMembers = _scopeMembersPool.Get(
+                    new MethodScopeMembersParameters(
+                        info.AsyncCaptureInfo.HoistedLocals.Length + (info.LocalsCount ?? 0),
+                        info.AsyncCaptureInfo.HoistedArguments.Length + (info.ArgumentsCount ?? 0)));
             }
             else
             {
-                MethodScopeMembers = new MethodScopeMembers(info.LocalsCount.Value, info.ArgumentsCount.Value);
+                MethodScopeMembers = _scopeMembersPool.Get(new MethodScopeMembersParameters(info.LocalsCount.Value, info.ArgumentsCount.Value));
             }
         }
 
@@ -223,7 +230,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void Initialize()
         {
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WriteStartObject();
             StartDebugger();
             StartSnapshot();
             if (_isFullSnapshot)
@@ -234,35 +241,35 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void StartDebugger()
         {
-            _jsonWriter.WritePropertyName("debugger");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("debugger");
+            JsonWriter.WriteStartObject();
         }
 
         internal void StartSnapshot()
         {
-            _jsonWriter.WritePropertyName("snapshot");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("snapshot");
+            JsonWriter.WriteStartObject();
         }
 
         internal void StartCaptures()
         {
-            _jsonWriter.WritePropertyName("captures");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("captures");
+            JsonWriter.WriteStartObject();
         }
 
         internal void StartEntry()
         {
-            _jsonWriter.WritePropertyName("entry");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("entry");
+            JsonWriter.WriteStartObject();
         }
 
         internal void StartLines(int lineNumber)
         {
-            _jsonWriter.WritePropertyName("lines");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("lines");
+            JsonWriter.WriteStartObject();
 
-            _jsonWriter.WritePropertyName(lineNumber.ToString());
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName(lineNumber.ToString());
+            JsonWriter.WriteStartObject();
         }
 
         internal void EndEntry(bool hasArgumentsOrLocals)
@@ -270,11 +277,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             if (hasArgumentsOrLocals)
             {
                 // end arguments or locals
-                _jsonWriter.WriteEndObject();
+                JsonWriter.WriteEndObject();
             }
 
             // end entry
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
         }
 
         internal void StartReturn()
@@ -284,8 +291,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 StartCaptures();
             }
 
-            _jsonWriter.WritePropertyName("return");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("return");
+            JsonWriter.WriteStartObject();
         }
 
         internal void EndReturn(bool hasArgumentsOrLocals)
@@ -293,15 +300,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             if (hasArgumentsOrLocals)
             {
                 // end arguments or locals
-                _jsonWriter.WriteEndObject();
+                JsonWriter.WriteEndObject();
             }
 
             // end line number or method return
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
             if (_probeLocation == ProbeLocation.Line)
             {
                 // end lines
-                _jsonWriter.WriteEndObject();
+                JsonWriter.WriteEndObject();
             }
 
             // end captures
@@ -310,30 +317,30 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void EndCapture()
         {
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
         }
 
         internal DebuggerSnapshotCreator EndDebugger()
         {
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
             return this;
         }
 
-        internal DebuggerSnapshotCreator EndSnapshot()
+        internal virtual DebuggerSnapshotCreator EndSnapshot()
         {
-            _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(SnapshotId);
+            JsonWriter.WritePropertyName("id");
+            JsonWriter.WriteValue(SnapshotId);
 
-            _jsonWriter.WritePropertyName("timestamp");
-            _jsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
+            JsonWriter.WritePropertyName("timestamp");
+            JsonWriter.WriteValue(DateTimeOffset.Now.ToUnixTimeMilliseconds());
 
-            _jsonWriter.WritePropertyName("duration");
-            _jsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
+            JsonWriter.WritePropertyName("duration");
+            JsonWriter.WriteValue(_accumulatedDuration.TotalMilliseconds);
 
-            _jsonWriter.WritePropertyName("language");
-            _jsonWriter.WriteValue(TracerConstants.Language);
+            JsonWriter.WritePropertyName("language");
+            JsonWriter.WriteValue(TracerConstants.Language);
 
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
             return this;
         }
 
@@ -351,11 +358,11 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             if (info.IsAsyncCapture())
             {
-                DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, _jsonWriter, _limitInfo);
+                DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, JsonWriter, _limitInfo);
             }
             else
             {
-                DebuggerSnapshotSerializer.SerializeStaticFields(info.InvocationTargetType, _jsonWriter, _limitInfo);
+                DebuggerSnapshotSerializer.SerializeStaticFields(info.InvocationTargetType, JsonWriter, _limitInfo);
             }
         }
 
@@ -363,29 +370,29 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, _jsonWriter, _limitInfo);
+            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, JsonWriter, _limitInfo);
         }
 
         internal void CaptureLocal<TLocal>(TLocal value, string name, Type type = null)
         {
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, _jsonWriter, _limitInfo);
+            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, JsonWriter, _limitInfo);
         }
 
         internal void CaptureException(Exception ex)
         {
-            _jsonWriter.WritePropertyName("throwable");
-            _jsonWriter.WriteStartObject();
-            _jsonWriter.WritePropertyName("message");
-            _jsonWriter.WriteValue(ex.Message);
-            _jsonWriter.WritePropertyName("type");
-            _jsonWriter.WriteValue(ex.GetType().FullName);
-            _jsonWriter.WritePropertyName("stacktrace");
-            _jsonWriter.WriteStartArray();
+            JsonWriter.WritePropertyName("throwable");
+            JsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("message");
+            JsonWriter.WriteValue(ex.Message);
+            JsonWriter.WritePropertyName("type");
+            JsonWriter.WriteValue(ex.GetType().FullName);
+            JsonWriter.WritePropertyName("stacktrace");
+            JsonWriter.WriteStartArray();
             AddFrames(new StackTrace(ex).GetFrames() ?? Array.Empty<StackFrame>());
-            _jsonWriter.WriteEndArray();
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndArray();
+            JsonWriter.WriteEndObject();
         }
 
         internal void CaptureEntryMethodStartMarker<T>(ref CaptureInfo<T> info)
@@ -636,7 +643,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private void StartLocalsOrArgsIfNeeded(string newParent)
         {
-            var currentParent = _jsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
+            var currentParent = JsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
             if (currentParent == newParent)
             {
                 // We're already there!
@@ -648,11 +655,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                 (currentParent == "arguments" && newParent == "locals"))
             {
                 // We need to close the previous node first.
-                _jsonWriter.WriteEndObject();
+                JsonWriter.WriteEndObject();
             }
 
-            _jsonWriter.WritePropertyName(newParent);
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName(newParent);
+            JsonWriter.WriteStartObject();
         }
 
         // Finalize snapshot
@@ -735,57 +742,57 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return this;
             }
 
-            _jsonWriter.WritePropertyName("evaluationErrors");
-            _jsonWriter.WriteStartArray();
+            JsonWriter.WritePropertyName("evaluationErrors");
+            JsonWriter.WriteStartArray();
             foreach (var error in _errors)
             {
-                _jsonWriter.WriteStartObject();
-                _jsonWriter.WritePropertyName("expr");
-                _jsonWriter.WriteValue(error.Expression);
-                _jsonWriter.WritePropertyName("message");
-                _jsonWriter.WriteValue(error.Message);
-                _jsonWriter.WriteEndObject();
+                JsonWriter.WriteStartObject();
+                JsonWriter.WritePropertyName("expr");
+                JsonWriter.WriteValue(error.Expression);
+                JsonWriter.WritePropertyName("message");
+                JsonWriter.WriteValue(error.Message);
+                JsonWriter.WriteEndObject();
             }
 
-            _jsonWriter.WriteEndArray();
+            JsonWriter.WriteEndArray();
             return this;
         }
 
         internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, int probeVersion, T methodNameOrLineNumber, string typeFullNameOrFilePath)
         {
-            _jsonWriter.WritePropertyName("probe");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("probe");
+            JsonWriter.WriteStartObject();
 
-            _jsonWriter.WritePropertyName("id");
-            _jsonWriter.WriteValue(probeId);
+            JsonWriter.WritePropertyName("id");
+            JsonWriter.WriteValue(probeId);
 
-            _jsonWriter.WritePropertyName("version");
-            _jsonWriter.WriteValue(probeVersion);
+            JsonWriter.WritePropertyName("version");
+            JsonWriter.WriteValue(probeVersion);
 
-            _jsonWriter.WritePropertyName("location");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("location");
+            JsonWriter.WriteStartObject();
 
             if (_probeLocation == ProbeLocation.Method)
             {
-                _jsonWriter.WritePropertyName("method");
-                _jsonWriter.WriteValue(methodNameOrLineNumber);
+                JsonWriter.WritePropertyName("method");
+                JsonWriter.WriteValue(methodNameOrLineNumber);
 
-                _jsonWriter.WritePropertyName("type");
-                _jsonWriter.WriteValue(typeFullNameOrFilePath ?? UnknownValue);
+                JsonWriter.WritePropertyName("type");
+                JsonWriter.WriteValue(typeFullNameOrFilePath ?? UnknownValue);
             }
             else
             {
-                _jsonWriter.WritePropertyName("file");
-                _jsonWriter.WriteValue(SanitizePath(typeFullNameOrFilePath));
+                JsonWriter.WritePropertyName("file");
+                JsonWriter.WriteValue(SanitizePath(typeFullNameOrFilePath));
 
-                _jsonWriter.WritePropertyName("lines");
-                _jsonWriter.WriteStartArray();
-                _jsonWriter.WriteValue(methodNameOrLineNumber.ToString());
-                _jsonWriter.WriteEndArray();
+                JsonWriter.WritePropertyName("lines");
+                JsonWriter.WriteStartArray();
+                JsonWriter.WriteValue(methodNameOrLineNumber.ToString());
+                JsonWriter.WriteEndArray();
             }
 
-            _jsonWriter.WriteEndObject();
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
 
             return this;
         }
@@ -805,10 +812,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             var stackFrames = (new StackTrace(true).GetFrames() ?? Array.Empty<StackFrame>())
                              .SkipWhile(frame => frame?.GetMethod()?.DeclaringType?.Namespace?.StartsWith("Datadog") == true).ToArray();
 
-            _jsonWriter.WritePropertyName("stack");
-            _jsonWriter.WriteStartArray();
+            JsonWriter.WritePropertyName("stack");
+            JsonWriter.WriteStartArray();
             AddFrames(stackFrames);
-            _jsonWriter.WriteEndArray();
+            JsonWriter.WriteEndArray();
 
             return this;
         }
@@ -817,77 +824,77 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             foreach (var frame in frames)
             {
-                _jsonWriter.WriteStartObject();
-                _jsonWriter.WritePropertyName("function");
+                JsonWriter.WriteStartObject();
+                JsonWriter.WritePropertyName("function");
                 var frameMethod = frame.GetMethod();
-                _jsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
+                JsonWriter.WriteValue($"{frameMethod?.DeclaringType?.FullName ?? UnknownValue}.{frameMethod?.Name ?? UnknownValue}");
 
                 var fileName = frame.GetFileName();
                 if (fileName != null)
                 {
-                    _jsonWriter.WritePropertyName("fileName");
-                    _jsonWriter.WriteValue(frame.GetFileName());
+                    JsonWriter.WritePropertyName("fileName");
+                    JsonWriter.WriteValue(frame.GetFileName());
                 }
 
-                _jsonWriter.WritePropertyName("lineNumber");
-                _jsonWriter.WriteValue(frame.GetFileLineNumber());
-                _jsonWriter.WriteEndObject();
+                JsonWriter.WritePropertyName("lineNumber");
+                JsonWriter.WriteValue(frame.GetFileLineNumber());
+                JsonWriter.WriteEndObject();
             }
         }
 
         internal DebuggerSnapshotCreator AddLoggerInfo(string methodName, string typeFullName, string probeFilePath)
         {
-            _jsonWriter.WritePropertyName("logger");
-            _jsonWriter.WriteStartObject();
+            JsonWriter.WritePropertyName("logger");
+            JsonWriter.WriteStartObject();
 
             var thread = Thread.CurrentThread;
-            _jsonWriter.WritePropertyName("thread_id");
-            _jsonWriter.WriteValue(thread.ManagedThreadId);
+            JsonWriter.WritePropertyName("thread_id");
+            JsonWriter.WriteValue(thread.ManagedThreadId);
 
-            _jsonWriter.WritePropertyName("thread_name");
-            _jsonWriter.WriteValue(thread.Name);
+            JsonWriter.WritePropertyName("thread_name");
+            JsonWriter.WriteValue(thread.Name);
 
-            _jsonWriter.WritePropertyName("version");
-            _jsonWriter.WriteValue(LoggerVersion);
+            JsonWriter.WritePropertyName("version");
+            JsonWriter.WriteValue(LoggerVersion);
 
-            _jsonWriter.WritePropertyName("name");
-            _jsonWriter.WriteValue(typeFullName ?? SanitizePath(probeFilePath));
+            JsonWriter.WritePropertyName("name");
+            JsonWriter.WriteValue(typeFullName ?? SanitizePath(probeFilePath));
 
-            _jsonWriter.WritePropertyName("method");
-            _jsonWriter.WriteValue(methodName);
+            JsonWriter.WritePropertyName("method");
+            JsonWriter.WriteValue(methodName);
 
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
 
             return this;
         }
 
         internal DebuggerSnapshotCreator AddGeneralInfo(string service, string traceId, string spanId)
         {
-            _jsonWriter.WritePropertyName("service");
-            _jsonWriter.WriteValue(service ?? UnknownValue);
+            JsonWriter.WritePropertyName("service");
+            JsonWriter.WriteValue(service ?? UnknownValue);
 
-            _jsonWriter.WritePropertyName("ddsource");
-            _jsonWriter.WriteValue(DDSource);
+            JsonWriter.WritePropertyName("ddsource");
+            JsonWriter.WriteValue(DDSource);
 
-            _jsonWriter.WritePropertyName("dd.trace_id");
-            _jsonWriter.WriteValue(traceId);
+            JsonWriter.WritePropertyName("dd.trace_id");
+            JsonWriter.WriteValue(traceId);
 
-            _jsonWriter.WritePropertyName("dd.span_id");
-            _jsonWriter.WriteValue(spanId);
+            JsonWriter.WritePropertyName("dd.span_id");
+            JsonWriter.WriteValue(spanId);
 
             return this;
         }
 
         public DebuggerSnapshotCreator AddMessage()
         {
-            _jsonWriter.WritePropertyName("message");
-            _jsonWriter.WriteValue(_message);
+            JsonWriter.WritePropertyName("message");
+            JsonWriter.WriteValue(_message);
             return this;
         }
 
         public DebuggerSnapshotCreator Complete()
         {
-            _jsonWriter.WriteEndObject();
+            JsonWriter.WriteEndObject();
             return this;
         }
 
@@ -901,9 +908,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             try
             {
                 Stop();
-                MethodScopeMembers?.Dispose();
-                MethodScopeMembers = null;
-                _jsonWriter?.Close();
+                _scopeMembersPool.Return(MethodScopeMembers);
+                JsonWriter?.Close();
             }
             catch
             {

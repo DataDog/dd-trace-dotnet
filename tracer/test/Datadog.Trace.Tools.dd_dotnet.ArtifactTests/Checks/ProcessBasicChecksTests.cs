@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -18,6 +20,8 @@ using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 
 namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 {
+    // Some of these tests use SSI variables, so we have to explicitly reset them
+    [EnvironmentRestorer("DD_INJECTION_ENABLED")]
     public class ProcessBasicChecksTests : ConsoleTestHelper
     {
 #if NETFRAMEWORK
@@ -194,17 +198,48 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             exitCode.Should().Be(0);
         }
 
-        [SkippableFact]
-        public async Task WorkingWithContinuousProfiler()
+        [SkippableTheory]
+        [InlineData("auto", null)]
+        [InlineData("1", null)]
+        [InlineData("0", null)]
+        [InlineData(null, null)]
+        [InlineData("auto", false)]
+        [InlineData("1", false)]
+        [InlineData("0", false)]
+        [InlineData(null, false)]
+        [InlineData("auto", true)]
+        [InlineData("1", true)]
+        [InlineData("0", true)]
+        [InlineData(null, true)]
+        public async Task WorkingWithContinuousProfiler(string enabled, bool? ssiInjectionEnabled)
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            var apiWrapperPath = Utils.GetApiWrapperPath();
+            var ssiInjection = ssiInjectionEnabled is null
+                                   ? null
+                                   : ssiInjectionEnabled == true ? "tracer,profiler" : "tracer";
 
-            using var helper = await StartConsole(
-                                   enableProfiler: true,
-                                   ("DD_PROFILING_ENABLED", "1"),
-                                   ("LD_PRELOAD", apiWrapperPath));
+            var expected = (enabled, ssiInjectionEnabled) switch
+            {
+                ("0", _) => ContinuousProfilerDisabled,
+                ("1", _) => ContinuousProfilerEnabled,
+                ("auto", _) => ContinuousProfilerEnabledWithHeuristics,
+                (null, null) => ContinuousProfilerNotSet,
+                (null, true) => ContinuousProfilerSsiEnabledWithHeuristics,
+                (null, false) => ContinuousProfilerSsiMonitoring,
+                _ => throw new InvalidOperationException("Unexpected test combination"),
+            };
+
+            var apiWrapperPath = Utils.GetApiWrapperPath();
+            (string, string)[] envVars = (enabled, ssiInjection) switch
+            {
+                (null, null) => [("LD_PRELOAD", apiWrapperPath)],
+                ({ } prof, null) => [("LD_PRELOAD", apiWrapperPath), ("DD_PROFILING_ENABLED", prof)],
+                (null, { } ssi) => [("LD_PRELOAD", apiWrapperPath), ("DD_INJECTION_ENABLED", ssi)],
+                ({ } prof, { } ssi) => [("LD_PRELOAD", apiWrapperPath), ("DD_PROFILING_ENABLED", prof), ("DD_INJECTION_ENABLED", ssi)],
+            };
+
+            using var helper = await StartConsole(enableProfiler: true, envVars);
 
             var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
@@ -215,19 +250,34 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             standardOutput.Should().ContainAll(
                 TracerVersion(TracerConstants.AssemblyVersion),
-                ContinuousProfilerEnabled,
+                expected,
                 CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
                 CorrectlySetupEnvironment(CorEnableKey, "1"));
 
             standardOutput.Replace(" ", string.Empty).Should().Contain(CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath).Replace(" ", string.Empty));
 
-            standardOutput.Should().NotContainAny(
-                NativeTracerNotLoaded,
-                TracerNotLoaded,
+            // All of the possible messages about Continuous profiler state
+            var profilerMessages = new[]
+            {
                 ContinuousProfilerNotSet,
-                ContinuousProfilerNotLoaded,
-                "LD_PRELOAD",
-                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+                ContinuousProfilerEnabled,
+                ContinuousProfilerEnabledWithHeuristics,
+                ContinuousProfilerDisabled,
+                ContinuousProfilerSsiEnabledWithHeuristics,
+                ContinuousProfilerSsiMonitoring
+            };
+
+            standardOutput.Should()
+                          .NotContainAny(
+                               profilerMessages
+                                  .Concat(
+                                   [
+                                       NativeTracerNotLoaded,
+                                       TracerNotLoaded,
+                                       "LD_PRELOAD",
+                                       TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME")
+                                   ])
+                                  .Except([expected]));
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(0);

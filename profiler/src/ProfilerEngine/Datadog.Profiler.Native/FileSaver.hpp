@@ -32,7 +32,7 @@ public:
 
     ~FileSaver() = default;
 
-    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::string>> const& files, std::string const& metadata)
+    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::string>> const& files, std::string const& metadata, std::string const& info)
     {
         auto const& profileId = profile.GetId();
         auto success = WriteProfileToDisk(profile, serviceName, profileId);
@@ -69,6 +69,18 @@ public:
             }
         }
 
+        if (!info.empty())
+        {
+            static const std::string InfoFilename = "info.json";
+            success = WriteTextFileToDisk(InfoFilename, info, serviceName, profileId);
+
+            if (!success)
+            {
+                errorMessage << success.message() << "\n";
+                hasError = true;
+            }
+        }
+
         if (hasError)
         {
             return make_error(errorMessage.str());
@@ -77,14 +89,20 @@ public:
     }
 
 private:
-    Success WriteProfileToDisk(ddog_prof_EncodedProfile const* profile, std::string const& serviceName, std::string const& uid)
+    Success WriteProfileToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName, std::string const& uid)
     {
         // no specific filename for the pprof file
         auto filepath = GenerateFilePath("", ".pprof", serviceName, uid);
+        auto resultBytes = ddog_prof_EncodedProfile_bytes(profile);
 
-        auto bufferPtr = profile->buffer.ptr;
-        auto bufferSize = static_cast<std::size_t>(profile->buffer.len);
+        if (resultBytes.tag == DDOG_PROF_RESULT_BYTE_SLICE_ERR_BYTE_SLICE)
+        {
+            return make_error(resultBytes.err);
+        }
 
+        auto bufferPtr = resultBytes.ok.ptr;
+        auto bufferSize = static_cast<std::size_t>(resultBytes.ok.len);
+        
         return WriteFileToDisk(filepath, (char const*)bufferPtr, bufferSize);
     }
 

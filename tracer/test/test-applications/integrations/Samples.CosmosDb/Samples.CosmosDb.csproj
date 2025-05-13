@@ -19,6 +19,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="$(ApiVersion)" />
+    <!-- error : The Newtonsoft.Json package must be explicitly referenced with version >= 10.0.2.
+         Please add a reference to Newtonsoft.Json or set the 'AzureCosmosDisableNewtonsoftJsonCheck'
+          property to 'true' to bypass this check-->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   
 </Project>

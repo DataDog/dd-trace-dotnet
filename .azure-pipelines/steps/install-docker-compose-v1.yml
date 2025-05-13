@@ -1,0 +1,24 @@
+parameters:
+  - name: isLinux
+    type: boolean
+    default: false
+  
+  - name: 'dockerComposePath'
+    type: string
+    default: 'C:/docker-compose/docker-compose.exe'
+
+steps:
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      sudo mkdir -p "$(dirname "${{ parameters.dockerComposePath }}")" 
+      sudo curl -SL https://github.com/docker/compose/releases/download/1.29.2/docker-compose-linux-x86_64 -o ${{ parameters.dockerComposePath }}
+      sudo chmod 755 ${{ parameters.dockerComposePath }}
+    displayName: Download docker-compose
+- ${{ else }}:
+  - powershell: |
+      $dir= (Split-Path -parent "${{ parameters.dockerComposePath }}")
+      mkdir -f -p $dir
+      # GitHub now requires TLS1.2. In PowerShell, run the following
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      Invoke-WebRequest "https://github.com/docker/compose/releases/download/1.29.1/docker-compose-windows-x86_64.exe" -OutFile "${{ parameters.dockerComposePath }}"
+    displayName: Download docker-compose

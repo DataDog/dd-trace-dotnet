@@ -15,9 +15,9 @@ internal static class StackReporter
 {
     private const string _language = "dotnet";
 
-    public static Dictionary<string, object>? GetStack(int maxStackTraceDepth, string id, StackFrame[]? stackFrames = null)
+    public static Dictionary<string, object>? GetStack(int maxStackTraceDepth, int topPercent, string id, StackFrame[]? stackFrames = null)
     {
-        var frames = GetFrames(maxStackTraceDepth, stackFrames ?? new StackTrace(true).GetFrames());
+        var frames = GetFrames(maxStackTraceDepth, topPercent, stackFrames ?? new StackTrace(true).GetFrames());
 
         if (frames is null || frames.Count == 0)
         {
@@ -27,7 +27,7 @@ internal static class StackReporter
         return MetaStructHelper.StackTraceInfoToDictionary(null, _language, id, null, frames);
     }
 
-    private static List<Dictionary<string, object>> GetFrames(int maxStackTraceDepth, StackFrame?[] frames)
+    private static List<Dictionary<string, object>> GetFrames(int maxStackTraceDepth, int topPercent, StackFrame?[] frames)
     {
         var allValidFrames = new List<Dictionary<string, object>>(frames.Length);
         int counter = 0;
@@ -57,13 +57,16 @@ internal static class StackReporter
         // Determine if we need to trim the stack
         if (maxStackTraceDepth > 0 && allValidFrames.Count > maxStackTraceDepth)
         {
-            int topCount = Math.Max(1, (int)(0.25 * maxStackTraceDepth));
+            int topCount = Math.Max(1, (int)((double)topPercent * (double)maxStackTraceDepth / 100.0));
             int bottomCount = maxStackTraceDepth - topCount;
             var trimmedStackFrames = new List<Dictionary<string, object>>(maxStackTraceDepth);
-            // Add the top 25% frames
+            // Add the top percent frames
             trimmedStackFrames.AddRange(allValidFrames.GetRange(0, topCount));
-            // Add the bottom 75% frames
-            trimmedStackFrames.AddRange(allValidFrames.GetRange(allValidFrames.Count - bottomCount, bottomCount));
+            // Add the bottom percent frames
+            if (bottomCount > 0)
+            {
+                trimmedStackFrames.AddRange(allValidFrames.GetRange(allValidFrames.Count - bottomCount, bottomCount));
+            }
 
             return trimmedStackFrames;
         }

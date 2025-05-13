@@ -14,4 +14,5 @@ internal enum SecureMarks : byte
 {
     None = 0,
     Xss = 1,
+    Ssrf = 2,
 }

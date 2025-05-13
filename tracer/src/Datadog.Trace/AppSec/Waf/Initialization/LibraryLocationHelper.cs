@@ -183,7 +183,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 OSPlatformName.MacOS => new[] { $"osx" },
                 OSPlatformName.Windows => new[] { $"win-{fwk.ProcessArchitecture}" },
                 OSPlatformName.Linux => fwk.ProcessArchitecture == ProcessArchitecture.Arm64
-                                            ? new[] { "linux-arm64" }
+                                            ? new[] { "linux-arm64", "linux-musl-arm64" }
                                             : new[] { "linux-x64", "linux-musl-x64" },
                 _ => null, // unsupported
             };

@@ -2,6 +2,7 @@ using System;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
+using System.Net.Http;
 using System.Linq;
 using System.IO;
 using Nuke.Common.Tooling;
@@ -17,12 +18,13 @@ using System.Collections.Generic;
 using Nuke.Common.Utilities;
 using System.Collections;
 using System.Threading.Tasks;
+using DiffMatchPatch;
 using Logger = Serilog.Log;
+using System.Runtime.CompilerServices;
 
 partial class Build
 {
     const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
-    const string LinuxApiWrapperLibrary = "Datadog.Linux.ApiWrapper.x64.so";
 
     AbsolutePath ProfilerDeployDirectory => ProfilerOutputDirectory / "DDProf-Deploy";
 
@@ -38,9 +40,19 @@ partial class Build
         .DependsOn(CompileProfilerNativeTestsWindows)
         .DependsOn(CompileProfilerNativeTestsLinux);
 
+    Target SetupVcpkg => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(async () =>
+        {
+            var vcpkg = ToolResolver.GetLocalTool(await GetVcpkg());
+            vcpkg("integrate install");
+        });
+
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
@@ -105,7 +117,7 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
 
             CMake.Value(
-                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler-wrapper");
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler");
 
             if (IsAlpine)
             {
@@ -113,6 +125,121 @@ partial class Build
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
                 Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
+        });
+
+    Target CompileNativeWrapper => _ => _
+        .Unlisted()
+        .Description("Compile Native wrapper")
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            var additionalArgs = $"-DUNIVERSAL={(AsUniversal ? "ON" : "OFF")}";
+
+            if (AsUniversal)
+            {
+                additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
+            }
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target wrapper");
+        });
+
+    Target TestNativeWrapper => _ => _
+        .Unlisted()
+        .Description("Test that the Native wrapper symbols haven't changed")
+        .After(CompileNativeWrapper)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var (arch, _) = GetUnixArchitectureAndExtension();
+            var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+
+            var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
+
+            // Gives output similar to this:
+            // 0000000000006bc8 D DdDotnetFolder
+            // 0000000000006bd0 D DdDotnetMuslFolder
+            //                  w _ITM_deregisterTMCloneTable
+            //                  w _ITM_registerTMCloneTable
+            //                  w __cxa_finalize
+            //                  w __deregister_frame_info
+            //                  U __errno_location
+            //                  U __tls_get_addr
+            // 0000000000002d1b T _fini
+            // 0000000000002d18 T _init
+            // 0000000000003d70 T accept
+            // 0000000000003e30 T accept4
+            //                  U access
+            //
+            // The types of symbols are:
+            // D: Data section symbol. These symbols are initialized global variables.
+            // w: Weak symbol. These symbols are weakly referenced and can be overridden by other symbols.
+            // U: Undefined symbol. These symbols are referenced in the file but defined elsewhere.
+            // T: Text section symbol. These symbols are functions or executable code.
+            // B: BSS (Block Started by Symbol) section symbol. These symbols are uninitialized global variables.
+            //
+            // We only care about the Undefined symbols - we don't want to accidentally add more of them
+
+            Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
+
+            var symbols = output
+                .Select(x => x.Trim())
+                .Where(x => x.StartsWith("U "))
+                .Select(x => x.TrimStart("U "))
+                .OrderBy(x => x)
+                .ToList();
+
+
+            var received = string.Join(Environment.NewLine, symbols);
+            var verifiedPath = TestsDirectory / "snapshots" / $"native-wrapper-symbols-{UnixArchitectureIdentifier}.verified.txt";
+            var verified = File.Exists(verifiedPath)
+                ? File.ReadAllText(verifiedPath)
+                : string.Empty;
+
+            Logger.Information("Comparing snapshot of Undefined symbols in the Native Wrapper library using {Path}...", verifiedPath);
+
+            var dmp = new diff_match_patch();
+            var diff = dmp.diff_main(verified, received);
+            dmp.diff_cleanupSemantic(diff);
+
+            var changedSymbols = diff
+                .Where(x => x.operation != Operation.EQUAL)
+                .Select(x => x.text.Trim())
+                .ToList();
+
+            if (changedSymbols.Count == 0)
+            {
+                Logger.Information("No changes found in Undefined symbols in the Native Wrapper library");
+                return;
+            }
+
+            PrintDiff(diff);
+
+            throw new Exception($"Found differences in undefined symbols ({string.Join(",", changedSymbols)}) in the Native Wrapper library. " +
+                                "Verify that these changes are expected, and will not cause problems. " +
+                                "Removing symbols is generally a safe operation, but adding them could cause crashes. " +
+                                $"If the new symbols are safe to add, update the snapshot file at {verifiedPath} with the " +
+                                "new values");
+        });
+
+    Target CompileNativeWrapperNativeTests => _ => _
+        .Unlisted()
+        .Description("Compile Native wrapper unit tests")
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(NativeBuildDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target wrapper-native-tests");
         });
 
     Target RunProfilerNativeUnitTestsLinux => _ => _
@@ -123,15 +250,25 @@ partial class Build
         .Executes(() =>
         {
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
+        });
 
+    Target RunNativeWrapperNativeTests => _ => _
+        .Unlisted()
+        .Description("Run native wrapper unit tests")
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeWrapperNativeTests)
+        .Executes(() =>
+        {
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
+            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper}" };
             RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
+        .DependsOn(SetupVcpkg)
+        .After(CompileProfilerNativeSrcWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -184,17 +321,37 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var (arch, _) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
-            EnsureExistingDirectory(SymbolsDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so", LinuxApiWrapperLibrary };
+            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
                 var dest = MonitoringHomeDirectory / arch / file;
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
+            }
+        });
+
+    Target PublishNativeWrapper => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeWrapper)
+        .Executes(() =>
+        {
+            var (arch, _) = GetUnixArchitectureAndExtension();
+            var sourceDir = ProfilerDeployDirectory / arch;
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+
+            var source = sourceDir / FileNames.ProfilerLinuxApiWrapper;
+            var dest = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+            CopyFile(source, dest, FileExistsPolicy.Overwrite);
+
+            if (AsUniversal)
+            {
+                var libc = IsArm64 ? "libc.musl-aarch64.so.1" : "libc.musl-x86_64.so.1";
+                PatchElf.Value.Invoke($"--remove-needed {libc} {dest} --remove-rpath");
             }
         });
 
@@ -204,16 +361,20 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            foreach (var architecture in ArchitecturesForPlatformForProfiler)
+            var files = new[] { "Datadog.Profiler.Native", "datadog_profiling_ffi" };
+            foreach (var file in files)
             {
-                var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
-                var source = sourceDir / "Datadog.Profiler.Native.dll";
-                var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                foreach (var architecture in ArchitecturesForPlatformForProfiler)
+                {
+                    var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
+                    var source = sourceDir / $"{file}.dll";
+                    var dest = MonitoringHomeDirectory / $"win-{architecture}";
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = sourceDir / "Datadog.Profiler.Native.pdb";
-                dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
-                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    source = sourceDir / $"{file}.pdb";
+                    dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+                    CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                }
             }
         });
 
@@ -237,25 +398,25 @@ partial class Build
         .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
         .Requires(() => IsLinux && !IsArm64)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            await BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
         .Requires(() => !IsArm64)
-        .Executes(async () =>
+        .Executes(() =>
         {
             // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
             var filter = $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)";
-            await BuildAndRunProfilerIntegrationTestsInternal(filter);
+            BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
-    private async Task BuildAndRunProfilerIntegrationTestsInternal(string filter)
+    private void BuildAndRunProfilerIntegrationTestsInternal(string filter)
     {
-        var isDebugRun = await IsDebugRun();
+        var isDebugRun = IsDebugRun();
 
         EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
@@ -302,6 +463,7 @@ partial class Build
     Target RunClangTidyProfilerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
@@ -331,6 +493,7 @@ partial class Build
     Target RunCppCheckProfiler => _ => _
         .Unlisted()
         .Description("Runs CppCheck on native profiler")
+        .DependsOn(SetupVcpkg)
         .DependsOn(RunCppCheckProfilerWindows)
         .DependsOn(RunCppCheckProfilerLinux);
 
@@ -495,6 +658,8 @@ partial class Build
         .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
+        .DependsOn(BuildNativeWrapper)
+        .DependsOn(PublishNativeWrapper)
         .DependsOn(PublishProfiler);
 
     Target RunProfilerAsanTest => _ => _
@@ -638,6 +803,8 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithUbsanLinux)
+        .DependsOn(BuildNativeWrapper)
+        .DependsOn(PublishNativeWrapper)
         .DependsOn(PublishProfiler);
 
     Target RunProfilerUbsanTest => _ => _
@@ -714,6 +881,40 @@ partial class Build
         .Executes(() =>
         {
             RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+        });
+
+    Target ValidateNativeProfilerGlibcCompatibility => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileProfilerNativeSrc)
+        .Before(PublishProfilerLinux)
+        .Before(ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            var (arch, extension) = GetUnixArchitectureAndExtension();
+
+            // If we need to increase this version on arm64 later, that is ok as long
+            // as it doesn't go above 2.23. Just update the version below. We must
+            // NOT increase it beyond 2.23, or increase the version on x64.
+            //
+            // See also the ValidateNativeTracerGlibcCompatibility Nuke task and the checks
+            // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
+
+            // On Alpine/aarch64, libdatadog requires those two symbols (they are defined as weak with no implementation).
+            // Since the CLR requires them too, it seems safe to accept them.
+            // For information, those symbols comes from libgcc and are exposed for compatibility
+            var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
+            var filesAndVersion = new List<Tuple<string, Version, IEnumerable<string>>>
+            {
+                new(FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null),
+                new("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols)
+            };
+
+            foreach (var (file, expectedGlibcVersion, allowedSymbols) in filesAndVersion)
+            {
+                var dest = ProfilerDeployDirectory / arch / $"{file}.{extension}";
+                ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion, allowedSymbols);
+            }
         });
 
     enum SanitizerKind

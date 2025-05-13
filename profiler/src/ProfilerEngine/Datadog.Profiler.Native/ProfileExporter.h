@@ -26,6 +26,8 @@ class IAllocationsRecorder;
 class IProcessSamplesProvider;
 class IMetadataProvider;
 class IConfiguration;
+class IRuntimeInfo;
+class ISsiManager;
 
 namespace libdatadog {
 class Exporter;
@@ -44,14 +46,23 @@ public:
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
+        ISsiManager* ssiManager,
         IAllocationsRecorder* allocationsRecorder);
     ~ProfileExporter() override;
 
-    bool Export() override;
+    bool Export(bool lastCall = false) override;
     void Add(std::shared_ptr<Sample> const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
+    void RegisterApplication(std::string_view runtimeId) override;
+
+    static std::string BuildAgentEndpoint(IConfiguration const* configuration);
+
+    // TODO: move to a common place (also used for the telemetry metrics)
+    static std::string const LibraryName;
+    static std::string const LibraryVersion;
+    static std::string const LanguageFamily;
 
 private:
     class ProfileInfo
@@ -86,7 +97,6 @@ private:
     void AddProcessSamples(libdatadog::Profile* profile, std::list<std::shared_ptr<Sample>> const& samples);
     void Add(libdatadog::Profile* profile, std::shared_ptr<Sample> const& sample);
 
-    std::string BuildAgentEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     static void AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
@@ -97,13 +107,12 @@ private:
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadata() const;
+    std::string GetInfo() const;
 
+private:
     static tags CommonTags;
     static std::string const ProcessId;
     static int const RequestTimeOutMs;
-    static std::string const LibraryName;
-    static std::string const LibraryVersion;
-    static std::string const LanguageFamily;
     static std::string const MetricsFilename;
     static std::string const AllocationsExtension;
 
@@ -130,6 +139,8 @@ private:
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
     IConfiguration* _configuration;
+    IRuntimeInfo* _runtimeInfo;
+    ISsiManager* _ssiManager;
 
 public: // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

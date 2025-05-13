@@ -334,28 +334,26 @@ namespace Datadog.Trace.DuckTyping
             TypeAttributes typeAttributes;
             Type[] interfaceTypes;
 
-            if (typeToDeriveFrom.IsInterface || typeToDeriveFrom.IsValueType)
+            var duckAsStruct = typeToDeriveFrom.IsValueType
+                            || (typeToDeriveFrom.IsInterface && !HasGetAsClassAttribute(typeToDeriveFrom));
+
+            if (duckAsStruct)
             {
-                // If the proxy type definition is an interface we create an struct proxy
+                // If the proxy type definition is an interface we create a struct proxy unless explicitly marked as class
                 // If the proxy type definition is an struct then we use that struct to copy the values from the target type
                 parentType = typeof(ValueType);
                 typeAttributes = TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.SequentialLayout | TypeAttributes.Sealed | TypeAttributes.Serializable;
-                if (typeToDeriveFrom.IsInterface)
-                {
-                    interfaceTypes = new[] { typeToDeriveFrom, typeof(IDuckType) };
-                }
-                else
-                {
-                    interfaceTypes = new[] { typeof(IDuckType) };
-                }
             }
             else
             {
-                // If the proxy type definition is a class then we create a class proxy
-                parentType = typeToDeriveFrom;
+                // If the proxy type definition is a class (or an interface that needs a class proxy) then we create a class proxy
+                parentType = typeToDeriveFrom.IsInterface ? typeof(object) : typeToDeriveFrom;
                 typeAttributes = TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit | TypeAttributes.AutoLayout | TypeAttributes.Sealed;
-                interfaceTypes = new[] { typeof(IDuckType) };
             }
+
+            interfaceTypes = typeToDeriveFrom.IsInterface
+                                 ? [typeToDeriveFrom, typeof(IDuckType)]
+                                 : [typeof(IDuckType)];
 
             // Gets the module builder
             var moduleBuilder = GetModuleBuilder(typeToDelegateTo, (typeToDelegateTo.IsPublic || typeToDelegateTo.IsNestedPublic) && (typeToDeriveFrom.IsPublic || typeToDeriveFrom.IsNestedPublic));
@@ -418,6 +416,30 @@ namespace Datadog.Trace.DuckTyping
 
             ctorIL.Emit(OpCodes.Ret);
             return moduleBuilder;
+
+            static bool HasGetAsClassAttribute(Type interfaceProxy)
+            {
+                foreach (var attribute in interfaceProxy.GetCustomAttributes())
+                {
+                    if (attribute is DuckAsClassAttribute)
+                    {
+                        return true;
+                    }
+
+                    if (attribute is null)
+                    {
+                        continue;
+                    }
+
+                    // In case it's defined in Datadog.Trace.Manual etc
+                    if (attribute.GetType().FullName == "Datadog.Trace.DuckTyping.DuckAsClassAttribute")
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
         }
 
         private static FieldInfo CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
@@ -639,9 +661,15 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
+                    case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
                         if (targetProperty is null)
                         {
+                            if (duckAttribute.Kind == DuckKind.PropertyOrField)
+                            {
+                                goto case DuckKind.Field;
+                            }
+
                             if (proxyProperty.CanRead && proxyProperty.GetMethod is not null)
                             {
                                 var getMethod = proxyProperty.GetMethod;
@@ -918,9 +946,15 @@ namespace Datadog.Trace.DuckTyping
                 switch (duckAttribute.Kind)
                 {
                     case DuckKind.Property:
+                    case DuckKind.PropertyOrField:
                         PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
+                            if (duckAttribute.Kind == DuckKind.PropertyOrField)
+                            {
+                                goto case DuckKind.Field;
+                            }
+
                             DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }
@@ -1328,7 +1362,7 @@ namespace Datadog.Trace.DuckTyping
                     return default;
                 }
 
-                return GetProxy(instance.GetType()).CreateInstance<T>(instance);
+                return instance is T tInst ? tInst : GetProxy(instance.GetType()).CreateInstance<T>(instance);
             }
 
             /// <summary>
@@ -1346,7 +1380,7 @@ namespace Datadog.Trace.DuckTyping
                     return default;
                 }
 
-                return GetProxy(typeof(TOriginal)).CreateInstance<T, TOriginal>(instance);
+                return instance is T tInst ? tInst : GetProxy(typeof(TOriginal)).CreateInstance<T, TOriginal>(instance);
             }
 
             /// <summary>
@@ -1362,7 +1396,7 @@ namespace Datadog.Trace.DuckTyping
                     return false;
                 }
 
-                return GetProxy(instance.GetType()).CanCreate();
+                return instance is T || GetProxy(instance.GetType()).CanCreate();
             }
 
             /// <summary>

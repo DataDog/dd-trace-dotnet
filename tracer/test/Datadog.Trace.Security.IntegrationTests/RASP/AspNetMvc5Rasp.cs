@@ -8,10 +8,10 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
@@ -68,6 +68,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         EnableRasp();
         SetSecurity(true);
         EnableIast(enableIast);
+        AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
@@ -81,7 +82,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         _classicMode = classicMode;
         _enableIast = enableIast;
 
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "0");
     }
 
     [SkippableTheory]
@@ -92,8 +93,17 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [InlineData("/Iast/SsrfAttackNoCatch?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
+    [InlineData("/Iast/ExecuteCommand?file=/bin/rebootCommand&argumentLine=-f&fromShell=false", "CmdI")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit);

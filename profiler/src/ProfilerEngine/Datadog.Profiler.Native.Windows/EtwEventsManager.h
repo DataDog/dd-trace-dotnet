@@ -13,8 +13,12 @@
 
 
 #include "Configuration.h"
+#include "chrono_helper.hpp"
+
+#include <chrono>
 #include <memory>
 
+using namespace std::chrono_literals;
 
 enum class EventId : uint32_t
 {
@@ -22,7 +26,6 @@ enum class EventId : uint32_t
     ContentionStart = 1,
     AllocationTick = 2
 };
-
 
 struct ThreadInfo
 {
@@ -32,15 +35,17 @@ struct ThreadInfo
     // bit field to identify the last received event for ClrStackWalk association
     EventId LastEventId = EventId::Unknown;
 
-    // Lock contention
+    // Lock contentions
     std::vector<uintptr_t> ContentionCallStack;
-    uint64_t ContentionStartTimestamp = 0;
+    etw_timestamp ContentionStartTimestamp = etw_timestamp::zero();
 
     // Allocations
     std::vector<uintptr_t> AllocationCallStack;
-    uint64_t AllocationTickTimestamp = 0;
+    std::chrono::nanoseconds AllocationTickTimestamp = 0ns;
+    uint32_t AllocationKind = 0;
+    uintptr_t AllocationClassId = 0;
     std::string AllocatedType;
-    uintptr_t ClassId = 0;
+    uint64_t AllocationAmount = 0;
 
 public:
     const inline bool LastEventWasContentionStart()
@@ -77,7 +82,7 @@ public:
 
 // Inherited via IEtwEventsReceiver
     void OnEvent(
-        uint64_t systemTimestamp,
+        etw_timestamp systemTimestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,
@@ -108,8 +113,12 @@ private:
 
     // responsible for receiving ETW events from the Windows Agent
     std::unique_ptr<EtwEventsHandler> _eventsHandler;
-    std::unique_ptr<IpcServer> _IpcServer; // used to connect to the Windows Agent and register our process ID
-    std::unique_ptr<IpcClient> _IpcClient; // used to receive ETW events from the Windows Agent
+    std::string _agentReplayEndpoint;
+
+    // controlling the lifetime of this instance is... complicated (used by 2 desynchronized threads)
+    // so we won't free it to avoid random crashes
+    IpcServer* _IpcServer;                  // used to connect to the Windows Agent and register our process ID
+    std::unique_ptr<IpcClient> _IpcClient;  // used to receive ETW events from the Windows Agent
 
 private:
     // Each ClrStackWalk event is received at some point AFTER its sibling CLR event.

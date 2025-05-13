@@ -70,7 +70,7 @@ public class ActivityTagsTests
     // TODO what about an array of object that contains string and numeric objects?
 
     [Theory]
-    [MemberData(nameof(TagData))]
+    [MemberData(nameof(TagData), DisableDiscoveryEnumeration = true)]
     public void Tags_ShouldBe_PlacedInMetricsOrMeta(string tagKey, object tagValue, TagKind expectedTagKind)
     {
         var activityMock = new Mock<IActivity5>();
@@ -97,7 +97,7 @@ public class ActivityTagsTests
     }
 
     [Theory]
-    [MemberData(nameof(ArrayTagData))]
+    [MemberData(nameof(ArrayTagData), DisableDiscoveryEnumeration = true)]
     public void ArrayedTags_ShouldBe_PlacedInMeta(string tagKey, object tagValue, TagKind expectedTagKind, Dictionary<string, object> expectedTagValues)
     {
         var activityMock = new Mock<IActivity5>();

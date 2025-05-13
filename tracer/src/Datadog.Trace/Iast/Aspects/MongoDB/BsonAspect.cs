@@ -28,7 +28,15 @@ public class BsonAspect
     [AspectMethodInsertBefore("MongoDB.Bson.IO.JsonReader::.ctor(System.String)")]
     public static object AnalyzeJsonString(string json)
     {
-        IastModule.OnNoSqlMongoDbQuery(json, IntegrationId.MongoDb);
-        return json;
+        try
+        {
+            IastModule.OnNoSqlMongoDbQuery(json, IntegrationId.MongoDb);
+            return json;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return json;
+        }
     }
 }

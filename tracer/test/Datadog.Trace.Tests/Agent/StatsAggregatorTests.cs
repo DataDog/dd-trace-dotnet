@@ -414,13 +414,13 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
-        private static ImmutableTracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
+        private static TracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
         {
             var settings = statsComputationIntervalSeconds.HasValue
                                ? TracerSettings.Create(new() { { ConfigurationKeys.StatsComputationInterval, statsComputationIntervalSeconds.Value } })
                                : new TracerSettings();
 
-            return settings.Build();
+            return settings;
         }
 
         // Re-implement timestamp conversion to independently verify the operation
@@ -455,7 +455,9 @@ namespace Datadog.Trace.Tests.Agent
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              telemetryProxyEndpoint: "telemetryProxyEndpoint",
                              tracerFlareEndpoint: "tracerFlareEndpoint",
-                             clientDropP0: true));
+                             clientDropP0: true,
+                             spanMetaStructs: true,
+                             spanEvents: true));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

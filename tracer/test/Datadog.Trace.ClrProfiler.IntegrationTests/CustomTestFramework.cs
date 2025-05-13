@@ -12,7 +12,7 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class CustomTestFramework : TestHelpers.CustomTestFramework
+    public class CustomTestFramework : TestHelpers.AutoInstrumentation.DockerTestFramework
     {
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink, typeof(Instrumentation))

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
@@ -239,6 +240,20 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             {
                 Directory.Delete(sysFsCgroupPath, recursive: true);
             }
+        }
+
+        // Given an actual file, we should be able to get a result back in all linux environments
+        [SkippableFact]
+        public void Parse_TryGetInode()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            string currentDirectory = Environment.CurrentDirectory;
+            bool success = ContainerMetadata.TryGetInode(currentDirectory, out long inode);
+
+            success.Should().BeTrue();
+            inode.Should().BeGreaterThan(0);
         }
     }
 }

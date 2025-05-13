@@ -10,25 +10,76 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
-internal interface IConfigurationTelemetry
+/// <summary>
+/// Used to collect configuration telemetry
+/// </summary>
+public interface IConfigurationTelemetry
 {
+    /// <summary>
+    /// Records a value in telemetry, and marks it as the "current" value
+    /// </summary>
+    /// <param name="key">The key of the configuration</param>
+    /// <param name="value">The value of the configuration</param>
+    /// <param name="recordValue">Should the value be recorded, or redacted?</param>
+    /// <param name="origin">Which configuration source the value came from</param>
+    /// <param name="error">An optional error code</param>
     void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    /// <summary>
+    /// Records a value in telemetry, and marks it as the "current" value
+    /// </summary>
+    /// <param name="key">The key of the configuration</param>
+    /// <param name="value">The value of the configuration</param>
+    /// <param name="origin">Which configuration source the value came from</param>
+    /// <param name="error">An optional error code</param>
     void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    /// <summary>
+    /// Records a value in telemetry, and marks it as the "current" value
+    /// </summary>
+    /// <param name="key">The key of the configuration</param>
+    /// <param name="value">The value of the configuration</param>
+    /// <param name="origin">Which configuration source the value came from</param>
+    /// <param name="error">An optional error code</param>
     void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    /// <summary>
+    /// Records a value in telemetry, and marks it as the "current" value
+    /// </summary>
+    /// <param name="key">The key of the configuration</param>
+    /// <param name="value">The value of the configuration</param>
+    /// <param name="origin">Which configuration source the value came from</param>
+    /// <param name="error">An optional error code</param>
     void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    /// <summary>
+    /// Records a value in telemetry, and marks it as the "current" value
+    /// </summary>
+    /// <param name="key">The key of the configuration</param>
+    /// <param name="value">The value of the configuration</param>
+    /// <param name="origin">Which configuration source the value came from</param>
+    /// <param name="error">An optional error code</param>
     void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    /// <summary>
+    /// Records a value in telemetry, and marks it as the "current" value
+    /// </summary>
+    /// <param name="key">The key of the configuration</param>
+    /// <param name="value">The value of the configuration</param>
+    /// <param name="origin">Which configuration source the value came from</param>
+    /// <param name="error">An optional error code</param>
     void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null);
 
+    /// <summary>
+    /// Gets the stored configuration data and clears the stored data
+    /// </summary>
+    /// <returns>The stored configuration data</returns>
     public ICollection<ConfigurationKeyValue>? GetData();
 
     /// <summary>
     /// Copies the stored configuration to the provided destination
     /// Note that this should not remove the configuration elements from the source
     /// </summary>
+    /// <param name="destination">The destination for the copied data</param>
     public void CopyTo(IConfigurationTelemetry destination);
 }

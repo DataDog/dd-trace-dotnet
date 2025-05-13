@@ -30,7 +30,15 @@ public class AssemblyAspect
     [AspectMethodInsertBefore("System.Reflection.AssemblyName::.ctor(System.String)", 0)]
     public static string ReflectionAssemblyInjection(string assemblyString)
     {
-        IastModule.OnReflectionInjection(assemblyString, IntegrationId.ReflectionInjection);
-        return assemblyString;
+        try
+        {
+            IastModule.OnReflectionInjection(assemblyString, IntegrationId.ReflectionInjection);
+            return assemblyString;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.LogAspectException(ex);
+            return assemblyString;
+        }
     }
 }

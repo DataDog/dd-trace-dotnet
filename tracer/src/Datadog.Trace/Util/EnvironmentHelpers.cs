@@ -8,6 +8,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util
@@ -92,6 +94,17 @@ namespace Datadog.Trace.Util
             }
 
             return new Dictionary<object, object>();
+        }
+
+        internal static bool IsServerlessEnvironment()
+        {
+            return !string.IsNullOrEmpty(GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT")) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey)) ||
+                   !string.IsNullOrEmpty(GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey));
         }
     }
 }

@@ -56,15 +56,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             try
             {
-                SpanContext? propagatedContext = null;
+                PropagationContext extractedContext = default;
                 string? host = null;
                 string? userAgent = null;
                 string? httpMethod = null;
                 WebHeadersCollection? headers = null;
 
                 IDictionary<string, object?>? requestProperties = requestMessage.Properties;
-                if (requestProperties?.TryGetValue("httpRequest", out var httpRequestProperty) ?? false
-                    && httpRequestProperty.GetType().FullName.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
+                if (requestProperties is not null
+                 && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
+                 && httpRequestProperty?.GetType().FullName != null
+                 && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
                     var webHeaderCollection = httpRequestPropertyProxy.Headers;
@@ -80,7 +82,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                         try
                         {
                             headers = webHeaderCollection.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+
+                            extractedContext = tracer.TracerManager.SpanContextPropagator
+                                                                    .Extract(headers.Value)
+                                                                    .MergeBaggageInto(Baggage.Current);
                         }
                         catch (Exception ex)
                         {
@@ -89,12 +94,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                if (propagatedContext == null && requestMessage.Headers != null)
+                if (extractedContext.SpanContext is null && requestMessage.Headers is { } messageHeaders)
                 {
                     Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
                     try
                     {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(requestMessage.Headers, GetHeaderValues);
+                        extractedContext = tracer.TracerManager.SpanContextPropagator
+                                                                .Extract(messageHeaders, GetHeaderValues)
+                                                                .MergeBaggageInto(Baggage.Current);
 
                         static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
                         {
@@ -104,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                                 var index = headers.FindHeader(name, ns);
                                 if (index >= 0)
                                 {
-                                    return new[] { headers.GetHeader<string>(name, ns) };
+                                    return [headers.GetHeader<string>(name, ns)];
                                 }
                             }
                             catch (Exception ex)
@@ -112,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                                 Log.Error(ex, "Error extracting propagated WCF headers.");
                             }
 
-                            return Enumerable.Empty<string>();
+                            return [];
                         }
                     }
                     catch (Exception ex)
@@ -148,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, extractedContext.SpanContext, tags: tags);
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;
@@ -166,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 if (headers is not null)
                 {
                     var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
-                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTags!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

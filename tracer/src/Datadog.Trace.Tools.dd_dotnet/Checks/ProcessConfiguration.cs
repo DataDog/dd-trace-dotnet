@@ -43,11 +43,15 @@ internal static class ProcessConfiguration
             }
         }
 
-        var jsonConfigurationSource = JsonConfigurationSource.TryLoadJsonConfigurationFile(configurationSource, baseDirectory);
-
+        var jsonConfigurationSource = JsonConfigurationSource.TryLoadJsonConfigurationFile(configurationSource, baseDirectory, out string jsonDirectory);
         if (jsonConfigurationSource != null)
         {
+            Utils.WriteInfo("Loaded JSON configuration file from: " + jsonDirectory);
             configurationSource.Add(jsonConfigurationSource);
+        }
+        else
+        {
+            Utils.WriteInfo("Did not find JSON configuration file to load from: " + jsonDirectory);
         }
 
         return configurationSource;

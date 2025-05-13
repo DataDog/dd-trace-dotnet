@@ -6,18 +6,20 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Gitlab CI detected");
 
         IsCI = true;
         Provider = "gitlab";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Gitlab;
         Repository = ValueProvider.GetValue(Constants.GitlabRepositoryUrl);
         Commit = ValueProvider.GetValue(Constants.GitlabCommitSha);
         Branch = ValueProvider.GetValue(Constants.GitlabCommitBranch);
@@ -72,5 +74,9 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
             Constants.GitlabProjectUrl,
             Constants.GitlabPipelineId,
             Constants.GitlabJobId);
+
+        HeadCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestSourceBranchSha);
+        PrBaseCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchSha);
+        PrBaseBranch = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchName);
     }
 }

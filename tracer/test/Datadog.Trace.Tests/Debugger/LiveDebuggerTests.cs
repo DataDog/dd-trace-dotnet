@@ -96,7 +96,9 @@ public class LiveDebuggerTests
                     eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                     telemetryProxyEndpoint: "telemetryProxyEndpoint",
                     tracerFlareEndpoint: "tracerFlareEndpoint",
-                    clientDropP0: false));
+                    clientDropP0: false,
+                    spanMetaStructs: true,
+                    spanEvents: true));
         }
 
         public void RemoveSubscription(Action<AgentConfiguration> callback)

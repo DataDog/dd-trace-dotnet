@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -160,7 +161,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             var environment = options.Environment.GetValue(context);
 
-            // Settings back DD_ENV to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_ENV to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(environment))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, environment);
@@ -168,7 +169,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var service = options.Service.GetValue(context);
 
-            // Settings back DD_SERVICE to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_SERVICE to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(service))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, service);
@@ -176,7 +177,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var version = options.Version.GetValue(context);
 
-            // Settings back DD_VERSION to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_VERSION to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(version))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, version);
@@ -184,7 +185,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var agentUrl = options.AgentUrl.GetValue(context);
 
-            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for CIVisibility's TestSession)
+            // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for TestOptimization's TestSession)
             if (!string.IsNullOrWhiteSpace(agentUrl))
             {
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, agentUrl);
@@ -401,16 +402,15 @@ namespace Datadog.Trace.Tools.Runner
                 env[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
-            var configurationSource = new CompositeConfigurationSourceInternal();
-            configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
-            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
+            var configurationSource = new CompositeConfigurationSource();
+            configurationSource.Add(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
+            configurationSource.Add(GlobalConfigurationSource.Instance);
 
-            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
-            var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
+            var settings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
 
-            Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
+            Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Exporter.AgentUri);
             var discoveryService = DiscoveryService.Create(
-                settings.ExporterInternal,
+                settings.Exporter,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
@@ -424,7 +424,7 @@ namespace Datadog.Trace.Tools.Runner
             using (cts.Token.Register(
                        () =>
                        {
-                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.ExporterInternal.AgentUriInternal}.");
+                           WriteError($"Error connecting to the Datadog Agent at {settings.Exporter.AgentUri}.");
                            tcs.TrySetResult(null);
                        }))
             {
@@ -562,9 +562,10 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    var archFolder = IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Trace.ClrProfiler.Native.so"));
                     tracerProfilerArm64 = tracerProfiler64;
-                    ldPreload = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Linux.ApiWrapper.x64.so"));
+                    ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so"));
                 }
                 else
                 {
@@ -606,6 +607,12 @@ namespace Datadog.Trace.Tools.Runner
             {
                 envVars["CORECLR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
                 envVars["COR_PROFILER_PATH_ARM64"] = tracerProfilerArm64;
+            }
+
+            const string installTypeKey = "DD_INSTRUMENTATION_INSTALL_TYPE";
+            if (string.IsNullOrEmpty(GetEnvironmentVariable(installTypeKey)))
+            {
+                envVars[installTypeKey] = "dd_trace_tool";
             }
 
             if (!string.IsNullOrEmpty(devPath))
@@ -838,7 +845,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             const char Quote = '\"';
             const char Backslash = '\\';
-            var stringBuilder = StringBuilderCache.Acquire(100);
+            var stringBuilder = StringBuilderCache.Acquire();
 
             foreach (var argument in args)
             {

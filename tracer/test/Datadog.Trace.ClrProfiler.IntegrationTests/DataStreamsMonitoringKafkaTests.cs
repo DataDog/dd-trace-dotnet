@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -25,6 +26,14 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         : base("DataStreams.Kafka", output)
     {
         SetServiceVersion("1.0.0");
+    }
+
+    public static IEnumerable<object[]> GetKafkaTestData()
+    {
+        yield return new object[] { true, true };
+        yield return new object[] { true, false };
+        yield return new object[] { false, true };
+        yield return new object[] { false, false };
     }
 
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -57,15 +66,16 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
     ///    C2->>+T3: Produce
     /// </summary>
     /// <param name="enableConsumerScopeCreation">Is the scope created manually or using built-in support</param>
+    /// <param name="enableLegacyHeaders">Should legacy headers be enabled?</param>
     [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [MemberData(nameof(GetKafkaTestData))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
-    public async Task SubmitsDataStreams(bool enableConsumerScopeCreation)
+    public async Task SubmitsDataStreams(bool enableConsumerScopeCreation, bool enableLegacyHeaders)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, enableConsumerScopeCreation ? "1" : "0");
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
@@ -100,6 +110,7 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         // set variable to create short spans on receive instead of spans that last until the next consume
         SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, "1");
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 

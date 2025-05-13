@@ -157,8 +157,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
                 actualNumberOfThreads.Should().NotBeNull();
 
-                // A margin of 500 threads seem like a lot, but we have tests that spawn a large number of threads to try to find race conditions
-                actualNumberOfThreads.Should().NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 500, expectedNumberOfThreads + 500);
+                actualNumberOfThreads.Should().NotBeNull().And.BeGreaterThan(0).And.BeInRange(expectedNumberOfThreads - 100, expectedNumberOfThreads + 100);
 
                 // CPU time and memory usage can vary wildly, so don't try too hard to validate
                 userCpuTime.Should().NotBeNull().And.BeGreaterThan(0);

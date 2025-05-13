@@ -1,0 +1,1 @@
+del /S/q "%ProgramData%\Datadog .NET Tracer\logs\*.*"

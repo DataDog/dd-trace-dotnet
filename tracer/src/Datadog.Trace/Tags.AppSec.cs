@@ -18,7 +18,14 @@ public static partial class Tags
 
         internal static class EventsUsers
         {
-            internal const string EventsUsersRoot = Events + "users";
+            private const string EventsUsersRoot = Events + "users";
+            private const string PropagatedPrefix = "_dd.appsec.usr";
+            internal const string CollectionMode = "_dd.appsec.user.collection_mode";
+            internal const string InternalUserId = $"{PropagatedPrefix}.id";
+            internal const string InternalLogin = $"{PropagatedPrefix}.login";
+            internal const string True = "true";
+            internal const string False = "false";
+            internal const string Sdk = "sdk";
 
             internal static class LoginEvent
             {
@@ -27,12 +34,12 @@ public static partial class Tags
                 internal const string SuccessSdkSource = $"_dd.{Success}.sdk";
                 internal const string SuccessAutoMode = $"_dd.{Success}.auto.mode";
                 internal const string SuccessTrack = Success + ".track";
+                internal const string SuccessLogin = Success + ".usr.login";
 
                 internal const string Failure = Root + ".failure";
                 internal const string FailureUserId = Failure + ".usr.id";
+                internal const string FailureUserLogin = Failure + ".usr.login";
                 internal const string FailureUserExists = Failure + ".usr.exists";
-                internal const string FailureEmail = Failure + ".email";
-                internal const string FailureUserName = Failure + ".username";
                 internal const string FailureAutoMode = $"_dd.{Failure}.auto.mode";
                 internal const string FailureSdkSource = $"_dd.{Failure}.sdk";
                 internal const string FailureTrack = Failure + ".track";
@@ -41,20 +48,15 @@ public static partial class Tags
             internal static class SignUpEvent
             {
                 private const string Root = EventsUsersRoot + ".signup";
-                private const string Success = Root + ".success";
-                internal const string SuccessUserId = Root + ".usr.id";
-                internal const string SuccessEmail = Root + ".usr.email";
-                internal const string SuccessUserName = Root + ".usr.username";
+                internal const string UserId = Root + ".usr.id";
 
-                internal const string SuccessAutoMode = $"_dd.{Success}.auto.mode";
-                internal const string SuccessTrack = Success + ".track";
+                /// <summary>
+                /// In the case of aspnet core it will come down to username which is supposed to be unique (unless custom db is provided)
+                /// </summary>
+                internal const string Login = Root + ".usr.login";
 
-                private const string RootFailure = Root + ".failure";
-                internal const string FailureUserId = RootFailure + ".usr.id";
-                internal const string FailureEmail = RootFailure + ".usr.email";
-                internal const string FailureUserName = RootFailure + ".usr.username";
-                internal const string FailureAutoMode = $"_dd.{RootFailure}.auto.mode";
-                internal const string FailureTrack = RootFailure + ".track";
+                internal const string AutoMode = $"_dd.{Root}.auto.mode";
+                internal const string Track = Root + ".track";
             }
         }
     }

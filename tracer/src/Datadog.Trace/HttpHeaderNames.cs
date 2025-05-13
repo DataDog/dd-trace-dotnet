@@ -85,5 +85,10 @@ namespace Datadog.Trace
         /// Used in a serverless context only.
         /// </summary>
         internal const string InvocationErrorStack = "x-datadog-invocation-error-stack";
+
+        /// <summary>
+        /// An internal, temporary, header for tracking the start time of a span
+        /// </summary>
+        internal const string InternalStartTime = "x-datadog-span-start-timestamp";
     }
 }

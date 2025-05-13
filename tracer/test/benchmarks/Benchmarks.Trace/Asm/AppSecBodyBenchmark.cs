@@ -73,15 +73,18 @@ namespace Benchmarks.Trace.Asm
 
         private void ExecuteCycle(object body)
         {
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            var traceContext = new Datadog.Trace.TraceContext(new EmptyDatadogTracer(), null);
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+            var span = new Span(spanContext, DateTimeOffset.Now);
+
 #if !NETFRAMEWORK
             _security.CheckBody(_httpContext, span, body, false);
             var context = _httpContext.Features.Get<IContext>();
             context?.Dispose();
             _httpContext.Features.Set<IContext>(null);
 #else
-            var securityTransport = new SecurityCoordinator(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
-            securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
+            var securityTransport = SecurityCoordinator.Get(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
+            securityTransport!.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
             var context = _httpContext.Items["waf"] as IContext;
             context?.Dispose();
             _httpContext.Items["waf"] = null;

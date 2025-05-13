@@ -2,12 +2,17 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using OpenTelemetry.Context.Propagation;
+using OpenTelemetry;
 
 namespace NetActivitySdk;
 
 public static class Program
 {
     private static ActivitySource _source;
+    private static ActivitySource _ignored;
+    private static ActivitySource _disabledGlob;
+    private static ActivitySource _disabledExact;
 
     private static string SpanLinkTraceId1;
     private static string SpanLinkTraceId2;
@@ -19,12 +24,15 @@ public static class Program
     {
         Console.WriteLine($"SpanId 1: {SpanLinkSpanId1} SpanId 2: {SpanLinkSpanId2}");
         _source = new ActivitySource("Samples.NetActivitySdk");
+        _ignored = new ActivitySource("Microsoft.AspNetCore"); // this is an ignored source
+        _disabledGlob = new ActivitySource("Disabled.By.GlobPattern");
+        _disabledExact = new ActivitySource("Disabled.By.ExactMatch");
 
         var activityListener = new ActivityListener
         {
             //ActivityStarted = activity => Console.WriteLine($"{activity.DisplayName} - Started"),
             ActivityStopped = activity => PrintSpanStoppedInformation(activity),
-            ShouldListenTo = _ => true,
+            ShouldListenTo = source => { return !source.Name.Contains("Disabled"); }, // return true for all except Disabled ones
             Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData
         };
 
@@ -41,6 +49,8 @@ public static class Program
             RunActivityAddEvent(); // 5 spans (total 8)
             RunActivityAddBaggage(); // 2 spans (total 10)
             RunActivityOperationName(); // 21 spans (total 31)
+
+            RunOpenTelemetryApiInject();
         }
 
         // needs to be outside of the above root span as we don't want a parent here
@@ -50,6 +60,8 @@ public static class Program
         RunActivityReservedAttributes(); // 1 span (47 total)
 
         RunManuallyUpdatedStartTime(); // 3 spans (50 total)
+
+        RunIgnoredAndDisabledSources(); // 0 spans (50 total)
 
         await Task.Delay(1000);
     }
@@ -208,6 +220,22 @@ public static class Program
         }
     }
 
+    private static void RunIgnoredAndDisabledSources()
+    {
+        using var ignoredSpan = _ignored.StartActivity("Ignored - SHOULD NOT BE IN SNAPSHOT") ?? throw new InvalidOperationException("Ignored Activity was null - was it disabled?");
+        using var disabledSpanGlob = _disabledGlob.StartActivity("DisabledGlob - SHOULD BE NULL AND NOT IN SNAPSHOT");
+        if (disabledSpanGlob is not null)
+        {
+            throw new InvalidOperationException("DisabledGlob Activity wasn't null");
+        }
+
+        using var disabledSpanExact = _disabledExact.StartActivity("DisabledExact - SHOULD BE NULL AND NOT IN SNAPSHOT");
+        if (disabledSpanExact is not null)
+        {
+            throw new InvalidOperationException("DisabledExact Activity wasn't null");
+        }
+    }
+
     private static void RunActivityUpdate()
     {
         using var errorSpan = _source.StartActivity("ErrorSpan");
@@ -308,6 +336,22 @@ public static class Program
         {
             using var activity = _source.StartActivity(name: $"operation name should be-> {data[0]}", kind: (ActivityKind)data[1], tags: (Dictionary<string, object>)data[2]);
         }
+    }
+
+    private static void RunOpenTelemetryApiInject()
+    {
+        // Set Baggage using the OpenTelemetry API, which works with the OpenTelemetry Context Propagation
+        OpenTelemetry.Baggage.SetBaggage("key", "value");
+
+        var headersDict = new Dictionary<string, string>();
+        OpenTelemetry.Context.Propagation.Propagators.DefaultTextMapPropagator.Inject(new PropagationContext(Activity.Current.Context, OpenTelemetry.Baggage.Current), headersDict, (carrier, key, value) =>
+        {
+            carrier[key] = value;
+        });
+
+        // The baggage header should be present now, so we'll test by setting a tag on the span with the baggage header information
+        var baggage = headersDict.TryGetValue("baggage", out var value) ? value : null;
+        Activity.Current.SetTag("custom.opentelemetry.defaulttextmappropagator.baggage", baggage);
     }
 
     private static void RunActivityReservedAttributes()

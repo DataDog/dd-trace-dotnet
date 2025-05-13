@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // We remove the evp_proxy endpoint to force the APM protocol compatibility
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
             var spans = agent.WaitForSpans(ExpectedSpanCount)
                          .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                          .ToList();
@@ -69,8 +69,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
                     // Remove EFD tags
-                    targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsNew);
-                    targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+                    targetSpan.Tags.Remove(TestTags.TestIsNew);
+                    targetSpan.Tags.Remove(TestTags.TestIsRetry);
+
+                    // Remove capabilities
+                    targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
+                    targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
+                    targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesEarlyFlakeDetection);
+                    targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis);
+                    targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementDisable);
+                    targetSpan.Tags.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementAttemptToFix);
+
+                    // Remove user provided service tag
+                    targetSpan.Tags.Remove(CommonTags.UserProvidedTestServiceTag);
 
                     // check the name
                     Assert.Equal("xunit.test", targetSpan.Name);

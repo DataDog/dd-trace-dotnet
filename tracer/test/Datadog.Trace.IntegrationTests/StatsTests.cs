@@ -47,20 +47,16 @@ namespace Datadog.Trace.IntegrationTests
             var year2KDateTime = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                StatsComputationEnabled = true,
-                ServiceName = "default-service",
-                ServiceVersion = "v1",
-                Environment = "test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
+                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.ServiceName, "default-service" },
+                { ConfigurationKeys.ServiceVersion, "v1" },
+                { ConfigurationKeys.Environment, "test" },
+                { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+            });
 
-            var discovery = DiscoveryService.Create(settings.Build().Exporter);
+            var discovery = DiscoveryService.Create(settings.Exporter);
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
@@ -195,20 +191,16 @@ namespace Datadog.Trace.IntegrationTests
         public async Task SendsStatsWithProcessing_Obfuscator()
         {
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                StatsComputationEnabled = true,
-                ServiceName = "default-service",
-                ServiceVersion = "v1",
-                Environment = "test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
+                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.ServiceName, "default-service" },
+                { ConfigurationKeys.ServiceVersion, "v1" },
+                { ConfigurationKeys.Environment, "test" },
+                { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+            });
 
-            var discovery = DiscoveryService.Create(settings.Build().Exporter);
+            var discovery = DiscoveryService.Create(settings.Exporter);
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -366,9 +358,7 @@ namespace Datadog.Trace.IntegrationTests
                         { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
                     }));
 
-            var immutableSettings = settings.Build();
-
-            var discovery = DiscoveryService.Create(immutableSettings.Exporter);
+            var discovery = DiscoveryService.Create(settings.Exporter);
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -385,7 +375,7 @@ namespace Datadog.Trace.IntegrationTests
             spansCount++;
 
             Span span1;
-            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
                 span1 = scope.Span;
                 span1.Error = true;
@@ -400,7 +390,7 @@ namespace Datadog.Trace.IntegrationTests
             p0DroppedSpansCount++;
 
             Span span2;
-            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
                 span2 = scope.Span;
             }
@@ -413,7 +403,7 @@ namespace Datadog.Trace.IntegrationTests
             spansCount++;
 
             Span span3;
-            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
                 span3 = scope.Span;
                 span3.Error = true;
@@ -427,7 +417,7 @@ namespace Datadog.Trace.IntegrationTests
             spansCount += 2;
 
             Span span4;
-            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
                 span4 = scope.Span;
 
@@ -444,7 +434,7 @@ namespace Datadog.Trace.IntegrationTests
             p0DroppedSpansCount += 2;
 
             Span span5;
-            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
                 span5 = scope.Span;
 
@@ -460,7 +450,7 @@ namespace Datadog.Trace.IntegrationTests
             spansCount += 2;
 
             Span span6;
-            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, settings))
             {
                 span6 = scope.Span;
 
@@ -527,7 +517,7 @@ namespace Datadog.Trace.IntegrationTests
                 droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1", "0", "2" });
             }
 
-            Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, ImmutableTracerSettings tracerSettings)
+            Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, TracerSettings tracerSettings)
             {
                 var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
                 var span = scope.Span;

@@ -6,10 +6,12 @@
 using System;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
@@ -29,14 +31,11 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var param = "http://someUrl";
             var uri = new Uri(param);
-            var settings = new ExporterSettings { AgentUri = uri };
             var settingsFromSource = Setup("DD_TRACE_AGENT_URL", param);
 
             AssertHttpIsConfigured(settingsFromSource, uri);
             // The Uri is used to connect to dogstatsd as well, by getting the host from the uri
             AssertMetricsUdpIsConfigured(settingsFromSource, "someurl");
-            AssertHttpIsConfigured(settings, uri);
-            AssertMetricsUdpIsConfigured(settings, "someurl");
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -133,11 +132,9 @@ namespace Datadog.Trace.Tests.Configuration
         public void TracesPipeName()
         {
             var param = @"C:\temp\someval";
-            var settings = new ExporterSettings() { TracesPipeName = param };
             var settingsFromSource = Setup("DD_TRACE_PIPE_NAME", param);
 
             AssertPipeIsConfigured(settingsFromSource, param);
-            settings.TracesPipeName.Should().Be(param);
             // metrics default to UDP
             AssertMetricsUdpIsConfigured(settingsFromSource);
         }
@@ -147,23 +144,19 @@ namespace Datadog.Trace.Tests.Configuration
         public void MetricsUnixDomainSocketPath()
         {
             var param = "/var/path";
-            var settings = new ExporterSettings() { MetricsUnixDomainSocketPath = param };
             var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
 
             AssertMetricsUdsIsConfigured(settingsFromSource, param);
-            settings.MetricsUnixDomainSocketPath.Should().Be(param);
-            // AssertUdsIsConfigured(settings, param); //This is actually not working as we don't recompute the transport when setting the property
         }
 #else
         [Fact]
         public void MetricsUnixDomainSocketPath_UdsUnsupported_UsesDefaultUdp()
         {
             var param = "/var/path";
-            var settings = new ExporterSettings() { MetricsUnixDomainSocketPath = param };
+            var settingsFromSource = Setup("DD_DOGSTATSD_SOCKET", param);
 
-            AssertMetricsUdpIsConfigured(settings);
-            // This is actually not working as we don't recompute the transport when setting the property
-            // settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+            settingsFromSource.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
         }
 #endif
 
@@ -171,27 +164,21 @@ namespace Datadog.Trace.Tests.Configuration
         public void MetricsPipeName()
         {
             var param = "/var/path";
-            var settings = new ExporterSettings() { MetricsPipeName = param };
             var settingsFromSource = Setup("DD_DOGSTATSD_PIPE_NAME", param);
 
-            settings.MetricsPipeName.Should().Be(param);
             settingsFromSource.MetricsPipeName.Should().Be(param);
 
             AssertMetricsPipeIsConfigured(settingsFromSource, param);
-            // AssertMetricsPipeIsConfigured(settings, param); // This is actually not working as we don't recompute the transport when setting the property
         }
 
         [Fact]
         public void DogStatsdPort()
         {
             var param = 9333;
-            var settings = new ExporterSettings() { DogStatsdPort = param };
             var settingsFromSource = Setup("DD_DOGSTATSD_PORT", param.ToString());
 
-            settings.DogStatsdPort.Should().Be(param);
             settingsFromSource.DogStatsdPort.Should().Be(param);
 
-            CheckDefaultValues(settings, "DogStatsdPort");
             CheckDefaultValues(settingsFromSource, "DogStatsdPort");
         }
 
@@ -199,13 +186,10 @@ namespace Datadog.Trace.Tests.Configuration
         public void PartialFlushEnabled()
         {
             var param = true;
-            var settings = new ExporterSettings() { PartialFlushEnabled = param };
             var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_ENABLED", param.ToString());
 
-            settings.PartialFlushEnabled.Should().Be(param);
             settingsFromSource.PartialFlushEnabled.Should().Be(param);
 
-            CheckDefaultValues(settings, "PartialFlushEnabled");
             CheckDefaultValues(settingsFromSource, "PartialFlushEnabled");
         }
 
@@ -213,13 +197,10 @@ namespace Datadog.Trace.Tests.Configuration
         public void PartialFlushMinSpans()
         {
             var param = 200;
-            var settings = new ExporterSettings() { PartialFlushMinSpans = param };
             var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
 
-            settings.PartialFlushMinSpans.Should().Be(param);
             settingsFromSource.PartialFlushMinSpans.Should().Be(param);
 
-            CheckDefaultValues(settings, "PartialFlushMinSpans");
             CheckDefaultValues(settingsFromSource, "PartialFlushMinSpans");
         }
 
@@ -229,7 +210,6 @@ namespace Datadog.Trace.Tests.Configuration
             var param = -200;
             var settingsFromSource = Setup("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", param.ToString());
             settingsFromSource.PartialFlushMinSpans.Should().Be(500);
-            Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -242,11 +222,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new ExporterSettings();
             AssertHttpIsConfigured(settings, new Uri("http://127.0.0.1:8126/"));
-            AssertMetricsUdpIsConfigured(settingsFromSource);
-
-            settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
-            AssertUdsIsConfigured(settings, "/var/datadog/myscocket.soc");
-            // Note that this _doesn't_ switch metrics back to UDS
             AssertMetricsUdpIsConfigured(settingsFromSource);
         }
 
@@ -271,11 +246,6 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ExporterSettings();
             AssertHttpIsConfigured(settings, expectedUri);
             AssertMetricsUdpIsConfigured(settingsFromSource);
-
-            settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
-            AssertHttpIsConfigured(settings, expectedUri);
-            AssertMetricsUdpIsConfigured(settingsFromSource);
-            settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
         }
 
         [Fact]
@@ -531,6 +501,29 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settingsFromSource = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_URL:unix:///var/datadog/myscocket.soc", "DD_AGENT_HOST:someotherhost");
             AssertMetricsUdpIsConfigured(settingsFromSource, hostname: "someotherhost");
+        }
+
+        [Fact]
+        public void OnlyHasReadOnlyProperties()
+        {
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+
+            var type = typeof(ExporterSettings);
+
+            using var scope = new AssertionScope();
+
+            var properties = type.GetProperties(flags);
+            foreach (var propertyInfo in properties)
+            {
+                propertyInfo.CanWrite.Should().BeFalse($"{propertyInfo.Name} should be read only");
+            }
+
+            var fields = type.GetFields(flags);
+            foreach (var field in fields)
+            {
+                var isReadonlyOrConstant = field.IsInitOnly || field.IsLiteral;
+                isReadonlyOrConstant.Should().BeTrue($"{field.Name} should be read only");
+            }
         }
 
         private ExporterSettings Setup(string key, string value)

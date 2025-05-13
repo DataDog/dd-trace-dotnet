@@ -75,6 +75,9 @@ protected:
     virtual const bool GetIsEnabled(const RejitRequestDefinition& definition) = 0;
     virtual const bool SupportsSelectiveEnablement() = 0;
 
+    virtual bool CheckExactSignatureMatch(ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo& functionInfo,
+                                          const MethodReference& targetMethod);
+
     virtual bool ShouldSkipModule(const ModuleInfo& moduleInfo, const RejitRequestDefinition& definition) = 0;
 
     virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(mdMethodDef methodDef,

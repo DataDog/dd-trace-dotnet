@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
 
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -9,15 +9,15 @@
   <ItemGroup>
     <None Remove="xunit.runner.json" />
     <Content Include="xunit.runner.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Remove="CoverageRewriterAssembly.dll" />
     <Content Include="CoverageRewriterAssembly.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Remove="CoverageRewriterAssembly.pdb" />
     <Content Include="CoverageRewriterAssembly.pdb">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
@@ -31,11 +31,12 @@
 
   <ItemGroup>
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
   
   <ItemGroup>
     <None Update="datadogConfig.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

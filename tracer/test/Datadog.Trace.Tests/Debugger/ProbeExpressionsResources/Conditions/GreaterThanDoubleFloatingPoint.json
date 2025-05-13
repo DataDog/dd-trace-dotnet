@@ -1,0 +1,9 @@
+{
+  "dsl": "ref IntNumber > DoubleNumber",
+  "gt": [
+    {
+      "ref": "DoubleNumber"
+    },
+    0.1
+  ]
+}

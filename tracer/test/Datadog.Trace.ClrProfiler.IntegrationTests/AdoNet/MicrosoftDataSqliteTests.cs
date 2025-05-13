@@ -8,14 +8,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
+    [UsesVerify]
     public class MicrosoftDataSqliteTests : TracingIntegrationTest
     {
         public MicrosoftDataSqliteTests(ITestOutputHelper output)
@@ -24,19 +28,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.MicrosoftDataSqlite
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlite(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(
+            [PackageVersionData(nameof(PackageVersions.MicrosoftDataSqlite))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
 #if NETCOREAPP3_0
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")) // set in dockerfile
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 return;
             }
 #endif
-            const int expectedSpanCount = 91;
+            const int expectedSpanCount = 105;
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
 
@@ -64,6 +65,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("Sqlite-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
+            settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
+            settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
+            settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
+            settings.AddRegexScrubber(new Regex("dd.instrumentation.time_ms: \\d+.\\d+"), "dd.instrumentation.time_ms: 123.456");
+
+            var fileName = nameof(MicrosoftDataSqliteTests);
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                  .DisableRequireUniquePrefix()
+                  .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]

@@ -10,11 +10,13 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
     [Collection(nameof(WebRequestTests))]
     public class WebRequestTests : TracingIntegrationTest
@@ -22,9 +24,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public WebRequestTests(ITestOutputHelper output)
             : base("WebRequest", output)
         {
-            SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "410-499");
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_ERROR_STATUSES", "410-499");
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);
@@ -73,8 +75,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private async Task RunTest(string metadataSchemaVersion)
         {
             SetInstrumentationVerification();
-            var expectedAllSpansCount = 130;
-            var expectedSpanCount = 87;
+
+            var expectedAllSpansCount = 134;
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -84,34 +86,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
+
+            var allSpans = agent.WaitForSpans(expectedAllSpansCount, assertExpectedCount: false).OrderBy(s => s.Start).ToList();
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+#if NET9_0_OR_GREATER
+            // .NET 9.0 changed the behaviour when AllowWriteStreamBuffering=false
+            // The net result is that we end up creating a "WebRequest" span instead
+            // of an "HttpClient" span in one of the cases. Rather than creating a whole
+            // separate set of snapshots for .NET 9+, just "fixing" that one span instead.
+            var rogueSpan = allSpans.SingleOrDefault(
+                s => s.Tags.TryGetValue(Tags.HttpUrl, out var tag)
+                  && tag.EndsWith("?BeginGetResponseAsync_NoBuffering"));
+
+            // it should never be null, but fall through to fail the snapshots for easier debuggability if it is
+            if (rogueSpan is not null)
             {
-                var allSpans = agent.WaitForSpans(expectedAllSpansCount).OrderBy(s => s.Start).ToList();
-                allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
-
-                var spans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
-                spans.Should().HaveCount(expectedSpanCount);
-                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-
-                var okSpans = spans.Where(s => s.Tags[Tags.HttpStatusCode] == "200").ToList();
-                var notFoundSpans = spans.Where(s => s.Tags[Tags.HttpStatusCode] == "404").ToList();
-                var teapotSpans = spans.Where(s => s.Tags[Tags.HttpStatusCode] == "418").ToList();
-
-                (okSpans.Count + notFoundSpans.Count + teapotSpans.Count).Should().Be(expectedSpanCount);
-                okSpans.Should().OnlyContain(s => s.Error == 0);
-                notFoundSpans.Should().OnlyContain(s => s.Error == 0);
-                teapotSpans.Should().OnlyContain(s => s.Error == 1);
-
-                var firstSpan = spans.First();
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
-                telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
-                VerifyInstrumentation(processResult.Process);
+                Output.WriteLine("Updating span with HttpClient tags");
+                rogueSpan.Tags["component"] = "HttpMessageHandler"; // previously "WebRequest"
+                rogueSpan.Tags["http-client-handler-type"] = "System.Net.Http.SocketsHttpHandler"; // previously not set
             }
+#endif
+#if NETCOREAPP
+            // different TFMs use different underlying handlers, which we don't really care about for the snapshots
+            settings.AddSimpleScrubber("System.Net.Http.HttpClientHandler", "System.Net.Http.SocketsHttpHandler");
+#endif
+            var suffix = EnvironmentHelper.IsCoreClr() ? string.Empty : "_netfx";
+            await VerifyHelper.VerifySpans(
+                                   allSpans,
+                                   settings,
+                                   spans =>
+                                       spans.OrderBy(x => VerifyHelper.GetRootSpanResourceName(x, spans))
+                                            .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
+                                            .ThenBy(x => x.Tags.TryGetValue("http.url", out var url) ? url : string.Empty)
+                                            .ThenBy(x => x.Start)
+                                            .ThenBy(x => x.Duration))
+                              .UseFileName($"{nameof(WebRequestTests)}{suffix}_{metadataSchemaVersion}");
+
+            allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
+            var httpSpans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
+            ValidateIntegrationSpans(httpSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+            telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
+            VerifyInstrumentation(processResult.Process);
         }
     }
 }

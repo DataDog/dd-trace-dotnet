@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -85,9 +86,17 @@ internal abstract class CIEnvironmentValues
 
     public string[]? NodeLabels { get; protected set; }
 
+    public string? HeadCommit { get; protected set; }
+
+    public string? PrBaseCommit { get; protected set; }
+
+    public string? PrBaseBranch { get; protected set; }
+
     public CodeOwners? CodeOwners { get; protected set; }
 
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
+
+    public MetricTags.CIVisibilityTestSessionProvider MetricTag { get; protected set; } = MetricTags.CIVisibilityTestSessionProvider.Unsupported;
 
     public static CIEnvironmentValues Create()
     {
@@ -232,7 +241,7 @@ internal abstract class CIEnvironmentValues
         Message = null;
         SourceRoot = null;
 
-        Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder));
+        Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder!));
 
         // **********
         // Remove sensitive info from repository url
@@ -282,7 +291,7 @@ internal abstract class CIEnvironmentValues
         }
     }
 
-    protected abstract void Setup(GitInfo gitInfo);
+    protected abstract void Setup(IGitInfo gitInfo);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void CleanBranchAndTag()
@@ -409,6 +418,7 @@ internal abstract class CIEnvironmentValues
         public const string TravisBuildWebUrl = "TRAVIS_BUILD_WEB_URL";
         public const string TravisJobWebUrl = "TRAVIS_JOB_WEB_URL";
         public const string TravisCommitMessage = "TRAVIS_COMMIT_MESSAGE";
+        public const string TravisPullRequestSha = "TRAVIS_PULL_REQUEST_SHA";
 
         // Circle CI Environment variables
         public const string CircleCI = "CIRCLECI";
@@ -460,6 +470,9 @@ internal abstract class CIEnvironmentValues
         public const string GitlabCommitTimestamp = "CI_COMMIT_TIMESTAMP";
         public const string GitlabRunnerId = "CI_RUNNER_ID";
         public const string GitlabRunnerTags = "CI_RUNNER_TAGS";
+        public const string GitlabMergeRequestSourceBranchSha = "CI_MERGE_REQUEST_SOURCE_BRANCH_SHA";
+        public const string GitlabMergeRequestTargetBranchSha = "CI_MERGE_REQUEST_TARGET_BRANCH_SHA";
+        public const string GitlabMergeRequestTargetBranchName = "CI_MERGE_REQUEST_TARGET_BRANCH_NAME";
 
         // Appveyor CI Environment variables
         public const string Appveyor = "APPVEYOR";
@@ -476,6 +489,7 @@ internal abstract class CIEnvironmentValues
         public const string AppveyorRepoCommitMessageExtended = "APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED";
         public const string AppveyorRepoCommitAuthor = "APPVEYOR_REPO_COMMIT_AUTHOR";
         public const string AppveyorRepoCommitAuthorEmail = "APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL";
+        public const string AppveyorPullRequestBaseRepoBranch = "APPVEYOR_REPO_BRANCH";
 
         // Azure CI Environment variables
         public const string AzureTFBuild = "TF_BUILD";
@@ -498,6 +512,7 @@ internal abstract class CIEnvironmentValues
         public const string AzureBuildSourceVersionMessage = "BUILD_SOURCEVERSIONMESSAGE";
         public const string AzureBuildRequestedForId = "BUILD_REQUESTEDFORID";
         public const string AzureBuildRequestedForEmail = "BUILD_REQUESTEDFOREMAIL";
+        public const string AzureSystemPullRequestTargetBranch = "SYSTEM_PULLREQUEST_TARGETBRANCH";
 
         // BitBucket CI Environment variables
         public const string BitBucketCommit = "BITBUCKET_COMMIT";
@@ -509,6 +524,7 @@ internal abstract class CIEnvironmentValues
         public const string BitBucketPipelineUuid = "BITBUCKET_PIPELINE_UUID";
         public const string BitBucketBuildNumber = "BITBUCKET_BUILD_NUMBER";
         public const string BitBucketRepoFullName = "BITBUCKET_REPO_FULL_NAME";
+        public const string BitBucketPullRequestDestinationBranch = "BITBUCKET_PR_DESTINATION_BRANCH";
 
         // GitHub CI Environment variables
         public const string GitHubSha = "GITHUB_SHA";
@@ -522,6 +538,8 @@ internal abstract class CIEnvironmentValues
         public const string GitHubRunNumber = "GITHUB_RUN_NUMBER";
         public const string GitHubWorkflow = "GITHUB_WORKFLOW";
         public const string GitHubJob = "GITHUB_JOB";
+        public const string GitHubEventPath = "GITHUB_EVENT_PATH";
+        public const string GitHubBaseRef = "GITHUB_BASE_REF";
 
         // Teamcity CI Environment variables
         public const string TeamCityVersion = "TEAMCITY_VERSION";
@@ -547,6 +565,7 @@ internal abstract class CIEnvironmentValues
         public const string BuildKiteBuildCreatorEmail = "BUILDKITE_BUILD_CREATOR_EMAIL";
         public const string BuildKiteAgentId = "BUILDKITE_AGENT_ID";
         public const string BuildKiteAgentMetadata = "BUILDKITE_AGENT_META_DATA_";
+        public const string BuildKitePullRequestBaseBranch = "BUILDKITE_PULL_REQUEST_BASE_BRANCH";
 
         // Bitrise CI Environment variables
         public const string BitriseBuildSlug = "BITRISE_BUILD_SLUG";
@@ -565,6 +584,7 @@ internal abstract class CIEnvironmentValues
         public const string BitriseCloneCommitAuthorEmail = "GIT_CLONE_COMMIT_AUTHOR_EMAIL";
         public const string BitriseCloneCommitCommiterName = "GIT_CLONE_COMMIT_COMMITER_NAME";
         public const string BitriseCloneCommitCommiterEmail = "GIT_CLONE_COMMIT_COMMITER_EMAIL";
+        public const string BitrisePullRequestHeadBranch = "BITRISEIO_PULL_REQUEST_HEAD_BRANCH";
 
         // Buddy CI Environment variables
         public const string Buddy = "BUDDY";
@@ -579,6 +599,7 @@ internal abstract class CIEnvironmentValues
         public const string BuddyExecutionRevisionMessage = "BUDDY_EXECUTION_REVISION_MESSAGE";
         public const string BuddyExecutionRevisionCommitterName = "BUDDY_EXECUTION_REVISION_COMMITTER_NAME";
         public const string BuddyExecutionRevisionCommitterEmail = "BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL";
+        public const string BuddyPullRequestBaseBranch = "BUDDY_RUN_PR_BASE_BRANCH";
 
         // Codefresh CI Environment variables
         public const string CodefreshBuildId = "CF_BUILD_ID";
@@ -586,6 +607,7 @@ internal abstract class CIEnvironmentValues
         public const string CodefreshBuildUrl = "CF_BUILD_URL";
         public const string CodefreshStepName = "CF_STEP_NAME";
         public const string CodefreshBranch = "CF_BRANCH";
+        public const string CodefreshPullRequestTarget = "CF_PULL_REQUEST_TARGET";
 
         // AWS CodePipeline
         public const string AWSCodePipelineId = "DD_PIPELINE_EXECUTION_ID";

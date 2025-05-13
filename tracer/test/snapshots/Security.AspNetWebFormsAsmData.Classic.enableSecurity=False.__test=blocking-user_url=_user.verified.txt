@@ -16,7 +16,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: user3
+      usr.id: user3,
+      _dd.appsec.user.collection_mode: sdk
     },
     Metrics: {
       process_id: 0,
@@ -42,7 +43,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: user3
+      usr.id: user3,
+      _dd.appsec.user.collection_mode: sdk
     },
     Metrics: {
       process_id: 0,

@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "7.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
 [Browsable(false)]
@@ -45,7 +45,7 @@ public class SymmetricAlgorithmIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
-        return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance));
+        return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance, false));
     }
 
     /// <summary>

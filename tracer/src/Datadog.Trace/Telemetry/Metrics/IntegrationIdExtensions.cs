@@ -38,9 +38,12 @@ internal static class IntegrationIdExtensions
             IntegrationId.Msmq => MetricTags.IntegrationName.Msmq,
             IntegrationId.Kafka => MetricTags.IntegrationName.Kafka,
             IntegrationId.CosmosDb => MetricTags.IntegrationName.CosmosDb,
+            IntegrationId.AwsS3 => MetricTags.IntegrationName.AwsS3,
             IntegrationId.AwsSdk => MetricTags.IntegrationName.AwsSdk,
             IntegrationId.AwsSns => MetricTags.IntegrationName.AwsSns,
             IntegrationId.AwsSqs => MetricTags.IntegrationName.AwsSqs,
+            IntegrationId.AwsEventBridge => MetricTags.IntegrationName.AwsEventBridge,
+            IntegrationId.AwsStepFunctions => MetricTags.IntegrationName.AwsStepFunctions,
             IntegrationId.AwsLambda => MetricTags.IntegrationName.AwsLambda,
             IntegrationId.ILogger => MetricTags.IntegrationName.ILogger,
             IntegrationId.Aerospike => MetricTags.IntegrationName.Aerospike,
@@ -80,8 +83,11 @@ internal static class IntegrationIdExtensions
             IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             IntegrationId.DotnetTest => MetricTags.IntegrationName.DotnetTest,
             IntegrationId.Selenium => MetricTags.IntegrationName.Selenium,
+            IntegrationId.DatadogTraceManual => MetricTags.IntegrationName.DatadogTraceManual,
             IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
             IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
+            IntegrationId.EmailHtmlInjection => MetricTags.IntegrationName.EmailHtmlInjection,
+            IntegrationId.Protobuf => MetricTags.IntegrationName.Protobuf,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

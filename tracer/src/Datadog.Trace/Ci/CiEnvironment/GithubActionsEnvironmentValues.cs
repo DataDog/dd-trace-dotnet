@@ -4,19 +4,24 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.IO;
+using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: GitHub Actions detected");
 
         IsCI = true;
         Provider = "github";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.GithubActions;
 
         var serverUrl = ValueProvider.GetValue(Constants.GitHubServerUrl);
         if (string.IsNullOrWhiteSpace(serverUrl))
@@ -77,5 +82,51 @@ internal sealed class GithubActionsEnvironmentValues<TValueProvider>(TValueProvi
 
                 return kvp.Value;
             });
+
+        // Load github-event.json
+        LoadGithubEventJson();
+        if (string.IsNullOrEmpty(PrBaseBranch))
+        {
+            PrBaseBranch = ValueProvider.GetValue(Constants.GitHubBaseRef);
+        }
+    }
+
+    private void LoadGithubEventJson()
+    {
+        // Load github-event.json
+        try
+        {
+            var githubEventPath = ValueProvider.GetValue(Constants.GitHubEventPath);
+            if (!string.IsNullOrWhiteSpace(githubEventPath))
+            {
+                var githubEvent = File.ReadAllText(githubEventPath);
+                var githubEventObject = JObject.Parse(githubEvent);
+                var pullRequestObject = githubEventObject["pull_request"];
+                if (pullRequestObject is not null)
+                {
+                    var prHeadSha = pullRequestObject["head"]?["sha"]?.Value<string>();
+                    if (!string.IsNullOrWhiteSpace(prHeadSha))
+                    {
+                        HeadCommit = prHeadSha;
+                    }
+
+                    var prBaseSha = pullRequestObject["base"]?["sha"]?.Value<string>();
+                    if (!string.IsNullOrWhiteSpace(prBaseSha))
+                    {
+                        PrBaseCommit = prBaseSha;
+                    }
+
+                    var prBaseRef = pullRequestObject["base"]?["ref"]?.Value<string>();
+                    if (!string.IsNullOrWhiteSpace(prBaseRef))
+                    {
+                        PrBaseBranch = prBaseRef;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            TestOptimization.Instance.Log.Warning(ex, "Error loading the github-event.json");
+        }
     }
 }

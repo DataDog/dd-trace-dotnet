@@ -15,14 +15,18 @@ namespace libdatadog {
 struct TagsImpl
 {
 public:
-    TagsImpl()
+    TagsImpl(bool releaseOnClose = true) :
+        _releaseOnClose{releaseOnClose}
     {
         _tags = ddog_Vec_Tag_new();
     }
 
     ~TagsImpl()
     {
-        ddog_Vec_Tag_drop(_tags);
+        if (_releaseOnClose)
+        {
+            ddog_Vec_Tag_drop(_tags);
+        }
     }
 
     explicit operator ddog_Vec_Tag*()
@@ -34,5 +38,6 @@ public:
     TagsImpl& operator=(TagsImpl const&) = delete;
 
     ddog_Vec_Tag _tags;
+    bool _releaseOnClose;
 };
 } // namespace libdatadog

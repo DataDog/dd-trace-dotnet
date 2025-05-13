@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -23,14 +25,14 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Gets the "raw" content-type header, which may contain additional information like charset or boundary.
         /// </summary>
-        string ContentTypeHeader { get; }
+        string? ContentTypeHeader { get; }
 
         /// <summary>
         /// Gets the "raw" content-encoding header, which may contain multiple values
         /// </summary>
-        string ContentEncodingHeader { get; }
+        string? ContentEncodingHeader { get; }
 
-        string GetHeader(string headerName);
+        string? GetHeader(string headerName);
 
         Encoding GetCharsetEncoding();
 
@@ -50,9 +52,9 @@ namespace Datadog.Trace.Agent
             return await reader.ReadToEndAsync().ConfigureAwait(false);
         }
 
-        public static async Task<T> ReadAsTypeAsync<T>(this IApiResponse apiResponse)
+        public static async Task<T?> ReadAsTypeAsync<T>(this IApiResponse apiResponse)
         {
-            InitiallyBufferedStream bufferedStream = null;
+            InitiallyBufferedStream? bufferedStream = null;
             try
             {
                 var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
@@ -103,7 +105,7 @@ namespace Datadog.Trace.Agent
         /// <param name="contentTypeHeader">The raw content-type header, for example <c>"application/json;charset=utf-8"</c></param>
         /// <returns>The encoding associated with the charset, or <see cref="EncodingHelpers.Utf8NoBom"/> if the content-type header was not provided,
         /// if the charset was not provided, or if the charset was not recognized</returns>
-        public static Encoding GetCharsetEncoding(string contentTypeHeader)
+        public static Encoding GetCharsetEncoding(string? contentTypeHeader)
         {
             // special casing application/json because it's so common
             if (string.IsNullOrEmpty(contentTypeHeader)
@@ -114,7 +116,7 @@ namespace Datadog.Trace.Agent
             }
 
             // text/plain; charset=utf-8; boundary=foo
-            foreach (var pair in contentTypeHeader.SplitIntoSpans(';'))
+            foreach (var pair in contentTypeHeader!.SplitIntoSpans(';'))
             {
                 var parts = pair.AsSpan();
                 var index = parts.IndexOf('=');
@@ -143,14 +145,14 @@ namespace Datadog.Trace.Agent
             return EncodingHelpers.Utf8NoBom;
         }
 
-        public static ContentEncodingType GetContentEncodingType(string contentEncodingHeader)
+        public static ContentEncodingType GetContentEncodingType(string? contentEncodingHeader)
         {
             if (string.IsNullOrEmpty(contentEncodingHeader))
             {
                 return ContentEncodingType.None;
             }
 
-            if (contentEncodingHeader.Contains(","))
+            if (contentEncodingHeader!.Contains(","))
             {
                 return ContentEncodingType.Multiple;
             }

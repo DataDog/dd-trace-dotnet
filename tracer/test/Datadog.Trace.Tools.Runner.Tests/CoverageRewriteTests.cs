@@ -147,7 +147,7 @@ public class CoverageRewriteTests
 
         // Apply rewriter process
         var covSettings = new CoverageSettings(null, string.Empty);
-        covSettings.CIVisibility.SetCodeCoverageMode(coverageMode);
+        covSettings.TestOptimization.SetCodeCoverageMode(coverageMode);
         var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
         asmProcessor.Process();
 
@@ -178,7 +178,7 @@ public class CoverageRewriteTests
         configurationElement.LoadXml(configurationSettingsXml);
 
         var covSettings = new CoverageSettings(configurationElement.DocumentElement, string.Empty);
-        covSettings.CIVisibility.SetCodeCoverageMode(coverageMode);
+        covSettings.TestOptimization.SetCodeCoverageMode(coverageMode);
         var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
         asmProcessor.Process();
 

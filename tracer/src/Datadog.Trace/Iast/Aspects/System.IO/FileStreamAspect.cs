@@ -5,14 +5,15 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> StreamWriterAspect class aspects </summary>
-[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", AspectType.RaspIastSink, VulnerabilityType.PathTraversal)]
+[AspectClass("mscorlib,System.IO.FileSystem,System.Runtime", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.PathTraversal)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class FileStreamAspect
@@ -37,7 +38,15 @@ public class FileStreamAspect
 #endif
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            VulnerabilitiesModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.LogAspectException(ex);
+            return path;
+        }
     }
 }

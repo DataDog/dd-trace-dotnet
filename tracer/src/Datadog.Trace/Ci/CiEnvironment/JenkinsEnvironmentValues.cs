@@ -6,18 +6,20 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Jenkins detected");
 
         IsCI = true;
         Provider = "jenkins";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.Jenkins;
         Repository = ValueProvider.GetValue(Constants.JenkinsGitUrl);
         if (string.IsNullOrEmpty(Repository))
         {

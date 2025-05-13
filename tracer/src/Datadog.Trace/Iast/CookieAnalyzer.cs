@@ -6,8 +6,10 @@
 #nullable enable
 
 using System;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
@@ -18,12 +20,44 @@ using System.Web;
 
 namespace Datadog.Trace.Iast;
 
-internal static class CookieAnalyzer
+internal class CookieAnalyzer
 {
+    private static readonly Lazy<CookieAnalyzer> Instance = new Lazy<CookieAnalyzer>();
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CookieAnalyzer));
+    private readonly Regex? _cookieFilterRegex = null;
+
+    public CookieAnalyzer()
+        : this(Iast.Instance.Settings)
+    {
+    }
+
+    internal CookieAnalyzer(IastSettings settings)
+        : this(settings.Enabled, settings.CookieFilterRegex, settings.RegexTimeout)
+    {
+    }
+
+    internal CookieAnalyzer(bool iastEnabled, string pattern, double timeoutMilliSeconds)
+    {
+        if (iastEnabled && !string.IsNullOrEmpty(pattern))
+        {
+            var timeout = TimeSpan.FromMilliseconds(timeoutMilliSeconds);
+            if (timeout.TotalMilliseconds == 0)
+            {
+                timeout = Regex.InfiniteMatchTimeout;
+            }
+
+            var options = RegexOptions.IgnoreCase | RegexOptions.Compiled;
+            _cookieFilterRegex = new(pattern, options, timeout);
+        }
+    }
 
 #if NETFRAMEWORK
     public static void AnalyzeCookies(HttpCookieCollection cookies, IntegrationId integrationId)
+    {
+        Instance.Value.AnalyzeCookieCollection(cookies, integrationId);
+    }
+
+    public void AnalyzeCookieCollection(HttpCookieCollection cookies, IntegrationId integrationId)
     {
         try
         {
@@ -38,7 +72,7 @@ internal static class CookieAnalyzer
         }
     }
 
-    private static void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
+    private void ReportVulnerabilities(IntegrationId integrationId, HttpCookie cookie)
     {
         if (cookie.Values.Count == 0)
         {
@@ -54,25 +88,33 @@ internal static class CookieAnalyzer
             return;
         }
 
+        bool isFiltered = IsFiltered(name);
+
         string? samesiteCookie = cookie.Values["SameSite"];
         if (samesiteCookie?.Equals("Strict", System.StringComparison.InvariantCultureIgnoreCase) is not true)
         {
-            IastModule.OnNoSamesiteCookie(integrationId, name);
+            IastModule.OnNoSamesiteCookie(integrationId, name, isFiltered);
         }
 
         if (!cookie.HttpOnly)
         {
-            IastModule.OnNoHttpOnlyCookie(integrationId, name);
+            IastModule.OnNoHttpOnlyCookie(integrationId, name, isFiltered);
         }
 
         if (!cookie.Secure)
         {
-            IastModule.OnInsecureCookie(integrationId, name);
+            IastModule.OnInsecureCookie(integrationId, name, isFiltered);
         }
     }
 #else
     // Extract the cookie information of a request from a IHeaderDictionary
-    public static void AnalyzeCookies(IHeaderDictionary headers, IntegrationId integrationId)
+
+    public static void AnalyzeCookies(IHeaderDictionary cookies, IntegrationId integrationId)
+    {
+        Instance.Value.AnalyzeCookieCollection(cookies, integrationId);
+    }
+
+    public void AnalyzeCookieCollection(IHeaderDictionary headers, IntegrationId integrationId)
     {
         try
         {
@@ -92,7 +134,7 @@ internal static class CookieAnalyzer
         }
     }
 
-    private static void AnalyzeCookie(string cookieHeaderValue, IntegrationId integrationId)
+    private void AnalyzeCookie(string cookieHeaderValue, IntegrationId integrationId)
     {
         if (!IsExcluded(cookieHeaderValue))
         {
@@ -103,7 +145,7 @@ internal static class CookieAnalyzer
         }
     }
 
-    private static void ReportVulnerabilities(IntegrationId integrationId, SetCookieHeaderValue cookie)
+    private void ReportVulnerabilities(IntegrationId integrationId, SetCookieHeaderValue cookie)
     {
         var name = cookie.Name.ToString();
         var value = cookie.Value.ToString();
@@ -114,26 +156,40 @@ internal static class CookieAnalyzer
             return;
         }
 
+        bool isFiltered = IsFiltered(name);
+
         if (cookie.SameSite != Microsoft.Net.Http.Headers.SameSiteMode.Strict)
         {
-            IastModule.OnNoSamesiteCookie(integrationId, name);
+            IastModule.OnNoSamesiteCookie(integrationId, name, isFiltered);
         }
 
         if (!cookie.HttpOnly)
         {
-            IastModule.OnNoHttpOnlyCookie(integrationId, name);
+            IastModule.OnNoHttpOnlyCookie(integrationId, name, isFiltered);
         }
 
         if (!cookie.Secure)
         {
-            IastModule.OnInsecureCookie(integrationId, name);
+            IastModule.OnInsecureCookie(integrationId, name, isFiltered);
         }
     }
 
-    private static bool IsExcluded(string cookieName)
+    internal bool IsExcluded(string cookieName)
     {
-        return string.IsNullOrWhiteSpace(cookieName) || cookieName.StartsWith(".AspNetCore.Correlation.", StringComparison.OrdinalIgnoreCase);
+        return string.IsNullOrWhiteSpace(cookieName) || cookieName.StartsWith(".AspNetCore.", StringComparison.OrdinalIgnoreCase);
     }
-
 #endif
+
+    internal bool IsFiltered(string cookieName)
+    {
+        try
+        {
+            return _cookieFilterRegex?.IsMatch(cookieName) ?? false;
+        }
+        catch (RegexMatchTimeoutException err)
+        {
+            IastModule.LogTimeoutError(err);
+            return true;
+        }
+    }
 }

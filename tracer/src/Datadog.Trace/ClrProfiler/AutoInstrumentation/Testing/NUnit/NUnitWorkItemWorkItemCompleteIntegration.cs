@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -62,7 +63,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
 
                 module.Close();
                 // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
-                CIVisibility.Close();
+                TestOptimization.Instance.Close();
 
                 break;
             case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is { } suite:
@@ -73,7 +74,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                     suite.Tags.Status = TestTags.StatusFail;
 
                     // Handle setup errors
-                    if (result.ResultState.Site == FailureSite.SetUp && compositeWorkItem is not null)
+                    if (result.ResultState.Site == FailureSite.SetUp && compositeWorkItem?.Children != null)
                     {
                         foreach (var child in compositeWorkItem.Children)
                         {
@@ -92,7 +93,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                 }
 
                 // Handle ignored children in a Theory if the theory has been marked as ignored
-                if (compositeWorkItem is not null)
+                if (compositeWorkItem?.Children is not null)
                 {
                     foreach (var child in compositeWorkItem.Children)
                     {
@@ -161,7 +162,8 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
             }
 
             if (workItem.Result.ResultState.Site == FailureSite.SetUp &&
-                workItem.Instance.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem))
+                workItem.Instance.TryDuckCast<ICompositeWorkItem>(out var compositeWorkItem) &&
+                compositeWorkItem.Children != null)
             {
                 foreach (var child in compositeWorkItem.Children)
                 {

@@ -8,9 +8,10 @@ namespace CallTargetNativeTest.NoOp
     /// </summary>
     public static class Noop1ArgumentsVoidIntegration
     {
+        public const string SKIPMETHODBODY = "SKIPMETHODBODY";
+
         public static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, TArg1 arg1)
         {
-            CallTargetState returnValue = CallTargetState.GetDefault();
             Console.WriteLine($"ProfilerOK: BeginMethod(1)<{typeof(Noop1ArgumentsVoidIntegration)}, {typeof(TTarget)}, {typeof(TArg1)}>({instance}, {arg1})");
             if (instance?.GetType().Name.Contains("ThrowOnBegin") == true)
             {
@@ -18,7 +19,13 @@ namespace CallTargetNativeTest.NoOp
                 throw new Exception();
             }
 
-            return returnValue;
+            Console.WriteLine(arg1 as string);
+            if (arg1 as string == SKIPMETHODBODY)
+            {
+                return new CallTargetState(null, null, skipMethodBody: true);
+            }
+
+            return CallTargetState.GetDefault();
         }
 
         public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
@@ -30,7 +37,7 @@ namespace CallTargetNativeTest.NoOp
                 Console.WriteLine("Exception thrown.");
                 throw new Exception();
             }
-
+            
             return returnValue;
         }
     }

@@ -193,7 +193,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                             integrationKind = namedArgument.Value.Value as int?;
                             break;
                         case nameof(Constants.InstrumentAttributeProperties.InstrumentationCategory):
-                            instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as int?).GetValueOrDefault();
+                            instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as uint?).GetValueOrDefault();
                             break;
                         default:
                             hasMisconfiguredInput = true;
@@ -366,6 +366,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
             int? integrationKind = null;
             int? returnType = null;
             string? callTargetType = null;
+            InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing;
 
             foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
             {
@@ -391,6 +392,9 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         break;
                     case nameof(Constants.AdoNetSignatureAttributeProperties.CallTargetIntegrationKind):
                         integrationKind = namedArgument.Value.Value as int?;
+                        break;
+                    case nameof(Constants.AdoNetSignatureAttributeProperties.InstrumentationCategory):
+                        instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as uint?).GetValueOrDefault();
                         break;
                     case nameof(Constants.AdoNetSignatureAttributeProperties.ReturnType):
                         returnType = namedArgument.Value.Value as int?;
@@ -457,6 +461,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         targetParameterTypes: parameterTypeNames ?? Array.Empty<string>(),
                         instrumentationTypeName: callTargetType!.ToString(),
                         callTargetIntegrationKind: integrationKind ?? 0,
+                        instrumentationCategory: instrumentationCategory,
                         returnType: returnType ?? 0)));
         }
 
@@ -702,7 +707,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                         instrumentationTypeName: signature.Signature.InstrumentationTypeName,
                         integrationKind: signature.Signature.CallTargetIntegrationKind,
                         isAdoNetIntegration: true,
-                        instrumentationCategory: InstrumentationCategory.Tracing);
+                        instrumentationCategory: signature.Signature.InstrumentationCategory);
 
                 return new Result<CallTargetDefinitionSource?>(callTargetSource, default);
             }

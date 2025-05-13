@@ -31,9 +31,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicPublishIntegration
     {
-        private const string Command = "basic.publish";
+        internal const string Command = "basic.publish";
 
-        private static readonly string?[] DeliveryModeStrings = { null, "1", "2" };
+        internal static readonly string?[] DeliveryModeStrings = [null, "1", "2"];
 
         /// <summary>
         /// OnMethodBegin callback
@@ -58,7 +58,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             // Tags is not null if span is not null, but keep analysis happy, as there's no attribute for that
             if (scope != null && tags is not null)
             {
-                Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
+                var tracer = Tracer.Instance;
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
                 string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
@@ -79,7 +80,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         basicProperties.Headers = new Dictionary<string, object>();
                     }
 
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, default(ContextPropagation));
+                    var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    tracer.TracerManager.SpanContextPropagator.Inject(context, basicProperties.Headers, default(ContextPropagation));
+
                     RabbitMQIntegration.SetDataStreamsCheckpointOnProduce(
                         Tracer.Instance,
                         scope.Span,

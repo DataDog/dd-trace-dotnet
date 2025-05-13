@@ -73,11 +73,18 @@ public:
     std::uint64_t GetCIVisibilitySpanId() const override;
     bool IsEtwEnabled() const override;
     bool IsEtwLoggingEnabled() const override;
+    std::string const& GetEtwReplayEndpoint() const override;
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
+    std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
+    bool IsTelemetryToDiskEnabled() const override;
+    bool IsSsiTelemetryEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
-
+    bool IsHttpProfilingEnabled() const override;
+    std::chrono::milliseconds GetHttpRequestDurationThreshold() const override;
+    bool ForceHttpSampling() const override;
+    bool IsWaitHandleProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -92,7 +99,7 @@ private:
     static std::chrono::seconds GetDefaultUploadInterval();
     static bool GetDefaultDebugLogEnabled();
     template <typename T>
-    static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
+    static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue, bool shouldLog = false);
     template <typename T>
     static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
     static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);
@@ -101,6 +108,8 @@ private:
     static int32_t ExtractCodeHotspotsThreadsThreshold();
     static bool GetContention();
     EnablementStatus ExtractEnablementStatus();
+    std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
+    std::chrono::milliseconds ExtractHttpRequestDurationThreshold() const;
 
 private:
     static std::string const DefaultProdSite;
@@ -166,7 +175,16 @@ private:
     bool _isEtwEnabled;
     DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
+    std::string _etwReplayEndpoint;
     EnablementStatus _enablementStatus;
+    std::chrono::milliseconds _ssiLongLivedThreshold;
+    bool _isTelemetryToDiskEnabled;
+    bool _isSsiTelemetryEnabled;
+    bool _isHttpProfilingEnabled;
+    std::chrono::milliseconds _httpRequestDurationThreshold;
+    bool _forceHttpSampling;
+
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
+    bool _isWaitHandleProfilingEnabled;
 };

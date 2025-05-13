@@ -72,7 +72,7 @@ internal sealed class LocalCustomSamplingRule : CustomSamplingRule
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Unable to parse the trace sampling rules.");
+            Log.Warning(ex, "Unable to parse the trace sampling rules.");
         }
 
         return [];

@@ -2,14 +2,13 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.AppSec.Waf;
@@ -26,10 +25,10 @@ namespace Datadog.Trace.AppSec
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ObjectExtractor));
         private static readonly IReadOnlyDictionary<string, object?> EmptyDictionary = new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(0));
 
-        private static readonly ConcurrentDictionary<Type, FieldExtractor[]> TypeToExtractorMap = new();
+        private static readonly ConcurrentDictionary<Type, FieldExtractor?[]> TypeToExtractorMap = new();
 
-        private static readonly HashSet<Type> WafProcessableTypes = new()
-        {
+        private static readonly HashSet<Type> WafProcessableTypes =
+        [
             typeof(float),
             typeof(double),
             typeof(decimal),
@@ -41,7 +40,7 @@ namespace Datadog.Trace.AppSec
             typeof(bool),
             typeof(byte),
             typeof(ulong)
-        };
+        ];
 
         internal static object? Extract(object? body)
         {
@@ -59,12 +58,10 @@ namespace Datadog.Trace.AppSec
         {
             try
             {
-                if (visited.Contains(body))
+                if (!visited.Add(body))
                 {
                     return EmptyDictionary;
                 }
-
-                visited.Add(body);
             }
             catch
             {
@@ -105,7 +102,7 @@ namespace Datadog.Trace.AppSec
                     var dynMethod = new DynamicMethod(
                         bodyType + "_get_" + propertyName,
                         typeof(object),
-                        new[] { typeof(object) },
+                        [typeof(object)],
                         typeof(ObjectExtractor).Module,
                         true);
                     var ilGen = dynMethod.GetILGenerator();
@@ -127,7 +124,7 @@ namespace Datadog.Trace.AppSec
                     fieldExtractors[i] = new FieldExtractor(propertyName!, field.FieldType, func);
                 }
 
-                // this would be expect to fail sometimes, when several threads attempt process the same body
+                // this would be expected to fail sometimes, when several threads attempt process the same body
                 TypeToExtractorMap.TryAdd(bodyType, fieldExtractors);
             }
 
@@ -143,7 +140,7 @@ namespace Datadog.Trace.AppSec
 
                 var fieldExtractor = fieldExtractors[i];
 
-                if (fieldExtractor != null)
+                if (fieldExtractor is not null)
                 {
                     var value = fieldExtractor.Accessor.Invoke(body);
                     if (Log.IsEnabled(LogEventLevel.Debug))
@@ -208,15 +205,20 @@ namespace Datadog.Trace.AppSec
 #endif
             if (unhandledType)
             {
-                return value?.ToString();
+                return value.ToString();
             }
 
             var nestedDict = ExtractProperties(value, depth, visited);
             return nestedDict;
         }
 
-        private static Dictionary<string, object?> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
+        private static IReadOnlyDictionary<string, object?> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
         {
+            if (!visited.Add(value))
+            {
+                return EmptyDictionary;
+            }
+
             var gtkvp = typeof(KeyValuePair<,>);
             var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
             var keyProp = tkvp.GetProperty("Key");
@@ -268,6 +270,11 @@ namespace Datadog.Trace.AppSec
 
         private static List<object?> ExtractListOrArray(object value, int depth, HashSet<object> visited)
         {
+            if (visited.Contains(value))
+            {
+                return [];
+            }
+
             var sourceList = (ICollection)value;
             var listSize = Math.Min(WafConstants.MaxContainerSize, sourceList.Count);
             var items = new List<object?>(listSize);
@@ -293,20 +300,13 @@ namespace Datadog.Trace.AppSec
             return items;
         }
 
-        private class FieldExtractor
+        private class FieldExtractor(string name, Type type, Func<object, object> accessor)
         {
-            public FieldExtractor(string name, Type type, Func<object, object> accessor)
-            {
-                Name = name;
-                Type = type;
-                Accessor = accessor;
-            }
+            public string Name { get; } = name;
 
-            public string Name { get; set; }
+            public Type Type { get; } = type;
 
-            public Type Type { get; set; }
-
-            public Func<object, object> Accessor { get; set; }
+            public Func<object, object> Accessor { get; } = accessor;
         }
     }
 }

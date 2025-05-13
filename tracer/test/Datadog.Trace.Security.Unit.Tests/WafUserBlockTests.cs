@@ -23,16 +23,19 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf!;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
+
+            var configurationStatus = UpdateConfigurationState();
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            var payload = new Payload { RulesData = rulesData!.ToArray() };
+            AddAsmDataRemoteConfig(configurationStatus, payload, "001");
+            configurationStatus.ApplyStoredFiles();
+            var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
-            res.HasErrors.Should().BeFalse();
+            res.HasRuleErrors.Should().BeFalse();
             using var context = waf.CreateContext()!;
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },

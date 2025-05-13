@@ -135,7 +135,7 @@ public class CompareExecutionTime
 
     private static string GetName(ExecutionTimeFramework source) => source switch
     {
-        ExecutionTimeFramework.NetFramework462 => ".NET Framework 4.6.2",
+        ExecutionTimeFramework.NetFramework => ".NET Framework 4.8",
         ExecutionTimeFramework.Netcoreapp31 => ".NET Core 3.1",
         ExecutionTimeFramework.Net6 => ".NET 6",
         _ => throw new NotImplementedException(),
@@ -144,12 +144,12 @@ public class CompareExecutionTime
     static readonly (string Path, ExecutionTimeSample Sample, (string Filename, ExecutionTimeFramework Framework)[] TestRuns)[] ExpectedTestRuns =
     {
         ("execution_time_benchmarks_windows_x64_FakeDbCommand_1", ExecutionTimeSample.FakeDbCommand, new[] { 
-            ("results_Samples.FakeDbCommand.windows.net462.json", ExecutionTimeFramework.NetFramework462),
+            ("results_Samples.FakeDbCommand.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.FakeDbCommand.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.FakeDbCommand.windows.net60.json", ExecutionTimeFramework.Net6),
         }),
         ("execution_time_benchmarks_windows_x64_HttpMessageHandler_1", ExecutionTimeSample.HttpMessageHandler, new[] { 
-            ("results_Samples.HttpMessageHandler.windows.net462.json", ExecutionTimeFramework.NetFramework462),
+            ("results_Samples.HttpMessageHandler.windows.net48.json", ExecutionTimeFramework.NetFramework),
             ("results_Samples.HttpMessageHandler.windows.netcoreapp31.json", ExecutionTimeFramework.Netcoreapp31),
             ("results_Samples.HttpMessageHandler.windows.net60.json", ExecutionTimeFramework.Net6),
         }),
@@ -197,7 +197,7 @@ public class CompareExecutionTime
 
     public enum ExecutionTimeFramework
     {
-        NetFramework462,
+        NetFramework,
         Netcoreapp31,
         Net6,
     }

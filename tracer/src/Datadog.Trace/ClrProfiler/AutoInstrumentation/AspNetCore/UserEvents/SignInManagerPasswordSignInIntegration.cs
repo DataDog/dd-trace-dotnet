@@ -4,14 +4,20 @@
 // </copyright>
 
 #nullable enable
+#if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
+using Microsoft.AspNetCore.Http;
 
-#if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
@@ -22,20 +28,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [InstrumentMethod(
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
@@ -48,7 +54,7 @@ public static class SignInManagerPasswordSignInIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string user, string password, bool isPersistent, bool lockoutOnFailure)
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -61,21 +67,52 @@ public static class SignInManagerPasswordSignInIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (!returnValue.Succeeded && Security.Instance is { TrackUserEvents: true } security && state.Scope is { Span: { } span })
+        if (!returnValue.Succeeded
+         && Security.Instance is { IsTrackUserEventsEnabled: true } security
+         && state is { Scope.Span: { } span })
         {
+            // the new user semantics events must only be collected if either the user login or the user ID are available
+            // here as it's the first login step, state.State is the username, db hasn't been hit yet.
+            if (state.State is not string login || string.IsNullOrEmpty(login))
+            {
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(true, foundLogin: false);
+                return returnValue;
+            }
+
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-            if (security.IsExtendedUserTrackingEnabled)
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
+            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, Tags.AppSec.EventsUsers.False);
+            var processedLogin = login;
+            if (security.IsAnonUserTrackingMode)
             {
-                // if we get here and the tag doesn't exist, the user doesn't exist, we dont have an ID but a username that doesn't exist
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, state.State!.ToString());
+                processedLogin = UserEventsCommon.Anonymize(login);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, processedLogin);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, processedLogin);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
+            }
+            else
+            {
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
-            security.SetTraceSamplingPriority(span);
+            var duckCast = instance.TryDuckCast<ISignInManager>(out var value);
+            if (duckCast && value is not null)
+            {
+                var httpContext = value.Context;
+                var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext!);
+                securityCoordinator.Reporter.CollectHeaders();
+                security.SetTraceSamplingPriority(span);
+
+                if (security.AddressEnabled(AddressesConstants.UserLogin))
+                {
+                    var result = securityCoordinator.RunWafForUser(userLogin: processedLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                    securityCoordinator.BlockAndReport(result);
+                }
+            }
         }
 
         return returnValue;

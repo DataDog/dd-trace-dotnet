@@ -8,6 +8,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Spectre.Console;
 
@@ -58,7 +59,10 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             // Run child process
-            AnsiConsole.WriteLine("Running: " + command);
+            if (GlobalSettings.Instance.DebugEnabledInternal)
+            {
+                Console.WriteLine("Running: {0}", command);
+            }
 
             if (initResults.TestSkippingEnabled || Program.CallbackForTests is not null)
             {

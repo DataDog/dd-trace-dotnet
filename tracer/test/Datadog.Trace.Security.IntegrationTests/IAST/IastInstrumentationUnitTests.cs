@@ -13,16 +13,21 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
+using Amazon.SimpleEmail;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Equivalency.Tracing;
+using MimeKit;
 using Xunit;
 using Xunit.Abstractions;
 using DirectoryEntry = System.DirectoryServices.DirectoryEntry;
@@ -31,6 +36,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 public class IastInstrumentationUnitTests : TestHelper
 {
+    private List<string> _aspects = null;
+
     private List<Type> _taintedTypes = new List<Type>()
     {
         typeof(string), typeof(StringBuilder), typeof(object), typeof(char[]), typeof(object[]), typeof(IEnumerable),
@@ -41,21 +48,62 @@ public class IastInstrumentationUnitTests : TestHelper
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
     {
+        // We have seen crashes in CI for these tests which seem to be due to
+        // https://github.com/dotnet/runtime/issues/95653
+        // In the past, we have solved it by setting this variable,
+        // e.g. https://github.com/DataDog/dd-trace-dotnet/pull/5004
+        // so trying the same thing here:
+        SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
+    }
+
+    public List<string> GetAspects()
+    {
+        if (_aspects == null)
+        {
+            var tfm = (uint)Telemetry.ConfigTelemetryData.TargetFramework;
+            var aspects = new List<string>();
+            // Read aspects from the native definitions file
+            var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.cpp");
+            foreach (var line in File.ReadAllLines(path))
+            {
+                if (!line.Contains("[Aspect")) { continue; }
+                var aspect = line.Substring(14, line.Length - 17).Replace("\\\"", "\"");
+
+                // Get TFMs from the aspect
+                int index = aspect.LastIndexOf(' ');
+                uint tfms = Convert.ToUInt32(aspect.Substring(index + 1));
+                if ((tfm & tfms) == 0) { continue; }
+
+                aspects.Add(aspect);
+            }
+
+            _aspects = aspects;
+        }
+
+        return _aspects;
     }
 
     [SkippableTheory]
+#if NETCOREAPP3_1_OR_GREATER
     [InlineData(typeof(StringBuilder), "Append")]
+#else
+    [InlineData(typeof(StringBuilder), "Append", new string[] { "System.Text.StringBuilder Append(System.Text.StringBuilder, Int32, Int32)" })]
+#endif
     [InlineData(typeof(StringBuilder), "AppendLine", null, true)]
     [InlineData(typeof(StringBuilder), ".ctor", null, true)]
     [InlineData(typeof(StringBuilder), "Insert", null, true)]
 #if NETCOREAPP3_1_OR_GREATER
-    [InlineData(typeof(StringBuilder), "AppendJoin", null, true)]
+    [InlineData(typeof(StringBuilder), "AppendJoin", new string[] { "System.Text.StringBuilder AppendJoin[T](System.String, System.Collections.Generic.IEnumerable`1[T])", "System.Text.StringBuilder AppendJoin(System.String, System.ReadOnlySpan`1<System.Object>)",  "System.Text.StringBuilder AppendJoin(System.String, System.ReadOnlySpan`1<System.String>)" }, true)]
 #endif
     [InlineData(typeof(StringBuilder), "Replace", null, true)]
     [InlineData(typeof(StringBuilder), "Remove", null, true)]
     [InlineData(typeof(StringBuilder), "CopyTo", null, true)]
-    [InlineData(typeof(StringBuilder), "AppendFormat", new string[] { "System.StringBuilder::AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])" }, true)]
-    [InlineData(typeof(string), "Join")]
+    [InlineData(typeof(StringBuilder), "AppendFormat", new string[] { "System.StringBuilder AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])", "System.Text.StringBuilder AppendFormat(System.String, System.String, System.ReadOnlySpan`1<System.Object>)", "System.Text.StringBuilder AppendFormat(System.String, System.ReadOnlySpan`1<System.Object>)", "System.Text.StringBuilder AppendFormat(System.IFormatProvider, System.String, System.ReadOnlySpan`1<System.Object>)" }, true)]
+#if NETCOREAPP3_1_OR_GREATER
+    [InlineData(typeof(string), "Join", new string[] { "System.String Join[T](System.String, System.Collections.Generic.IEnumerable`1[T])", "System.String Join(System.String, System.ReadOnlySpan`1<System.String>)", "System.String Join(System.String, System.ReadOnlySpan`1<System.Object>)" })]
+#else
+    [InlineData(typeof(string), "Join", new string[] { "System.String Join[T](System.String, System.Collections.Generic.IEnumerable`1[T])", "System.String Join(Char, System.String[])", "System.String Join(Char, System.Object[])", "System.String Join(Char, System.String[], Int32, Int32)" })]
+#endif
     [InlineData(typeof(string), "Copy")]
     [InlineData(typeof(string), "ToUpper")]
     [InlineData(typeof(string), "ToUpperInvariant")]
@@ -68,8 +116,14 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(string), "Trim")]
     [InlineData(typeof(string), "Substring")]
     [InlineData(typeof(string), "TrimEnd")]
-    [InlineData(typeof(string), "Format", new string[] { "System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])" })]
-    [InlineData(typeof(string), "Split")]
+    [InlineData(typeof(string), "Format", new string[] { "System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])", "System.String Format(System.String, System.ReadOnlySpan`1<System.Object>)", "System.String Format(System.IFormatProvider, System.String, System.ReadOnlySpan`1<System.Object>)" })]
+#if NETCOREAPP2_1
+    [InlineData(typeof(string), "Split", new string[] { "System.String[] Split(System.String, System.StringSplitOptions)", "System.String[] Split(System.String, Int32, System.StringSplitOptions)", "System.String Join(Char, System.String[], Int32, Int32)", "System.String Join(Char, System.String[], Int32, Int32)", "System.String Join(Char, System.String[], Int32, Int32)" })]
+#elif NETCOREAPP3_0
+    [InlineData(typeof(string), "Split", new string[] { "System.String[] Split(System.String, System.StringSplitOptions)", "System.String[] Split(System.String, Int32, System.StringSplitOptions)" })]
+#else
+    [InlineData(typeof(string), "Split", new string[] { "System.String[] Split(System.String, System.StringSplitOptions)" })]
+#endif
     [InlineData(typeof(string), "Replace", new string[] { "System.String::Replace(System.String,System.String,System.StringComparison)", "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)" })]
     [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]
     [InlineData(typeof(StreamReader), ".ctor")]
@@ -102,6 +156,18 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(Type), "InvokeMember", null, true)]
     [InlineData(typeof(Assembly), "Load", null, true)]
     [InlineData(typeof(Assembly), "LoadFrom", null, true)]
+    [InlineData(typeof(SmtpClient), "Send", new[] { "Void Send(System.String, System.String, System.String, System.String)" }, true)]
+    [InlineData(typeof(SmtpClient), "SendAsync", new[] { "Void SendAsync(System.String, System.String, System.String, System.String, System.Object)" }, true)]
+    [InlineData(typeof(SmtpClient), "SendMailAsync", new[] { "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String, System.Threading.CancellationToken)", "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String)" }, true)]
+#if NETFRAMEWORK
+    [InlineData(typeof(AmazonSimpleEmailServiceClient), "SendEmail", null, true)]
+#endif
+    [InlineData(typeof(AmazonSimpleEmailServiceClient), "SendEmailAsync", null, true)]
+    [InlineData(typeof(TextPart), "SetText", null, false)]
+    [InlineData(typeof(TextPart), "set_Text", null, false)]
+#if NET6_0_OR_GREATER
+    [InlineData(typeof(DefaultInterpolatedStringHandler), null, new[] { "Void AppendFormatted(System.ReadOnlySpan`1[System.Char], Int32, System.String)" }, true)]
+#endif
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -174,11 +240,11 @@ public class IastInstrumentationUnitTests : TestHelper
 #if NETFRAMEWORK
             "System.Security.AccessControl.FileSecurity GetAccessControl(System.String)",
             "System.Security.AccessControl.FileSecurity GetAccessControl(System.String, System.Security.AccessControl.AccessControlSections)",
-            "void SetAccessControl(System.String, System.Security.AccessControl.FileSecurity)"
+            "void SetAccessControl(System.String, System.Security.AccessControl.FileSecurity)",
 #endif
 #if NETCOREAPP3_0
             // special case
-            "System.IO.File Move(System.String, System.String, Boolean)"
+            "System.IO.File Move(System.String, System.String, Boolean)",
 #endif
         };
         TestMethodOverloads(typeof(File), null, overloadsToExclude, true);
@@ -187,11 +253,27 @@ public class IastInstrumentationUnitTests : TestHelper
         {
 #if NET6_0
             // special case
-            "System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)"
+            "System.IO.File::ReadLinesAsync(System.String, System.Threading.CancellationToken)",
 #endif
 #if NETCOREAPP2_1
             // special case
-            "System.IO.File Move(System.String, System.String, Boolean)"
+            "System.IO.File Move(System.String, System.String, Boolean)",
+#endif
+#if NET6_0_OR_GREATER && !NET9_0_OR_GREATER
+            "System.IO.File::AppendAllText(System.String,System.ReadOnlySpan`1[System.Char])",
+            "System.IO.File::AppendAllText(System.String,System.ReadOnlySpan`1[System.Char],System.Text.Encoding)",
+            "System.IO.File::AppendAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Threading.CancellationToken)",
+            "System.IO.File::AppendAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Text.Encoding,System.Threading.CancellationToken)",
+            "System.IO.File::AppendAllBytes(System.String,Byte[])",
+            "System.IO.File::AppendAllBytes(System.String,System.ReadOnlySpan`1[System.Byte]))",
+            "System.IO.File::AppendAllBytesAsync(System.String, Byte[],System.Threading.CancellationToken)",
+            "System.IO.File::AppendAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)",
+            "System.IO.File::WriteAllBytes(System.String,System.ReadOnlySpan`1[System.Byte])",
+            "System.IO.File::WriteAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)",
+            "System.IO.File::WriteAllText(System.String,System.ReadOnlySpan`1[System.Char])",
+            "System.IO.File::WriteAllText(System.String,System.ReadOnlySpan`1[System.Char],System.Text.Encoding)",
+            "System.IO.File::WriteAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Threading.CancellationToken)",
+            "System.IO.File::WriteAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Text.Encoding,System.Threading.CancellationToken)",
 #endif
         };
 
@@ -200,7 +282,11 @@ public class IastInstrumentationUnitTests : TestHelper
 
     [Theory]
     [InlineData(typeof(StringBuilder))]
+#if NET9_0_OR_GREATER
     [InlineData(typeof(string))]
+#else
+    [InlineData(typeof(string), new[] { "System.String::Concat(System.ReadOnlySpan`1<System.String>)" })]
+#endif
     [InlineData(typeof(StreamWriter))]
     [InlineData(typeof(StreamReader))]
     [InlineData(typeof(FileStream))]
@@ -224,13 +310,18 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(XmlNode))]
     [InlineData(typeof(Extensions))]
     [InlineData(typeof(XPathExpression))]
+    [InlineData(typeof(SmtpClient), new[] { "System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])]" })]
+    [InlineData(typeof(AmazonSimpleEmailServiceClient))]
+    [InlineData(typeof(TextPart))]
     [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
 #if !NETFRAMEWORK
-    #if NET6_0_OR_GREATER
+#if NET9_0_OR_GREATER
     [InlineData(typeof(Type))]
-    #else
+#elif NET6_0_OR_GREATER
+    [InlineData(typeof(Type), new[] { "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Type[])" })]
+#else
     [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])" })]
-    #endif
+#endif
 #else
     [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[])" })]
 #endif
@@ -238,6 +329,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(Assembly))]
 #endif
     [InlineData(typeof(Assembly), new string[] { "System.Reflection.Assembly::Load(System.String,System.Security.Policy.Evidence)" })]
+#if NET6_0_OR_GREATER
+    [InlineData(typeof(DefaultInterpolatedStringHandler), null)]
+#endif
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)
@@ -283,24 +377,30 @@ public class IastInstrumentationUnitTests : TestHelper
             SetDumpInfo(logDirectory);
             EnableEvidenceRedaction(false);
             string arguments = string.Empty;
-#if NET462
+#if NETFRAMEWORK
             arguments = @" /Framework:"".NETFramework,Version=v4.6.2"" ";
 #else
             if (!EnvironmentTools.IsWindows())
             {
-                if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                arguments += (RuntimeInformation.ProcessArchitecture == Architecture.Arm64, EnvironmentHelper.IsAlpine()) switch
                 {
-                    arguments += " --TestCaseFilter:\"(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)\"";
-                }
-                else
-                {
-                    arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
-                }
+                    (true, false) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)""",
+                    (true, true) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=AlpineArmUnsupported)&(Category!=LinuxUnsupported)""",
+                    _ => @" --TestCaseFilter:""Category!=LinuxUnsupported""",
+                };
             }
 #endif
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
+
+            var securityControlsConfig = """
+                INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String);
+                INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1;
+                      SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String)
+                """;
+            SetEnvironmentVariable("DD_IAST_SECURITY_CONTROLS_CONFIGURATION", securityControlsConfig);
+
             ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);
             processResult.StandardError.Should().BeEmpty("arguments: " + arguments + Environment.NewLine + processResult.StandardError + Environment.NewLine + processResult.StandardOutput);
         }
@@ -324,7 +424,7 @@ public class IastInstrumentationUnitTests : TestHelper
 
         return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
             .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("System.", string.Empty)
-            .Replace("ByRef", string.Empty);
+            .Replace("ByRef", string.Empty).Replace("!!0", "T");
     }
 
     private bool MethodShouldBeChecked(MethodBase method)
@@ -350,7 +450,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
+        var aspects = GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
             typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
@@ -365,12 +465,28 @@ public class IastInstrumentationUnitTests : TestHelper
         typeMethods.Should().NotBeNull();
         typeMethods.Should().HaveCountGreaterThan(0);
 
+        Output.WriteLine("Exclude:");
+        if (overloadsToExcludeNormalized != null)
+        {
+            foreach (var method in overloadsToExcludeNormalized)
+            {
+                Output.WriteLine(method);
+            }
+        }
+
         foreach (var method in typeMethods)
         {
             var methodSignature = NormalizeName(method.ToString());
+            Output.WriteLine("Checking: " + methodSignature);
             if (MethodShouldBeChecked(method) && overloadsToExcludeNormalized?.Contains(methodSignature) != true)
             {
-                var isCovered = aspects.Any(x => NormalizeName(x).Contains(methodSignature) && x.Contains(typeToCheck.FullName));
+                var isCovered = aspects.Any(x =>
+                {
+                    var normalized = NormalizeName(x);
+                    var contains = normalized.Contains(methodSignature);
+                    var xcontains = x.Contains(typeToCheck.FullName);
+                    return contains && xcontains;
+                });
                 isCovered.Should().BeTrue(method.ToString() + " is not covered");
             }
         }
@@ -380,7 +496,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
 
-        foreach (var aspect in ClrProfiler.AspectDefinitions.GetAspects())
+        foreach (var aspect in GetAspects())
         {
             if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
             {

@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
     MethodName = "ComputeHash",
     ReturnTypeName = ClrNames.ByteArray,
     MinimumVersion = "7.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [Browsable(false)]
@@ -50,7 +50,7 @@ public class HashAlgorithmIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array, int offset, int count)
     {
-        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance));
+        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, false));
     }
 
     /// <summary>

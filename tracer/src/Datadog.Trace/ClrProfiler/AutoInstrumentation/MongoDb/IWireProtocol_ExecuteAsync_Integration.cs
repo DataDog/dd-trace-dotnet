@@ -17,10 +17,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// </summary>
 #pragma warning disable SA1118 // parameter spans multiple lines
     [InstrumentMethod(
-        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        AssemblyNames = [MongoDbIntegration.MongoDbClientV2Assembly, MongoDbIntegration.MongoDbClientV3Assembly],
         IntegrationName = MongoDbIntegration.IntegrationName,
         MinimumVersion = MongoDbIntegration.Major2Minor1,
-        MaximumVersion = MongoDbIntegration.Major2,
+        MaximumVersion = MongoDbIntegration.Major3,
         MethodName = "ExecuteAsync",
         ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
         ReturnTypeName = ClrNames.GenericTaskWithGenericClassParameter,
@@ -35,10 +35,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         })]
 #pragma warning restore SA1118
     [InstrumentMethod(
-        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        AssemblyName = MongoDbIntegration.MongoDbClientV2Assembly,
         IntegrationName = MongoDbIntegration.IntegrationName,
         MinimumVersion = MongoDbIntegration.Major2Minor1,
-        MaximumVersion = MongoDbIntegration.Major2,
+        MaximumVersion = MongoDbIntegration.Major2, // not available in 2.15+ so not available in 3.x
         MethodName = "ExecuteAsync",
         ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
         ReturnTypeName = "System.Threading.Tasks.Task",

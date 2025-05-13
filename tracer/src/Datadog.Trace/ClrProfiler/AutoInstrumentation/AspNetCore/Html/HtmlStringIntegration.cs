@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Html
        ParameterTypeNames = new[] { ClrNames.String },
        ReturnTypeName = ClrNames.Void,
        MinimumVersion = "1.0.0",
-       MaximumVersion = "8.*.*",
+       MaximumVersion = SupportedVersions.LatestDotNet,
        IntegrationName = nameof(Configuration.IntegrationId.Xss),
        InstrumentationCategory = InstrumentationCategory.Iast)]
 #else

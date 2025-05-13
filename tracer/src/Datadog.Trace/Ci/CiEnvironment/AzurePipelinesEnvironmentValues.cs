@@ -5,18 +5,20 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: Azure Pipelines detected");
 
         IsCI = true;
         Provider = "azurepipelines";
+        MetricTag = MetricTags.CIVisibilityTestSessionProvider.AzurePipelines;
         SourceRoot = ValueProvider.GetValue(Constants.AzureBuildSourcesDirectory);
         WorkspacePath = ValueProvider.GetValue(Constants.AzureBuildSourcesDirectory);
         PipelineId = ValueProvider.GetValue(Constants.AzureBuildBuildId);
@@ -63,5 +65,7 @@ internal sealed class AzurePipelinesEnvironmentValues<TValueProvider>(TValueProv
             Constants.AzureSystemTeamProjectId,
             Constants.AzureBuildBuildId,
             Constants.AzureSystemJobId);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.AzureSystemPullRequestTargetBranch);
     }
 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerSchedulerTests.cs" company="Datadog">
+// <copyright file="TelemetryControllerSchedulerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -162,6 +162,8 @@ public class TelemetryControllerSchedulerTests
         delayMutex.Wait();
         queueTcs.SetResult(true); // this triggers the queue task
 
+        await waitTask;
+
         // t = 15s;
         _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // not a complete interval
         _scheduler.ShouldFlushRedactedErrorLogs.Should().BeTrue(); // triggered by queue
@@ -180,7 +182,7 @@ public class TelemetryControllerSchedulerTests
         // t = 125s;
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
         _scheduler.ShouldFlushRedactedErrorLogs.Should().BeTrue();
-     }
+    }
 
     [Fact]
     public async Task DoesNotFlushTelemetryUntilInitialized()

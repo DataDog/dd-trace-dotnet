@@ -16,7 +16,14 @@ namespace Datadog.Trace.Iast;
 internal static class StackWalker
 {
     private const int DefaultSkipFrames = 2;
-    private static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument", "System.Security.IdentityHelper" };
+    private static readonly string[] ExcludeSpanGenerationTypes =
+    {
+        "Datadog.Trace.Debugger.Helpers.StringExtensions",
+        "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument",
+        "System.Security.IdentityHelper",
+        "Npgsql.Internal.NpgsqlConnector"
+    };
+
     private static readonly string[] AssemblyNamesToSkip =
     {
         "Datadog.Trace",
@@ -41,11 +48,16 @@ internal static class StackWalker
 
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
-    public static StackFrameInfo GetFrame(StackTrace? externalStack = null)
+    public static StackTrace GetStackTrace()
     {
-        var stackTrace = externalStack ?? new StackTrace(DefaultSkipFrames, true);
+        return new StackTrace(DefaultSkipFrames, true);
+    }
 
-        foreach (var frame in stackTrace.GetFrames())
+    public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
+    {
+        targetFrame = null;
+        var frames = stackTrace.GetFrames() ?? [];
+        foreach (var frame in frames)
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
 
@@ -53,26 +65,22 @@ internal static class StackWalker
             {
                 if (excludeType == declaringType?.FullName)
                 {
-                    return new StackFrameInfo(null, false);
+                    return false;
                 }
             }
 
-            if (ExcludeSpanGenerationTypes.Contains(declaringType?.FullName))
-            {
-                return new StackFrameInfo(null, false);
-            }
-
             var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !AssemblyExcluded(assembly))
+            if (assembly != null && !MustSkipAssembly(assembly))
             {
-                return new StackFrameInfo(frame, true);
+                targetFrame = frame;
+                break;
             }
         }
 
-        return new StackFrameInfo(null, true);
+        return true;
     }
 
-    public static bool AssemblyExcluded(string assembly)
+    public static bool MustSkipAssembly(string assembly)
     {
         if (ExcludedAssemblyCache.TryGetValue(assembly, out bool excluded))
         {
@@ -83,34 +91,34 @@ internal static class StackWalker
         ExcludedAssemblyCache[assembly] = excluded;
 
         return excluded;
-    }
 
-    // For performance reasons, we are not supporting wildcards fully. We just need to use '.' at the end for now. We can use regular expressions
-    // if in the future we need a more sophisticated wildcard support
-    private static bool IsExcluded(string assembly)
-    {
-        foreach (var assemblyToSkip in AssemblyNamesToSkip)
+        // For performance reasons, we are not supporting wildcards fully. We just need to use '.' at the end for now. We can use regular expressions
+        // if in the future we need a more sophisticated wildcard support
+        static bool IsExcluded(string assembly)
         {
+            foreach (var assemblyToSkip in AssemblyNamesToSkip)
+            {
 #if NETCOREAPP3_1_OR_GREATER
-            if (assemblyToSkip.EndsWith('.'))
+                if (assemblyToSkip.EndsWith('.'))
 #else
-            if (assemblyToSkip.EndsWith("."))
+                if (assemblyToSkip.EndsWith("."))
 #endif
-            {
-                if (assembly.StartsWith(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
                 {
-                    return true;
+                    if (assembly.StartsWith(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (assembly.Equals(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
                 }
             }
-            else
-            {
-                if (assembly.Equals(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-        }
 
-        return false;
+            return false;
+        }
     }
 }

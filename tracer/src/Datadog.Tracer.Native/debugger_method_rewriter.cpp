@@ -472,6 +472,13 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     if (lineProbeFirstInstruction->m_opcode == CEE_NOP || lineProbeFirstInstruction->m_opcode == CEE_BR_S ||
         lineProbeFirstInstruction->m_opcode == CEE_BR)
     {
+        if (lineProbeFirstInstruction->m_pNext == rewriterWrapper.GetILRewriter()->GetILList())
+        {
+            // Note we are not sabotaging the whole rewriting upon failure to lookup for a specific bytecode offset.
+            ProbesMetadataTracker::Instance()->SetErrorProbeStatus(lineProbe->probeId, line_probe_il_offset_lookup_failure_2);
+            return E_NOTIMPL;
+        }
+
         lineProbeFirstInstruction = lineProbeFirstInstruction->m_pNext;
     }
 
@@ -2310,7 +2317,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     // BEGIN LINE PROBES PART
     // ***
 
-    auto beforeLineProbe = rewriterWrapper.GetCurrentILInstr();
+    auto beforeLineProbe = rewriterWrapper.GetCurrentILInstr()->m_pPrev;
 
     // TODO support multiple line probes & multiple line probes on the same bytecode offset (by deduplicating the probe ids)
 
@@ -2345,6 +2352,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         appliedAtLeastOneLineProbeInstrumentation = hr == S_OK;
     }
+
+    beforeLineProbe = beforeLineProbe->m_pNext;
 
     // ***
     // BEGIN METHOD PROBE PART
@@ -2495,22 +2504,19 @@ void DebuggerMethodRewriter::AdjustExceptionHandlingClauses(ILInstr* pFromInstr,
 
     for (unsigned ehIndex = 0; ehIndex < ehCount; ehIndex++)
     {
+        if (ehClauses[ehIndex].m_pTryEnd == pFromInstr)
+        {
+            ehClauses[ehIndex].m_pTryEnd = pToInstr;
+        }
+
         if (ehClauses[ehIndex].m_pTryBegin == pFromInstr)
         {
             ehClauses[ehIndex].m_pTryBegin = pToInstr;
-        }
-        else if (ehClauses[ehIndex].m_pTryEnd == pFromInstr)
-        {
-            ehClauses[ehIndex].m_pTryEnd = pToInstr;
         }
 
         if (ehClauses[ehIndex].m_pHandlerBegin == pFromInstr)
         {
             ehClauses[ehIndex].m_pHandlerBegin = pToInstr;
-        }
-        else if (ehClauses[ehIndex].m_pHandlerEnd == pFromInstr)
-        {
-            ehClauses[ehIndex].m_pHandlerEnd = pToInstr;
         }
 
         if (ehClauses[ehIndex].m_pFilter == pFromInstr)

@@ -17,4 +17,9 @@ echo ^<DD_TRACE_DEBUG^>1^</DD_TRACE_DEBUG^> >> %file%
 echo ^<DD_IAST_ENABLED^>1^</DD_IAST_ENABLED^> >> %file%
 echo ^<DD_CIVISIBILITY_ENABLED^>0^</DD_CIVISIBILITY_ENABLED^> >> %file%
 echo ^<DD_IAST_DEDUPLICATION_ENABLED^>0^</DD_IAST_DEDUPLICATION_ENABLED^> >> %file%
+echo ^<DD_IAST_SECURITY_CONTROLS_CONFIGURATION^> >> %file%
+echo ^    INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String); >> %file%
+echo ^    INPUT_VALIDATOR:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Validate(System.String,System.String,System.String,System.String):0,1; >> %file%
+echo ^    SANITIZER:XSS:Samples.InstrumentedTests:Samples.InstrumentedTests.Iast.Propagation.SecurityControls.SecurityControlsTests:Sanitize(System.String) >> %file%
+echo ^</DD_IAST_SECURITY_CONTROLS_CONFIGURATION^> >> %file%
 echo ^</EnvironmentVariables^>^</RunConfiguration^>^</RunSettings^> >> %file%

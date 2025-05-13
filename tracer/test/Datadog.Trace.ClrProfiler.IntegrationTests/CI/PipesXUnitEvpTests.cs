@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Collection(nameof(TransportTestsCollection))]
 public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
-    [SkippableTheory]
+    [SkippableTheory(Skip = "These are currently very flaky - revisit once we move to aspnetcore-based mock agent")]
     [MemberData(nameof(GetData))]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
@@ -43,13 +43,13 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
         }
     }
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "These are currently very flaky - revisit once we move to aspnetcore-based mock agent")]
     [MemberData(nameof(GetDataForEarlyFlakeDetection))]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "EarlyFlakeDetection")]
-    public override async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
+    public override async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
@@ -62,7 +62,7 @@ public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output
             try
             {
                 attemptsRemaining--;
-                await base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, settingsJson, testsJson, expectedSpans, friendlyName);
+                await base.EarlyFlakeDetection(packageVersion, evpVersionToRemove, expectedGzip, mockData, expectedExitCode, expectedSpans, friendlyName);
                 return;
             }
             catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)

@@ -5,22 +5,31 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.DiagnosticListeners
+namespace Datadog.Trace.DiagnosticListeners;
+
+/// <summary>
+/// Endpoint for duck typing
+/// </summary>
+[DuckCopy]
+internal struct RouteEndpoint
 {
     /// <summary>
-    /// Endpoint for duck typing
+    /// Delegates to Endpoint.RoutePattern;
     /// </summary>
-    [DuckCopy]
-    internal struct RouteEndpoint
-    {
-        /// <summary>
-        /// Delegates to Endpoint.RoutePattern;
-        /// </summary>
-        public RoutePattern RoutePattern;
+    public object RoutePattern;
 
-        /// <summary>
-        /// Delegates to Endpoint.DisplayName;
-        /// </summary>
-        public string DisplayName;
-    }
+    /// <summary>
+    /// Delegates to Endpoint.DisplayName;
+    /// </summary>
+    public string DisplayName;
+
+    /// <summary>
+    /// Delegates to Endpoint.RequestDelegate;
+    /// </summary>
+    public RequestDelegate? RequestDelegate;
+
+    /// <summary>
+    /// Delegates to Endpoint.Metadata;
+    /// </summary>
+    public object Metadata;
 }
