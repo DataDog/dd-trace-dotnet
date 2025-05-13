@@ -209,20 +209,29 @@ internal static class DebuggerTestHelper
 
         foreach (var method in type.GetMethods())
         {
-            sequencePoints = reader?.GetMethodSequencePoints(method.MetadataToken);
+            sequencePoints = reader.GetMethodSequencePoints(method.MetadataToken);
             if (sequencePoints != null && sequencePoints.Any(sp => !string.IsNullOrEmpty(sp.URL)))
             {
                 break;
             }
         }
 
-        var sp = sequencePoints?.FirstOrDefault(sp => !string.IsNullOrEmpty(sp.URL));
-        if (sp == null || string.IsNullOrEmpty(sp.Value.URL))
+        var sourceFile = sequencePoints?.FirstOrDefault(sp => !string.IsNullOrEmpty(sp.URL)).URL;
+        if (sequencePoints == null || string.IsNullOrEmpty(sourceFile))
         {
-            throw new Exception($"Can't find source file for line probe. Type is: {type.FullName}");
+            var pdbReaderType = reader.PdbReader != null ? "System.Reflection.Metadata" : "dnlib";
+            var foundedSequencePoints = sequencePoints?
+                                      .Where(sp => !sp.IsHidden)
+                                      .Select(sp => new { sp.StartLine, sp.EndLine, sp.StartColumn, sp.EndColumn })
+                                       .ToList();
+            var foundedSequencePointsMessage = foundedSequencePoints is { Count: > 0 } 
+                                                   ? $"Sequence points found for type:{Environment.NewLine}{string.Join(Environment.NewLine, foundedSequencePoints)}" 
+                                                   : "No sequence points for type.";
+
+            throw new Exception($"Can't find source file of type {type.FullName} for line probe using {pdbReaderType} PDB reader, reading {reader.PdbFullPath} file.{Environment.NewLine}{foundedSequencePointsMessage}");
         }
 
-        var where = new Where { SourceFile = sp.Value.URL, Lines = [line.LineNumber.ToString()] };
+        var where = new Where { SourceFile = sourceFile, Lines = [line.LineNumber.ToString()] };
         snapshot.Where = where;
         return snapshot;
     }
