@@ -339,12 +339,6 @@ namespace Datadog.Trace.DatabaseMonitoring
                 parameter.DbType = DbType.Binary;
                 injectionCommand.Parameters.Add(parameter);
 
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    // avoid building the string representation in the general case where debug is disabled
-                    Log.Debug("Propagating span data for DBM for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
-                }
-
                 try
                 {
                     injectionCommand.ExecuteNonQuery();
