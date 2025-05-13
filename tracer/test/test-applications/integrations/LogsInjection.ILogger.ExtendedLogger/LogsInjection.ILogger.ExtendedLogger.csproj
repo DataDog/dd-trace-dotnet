@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">8.0.0</ApiVersion>
-    <TargetFrameworks>net462;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
@@ -11,7 +11,8 @@
     <PackageReference Include="Microsoft.Extensions.Telemetry" Version="$(ApiVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.Net.Http" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />

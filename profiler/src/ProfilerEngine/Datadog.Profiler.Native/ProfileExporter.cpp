@@ -271,6 +271,16 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
         emptyList = false;
     }
 
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Network))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "http";
+        emptyList = false;
+    }
+
     return buffer.str();
 }
 
@@ -399,7 +409,10 @@ std::vector<UpscalingInfo> ProfileExporter::GetUpscalingInfos()
 
     for (auto& provider : _upscaledProviders)
     {
-        samplingInfos.push_back(provider->GetInfo());
+        for (auto& upscalingInfo : provider->GetInfos())
+        {
+            samplingInfos.push_back(upscalingInfo);
+        }
     }
 
     return samplingInfos;

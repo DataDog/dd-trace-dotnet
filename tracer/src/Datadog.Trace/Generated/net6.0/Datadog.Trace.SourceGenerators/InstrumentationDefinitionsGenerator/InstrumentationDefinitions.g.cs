@@ -80,6 +80,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.HttpContextSetUser"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegrationV2V3"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.MapExtensionsMapIntegrationV5Plus"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.RunExtensionsRunIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInUserIntegration"
@@ -89,6 +92,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.MvcOptionsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.FireOnStartCommon"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.KestrelServerImplStartAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.EndpointsCollection.KestrelServerImplStartAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Session.SessionOptionsIdleTimeoutIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
@@ -147,7 +152,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.S3.MultipartUploadManagement.UploadPartAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsS3,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.HttpWebRequestMessageProcessHttpResponseMessageIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSdk,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS.PublishIntegration"

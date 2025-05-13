@@ -41,7 +41,7 @@ public class StreamReaderAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(StreamReaderAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }

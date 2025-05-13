@@ -90,7 +90,7 @@ public class MailkitAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(MailkitAspect)}.{nameof(CheckForVulnerability)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -103,7 +103,7 @@ public class MailkitAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(MailkitAspect)}.{nameof(ConvertToMimekit)} (DuckCast)");
+            IastModule.LogAspectException(ex, "(DuckCast)");
         }
 
         return textPart;

@@ -37,7 +37,7 @@ public partial class DirectoryEntryAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DirectoryEntryAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }

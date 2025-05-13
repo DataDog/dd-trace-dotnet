@@ -78,6 +78,7 @@ private:
     bool trace_annotations_enabled = false;
     bool call_target_bubble_up_exception_available = false;
     bool call_target_bubble_up_exception_function_available = false;
+    bool call_target_state_skip_method_body_function_available = false;
 
     //
     // Debugger Members
@@ -115,7 +116,7 @@ private:
     //
     // Helper methods
     //
-    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
+    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                               const shared::WSTRING& nativemethods_type_name,
                               const shared::WSTRING& library_path = shared::WSTRING());
     static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);
@@ -132,7 +133,7 @@ private:
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
-    
+    static bool EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //

@@ -26,7 +26,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
@@ -39,7 +39,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckSmokeForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }

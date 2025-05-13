@@ -34,7 +34,7 @@ public partial class SearchRequestAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SearchRequestAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex);
             return path;
         }
     }

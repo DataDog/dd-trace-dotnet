@@ -58,6 +58,7 @@ ENV DD_TRACE_DEBUG=1
 ENV COMPlus_DbgEnableMiniDump=1
 ENV COMPlus_DbgMiniDumpType=4
 ENV DOTNET_DbgMiniDumpName=/dumps/coredump.%t.%p
+ENV DOTNET_EnableCrashReport=1
 
 ## SSI variables
 ENV DD_INJECTION_ENABLED=tracer

@@ -63,7 +63,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(NewtonsoftJsonAspects)}.Ctor");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -85,7 +85,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(NewtonsoftJsonAspects)}.{nameof(ParseObject)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -113,7 +113,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(NewtonsoftJsonAspects)}.{nameof(ParseArray)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;
@@ -136,7 +136,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(NewtonsoftJsonAspects)}.{nameof(ParseToken)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

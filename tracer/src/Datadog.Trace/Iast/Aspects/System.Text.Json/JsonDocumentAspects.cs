@@ -37,7 +37,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(Parse)}");
+            IastModule.LogAspectException(ex);
         }
 
         return doc;
@@ -60,7 +60,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetString)} (DuckCast)");
+            IastModule.LogAspectException(ex, "(DuckCast)");
             return null;
         }
 
@@ -77,7 +77,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetString)}");
+            IastModule.LogAspectException(ex);
         }
 
         return str;
@@ -101,7 +101,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetRawText)} (DuckCast)");
+            IastModule.LogAspectException(ex, "(DuckCast)");
             return null;
         }
 
@@ -118,7 +118,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(JsonDocumentAspects)}.{nameof(GetRawText)}");
+            IastModule.LogAspectException(ex);
         }
 
         return str;

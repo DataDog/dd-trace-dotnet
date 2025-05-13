@@ -40,7 +40,7 @@ public class EntityFrameworkCoreAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.LogAspectException(ex, $"{nameof(EntityFrameworkCoreAspect)}.{nameof(ReviewSqlString)}");
+            IastModule.LogAspectException(ex);
             return sqlAsString;
         }
     }

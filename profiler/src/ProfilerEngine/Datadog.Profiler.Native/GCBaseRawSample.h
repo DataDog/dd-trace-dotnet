@@ -42,7 +42,7 @@ public:
 
         sample->AddValue(GetValue(), durationIndex);
 
-        sample->AddNumericLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
+        sample->AddLabel(NumericLabel(Sample::GarbageCollectionNumberLabel, Number));
         AddGenerationLabel(sample, Generation);
 
         BuildCallStack(sample, Generation);
@@ -74,19 +74,19 @@ private:
         switch (generation)
         {
             case 0:
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen0Value));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen0Value));
                 break;
 
             case 1:
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen1Value));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen1Value));
                 break;
 
             case 2:
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, Gen2Value));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, Gen2Value));
                 break;
 
             default: // this should never happen (only gen0, gen1 or gen2 collections)
-                sample->AddLabel(Label(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
+                sample->AddLabel(StringLabel(Sample::GarbageCollectionGenerationLabel, std::to_string(generation)));
                 break;
         }
     }

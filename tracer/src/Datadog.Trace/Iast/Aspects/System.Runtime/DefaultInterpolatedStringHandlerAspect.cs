@@ -38,7 +38,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -59,7 +59,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -83,7 +83,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted3)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -106,7 +106,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted4)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -130,7 +130,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted5)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -154,7 +154,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted6)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -179,7 +179,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted7)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -198,7 +198,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendLiteral)}");
+            IastModule.LogAspectException(ex);
         }
     }
 
@@ -217,7 +217,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(ToStringAndClear)}");
+            IastModule.LogAspectException(ex);
         }
 
         return result;

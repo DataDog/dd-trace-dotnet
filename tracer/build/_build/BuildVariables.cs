@@ -25,6 +25,7 @@ partial class Build
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
+        envVars.Add("COMPlus_EnableCrashReport", "1");
         envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
 
         if (EnableFaultTolerantInstrumentation)

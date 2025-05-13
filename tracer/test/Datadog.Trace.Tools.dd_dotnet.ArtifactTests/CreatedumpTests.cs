@@ -41,6 +41,9 @@ public class CreatedumpTests : ConsoleTestHelper
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", string.Empty);
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", string.Empty);
         SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", string.Empty);
+
+        // Don't let the EnvironmentHelper override our environment variables
+        EnvironmentHelper.UseCrashTracking = false;
     }
 
     private static (string Key, string Value) LdPreloadConfig

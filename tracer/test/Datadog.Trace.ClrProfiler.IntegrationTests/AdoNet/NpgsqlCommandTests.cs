@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -26,18 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.Npgsql
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
+        public async Task SubmitsTraces(
+            [PackageVersionData(nameof(PackageVersions.Npgsql))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [DbmPropagationModesData] string dbmPropagation)
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
 
@@ -81,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
 
             var fileName = nameof(NpgsqlCommandTests);
-#if NET462
+#if NETFRAMEWORK
             fileName = fileName + ".Net462";
 #endif
             fileName = fileName + (dbmPropagation switch

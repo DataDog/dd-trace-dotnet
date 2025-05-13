@@ -36,6 +36,9 @@ public class SamplingHelpersTests
     [InlineData(12078589664685934330, 0.5, false)] // random traceIDs
     [InlineData(13794769880582338323, 0.5, true)]  // random traceIDs
     [InlineData(14629469446186818297, 0.5, false)] // random traceIDs
+    [InlineData(5826373039044427785, 0.5, true)]   // traceID 8 KnuthFactor = 0.5 * MaxUint64
+    [InlineData(5826373039044427785, 1, true)]     // 1 rate
+    [InlineData(5826373039044427785, 0, false)]    // 0 rate
     public void SampleByRate(ulong traceId, double rate, bool expected)
     {
         SamplingHelpers.SampleByRate(traceId, rate).Should().Be(expected);

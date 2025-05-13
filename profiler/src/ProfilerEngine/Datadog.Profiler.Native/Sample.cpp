@@ -58,15 +58,13 @@ Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, s
     _timestamp = timestamp;
     _runtimeId = runtimeId;
     _callstack.reserve(framesCount);
-    _labels.reserve(10);
-    _numericLabels.reserve(10);
+    _allLabels.reserve(10);
 }
 
 Sample::Sample(std::string_view runtimeId) :
     _values(ValuesCount),
     _timestamp{0},
-    _labels{},
-    _numericLabels{},
+    _allLabels{},
     _callstack{},
     _runtimeId{runtimeId}
 {
@@ -122,10 +120,5 @@ std::string_view Sample::GetRuntimeId() const
 
 const Labels& Sample::GetLabels() const
 {
-    return _labels;
-}
-
-const NumericLabels& Sample::GetNumericLabels() const
-{
-    return _numericLabels;
+    return _allLabels;
 }

@@ -36,7 +36,7 @@ public class SecurityControlsAspect
         }
         catch (Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(SecurityControlsAspect)}.{nameof(MarkAsSecure)}");
+            IastModule.LogAspectException(ex);
         }
 
         return target;

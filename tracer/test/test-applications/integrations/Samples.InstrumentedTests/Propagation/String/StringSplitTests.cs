@@ -483,4 +483,19 @@ public class StringSplitTests : InstrumentationTestsBase
     }
 
 #endif
+
+#if NET9_0_OR_GREATER
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingSplitWithCharReadOnlySpan_ResultIsTainted2()
+    {
+        var values = new Char[] { 'n' };
+        var span = new ReadOnlySpan<char>(values);
+        AssertTaintedFormatWithOriginalCallCheck(
+            ":+-tai-+:", 
+            _taintedValue.Split(span)[0], 
+            () => _taintedValue.Split(values)[0]);
+    }
+
+#endif
 }

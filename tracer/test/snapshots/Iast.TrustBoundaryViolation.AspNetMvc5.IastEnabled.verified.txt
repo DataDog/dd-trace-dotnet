@@ -91,14 +91,14 @@
     },
     {
       "type": "NO_SAMESITE_COOKIE",
-      "hash": 264671858,
+      "hash": -636226626,
       "evidence": {
         "value": "ASP.NET_SessionId"
       }
     },
     {
       "type": "INSECURE_COOKIE",
-      "hash": -974040902,
+      "hash": 990913114,
       "evidence": {
         "value": "ASP.NET_SessionId"
       }

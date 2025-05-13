@@ -1,17 +1,18 @@
-﻿// <copyright file="ErrorHelpers.cs" company="Datadog">
+// <copyright file="ErrorHelpers.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.AutoInstrumentation;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -51,6 +52,8 @@ public static class ErrorHelpers
             SendMetric(output, "dd_trace_dotnet.ci.tests.skipped_due_to_flake", environmentHelper).ConfigureAwait(false).GetAwaiter().GetResult();
             throw new SkipException("Exit code (13) - anticipated flake");
         }
+
+        SkipKnownCrashes(environmentHelper.PathToCrashReport, output).Wait();
     }
 
     public static async Task SendMetric(ITestOutputHelper outputHelper, string metricName, EnvironmentHelper environmentHelper)
@@ -111,5 +114,32 @@ public static class ErrorHelpers
     {
         SpanTagHelper.TryNormalizeTagName(tag, normalizeSpaces: true, out var normalizedTag);
         return normalizedTag;
+    }
+
+    private static async Task SkipKnownCrashes(string pathToCrashReport, ITestOutputHelper output)
+    {
+        if (pathToCrashReport == null || !File.Exists(pathToCrashReport))
+        {
+            return;
+        }
+
+        try
+        {
+            using var crashReport = new CrashReport(pathToCrashReport, output);
+            var stacktrace = await crashReport.ResolveCrashStackTrace();
+
+            output.WriteLine("Crash stacktrace:");
+
+            foreach (var frame in stacktrace)
+            {
+                output.WriteLine(frame);
+            }
+
+            // TODO: Add logic to throw SkipException on known crashes
+        }
+        catch (Exception ex) when (ex is not SkipException)
+        {
+            output.WriteLine($"Unexpected exception while analyzing the crash report: {ex}");
+        }
     }
 }

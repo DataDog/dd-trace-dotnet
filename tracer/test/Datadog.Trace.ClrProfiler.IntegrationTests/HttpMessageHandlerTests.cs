@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -31,37 +30,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
-            new List<InstrumentationOptions>
-            {
-                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
-                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
-                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
-                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
-            };
+        public static InstrumentationOptions[] GetInstrumentationOptions()
+        {
+            return
+            [
+                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
+                new InstrumentationOptions(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                new InstrumentationOptions(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
+            ];
+        }
 
-        public static IEnumerable<object[]> IntegrationConfig() =>
-            from instrumentationOptions in InstrumentationOptionsValues
-            from socketHandlerEnabled in new[] { true, false }
-            select new object[] { instrumentationOptions, socketHandlerEnabled };
-
-        public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
-            from instrumentationOptions in InstrumentationOptionsValues
-            from socketHandlerEnabled in new[] { true, false }
-            from queryStringEnabled in new[] { true, false }
-            from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
-            from metadataSchemaVersion in new[] { "v0", "v1" }
-            from traceId128Enabled in new[] { true, false }
-            select new object[]
-                   {
-                       instrumentationOptions,
-                       socketHandlerEnabled,
-                       queryStringEnabled,
-                       queryStringSizeAndExpectation.Key,
-                       queryStringSizeAndExpectation.Value,
-                       metadataSchemaVersion,
-                       traceId128Enabled
-                   };
+        public static StringSizeExpectation[] GetStringSizeAndExpectation()
+        {
+            return
+            [
+                new StringSizeExpectation(null, "?key1=value1&<redacted>"),
+                new StringSizeExpectation(200, "?key1=value1&<redacted>"),
+                new StringSizeExpectation(2, "?k")
+            ];
+        }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
 
@@ -69,14 +57,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfigWithObfuscation))]
+        [CombinatorialOrPairwiseData]
         public async Task HttpClient_SubmitsTraces(
-            InstrumentationOptions instrumentation,
+            [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
             bool socketsHandlerEnabled,
             bool queryStringCaptureEnabled,
-            int? queryStringSize,
-            string expectedQueryString,
-            string metadataSchemaVersion,
+            [CombinatorialMemberData(nameof(GetStringSizeAndExpectation))] StringSizeExpectation queryStringSizeAndExpected,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
             bool traceId128Enabled)
         {
             try
@@ -86,6 +73,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable("DD_HTTP_SERVER_TAG_QUERY_STRING", queryStringCaptureEnabled ? "true" : "false");
                 SetEnvironmentVariable("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", traceId128Enabled ? "true" : "false");
                 SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
+                int? queryStringSize = queryStringSizeAndExpected.Size;
+                string expectedQueryString = queryStringSizeAndExpected.Expectation;
 
                 if (queryStringSize.HasValue)
                 {
@@ -188,8 +178,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        [MemberData(nameof(IntegrationConfig))]
-        public async Task TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
+        [CombinatorialOrPairwiseData]
+        public async Task TracingDisabled_DoesNotSubmitsTraces(
+            [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
+            bool enableSocketsHandler)
         {
             try
             {
@@ -382,6 +374,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public override string ToString() =>
                 $"InstrumentSocketHandler={InstrumentSocketHandler},InstrumentWinHttpOrCurlHandler={InstrumentWinHttpOrCurlHandler}";
+        }
+
+        public class StringSizeExpectation : IXunitSerializable
+        {
+            public StringSizeExpectation()
+            {
+            }
+
+            public StringSizeExpectation(int? size, string expectation)
+            {
+                Size = size;
+                Expectation = expectation;
+            }
+
+            public int? Size { get; private set; }
+
+            public string Expectation { get; private set; }
+
+            public void Deserialize(IXunitSerializationInfo info)
+            {
+                Size = info.GetValue<int?>(nameof(Size));
+                Expectation = info.GetValue<string>(nameof(Expectation));
+            }
+
+            public void Serialize(IXunitSerializationInfo info)
+            {
+                info.AddValue(nameof(Size), Size);
+                info.AddValue(nameof(Expectation), Expectation);
+            }
+
+            public override string ToString() => $"Size={Size},Expectation={Expectation}";
         }
     }
 }

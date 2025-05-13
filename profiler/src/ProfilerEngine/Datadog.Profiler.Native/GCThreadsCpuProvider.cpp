@@ -61,7 +61,7 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
 
 Labels GCThreadsCpuProvider::GetLabels()
 {
-    return Labels{Label{"gc_cpu_sample", "true"}};
+    return Labels{StringLabel{"gc_cpu_sample", "true"}};
 }
 
 std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()

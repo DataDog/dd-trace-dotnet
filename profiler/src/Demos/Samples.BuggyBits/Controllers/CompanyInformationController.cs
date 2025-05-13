@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading;
 using BuggyBits.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,12 @@ namespace BuggyBits.Controllers
             }
         }
 
+        public IActionResult AccessGithub()
+        {
+            ViewData["TessGithubPage"] = $"Simulating a call to GitHub at {DateTime.Now.TimeOfDay}";
+            return View("Index");
+        }
+
         private string GetGitHubPageViaThread()
         {
             string result = string.Empty;
@@ -43,7 +50,8 @@ namespace BuggyBits.Controllers
                     Thread.Sleep(100);
                 }
 
-                result = dataLayer.GetTessGithubPage().Result;
+                var rootPath = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}";
+                result = dataLayer.SimulateGithubPage(rootPath).Result;
                 for (int i = 0; i < 5; i++)
                 {
                     Thread.Sleep(100);

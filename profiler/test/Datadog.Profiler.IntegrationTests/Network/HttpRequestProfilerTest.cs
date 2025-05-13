@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
@@ -45,6 +46,15 @@ namespace Datadog.Profiler.IntegrationTests.Network
             // HTTP events are not emitted in .NET 5 nor .NET 6
             var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
             samples.Should().BeEmpty();
+
+            // we should also get warnings in the log
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                                   .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            var nbWarning = File.ReadLines(logFile)
+                .Count(l => (l.Contains("Outgoing HTTP profiling is disabled for .NET") && (l.Contains(": .NET 7 + is required."))));
+
+            nbWarning.Should().Be(1);
         }
 
         [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0" })]

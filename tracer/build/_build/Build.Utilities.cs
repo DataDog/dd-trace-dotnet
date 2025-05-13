@@ -312,9 +312,32 @@ partial class Build
 
     Target AnalyzePipelineCriticalPath => _ => _
        .Description("Perform critical path analysis on the consolidated pipeline stages")
+       .Requires(() => TargetBranch)
        .Executes(async () =>
         {
-            await CriticalPathAnalysis.CriticalPathAnalyzer.AnalyzeCriticalPath(RootDirectory);
+            // Visit https://app.datadoghq.com/dashboard/49i-n6n-9jq and download the results you require as a csv file
+            // Save the results in build_data/stages.csv, and then run this task, specifying 'master' or 'branch'.
+            // e.g.
+            //
+            // ./tracer/build.ps1 AnalyzePipelineCriticalPath --TargetBranch master
+            // ./tracer/build.ps1 AnalyzePipelineCriticalPath --TargetBranch branch
+            //
+            // This task
+            // - Loads the list of pipelines and their dependencies
+            // - Sorts the list by "dependency" order, i.e. each stage can only depend on stages earlier in the list
+            // - Calculates the earliest and latest times that a dependency can run without making the project longer
+            // - Visualizes the results as a mermaid diagram and writes to a markdown doc (trying to write to the console gives errors due to wrapping)
+            //
+            // The markdown doc can be found at `build_data/pipeline_critical_path.md`
+            // Copy the contents of the diagram and paste into the text box at https://mermaid.live/ to visualize it.
+            //
+            // The different colours indicate the following:
+            // - Stages on the critical path, which are required for merging PRs (Red box)
+            // - Stages on the critical path, which are not required for merging PRs (Grey box with red outline)
+            // - Stages not on the critical path, which are required for merging PRs (Blue box)
+            // - Stages not on the critical path, which are not required for merging PRs (Grey box)
+            var isMasterRun = TargetBranch == "master";
+            await CriticalPathAnalysis.CriticalPathAnalyzer.AnalyzeCriticalPath(RootDirectory, isMasterRun);
         });
 
     Target UpdateSnapshots => _ => _

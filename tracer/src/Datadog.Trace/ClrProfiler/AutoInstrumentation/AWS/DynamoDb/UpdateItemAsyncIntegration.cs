@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.UpdateItemResponse]",
         ParameterTypeNames = new[] { "Amazon.DynamoDBv2.Model.UpdateItemRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsDynamoDbCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

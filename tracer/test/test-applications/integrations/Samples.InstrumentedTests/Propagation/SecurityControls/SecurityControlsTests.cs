@@ -18,11 +18,11 @@ public class SecurityControlsTests : InstrumentationTestsBase
         AddTainted(_taintedValue3);
     }
 
-    public void Validate(string value)
+    internal void Validate(string value)
     { 
     }
 
-    public void Validate(string value0, string value1, string value2, string value3)
+    internal void Validate(string value0, string value1, string value2, string value3)
     {
     }
 

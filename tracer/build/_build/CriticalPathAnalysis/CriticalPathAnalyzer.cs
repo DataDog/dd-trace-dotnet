@@ -12,6 +12,9 @@ using Logger = Serilog.Log;
 
 namespace CriticalPathAnalysis;
 
+/// <summary>
+/// Implements the Critical Path Method
+/// </summary>
 public static class CriticalPathAnalyzer
 {
     // These checks are required for merging
@@ -38,18 +41,46 @@ public static class CriticalPathAnalyzer
         "verify_app_trimming_descriptor_generator",
     };
 
-    public static Task AnalyzeCriticalPath(AbsolutePath rootDirectory)
+    // These stages are ignored from the analysis, primarily because they are not going to be around for much longer
+    static readonly string[] AlwaysIgnoreStages =
     {
+        "throughput",
+        "benchmarks",
+        "coverage", // optional, basically never run
+        "integration_tests_windows_iis_security", // removed recently
+    };
+
+    // These stages don't run on PRs, but do run on master, so exclude from the analysis for PRs only
+    static readonly string[] MasterOnlyStages =
+    {
+        "upload_container_images",
+        "nuget_installer_smoke_tests",
+        "nuget_installer_smoke_tests_arm64",
+        "nuget_installer_smoke_tests_windows",
+        "dotnet_tool_nuget_smoke_tests_linux",
+        "dotnet_tool_nuget_smoke_tests_macos",
+        "dotnet_tool_smoke_tests_linux",
+        "dotnet_tool_self_instrument_smoke_tests_linux",
+        "dotnet_tool_smoke_tests_arm64",
+        "dotnet_tool_smoke_tests_windows",
+        "dd_dotnet_msi_installer_smoke_tests",
+        "dd_dotnet_installer_failure_tests_linux_arm64",
+        "msi_installer_smoke_tests",
+    };
+
+    public static Task AnalyzeCriticalPath(AbsolutePath rootDirectory, bool isMasterRun)
+    {
+        var ignoreStages = isMasterRun ? AlwaysIgnoreStages : MasterOnlyStages.Concat(AlwaysIgnoreStages).ToArray();
         var pipeline = PipelineParser.GetPipelineDefinition(rootDirectory);
-        var stages = GetStages(rootDirectory, pipeline);
+        var stages = GetStages(rootDirectory, pipeline, ignoreStages);
         stages = OrderByDependencies(stages);
         UpdateEarliestValues(stages);
         UpdateLatestValues(stages);
         // displaying in original (pipeline) order
         var stageOrder = pipeline.Stages.Select((x, i) => (x.Stage, Index: i)).ToDictionary(x => x.Stage, x => x.Index);
         var ordered = stages.OrderBy(x => stageOrder[x.Id]);
-        var mermaidDiagram = GenerateMermaidDiagram(ordered);
-        var outputPath = rootDirectory / "tracer" / "build_data" / "pipeline_critical_path.md";
+        var mermaidDiagram = GenerateMermaidDiagram(ordered, isMasterRun);
+        var outputPath = rootDirectory / "artifacts" / "build_data" / "pipeline_critical_path.md";
         File.WriteAllText(outputPath, $"""
                                        ```mermaid
                                        {mermaidDiagram}
@@ -59,17 +90,22 @@ public static class CriticalPathAnalyzer
         return Task.CompletedTask;
     }
 
-    static List<PipelineStage> GetStages(AbsolutePath rootDirectory, PipelineDefinition pipeline)
+    static List<PipelineStage> GetStages(AbsolutePath rootDirectory, PipelineDefinition pipeline, string[] IgnoreStages)
     {
         var stages = new List<PipelineStage>(pipeline.Stages.Length);
 
-        // Export the data from the widget here by clicking "Download as csv" and moving to tracer/build_data/stages.csv
-        // https://ddstaging.datadoghq.com/dashboard/74k-me3-y2z?from_ts=1689611447016&to_ts=1692289847016&live=true
-        var stagesCsv = rootDirectory / "tracer" / "build_data" / "stages.csv";
+        // Export the data from the widget here by clicking "Download as csv" and moving to artifacts/build_data/stages.csv
+        // https://app.datadoghq.com/dashboard/49i-n6n-9jq
+        var stagesCsv = rootDirectory / "artifacts" / "build_data" / "stages.csv";
         using var reader = Sep.New(',').Reader().FromFile(stagesCsv);
         foreach (var row in reader)
         {
             var stageName = row[0].ToString();
+            if (IgnoreStages.Contains(stageName))
+            {
+                continue;
+            }
+
             var durationInNanosecond = row[1].Parse<decimal>();
             var durationInMilliSeconds = (long)(durationInNanosecond / 1_000_000m);
             var requiredForMerging = RequiredStagesForMerging.Contains(stageName);
@@ -82,11 +118,24 @@ public static class CriticalPathAnalyzer
         // the successors (stages that depend on us)
         foreach (var currentStage in stages)
         {
-            var stageDefinition = pipeline.Stages.First(x => x.Stage == currentStage.Id);
+            var stageDefinition = pipeline.Stages.FirstOrDefault(x => x.Stage == currentStage.Id);
+            if (stageDefinition is null)
+            {
+                throw new Exception($"Could not find stage called {currentStage.Id}. " );
+            }
 
             foreach (var dependency in stageDefinition.DependsOn)
             {
-                var predecessor = stages.First(x => x.Id == dependency);
+                if (IgnoreStages.Contains(dependency))
+                {
+                    continue;
+                }
+
+                var predecessor = stages.FirstOrDefault(x => x.Id == dependency);
+                if (predecessor is null)
+                {
+                    throw new Exception($"{stageDefinition.Stage} depends on stage '{dependency}' that could not be found in output results");
+                }
                 currentStage.Predecessors.Add(predecessor);
                 predecessor.Successors.Add(currentStage);
             }
@@ -164,14 +213,17 @@ public static class CriticalPathAnalyzer
         return ordered;
     }
 
-    static string GenerateMermaidDiagram(IEnumerable<PipelineStage> stages)
+    static string GenerateMermaidDiagram(IEnumerable<PipelineStage> stages, bool isMaster)
     {
         // can't easily show flex in the diagram, so display using earliest start/end
         // and mark critical tasks
         var sb = new StringBuilder();
-        sb.AppendLine("""
+        sb.Append("""
              gantt
                  title Consolidated pipeline critical path analysis
+             """);
+        sb.AppendLine(isMaster ? " for master" : " for branches");
+        sb.AppendLine("""
                  dateFormat s
                  axisFormat %H:%M
                  todayMarker off

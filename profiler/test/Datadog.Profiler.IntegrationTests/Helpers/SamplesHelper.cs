@@ -185,7 +185,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
         }
 
-        private static IEnumerable<PprofHelper.Label> GetLabels(Profile profile, Sample sample)
+        private static IEnumerable<PprofHelper.Label> GetLabels(Profile profile, Perftools.Profiles.Sample sample)
         {
             return sample.Labels(profile);
         }

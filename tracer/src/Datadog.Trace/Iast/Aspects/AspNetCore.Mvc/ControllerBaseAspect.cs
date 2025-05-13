@@ -37,7 +37,7 @@ public class ControllerBaseAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.LogAspectException(ex, $"{nameof(ControllerBaseAspect)}.{nameof(Redirect)}");
+            IastModule.LogAspectException(ex);
             return url;
         }
     }

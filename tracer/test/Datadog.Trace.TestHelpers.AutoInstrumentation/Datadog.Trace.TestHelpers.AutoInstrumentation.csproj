@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="SharpPdb" Version="1.0.4" />
     <PackageReference Include="Testcontainers" Version="3.6.0" />
   </ItemGroup>
 

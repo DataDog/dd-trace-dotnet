@@ -64,6 +64,8 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public string PathToCrashReport { get; private set; }
+
         public bool AutomaticInstrumentationEnabled { get; private set; } = true;
 
         public bool DebugModeEnabled { get; set; }
@@ -77,6 +79,8 @@ namespace Datadog.Trace.TestHelpers
         public string MonitoringHome { get; }
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
+
+        public bool UseCrashTracking { get; set; } = true;
 
         public static bool IsNet5()
         {
@@ -294,6 +298,13 @@ namespace Datadog.Trace.TestHelpers
             if (agent.TelemetryEnabled)
             {
                 environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
+            }
+
+            if (UseCrashTracking)
+            {
+                PathToCrashReport = Path.Combine(LogDirectory, $"{SampleName}-{Guid.NewGuid()}.crash.json");
+                environmentVariables["DD_INTERNAL_CRASHTRACKING_OUTPUT"] = $"file://{PathToCrashReport}";
+                environmentVariables["DD_CRASHTRACKING_FILTERING_ENABLED"] = "0";
             }
 
             ConfigureTransportVariables(environmentVariables, agent);

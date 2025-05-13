@@ -27,7 +27,7 @@ public:
     ~IpcServer();
 
     // TODO: remove this method and use Start instead in the sample application
-    static std::unique_ptr<IpcServer> StartAsync(
+    static IpcServer* StartAsync(
         IIpcLogger* pLogger,
         const std::string& portName,
         INamedPipeHandler* pHandler,

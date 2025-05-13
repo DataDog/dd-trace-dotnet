@@ -64,7 +64,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.23.0";
+    const string LibDdwafVersion = "1.24.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -183,8 +183,8 @@ partial class Build
     TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
-        (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (false, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (false, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
         (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
@@ -198,6 +198,12 @@ partial class Build
 
     bool RequiresThoroughTesting()
     {
+        if (IsLocalBuild)
+        {
+            // we should always run all tests locally
+            return true;
+        }
+
         var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
         if (IsGitBaseBranch(baseBranch))
         {
@@ -1380,9 +1386,8 @@ partial class Build
         .Executes(() =>
         {
             // Compile the dependent samples.
-            if (!Framework.ToString().StartsWith("net46"))
+            if (!Framework.ToString().StartsWith("net4"))
             {
-                // we need to build RazorPages before integration tests for .net46x
                 DotnetBuild(Solution.GetProject(Projects.RazorPages), framework: Framework);
             }
 
@@ -1412,7 +1417,6 @@ partial class Build
                   );
 
                   DotnetBuild(projects, noDependencies: false, noRestore: false);
-
                   // these are defined in Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet dependencies
                   var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
                   var frameworks = Framework is null || string.IsNullOrEmpty(Framework)
@@ -1631,7 +1635,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = GetFilter();
+            var filter = AddAreaFilter(GetFilter());
 
             try
             {
@@ -1647,9 +1651,10 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
+                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1669,6 +1674,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
@@ -1706,6 +1712,21 @@ partial class Build
                 return filter;
             }
         });
+
+    private string AddAreaFilter(string filter)
+    {
+        if (string.IsNullOrWhiteSpace(Area))
+        {
+            return filter;
+        }
+
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return $"(Area={Area})";
+        }
+
+        return filter + $"&(Area={Area})";
+    }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
@@ -1787,6 +1808,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
+            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
 
             try
             {
@@ -1798,7 +1820,7 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
+                    .SetFilter(filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1823,14 +1845,7 @@ partial class Build
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
         .Executes(() => RunWindowsIisIntegrationTests(
-                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
-
-    Target RunWindowsSecurityIisIntegrationTests => _ => _
-        .After(BuildTracerHome)
-        .After(CompileIntegrationTests)
-        .After(PublishIisSamples)
-        .Triggers(PrintSnapshotsDiff)
-        .Requires(() => Framework)
+                      Solution.GetProject(Projects.ClrProfilerIntegrationTests)))
         .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
 
@@ -1838,6 +1853,8 @@ partial class Build
     {
         var isDebugRun = IsDebugRun();
         EnsureResultsDirectory(project);
+        var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
+
         try
         {
             // Different filter from RunWindowsIntegrationTests
@@ -1848,7 +1865,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&(LoadFromGAC=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter)
+                                .SetFilter(filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -2177,7 +2194,7 @@ partial class Build
 
     Target CreateTrimmingFile => _ => _
        .Description("Create Datadog.Trace.Trimming.xml file")
-       .DependsOn(CompileManagedSrc)
+       .After(CompileManagedSrc)
        .Executes(() =>
         {
             var loaderTypes = GetTypeReferences(SourceDirectory / "bin" / "ProfilerResources" / "netcoreapp2.0" / "Datadog.Trace.ClrProfiler.Managed.Loader.dll");
@@ -2714,7 +2731,7 @@ partial class Build
 
         if (Directory.Exists(TempDirectory))
         {
-            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp"))
+            foreach (var dump in GlobFiles(TempDirectory, "coredump*", "*.dmp", "*.crashreport.json"))
             {
                 Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
 
