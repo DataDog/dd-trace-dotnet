@@ -33,6 +33,8 @@ check_azure_pipeline:
   timeout: 1h
   rules:
     - when: on_success
+  variables:
+    TEST_BRANCH: "master"
 
 update-bp-infra:
   stage: infra-update
@@ -453,7 +455,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks-2
   interruptible: true
   timeout: 1h
   rules:
