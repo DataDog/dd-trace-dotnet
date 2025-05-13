@@ -236,6 +236,25 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("unknown");
     }
 
+    [Fact]
+    public void ConfigurationDataShouldReportSSIValues()
+    {
+        var collector = new ConfigurationTelemetry();
+        var source = new NameValueConfigurationSource(new NameValueCollection
+        {
+            { "DD_INJECTION_ENABLED", "tracer" },
+            { "DD_INJECT_FORCE", "true" }
+        });
+
+        _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
+        _ = new SecuritySettings(source, collector);
+
+        var data = collector.GetData();
+        GetLatestValueFromConfig(data, "ssi_injection_enabled", ConfigurationOrigins.Default).Should().Be("tracer");
+        GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("ssi");
+        GetLatestValueFromConfig(data, "ssi_forced_injection_enabled", ConfigurationOrigins.Default).Should().Be("true");
+    }
+
 #if NETFRAMEWORK
     [Fact]
     public void ConfigurationDataShouldIncludeExpectedFullTrustValues()
