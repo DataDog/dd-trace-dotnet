@@ -73,10 +73,18 @@ partial class Build : NukeBuild
                     "tracer/src/Datadog.Trace/DogStatsd/",
                 };
 
-                foreach(var file in changedFiles)
+                // Directories that are not explicitelly owned by ASM but are common to both teams
+                string[] commonDirectories = new[]
+{
+                    "tracer/test/Datadog.Trace.TestHelpers/",
+                };
+
+                foreach (var file in changedFiles)
                 {
                     if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
+                        ))
                     {
                         Logger.Information($"File {file} was detected as common.");
                         return true;
