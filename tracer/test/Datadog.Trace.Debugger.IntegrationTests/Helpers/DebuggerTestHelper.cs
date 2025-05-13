@@ -224,8 +224,8 @@ internal static class DebuggerTestHelper
                                       .Where(sp => !sp.IsHidden)
                                       .Select(sp => new { sp.StartLine, sp.EndLine, sp.StartColumn, sp.EndColumn })
                                        .ToList();
-            var foundedSequencePointsMessage = foundedSequencePoints is { Count: > 0 } 
-                                                   ? $"Sequence points found for type:{Environment.NewLine}{string.Join(Environment.NewLine, foundedSequencePoints)}" 
+            var foundedSequencePointsMessage = foundedSequencePoints is { Count: > 0 }
+                                                   ? $"Sequence points found for type:{Environment.NewLine}{string.Join(Environment.NewLine, foundedSequencePoints)}"
                                                    : "No sequence points for type.";
 
             throw new Exception($"Can't find source file of type {type.FullName} for line probe using {pdbReaderType} PDB reader, reading {reader.PdbFullPath} file.{Environment.NewLine}{foundedSequencePointsMessage}");
