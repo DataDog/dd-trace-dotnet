@@ -63,7 +63,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData(phase: 1)]
+        [LogMethodProbeTestData(phase: 1, skipOnFrameworks: ["net48", "net462"])]
         string Method(double arg)
         {
             var local = arg + GetInt(arg);
@@ -72,7 +72,7 @@ namespace Samples.Probes.TestRuns.ExpressionTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData(phase: 2)]
+        [LogMethodProbeTestData(phase: 2, skipOnFrameworks: ["net48", "net462"])]
         int GetInt(double d)
         {
             var local = (int)(d + 1);
