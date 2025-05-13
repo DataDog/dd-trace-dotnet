@@ -13,6 +13,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -80,6 +81,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
 
+            // these two are to test resource-based sampling on the parent ASP.NET span (non-MVC) one.
+            // it should not show up at all
+            SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.0, "service":"*", "resource":"*/Home/identifier/IAmSampledOut"}]""");
+            SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRulesFormat, SamplingRulesFormat.Glob.ToString()); // for ease of use
+
             _classicMode = classicMode;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
@@ -110,6 +116,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
               { "/Home/BadRequestWithStatusCode?statuscode=401&TransferRequest=true", 401 },
               { "/Home/BadRequestWithStatusCode?statuscode=503&TransferRequest=true", 503 },
               { "/graphql/GetAllFoo", 200 }, // Slug in route template
+              { "/Home/identifier/IAmSampledOut", 500 }, // test resource-based sampling for parent ASP.NET span (non-MVC)
         };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -142,6 +149,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
+
             await Verifier.Verify(spans, settings)
                           .UseMethodName("_")
                           .UseTypeName(_testName);
