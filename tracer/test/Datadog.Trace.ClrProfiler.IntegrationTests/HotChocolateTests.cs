@@ -73,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_GRAPHQL_ERROR_EXTENSIONS", "bool,int,float,test,str,other");
 
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
