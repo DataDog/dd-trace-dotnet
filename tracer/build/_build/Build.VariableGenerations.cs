@@ -54,10 +54,10 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsDebuggerArm64Matrices();
                    });
 
-            bool CriticalTracerChanges(string[] changedFiles, CodeOwnersParser codeOwners)
+            bool CommonTracerChanges(string[] changedFiles, CodeOwnersParser codeOwners)
             {
                 // These folders are owned by @DataDog/tracing-dotnet but changes should not affect ASM functionality
-                string[] nonCriticalDirectories = new[]
+                string[] nonCommonDirectories = new[]
                 {
                     "tracer/test/",
                     "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/",
@@ -76,9 +76,9 @@ partial class Build : NukeBuild
                 foreach(var file in changedFiles)
                 {
                     if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        !nonCriticalDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
                     {
-                        Logger.Information($"File {file} was detected as critical.");
+                        Logger.Information($"File {file} was detected as common.");
                         return true;
                     }
                 }
@@ -122,10 +122,10 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
 
-                        if (changedTeamValue.TeamName == ASMDotnet && CriticalTracerChanges(changedFiles, codeOwners))
+                        if (changedTeamValue.TeamName == ASMDotnet && CommonTracerChanges(changedFiles, codeOwners))
                         {
                             isChanged = true;
-                            Logger.Information($"ASM tests will be launched based on critical changes.");
+                            Logger.Information($"ASM tests will be launched based on common changes.");
                         }
                         else
                         {
