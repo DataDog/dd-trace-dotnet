@@ -251,7 +251,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
+    - script: tracer\build.cmd Info BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
@@ -1665,6 +1665,13 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
+    - script: tracer\build.cmd Info
+      displayName: Run integration tests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
+        Filter: $(IntegrationTestFilter)
+
     - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
@@ -2198,6 +2205,12 @@ stages:
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "Info --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
+        apikey: $(DD_LOGGER_DD_API_KEY)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
