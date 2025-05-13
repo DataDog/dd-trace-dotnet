@@ -545,173 +545,66 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarksProject = Solution.GetProject(Projects.BenchmarksTrace);
-            var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
-            EnsureCleanDirectory(resultsDirectory);
+            var benchmarkProjectsWithSettings = new Tuple<string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
+                new(Projects.BenchmarksTrace, s => s),
+                new(Projects.BenchmarksOpenTelemetryApi, s => s),
+                new(Projects.BenchmarksOpenTelemetryInstrumentedApi,
+                    s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
+                          .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
+                          .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
+                          .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")),
+            };
 
-            try
+            foreach (var tuple in benchmarkProjectsWithSettings)
             {
-                DotNetBuild(s => s
-                    .SetProjectFile(benchmarksProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoDependencies()
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
+                var benchmarkProjectName = tuple.Item1;
+                var configureDotNetRunSettings = tuple.Item2;
 
-                var (framework, runtimes) = IsOsx switch
+                var benchmarksProject = Solution.GetProject(benchmarkProjectName);
+                var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+                EnsureCleanDirectory(resultsDirectory);
+
+                try
                 {
-                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
-                };
+                    DotNetBuild(s => s
+                        .SetProjectFile(benchmarksProject)
+                        .SetConfiguration(BuildConfiguration)
+                        .EnableNoDependencies()
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                    );
 
-                DotNetRun(s => s
-                    .SetProjectFile(benchmarksProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(framework)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
-                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
-                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                    var (framework, runtimes) = IsOsx switch
+                    {
+                        true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
+                        false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
+                    };
 
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
-            }
-            finally
-            {
-                if (Directory.Exists(resultsDirectory))
-                {
-                    CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
-                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    DotNetRun(s => s
+                        .SetProjectFile(benchmarksProject)
+                        .SetConfiguration(BuildConfiguration)
+                        .SetFramework(framework)
+                        .EnableNoRestore()
+                        .EnableNoBuild()
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                        .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
+                        .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                        .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
+                        .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                        .ConfigureDotNetRunSettings(configureDotNetRunSettings)
+
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                    );
                 }
-
-                CopyDumpsToBuildData();
-            }
-        });
-
-    Target RunOpenTelemetryBenchmarks => _ => _
-        .After(BuildTracerHome)
-        .After(BuildProfilerHome)
-        .Description("Runs the OpenTelemetry Benchmarks projects")
-        .Executes(() =>
-        {
-            var benchmarksOpenTelemetryApiProject = Solution.GetProject(Projects.BenchmarksOpenTelemetryApi);
-            var benchmarksOpenTelemetryApiResultsDirectory = benchmarksOpenTelemetryApiProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
-            EnsureCleanDirectory(benchmarksOpenTelemetryApiResultsDirectory);
-
-            try
-            {
-                DotNetBuild(s => s
-                    .SetProjectFile(benchmarksOpenTelemetryApiProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoDependencies()
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
-
-                var (framework, runtimes) = IsOsx switch
+                finally
                 {
-                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
-                };
+                    if (Directory.Exists(resultsDirectory))
+                    {
+                        CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
+                                                 DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    }
 
-                DotNetRun(s => s
-                    .SetProjectFile(benchmarksOpenTelemetryApiProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(framework)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .EnableNoLaunchProfile()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
-                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
-                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
-
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
-            }
-            finally
-            {
-                if (Directory.Exists(benchmarksOpenTelemetryApiResultsDirectory))
-                {
-                    CopyDirectoryRecursively(benchmarksOpenTelemetryApiResultsDirectory, BuildDataDirectory / "benchmarks",
-                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                    CopyDumpsToBuildData();
                 }
-
-                CopyDumpsToBuildData();
-            }
-
-            var benchmarksOpenTelemetryInstrumentedApiProject = Solution.GetProject(Projects.BenchmarksOpenTelemetryInstrumentedApi);
-            var benchmarksOpenTelemetryInstrumentedApiResultsDirectory = benchmarksOpenTelemetryInstrumentedApiProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
-            EnsureCleanDirectory(benchmarksOpenTelemetryInstrumentedApiResultsDirectory);
-
-            try
-            {
-                DotNetBuild(s => s
-                    .SetProjectFile(benchmarksOpenTelemetryInstrumentedApiProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .EnableNoDependencies()
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
-
-                var (framework, runtimes) = IsOsx switch
-                {
-                    true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
-                };
-
-                var platformName = (Platform, TargetPlatform.ToString()) switch
-                {
-                    (PlatformFamily.Linux, "x64") => IsAlpine ? "linux-musl-x64" : "linux-x64",
-                    (PlatformFamily.Linux, "ARM64") => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
-                    (PlatformFamily.OSX, "x64") => "osx",
-                    (PlatformFamily.OSX, "ARM64") => "osx",
-                    (PlatformFamily.Windows, "ARM64" or "ARM64EC") => "win-ARM64EC",
-                    (PlatformFamily.Windows, "x64") => "win-x64",
-                    (PlatformFamily.Windows, "x86") => "win-x86",
-                    _ => throw new InvalidOperationException($"Unknown platform {Platform} ({RuntimeInformation.ProcessArchitecture})"),
-                };
-
-                var profilerPath = platformName switch
-                {
-                    "osx" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.dylib",
-                    "linux-x64" or "linux-musl-x64" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.so",
-                    "linux-arm64" or "linux-musl-arm64" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.so",
-                    "win-x64" or "win-x86" or "win-ARM64EC" => MonitoringHomeDirectory / platformName / "Datadog.Trace.ClrProfiler.Native.dll",
-                    _ => throw new InvalidOperationException($"Unknown platformName {platformName} for native path"),
-                };
-
-                DotNetRun(s => s
-                    .SetProjectFile(benchmarksOpenTelemetryInstrumentedApiProject)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetFramework(framework)
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .EnableNoLaunchProfile()
-                    .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
-                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                    .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHomeDirectory)
-                    .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHomeDirectory)
-                    .SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
-                    .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
-                    .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
-                    .SetProcessEnvironmentVariable("DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY", "V4")
-
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                );
-            }
-            finally
-            {
-                if (Directory.Exists(benchmarksOpenTelemetryInstrumentedApiResultsDirectory))
-                {
-                    CopyDirectoryRecursively(benchmarksOpenTelemetryInstrumentedApiResultsDirectory, BuildDataDirectory / "benchmarks",
-                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                }
-
-                CopyDumpsToBuildData();
             }
         });
 
