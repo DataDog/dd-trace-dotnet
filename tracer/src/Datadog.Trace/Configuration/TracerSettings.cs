@@ -117,10 +117,6 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
                                          .AsBool(false);
 
-            IsStandaloneModeEnabled = config
-                .WithKeys(ConfigurationKeys.InternalStandaloneModeEnabled)
-                .AsBool(false);
-
             LambdaMetadata = LambdaMetadata.Create();
 
             IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
@@ -1144,12 +1140,6 @@ namespace Datadog.Trace.Configuration
         internal bool IsRareSamplerEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether a standalone mode is enabled, which turns off
-        /// all communications with the Datadog Agent.
-        /// </summary>
-        internal bool IsStandaloneModeEnabled { get; }
-
-        /// <summary>
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
@@ -1254,8 +1244,7 @@ namespace Datadog.Trace.Configuration
             !(IsRunningInAzureAppService
            || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
-           || LambdaMetadata.IsRunningInLambda
-           || IsStandaloneModeEnabled);
+           || LambdaMetadata.IsRunningInLambda);
 
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());

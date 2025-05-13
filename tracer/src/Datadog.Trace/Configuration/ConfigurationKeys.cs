@@ -546,13 +546,6 @@ namespace Datadog.Trace.Configuration
         public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
 
         /// <summary>
-        /// Configuration key for enabling a standalone mode where the Tracer does not reach out to the local Datadog Agent.
-        /// This limits the functionality of the Tracer and should only be used for test purposes.
-        /// Default value is false (disabled).
-        /// </summary>
-        public const string InternalStandaloneModeEnabled = "DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED";
-
-        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
