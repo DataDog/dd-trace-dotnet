@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -31,18 +32,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// <summary>
         /// Gets the path in the document where the error applies
         /// </summary>
-        // GraphQL2 uses IEnumerable<string> and GraphQL3 uses IEnumerable<object>
-        // Declaring the property as IEnumerable allows supporting both at once
-        IEnumerable Path { get; }
+        PathStruct Path { get; }
 
         /// <summary>
         /// Gets the StackTrace of the error.
         /// </summary>
-        string StackTrace { get; }
+        Exception Exception { get; }
 
         /// <summary>
         /// Gets additional Extensions information about error.
         /// </summary>
-        Dictionary<string, object> Extensions { get; }
+        IReadOnlyDictionary<string, object> Extensions { get; }
     }
 }
