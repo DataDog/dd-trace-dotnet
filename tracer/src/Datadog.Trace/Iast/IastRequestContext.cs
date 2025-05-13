@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
 using System.Threading;
 using System.Web;
@@ -15,10 +14,8 @@ using System.Web;
 using Microsoft.AspNetCore.Http;
 #endif
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -34,6 +31,10 @@ internal class IastRequestContext
     private bool _querySourcesAdded = false;
     private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
     private int _lastVulnerabilityStackId = 0;
+
+    private bool _routeVulnerabilityStatsDirty = false;
+    private VulnerabilityStats _routeVulnerabilityStats;
+    private VulnerabilityStats _requestVulnerabilityStats;
 
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
@@ -66,6 +67,11 @@ internal class IastRequestContext
                 }
             }
 
+            if (_routeVulnerabilityStatsDirty)
+            {
+                IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
+            }
+
             if (_executedTelemetryHelper != null)
             {
                 _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
@@ -79,7 +85,34 @@ internal class IastRequestContext
 
     internal bool AddVulnerabilitiesAllowed()
     {
+        // Check global budget
         return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
+    }
+
+    internal bool AddVulnerabilitiesAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
+    {
+        // Check global budget
+        if (AddVulnerabilitiesAllowed())
+        {
+            if (_requestVulnerabilityStats.Route is null)
+            {
+                // Init the route vulnerability stats
+                _routeVulnerabilityStats = getForCurrentRoute(span);
+                _requestVulnerabilityStats = new(_routeVulnerabilityStats.Route);
+            }
+
+            // Check route budget
+            var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
+            _requestVulnerabilityStats[index]++;
+            if (_requestVulnerabilityStats[index] <= _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+            {
+                _routeVulnerabilityStatsDirty = true;
+                _routeVulnerabilityStats[index] = _requestVulnerabilityStats[index];
+                return true;
+            }
+        }
+
+        return false;
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)
