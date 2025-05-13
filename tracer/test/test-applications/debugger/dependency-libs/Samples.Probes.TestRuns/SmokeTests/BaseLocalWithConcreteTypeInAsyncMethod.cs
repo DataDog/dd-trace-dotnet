@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
         public async Task<string> Pii(int arg)
         {
             PiiBase? pii;

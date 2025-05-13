@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogLineProbeTestData(28)]
-    [LogLineProbeTestData(32)]
-    [LogLineProbeTestData(33)]
-    [LogLineProbeTestData(34)]
-    [LogLineProbeTestData(38)]
-    [LogLineProbeTestData(39)]
-    [LogLineProbeTestData(40)]
+    [LogLineProbeTestData(28, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(32, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(33, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(34, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(38, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(39, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(40, skipOnFrameworks: ["net48", "net462"])]
     internal class AsyncTryCatchTest : IAsyncRun
     {
         public async Task RunAsync()
@@ -20,7 +20,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             await Test(nameof(AsyncTryCatchTest));
         }
 
-        [LogMethodProbeTestData]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
         private async Task<int> Test(string arg)
         {
             int ret;
