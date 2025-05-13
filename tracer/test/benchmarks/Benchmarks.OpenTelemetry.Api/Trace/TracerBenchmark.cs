@@ -15,7 +15,6 @@ namespace Benchmarks.OpenTelemetry.Api.Trace;
 public class TracerBenchmark
 {
     private Tracer alwaysSampleTracer;
-    private Tracer noopTracer;
     private Setup.TracerBenchmarkSetup tracerBenchmarkSetup;
 
     [GlobalSetup]
@@ -25,7 +24,6 @@ public class TracerBenchmark
         this.tracerBenchmarkSetup.GlobalSetup();
 
         this.alwaysSampleTracer = TracerProvider.Default.GetTracer("TracerBenchmark_AlwaysOnSample");
-        this.noopTracer = TracerProvider.Default.GetTracer("TracerBenchmark_Noop");
     }
 
     [GlobalCleanup]
@@ -74,13 +72,6 @@ public class TracerBenchmark
         {
         }
 
-        span.End();
-    }
-
-    [Benchmark(Baseline = true)]
-    public void StartSpan_Noop()
-    {
-        using var span = this.noopTracer.StartSpan("operation");
         span.End();
     }
 }

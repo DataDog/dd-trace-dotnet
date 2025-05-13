@@ -15,18 +15,12 @@ namespace Benchmarks.OpenTelemetry.Api.Setup
                 .SetSampler(new AlwaysOnSampler())
                 .Build();
 
-            this.tracerProviderAlwaysOffSample = Sdk.CreateTracerProviderBuilder()
-                .AddSource("TelemetrySpanBenchmark_AlwaysOffSample")
-                .SetSampler(new AlwaysOffSampler())
-                .Build();
-
             using var traceProviderNoop = Sdk.CreateTracerProviderBuilder().Build();
         }
 
         internal void GlobalCleanup()
         {
             this.tracerProviderAlwaysOnSample?.Dispose();
-            this.tracerProviderAlwaysOffSample?.Dispose();
         }
     }
 }
