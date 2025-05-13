@@ -670,6 +670,8 @@ namespace Datadog.Trace.Configuration
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
+            RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
+
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
                                             .AsBool(true);
@@ -1235,6 +1237,11 @@ namespace Datadog.Trace.Configuration
         internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
+        /// Gets a value indicating whether remote configuration has been explicitly disabled.
+        /// </summary>
+        internal bool RemoteConfigurationEnabled { get; }
+
+        /// <summary>
         /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
@@ -1245,9 +1252,11 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
-        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios
+        /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios.
+        /// It may also be explicitly disabled
         /// </summary>
         internal bool IsRemoteConfigurationAvailable =>
+            RemoteConfigurationEnabled &&
             !(IsRunningInAzureAppService
            || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
