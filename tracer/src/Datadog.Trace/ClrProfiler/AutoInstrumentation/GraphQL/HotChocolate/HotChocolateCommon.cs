@@ -168,15 +168,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
                     builder.AppendLine($"{tab}}},");
 
-                    var paths = executionError.Path;
-                    if (paths != null)
+                    var path = executionError.Path;
+                    if (path.Name != null)
                     {
                         var pathAttribute = new List<string>();
-                        foreach (var path in paths)
-                        {
-                            pathAttribute.Add(path.ToString());
-                        }
-
+                        pathAttribute.Add(path.Name);
                         eventAttributes.Add(new KeyValuePair<string, object>("path", pathAttribute.ToArray()));
                     }
 
@@ -186,10 +182,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         eventAttributes.Add(new KeyValuePair<string, object>("code", code));
                     }
 
-                    var stacktrace = executionError.StackTrace;
-                    if (stacktrace != null)
+                    var exception = executionError.Exception;
+                    if (exception != null)
                     {
-                        eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", stacktrace));
+                        eventAttributes.Add(new KeyValuePair<string, object>("stacktrace", exception.StackTrace));
                     }
 
                     var extensions = executionError.Extensions;
@@ -236,7 +232,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating HotChocolate error message.");
+                Log.Error(ex, "Error creating HotChocolate error message and Span Event.");
                 Util.StringBuilderCache.Release(builder);
                 return "errors: []";
             }
