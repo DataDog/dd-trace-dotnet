@@ -391,3 +391,6 @@ datadog-coverage-*
 
 # tools/dumps
 tools/dumps/
+!tools/dumps/README_ALPINE_ARM64.md
+!tools/dumps/start_alpine-arm64.cmd
+!tools/dumps/start_alpine-arm64.sh
