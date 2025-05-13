@@ -35,6 +35,7 @@ RUN mkdir /logs; \
 
 # Set the additional env vars
 ENV DD_TRACE_LOG_DIRECTORY="C:\logs" \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore
