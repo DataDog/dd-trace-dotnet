@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -65,6 +66,7 @@ internal static partial class IastModule
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
     private static readonly HashSet<int> LoggedAspectExceptionMessages = [];
     private static bool _showTimeoutExceptionError = true;
+    private static ConcurrentDictionary<string, VulnerabilityStats> _vulnerabilityStats = new ConcurrentDictionary<string, VulnerabilityStats>();
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
     {
@@ -573,7 +575,7 @@ internal static partial class IastModule
         var currentSpan = (tracer.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
 
-        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(currentSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -600,10 +602,37 @@ internal static partial class IastModule
 
     public static bool AddRequestVulnerabilitiesAllowed()
     {
+        // Check for global budget only
         var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
+    }
+
+    private static VulnerabilityStats GetRouteVulnerabilityStats(Span? span)
+    {
+        if (_vulnerabilityStats.Count >= 4096)
+        {
+            _vulnerabilityStats.Clear(); // Poor man's LRU cache
+        }
+
+        var key = string.Empty;
+        if (span?.Type == SpanTypes.Web)
+        {
+            var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
+            var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            key = $"{route}:{method}";
+        }
+
+        return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
+    }
+
+    internal static void UpdateRouteVulnerabilityStats(ref VulnerabilityStats stats)
+    {
+        if (stats.Route is not null)
+        {
+            _vulnerabilityStats[stats.Route] = stats;
+        }
     }
 
     private static IastModuleResponse GetScope(
@@ -637,7 +666,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(currentSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -660,7 +689,7 @@ internal static partial class IastModule
             var unsafeRanges = Ranges.GetUnsafeRanges(ranges, exclusionSecureMarks, safeSources);
             if (unsafeRanges is null || unsafeRanges.Length == 0)
             {
-                OnSupressedVulnerabilityTelemetry(VulnerabilityTypeUtils.GetTag(vulnerabilityType));
+                OnSupressedVulnerabilityTelemetry(VulnerabilityTypeUtils.FromName(vulnerabilityType));
                 return IastModuleResponse.Empty;
             }
 
