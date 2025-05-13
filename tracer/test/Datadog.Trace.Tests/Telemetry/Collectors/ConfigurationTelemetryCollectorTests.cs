@@ -246,7 +246,7 @@ public class ConfigurationTelemetryCollectorTests
             { "DD_INJECT_FORCE", "true" }
         });
 
-        _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
+        _ = new TracerSettings(source, collector, new OverrideErrorLog());
         _ = new SecuritySettings(source, collector);
 
         var data = collector.GetData();
