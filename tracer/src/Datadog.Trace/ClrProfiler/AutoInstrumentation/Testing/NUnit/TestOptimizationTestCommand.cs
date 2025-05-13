@@ -81,7 +81,7 @@ internal class TestOptimizationTestCommand
         {
             result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
         }
-        else if (testManagementProperties is { AttemptToFix: true })
+        else if (testTags?.IsAttemptToFix == "true" && testManagementProperties is not null)
         {
             result = DoRetries(new AttemptToFixRetryBehavior(testOptimization, testManagementProperties), context, result);
         }
