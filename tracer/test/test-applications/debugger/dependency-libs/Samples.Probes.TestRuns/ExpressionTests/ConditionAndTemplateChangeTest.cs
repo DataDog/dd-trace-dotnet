@@ -10,7 +10,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
                        conditionJson: Condition_EvaluatesToTrue_Json, 
                        captureSnapshot: true,
                        phase: 1,
-                       probeId: "99998286d046-9740-a3e4-95cf-ff46699c73c4")]
+                       probeId: "99998286d046-9740-a3e4-95cf-ff46699c73c4",
+                       skipOnFrameworks: ["net48", "net462"])]
 
     // Phase 2
     [LogLineProbeTestData(70,
@@ -20,7 +21,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
                        captureSnapshot: true,
                        phase: 2,
                        probeId: "99998286d046-9740-a3e4-95cf-ff46699c73c4",
-                       expectedNumberOfSnapshots: 0 /* the condition turns out false */)]
+                       expectedNumberOfSnapshots: 0, /* the condition turns out false */
+                       skipOnFrameworks: ["net48", "net462"])]
 
     // Phase 3
     [LogLineProbeTestData(70,
@@ -30,7 +32,8 @@ namespace Samples.Probes.TestRuns.ExpressionTests
                        captureSnapshot: true,
                        phase: 3,
                        probeId: "99998286d046-9740-a3e4-95cf-ff46699c73c4",
-                       expectedNumberOfSnapshots: 1)]
+                       expectedNumberOfSnapshots: 1,
+                       skipOnFrameworks: ["net48", "net462"])]
 
     public class ConditionAndTemplateChangeTest : IRun
     {

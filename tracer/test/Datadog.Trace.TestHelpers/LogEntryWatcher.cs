@@ -23,7 +23,6 @@ public class LogEntryWatcher : IDisposable
     // We must finish reading from the old one before switching to the new one, hence the queue
     private readonly ConcurrentQueue<StreamReader> _readers;
     private readonly DateTime _initialLogFileWriteTime;
-
     private StreamReader _activeReader;
 
     public LogEntryWatcher(string logFilePattern, string logDirectory = null)
@@ -31,7 +30,6 @@ public class LogEntryWatcher : IDisposable
         var logPath = logDirectory ?? DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
         _readers = new();
-
         var lastFile = GetLastWrittenLogFile(logFilePattern, logPath);
         _initialLogFileWriteTime = DateTime.Now;
 
@@ -39,7 +37,6 @@ public class LogEntryWatcher : IDisposable
         {
             var reader = OpenStream(lastFile.FullName);
             reader.ReadToEnd();
-
             _readers.Enqueue(reader);
         }
 
@@ -108,22 +105,7 @@ public class LogEntryWatcher : IDisposable
 
         if (i != logEntries.Length)
         {
-            var foundEntries = foundLogs.Take(i).Where(log => log != null).ToArray();
-            var missingEntries = logEntries.Skip(i).ToArray();
-
-            var lastFile = GetLastWrittenLogFile(_fileWatcher.Filter, _fileWatcher.Path);
-
-            var lastFileName = lastFile != null && lastFile.LastWriteTime > _initialLogFileWriteTime
-                                   ? $"{lastFile.Name} (Last write: {lastFile.LastWriteTime})"
-                                   : "No relevant log files found. No new entries have been written since monitoring began.";
-
-            var message = _readers.IsEmpty
-                              ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}. Timeout: {timeout?.TotalSeconds ?? 20}s. Found {i}/{logEntries.Length} expected log entries. Last file: {lastFileName}"
-                              : $"Timed out waiting for log entries in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Found {i}/{logEntries.Length} expected entries. Timeout: {timeout?.TotalSeconds ?? 20}s. Cancellation: {cancellationSource.IsCancellationRequested}. Last file: {lastFileName}";
-
-            message += $"\n\nFound entries ({foundEntries.Length}):\n{string.Join("\n", foundEntries.Select((log, index) => $"[{index}] {log}"))}";
-            message += $"\n\nMissing entries ({missingEntries.Length}):\n{string.Join("\n", missingEntries.Select((entry, index) => $"[{i + index}] {entry}"))}";
-
+            var message = GetDetailedExceptionMessage(logEntries, timeout, foundLogs, i, cancellationSource.IsCancellationRequested);
             throw new InvalidOperationException(message);
         }
 
@@ -154,5 +136,26 @@ public class LogEntryWatcher : IDisposable
                       .OrderBy(info => info.LastWriteTime)
                       .LastOrDefault();
         return lastFile;
+    }
+
+    private string GetDetailedExceptionMessage(string[] logEntries, TimeSpan? timeout, string[] foundLogs, int i, bool isCanceled)
+    {
+        var foundEntries = foundLogs.Take(i).Where(log => log != null).ToArray();
+        var missingEntries = logEntries.Skip(i).ToArray();
+
+        var lastFile = GetLastWrittenLogFile(_fileWatcher.Filter, _fileWatcher.Path);
+
+        var lastFileName = lastFile != null && lastFile.LastWriteTime > _initialLogFileWriteTime
+                               ? $"{lastFile.Name} (Last write: {lastFile.LastWriteTime})"
+                               : "No relevant log files found. No new entries have been written since monitoring began.";
+
+        var message = _readers.IsEmpty
+                          ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}.{Environment.NewLine}Timeout: {timeout?.TotalSeconds ?? 20}s.{Environment.NewLine}Found {i}/{logEntries.Length} expected log entries.{Environment.NewLine}Last file: {lastFileName}"
+                          : $"Timed out waiting for log entries in {_fileWatcher.Path} with filter {_fileWatcher.Filter}.{Environment.NewLine}Found {i}/{logEntries.Length} expected entries.{Environment.NewLine}Timeout: {timeout?.TotalSeconds ?? 20}s.{Environment.NewLine}Cancellation: {isCanceled}.{Environment.NewLine}Last file: {lastFileName}";
+
+        message += $"{Environment.NewLine}Found entries ({foundEntries.Length}):{Environment.NewLine}{string.Join(Environment.NewLine, foundEntries.Select((log, index) => $"[{index}] {log}"))}";
+        message += $"{Environment.NewLine}Missing entries ({missingEntries.Length}):{Environment.NewLine}{string.Join(Environment.NewLine, missingEntries.Select((entry, index) => $"[{i + index}] {entry}"))}";
+        message += Environment.NewLine;
+        return message;
     }
 }
