@@ -262,6 +262,7 @@ private :
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
+    bool _isFrameworkVersionKnown = false;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
     std::unique_ptr<IAllocationsRecorder> _pAllocationsRecorder = nullptr;
     std::unique_ptr<IDebugInfoStore> _pDebugInfoStore = nullptr;
@@ -287,7 +288,11 @@ private:
     static void OnThreadRoutineFinished();
 
     void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
-    void DisposeInternal();
+#ifdef _WINDOWS
+    void GetFullFrameworkVersion(ModuleID moduleId);
+#endif
+
+void DisposeInternal();
     void InitializeServices();
     bool DisposeServices();
     bool StartServices();

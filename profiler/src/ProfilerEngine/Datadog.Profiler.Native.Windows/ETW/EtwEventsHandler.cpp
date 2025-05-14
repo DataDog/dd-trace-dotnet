@@ -133,9 +133,9 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             {
                 _pReceiver->OnEvent(timestamp, tid, version, keyword, level, id, userDataLength, pUserData);
 
-                std::stringstream builder;
-                builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
-                _logger->Info(builder.str());
+                //std::stringstream builder;
+                //builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
+                //_logger->Info(builder.str());
             }
 
             // fire and forget so no need to answer
