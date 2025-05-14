@@ -866,7 +866,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cmd.shell")
                 .IsOptional("cmd.truncated")
                 .IsOptional("_dd.base_service")
-                .Matches("cmd.component", "process")
+                .Matches("component", "process")
                 .Matches("span.kind", "internal"));
 
         public static Result IsProtobufV1(this MockSpan span) => Result.FromSpan(span)
