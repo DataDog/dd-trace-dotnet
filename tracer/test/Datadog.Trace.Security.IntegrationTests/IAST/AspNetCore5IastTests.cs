@@ -343,6 +343,28 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastVulnerabilitySampling()
+    {
+        var filename = "Iast.VulnerabilitySampling.AspNetCore5.IastEnabled";
+        var url1 = $"/Iast/Sampling1?parameter=name";
+        var url2 = $"/Iast/Sampling2?parameter=name";
+        IncludeAllHttpSpans = true;
+
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url1, url2, url1, url2]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && x.Name == "aspnet_core.request").ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing(forceMetaStruct: true);
+
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 // Classes to test particular features
