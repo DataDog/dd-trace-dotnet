@@ -60,6 +60,16 @@ public class ActivityBenchmark
         return result;
     }
 
+#if NET9_0
+    [Benchmark]
+    public void StartSpan_RecordException_Sampled()
+    {
+        using var activity = this.activityBenchmarkSource.StartActivity("operation");
+        activity?.AddException(exception, timestamp: timestamp);
+        activity?.Dispose();
+    }
+#endif
+
     [Benchmark]
     public void StartSpan_SetStatus_Sampled()
     {
