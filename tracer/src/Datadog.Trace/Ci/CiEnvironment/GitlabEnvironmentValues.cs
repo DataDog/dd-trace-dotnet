@@ -74,5 +74,9 @@ internal sealed class GitlabEnvironmentValues<TValueProvider>(TValueProvider val
             Constants.GitlabProjectUrl,
             Constants.GitlabPipelineId,
             Constants.GitlabJobId);
+
+        HeadCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestSourceBranchSha);
+        PrBaseCommit = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchSha);
+        PrBaseBranch = ValueProvider.GetValue(Constants.GitlabMergeRequestTargetBranchName);
     }
 }
