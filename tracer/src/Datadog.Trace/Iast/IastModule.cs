@@ -58,6 +58,7 @@ internal static partial class IastModule
     private const string OperationNameSessionTimeout = "session_timeout";
     private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
+    private const int VulnerabilityStatsRouteLimit = 4096;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly IastSettings IastSettings = Iast.Instance.Settings;
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
@@ -574,8 +575,9 @@ internal static partial class IastModule
 
         var currentSpan = (tracer.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
+        var rootSpan = traceContext?.RootSpan;
 
-        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(currentSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -611,7 +613,7 @@ internal static partial class IastModule
 
     private static VulnerabilityStats GetRouteVulnerabilityStats(Span? span)
     {
-        if (_vulnerabilityStats.Count >= 4096)
+        if (_vulnerabilityStats.Count >= VulnerabilityStatsRouteLimit)
         {
             _vulnerabilityStats.Clear(); // Poor man's LRU cache
         }
@@ -658,7 +660,8 @@ internal static partial class IastModule
         var scope = tracer.ActiveScope as Scope;
         var currentSpan = scope?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
-        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+        var rootSpan = traceContext?.RootSpan;
+        var isRequest = rootSpan?.Type == SpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
         if (!isRequest && taintValidator != null)
@@ -666,7 +669,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(currentSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request

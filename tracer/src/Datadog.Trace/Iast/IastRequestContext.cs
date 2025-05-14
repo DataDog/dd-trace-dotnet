@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Reflection;
 using System.Threading;
 using System.Web;
 #if !NETFRAMEWORK
@@ -69,6 +70,8 @@ internal class IastRequestContext
 
             if (_routeVulnerabilityStatsDirty)
             {
+                Log.Information("Updating Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
+                _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
                 IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
             }
 
@@ -104,10 +107,13 @@ internal class IastRequestContext
             // Check route budget
             var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
             _requestVulnerabilityStats[index]++;
+
+            var txt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
+            Log.Information("Vulnerability Sampler: {Txt}", txt);
+
             if (_requestVulnerabilityStats[index] <= _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
             {
                 _routeVulnerabilityStatsDirty = true;
-                _routeVulnerabilityStats[index] = _requestVulnerabilityStats[index];
                 return true;
             }
         }
