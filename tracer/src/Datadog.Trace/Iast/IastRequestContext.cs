@@ -70,7 +70,7 @@ internal class IastRequestContext
 
             if (_routeVulnerabilityStatsDirty)
             {
-                Log.Information("Updating Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
+                Log.Debug("Updating Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
                 _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
                 IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
             }
@@ -92,7 +92,7 @@ internal class IastRequestContext
         return ((_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) < Iast.Instance.Settings.VulnerabilitiesPerRequest);
     }
 
-    internal bool AddVulnerabilitiesAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
+    internal bool AddVulnerabilityTypeAllowed(Span? span, string vulnerabilityType, Func<Span?, VulnerabilityStats> getForCurrentRoute)
     {
         // Check global budget
         if (AddVulnerabilitiesAllowed())
@@ -109,14 +109,21 @@ internal class IastRequestContext
                 var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
                 _requestVulnerabilityStats[index]++;
 
-                var txt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
-                Log.Information("Vulnerability Sampler: {Txt}", txt);
-
-                if (_requestVulnerabilityStats[index] <= _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+                string debugTxt = string.Empty;
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
+                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
+                }
+
+                if (_requestVulnerabilityStats[index] < _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+                {
+                    Log.Debug("Vulnerability Sampler ACCEPTED: {Txt}", debugTxt);
+
                     _routeVulnerabilityStatsDirty = true;
                     return true;
                 }
+
+                Log.Debug("Vulnerability Sampler SKIPPED: {Txt}", debugTxt);
             }
         }
 

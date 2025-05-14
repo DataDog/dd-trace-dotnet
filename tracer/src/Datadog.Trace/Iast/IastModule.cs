@@ -577,7 +577,7 @@ internal static partial class IastModule
         var traceContext = currentSpan?.Context?.TraceContext;
         var rootSpan = traceContext?.RootSpan;
 
-        if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -672,7 +672,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
         {
             // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
             // not activated for this particular request
@@ -701,6 +701,13 @@ internal static partial class IastModule
 
             // Contains at least one range that is not safe (when analyzing a vulnerability that can have secure marks)
             ranges = unsafeRanges;
+        }
+
+        if (isRequest && traceContext?.IastRequestContext?.AddVulnerabilityTypeAllowed(rootSpan, vulnerabilityType, GetRouteVulnerabilityStats) != true)
+        {
+            // we are inside a request but we don't accept more vulnerabilities or IastRequestContext is null, which means that iast is
+            // not activated for this particular request
+            return IastModuleResponse.Empty;
         }
 
         var location = addLocation ? GetLocation(externalStack, currentSpan) : null;
