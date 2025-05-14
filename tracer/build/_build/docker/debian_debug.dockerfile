@@ -1,6 +1,9 @@
-﻿FROM andrewlockdd/alpine-clang:1.0 AS base
+# We used a fixed, older version of debian for linking reasons
+FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as base
 ARG DOTNETSDK_VERSION
 
+# Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
+# and https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/src/sdk/5.0/buster-slim/amd64/Dockerfile
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image
     ASPNETCORE_URLS= \
@@ -16,10 +19,6 @@ ENV \
     DOTNET_MULTILEVEL_LOOKUP=0 \
     # Set CLI language to English for consistent logs
     DOTNET_CLI_UI_LANGUAGE="en" \
-    # SDK version
-    DOTNET_SDK_VERSION=$DOTNETSDK_VERSION \
-    # Disable the invariant mode (set in base image)
-    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
     # Enable correct mode for dotnet watch (only mode supported in a container)
     DOTNET_USE_POLLING_FILE_WATCHER=true \
     # Skip extraction of XML docs - generally not useful within an image/container - helps performance
@@ -28,62 +27,67 @@ ENV \
     QUIC_LTTng=0 \
     # https://github.com/dotnet/runtime/issues/13648
     DOTNET_EnableWriteXorExecute=0
-    
-RUN apk update \
-        && apk upgrade \
-        && apk add --no-cache \
-        ca-certificates \
-        \
-        # .NET Core dependencies
-        krb5-libs \
-        libgcc \
-        libintl \
-        libssl1.1 \
-        libstdc++ \
-        zlib-dev \
-        \
-        # SDK dependencies
-        curl \
-        icu-libs \
-        \
-        # our dependencies
-        cmake \
+
+    # Add nfpm source
+RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
+    && apt-get update \
+    && apt-get -y upgrade \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
         git \
-        bash \
+        procps \
+        wget \
+        curl \
+        cmake \
         make \
-        alpine-sdk \
-        util-linux-dev \
+        gcc \
+        build-essential \
+        rpm \
+        uuid-dev \
         autoconf \
         libtool \
-        automake \
-        xz-dev \
+        liblzma-dev \
         gdb \
-        musl-dbg \
         cppcheck \
-        build-base \
-        libldap \
+		zlib1g-dev \
+        \
+        # required to install clang
+        lsb-release \
+        software-properties-common \
+        gnupg \
+        nfpm \
         lldb \
-        py3-lldb \
-        # Download and install nfpm
-    && apkArch="$(apk --print-arch)" \
-    && wget https://github.com/goreleaser/nfpm/releases/download/v2.39.0/nfpm_2.39.0_${apkArch}.apk \
-    && apk add --allow-untrusted nfpm_2.39.0_${apkArch}.apk \
-    && rm nfpm_2.39.0_${apkArch}.apk
+    && rm -rf /var/lib/apt/lists/*
 
-ENV IsAlpine=true \
-    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
+# Install Clang
+RUN wget https://apt.llvm.org/llvm.sh && \
+    chmod u+x llvm.sh && \
+    ./llvm.sh 16 all && \
+    ln -s `which clang-16` /usr/bin/clang && \
+    ln -s `which clang++-16` /usr/bin/clang++ && \
+    ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
+    ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
 # Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
+# Trigger first run experience by running arbitrary cmd
     && dotnet help
 
-# Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
-RUN if [ "$(uname -m)" != "aarch64" ]; then \
-        ./dotnet-install.sh --runtime aspnetcore --channel 2.1 --install-dir /usr/share/dotnet --no-path; \
+ENV \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
+    CXX=clang++ \
+    CC=clang
+
+# Install ASP.NET Core runtimes using install script
+# There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
+
+RUN if [ "$(uname -m)" = "x86_64" ]; \
+    then export NETCORERUNTIME2_1=aspnetcore; \
+    else export NETCORERUNTIME2_1=dotnet; \
     fi \
+    && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
