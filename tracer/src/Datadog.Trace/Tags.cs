@@ -730,7 +730,6 @@ namespace Datadog.Trace
         internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
-        internal const string ProcessComponent = "cmd.component";
         internal const string ProcessCommandExec = "cmd.exec";
         internal const string ProcessCommandShell = "cmd.shell";
         internal const string ProcessTruncated = "cmd.truncated";
