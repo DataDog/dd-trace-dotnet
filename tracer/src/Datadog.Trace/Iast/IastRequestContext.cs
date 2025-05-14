@@ -103,18 +103,20 @@ internal class IastRequestContext
                 _routeVulnerabilityStats = getForCurrentRoute(span);
                 _requestVulnerabilityStats = new(_routeVulnerabilityStats.Route);
             }
-
-            // Check route budget
-            var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
-            _requestVulnerabilityStats[index]++;
-
-            var txt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
-            Log.Information("Vulnerability Sampler: {Txt}", txt);
-
-            if (_requestVulnerabilityStats[index] <= _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+            else if (_requestVulnerabilityStats.Route.Length > 0)
             {
-                _routeVulnerabilityStatsDirty = true;
-                return true;
+                // Check route budget
+                var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
+                _requestVulnerabilityStats[index]++;
+
+                var txt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
+                Log.Information("Vulnerability Sampler: {Txt}", txt);
+
+                if (_requestVulnerabilityStats[index] <= _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+                {
+                    _routeVulnerabilityStatsDirty = true;
+                    return true;
+                }
             }
         }
 
