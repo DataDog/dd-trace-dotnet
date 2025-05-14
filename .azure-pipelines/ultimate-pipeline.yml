@@ -2229,6 +2229,7 @@ stages:
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
+          --parallel \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2316,6 +2317,7 @@ stages:
           -e Filter=$(IntegrationTestFilter) \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
+          --parallel \
           IntegrationTests
       displayName: docker-compose run IntegrationTests
       env:
@@ -2451,6 +2453,7 @@ stages:
           -e framework=$(publishTargetFramework) \
           -e lambdaBaseImage=$(lambdaBaseImage) \
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          --parallel \
           IntegrationTests.Serverless
       displayName: docker-compose run IntegrationTests.Serverless
       env:
@@ -2590,6 +2593,7 @@ stages:
           -e baseImage=$(baseImage) \
           -e framework=$(publishTargetFramework) \
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          --parallel \
           IntegrationTests.Debugger
       displayName: docker-compose run --no-deps IntegrationTests.Debugger
       env:
@@ -3007,6 +3011,7 @@ stages:
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              --parallel \
               IntegrationTests.ARM64
           displayName: docker-compose run --no-deps IntegrationTests
           env:
@@ -3088,6 +3093,7 @@ stages:
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              --parallel \
               IntegrationTests.ARM64 \
           displayName: docker-compose run IntegrationTests
           env:
@@ -3183,6 +3189,7 @@ stages:
               -e baseImage=$(baseImage) \
               -e framework=$(publishTargetFramework) \
               -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+              --parallel \
               IntegrationTests.ARM64.Debugger
           displayName: docker-compose run --no-deps IntegrationTests.ARM64.Debugger
           env:
@@ -3355,6 +3362,7 @@ stages:
           -e explorationTestName=$(explorationTestName) \
           -e framework=$(publishTargetFramework) \
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
+          --parallel \
           ExplorationTests
       displayName: docker-compose run ExplorationTests
       env:
