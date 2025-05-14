@@ -618,15 +618,18 @@ internal static partial class IastModule
             _vulnerabilityStats.Clear(); // Poor man's LRU cache
         }
 
-        var key = string.Empty;
         if (span?.Type == SpanTypes.Web)
         {
             var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
             var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
-            key = $"{route}:{method}";
+            var key = $"{route}:{method}";
+            if (key.Length > 1)
+            {
+                return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
+            }
         }
 
-        return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
+        return new VulnerabilityStats(string.Empty);
     }
 
     internal static void UpdateRouteVulnerabilityStats(ref VulnerabilityStats stats)
