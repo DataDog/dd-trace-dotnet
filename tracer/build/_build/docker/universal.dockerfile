@@ -50,7 +50,7 @@ ENV IsAlpine=true \
     AsUniversal=true
 
 # Install the .NET SDK
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
+RUN curl -sSL https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
