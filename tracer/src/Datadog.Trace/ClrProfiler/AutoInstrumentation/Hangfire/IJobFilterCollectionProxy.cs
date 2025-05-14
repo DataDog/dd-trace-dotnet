@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// DuckTyping interface for Hangfire.Common.JobFilterCollection
 /// </summary>
-internal partial interface IJobFilterCollectionProxy : IDuckType
+internal interface IJobFilterCollectionProxy : IDuckType
 {
     /// <summary>
     /// Calls method: System.Void Hangfire.Common.JobFilterCollection::Add(System.Object)
@@ -38,22 +38,6 @@ internal partial interface IJobFilterCollectionProxy : IDuckType
     /// Calls method: System.Boolean Hangfire.Common.JobFilterCollection::Contains(System.Object)
     /// </summary>
     bool Contains(object filter);
-
-    /// <summary>
-    /// Calls method: System.Void Hangfire.Common.JobFilterCollection::Remove(System.Object)
-    /// </summary>
-    void Remove(object filter);
-
-    /// <summary>
-    /// Calls method: System.Void Hangfire.Common.JobFilterCollection::Remove[T]()
-    /// </summary>
-    void Remove();
-
-    /// <summary>
-    /// Calls method: System.Void Hangfire.Common.JobFilterCollection::Remove(System.Type)
-    /// </summary>
-    [Duck(ParameterTypeNames = new string[] { "System.Type" })]
-    void Remove(Type type);
 
     /// <summary>
     /// Calls method: System.Collections.Generic.IEnumerator`1[Hangfire.Common.JobFilter] Hangfire.Common.JobFilterCollection::GetEnumerator()

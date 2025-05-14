@@ -1,0 +1,85 @@
+// <copyright file="IPerformContextProxy.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using Datadog.Trace.DuckTyping;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
+
+/// <summary>
+/// DuckTyping interface for Hangfire.Server.PerformContext
+/// </summary>
+internal interface IPerformContextProxy : IDuckType
+{
+    /// <summary>
+    /// Gets a value of Hangfire.JobStorage
+    /// </summary>
+    object Storage { get; }
+
+    /// <summary>
+    /// Gets a value of System.Collections.Generic.IDictionary`2[System.String,System.Object]
+    /// </summary>
+    object Items { get; }
+
+    /// <summary>
+    /// Gets a value of Hangfire.BackgroundJob
+    /// </summary>
+    object BackgroundJob { get; }
+
+    /// <summary>
+    /// Gets a value of System.String
+    /// </summary>
+    string JobId { get; }
+
+    /// <summary>
+    /// Gets a value of Hangfire.Common.Job
+    /// </summary>
+    object Job { get; }
+
+    /// <summary>
+    /// Gets a value of System.DateTime
+    /// </summary>
+    DateTime CreatedAt { get; }
+
+    /// <summary>
+    /// Gets a value of Hangfire.IJobCancellationToken
+    /// </summary>
+    object CancellationToken { get; }
+
+    /// <summary>
+    /// Gets a value of Hangfire.Storage.IStorageConnection
+    /// </summary>
+    object Connection { get; }
+
+    /// <summary>
+    /// Gets a value of Hangfire.Profiling.IProfiler
+    /// </summary>
+    object Profiler { get; }
+
+    /// <summary>
+    /// Gets or sets a value of Hangfire.Server.IBackgroundJobPerformer
+    /// </summary>
+    object Performer { get; set; }
+
+    /// <summary>
+    /// Gets a value of System.String
+    /// </summary>
+    string ServerId { get; }
+
+    /// <summary>
+    /// Calls method: System.Void Hangfire.Server.PerformContext::SetJobParameter(System.String,System.Object)
+    /// </summary>
+    void SetJobParameter(string name, object value);
+
+    /// <summary>
+    /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String)
+    /// </summary>
+    object GetJobParameter(string name);
+
+    /// <summary>
+    /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String,System.Boolean)
+    /// </summary>
+    object GetJobParameter(string name, bool allowStale);
+}
