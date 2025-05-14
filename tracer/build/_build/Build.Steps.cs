@@ -961,7 +961,8 @@ partial class Build
         .Executes(() =>
         {
             // extract debug info from everything in monitoring home and copy it to the linux symbols directory
-            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so");
+            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so")
+                .Where(file => !Path.GetFileName(file).Contains("libdatadog_profiling.so"));
 
             foreach (var file in files)
             {
