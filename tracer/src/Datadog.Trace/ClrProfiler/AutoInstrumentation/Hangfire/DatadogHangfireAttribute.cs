@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
 
@@ -12,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// The datadog job filter
 /// </summary>
-public class DatadogHangfireAttribute : IServerFilter
+public class DatadogHangfireAttribute
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogHangfireAttribute));
 
@@ -20,6 +21,7 @@ public class DatadogHangfireAttribute : IServerFilter
     /// Do nothing
     /// </summary>
     /// <param name="context"> does nothing</param>
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
     public void OnPerforming(object context)
     {
         Log.Debug("On performing hangfire attribute");
@@ -29,6 +31,7 @@ public class DatadogHangfireAttribute : IServerFilter
     /// not
     /// </summary>
     /// <param name="context"> not thing </param>
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
     public void OnPerformed(object context)
     {
         Log.Debug("On performed hangfire attribute");
@@ -38,6 +41,7 @@ public class DatadogHangfireAttribute : IServerFilter
     /// Nothing
     /// </summary>
     /// <param name="context"> TBD </param>
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IClientFilter, Hangfire.Core" })]
     public void OnCreating(object context)
     {
         Log.Debug("On creating hangfire attribute");
@@ -47,6 +51,7 @@ public class DatadogHangfireAttribute : IServerFilter
     /// Nothign
     /// </summary>
     /// <param name="context"> TBD </param>
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IClientFilter, Hangfire.Core" })]
     public void OnCreated(object context)
     {
         Log.Debug("On created hangfire attribute");
