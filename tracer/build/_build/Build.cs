@@ -75,7 +75,7 @@ partial class Build : NukeBuild
     readonly bool? NewIsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
-    readonly bool PrintDriveSpace = true;
+    readonly bool PrintDriveSpace = false;
 
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
