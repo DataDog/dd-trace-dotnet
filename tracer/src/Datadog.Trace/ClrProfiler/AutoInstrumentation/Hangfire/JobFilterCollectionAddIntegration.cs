@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 public class JobFilterCollectionAddIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionAddIntegration));
+    private static bool _loaded = false;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref object? filter)
         where TTarget : IJobFilterCollectionProxy
@@ -44,7 +45,13 @@ public class JobFilterCollectionAddIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : IJobFilterCollectionProxy
     {
-        Log.Debug("Did we get in? JobFilterCollectionAddIntegration.OnMethodEnd");
+        if (!_loaded)
+        {
+            Log.Debug("Did we get in? JobFilterCollectionAddIntegration.OnMethodEnd");
+            instance.AddInternal(new DatadogHangfireAttribute(), null);
+            _loaded = true;
+        }
+
         return CallTargetReturn.GetDefault();
     }
 }
