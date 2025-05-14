@@ -32,6 +32,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
+using NativeInterop = Datadog.Trace.LibDatadog.NativeInterop;
 
 namespace Datadog.Trace
 {
@@ -671,7 +672,7 @@ namespace Datadog.Trace
             if (_firstInitialization)
             {
                 _firstInitialization = false;
-                OneTimeSetup();
+                OneTimeSetup(settings);
             }
 
             if (newManager.Settings.StartupDiagnosticLogEnabled)
@@ -682,13 +683,16 @@ namespace Datadog.Trace
             return newManager;
         }
 
-        private static void OneTimeSetup()
+        private static void OneTimeSetup(TracerSettings tracerSettings)
         {
             // Register callbacks to make sure we flush the traces before exiting
             LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
+#if LINUX
+            _ = Task.Run(() => LibDatadog.ServiceDiscovery.Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion));
+#endif
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
