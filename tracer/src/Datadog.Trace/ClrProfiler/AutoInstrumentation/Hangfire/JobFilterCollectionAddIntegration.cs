@@ -48,7 +48,7 @@ public class JobFilterCollectionAddIntegration
         if (!_loaded)
         {
             Log.Debug("Did we get in? JobFilterCollectionAddIntegration.OnMethodEnd");
-            instance.AddInternal(DuckType.CreateReverse(typeof(IIServerFilterProxy), typeof(DatadogHangfireAttribute)), null);
+            instance.AddInternal(DuckType.CreateReverse(typeof(IIServerFilterProxy), new DatadogHangfireAttribute()), null);
             _loaded = true;
         }
 
