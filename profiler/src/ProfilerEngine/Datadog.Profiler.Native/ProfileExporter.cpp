@@ -88,8 +88,6 @@ ProfileExporter::ProfileExporter(
     _runtimeInfo{runtimeInfo},
     _ssiManager{ssiManager}
 {
-    // TODO: the runtimeInfo does not contain the minor/build/reviews parts of the version for .NET Framework
-    // --> we need to pass the runtimeInfo to the exporter and not only the tags
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
     _metricsFileFolder = _configuration->GetProfilesOutputDirectory();
@@ -187,7 +185,6 @@ libdatadog::Tags ProfileExporter::CreateFixedTags(
 
     tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
-    //tags.Add("runtime_version", runtimeInfo->GetClrString());
 
     // list of enabled profilers
     std::string profilersTag = GetEnabledProfilersTag(enabledProfilers);
