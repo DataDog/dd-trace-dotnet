@@ -17,12 +17,12 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 WORKDIR /app
 
 ARG CHANNEL_32_BIT
-COPY ./build/_build/bootstrap/dotnet-install.ps1 .
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
+    curl 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
-    }; rm ./dotnet-install.ps1;
+    rm ./dotnet-install.ps1; }
 
 # Copy the installer files from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 COPY --from=builder /src/artifacts /install
@@ -40,6 +40,7 @@ ENV DD_PROFILING_ENABLED=1 \
     CORECLR_ENABLE_PROFILING=1 \
     CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore

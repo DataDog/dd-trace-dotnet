@@ -62,5 +62,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
             VariablesToBypass,
             Constants.BuildKiteBuildId,
             Constants.BuildKiteJobId);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.BuildKitePullRequestBaseBranch);
     }
 }
