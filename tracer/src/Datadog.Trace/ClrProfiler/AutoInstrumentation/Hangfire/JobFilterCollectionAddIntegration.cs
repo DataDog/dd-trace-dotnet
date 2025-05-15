@@ -38,7 +38,6 @@ public class JobFilterCollectionAddIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref object? filter)
         where TTarget : IJobFilterCollectionProxy
     {
-        Log.Debug("Did we get in? JobFilterCollectionAddIntegration.OnMethodBegin");
         return CallTargetState.GetDefault();
     }
 
@@ -47,9 +46,32 @@ public class JobFilterCollectionAddIntegration
     {
         if (!_loaded)
         {
-            Log.Debug("Did we get in? JobFilterCollectionAddIntegration.OnMethodEnd");
-            instance.AddInternal(DuckType.CreateReverse(typeof(IIServerFilterProxy), new DatadogHangfireAttribute()), null);
-            _loaded = true;
+            Log.Debug("Datadog Jobfilter is not added in yet, attempting to do so.");
+            Type? serverFilterType = Type.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
+            // Type? clientFilterType = Type.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
+            if (serverFilterType != null)
+            {
+                Log.Debug("Registering filter for {FilterType}", serverFilterType.ToString());
+                object proxy = DuckType.CreateReverse(serverFilterType, new DatadogHangfireAttribute());
+                Log.Debug("This is the ducktype using create reverse: {Proxy}", proxy.ToString());
+               // object proxy2 = DuckType.CreateReverse(clientFilterType, proxy);
+                instance.Add(proxy);
+                Log.Debug("We added the attribute");
+                _loaded = true;
+            }
+            else
+            {
+                Log.Debug("Unable to create Datadog Attribute with IServerFilter or IClientFilter.");
+                if (serverFilterType == null)
+                {
+                    Log.Debug("iserverfilter is null");
+                }
+
+                // if (clientFilterType == null)
+                // {
+                //     Log.Debug("clientfilter is null");
+                // }
+            }
         }
 
         return CallTargetReturn.GetDefault();

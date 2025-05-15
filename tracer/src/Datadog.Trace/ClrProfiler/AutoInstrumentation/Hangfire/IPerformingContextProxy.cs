@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 /// <summary>
 /// DuckTyping interface for Hangfire.Server.PerformingContext
 /// </summary>
-internal interface IPerformingContextProxy : IDuckType
+public interface IPerformingContextProxy : IDuckType
 {
     /// <summary>
     /// Gets or sets a value indicating whether gets or sets a value of System.Boolean
