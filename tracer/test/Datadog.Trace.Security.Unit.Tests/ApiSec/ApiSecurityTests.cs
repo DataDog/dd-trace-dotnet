@@ -23,18 +23,24 @@ namespace Datadog.Trace.Security.Unit.Tests.ApiSec;
 public class ApiSecurityTests
 {
     [Theory]
-    [InlineData(true, true, SamplingPriorityValues.UserKeep, true, "route0")]
-    [InlineData(true, true, SamplingPriorityValues.AutoKeep, true, "route1")]
-    [InlineData(true, true, SamplingPriorityValues.AutoReject, false, "route2")]
-    [InlineData(true, false, SamplingPriorityValues.AutoKeep, false, "route3")]
-    [InlineData(false, false, SamplingPriorityValues.AutoKeep, false, "route4")]
-    [InlineData(true, true, SamplingPriorityValues.AutoKeep, false, null)]
-    public void ApiSecurityTest(bool enable, bool lastCall, int samplingPriority, bool expectedResult, string route)
+    [InlineData(true, true, true, SamplingPriorityValues.UserKeep, true, "route0")]
+    [InlineData(true, true, true, SamplingPriorityValues.AutoKeep, true, "route1")]
+    [InlineData(true, true, true, SamplingPriorityValues.AutoReject, false, "route2")]
+    [InlineData(true, true, false, SamplingPriorityValues.AutoKeep, false, "route3")]
+    [InlineData(false, true, false, SamplingPriorityValues.AutoKeep, false, "route4")]
+    [InlineData(true, true, true, SamplingPriorityValues.AutoKeep, false, null)]
+    [InlineData(true, false, true, SamplingPriorityValues.AutoReject, true, "route2")]
+    [InlineData(true, false, false, SamplingPriorityValues.AutoKeep, false, "route3")]
+    public void ApiSecurityTest(bool enable, bool apmTracingEnabled, bool lastCall, int samplingPriority, bool expectedResult, string route)
     {
         var apiSec = new ApiSecurity(
             new SecuritySettings(
                 new CustomSettingsForTests(
-                    new Dictionary<string, object> { { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable } }),
+                    new Dictionary<string, object>
+                    {
+                        { Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, enable },
+                        { Configuration.ConfigurationKeys.ApmTracingEnabled, apmTracingEnabled },
+                    }),
                 new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object>();
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
