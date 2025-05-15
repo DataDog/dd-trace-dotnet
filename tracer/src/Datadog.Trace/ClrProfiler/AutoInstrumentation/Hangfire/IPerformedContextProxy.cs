@@ -8,10 +8,10 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 
-// <summary>
-// DuckTyping interface for Hangfire.Server.PerformedContext
-// </summary>
-internal interface IPerformedContextProxy : IDuckType
+/// <summary>
+/// DuckTyping interface for Hangfire.Server.PerformedContext
+/// </summary>
+public interface IPerformedContextProxy : IDuckType
 {
     /// <summary>
     /// Gets a value of System.Object

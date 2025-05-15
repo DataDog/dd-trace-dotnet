@@ -29,8 +29,8 @@ namespace Samples.Hangfire
                                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                                .UseSimpleAssemblyNameTypeSerializer()
                                .UseRecommendedSerializerSettings();
-            //
-            //GlobalJobFilters.Filters.Add(new AutomaticRetryAttribute());
+            
+            //GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
 
             // Start Hangfire server
 
@@ -40,6 +40,8 @@ namespace Samples.Hangfire
             // BackgroundJob.Enqueue(() => ExecuteTracedJob("enqueued-job"));
             BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
             BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world 2!"));
+            
+            
 
             // RecurringJob.AddOrUpdate("SomeJobId",() => ExecuteTracedJob("recurring-job"), "*/5 * * * * ? ");
             using (var server = new BackgroundJobServer())
