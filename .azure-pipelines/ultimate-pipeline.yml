@@ -4633,7 +4633,7 @@ stages:
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
             additional_scenarios="$(additionalScenarios)"
 
-            echo "Found scenario groups: endtoend_scenario_groups"
+            echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
             echo "Additional manual scenarios: $additional_scenarios"
             
