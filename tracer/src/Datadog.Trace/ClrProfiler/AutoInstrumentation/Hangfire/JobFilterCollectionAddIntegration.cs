@@ -55,7 +55,7 @@ public class JobFilterCollectionAddIntegration
                 object proxy = DuckType.CreateReverse(serverFilterType, new DatadogHangfireAttribute());
                 Log.Debug("This is the ducktype using create reverse: {Proxy}", proxy.ToString());
                // object proxy2 = DuckType.CreateReverse(clientFilterType, proxy);
-                instance.Add(proxy);
+                instance.AddInternal(proxy, null);
                 Log.Debug("We added the attribute");
                 _loaded = true;
             }
