@@ -174,7 +174,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
 
     steps:
     - checkout: none
@@ -4782,7 +4782,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -4865,7 +4865,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
       
       steps:
         - template: steps/clone-repo.yml
@@ -4939,7 +4939,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5030,7 +5030,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
 
       steps:
         - template: steps/clone-repo.yml
@@ -5105,7 +5105,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5170,7 +5170,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5243,7 +5243,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
