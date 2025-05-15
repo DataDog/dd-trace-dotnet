@@ -48,6 +48,24 @@ internal class IastRequestContext
         {
             span.Tags.SetTag(Tags.IastEnabled, "1");
 
+            if (_routeVulnerabilityStatsDirty)
+            {
+                if (AddVulnerabilitiesAllowed())
+                {
+                    // Global budget not depleted. Reset route stats so vulns can be detected again.
+                    Log.Debug("Clearing Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
+                    _routeVulnerabilityStats = new VulnerabilityStats(_requestVulnerabilityStats.Route);
+                }
+                else
+                {
+                    // Global budget depleted. Update route stats so vulns new can be detected.
+                    Log.Debug("Updating Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
+                    _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
+                }
+
+                IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
+            }
+
             if (_vulnerabilityBatch != null)
             {
                 if (Iast.Instance.IsMetaStructSupported())
@@ -66,24 +84,6 @@ internal class IastRequestContext
                         span.Tags.SetTag(Tags.IastJsonTagSizeExceeded, "1");
                     }
                 }
-            }
-
-            if (_routeVulnerabilityStatsDirty)
-            {
-                if (AddVulnerabilitiesAllowed())
-                {
-                    // Global budget not depleted. Reset route stats so vulns can be detected again.
-                    Log.Debug("Clearing Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
-                    _routeVulnerabilityStats = new VulnerabilityStats(_requestVulnerabilityStats.Route);
-                }
-                else
-                {
-                    // Global budget depleted. Update route stats so vulns new can be detected.
-                    Log.Debug("Updating Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
-                    _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
-                }
-
-                IastModule.UpdateRouteVulnerabilityStats(ref _routeVulnerabilityStats);
             }
 
             if (_executedTelemetryHelper != null)
@@ -114,7 +114,8 @@ internal class IastRequestContext
                 _routeVulnerabilityStats = getForCurrentRoute(span);
                 _requestVulnerabilityStats = new(_routeVulnerabilityStats.Route);
             }
-            else if (_requestVulnerabilityStats.Route.Length > 0)
+
+            if (_requestVulnerabilityStats.Route is { Length: > 0 })
             {
                 // Check route budget
                 var index = (int)VulnerabilityTypeUtils.FromName(vulnerabilityType);
@@ -126,11 +127,10 @@ internal class IastRequestContext
                     debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
                 }
 
-                if (_requestVulnerabilityStats[index] < _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
+                _routeVulnerabilityStatsDirty = true;
+                if (_requestVulnerabilityStats[index] > _routeVulnerabilityStats[index] || _routeVulnerabilityStats[index] == 0)
                 {
                     Log.Debug("Vulnerability Sampler ACCEPTED: {Txt}", debugTxt);
-
-                    _routeVulnerabilityStatsDirty = true;
                     return true;
                 }
 
