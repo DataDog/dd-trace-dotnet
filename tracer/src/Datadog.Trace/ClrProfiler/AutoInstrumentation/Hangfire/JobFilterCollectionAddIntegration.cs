@@ -33,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 public class JobFilterCollectionAddIntegration
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JobFilterCollectionAddIntegration));
-    private static bool _loaded = false;
+    private static bool _loadedClientFilter = false;
+    private static bool _loadedServerFilter = false;
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref object? filter)
         where TTarget : IJobFilterCollectionProxy
@@ -44,33 +45,39 @@ public class JobFilterCollectionAddIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : IJobFilterCollectionProxy
     {
-        if (!_loaded)
+        if (!_loadedServerFilter)
         {
             Log.Debug("Datadog Jobfilter is not added in yet, attempting to do so.");
             Type? serverFilterType = Type.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
-            // Type? clientFilterType = Type.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
             if (serverFilterType != null)
             {
                 Log.Debug("Registering filter for {FilterType}", serverFilterType.ToString());
-                object proxy = DuckType.CreateReverse(serverFilterType, new DatadogHangfireAttribute());
-                Log.Debug("This is the ducktype using create reverse: {Proxy}", proxy.ToString());
-               // object proxy2 = DuckType.CreateReverse(clientFilterType, proxy);
-                instance.AddInternal(proxy, null);
-                Log.Debug("We added the attribute");
-                _loaded = true;
+                object serverFilter = DuckType.CreateReverse(serverFilterType, new DatadogHangfireServerFilter());
+                Log.Debug("This is the ducktype using create reverse: {Proxy}", serverFilter.ToString());
+                instance.AddInternal(serverFilter, null);
+                Log.Debug("We added the serverFilter!");
+                _loadedServerFilter = true;
             }
             else
             {
-                Log.Debug("Unable to create Datadog Attribute with IServerFilter or IClientFilter.");
-                if (serverFilterType == null)
-                {
-                    Log.Debug("iserverfilter is null");
-                }
+                Log.Debug("iserverfilter is null");
+            }
+        }
 
-                // if (clientFilterType == null)
-                // {
-                //     Log.Debug("clientfilter is null");
-                // }
+        if (!_loadedClientFilter)
+        {
+            Type? clientFilterType = Type.GetType("Hangfire.Client.IClientFilter, Hangfire.Core");
+            if (clientFilterType != null)
+            {
+                Log.Debug("Registering filter for {FilterType}", clientFilterType.ToString());
+                object clientFilter = DuckType.CreateReverse(clientFilterType, new DatadogHangfireClientFilter());
+                instance.AddInternal(clientFilter, null);
+                Log.Debug("We added the clientFilter!");
+                _loadedClientFilter = true;
+            }
+            else
+            {
+                Log.Debug("iclientfilter is null");
             }
         }
 

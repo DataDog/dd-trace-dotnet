@@ -37,23 +37,23 @@ public class DatadogHangfireAttribute
         Log.Debug("On performed hangfire attribute");
     }
 
-    // /// <summary>
-    // /// Nothing
-    // /// </summary>
-    // /// <param name="context"> TBD </param>
-    // [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Client.IClientFilter, Hangfire.Core" })]
-    // public void OnCreating(object context)
-    // {
-    //     Log.Debug("On creating hangfire attribute");
-    // }
-    //
-    // /// <summary>
-    // /// Nothign
-    // /// </summary>
-    // /// <param name="context"> TBD </param>
-    // [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Client.IClientFilter, Hangfire.Core" })]
-    // public void OnCreated(object context)
-    // {
-    //     Log.Debug("On created hangfire attribute");
-    // }
+    /// <summary>
+    /// Nothing
+    /// </summary>
+    /// <param name="context"> TBD </param>
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Client.IClientFilter, Hangfire.Core" })]
+    public void OnCreating(object context)
+    {
+        Log.Debug("On creating hangfire attribute");
+    }
+
+    /// <summary>
+    /// Nothign
+    /// </summary>
+    /// <param name="context"> TBD </param>
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Client.IClientFilter, Hangfire.Core" })]
+    public void OnCreated(object context)
+    {
+        Log.Debug("On created hangfire attribute");
+    }
 }
