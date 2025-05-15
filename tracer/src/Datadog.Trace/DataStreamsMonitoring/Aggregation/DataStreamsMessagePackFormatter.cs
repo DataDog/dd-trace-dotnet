@@ -16,15 +16,10 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 {
     internal class DataStreamsMessagePackFormatter
     {
-        // extend the list as needed
-        private const int ApmProduct = 1; // 00000001
-        private const int DsmProduct = 2; // 00000010
-        private const int DjmProduct = 4; // 00000100, not used in .NET, but needs to be in sync with other languages, hence the unused constant
-        private const int ProfilingProduct = 8; // 00001000
-
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
         private readonly byte[] _environmentValueBytes;
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
+        private readonly long _productMask;
 
         private readonly byte[] _serviceValueBytes;
 
@@ -55,31 +50,38 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _productMaskBytes = StringEncoding.UTF8.GetBytes("ProductMask");
 
         public DataStreamsMessagePackFormatter(TracerSettings tracerSettings, string defaultServiceName)
-            : this(tracerSettings.Environment, defaultServiceName)
         {
-        }
-
-        public DataStreamsMessagePackFormatter(string? environment, string defaultServiceName)
-        {
+            var env = tracerSettings.Environment;
             // .NET tracer doesn't yet support primary tag
             // _primaryTagValueBytes = Array.Empty<byte>();
-            _environmentValueBytes = string.IsNullOrEmpty(environment)
-                                         ? Array.Empty<byte>()
-                                         : StringEncoding.UTF8.GetBytes(environment);
+            _environmentValueBytes = string.IsNullOrEmpty(env)
+                                         ? []
+                                         : StringEncoding.UTF8.GetBytes(env);
             _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
+            _productMask = GetProductsMask(tracerSettings);
         }
 
-        public static long GetProductsMask()
+        [Flags]
+        private enum Products : long
         {
-            long productsMask = ApmProduct;
-            if (Tracer.Instance.Settings.IsDataStreamsMonitoringEnabled)
+            None = 0,
+            Apm = 1,            // 00000001
+            Dsm = 1 << 1,       // 00000010
+            Djm = 1 << 2,       // 00000100
+            Profiling = 1 << 3, // 00001000
+        }
+
+        private static long GetProductsMask(TracerSettings tracerSettings)
+        {
+            var productsMask = (long)Products.Apm;
+            if (tracerSettings.IsDataStreamsMonitoringEnabled)
             {
-                productsMask |= DsmProduct;
+                productsMask |= (long)Products.Dsm;
             }
 
-            if (Tracer.Instance.Settings.ProfilingEnabledInternal)
+            if (tracerSettings.ProfilingEnabledInternal)
             {
-                productsMask |= ProfilingProduct;
+                productsMask |= (long)Products.Profiling;
             }
 
             return productsMask;
@@ -185,7 +187,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             }
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _productMaskBytes);
-            bytesWritten += MessagePackBinary.WriteInt64(stream, GetProductsMask());
+            bytesWritten += MessagePackBinary.WriteInt64(stream, _productMask);
 
             return bytesWritten;
         }
