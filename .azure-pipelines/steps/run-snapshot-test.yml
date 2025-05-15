@@ -170,7 +170,7 @@ steps:
     displayName: Check logs for evidence of crash output
     # This job sometimes hangs, and when it does, we lose all the logs, so explicitly end it early instead
     timeoutInMinutes: 15
-    condition: eq(variables['runCrashTest'], 'true')
+    condition: and(succeeded(), eq(variables['runCrashTest'], 'true'))
 
 - ${{ if eq(parameters.isLinux, true) }}:
     - script: |
