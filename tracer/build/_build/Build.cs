@@ -547,7 +547,7 @@ partial class Build : NukeBuild
         {
             var benchmarkProjectsWithSettings = new Tuple<string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
                 new(Projects.BenchmarksTrace, s => s),
-                new(Projects.BenchmarksOpenTelemetryApi, s => s),
+                // new(Projects.BenchmarksOpenTelemetryApi, s => s),
                 new(Projects.BenchmarksOpenTelemetryInstrumentedApi,
                     s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
                           .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
