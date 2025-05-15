@@ -38,7 +38,7 @@ namespace Datadog.Trace.Sampling
                 if (rule.IsMatch(span))
                 {
                     var sampleRate = rule.GetSamplingRate(span);
-                    return MakeSamplingDecision(span, rule.SamplingMechanism, sampleRate);
+                    return MakeSamplingDecision(span, sampleRate, rule.SamplingMechanism);
                 }
             }
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Sampling
             return _rules;
         }
 
-        private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
+        private SamplingDecision MakeSamplingDecision(Span span, float rate, string mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate.
             var sample = SamplingHelpers.SampleByRate(span.TraceId128, rate);

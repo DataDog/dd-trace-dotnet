@@ -9,7 +9,7 @@ namespace Datadog.Trace.Sampling
 {
     internal interface ISamplingRule
     {
-        int SamplingMechanism { get; }
+        string SamplingMechanism { get; }
 
         bool IsMatch(Span span);
 

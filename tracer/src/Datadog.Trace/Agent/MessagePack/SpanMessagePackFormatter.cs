@@ -822,12 +822,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
 
                 // add agent or rule sampling rate
-                if (model.TraceChunk is { AppliedSamplingRate: { } samplingRate, InitialSamplingMechanism: { } samplingMechanism })
+                if (model.TraceChunk is { AppliedSamplingRate: { } samplingRate, SamplingMechanism: { } samplingMechanism })
                 {
                     var samplingRateTagName = samplingMechanism switch
                     {
-                        SamplingMechanism.AgentRate => _agentSamplingRateNameBytes, // "_dd.agent_psr"
-                        SamplingMechanism.TraceSamplingRule => _ruleSamplingRateNameBytes, // "_dd.rule_psr"
+                        SamplingMechanism.AgentRate => _agentSamplingRateNameBytes,                 // "_dd.agent_psr"
+                        SamplingMechanism.LocalTraceSamplingRule => _ruleSamplingRateNameBytes,     // "_dd.rule_psr"
+                        SamplingMechanism.RemoteAdaptiveSamplingRule => _ruleSamplingRateNameBytes, // "_dd.rule_psr"
+                        SamplingMechanism.RemoteUserSamplingRule => _ruleSamplingRateNameBytes,     // "_dd.rule_psr"
                         _ => null
                     };
 
