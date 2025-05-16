@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 
