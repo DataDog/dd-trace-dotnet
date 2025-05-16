@@ -248,7 +248,7 @@ internal partial class MainViewModel
         onMethodBeginSourceBuilder.Replace("$(TArgsTypesParamDocumentation)", argsTypesParamDocumentation.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsTypesParamDocumentation));
         onMethodBeginSourceBuilder.Replace("$(TArgsTypes)", strTArgsTypes);
         onMethodBeginSourceBuilder.Replace("$(TArgsParameters)", strTArgsParameters);
-        onMethodBeginSourceBuilder.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
+        onMethodBeginSourceBuilder.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 || methodDef.DeclaringType.HasGenericParameters ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
         return onMethodBeginSourceBuilder;
     }
 
@@ -312,7 +312,7 @@ internal partial class MainViewModel
             onMethodEndSource.Replace("$(TReturnTypeParameter)", returnTypeParameter);
         }
 
-        onMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
+        onMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 || methodDef.DeclaringType.HasGenericParameters ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
 
         return onMethodEndSource;
     }
@@ -391,7 +391,7 @@ internal partial class MainViewModel
         onAsyncMethodEndSource.Replace("$(TReturnParamDocumentation)", returnParamDocumentation);
         onAsyncMethodEndSource.Replace("$(TReturnType)", returnType);
         onAsyncMethodEndSource.Replace("$(TReturnTypeParameter)", returnTypeParameter);
-        onAsyncMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
+        onAsyncMethodEndSource.Replace("$(TArgsConstraint)", argsConstraint.Count == 0 || methodDef.DeclaringType.HasGenericParameters ? string.Empty : Environment.NewLine + string.Join(Environment.NewLine, argsConstraint));
         return onAsyncMethodEndSource;
     }
 }
