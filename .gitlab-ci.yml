@@ -213,7 +213,6 @@ macrobenchmarks:
   stage: benchmarks
   needs: [ ]
   interruptible: false
-  timeout: 2h
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
@@ -228,7 +227,6 @@ microbenchmarks:
   stage: benchmarks
   needs: [ ]
   interruptible: false
-  timeout: 2h
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true
