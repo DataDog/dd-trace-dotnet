@@ -20,7 +20,7 @@ build:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
-  tags: ["windows-v2:2019"]  
+  tags: ["windows-v2:2019"]
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
