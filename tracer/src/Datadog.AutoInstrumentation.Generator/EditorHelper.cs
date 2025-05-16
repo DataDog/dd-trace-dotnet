@@ -114,43 +114,46 @@ internal static class EditorHelper
     public static string CreateTypeName(TypeSig typeSig)
     {
         var typeFullName = string.Empty;
-        if (typeSig is GenericMVar genMVar)
+        switch (typeSig)
         {
-            typeFullName = $"!!{genMVar.Number}";
-        }
-        else if (typeSig is GenericInstSig genType)
-        {
-            var genTypeFullName = genType.GenericType.FullName;
-            var genArgs = genType.GenericArguments;
+            case GenericVar genVar:
+                typeFullName = $"!{genVar.Number}";
+                break;
+            case GenericMVar genMVar:
+                typeFullName = $"!!{genMVar.Number}";
+                break;
+            case GenericInstSig genType:
+                var genTypeFullName = genType.GenericType.FullName;
+                var genArgs = genType.GenericArguments;
 
-            var sb = new StringBuilder(typeSig.FullName.Length + (genArgs.Count * 2));
-            sb.Append(genTypeFullName)
-                .Append('[');
-            for (var i = 0; i < genArgs.Count; i++)
-            {
-                if (genArgs[i] is GenericSig genericSig)
+                var sb = new StringBuilder(typeSig.FullName.Length + (genArgs.Count * 2));
+                sb.Append(genTypeFullName)
+                    .Append('[');
+                for (var i = 0; i < genArgs.Count; i++)
                 {
-                    var replacement = genericSig.IsTypeVar ? $"!{i}" : $"!!{i}";
-                    sb.Append(replacement);
-                }
-                else
-                {
-                    sb.Append(genArgs[i].FullName);
+                    if (genArgs[i] is GenericSig genericSig)
+                    {
+                        var replacement = genericSig.IsTypeVar ? $"!{i}" : $"!!{i}";
+                        sb.Append(replacement);
+                    }
+                    else
+                    {
+                        sb.Append(genArgs[i].FullName);
+                    }
+
+                    if (i < genArgs.Count - 1)
+                    {
+                        sb.Append(",");
+                    }
                 }
 
-                if (i < genArgs.Count - 1)
-                {
-                    sb.Append(",");
-                }
-            }
+                sb.Append(']');
 
-            sb.Append(']');
-
-            typeFullName = sb.ToString();
-        }
-        else
-        {
-            typeFullName = typeSig.FullName;
+                typeFullName = sb.ToString();
+                break;
+            default:
+                typeFullName = typeSig.FullName;
+                break;
         }
 
         return CreateTypeName(typeFullName);
