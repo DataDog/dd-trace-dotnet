@@ -267,6 +267,7 @@ errors: [
 ]
 ,
       error.type: HotChocolate.Error,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"The field `boook` does not exist on the type `Query`.","locations":["1:2"]}}],
       graphql.operation.type: Uncompleted,
       graphql.source:
 {
@@ -302,7 +303,7 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "Unexpected Execution Error",
+"message": "Something went wrong",
 "locations": [
 {
 "line": 1,
@@ -313,6 +314,7 @@ errors: [
 ]
 ,
       error.type: HotChocolate.Error,
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Something went wrong","locations":["1:18"],"path":["throwException"],"code":"ERROR_CODE","stacktrace":"   at Samples.HotChocolate.Query.ThrowException() in C:\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.HotChocolate\\Query.cs:line 28","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":["1","foo"]}}],
       graphql.operation.name: ErrorQuery,
       graphql.operation.type: Query,
       graphql.source:
