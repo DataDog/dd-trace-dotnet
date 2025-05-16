@@ -1728,8 +1728,29 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: Run integration tests
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType portable --Optimize true --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Run integration tests Portable Optimize(true)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType portable --Optimize false --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Run integration tests Portable Optimize(false)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType full --Optimize true --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Run integration tests Full Optimize(true)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType full --Optimize false --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Run integration tests Full Optimize(false)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
