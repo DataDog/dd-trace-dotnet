@@ -565,27 +565,20 @@ internal interface {proxyName} : IDuckType
             foreach (var property in proxyProperties)
             {
                 var getterSetter = string.Empty;
-                var documentation = string.Empty;
                 if (property is { Getter: true, Setter: true })
                 {
-                    documentation = $"Gets or sets a value of {property.TargetFullName}";
                     getterSetter = "get; set;";
                 }
                 else if (property.Getter)
                 {
-                    documentation = $"Gets a value of {property.TargetFullName}";
                     getterSetter = "get;";
                 }
                 else if (property.Setter)
                 {
-                    documentation = $"Sets a value of {property.TargetFullName}";
                     getterSetter = "set;";
                 }
 
                 sb.AppendLine(string.Empty);
-                sb.AppendLine("\t///<summary>");
-                sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
-                sb.AppendLine("\t///</summary>");
                 if (property.PropertyName != property.TargetName)
                 {
                     if (property.IsField)
