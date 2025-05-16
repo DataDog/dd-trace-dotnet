@@ -81,6 +81,12 @@ internal partial class MainViewModel
                 }
             }
 
+            if (methodDef.DeclaringType.IsInterface && methodDef.DeclaringType.HasGenericParameters)
+            {
+                SourceCode = "// Generics Interfaces are not supported by CallTarget.";
+                return;
+            }
+
             var integrationSourceBuilder = new StringBuilder(ResourceLoader.LoadResource("Integration.cs"));
             integrationSourceBuilder.Replace("$(Filename)", EditorHelper.GetFileName(methodDef));
             integrationSourceBuilder.Replace("$(Namespace)", EditorHelper.GetNamespace(methodDef));
