@@ -484,7 +484,7 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: false
+        useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
