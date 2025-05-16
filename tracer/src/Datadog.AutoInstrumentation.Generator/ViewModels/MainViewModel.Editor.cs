@@ -104,7 +104,7 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(MinimumVersion)", EditorHelper.GetMinimumVersion(methodDef));
             integrationSourceBuilder.Replace("$(MaximumVersion)", EditorHelper.GetMaximumVersion(methodDef));
             integrationSourceBuilder.Replace("$(IntegrationClassName)", EditorHelper.GetIntegrationClassName(methodDef));
-            integrationSourceBuilder.Replace("$(IntegrationName)", EditorHelper.GetIntegrationName(methodDef));
+            integrationSourceBuilder.Replace("$(IntegrationValue)", EditorHelper.GetIntegrationValue(methodDef));
 
             if (methodDef.DeclaringType.IsInterface)
             {

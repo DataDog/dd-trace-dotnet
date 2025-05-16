@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.$(Namespace);
     ParameterTypeNames = $(ParameterTypeNames),
     MinimumVersion = "$(MinimumVersion)",
     MaximumVersion = "$(MaximumVersion)",
-    IntegrationName = "$(IntegrationName)"$(IntegrationKind))]
+    IntegrationName = $(IntegrationValue)$(IntegrationKind))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class $(IntegrationClassName)Integration

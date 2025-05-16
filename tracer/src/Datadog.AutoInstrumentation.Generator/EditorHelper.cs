@@ -56,12 +56,17 @@ internal static class EditorHelper
         return new string(value.Where(c => !InvalidChars.Contains(c)).ToArray());
     }
 
-    public static string GetIntegrationName(MethodDef methodDef)
+    public static string GetIntegrationValue(MethodDef methodDef)
     {
-        var value = methodDef.DeclaringType.Name.ToString() ?? string.Empty;
-        return CleanTypeName(value);
-        // value = value.Replace("`", "Generic");
-        // return new string(value.Where(c => !InvalidChars.Contains(c)).ToArray());
+        var dllname = methodDef.Module.ToString();
+        if (!string.IsNullOrEmpty(dllname))
+        {
+            var dotposition = dllname.LastIndexOf('.');
+            var value = dotposition > 0 ? dllname.Substring(0, dotposition) : dllname;
+            return $"nameof(IntegrationId.{CleanTypeName(value)})";
+        }
+
+        return string.Empty;
     }
 
     public static string GetMinimumVersion(MethodDef methodDef)
