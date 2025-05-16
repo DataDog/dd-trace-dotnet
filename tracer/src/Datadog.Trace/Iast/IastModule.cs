@@ -622,7 +622,7 @@ internal static partial class IastModule
         {
             var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
             var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
-            var key = $"{route}:{method}";
+            var key = $"{method}#{route}";
             if (key.Length > 1)
             {
                 return _vulnerabilityStats.GetOrAdd(key, (k) => new(k));
