@@ -1,4 +1,3 @@
-
 stages:
   - build
   - publish
@@ -22,6 +21,7 @@ build:
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
   tags: ["windows-v2:2019"]
+  interruptible: false
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -61,6 +61,7 @@ publish:
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
   tags: ["windows-v2:2019"]
+  interruptible: false
   dependencies:
     - build
   hooks:
@@ -98,6 +99,7 @@ download-single-step-artifacts:
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   timeout: 45m
   tags: [ "arch:amd64" ]
+  interruptible: false
   needs:
     - job: build
       optional: true
@@ -144,6 +146,7 @@ download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
+  interruptible: false
   needs: []
   rules:
     - if: $DOTNET_PACKAGE_VERSION
@@ -164,6 +167,7 @@ aws-lambda-layer:
   stage: package
   needs: [download-serverless-artifacts]
   when: manual
+  interruptible: false
   trigger:
     project: DataDog/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
@@ -177,6 +181,8 @@ benchmark-serverless:
   image: registry.ddbuild.io/ci/serverless-tools:1
   tags: ["arch:amd64"]
   when: on_success
+  interruptible: false
+  timeout: 2h
   needs:
     - benchmark-serverless-trigger
   script:
@@ -186,6 +192,8 @@ benchmark-serverless:
 benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
+  interruptible: false
+  timeout: 2h
   trigger:
     project: DataDog/serverless-tools
     strategy: depend
@@ -204,6 +212,8 @@ benchmark-serverless-trigger:
 macrobenchmarks:
   stage: benchmarks
   needs: [ ]
+  interruptible: false
+  timeout: 2h
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
@@ -217,6 +227,8 @@ macrobenchmarks:
 microbenchmarks:
   stage: benchmarks
   needs: [ ]
+  interruptible: false
+  timeout: 2h
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
   allow_failure: true

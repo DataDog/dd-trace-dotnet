@@ -50,8 +50,8 @@ update-bp-infra:
 run-benchmarks:
   stage: benchmarks
   tags: ["arch:amd64"]
-  interruptible: true
-  timeout: 1h
+  interruptible: false
+  timeout: 2h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks-2
 
@@ -82,7 +82,7 @@ run-benchmarks:
 upload-to-bp-ui:
   stage: benchmarks
   tags: ["arch:amd64"]
-  interruptible: true
+  interruptible: false
   timeout: 1h
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-microbenchmarks

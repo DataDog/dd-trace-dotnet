@@ -28,7 +28,7 @@ check_azure_pipeline:
       - artifacts/
       - build-id.txt
     expire_in: 3 months
-  interruptible: true
+  interruptible: false
   tags: ["arch:amd64"]
   timeout: 1h
   rules:
@@ -74,8 +74,8 @@ update-bp-infra:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
-  interruptible: true
-  timeout: 1h
+  interruptible: false
+  timeout: 2h
   retry:
     max: 2
     when:
@@ -257,8 +257,8 @@ profiler_cpu_timer_create:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
-  interruptible: true
-  timeout: 1h
+  interruptible: false
+  timeout: 2h
   retry:
     max: 2
     when:
@@ -454,8 +454,8 @@ profiler_cpu_timer_create-arm64:
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
-  interruptible: true
-  timeout: 1h
+  interruptible: false
+  timeout: 2h
   rules:
     - when: on_success
   artifacts:
