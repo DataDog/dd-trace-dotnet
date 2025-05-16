@@ -193,7 +193,6 @@ benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
   interruptible: false
-  timeout: 2h
   trigger:
     project: DataDog/serverless-tools
     strategy: depend
