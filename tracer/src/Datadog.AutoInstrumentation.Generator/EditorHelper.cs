@@ -67,7 +67,7 @@ internal static class EditorHelper
     public static string GetMinimumVersion(MethodDef methodDef)
     {
         var version = methodDef.DeclaringType.DefinitionAssembly.Version;
-        return $"{version.Major}.{version.Minor}.{version.Build}";
+        return $"{version.Major}.0.0";
     }
 
     public static string GetMaximumVersion(MethodDef methodDef)
