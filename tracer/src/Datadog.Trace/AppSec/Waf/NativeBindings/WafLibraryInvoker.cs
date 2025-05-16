@@ -331,7 +331,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 }
 
                 Log.Debug("Calling InitContext with waf handle {Handle}", powerwafHandle);
-                return _initContextField(powerwafHandle);
+                var contextField = _initContextField(powerwafHandle);
+                Log.Debug("Received context handle {Handle}", contextField);
+                return contextField;
             }
             catch (Exception ex)
             {
