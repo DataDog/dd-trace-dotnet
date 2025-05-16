@@ -184,13 +184,11 @@ partial class Build : NukeBuild
                         {
                             foreach (var optimize in optimizations)
                             {
-                                matrix.Add($"{targetPlatform}_{framework}_{debugType}_{optimize}",
+                                matrix.Add($"{targetPlatform}_{framework}",
                                            new
                                            {
                                                framework = framework,
                                                targetPlatform = targetPlatform,
-                                               debugType = debugType,
-                                               optimize = optimize
                                            });
                             }
                         }

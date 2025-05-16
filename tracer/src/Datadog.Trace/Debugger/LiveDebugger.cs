@@ -139,7 +139,7 @@ namespace Datadog.Trace.Debugger
 
             try
             {
-                Log.Information("Live Debugger initialization started");
+                Log.Information("Live Debugger initialization started.");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
                 DebuggerSnapshotSerializer.SetConfig(Settings);
