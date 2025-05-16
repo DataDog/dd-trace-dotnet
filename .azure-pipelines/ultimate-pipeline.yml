@@ -223,7 +223,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - powershell: |
         tracer/build.ps1 GenerateVariables
@@ -249,7 +248,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
@@ -295,7 +293,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
@@ -1040,7 +1037,6 @@ stages:
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
-      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
@@ -1097,8 +1093,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - script: tracer\build.cmd BuildDdDotnet -framework=$(targetFramework)
       displayName: Build dd-dotnet
 
@@ -1139,7 +1134,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -1187,8 +1181,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -1273,7 +1266,6 @@ stages:
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
-      - template: steps/install-latest-dotnet-sdk.yml
 
       - script: tracer\build.cmd Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
         displayName: Build tracer home in debug
@@ -1337,7 +1329,6 @@ stages:
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
-      - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -1525,7 +1516,6 @@ stages:
           parameters:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
-        - template: steps/install-latest-dotnet-sdk.yml
 
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
@@ -1571,7 +1561,6 @@ stages:
           parameters:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
-        - template: steps/install-latest-dotnet-sdk.yml
 
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples -Framework $(framework) -TestAllPackageVersions
           displayName: Build sample projects
@@ -1643,9 +1632,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
     - template: steps/download-samples.yml
 
@@ -1722,10 +1708,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
-
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -1782,9 +1764,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -1839,7 +1818,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
     # This is a hack because otherwise Azure Functions _always_ tries to use the one from program files otherwise
     - script: |
         cd /D %PROGRAMFILES%/dotnet
@@ -1979,8 +1957,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-latest-dotnet-sdk.yml
-
     - script: tracer\build.cmd RunCppCheckProfiler RunClangTidyProfiler
       displayName: Run CppCheck and Clang-Tidy on Profiler
 
@@ -2003,7 +1979,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2048,9 +2023,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -2131,7 +2103,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -2648,10 +2619,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
-
     # windows-tracer-home.zip file contains profiler, tracer...
     - task: DownloadPipelineArtifact@2
       displayName: Download monitoring home zip
@@ -2818,8 +2785,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-latest-dotnet-sdk.yml
-
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -2864,10 +2829,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
-
     - script: tracer\build.cmd RunProfilerAsanTest -Framework net8.0
       displayName: Run Profiler ASAN test
 
@@ -2905,8 +2866,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3233,8 +3192,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-dotnet-sdks.yml
-
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
@@ -3382,7 +3339,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
     # download _everything_ not just the bin/obj/package files
     - task: DownloadPipelineArtifact@2
       displayName: Download working dir
@@ -3613,9 +3569,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
