@@ -24,9 +24,7 @@
 
 using namespace datadog::shared::nativeloader;
 
-// Keep track of all dispatchers to broadcast DllCanUnloadNow
-// Note: we don't actually do anything meaningful in DllCanUnloadNow so maybe we could remove it
-std::vector<IDynamicDispatcher*> dispatchers;
+IDynamicDispatcher* dispatcher;
 
 #if CRASHTRACKING
 std::unique_ptr<CrashHandler> crashHandler;
@@ -96,6 +94,9 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         }
 #endif
 
+        dispatcher = new DynamicDispatcherImpl();
+        dispatcher->LoadConfiguration(GetConfigurationFilePath());
+
         // *****************************************************************************************************************
         break;
     }
@@ -125,8 +126,6 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID rii
         return E_FAIL;
     }
 
-    auto dispatcher = new DynamicDispatcherImpl();
-    dispatchers.push_back(dispatcher);
     auto factory = new CorProfilerClassFactory(dispatcher);
     if (factory == nullptr)
     {
@@ -140,14 +139,5 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
 {
     Log::Debug("DllCanUnloadNow");
 
-    for (auto dispatcher : dispatchers)
-    {
-        HRESULT hr = dispatcher->DllCanUnloadNow();
-        if (FAILED(hr))
-        {
-            return hr;
-        }
-    }
-
-    return S_OK;    
+    return dispatcher->DllCanUnloadNow();
 }
