@@ -86,6 +86,7 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(Namespace)", EditorHelper.GetNamespace(methodDef));
             integrationSourceBuilder.Replace("$(FullName)", EditorHelper.GetMethodFullNameForComments(methodDef));
             integrationSourceBuilder.Replace("$(AssemblyName)", methodDef.DeclaringType.DefinitionAssembly.Name);
+
             if (methodDef.DeclaringType.IsNested)
             {
                 integrationSourceBuilder.Replace(
@@ -104,6 +105,15 @@ internal partial class MainViewModel
             integrationSourceBuilder.Replace("$(MaximumVersion)", EditorHelper.GetMaximumVersion(methodDef));
             integrationSourceBuilder.Replace("$(IntegrationClassName)", EditorHelper.GetIntegrationClassName(methodDef));
             integrationSourceBuilder.Replace("$(IntegrationName)", EditorHelper.GetIntegrationName(methodDef));
+
+            if (methodDef.DeclaringType.IsInterface)
+            {
+                integrationSourceBuilder.Replace("$(IntegrationKind)", $",{Environment.NewLine}    CallTargetIntegrationKind = CallTargetKind.Interface");
+            }
+            else
+            {
+                integrationSourceBuilder.Replace("$(IntegrationKind)", string.Empty);
+            }
 
             var isStatic = methodDef.IsStatic;
             var isVoid = !methodDef.HasReturnType;
