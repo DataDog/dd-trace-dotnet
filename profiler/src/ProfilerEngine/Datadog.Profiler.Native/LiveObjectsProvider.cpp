@@ -33,7 +33,6 @@ LiveObjectsProvider::LiveObjectsProvider(
     :
     _pCorProfilerInfo(pCorProfilerInfo),
     _rawSampleTransformer{rawSampleTransformer},
-    _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled()),
     _valueOffsets{valueTypeProvider.GetOrRegister(LiveObjectsProvider::SampleTypeDefinitions)}
 {
 }

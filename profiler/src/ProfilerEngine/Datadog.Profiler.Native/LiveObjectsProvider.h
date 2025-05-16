@@ -80,8 +80,6 @@ private:
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
     RawSampleTransformer* _rawSampleTransformer = nullptr;
 
-    bool _isTimestampsAsLabelEnabled = false;
-
     std::mutex _liveObjectsLock;
     std::list<LiveObjectInfo> _monitoredObjects;
     // WeakHandle are checked after each GC
