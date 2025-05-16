@@ -174,7 +174,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
 
     steps:
     - checkout: none
@@ -484,7 +484,7 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: false
+        useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -4594,7 +4594,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "appsec"
-    additionalScenarios: '[\"PARAMETRIC\", \"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4626,35 +4626,40 @@ stages:
             set -e
             
             source venv/bin/activate
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) > out.txt
+            # Try to get each workflow to take 15 mins = 900s
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -t 900 > out.txt
 
-            endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
-            parametric_scenarios=$(grep 'parametric_scenarios' out.txt | sed 's/.*=//g')
+            endtoend_scenario_groups=$(grep 'endtoend_defs_parallel_jobs' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
+            additional_scenarios="$(additionalScenarios)"
 
-            echo "Found scenarios: $endtoend_scenarios"
-            echo "Found parametric scenarios: $parametric_scenarios"
+            echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            echo "Additional manual scenarios: $(additionalScenarios)"
+            echo "Additional manual scenarios: $additional_scenarios"
             
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
-        
-            # Inline python script to cross the data into a json
-            echo "import json" > cross.py
-            echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
-            echo "script_parametric_scenarios = json.loads('$parametric_scenarios')" >> cross.py
-            echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
-            echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
-            echo 'combined_scenarios = script_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
-            echo 'matrix_items = {}' >> cross.py
-            echo 'for s in combined_scenarios:' >> cross.py
-            echo '    for w in script_weblogs:' >> cross.py
-            echo '        matrix_items[s + " (" + w + ")"] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
-            echo 'print(json.dumps(matrix_items))' >> cross.py
-            
-            python cross.py > matrix.json
-            
+            # Generate matrix and write to file
+            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" --argjson extra "$additional_scenarios" '
+              (
+                $main | map({
+                  ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
+                    SCENARIO: (.scenarios | map("+S " + .) | join(" ")), N: 1, I: 1,
+                    WEBLOG_VARIANT: .weblog
+                  }
+                })
+              ) + (
+                [ $extra[] as $scenario | $webs[] as $weblog |
+                  { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
+                ]
+              ) + (
+              [ $webs[] as $weblog | range(1; 4) as $i |
+                { ("PARAMETRIC (" + $weblog + ") \($i)"): {
+                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $weblog, N: 3, I: $i
+                }}
+              ]
+              ) | add
+            ' > matrix.json            
             echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
             echo "Json: $(cat matrix.json)"
           displayName: Generate scenarios matrix JSON
@@ -4746,7 +4751,7 @@ stages:
         displayName: Install runner
         workingDirectory: system-tests
 
-      - script: ./run.sh $(SCENARIO)
+      - script: ./run.sh $(SCENARIO) --splits=$(N) --group=$(I)
         workingDirectory: system-tests
         displayName: Run tests
         env:
@@ -4782,7 +4787,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -4865,7 +4870,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
       
       steps:
         - template: steps/clone-repo.yml
@@ -4939,7 +4944,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5030,7 +5035,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
 
       steps:
         - template: steps/clone-repo.yml
@@ -5105,7 +5110,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5170,7 +5175,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5243,7 +5248,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml

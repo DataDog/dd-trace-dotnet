@@ -14,6 +14,7 @@
 #include "IThreadsCpuManager.h"
 #include "IUpscaleProvider.h"
 #include "OsSpecificApi.h"
+#include "RawSampleTransformer.h"
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 
@@ -33,16 +34,13 @@ ContentionProvider::ContentionProvider(
     SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
+    RawSampleTransformer* rawSampleTransformer,
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
     shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     // keep at least 1 sampled lock contention per bucket so we will at least see long one if any
