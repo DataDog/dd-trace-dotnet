@@ -6,9 +6,11 @@
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyXunit;
@@ -59,7 +61,8 @@ public class LiveDebuggerTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+        var logPath = Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), nameof(LiveDebuggerTests) + "Logs");
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
         await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
 

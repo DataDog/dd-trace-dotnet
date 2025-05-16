@@ -79,7 +79,7 @@ internal static class EndpointDetector
                     isSignalRHub = IsInheritFromTypes(typeDef, metadataReader, SignalRHubBaseNames);
                     if (!isSignalRHub)
                     {
-                        isCompilerGeneratedType = datadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId);
+                        isCompilerGeneratedType = datadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle));
                         if (!isCompilerGeneratedType)
                         {
                             continue;
