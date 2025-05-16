@@ -28,7 +28,6 @@ check_azure_pipeline:
       - artifacts/
       - build-id.txt
     expire_in: 3 months
-  interruptible: false
   tags: ["arch:amd64"]
   timeout: 1h
   rules:
@@ -37,7 +36,6 @@ check_azure_pipeline:
 update-bp-infra:
   stage: infra-update
   tags: ["arch:amd64"]
-  interruptible: false
   timeout: 3h
   allow_failure: true
   # Image created in the following job https://gitlab.ddbuild.io/DataDog/benchmarking-platform-tools/-/jobs/869830045
@@ -74,7 +72,6 @@ update-bp-infra:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
-  interruptible: false
   timeout: 2h
   retry:
     max: 2
@@ -257,7 +254,6 @@ profiler_cpu_timer_create:
   stage: benchmarks
   tags: ["runner:apm-k8s-same-cpu"]
   needs: ["check_azure_pipeline"]
-  interruptible: false
   timeout: 2h
   retry:
     max: 2
@@ -454,7 +450,6 @@ profiler_cpu_timer_create-arm64:
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
-  interruptible: false
   timeout: 2h
   rules:
     - when: on_success
