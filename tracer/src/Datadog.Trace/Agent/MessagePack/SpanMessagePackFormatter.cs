@@ -73,6 +73,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitRepositoryUrl);
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private readonly byte[] _ddIntegrationNameBytes = StringEncoding.UTF8.GetBytes(Tags.DdIntegrationName);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
         private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
 
@@ -559,6 +560,16 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, originRawBytes);
+            }
+
+            // add "_dd.integration" tag to all spans
+            var ddIntegrationRawBytes = MessagePackStringCache.GetDdIntegrationBytes(span.DdComponent);
+
+            if (ddIntegrationRawBytes is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _ddIntegrationNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, ddIntegrationRawBytes);
             }
 
             // add "env" to all spans

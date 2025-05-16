@@ -130,6 +130,8 @@ namespace Datadog.Trace
 
         internal TimeSpan Duration { get; private set; }
 
+        internal string DdComponent { get; set; }
+
         internal bool IsFinished
         {
             get => _isFinished == 1;
@@ -465,6 +467,7 @@ namespace Datadog.Trace
         internal void Finish(TimeSpan duration)
         {
             ResourceName ??= OperationName;
+            DdComponent ??= Tags.GetTag(Trace.Tags.InstrumentationName); // todo : put InstrumentationName in CommonTags/TagsList and try to get it from there
             if (Interlocked.CompareExchange(ref _isFinished, 1, 0) == 0)
             {
                 if (IsRootSpan)
