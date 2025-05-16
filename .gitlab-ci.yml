@@ -176,7 +176,6 @@ benchmark-serverless:
   image: registry.ddbuild.io/ci/serverless-tools:1
   tags: ["arch:amd64"]
   when: on_success
-  timeout: 2h
   needs:
     - benchmark-serverless-trigger
   script:
