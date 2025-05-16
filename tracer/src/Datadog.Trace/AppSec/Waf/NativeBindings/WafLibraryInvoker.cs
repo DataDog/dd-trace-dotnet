@@ -320,7 +320,25 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
+        internal IntPtr InitContext(IntPtr powerwafHandle)
+        {
+            try
+            {
+                if (_initContextField is null)
+                {
+                    Log.Error("InitContext is null");
+                    return IntPtr.Zero;
+                }
+
+                Log.Debug("Calling InitContext with waf handle {Handle}", powerwafHandle);
+                return _initContextField(powerwafHandle);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while initializing context");
+                return IntPtr.Zero;
+            }
+        }
 
         /// <summary>
         /// WARNING: do not dispose newArgs until the Context is discarded as well
