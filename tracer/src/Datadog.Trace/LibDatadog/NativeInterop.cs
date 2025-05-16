@@ -64,4 +64,21 @@ internal class NativeInterop
         // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
         // internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
     }
+
+    internal static class Ddcommon
+    {
+        [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
+        internal static extern LibdatadogUtils.TracerMemfdHandleResult OpenTracerMemfd(
+            byte schemaVersion,
+            LibdatadogUtils.CharSlice runtimeId,
+            LibdatadogUtils.CharSlice tracerLanguage,
+            LibdatadogUtils.CharSlice tracerVersion,
+            LibdatadogUtils.CharSlice hostname,
+            LibdatadogUtils.CharSlice serviceName,
+            LibdatadogUtils.CharSlice serviceEnv,
+            LibdatadogUtils.CharSlice serviceVersion);
+
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropCharSlice(IntPtr charSlice);
+    }
 }

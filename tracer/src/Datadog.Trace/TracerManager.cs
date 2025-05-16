@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -20,6 +21,7 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -50,6 +52,7 @@ namespace Datadog.Trace
         private static TracerManager _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
+        private static LibdatadogUtils.TracerMemfdHandle _handle;
 
         private volatile bool _isClosing = false;
 
@@ -598,6 +601,17 @@ namespace Datadog.Trace
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
+                var result = LibdatadogUtils.StoreTracerMetadata(1,  "10", TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, instanceSettings.ServiceName, instanceSettings.Environment, instanceSettings.ServiceVersion);
+
+                if (result.Tag == LibdatadogUtils.ResultTag.Ok)
+                {
+                    _handle = result.Ok;
+                }
+                else
+                {
+                    Log.Error("Could not create the file handle from libdatadog, error is {Error}", result.Err.Message);
+                }
+
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
 
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
@@ -707,6 +721,8 @@ namespace Datadog.Trace
 #endif
                 }
 
+                GC.KeepAlive(_handle);
+
                 if (instance is not null)
                 {
                     Log.Debug("Disposing DynamicConfigurationManager");
@@ -741,7 +757,6 @@ namespace Datadog.Trace
                     Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();
 #endif
-
                     Log.Debug("Finished waiting for disposals.");
                 }
             }
