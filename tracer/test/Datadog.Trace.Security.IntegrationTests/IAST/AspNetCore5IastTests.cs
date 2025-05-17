@@ -27,7 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsFullSamplingIastEnabled")
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 3, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsFullSamplingIastEnabled")
     {
     }
 
@@ -335,6 +335,34 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing(forceMetaStruct: true);
+
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastVulnerabilitySampling()
+    {
+        var filename = "Iast.VulnerabilitySampling.AspNetCore5.IastEnabled";
+        var url1 = $"/Iast/Sampling1?parameter=name";
+        var url2 = $"/Iast/Sampling2?parameter=name";
+        IncludeAllHttpSpans = true;
+
+        // Each route has 3 vulnerabilities (as the budget), sot firts call to the route will rend 3 vulns, depleting budget.
+        // Second call will render none (sampling mechanism) and will reset as the budget was not depleted this time
+        // Third call will render all 3 vulns again (as the budget was reset)
+        // The same behabiour is repeated for the second route
+        // Calls are interleaved to test the stats persistency of each route
+
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url1, url2, url1, url2, url1, url2]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && x.Name == "aspnet_core.request").ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing(forceMetaStruct: true);
