@@ -238,6 +238,26 @@ public class ConfigurationTelemetryCollectorTests
         GetLatestValueFromConfig(data, "DD_TRACE_HEADER_TAGS", ConfigurationOrigins.Default).Should().Be(string.Empty);
         GetLatestValueFromConfig(data, "DD_LOGS_INJECTION", ConfigurationOrigins.Default).Should().Be(false);
         GetLatestValueFromConfig(data, "DD_TRACE_SAMPLE_RATE", ConfigurationOrigins.Default).Should().Be(1.0);
+        GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("unknown");
+    }
+
+    [Fact]
+    public void ConfigurationDataShouldReportSSIValues()
+    {
+        var collector = new ConfigurationTelemetry();
+        var source = new NameValueConfigurationSource(new NameValueCollection
+        {
+            { "DD_INJECTION_ENABLED", "tracer" },
+            { "DD_INJECT_FORCE", "true" }
+        });
+
+        _ = new TracerSettings(source, collector, new OverrideErrorLog());
+        _ = new SecuritySettings(source, collector);
+
+        var data = collector.GetData();
+        GetLatestValueFromConfig(data, "ssi_injection_enabled", ConfigurationOrigins.Default).Should().Be("tracer");
+        GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("ssi");
+        GetLatestValueFromConfig(data, "ssi_forced_injection_enabled", ConfigurationOrigins.Default).Should().Be("true");
     }
 
 #if NETFRAMEWORK
