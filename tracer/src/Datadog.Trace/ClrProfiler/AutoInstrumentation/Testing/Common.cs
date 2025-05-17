@@ -241,6 +241,7 @@ internal static class Common
             {
                 Log.Debug("Common: Test is an attempt to fix. [Suite: {SuiteName}, Test: {TestName}, IsRetry: {IsRetry}]", test.Suite.Name, test.Name, isRetry);
                 testTags.IsAttemptToFix = "true";
+                testTags.AttemptToFixSource = "manual";
                 if (isRetry)
                 {
                     testTags.TestIsRetry = "true";
