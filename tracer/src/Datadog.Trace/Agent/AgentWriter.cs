@@ -405,9 +405,9 @@ namespace Datadog.Trace.Agent
                 for (var i = 0; i < spans.Count; i++)
                 {
                     var index = i + spans.Offset;
-                    if (spans.Array![index].GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
+                    if (spans.Array?[index].GetMetric(Metrics.SingleSpanSampling.SamplingMechanism) is not null)
                     {
-                        singleSpanSamplingSpans.Add(spans.Array![index]);
+                        singleSpanSamplingSpans.Add(spans.Array[index]);
                     }
                 }
 
@@ -451,7 +451,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Add the current keep rate to the root span
-            var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
+            var rootSpan = spans.Array?[spans.Offset].Context.TraceContext?.RootSpan;
 
             if (rootSpan is not null)
             {
