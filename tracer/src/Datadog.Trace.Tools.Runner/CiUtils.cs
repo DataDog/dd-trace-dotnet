@@ -215,6 +215,8 @@ internal static class CiUtils
                     flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
                     impactedTestsDetectionEnabled = impactedTestsDetectionEnabled || itrSettings.ImpactedTestsEnabled == true;
                     testManagementEnabled = testManagementEnabled || itrSettings.TestManagement.Enabled == true;
+
+                    testOptimizationSettings.SetDefaultBranch(itrSettings.DefaultBranch);
                 }
                 catch (Exception ex)
                 {

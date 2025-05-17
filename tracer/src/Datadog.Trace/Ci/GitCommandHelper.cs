@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Ci.Telemetry;
@@ -29,7 +30,9 @@ internal static class GitCommandHelper
     // Regex patterns for parsing the diff output
     private static readonly Regex DiffHeaderRegex = new(@"^diff --git a/(?<fileA>.+) b/(?<fileB>.+)$", RegexOptions.Compiled);
     private static readonly Regex LineChangeRegex = new(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@", RegexOptions.Compiled);
+    private static readonly Regex BranchFilterRegex = new(@"^(main|master|preprod|prod|release/.*|hotfix/.*)$", RegexOptions.Compiled);
     private static readonly char[] LineSeparators = ['\n', '\r'];
+    private static readonly char[] WhitespaceSeparators = ['\t', ' '];
 
     public static ProcessHelpers.CommandOutput? RunGitCommand(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
@@ -89,7 +92,7 @@ internal static class GitCommandHelper
     {
         try
         {
-            // Retrieve PR list of modified files
+            // Retrieve the PR list of modified files
             var arguments = string.IsNullOrEmpty(headCommit) ? $"diff -U0 --word-diff=porcelain {baseCommit}" : $"diff -U0 --word-diff=porcelain {baseCommit} {headCommit}";
             var output = RunGitCommand(workingDirectory, arguments, MetricTags.CIVisibilityCommands.Diff);
             if (output is { ExitCode: 0, Output.Length: > 0 })
@@ -188,6 +191,186 @@ internal static class GitCommandHelper
         }
     }
 
+    public static BaseBranchInfo? DetectBaseBranch(
+        string workingDirectory,
+        string? targetBranch = null,
+        string? defaultBranch = null,
+        string remoteName = "origin")
+    {
+        if (string.IsNullOrEmpty(workingDirectory))
+        {
+            Log.Warning("GitCommandHelper: Cannot detect base branch because working directory is null or empty");
+            return null;
+        }
+
+        try
+        {
+            // Get the target branch if not specified
+            if (string.IsNullOrEmpty(targetBranch))
+            {
+                var branchOutput = RunGitCommand(
+                    workingDirectory,
+                    "rev-parse --abbrev-ref HEAD",
+                    MetricTags.CIVisibilityCommands.GetHead);
+
+                if (branchOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(branchOutput?.Output))
+                {
+                    Log.Warning("GitCommandHelper: Failed to get current branch");
+                    return null;
+                }
+
+                targetBranch = branchOutput!.Output.Trim();
+            }
+
+            // Verify branch exists
+            var verifyBranchOutput = RunGitCommand(
+                workingDirectory,
+                $"rev-parse --verify --quiet {targetBranch}",
+                MetricTags.CIVisibilityCommands.VerifyBranchExists);
+
+            if (verifyBranchOutput is not { ExitCode: 0 })
+            {
+                Log.Warning("GitCommandHelper: Branch '{Branch}' does not exist", targetBranch);
+                return null;
+            }
+
+            // Check if the target is already a main-like branch
+            string shortTargetName = targetBranch!;
+            if (shortTargetName.StartsWith($"{remoteName}/"))
+            {
+                shortTargetName = shortTargetName.Substring(remoteName.Length + 1);
+            }
+
+            if (BranchFilterRegex.IsMatch(shortTargetName))
+            {
+                Log.Debug("GitCommandHelper: Branch '{Branch}' already matches branch filter → no parent needed", targetBranch);
+                return null;
+            }
+
+            // Build candidate list
+            var branchesOutput = RunGitCommand(
+                workingDirectory,
+                $"for-each-ref --format='%(refname:short)' refs/heads refs/remotes/{remoteName}",
+                MetricTags.CIVisibilityCommands.BuildCandidateList);
+
+            if (branchesOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(branchesOutput?.Output))
+            {
+                Log.Warning("GitCommandHelper: Failed to get branch list");
+                return null;
+            }
+
+            var branches = SplitLines(branchesOutput!.Output)
+                          .Select(b => b.Trim('\'', ' '))
+                          .Where(b => !string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
+                          .Where(b =>
+                           {
+                               string nameToCheck = b;
+                               if (b.StartsWith($"{remoteName}/"))
+                               {
+                                   nameToCheck = b.Substring(remoteName.Length + 1);
+                               }
+
+                               return BranchFilterRegex.IsMatch(nameToCheck);
+                           })
+                          .ToList();
+
+            if (branches.Count == 0)
+            {
+                Log.Warning("GitCommandHelper: No candidate branches found");
+                return null;
+            }
+
+            // Compute metrics for each branch
+            var metrics = new List<BranchMetrics>();
+
+            foreach (var branch in branches)
+            {
+                // Find merge-base (common ancestor)
+                var mergeBaseOutput = RunGitCommand(
+                    workingDirectory,
+                    $"merge-base {branch} {targetBranch}",
+                    MetricTags.CIVisibilityCommands.MergeBase);
+
+                if (mergeBaseOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(mergeBaseOutput?.Output))
+                {
+                    continue; // Skip if no common history
+                }
+
+                var mergeBaseSha = mergeBaseOutput!.Output.Trim();
+
+                // Count commits ahead and behind
+                var revListOutput = RunGitCommand(
+                    workingDirectory,
+                    $"rev-list --left-right --count {branch}...{targetBranch}",
+                    MetricTags.CIVisibilityCommands.RevList);
+
+                if (revListOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(revListOutput?.Output))
+                {
+                    continue; // Skip if it cannot get commit counts
+                }
+
+                var counts = revListOutput!.Output.Split(WhitespaceSeparators, StringSplitOptions.RemoveEmptyEntries);
+                if (counts.Length != 2 ||
+                    !int.TryParse(counts[0], out var behind) ||
+                    !int.TryParse(counts[1], out var ahead))
+                {
+                    continue; // Skip if unexpected format or cannot parse counts
+                }
+
+                metrics.Add(new BranchMetrics(branch, mergeBaseSha, behind, ahead));
+            }
+
+            if (metrics.Count == 0)
+            {
+                Log.Warning("GitCommandHelper: No metrics could be computed for any candidate branch");
+                return null;
+            }
+
+            // Sort by "ahead" metric
+            metrics.Sort((a, b) => a.Ahead.CompareTo(b.Ahead));
+
+            int bestAhead = metrics[0].Ahead;
+            var bestCandidate = metrics[0]; // Default to first
+
+            // Check for collision and handle accordingly
+            if (metrics.Skip(1).Any(m => m.Ahead == bestAhead))
+            {
+                // Collision exists, find the best candidate
+                foreach (var candidate in metrics)
+                {
+                    if (candidate.Ahead == bestAhead)
+                    {
+                        bestCandidate = candidate;
+
+                        // If this is the default branch, it's the best choice
+                        if (IsDefaultBranch(candidate.Branch))
+                        {
+                            break; // Found the best possible candidate
+                        }
+                    }
+                }
+            }
+
+            var isDefaultBranch = IsDefaultBranch(bestCandidate.Branch);
+
+            return new BaseBranchInfo(
+                bestCandidate.Branch,
+                bestCandidate.MergeBaseSha,
+                bestCandidate.Behind,
+                bestCandidate.Ahead,
+                isDefaultBranch);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "GitCommandHelper: Error detecting base branch for '{Branch}'", targetBranch);
+            return null;
+        }
+
+        bool IsDefaultBranch(string candidate) => !string.IsNullOrEmpty(defaultBranch) &&
+                                                  (candidate == defaultBranch ||
+                                                   candidate == $"{remoteName}/{defaultBranch}");
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string[] SplitLines(string text, StringSplitOptions options = StringSplitOptions.RemoveEmptyEntries)
     {
@@ -195,4 +378,6 @@ internal static class GitCommandHelper
     }
 
     private readonly record struct LineRange(int Start, int End);
+
+    private readonly record struct BranchMetrics(string Branch, string MergeBaseSha, int Behind, int Ahead);
 }

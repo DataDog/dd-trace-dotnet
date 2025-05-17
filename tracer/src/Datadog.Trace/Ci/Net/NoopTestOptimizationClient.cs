@@ -37,12 +37,6 @@ internal sealed class NoopTestOptimizationClient : ITestOptimizationClient
         return Task.FromResult<TestOptimizationClient.SkippableTestsResponse>(default);
     }
 
-    public Task<TestOptimizationClient.ImpactedTestsDetectionResponse> GetImpactedTestsDetectionFilesAsync()
-    {
-        Log.Debug("NoopTestOptimizationClient: Getting impacted tests detection files...");
-        return Task.FromResult<TestOptimizationClient.ImpactedTestsDetectionResponse>(default);
-    }
-
     public Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
     {
         Log.Debug("NoopTestOptimizationClient: Sending pack files...");
