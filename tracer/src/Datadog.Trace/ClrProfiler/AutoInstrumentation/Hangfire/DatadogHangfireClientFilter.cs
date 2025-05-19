@@ -4,8 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
 {
@@ -24,6 +30,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         public void OnCreating(object context)
         {
             Log.Debug("Mock generate OnCreating Span.");
+            var creatingContext = context.DuckCast<ICreatingContextProxy>();
+            var createContext = context.DuckCast<ICreateContextProxy>();
+            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, "onCreating", out HangfireTags tags);
+            scope.Span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            scope.Span.SetTag(HangfireTags.JobName, createContext.Job.ToString());
+
+            PropagationContext contextToInject = new PropagationContext(scope.Span.Context, null, null);
+            var scopeContextData = new NameValueHeadersCollection(new NameValueCollection());
+            Tracer.Instance.TracerManager.SpanContextPropagator.Inject(contextToInject, scopeContextData);
+            creatingContext.SetJobParameter("ScopeKey", scopeContextData);
+            creatingContext.SetJobParameter("DD_SCOPE", scope);
+            Log.Debug("Creating and injected the following span context: {SpanContextData}", scopeContextData);
         }
 
         /// <summary>
@@ -33,6 +51,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Client.IClientFilter, Hangfire.Core" })]
         public void OnCreated(object context)
         {
+            var creatiedContext = context.DuckCast<ICreateContextProxy>();
+            ((ReadOnlyDictionary<string, object>)creatiedContext.Parameters).TryGetValue("DD_SCOPE", out var scope);
+            if (scope is not null)
+            {
+                ((Scope)scope).Dispose();
+            }
+
+            Tracer.Instance.ActiveScope?.Dispose();
             Log.Debug("Mock generate OnCreated Span.");
         }
     }
