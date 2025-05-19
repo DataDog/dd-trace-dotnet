@@ -52,6 +52,7 @@ class IManagedThreadList;
 class StackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+class RawSampleTransformer;
 class RuntimeIdStore;
 class TimerCreateCpuProfiler;
 class NetworkProvider;
@@ -277,6 +278,7 @@ private :
     MemoryResourceManager _memoryResourceManager;
 
     std::unique_ptr<ISsiManager> _pSsiManager = nullptr;
+    std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
 
 private:
     static void ConfigureDebugLog();

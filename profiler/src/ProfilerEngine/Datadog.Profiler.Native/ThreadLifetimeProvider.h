@@ -11,13 +11,8 @@
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
-class IFrameStore;
 class IThreadsCpuManager;
-class IAppDomainStore;
-class IRuntimeIdStore;
-class IConfiguration;
-class SampleValueTypeProvider;
-
+class RawSampleTransformer;
 
 class ThreadLifetimeProvider
     : public CollectorBase<RawThreadLifetimeSample>,
@@ -26,11 +21,7 @@ class ThreadLifetimeProvider
 public:
     ThreadLifetimeProvider(
         SampleValueTypeProvider& valueTypeProvider,
-        IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration,
+        RawSampleTransformer* rawSampleTransformer,
         shared::pmr::memory_resource* memoryResource);
 
     // Inherited via IThreadLifetimeListener
