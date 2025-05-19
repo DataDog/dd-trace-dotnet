@@ -136,6 +136,10 @@ internal class IastRequestContext
 
                 Log.Debug("Vulnerability Sampler SKIPPED: {Txt}", debugTxt);
             }
+            else
+            {
+                return true;
+            }
         }
 
         return false;

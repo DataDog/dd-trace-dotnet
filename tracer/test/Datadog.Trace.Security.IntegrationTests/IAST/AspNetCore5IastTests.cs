@@ -613,7 +613,7 @@ public class AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetC
     [Trait("RunOnWindows", "True")]
     public async Task TestIastLocationSpanId()
     {
-        var url = "/Iast/WeakHashing";
+        var url = "/Iast/WeakHashing2";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

@@ -246,6 +246,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("WeakHashing")]
         [Route("WeakHashing/{delay1}")]
+        [Route("WeakHashing2")]
         public IActionResult WeakHashing(int delay1 = 0, int delay2 = 0)
         {
             System.Threading.Thread.Sleep(delay1 + delay2);
