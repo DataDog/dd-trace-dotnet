@@ -4,8 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
 {
@@ -24,6 +28,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         public void OnPerforming(object context)
         {
             Log.Debug("Mock generate OnPerforming Span.");
+            var performingContext = context.DuckCast<IPerformingContextProxy>();
+            var performContext = context.DuckCast<IPerformContextProxy>();
+            var spanContextData = performContext.GetJobParameter("ScopeKey");
+            SpanContext parentContext = null;
+            if (spanContextData != null)
+            {
+                PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract((NameValueHeadersCollection)spanContextData);
+                parentContext = propagationContext.SpanContext;
+                Baggage.Current = propagationContext.Baggage;
+            }
+
+            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, "onPerforming", out HangfireTags tags, parentContext);
         }
 
         /// <summary>
@@ -33,6 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
+            Tracer.Instance.ActiveScope.Dispose();
             Log.Debug("Mock generate OnPerformed Span.");
         }
     }

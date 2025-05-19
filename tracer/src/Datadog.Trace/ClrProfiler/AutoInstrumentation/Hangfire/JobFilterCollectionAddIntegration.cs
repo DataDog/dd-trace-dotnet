@@ -7,6 +7,8 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -47,12 +49,24 @@ public class JobFilterCollectionAddIntegration
     {
         if (!_loadedServerFilter)
         {
+            // Try to find the Hangfire.Core assembly
+            Assembly? hangfireAssembly = AppDomain.CurrentDomain
+                                                  .GetAssemblies()
+                                                  .FirstOrDefault(asm => asm.GetName().Name == "Hangfire.Core");
+
+            if (hangfireAssembly == null)
+            {
+                throw new InvalidOperationException("Hangfire.Core assembly not loaded.");
+            }
+
+            Type? saferServerFilterType = hangfireAssembly.GetType("Hangfire.Server.IServerFilter");
+
             Log.Debug("Datadog Jobfilter is not added in yet, attempting to do so.");
             Type? serverFilterType = Type.GetType("Hangfire.Server.IServerFilter, Hangfire.Core");
-            if (serverFilterType != null)
+            if (saferServerFilterType != null)
             {
-                Log.Debug("Registering filter for {FilterType}", serverFilterType.ToString());
-                object serverFilter = DuckType.CreateReverse(serverFilterType, new DatadogHangfireServerFilter());
+                Log.Debug("Registering filter for {FilterType}", saferServerFilterType.ToString());
+                object serverFilter = DuckType.CreateReverse(saferServerFilterType, new DatadogHangfireServerFilter());
                 Log.Debug("This is the ducktype using create reverse: {Proxy}", serverFilter.ToString());
                 instance.AddInternal(serverFilter, null);
                 Log.Debug("We added the serverFilter!");

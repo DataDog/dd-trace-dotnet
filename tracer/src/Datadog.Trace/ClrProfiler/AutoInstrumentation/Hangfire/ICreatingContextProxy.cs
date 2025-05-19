@@ -21,9 +21,4 @@ internal interface ICreatingContextProxy : IDuckType
     /// Calls method: System.Void Hangfire.Client.CreatingContext::SetJobParameter(System.String,System.Object)
     /// </summary>
     void SetJobParameter(string name, object value);
-
-    /// <summary>
-    /// Calls method: T Hangfire.Client.CreatingContext::GetJobParameter[T](System.String)
-    /// </summary>
-    object GetJobParameter(string name);
 }

@@ -199,6 +199,7 @@ src/Datadog.Trace/Tagging/CommonTags.cs
 src/Datadog.Trace/Tagging/CosmosDbTags.cs
 src/Datadog.Trace/Tagging/CouchbaseTags.cs
 src/Datadog.Trace/Tagging/GrpcTags.cs
+src/Datadog.Trace/Tagging/HangfireTags.cs
 src/Datadog.Trace/Tagging/HttpTags.cs
 src/Datadog.Trace/Tagging/IHasStatusCode.cs
 src/Datadog.Trace/Tagging/IItemProcessor.cs
@@ -471,6 +472,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/OperationTypeProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireAttribute.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireClientFilter.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireServerFilter.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/HangfireCommon.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/ICreateContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/ICreatedContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/ICreatingContextProxy.cs

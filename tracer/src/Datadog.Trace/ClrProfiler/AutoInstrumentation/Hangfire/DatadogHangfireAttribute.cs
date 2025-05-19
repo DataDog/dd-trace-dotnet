@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
@@ -55,5 +56,10 @@ public class DatadogHangfireAttribute
     public void OnCreated(object context)
     {
         Log.Debug("On created hangfire attribute");
+    }
+
+    private static void InjectActivityProperties(IDictionary<string, string> jobParams, string key, string value)
+    {
+        jobParams[key] = value;
     }
 }
