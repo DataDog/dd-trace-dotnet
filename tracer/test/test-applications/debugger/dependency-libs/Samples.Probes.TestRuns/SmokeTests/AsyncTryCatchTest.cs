@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    [LogLineProbeTestData(28, skipOnFrameworks: ["net48", "net462"])]
-    [LogLineProbeTestData(32, skipOnFrameworks: ["net48", "net462"])]
-    [LogLineProbeTestData(33, skipOnFrameworks: ["net48", "net462"])]
-    [LogLineProbeTestData(34, skipOnFrameworks: ["net48", "net462"])]
-    [LogLineProbeTestData(38, skipOnFrameworks: ["net48", "net462"])]
-    [LogLineProbeTestData(39, skipOnFrameworks: ["net48", "net462"])]
-    [LogLineProbeTestData(40, skipOnFrameworks: ["net48", "net462"])]
+    [LogLineProbeTestData(28, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(32, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(33, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(34, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(38, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(39, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+    [LogLineProbeTestData(40, skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
     internal class AsyncTryCatchTest : IAsyncRun
     {
         public async Task RunAsync()
@@ -20,7 +20,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
             await Test(nameof(AsyncTryCatchTest));
         }
 
-        [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
         private async Task<int> Test(string arg)
         {
             int ret;
