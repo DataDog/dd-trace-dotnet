@@ -427,7 +427,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
 public class AspNetCore5IastTestsCompatEditAndContinue : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsCompatEditAndContinue(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsCompat", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200, redactionEnabled: true)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsCompat", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 3, redactionEnabled: true)
     {
         SetEnvironmentVariable("COMPLUS_ForceEnc", "1");
     }
@@ -763,7 +763,7 @@ public class AspNetCore5IastTestsFullSamplingIastDisabled : AspNetCore5IastTests
 public class AspNetCore5IastTestsFullSamplingRedactionEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingRedactionEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsRedactionEnabled", redactionEnabled: true, vulnerabilitiesPerRequest: 100)
+        : base(fixture, outputHelper, enableIast: true, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsRedactionEnabled", redactionEnabled: true, vulnerabilitiesPerRequest: 3)
     {
     }
 }

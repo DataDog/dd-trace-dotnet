@@ -53,13 +53,13 @@ internal class IastRequestContext
                 if (AddVulnerabilitiesAllowed())
                 {
                     // Global budget not depleted. Reset route stats so vulns can be detected again.
-                    Log.Debug("Clearing Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
+                    Log.Debug("Clearing Vulnerability Stats for Route {Route} (Budget left)", _routeVulnerabilityStats.Route);
                     _routeVulnerabilityStats = new VulnerabilityStats(_requestVulnerabilityStats.Route);
                 }
                 else
                 {
                     // Global budget depleted. Update route stats so vulns new can be detected.
-                    Log.Debug("Updating Vulnerability Stats for Route {Route}", _routeVulnerabilityStats.Route);
+                    Log.Debug("Updating Vulnerability Stats for Route {Route} (Budget depleted)", _routeVulnerabilityStats.Route);
                     _routeVulnerabilityStats.TransferNewVulns(ref _requestVulnerabilityStats);
                 }
 
@@ -124,7 +124,8 @@ internal class IastRequestContext
                 string debugTxt = string.Empty;
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
-                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}";
+                    var currentVulns = (_vulnerabilityBatch?.Vulnerabilities.Count ?? 0) + 1;
+                    debugTxt = $"Vulnerability {vulnerabilityType} detected for Route {_requestVulnerabilityStats.Route}. Current count: {_requestVulnerabilityStats[index]}  Route count: {_routeVulnerabilityStats[index]}  Budget: {currentVulns} out of {Iast.Instance.Settings.VulnerabilitiesPerRequest}";
                 }
 
                 _routeVulnerabilityStatsDirty = true;
