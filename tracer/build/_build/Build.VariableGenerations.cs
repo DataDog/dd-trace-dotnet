@@ -179,19 +179,12 @@ partial class Build : NukeBuild
                             // fails on CI with error "apphost.exe" not found.
                             continue;
                         }
-
-                        foreach (var debugType in debugTypes)
-                        {
-                            foreach (var optimize in optimizations)
-                            {
-                                matrix.Add($"{targetPlatform}_{framework}",
-                                           new
-                                           {
-                                               framework = framework,
-                                               targetPlatform = targetPlatform,
-                                           });
-                            }
-                        }
+                        matrix.Add($"{targetPlatform}_{framework}",
+                                    new
+                                    {
+                                        framework = framework,
+                                        targetPlatform = targetPlatform,
+                                    });
                     }
                 }
 
