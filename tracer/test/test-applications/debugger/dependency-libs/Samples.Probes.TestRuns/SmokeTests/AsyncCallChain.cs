@@ -16,7 +16,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData(skipOnFrameworks: ["net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net7.0", "net6.0", "net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"])]
         public async Task<int> Async1(int chain)
         {
             chain++;
@@ -24,7 +24,6 @@ namespace Samples.Probes.TestRuns.SmokeTests
             if (result > chain.ToString().Length + 10)
             {
                 result -= 2;
-                Console.WriteLine(result);
                 return result;
             }
 

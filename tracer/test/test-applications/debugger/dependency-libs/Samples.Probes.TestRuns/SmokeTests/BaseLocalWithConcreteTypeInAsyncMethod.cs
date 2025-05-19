@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.TestRuns.SmokeTests
 {
-    internal class BaseLocalWithConcreteTypeInAsyncMethod : IAsyncRun
+    public class BaseLocalWithConcreteTypeInAsyncMethod : IAsyncRun
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public async Task RunAsync()
