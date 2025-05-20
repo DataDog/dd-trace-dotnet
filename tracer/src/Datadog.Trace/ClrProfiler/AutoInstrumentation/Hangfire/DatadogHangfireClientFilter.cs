@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             var createContext = context.DuckCast<ICreateContextProxy>();
             Scope scope = HangfireCommon.CreateScope(Tracer.Instance, "onCreating", out HangfireTags tags);
             scope.Span.SetTag(Tags.SpanKind, SpanKinds.Client);
-            scope.Span.SetTag(HangfireTags.JobName, createContext.Job.ToString());
+            scope.Span.SetTag("job", createContext.Job.ToString());
 
             PropagationContext contextToInject = new PropagationContext(scope.Span.Context, null, null);
             var scopeContextData = new NameValueHeadersCollection(new NameValueCollection());

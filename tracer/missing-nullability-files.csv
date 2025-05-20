@@ -480,8 +480,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IJobFilterCollectionP
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IPerformContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IPerformedContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IPerformingContextProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/PerformedContextDuck.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/PerformingContextDuck.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/CachedMessageHeadersHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/IConsumeException.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Kafka/IConsumeResult.cs
