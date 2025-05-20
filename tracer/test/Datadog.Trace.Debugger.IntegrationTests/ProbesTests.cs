@@ -270,7 +270,7 @@ public class ProbesTests : TestHelper
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeUnboundProbeBecomesBoundTest()
