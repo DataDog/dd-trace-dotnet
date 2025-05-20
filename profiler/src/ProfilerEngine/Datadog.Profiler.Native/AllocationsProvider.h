@@ -25,6 +25,7 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class ISampledAllocationsListener;
+class RawSampleTransformer;
 class SampleValueTypeProvider;
 
 
@@ -40,9 +41,7 @@ public:
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
+        RawSampleTransformer* rawSampleTransformer,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,
@@ -54,9 +53,7 @@ public:
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
+        RawSampleTransformer* rawSampleTransformer,
         IConfiguration* pConfiguration,
         ISampledAllocationsListener* pListener,
         MetricsRegistry& metricsRegistry,

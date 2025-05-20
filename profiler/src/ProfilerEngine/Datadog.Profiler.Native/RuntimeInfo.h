@@ -8,18 +8,21 @@
 class RuntimeInfo : public IRuntimeInfo
 {
 public:
-    RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework);
+    RuntimeInfo(uint16_t major, uint16_t minor, bool isFramework);
 
     // Inherited via IRuntimeInfo
     bool IsDotnetFramework() const override;
-    uint16_t GetDotnetMajorVersion() const override;
-    uint16_t GetDotnetMinorVersion() const override;
+    uint16_t GetMajorVersion() const override;
+    uint16_t GetMinorVersion() const override;
     std::string GetOs() const override;
     std::string GetClrString() const override;
+    void SetMinorVersions(uint16_t minor, uint16_t build, uint16_t reviews) override;
 
 private:
-    uint16_t _dotnetMajor;
-    uint16_t _dotnetMinor;
+    uint16_t _major;
+    uint16_t _minor;
+    uint16_t _build;
+    uint16_t _reviews;
     bool _isFramework;
     std::string _os;
 };

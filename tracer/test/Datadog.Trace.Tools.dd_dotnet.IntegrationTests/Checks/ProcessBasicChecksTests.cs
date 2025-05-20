@@ -230,6 +230,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public async Task WorkingWithContinuousProfiler()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        // The continuous profiler isn't currently supported on ARM
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
         string archFolder;
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)

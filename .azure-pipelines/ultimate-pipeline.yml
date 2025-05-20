@@ -39,6 +39,7 @@ schedules:
         - release/*
         - hotfix/*
       exclude:
+        - release/2.x
         - release/1.x
     always: true
 
@@ -135,7 +136,6 @@ variables:
   DOTNET_CLI_UI_LANGUAGE: 'en'
   DOTNET_MULTILEVEL_LOOKUP: 0
   NUGET_XMLDOC_MODE: 'skip'
-  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -174,7 +174,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
 
     steps:
     - checkout: none
@@ -216,7 +216,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -243,7 +243,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -289,7 +289,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -345,7 +345,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -408,7 +408,7 @@ stages:
       timeoutInMinutes: 60 #default value
       dependsOn: []
       pool:
-        name: azure-linux-scale-set-2
+        name: azure-managed-linux-x64-1
       
       steps:
         - template: steps/clone-repo.yml
@@ -471,7 +471,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -484,7 +484,7 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: false
+        useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -522,7 +522,7 @@ stages:
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -584,7 +584,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1028,7 +1028,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-2
+    name: azure-managed-windows-x64-2
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1090,7 +1090,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1132,7 +1132,7 @@ stages:
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1231,7 +1231,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
       - template: steps/clone-repo.yml
@@ -1267,7 +1267,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1321,7 +1321,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-2
+    name: azure-managed-windows-x64-2
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1425,7 +1425,7 @@ stages:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1519,7 +1519,7 @@ stages:
     - job: standalone
       timeoutInMinutes: 60 #default value
       pool:
-        name: azure-windows-scale-set-2
+        name: azure-managed-windows-x64-2
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1565,7 +1565,7 @@ stages:
           net9.0:
             framework: net9.0
       pool:
-        name: azure-windows-scale-set-2
+        name: azure-managed-windows-x64-2
       steps:
         - template: steps/clone-repo.yml
           parameters:
@@ -1633,7 +1633,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1712,7 +1712,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1773,7 +1773,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1832,7 +1832,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1910,7 +1910,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1961,7 +1961,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -1996,7 +1996,7 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2039,7 +2039,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     variables:
       relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
@@ -2122,7 +2122,7 @@ stages:
   - job: fleet_installer_tests
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     variables:
       framework: net48
 
@@ -2184,7 +2184,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2259,7 +2259,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2374,7 +2374,7 @@ stages:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2551,7 +2551,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2640,7 +2640,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2717,7 +2717,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2810,7 +2810,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2856,7 +2856,7 @@ stages:
     condition: false
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2897,7 +2897,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
 
@@ -3221,7 +3221,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3279,7 +3279,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3375,7 +3375,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -3606,7 +3606,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -3697,12 +3697,12 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-linux-scale-set-2
+          poolName: azure-managed-linux-x64-1
           targetArch: x64
         alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-linux-scale-set-2
+          poolName: azure-managed-linux-x64-1
           targetArch: x64
         arm64:
           baseImage: debian
@@ -4594,7 +4594,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "appsec"
-    additionalScenarios: '[\"PARAMETRIC\", \"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4626,35 +4626,40 @@ stages:
             set -e
             
             source venv/bin/activate
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) > out.txt
+            # Try to get each workflow to take 15 mins = 900s
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -t 900 > out.txt
 
-            endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
-            parametric_scenarios=$(grep 'parametric_scenarios' out.txt | sed 's/.*=//g')
+            endtoend_scenario_groups=$(grep 'endtoend_defs_parallel_jobs' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
+            additional_scenarios="$(additionalScenarios)"
 
-            echo "Found scenarios: $endtoend_scenarios"
-            echo "Found parametric scenarios: $parametric_scenarios"
+            echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            echo "Additional manual scenarios: $(additionalScenarios)"
+            echo "Additional manual scenarios: $additional_scenarios"
             
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
-        
-            # Inline python script to cross the data into a json
-            echo "import json" > cross.py
-            echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
-            echo "script_parametric_scenarios = json.loads('$parametric_scenarios')" >> cross.py
-            echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
-            echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
-            echo 'combined_scenarios = script_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
-            echo 'matrix_items = {}' >> cross.py
-            echo 'for s in combined_scenarios:' >> cross.py
-            echo '    for w in script_weblogs:' >> cross.py
-            echo '        matrix_items[s + " (" + w + ")"] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
-            echo 'print(json.dumps(matrix_items))' >> cross.py
-            
-            python cross.py > matrix.json
-            
+            # Generate matrix and write to file
+            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" --argjson extra "$additional_scenarios" '
+              (
+                $main | map({
+                  ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
+                    SCENARIO: (.scenarios | map("+S " + .) | join(" ")), N: 1, I: 1,
+                    WEBLOG_VARIANT: .weblog
+                  }
+                })
+              ) + (
+                [ $extra[] as $scenario | $webs[] as $weblog |
+                  { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
+                ]
+              ) + (
+              [ $webs[] as $weblog | range(1; 4) as $i |
+                { ("PARAMETRIC (" + $weblog + ") \($i)"): {
+                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $weblog, N: 3, I: $i
+                }}
+              ]
+              ) | add
+            ' > matrix.json            
             echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
             echo "Json: $(cat matrix.json)"
           displayName: Generate scenarios matrix JSON
@@ -4746,7 +4751,7 @@ stages:
         displayName: Install runner
         workingDirectory: system-tests
 
-      - script: ./run.sh $(SCENARIO)
+      - script: ./run.sh $(SCENARIO) --splits=$(N) --group=$(I)
         workingDirectory: system-tests
         displayName: Run tests
         env:
@@ -4782,7 +4787,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -4865,7 +4870,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
       
       steps:
         - template: steps/clone-repo.yml
@@ -4939,7 +4944,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5030,7 +5035,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
 
       steps:
         - template: steps/clone-repo.yml
@@ -5105,7 +5110,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5170,7 +5175,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5243,7 +5248,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5951,7 +5956,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/install-docker-compose-v1.yml

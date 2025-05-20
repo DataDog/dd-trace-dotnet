@@ -642,7 +642,7 @@ namespace Datadog.Trace.Configuration
             StatsComputationEnabled = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningMiniAgentInAzureFunctions));
-            if (!ApmTracingEnabledInternal && StatsComputationEnabled)
+            if (!ApmTracingEnabled && StatsComputationEnabled)
             {
                 telemetry.Record(ConfigurationKeys.StatsComputationEnabled, false, ConfigurationOrigins.Calculated);
                 StatsComputationEnabled = false;
@@ -813,7 +813,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
-        internal bool ApmTracingEnabledInternal => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
+        internal bool ApmTracingEnabled => DynamicSettings.ApmTracingEnabled ?? _apmTracingEnabled;
 
         /// <summary>
         /// Gets a value indicating whether profiling is enabled.

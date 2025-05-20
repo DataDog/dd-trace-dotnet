@@ -271,7 +271,7 @@ namespace Datadog.Trace
             // Note: the order that rules are registered is important, as they are evaluated in order.
             // The first rule that matches will be used to determine the sampling rate.
 
-            if (settings.ApmTracingEnabledInternal == false &&
+            if (settings.ApmTracingEnabled == false &&
                 (Security.Instance.Settings.AppsecEnabled || Iast.Iast.Instance.Settings.Enabled))
             {
                 // Custom sampler for ASM and IAST standalone billing mode
@@ -356,7 +356,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabledInternal);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled);
         }
 
         private IApi GetApi(TracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)

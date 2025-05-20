@@ -18,6 +18,7 @@ internal class ApiSecurity
 
     private readonly int _maxRoutesSize;
     private readonly bool _enabled;
+    private readonly bool _apmTracingEnabled;
     private readonly bool _endpointsCollectionEnabled;
     private readonly int _endpointsCollectionMessageLimit;
     private readonly TimeSpan _minTimeBetweenReprocessTimeSpan;
@@ -28,6 +29,7 @@ internal class ApiSecurity
     {
         // todo: later, will be enabled by default, depending on if Security is enabled
         _enabled = securitySettings.ApiSecurityEnabled;
+        _apmTracingEnabled = securitySettings.ApmTracingEnabled;
         _minTimeBetweenReprocessTimeSpan = TimeSpan.FromSeconds(securitySettings.ApiSecuritySampleDelay);
         _maxRoutesSize = maxRouteSize;
         _endpointsCollectionEnabled = securitySettings.ApiSecurityEndpointCollectionEnabled;
@@ -40,7 +42,7 @@ internal class ApiSecurity
         {
             var samplingPriority = localRootSpan.Context.TraceContext.GetOrMakeSamplingDecision();
 
-            if (_enabled && lastWafCall && SamplingPriorityValues.IsKeep(samplingPriority))
+            if (_enabled && lastWafCall && (!_apmTracingEnabled || SamplingPriorityValues.IsKeep(samplingPriority)))
             {
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);
