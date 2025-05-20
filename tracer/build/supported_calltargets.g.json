@@ -8768,8 +8768,8 @@
     },
     "MaximumVersion": {
       "Item1": 9,
-      "Item2": 5,
-      "Item3": 0
+      "Item2": 65535,
+      "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.ExtendedLoggerFactoryConstructorIntegration_930_940",
     "IntegrationKind": 0,
