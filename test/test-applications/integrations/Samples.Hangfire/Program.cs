@@ -39,7 +39,6 @@ namespace Samples.Hangfire
             // BackgroundJob.Schedule(() => ExecuteTracedJob("scheduled-job"), TimeSpan.FromSeconds(10));
             // BackgroundJob.Enqueue(() => ExecuteTracedJob("enqueued-job"));
             BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
-            BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world 2!"));
             
             
 

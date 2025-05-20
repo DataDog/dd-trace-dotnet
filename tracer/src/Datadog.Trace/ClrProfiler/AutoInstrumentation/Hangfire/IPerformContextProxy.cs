@@ -76,10 +76,10 @@ internal interface IPerformContextProxy : IDuckType
     /// <summary>
     /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String)
     /// </summary>
-    object GetJobParameter(string name);
+    T GetJobParameter<T>(string name);
 
     /// <summary>
     /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String,System.Boolean)
     /// </summary>
-    object GetJobParameter(string name, bool allowStale);
+    T GetJobParameter<T>(string name, bool allowStale);
 }

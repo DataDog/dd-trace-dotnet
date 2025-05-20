@@ -29,18 +29,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         public void OnPerforming(object context)
         {
             Log.Debug("Mock generate OnPerforming Span.");
-            // var performingContext = context.DuckCast<IPerformingContextProxy>();
+            var performingContext = context.DuckCast<IPerformingContextProxy>();
             var performContext = context.DuckCast<IPerformContextProxy>();
-            Log.Debug("This is the performContext we're working with {PerformContext}", performContext.ToString());
-            var spanContextData = performContext.GetJobParameter("ScopeKey");
             SpanContext parentContext = null;
-            if (spanContextData != null)
-            {
-                Log.Debug("Creating PropagationContext");
-                PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract((NameValueHeadersCollection)spanContextData);
-                parentContext = propagationContext.SpanContext;
-                Baggage.Current = propagationContext.Baggage;
-            }
+            Log.Debug("Creating PropagationContext");
+
+           // NameValueHeadersCollection spanContextData = performContext.GetJobParameter<NameValueHeadersCollection>("ScopeKey");
+            var spanContextData = performContext.GetJobParameter<Dictionary<string, string>>("Alt_ScopeKey");
+            PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
+            parentContext = propagationContext.SpanContext;
+            Baggage.Current = propagationContext.Baggage;
 
             Scope scope = HangfireCommon.CreateScope(Tracer.Instance, "onPerforming", out HangfireTags tags, parentContext);
             Log.Debug("Creating Perfoming Span");
@@ -60,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         {
             Tracer.Instance.ActiveScope?.Dispose();
             var performContext = context.DuckCast<IPerformContextProxy>();
-            var scope = performContext.GetJobParameter("DD_SCOPE");
+            var scope = performContext.GetJobParameter<object>("DD_SCOPE");
             if (scope is not null)
             {
                 ((Scope)scope).Dispose();
