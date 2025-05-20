@@ -39,18 +39,14 @@ internal class EnableIisInstrumentationCommand : CommandBase
         var tracerValues = new TracerValues(versionedPath);
         var log = Log.Instance;
 
-        var result = Execute(log, tracerValues, Defaults.TracerLogDirectory, Defaults.CrashTrackingRegistryKey);
+        var result = Execute(log, tracerValues);
 
         context.ExitCode = (int)result;
         return Task.CompletedTask;
     }
 
     // Internal for testing
-    internal static ReturnCode Execute(
-        ILogger log,
-        TracerValues tracerValues,
-        string tracerLogDirectory,
-        string registryKeyName)
+    internal static ReturnCode Execute(ILogger log, TracerValues tracerValues)
     {
         log.WriteInfo("Enabling IIS instrumentation for .NET tracer");
 
