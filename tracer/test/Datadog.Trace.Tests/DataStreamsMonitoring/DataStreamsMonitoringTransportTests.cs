@@ -61,7 +61,7 @@ public class DataStreamsMonitoringTransportTests
         var discovery = new DiscoveryServiceMock();
         var writer = new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter("env", "service"),
+                new DataStreamsMessagePackFormatter(tracerSettings, "service"),
                 bucketDurationMs),
             api,
             bucketDurationMs: bucketDurationMs,
@@ -127,10 +127,10 @@ public class DataStreamsMonitoringTransportTests
     private TracerSettings GetSettings(MockTracerAgent agent)
         => agent switch
         {
-            MockTracerAgent.TcpUdpAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, $"http://localhost:{x.Port}" } }),
-            MockTracerAgent.NamedPipeAgent x => TracerSettings.Create(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName } }),
+            MockTracerAgent.TcpUdpAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, $"http://localhost:{x.Port}" }, { ConfigurationKeys.Environment, "env" } }),
+            MockTracerAgent.NamedPipeAgent x => TracerSettings.Create(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName }, { ConfigurationKeys.Environment, "env" } }),
 #if NETCOREAPP3_1_OR_GREATER
-            MockTracerAgent.UdsAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, ExporterSettings.UnixDomainSocketPrefix + x.TracesUdsPath } }),
+            MockTracerAgent.UdsAgent x => TracerSettings.Create(new() { { ConfigurationKeys.AgentUri, ExporterSettings.UnixDomainSocketPrefix + x.TracesUdsPath }, { ConfigurationKeys.Environment, "env" } }),
 #endif
             _ => throw new InvalidOperationException("Unknown agent type " + agent.GetType()),
         };
