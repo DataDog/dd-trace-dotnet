@@ -349,11 +349,12 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public async Task TestIastVulnerabilitySampling()
     {
         var filename = "Iast.VulnerabilitySampling.AspNetCore5.IastEnabled";
-        var url1 = $"/Iast/Sampling1?parameter=name";
-        var url2 = $"/Iast/Sampling2?parameter=name";
+        var url1 = $"/Iast/Sampling1";
+        var url2 = $"/Iast/Sampling2";
         IncludeAllHttpSpans = true;
 
-        // Each route has 3 vulnerabilities (as the budget), sot firts call to the route will rend 3 vulns, depleting budget.
+        // Each route has 3 vulnerabilities (as the budget)
+        // First call to the route will rend 3 vulns, depleting budget.
         // Second call will render none (sampling mechanism) and will reset as the budget was not depleted this time
         // Third call will render all 3 vulns again (as the budget was reset)
         // The same behabiour is repeated for the second route

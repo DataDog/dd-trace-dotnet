@@ -1380,25 +1380,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         [HttpGet("Sampling")]
         [Route("Sampling1")]
         [Route("Sampling2")]
-        public IActionResult Sampling(string parameter)
+        public IActionResult Sampling()
         {
             WeakHashing();
-
-            try
-            {
-                if (!string.IsNullOrEmpty(parameter))
-                {
-                    var taintedQuery = "SELECT Surname from Persons where name = '" + parameter + "'";
-                    var rname = new SQLiteCommand(taintedQuery, DbConnectionSystemData).ExecuteScalar();
-                    return Content($"Result: " + rname);
-                }
-            }
-            catch (SQLiteException ex)
-            {
-                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
-            }
-
-            return BadRequest($"No query or username was provided");
+            WeakRandomness();
+            return Content($"Result: 3 vulns should have been triggered");
         }
     }
 }
