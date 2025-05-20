@@ -70,6 +70,11 @@ public class ProbesTests : TestHelper
             typeof(UnboundProbeBecomesBoundTest)
     };
 
+    private static readonly Type[] _optimizedNotSupportedTypes = new[]
+    {
+        typeof(NonSupportedInstrumentationTest)
+    };
+
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
@@ -99,11 +104,17 @@ public class ProbesTests : TestHelper
         return DebuggerTestHelper.AllTestDescriptions();
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task RedactionFromConfigurationTest()
     {
+        var framework = EnvironmentHelper.GetTargetFramework();
+        if (framework != "net9.0")
+        {
+            throw new SkipException("This test should run on net9.0 only.");
+        }
+
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(RedactionTest));
         const int expectedNumberOfSnapshots = 1;
 
@@ -275,6 +286,12 @@ public class ProbesTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeUnboundProbeBecomesBoundTest()
     {
+        var framework = EnvironmentHelper.GetTargetFramework();
+        if (framework != "net9.0")
+        {
+            throw new SkipException("This test should run on net9.0 only.");
+        }
+
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(UnboundProbeBecomesBoundTest));
         SkipOverTestIfNeeded(testDescription);
 
@@ -282,8 +299,8 @@ public class ProbesTests : TestHelper
 
         var probes = new[]
         {
-            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 11, skipOnFrameworks: ["net8.0", "net7.0", "net6.0", "net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"]), guidGenerator),
-            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 12, skipOnFrameworks: ["net8.0", "net7.0", "net6.0", "net5.0", "net48", "net462", "netcoreapp3.1", "netcoreapp3.0", "netcoreapp2.1"]), guidGenerator),
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 11), guidGenerator),
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 12), guidGenerator),
         };
 
         var expectedNumberOfSnapshots = probes.Length;
@@ -734,6 +751,11 @@ public class ProbesTests : TestHelper
         if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))
         {
             throw new SkipException("Current test is not supported with unoptimized code.");
+        }
+
+        if (testDescription.IsOptimized && _optimizedNotSupportedTypes.Contains(testDescription.TestType))
+        {
+            throw new SkipException("Current test is not supported with optimized code.");
         }
     }
 
