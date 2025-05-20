@@ -571,6 +571,7 @@
   "DD_TRACE_LOGFILE_RETENTION_DAYS": "trace_log_file_retention_days",
   "DD_TRACE_LOG_SINKS": "trace_log_sinks",
   "DD_TRACE_COMMANDS_COLLECTION_ENABLED": "trace_commands_collection_enabled",
+  "DD_REMOTE_CONFIGURATION_ENABLED": "remote_config_enabled",
   "DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS": "remote_config_poll_interval",
   "DD_INTERNAL_RCM_POLL_INTERVAL": "remote_config_poll_interval",
   "trace.128_bit_traceid_logging_enabled": "trace_128_bits_id_logging_enabled",

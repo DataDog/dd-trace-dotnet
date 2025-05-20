@@ -34,10 +34,10 @@ public:
         return m_loadClassFactory;
     }
 
-    HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override
+    HRESULT LoadInstance() override
     {
         if (GetFilePath() != "Test")
-            return DynamicInstanceImpl::LoadInstance(pUnkOuter, riid);
+            return DynamicInstanceImpl::LoadInstance();
         return m_loadInstance;
     }
 

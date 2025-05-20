@@ -3,6 +3,7 @@
 
 #include "SamplesCollector.h"
 
+#include "Callstack.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "SamplesEnumerator.h"
@@ -20,7 +21,7 @@ SamplesCollector::SamplesCollector(
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
     _exporter{exporter},
-    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, 2048)}
+    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, Callstack::MaxFrames)}
 {
 }
 

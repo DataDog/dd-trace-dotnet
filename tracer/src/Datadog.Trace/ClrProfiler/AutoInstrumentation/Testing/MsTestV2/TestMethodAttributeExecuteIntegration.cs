@@ -120,7 +120,8 @@ public static class TestMethodAttributeExecuteIntegration
 
                     if (returnValueList[i].TryDuckCast<ITestResult>(out var testResult))
                     {
-                        resultStatus = HandleTestResult(test, testMethod, testResult, exception);
+                        var retryState = new RetryState();
+                        resultStatus = HandleTestResult(test, testMethod, testResult, exception, ref retryState);
                         allowRetries = allowRetries || resultStatus != TestStatus.Skip;
                     }
                     else
@@ -150,13 +151,20 @@ public static class TestMethodAttributeExecuteIntegration
 
                 if (remainingRetries > 0)
                 {
+                    var retryState = new RetryState
+                    {
+                        IsARetry = true,
+                        IsAttemptToFix = isAttemptToFix,
+                    };
+
                     // Handle retries
                     List<IList> results = [returnValueList];
                     Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: We need to retry {Times} times", retryReason, remainingRetries);
                     for (var i = 0; i < remainingRetries; i++)
                     {
+                        retryState.IsLastRetry = i == remainingRetries - 1;
                         Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: Retry number: {RetryNumber}", retryReason, i);
-                        RunRetry(testMethod, testMethodState, results, out _);
+                        RunRetry(testMethod, testMethodState, ref retryState, results, out _);
                     }
 
                     // Calculate final results
@@ -166,6 +174,11 @@ public static class TestMethodAttributeExecuteIntegration
             else if (testOptimization.FlakyRetryFeature?.Enabled == true && resultStatus == TestStatus.Fail)
             {
                 // Flaky retry is enabled and the test failed
+                var retryState = new RetryState
+                {
+                    IsARetry = true,
+                    IsAttemptToFix = false,
+                };
                 Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
                 var remainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
                 if (remainingRetries > 0)
@@ -181,7 +194,7 @@ public static class TestMethodAttributeExecuteIntegration
                         }
 
                         Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
-                        RunRetry(testMethod, testMethodState, results, out var failedResult);
+                        RunRetry(testMethod, testMethodState, ref retryState, results, out var failedResult);
 
                         // If the retried test passed, we can stop the retries
                         if (!failedResult)
@@ -199,7 +212,7 @@ public static class TestMethodAttributeExecuteIntegration
 
         return new CallTargetReturn<TReturn?>(returnValue);
 
-        static void RunRetry(ITestMethod testMethod, TestRunnerState testMethodState, List<IList> resultsCollection, out bool hasFailed)
+        static void RunRetry(ITestMethod testMethod, TestRunnerState testMethodState, ref RetryState retryState, List<IList> resultsCollection, out bool hasFailed)
         {
             var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
             object? retryTestResult = null;
@@ -225,7 +238,7 @@ public static class TestMethodAttributeExecuteIntegration
                             continue;
                         }
 
-                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException) == TestStatus.Fail)
+                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j].DuckCast<ITestResult>()!, retryException, ref retryState) == TestStatus.Fail)
                         {
                             hasFailed = true;
                         }
@@ -235,7 +248,7 @@ public static class TestMethodAttributeExecuteIntegration
                 }
                 else
                 {
-                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException) == TestStatus.Fail)
+                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult.DuckCast<ITestResult>()!, retryException, ref retryState) == TestStatus.Fail)
                     {
                         hasFailed = true;
                     }
@@ -246,7 +259,7 @@ public static class TestMethodAttributeExecuteIntegration
         }
     }
 
-    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception)
+    private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, ref RetryState retryState)
         where TTestMethod : ITestMethod
         where TTestResult : ITestResult
     {
@@ -281,19 +294,44 @@ public static class TestMethodAttributeExecuteIntegration
                 return TestStatus.Fail;
             }
 
-            switch (testResult.Outcome)
+            var testStatus = GetStatusFromOutcome(testResult.Outcome);
+            if (retryState.IsARetry)
             {
-                case UnitTestOutcome.Error or UnitTestOutcome.Failed or UnitTestOutcome.Timeout:
+                if (testStatus != TestStatus.Fail)
+                {
+                    retryState.AllRetriesFailed = false;
+                }
+                else if (retryState.IsAttemptToFix)
+                {
+                    retryState.AllAttemptsPassed = false;
+                }
+
+                if (retryState.IsLastRetry && test.GetTags() is { } testTags)
+                {
+                    if (retryState.IsAttemptToFix)
+                    {
+                        testTags.AttemptToFixPassed = retryState.AllAttemptsPassed ? "true" : "false";
+                    }
+
+                    if (retryState.AllRetriesFailed)
+                    {
+                        testTags.HasFailedAllRetries = "true";
+                    }
+                }
+            }
+
+            switch (testStatus)
+            {
+                case TestStatus.Fail:
                     test.Close(TestStatus.Fail);
                     return TestStatus.Fail;
-                case UnitTestOutcome.Inconclusive or UnitTestOutcome.NotRunnable:
+                case TestStatus.Skip:
                     test.Close(TestStatus.Skip, TimeSpan.Zero, testException?.Message ?? string.Empty);
                     return TestStatus.Skip;
-                case UnitTestOutcome.Passed:
+                case TestStatus.Pass:
                     test.Close(TestStatus.Pass);
                     return TestStatus.Pass;
                 default:
-                    Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to handle the test status: {Outcome}", testResult.Outcome);
                     test.Close(TestStatus.Fail);
                     return TestStatus.Fail;
             }
@@ -312,6 +350,23 @@ public static class TestMethodAttributeExecuteIntegration
                     testResult.TestFailureException = null;
                 }
             }
+        }
+    }
+
+    private static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)
+    {
+        return outcome switch
+        {
+            UnitTestOutcome.Error or UnitTestOutcome.Failed or UnitTestOutcome.Timeout => TestStatus.Fail,
+            UnitTestOutcome.Inconclusive or UnitTestOutcome.NotRunnable => TestStatus.Skip,
+            UnitTestOutcome.Passed => TestStatus.Pass,
+            _ => Unknown(outcome)
+        };
+
+        static TestStatus Unknown(UnitTestOutcome outcome)
+        {
+            Common.Log.Warning("TestMethodAttributeExecuteIntegration: Failed to handle the test status: {Outcome}", outcome);
+            return TestStatus.Fail;
         }
     }
 
@@ -397,5 +452,23 @@ public static class TestMethodAttributeExecuteIntegration
         }
 
         public TimeSpan Elapsed => _clock.UtcNow - StartTime;
+    }
+
+    private ref struct RetryState
+    {
+        public bool IsARetry;
+        public bool IsLastRetry;
+        public bool AllAttemptsPassed;
+        public bool AllRetriesFailed;
+        public bool IsAttemptToFix;
+
+        public RetryState()
+        {
+            IsARetry = false;
+            IsLastRetry = false;
+            AllAttemptsPassed = true;
+            AllRetriesFailed = true;
+            IsAttemptToFix = false;
+        }
     }
 }

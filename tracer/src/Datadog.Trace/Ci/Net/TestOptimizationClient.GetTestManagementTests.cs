@@ -35,7 +35,7 @@ internal sealed partial class TestOptimizationClient
             new Data<TestManagementQuery>(
                 _commitSha,
                 TestManagementType,
-                new TestManagementQuery(_repositoryUrl, null, commitMessage)),
+                new TestManagementQuery(_repositoryUrl, _commitSha, null, commitMessage)),
             null);
 
         var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
@@ -116,15 +116,19 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("repository_url")]
         public readonly string RepositoryUrl;
 
+        [JsonProperty("sha")]
+        public readonly string CommitSha;
+
         [JsonProperty("module")]
         public readonly string? Module;
 
         [JsonProperty("commit_message")]
         public readonly string CommitMessage;
 
-        public TestManagementQuery(string repositoryUrl, string? module, string commitMessage)
+        public TestManagementQuery(string repositoryUrl, string commitSha, string? module, string commitMessage)
         {
             RepositoryUrl = repositoryUrl;
+            CommitSha = commitSha;
             Module = module;
             CommitMessage = commitMessage;
         }
