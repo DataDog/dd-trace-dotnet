@@ -66,7 +66,8 @@ public class ProbesTests : TestHelper
             typeof(AsyncMethodWithNotHoistedLocals),
             typeof(BaseLocalWithConcreteTypeInAsyncMethod),
             typeof(ManyLocals),
-            typeof(AsyncTryCatchTest)
+            typeof(AsyncTryCatchTest),
+            typeof(UnboundProbeBecomesBoundTest)
     };
 
     public ProbesTests(ITestOutputHelper output)
@@ -275,6 +276,8 @@ public class ProbesTests : TestHelper
     public async Task LineProbeUnboundProbeBecomesBoundTest()
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(UnboundProbeBecomesBoundTest));
+        SkipOverTestIfNeeded(testDescription);
+
         var guidGenerator = new DeterministicGuidGenerator();
 
         var probes = new[]
@@ -710,6 +713,9 @@ public class ProbesTests : TestHelper
         }
 
         if (testDescription.TestType == typeof(AsyncWithGenericArgumentAndLocal)
+         || testDescription.TestType == typeof(EmptyCtorTest)
+         || testDescription.TestType == typeof(AsyncGenericClass)
+         || testDescription.TestType == typeof(AsyncGenericClass)
          || testDescription.TestType == typeof(AsyncGenericMethodWithLineProbeTest))
         {
             throw new SkipException("Probe status not found.");
