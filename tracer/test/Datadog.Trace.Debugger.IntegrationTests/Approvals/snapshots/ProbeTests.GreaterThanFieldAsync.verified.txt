@@ -19,8 +19,7 @@
                     "value": "13"
                   }
                 },
-                "type": "GreaterThanFieldAsync",
-                "value": "GreaterThanFieldAsync"
+                "type": "GreaterThanFieldAsync"
               }
             },
             "locals": {

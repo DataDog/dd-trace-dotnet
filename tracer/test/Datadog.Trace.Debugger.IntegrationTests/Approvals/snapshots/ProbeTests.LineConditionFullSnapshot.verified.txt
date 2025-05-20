@@ -14,8 +14,7 @@
                   "value": "1"
                 },
                 "this": {
-                  "type": "LineConditionFullSnapshot",
-                  "value": "LineConditionFullSnapshot"
+                  "type": "LineConditionFullSnapshot"
                 }
               },
               "locals": {

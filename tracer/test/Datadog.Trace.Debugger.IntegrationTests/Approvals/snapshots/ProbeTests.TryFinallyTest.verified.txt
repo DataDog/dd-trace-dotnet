@@ -14,8 +14,7 @@
                   "value": "TryFinallyTest"
                 },
                 "this": {
-                  "type": "TryFinallyTest",
-                  "value": "TryFinallyTest"
+                  "type": "TryFinallyTest"
                 }
               },
               "locals": {

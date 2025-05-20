@@ -188,11 +188,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var stringValueTruncated = stringValue?.Length < limitInfo.MaxLength ? stringValue : stringValue?.Substring(0, limitInfo.MaxLength);
                 jsonWriter.WriteValue(stringValueTruncated);
             }
-            else
-            {
-                jsonWriter.WritePropertyName("value");
-                jsonWriter.WriteValue(type.Name);
-            }
         }
 
         private static void SerializeInstanceFieldsInternal(

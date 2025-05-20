@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "ManyLocals",
-                "value": "ManyLocals"
+                "type": "ManyLocals"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "ManyLocals",
-                "value": "ManyLocals"
+                "type": "ManyLocals"
               }
             },
             "locals": {

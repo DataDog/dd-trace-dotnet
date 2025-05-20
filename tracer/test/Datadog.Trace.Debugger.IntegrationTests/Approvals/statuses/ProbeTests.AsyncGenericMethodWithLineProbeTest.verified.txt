@@ -1,10 +1,10 @@
-[
+﻿[
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
         "exception": {
-          "message": "Placing line probes in async generic methods in Release builds is currently not supported.",
+          "message": "Probe location did not map out to a valid bytecode offset",
           "stacktrace": null,
           "type": "NO_TYPE"
         },

@@ -9,8 +9,7 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "MultidimensionalArrayTest",
-                "value": "MultidimensionalArrayTest"
+                "type": "MultidimensionalArrayTest"
               }
             },
             "staticFields": {
@@ -117,8 +116,7 @@
           "return": {
             "arguments": {
               "this": {
-                "type": "MultidimensionalArrayTest",
-                "value": "MultidimensionalArrayTest"
+                "type": "MultidimensionalArrayTest"
               }
             },
             "staticFields": {

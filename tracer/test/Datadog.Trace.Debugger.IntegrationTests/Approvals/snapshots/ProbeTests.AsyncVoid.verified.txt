@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncVoid"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "AsyncVoid",
-                "value": "AsyncVoid"
+                "type": "AsyncVoid"
               }
             },
             "locals": {

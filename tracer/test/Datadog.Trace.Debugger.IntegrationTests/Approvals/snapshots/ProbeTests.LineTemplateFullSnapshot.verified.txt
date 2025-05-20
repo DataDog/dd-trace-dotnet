@@ -14,8 +14,7 @@
                   "value": "1"
                 },
                 "this": {
-                  "type": "LineTemplateFullSnapshot",
-                  "value": "LineTemplateFullSnapshot"
+                  "type": "LineTemplateFullSnapshot"
                 }
               },
               "locals": {

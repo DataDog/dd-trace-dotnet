@@ -13,8 +13,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThanArgumentTrueAtEntry",
-                "value": "GreaterThanArgumentTrueAtEntry"
+                "type": "GreaterThanArgumentTrueAtEntry"
               }
             },
             "staticFields": {
@@ -31,8 +30,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThanArgumentTrueAtEntry",
-                "value": "GreaterThanArgumentTrueAtEntry"
+                "type": "GreaterThanArgumentTrueAtEntry"
               }
             },
             "locals": {

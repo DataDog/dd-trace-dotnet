@@ -13,8 +13,7 @@
                 "value": "IAmNotSupported"
               },
               "this": {
-                "type": "NormalStruct",
-                "value": "NormalStruct"
+                "type": "NormalStruct"
               }
             }
           },
@@ -25,8 +24,7 @@
                 "value": "IAmNotSupported"
               },
               "this": {
-                "type": "NormalStruct",
-                "value": "NormalStruct"
+                "type": "NormalStruct"
               }
             },
             "locals": {
@@ -76,8 +74,7 @@
                 "value": "IAmNotSupported"
               },
               "this": {
-                "type": "NotSupportedFailureTest",
-                "value": "NotSupportedFailureTest"
+                "type": "NotSupportedFailureTest"
               }
             }
           },
@@ -88,18 +85,15 @@
                 "value": "IAmNotSupported"
               },
               "this": {
-                "type": "NotSupportedFailureTest",
-                "value": "NotSupportedFailureTest"
+                "type": "NotSupportedFailureTest"
               }
             },
             "locals": {
               "@return": {
-                "type": "NormalStruct",
-                "value": "NormalStruct"
+                "type": "NormalStruct"
               },
               "ret": {
-                "type": "NormalStruct",
-                "value": "NormalStruct"
+                "type": "NormalStruct"
               }
             }
           }
@@ -140,8 +134,7 @@
             "24": {
               "arguments": {
                 "this": {
-                  "type": "NotSupportedFailureTest",
-                  "value": "NotSupportedFailureTest"
+                  "type": "NotSupportedFailureTest"
                 }
               },
               "locals": {
@@ -191,8 +184,7 @@
             "25": {
               "arguments": {
                 "this": {
-                  "type": "NotSupportedFailureTest",
-                  "value": "NotSupportedFailureTest"
+                  "type": "NotSupportedFailureTest"
                 }
               },
               "locals": {
@@ -242,8 +234,7 @@
             "26": {
               "arguments": {
                 "this": {
-                  "type": "NotSupportedFailureTest",
-                  "value": "NotSupportedFailureTest"
+                  "type": "NotSupportedFailureTest"
                 }
               },
               "locals": {
@@ -293,8 +284,7 @@
             "27": {
               "arguments": {
                 "this": {
-                  "type": "NotSupportedFailureTest",
-                  "value": "NotSupportedFailureTest"
+                  "type": "NotSupportedFailureTest"
                 }
               },
               "locals": {
@@ -344,8 +334,7 @@
             "28": {
               "arguments": {
                 "this": {
-                  "type": "NotSupportedFailureTest",
-                  "value": "NotSupportedFailureTest"
+                  "type": "NotSupportedFailureTest"
                 }
               },
               "locals": {
@@ -399,8 +388,7 @@
                   "value": "IAmNotSupported"
                 },
                 "this": {
-                  "type": "NormalStruct",
-                  "value": "NormalStruct"
+                  "type": "NormalStruct"
                 }
               }
             }
@@ -448,14 +436,12 @@
                   "value": "IAmNotSupported"
                 },
                 "this": {
-                  "type": "NotSupportedFailureTest",
-                  "value": "NotSupportedFailureTest"
+                  "type": "NotSupportedFailureTest"
                 }
               },
               "locals": {
                 "ret": {
-                  "type": "NormalStruct",
-                  "value": "NormalStruct"
+                  "type": "NormalStruct"
                 }
               }
             }
