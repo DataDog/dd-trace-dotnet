@@ -29,6 +29,9 @@
         "DD_SERVICE": "",
         "DD_VERSION": "",
 
+        "COR_ENABLE_PROFILING": "0",
+        "DD_TRACE_ENABLED": "false",
+
         "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
         "OTEL_EXPORTER_OTLP_ENABLED": "true"
       },
