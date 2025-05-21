@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -20,6 +21,7 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.LibDatadog.ServiceDiscovery;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -599,7 +601,6 @@ namespace Datadog.Trace
                 }
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
-
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
                 instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
             }
@@ -671,7 +672,7 @@ namespace Datadog.Trace
             if (_firstInitialization)
             {
                 _firstInitialization = false;
-                OneTimeSetup();
+                OneTimeSetup(newManager.Settings);
             }
 
             if (newManager.Settings.StartupDiagnosticLogEnabled)
@@ -682,13 +683,28 @@ namespace Datadog.Trace
             return newManager;
         }
 
-        private static void OneTimeSetup()
+        private static void OneTimeSetup(TracerSettings tracerSettings)
         {
             // Register callbacks to make sure we flush the traces before exiting
             LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
+
+#if true
+            try
+            {
+                var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
+                if (result.Tag == ResultTag.Err)
+                {
+                    Log.Error("Failed to store tracer metadata with message: {Error}", result.Err.Message());
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to store tracer metadata");
+            }
+#endif
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
