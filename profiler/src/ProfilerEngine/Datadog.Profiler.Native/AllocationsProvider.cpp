@@ -352,3 +352,10 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
     // TODO: don't create that metric if running under .NET Framework
     //_sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
+
+UpscalingPoissonInfo AllocationsProvider::GetPoissonInfo()
+{
+    auto const& offsets = GetValueOffsets(); //              sum(size)       count
+    UpscalingPoissonInfo info{ offsets, AllocTickThreshold, offsets[1], offsets[0] };
+    return info;
+}
