@@ -320,7 +320,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle)
+        internal IntPtr InitContext(IntPtr wafHandle)
         {
             try
             {
@@ -330,8 +330,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     return IntPtr.Zero;
                 }
 
-                Log.Debug("Calling InitContext with waf handle {Handle}", powerwafHandle);
-                var contextField = _initContextField(powerwafHandle);
+                Log.Debug("Calling InitContext with waf handle {Handle}", wafHandle);
+                var contextField = _initContextField(wafHandle);
                 Log.Debug("Received context handle {Handle}", contextField);
                 return contextField;
             }
