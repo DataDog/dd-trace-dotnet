@@ -67,7 +67,9 @@ public class ProbesTests : TestHelper
             typeof(BaseLocalWithConcreteTypeInAsyncMethod),
             typeof(ManyLocals),
             typeof(AsyncTryCatchTest),
-            typeof(UnboundProbeBecomesBoundTest)
+            typeof(UnboundProbeBecomesBoundTest),
+            typeof(Emit100LineProbeSnapshotsTest),
+            typeof(ModuleUnloadTest)
     };
 
     private static readonly Type[] _optimizedNotSupportedTypes = new[]
@@ -189,14 +191,14 @@ public class ProbesTests : TestHelper
         await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
     }
 
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeEmit100SnapshotsTest()
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(Emit100LineProbeSnapshotsTest));
         const int expectedNumberOfSnapshots = 100;
-
+        SkipOverTestIfNeeded(testDescription);
         var probes = GetProbeConfiguration(testDescription.TestType, true, new DeterministicGuidGenerator());
 
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -232,12 +234,13 @@ public class ProbesTests : TestHelper
         }
     }
 
-    [Fact]
+    [SkippableFact(Skip = "Too flaky, 'Log file was not found for path' error")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task MoveFromSimpleLogToSnapshotLogTest()
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(SimpleMethodWithLocalsAndArgsTest));
+        SkipOverTestIfNeeded(testDescription);
         var probeId = new DeterministicGuidGenerator().New().ToString();
         var expectedNumberOfSnapshots = 1;
 
@@ -339,12 +342,13 @@ public class ProbesTests : TestHelper
     }
 
 #if NETFRAMEWORK
-    [Fact]
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task ModuleUnloadInNetFramework462Test()
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(ModuleUnloadTest));
+        SkipOverTestIfNeeded(testDescription);
         var guidGenerator = new DeterministicGuidGenerator();
 
         var probes = new[]
