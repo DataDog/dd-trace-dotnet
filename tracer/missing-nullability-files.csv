@@ -211,7 +211,6 @@ src/Datadog.Trace/Tagging/RabbitMQTags.cs
 src/Datadog.Trace/Tagging/RemotingTags.cs
 src/Datadog.Trace/Tagging/SqlTags.cs
 src/Datadog.Trace/Tagging/TagItem.cs
-src/Datadog.Trace/Tagging/TagsList.cs
 src/Datadog.Trace/Tagging/TraceAnnotationTags.cs
 src/Datadog.Trace/Tagging/WcfTags.cs
 src/Datadog.Trace/Tagging/WebTags.cs
