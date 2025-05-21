@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -131,14 +132,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out var errorSpanEvents), errorSpanEvents);
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors), ConstructErrorEvents(executionErrors));
             }
         }
 
-        private static string ConstructErrorMessageAndEvents(IExecutionErrors executionErrors, out List<SpanEvent> spanEvents)
+        private static string ConstructErrorMessage(IExecutionErrors executionErrors)
         {
-            spanEvents = [];
-
             if (executionErrors == null)
             {
                 return string.Empty;
@@ -153,23 +152,73 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
+                    var executionError = executionErrors[i];
+
+                    builder.AppendLine($"{tab}{{");
+
+                    var message = executionError.Message;
+                    if (message != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                    }
+
+                    var paths = executionError.Path;
+                    if (paths != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
+                    }
+
+                    var code = executionError.Code;
+                    if (code != null)
+                    {
+                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                    }
+
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
+                        ConstructErrorLocationsMessage(builder, tab, locations);
+                    }
+
+                    builder.AppendLine($"{tab}}},");
+                }
+
+                builder.AppendLine("]");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating GraphQL error message.");
+                Util.StringBuilderCache.Release(builder);
+                return "errors: []";
+            }
+
+            return Util.StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        private static List<SpanEvent> ConstructErrorEvents(IExecutionErrors executionErrors)
+        {
+            List<SpanEvent> spanEvents = [];
+
+            try
+            {
+                for (int i = 0; i < executionErrors.Count; i++)
+                {
                     var eventAttributes = new List<KeyValuePair<string, object>>();
                     var executionError = executionErrors[i];
 
                     if (executionErrors[i].Instance.TryDuckCast<IExecutionErrorExtensions>(out var executionErrorExtensions))
                     {
                         var extensions = executionErrorExtensions.Extensions;
-                        if (extensions != null)
+                        if (extensions is { Count: > 0 })
                         {
                             var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
 
-                            var keys = extensions.Keys.ToList();
-                            for (int j = 0; j < keys.Count; j++)
+                            foreach (var extension in extensions)
                             {
-                                if (configuredExtensions.Contains(keys[j]))
+                                if (configuredExtensions.Contains(extension.Key))
                                 {
-                                    var key = keys[j];
-                                    var value = extensions[key];
+                                    var key = extension.Key;
+                                    var value = extension.Value;
 
                                     if (value == null)
                                     {
@@ -177,15 +226,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                                     }
                                     else if (value is Array array)
                                     {
-                                        var stringArray = new string[array.Length];
-                                        for (int k = 0; k < array.Length; k++)
-                                        {
-                                            stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
-                                        }
+                                        var builder = Util.StringBuilderCache.Acquire();
 
-                                        value = stringArray;
+                                        try
+                                        {
+                                            builder.Append('[');
+                                            for (var k = 0; k < array.Length; k++)
+                                            {
+                                                var item = array.GetValue(k);
+                                                if (k > 0)
+                                                {
+                                                    builder.Append(',');
+                                                }
+
+                                                builder.Append(item?.ToString() ?? "null");
+                                            }
+
+                                            builder.Append(']');
+                                            value = Util.StringBuilderCache.GetStringAndRelease(builder);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Console.WriteLine(ex);
+                                            Util.StringBuilderCache.Release(builder);
+                                        }
                                     }
-                                    else if (!(value is int || value is double || value is float || value is bool))
+                                    else if (value is ulong or decimal || !SpanEventConverter.IsAllowedType(value))
                                     {
                                         value = value.ToString();
                                     }
@@ -196,20 +262,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         }
                     }
 
-                    builder.AppendLine($"{tab}{{");
-
                     var message = executionError.Message;
                     if (message != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                         eventAttributes.Add(new KeyValuePair<string, object>("message", message));
                     }
 
                     var paths = executionError.Path;
                     if (paths != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
-
                         var pathAttribute = new List<string>();
                         foreach (var path in paths)
                         {
@@ -222,17 +283,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                     var code = executionError.Code;
                     if (code != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
                         eventAttributes.Add(new KeyValuePair<string, object>("code", code));
                     }
 
                     var locations = executionError.Locations;
                     if (locations is not null)
                     {
-                        ConstructErrorLocationsMessage(builder, tab, locations);
-
                         var joinedLocations = new List<string>();
-                        foreach (var location in (System.Collections.IEnumerable)locations)
+                        foreach (var location in locations)
                         {
                             if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                             {
@@ -243,8 +301,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                         eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
                     }
 
-                    builder.AppendLine($"{tab}}},");
-
                     var stacktrace = executionError.StackTrace;
                     if (stacktrace != null)
                     {
@@ -253,17 +309,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
                     spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
                 }
-
-                builder.AppendLine("]");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating GraphQL error message and SpanEvent.");
-                Util.StringBuilderCache.Release(builder);
-                return "errors: []";
+                Log.Error(ex, "Error creating GraphQL error SpanEvent.");
+                return spanEvents;
             }
 
-            return Util.StringBuilderCache.GetStringAndRelease(builder);
+            return spanEvents;
         }
     }
 }
