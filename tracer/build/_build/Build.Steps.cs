@@ -2829,6 +2829,7 @@ partial class Build
             .When(noRestore, settings => settings.EnableNoRestore())
             .When(noDependencies, settings => settings.EnableNoDependencies())
             .When(framework is not null, settings => settings.SetFramework(framework))
+            .When(IsLinux, settings => settings.SetProperty("OS", "Linux"))
             .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
             .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
             .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
