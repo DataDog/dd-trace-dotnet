@@ -46,9 +46,10 @@ internal class GacInstallCommand : CommandWithExamples
             return;
         }
 
-        using var container = NativeMethods.CreateAssemblyCache();
-        var hr = container.AssemblyCache.InstallAssembly(AssemblyCacheInstallFlags.None, assemblyPath, IntPtr.Zero);
-        if (hr == 0)
+        using var gacMethods = GacNativeMethods.Create();
+        var assemblyCache = gacMethods.CreateAssemblyCache();
+        var hr = assemblyCache.InstallAssembly(AssemblyCacheInstallFlags.IASSEMBLYCACHE_INSTALL_FLAG_REFRESH, assemblyPath, IntPtr.Zero);
+        if (hr == Hresult.S_OK)
         {
             Utils.WriteSuccess($"Assembly '{assemblyPath}' was installed in the GAC successfully.");
         }
@@ -57,6 +58,6 @@ internal class GacInstallCommand : CommandWithExamples
             Utils.WriteError($"Error installing '{assemblyPath}' in the GAC. HRESULT={hr}");
         }
 
-        context.ExitCode = hr;
+        context.ExitCode = (int)hr;
     }
 }
