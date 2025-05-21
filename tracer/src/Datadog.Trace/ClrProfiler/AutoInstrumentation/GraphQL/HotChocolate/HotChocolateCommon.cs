@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         ConstructErrorLocationsMessage(builder, tab, locations);
 
                         var joinedLocations = new List<string>();
-                        foreach (var location in (System.Collections.IEnumerable)locations)
+                        foreach (var location in locations)
                         {
                             if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                             {

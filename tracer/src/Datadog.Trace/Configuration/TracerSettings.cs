@@ -1310,8 +1310,8 @@ namespace Datadog.Trace.Configuration
         internal List<string> JsonConfigurationFilePaths { get; } = new();
 
         /// <summary>
-        /// Gets a value indicating whether GraphQL error extensions should be included in error messages.
-        /// </summary>
+        /// Gets which GraphQL error extensions to capture.
+        /// A comma-separated list of extension keys to capture. Empty or not present means no extensions are captured.        /// </summary>
         /// <seealso cref="ConfigurationKeys.GraphQLErrorExtensions"/>
         internal string[] GraphQLErrorExtensions { get; }
 
@@ -1419,7 +1419,11 @@ namespace Datadog.Trace.Configuration
             {
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    list.Add(value.Trim());
+                    var trimmedValue = value.Trim();
+                    if (!list.Contains(trimmedValue))
+                    {
+                        list.Add(trimmedValue);
+                    }
                 }
             }
 
