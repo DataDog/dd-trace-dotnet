@@ -207,10 +207,10 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             IntPtr contextHandle;
-            if (_wafLocker.EnterWriteLock())
+            if (_wafLocker.EnterReadLock())
             {
                 contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
-                _wafLocker.ExitWriteLock();
+                _wafLocker.ExitReadLock();
             }
             else
             {

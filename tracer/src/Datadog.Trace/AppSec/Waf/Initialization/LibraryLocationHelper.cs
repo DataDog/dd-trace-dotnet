@@ -139,8 +139,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     continue;
                 }
 
-                var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
+                var preLoaded = NativeLibrary.TryLoad(libFullPath, out handle);
+                if (preLoaded)
+                {
+                    NativeLibrary.CloseLibrary(handle);
+                }
 
+                var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
                 if (loaded)
                 {
                     success = true;
