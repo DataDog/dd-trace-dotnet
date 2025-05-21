@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
     /// </summary>
     public class DatadogHangfireServerFilter
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogHangfireServerFilter));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogHangfireServerFilter>();
 
         /// <summary>
         /// Called before the job is performed.
@@ -57,7 +57,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         public void OnPerformed(object context)
         {
             var performContext = context.DuckCast<IPerformContextProxy>();
+            var performedContext = context.DuckCast<IPerformedContextProxy>();
             ((Dictionary<string, object>)performContext.Items).TryGetValue(HangfireConstants.DatadogScopeKey, out var scope);
+            if (performedContext.Exception is not null)
+            {
+                HangfireCommon.SetStatusAndRecordException((Scope)scope, performedContext.Exception);
+            }
+
             ((Scope)scope)?.Dispose();
         }
     }
