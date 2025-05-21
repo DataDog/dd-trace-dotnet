@@ -34,7 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             SpanContext parentContext = null;
             Log.Debug("Creating PropagationContext");
 
-           // NameValueHeadersCollection spanContextData = performContext.GetJobParameter<NameValueHeadersCollection>("ScopeKey");
+            NameValueHeadersCollection spanContextData1 = performContext.GetJobParameter<NameValueHeadersCollection>("ScopeKey");
+            Log.Debug("This is the messgae {SpanContextData}", spanContextData1.ToString());
             var spanContextData = performContext.GetJobParameter<Dictionary<string, string>>("Alt_ScopeKey");
             PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
             parentContext = propagationContext.SpanContext;
@@ -45,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             if (scope is not null)
             {
                 scope.Span.SetTag(Tags.SpanKind, SpanKinds.Server);
-                performContext.SetJobParameter("DD_SCOPE", scope);
+                ((Dictionary<string, object>)performContext.Items).Add("DD_SCOPE", scope);
             }
         }
 
@@ -56,9 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
-            Tracer.Instance.ActiveScope?.Dispose();
             var performContext = context.DuckCast<IPerformContextProxy>();
-            var scope = performContext.GetJobParameter<object>("DD_SCOPE");
+            ((Dictionary<string, object>)performContext.Items).TryGetValue("DD_SCOPE", out var scope);
             if (scope is not null)
             {
                 ((Scope)scope).Dispose();
