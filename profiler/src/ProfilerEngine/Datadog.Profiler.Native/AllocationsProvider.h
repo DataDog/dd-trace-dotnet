@@ -8,6 +8,7 @@
 #include "CounterMetric.h"
 #include "GenericSampler.h"
 #include "IAllocationsListener.h"
+#include "IUpscaleProvider.h"
 #include "MeanMaxMetric.h"
 #include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
@@ -32,7 +33,9 @@ class SampleValueTypeProvider;
 class AllocationsProvider
     :
     public CollectorBase<RawAllocationSample>,
-    public IAllocationsListener
+    public IAllocationsListener,
+    //public IUpscaleProvider,
+    public IUpscalePoissonProvider
 {
 public:
     AllocationsProvider(
@@ -82,6 +85,12 @@ public:
         uintptr_t address,
         uint64_t objectSize,
         uint64_t allocationByteOffset) override;
+
+    // IUpscalePoissonProvider
+    UpscalingPoissonInfo GetPoissonInfo() override;
+
+private:
+    uint64_t AllocTickThreshold = 100 * 1024; // this is also used for AllocationSampled as the mean of the distribution
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
