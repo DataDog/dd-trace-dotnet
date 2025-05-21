@@ -39,6 +39,9 @@ namespace Datadog.Trace.AppSec.Waf
             _wafLibraryInvoker = wafLibraryInvoker;
             _wafBuilderHandle = wafBuilderHandle;
             _wafHandle = wafHandle;
+
+            _wafLibraryInvoker.ContextDestroy(_wafLibraryInvoker.InitContext(_wafHandle));
+
             _encoder = encoder;
         }
 
@@ -124,6 +127,9 @@ namespace Datadog.Trace.AppSec.Waf
                             var newHandle = updateResult.WafHandle;
                             var oldHandle = _wafHandle;
                             _wafHandle = newHandle;
+
+                            _wafLibraryInvoker.ContextDestroy(_wafLibraryInvoker.InitContext(_wafHandle));
+
                             _wafLocker.ExitWriteLock();
                             _wafLibraryInvoker.Destroy(oldHandle);
                         }
@@ -207,10 +213,10 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             IntPtr contextHandle;
-            if (_wafLocker.EnterWriteLock())
+            if (_wafLocker.EnterReadLock())
             {
                 contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
-                _wafLocker.ExitWriteLock();
+                _wafLocker.ExitReadLock();
             }
             else
             {
