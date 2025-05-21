@@ -255,6 +255,26 @@ internal class Program
             {
                 s1.Span.ServiceName = Tracer.Instance.DefaultServiceName;
                 await SendHttpRequest("CustomContext");
+
+                // Test injection
+                Dictionary<string, List<string>> headers = new();
+                new SpanContextInjector().Inject(
+                    headers,
+                    setter: (dict, key, value) => headers[key] = new List<string> { value },
+                    s1.Span.Context);
+                var context = new SpanContextExtractor().Extract(
+                    headers,
+                    getter: (dict, key) => dict.TryGetValue(key, out var values) ? values : Enumerable.Empty<string>());
+                ThrowIf(context is null, "Extracted context should not be null");
+                Expect(s1.Span.Context.ServiceName == context!.ServiceName, "Service names should be extracted");
+                Expect(s1.Span.Context.SpanId == context.SpanId, "SpanId should be extracted");
+                Expect(s1.Span.Context.TraceId == context.TraceId, "TraceId should be extracted");
+
+                // Test that we handle returning null
+                var nullContext = new SpanContextExtractor().Extract(
+                    headers,
+                    getter: (dict, key) => null); // Always return null
+                ThrowIf(nullContext is not null, "Extracted context should be null");
             }
 
             // Manually disable debug logs
