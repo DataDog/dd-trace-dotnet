@@ -545,10 +545,11 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarkProjectsWithSettings = new Tuple<string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
-                new(Projects.BenchmarksTrace, s => s),
-                // new(Projects.BenchmarksOpenTelemetryApi, s => s),
+            var benchmarkProjectsWithSettings = new Tuple<string, string, Func<DotNetRunSettings, DotNetRunSettings>>[] {
+                new(Projects.BenchmarksTrace, "--iterationTime 200", s => s),
+                // new(Projects.BenchmarksOpenTelemetryApi, "--iterationTime 100", s => s),
                 new(Projects.BenchmarksOpenTelemetryInstrumentedApi,
+                    "--iterationTime 100",
                     s => s.SetProcessEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true")
                           .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                           .SetProcessEnvironmentVariable("DD_INTERNAL_AGENT_STANDALONE_MODE_ENABLED", "true")
@@ -558,7 +559,8 @@ partial class Build : NukeBuild
             foreach (var tuple in benchmarkProjectsWithSettings)
             {
                 var benchmarkProjectName = tuple.Item1;
-                var configureDotNetRunSettings = tuple.Item2;
+                var benchmarkSettings = tuple.Item2;
+                var configureDotNetRunSettings = tuple.Item3;
 
                 var benchmarksProject = Solution.GetProject(benchmarkProjectName);
                 var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
@@ -585,7 +587,7 @@ partial class Build : NukeBuild
                         .SetFramework(framework)
                         .EnableNoRestore()
                         .EnableNoBuild()
-                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} --iterationTime 200")
+                        .SetApplicationArguments($"-r {runtimes} -m -f {Filter ?? "*"} --anyCategories {BenchmarkCategory ?? "tracer"} {benchmarkSettings ?? string.Empty}")
                         .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
