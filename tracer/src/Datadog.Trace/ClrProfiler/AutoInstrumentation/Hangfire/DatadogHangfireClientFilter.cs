@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
     /// </summary>
     public class DatadogHangfireClientFilter
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogHangfireClientFilter));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DatadogHangfireClientFilter>();
 
         /// <summary>
         /// Called before the job is created.

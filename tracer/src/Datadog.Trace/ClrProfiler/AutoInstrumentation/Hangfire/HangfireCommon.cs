@@ -60,9 +60,9 @@ internal static class HangfireCommon
         return Enumerable.Empty<string>();
     }
 
-    internal static void SetStatusAndRecordException(ISpan span, Exception exception)
+    internal static void SetStatusAndRecordException(Scope scope, Exception exception)
     {
-        return;
+        scope.Span.SetException(exception);
     }
 
     internal static void InjectSpanProperties(IDictionary<string, string> jobParams, string key, string value)
