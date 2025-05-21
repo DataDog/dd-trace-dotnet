@@ -37,10 +37,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             scope.Span.SetTag("job", createContext.Job.ToString());
 
             PropagationContext contextToInject = new PropagationContext(scope.Span.Context, null, null);
-            var scopeContextData = new NameValueHeadersCollection(new NameValueCollection());
+            NameValueHeadersCollection scopeContextData = new NameValueHeadersCollection(new NameValueCollection());
             Tracer.Instance.TracerManager.SpanContextPropagator.Inject(contextToInject, scopeContextData);
             creatingContext.SetJobParameter("ScopeKey", scopeContextData);
-            creatingContext.SetJobParameter("DD_SCOPE", scope);
+            // creatingContext.SetJobParameter("DD_SCOPE", scope);
+            ((Dictionary<string, object>)createContext.Items).Add("DD_SCOPE", scope);
 
             // alt method
             var contextDetails = new Dictionary<string, string>();
@@ -56,8 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Client.IClientFilter, Hangfire.Core" })]
         public void OnCreated(object context)
         {
-            var createdContext = context.DuckCast<ICreateContextProxy>();
-            ((ReadOnlyDictionary<string, object>)createdContext.Parameters).TryGetValue("DD_SCOPE", out var scope);
+            var createContext = context.DuckCast<ICreateContextProxy>();
+            // ((ReadOnlyDictionary<string, object>)createdContext.Parameters).TryGetValue("DD_SCOPE", out var scope);
+            ((Dictionary<string, object>)createContext.Items).TryGetValue("DD_SCOPE", out var scope);
             if (scope is not null)
             {
                 ((Scope)scope).Dispose();
