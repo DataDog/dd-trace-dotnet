@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     {
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
-        public const string OperationName = "azure-functions.invoke";
+        public const string OperationName = "azure-functions.invoke"; // this gets normalized to "azure_functions.invoke"
         public const string SpanType = SpanTypes.Serverless;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
@@ -223,16 +223,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub", // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos", // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid", // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+
+                        // TODO: should we use the value of `type`?
                         _ => "Automatic", // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
                     // need to extract the headers from the context.
                     // We currently only support httpTrigger, but other triggers may also propagate context,
                     // e.g. Cosmos + ServiceBus, so we should handle those too
-                    if (triggerType == "Http")
-                    {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                    }
+                    extractedContext = ExtractPropagatedContext(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
 
                     break;
                 }
@@ -280,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static PropagationContext ExtractPropagatedContext<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
