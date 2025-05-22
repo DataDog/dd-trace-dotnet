@@ -298,7 +298,7 @@ errors: [
 ]
 ,
       error.type: HotChocolate.Error,
-      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Something went wrong","locations":["1:18"],"path":["throwException"],"code":"ERROR_CODE","stacktrace":"   at Samples.HotChocolate.Query.ThrowException() in C:\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.HotChocolate\\Query.cs:line 28","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":["1","foo"]}}],
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Something went wrong","locations":["1:18"],"path":["throwException"],"code":"ERROR_CODE","stacktrace":"   at Samples.HotChocolate.Query.ThrowException() in C:\\dd-trace-dotnet\\tracer\\test\\test-applications\\integrations\\Samples.HotChocolate\\Query.cs:line 28","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":"[1,foo]","extensions.sbyte":-42,"extensions.byte":42,"extensions.short":-1000,"extensions.ushort":1000,"extensions.uint":4294967295,"extensions.long":-9223372036854775808,"extensions.ulong":"18446744073709551615","extensions.decimal":"3.14159265358979","extensions.double":3.141592653589793,"extensions.char":"A"}}],
       graphql.operation.name: ErrorQuery,
       graphql.operation.type: Query,
       graphql.source:
