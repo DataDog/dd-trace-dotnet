@@ -14,6 +14,7 @@ using Datadog.Trace.VendoredMicrosoftCode.System;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -167,7 +168,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeDefinitionHandle.RowId))
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeDefinitionHandle)))
                 {
                     return false;
                 }
@@ -352,7 +353,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(typeHandle)))
                     {
                         continue;
                     }
@@ -459,12 +460,14 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodDefHandle.RowId))
+                    var methodToken = MetadataTokens.GetToken(methodDefHandle);
+
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodToken))
                     {
                         continue;
                     }
 
-                    if (!DatadogMetadataReader.HasMethodBody(methodDefHandle.RowId))
+                    if (!DatadogMetadataReader.HasMethodBody(methodToken))
                     {
                         continue;
                     }
@@ -632,7 +635,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 for (int i = 0; i < nestedTypes.Length; i++)
                 {
-                    if (!DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(nestedTypes[i].RowId))
+                    if (!DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataTokens.GetToken(nestedTypes[i])))
                     {
                         continue;
                     }
@@ -658,7 +661,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    if (!DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodHandle.RowId))
+                    if (!DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(MetadataTokens.GetToken(methodHandle)))
                     {
                         continue;
                     }
