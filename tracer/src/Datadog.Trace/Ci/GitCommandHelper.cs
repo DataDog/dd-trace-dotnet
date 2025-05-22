@@ -11,7 +11,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
@@ -31,6 +30,7 @@ internal static class GitCommandHelper
     private static readonly Regex DiffHeaderRegex = new(@"^diff --git a/(?<fileA>.+) b/(?<fileB>.+)$", RegexOptions.Compiled);
     private static readonly Regex LineChangeRegex = new(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@", RegexOptions.Compiled);
     private static readonly Regex BranchFilterRegex = new(@"^(main|master|preprod|prod|release/.*|hotfix/.*)$", RegexOptions.Compiled);
+    private static readonly string[] PossibleBaseBranches = ["main", "master", "preprod", "prod", "dev", "development", "trunk"];
     private static readonly char[] LineSeparators = ['\n', '\r'];
     private static readonly char[] WhitespaceSeparators = ['\t', ' '];
 
@@ -194,8 +194,10 @@ internal static class GitCommandHelper
     public static BaseBranchInfo? DetectBaseBranch(
         string workingDirectory,
         string? targetBranch = null,
+        string? remoteName = null,
         string? defaultBranch = null,
-        string remoteName = "origin")
+        string? pullRequestBaseBranch = null,
+        bool fetchRemoteBranches = true)
     {
         if (string.IsNullOrEmpty(workingDirectory))
         {
@@ -205,21 +207,20 @@ internal static class GitCommandHelper
 
         try
         {
-            // Get the target branch if not specified
+            // Step 1a - Get remote name if not provided
+            if (string.IsNullOrEmpty(remoteName))
+            {
+                var originNameOutput = RunGitCommand(workingDirectory, "config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote);
+                remoteName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+                Log.Debug("GitCommandHelper: Auto-detected remote name: {RemoteName}", remoteName);
+            }
+
+            // Step 1b - Get source branch (target branch) if not provided
             if (string.IsNullOrEmpty(targetBranch))
             {
-                var branchOutput = RunGitCommand(
-                    workingDirectory,
-                    "rev-parse --abbrev-ref HEAD",
-                    MetricTags.CIVisibilityCommands.GetHead);
-
-                if (branchOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(branchOutput?.Output))
-                {
-                    Log.Warning("GitCommandHelper: Failed to get current branch");
-                    return null;
-                }
-
-                targetBranch = branchOutput!.Output.Trim();
+                var gitOutput = RunGitCommand(workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch);
+                targetBranch = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+                Log.Debug("GitCommandHelper: Auto-detected source branch: {SourceBranch}", targetBranch);
             }
 
             // Verify branch exists
@@ -228,17 +229,17 @@ internal static class GitCommandHelper
                 $"rev-parse --verify --quiet {targetBranch}",
                 MetricTags.CIVisibilityCommands.VerifyBranchExists);
 
-            if (verifyBranchOutput is not { ExitCode: 0 })
+            if (verifyBranchOutput?.ExitCode != 0)
             {
                 Log.Warning("GitCommandHelper: Branch '{Branch}' does not exist", targetBranch);
                 return null;
             }
 
-            // Check if the target is already a main-like branch
+            // Check if the target branch is already a main-like branch
             string shortTargetName = targetBranch!;
             if (shortTargetName.StartsWith($"{remoteName}/"))
             {
-                shortTargetName = shortTargetName.Substring(remoteName.Length + 1);
+                shortTargetName = shortTargetName.Substring(remoteName!.Length + 1);
             }
 
             if (BranchFilterRegex.IsMatch(shortTargetName))
@@ -247,43 +248,74 @@ internal static class GitCommandHelper
                 return null;
             }
 
-            // Build candidate list
-            var branchesOutput = RunGitCommand(
-                workingDirectory,
-                $"for-each-ref --format='%(refname:short)' refs/heads refs/remotes/{remoteName}",
-                MetricTags.CIVisibilityCommands.BuildCandidateList);
+            // Step 2 - Build candidate branches list and fetch them from remote
+            var candidateBranches = new List<string>();
 
-            if (branchesOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(branchesOutput?.Output))
+            if (!string.IsNullOrEmpty(pullRequestBaseBranch))
             {
-                Log.Warning("GitCommandHelper: Failed to get branch list");
-                return null;
+                // Step 2b - We have git.pull_request.base_branch
+                if (fetchRemoteBranches)
+                {
+                    CheckAndFetchBranch(workingDirectory, pullRequestBaseBranch!, remoteName!);
+                }
+
+                candidateBranches.Add(pullRequestBaseBranch!);
+                Log.Debug("GitCommandHelper: Using pull request base branch from CI: {BaseBranch}", pullRequestBaseBranch);
+            }
+            else
+            {
+                // Step 2a - We don't have git.pull_request.base_branch
+                if (fetchRemoteBranches)
+                {
+                    foreach (var branch in PossibleBaseBranches)
+                    {
+                        CheckAndFetchBranch(workingDirectory, branch, remoteName!);
+                    }
+                }
+
+                // Build candidate list
+                var branchesOutput = RunGitCommand(
+                    workingDirectory,
+                    $"for-each-ref --format='%(refname:short)' refs/heads refs/remotes/{remoteName}",
+                    MetricTags.CIVisibilityCommands.BuildCandidateList);
+
+                if (branchesOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(branchesOutput.Output))
+                {
+                    Log.Warning("GitCommandHelper: Failed to get branch list");
+                    return null;
+                }
+
+                candidateBranches.AddRange(SplitLines(branchesOutput!.Output)
+                                   .Select(b => b.Trim('\'', ' '))
+                                   .Where(b => !string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
+                                   .Where(b =>
+                                    {
+                                        string nameToCheck = b;
+                                        if (b.StartsWith($"{remoteName}/"))
+                                        {
+                                            nameToCheck = b.Substring(remoteName!.Length + 1);
+                                        }
+
+                                        return BranchFilterRegex.IsMatch(nameToCheck);
+                                    }));
+
+                Log.Debug(
+                    "GitCommandHelper: Found {Count} candidate branches: {Branches}",
+                    candidateBranches.Count,
+                    string.Join(", ", candidateBranches));
             }
 
-            var branches = SplitLines(branchesOutput!.Output)
-                          .Select(b => b.Trim('\'', ' '))
-                          .Where(b => !string.Equals(b, targetBranch, StringComparison.OrdinalIgnoreCase))
-                          .Where(b =>
-                           {
-                               string nameToCheck = b;
-                               if (b.StartsWith($"{remoteName}/"))
-                               {
-                                   nameToCheck = b.Substring(remoteName.Length + 1);
-                               }
-
-                               return BranchFilterRegex.IsMatch(nameToCheck);
-                           })
-                          .ToList();
-
-            if (branches.Count == 0)
+            if (candidateBranches.Count == 0)
             {
                 Log.Warning("GitCommandHelper: No candidate branches found");
                 return null;
             }
 
-            // Compute metrics for each branch
+            // Step 3 - Find the best base branch
             var metrics = new List<BranchMetrics>();
 
-            foreach (var branch in branches)
+            // Compute metrics for each branch
+            foreach (var branch in candidateBranches)
             {
                 // Find merge-base (common ancestor)
                 var mergeBaseOutput = RunGitCommand(
@@ -291,22 +323,22 @@ internal static class GitCommandHelper
                     $"merge-base {branch} {targetBranch}",
                     MetricTags.CIVisibilityCommands.MergeBase);
 
-                if (mergeBaseOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(mergeBaseOutput?.Output))
+                if (mergeBaseOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(mergeBaseOutput.Output))
                 {
                     continue; // Skip if no common history
                 }
 
                 var mergeBaseSha = mergeBaseOutput!.Output.Trim();
 
-                // Count commits ahead and behind
+                // Get ahead/behind counts
                 var revListOutput = RunGitCommand(
                     workingDirectory,
                     $"rev-list --left-right --count {branch}...{targetBranch}",
                     MetricTags.CIVisibilityCommands.RevList);
 
-                if (revListOutput is not { ExitCode: 0 } || string.IsNullOrWhiteSpace(revListOutput?.Output))
+                if (revListOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(revListOutput.Output))
                 {
-                    continue; // Skip if it cannot get commit counts
+                    continue;
                 }
 
                 var counts = revListOutput!.Output.Split(WhitespaceSeparators, StringSplitOptions.RemoveEmptyEntries);
@@ -369,6 +401,53 @@ internal static class GitCommandHelper
         bool IsDefaultBranch(string candidate) => !string.IsNullOrEmpty(defaultBranch) &&
                                                   (candidate == defaultBranch ||
                                                    candidate == $"{remoteName}/{defaultBranch}");
+    }
+
+    private static void CheckAndFetchBranch(string workingDirectory, string branch, string remoteName)
+    {
+        try
+        {
+            // Check if branch exists locally
+            var localOutput = RunGitCommand(
+                workingDirectory,
+                $"show-ref --verify --quiet refs/heads/{branch}",
+                MetricTags.CIVisibilityCommands.ShowRef);
+
+            if (localOutput?.ExitCode == 0)
+            {
+                // Branch exists locally
+                Log.Debug("GitCommandHelper: Branch {Branch} exists locally", branch);
+                return;
+            }
+
+            // Check if branch exists in remote
+            var remoteOutput = RunGitCommand(
+                workingDirectory,
+                $"ls-remote --heads {remoteName} {branch}",
+                MetricTags.CIVisibilityCommands.LsRemote);
+
+            if (remoteOutput?.ExitCode != 0 || string.IsNullOrWhiteSpace(remoteOutput.Output))
+            {
+                // Branch doesn't exist in remote
+                Log.Debug("GitCommandHelper: Branch {Branch} doesn't exist in remote {Remote}", branch, remoteName);
+                return;
+            }
+
+            // Fetch the latest commit for this branch from remote
+            var fetchOutput = RunGitCommand(
+                workingDirectory,
+                $"fetch --depth 1 {remoteName} {branch}:{branch}",
+                MetricTags.CIVisibilityCommands.Fetch);
+
+            if (fetchOutput?.ExitCode != 0)
+            {
+                Log.Warning("GitCommandHelper: Failed to fetch branch {Branch} from remote {Remote}", branch, remoteName);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "GitCommandHelper: Error checking/fetching branch {Branch}", branch);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
