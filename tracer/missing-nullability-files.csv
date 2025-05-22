@@ -474,6 +474,7 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireClient
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/DatadogHangfireServerFilter.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/HangfireCommon.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/HangfireConstants.cs
+src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/IBackgroundJobProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/ICreateContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/ICreatedContextProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Hangfire/ICreatingContextProxy.cs

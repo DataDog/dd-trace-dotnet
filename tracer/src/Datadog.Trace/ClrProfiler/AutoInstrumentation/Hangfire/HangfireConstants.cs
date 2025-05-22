@@ -16,4 +16,5 @@ internal class HangfireConstants
     internal const string DatadogContextKey = "datadog_context_key";
     internal const string JobIdTag = "job.ID";
     internal const string JobCreatedAtTag = "job.CreatedAt";
+    internal const string ResourceNamePrefix = "JOB ";
 }

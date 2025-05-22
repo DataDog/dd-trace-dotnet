@@ -23,13 +23,20 @@ namespace Samples.Hangfire
             //                       .Build();
 
             // Configure Hangfire
+            using var tracer = Sdk
+                              .CreateTracerProviderBuilder()
+                              .AddHangfireInstrumentation()
+                              .AddConsoleExporter()
+                              .Build();
+
             GlobalConfiguration.Configuration
-                               .UseMemoryStorage()
-                               .UseSimpleAssemblyNameTypeSerializer()
                                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                                .UseSimpleAssemblyNameTypeSerializer()
-                               .UseRecommendedSerializerSettings();
-            
+                               .UseRecommendedSerializerSettings()
+                               .UseMemoryStorage();
+
+            BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
+
             //GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
 
             // Start Hangfire server
@@ -38,8 +45,8 @@ namespace Samples.Hangfire
 
             // BackgroundJob.Schedule(() => ExecuteTracedJob("scheduled-job"), TimeSpan.FromSeconds(10));
             // BackgroundJob.Enqueue(() => ExecuteTracedJob("enqueued-job"));
-            BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
-            
+            // BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
+            //
             
 
             // RecurringJob.AddOrUpdate("SomeJobId",() => ExecuteTracedJob("recurring-job"), "*/5 * * * * ? ");
