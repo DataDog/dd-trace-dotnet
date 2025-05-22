@@ -68,7 +68,6 @@ public class ProbesTests : TestHelper
             typeof(ManyLocals),
             typeof(AsyncTryCatchTest),
             typeof(UnboundProbeBecomesBoundTest),
-            typeof(RedactionTest),
 #if NETFRAMEWORK
             typeof(ModuleUnloadTest)
 #endif
@@ -737,7 +736,8 @@ public class ProbesTests : TestHelper
          || testDescription.TestType == typeof(AsyncGenericStruct)
          || testDescription.TestType == typeof(NonSupportedInstrumentationTest)
          || testDescription.TestType == typeof(Emit100LineProbeSnapshotsTest)
-         || testDescription.TestType == typeof(NonEmptyCtorTest))
+         || testDescription.TestType == typeof(NonEmptyCtorTest)
+         || testDescription.TestType == typeof(RedactionTest))
         {
             throw new SkipException("Probe status not found or log entry not found.");
         }
