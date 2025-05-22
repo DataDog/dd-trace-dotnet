@@ -121,7 +121,7 @@ namespace Samples.GraphQL4.StarWarsExtensions
                     { "float", 1.1f },
                     { "str", "1" },
                     { "bool", true },
-                    { "other", new object[] { 1, "foo" , bool } },
+                    { "other", new object[] { 1, "foo" } },
                     { "sbyte", (sbyte)-42 },
                     { "byte", (byte)42 },
                     { "short", (short)-1000 },

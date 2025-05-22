@@ -115,14 +115,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             if (errorCount > 0)
             {
-                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessageAndEvents(executionErrors, out var errorSpanEvents), errorSpanEvents);
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors), ConstructErrorEvents(executionErrors));
             }
         }
 
-        private static string ConstructErrorMessageAndEvents(List<IError> executionErrors, out List<SpanEvent> spanEvents)
+        private static string ConstructErrorMessage(List<IError> executionErrors)
         {
-            spanEvents = [];
-
             if (executionErrors == null)
             {
                 return string.Empty;
@@ -137,7 +135,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
-                    var eventAttributes = new List<KeyValuePair<string, object>>();
                     var executionError = executionErrors[i];
 
                     builder.Append(tab).AppendLine("{");
@@ -146,14 +143,49 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     if (message != null)
                     {
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
-                        eventAttributes.Add(new KeyValuePair<string, object>("message", message));
                     }
 
                     var locations = executionError.Locations;
                     if (locations != null)
                     {
                         ConstructErrorLocationsMessage(builder, tab, locations);
+                    }
 
+                    builder.AppendLine($"{tab}}},");
+                }
+
+                builder.AppendLine("]");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating HotChocolate error message.");
+                Util.StringBuilderCache.Release(builder);
+                return "errors: []";
+            }
+
+            return Util.StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        private static List<SpanEvent> ConstructErrorEvents(List<IError> executionErrors)
+        {
+            List<SpanEvent> spanEvents = [];
+
+            try
+            {
+                for (int i = 0; i < executionErrors.Count; i++)
+                {
+                    var eventAttributes = new List<KeyValuePair<string, object>>();
+                    var executionError = executionErrors[i];
+
+                    var message = executionError.Message;
+                    if (message != null)
+                    {
+                        eventAttributes.Add(new KeyValuePair<string, object>("message", message));
+                    }
+
+                    var locations = executionError.Locations;
+                    if (locations != null)
+                    {
                         var joinedLocations = new List<string>();
                         foreach (var location in locations)
                         {
@@ -166,14 +198,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         eventAttributes.Add(new KeyValuePair<string, object>("locations", joinedLocations.ToArray()));
                     }
 
-                    builder.AppendLine($"{tab}}},");
-
                     var path = executionError.Path;
                     if (path.Name != null)
                     {
-                        var pathAttribute = new List<string>();
-                        pathAttribute.Add(path.Name);
-                        eventAttributes.Add(new KeyValuePair<string, object>("path", pathAttribute.ToArray()));
+                        eventAttributes.Add(new KeyValuePair<string, object>("path", new[] { path.Name }));
                     }
 
                     var code = executionError.Code;
@@ -189,17 +217,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     }
 
                     var extensions = executionError.Extensions;
-                    if (extensions != null)
+                    if (extensions is { Count: > 0 })
                     {
                         var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
 
                         var keys = extensions.Keys.ToList();
-                        for (int j = 0; j < keys.Count; j++)
+                        foreach (var extension in extensions)
                         {
-                            if (configuredExtensions.Contains(keys[j]))
+                            if (configuredExtensions.Contains(extension.Key))
                             {
-                                var key = keys[j];
-                                var value = extensions[key];
+                                var key = extension.Key;
+                                var value = extension.Value;
 
                                 if (value == null)
                                 {
@@ -207,15 +235,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                                 }
                                 else if (value is Array array)
                                 {
-                                    var stringArray = new string[array.Length];
-                                    for (int k = 0; k < array.Length; k++)
-                                    {
-                                        stringArray[k] = array.GetValue(k)?.ToString() ?? "null";
-                                    }
+                                    var builder = Util.StringBuilderCache.Acquire();
 
-                                    value = stringArray;
+                                    try
+                                    {
+                                        builder.Append('[');
+                                        for (var k = 0; k < array.Length; k++)
+                                        {
+                                            var item = array.GetValue(k);
+                                            if (k > 0)
+                                            {
+                                                builder.Append(',');
+                                            }
+
+                                            builder.Append(item?.ToString() ?? "null");
+                                        }
+
+                                        builder.Append(']');
+                                        value = Util.StringBuilderCache.GetStringAndRelease(builder);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex);
+                                        Util.StringBuilderCache.Release(builder);
+                                    }
                                 }
-                                else if (!(value is int || value is double || value is float || value is bool))
+                                else if (value is ulong or decimal || !Util.SpanEventConverter.IsAllowedType(value))
                                 {
                                     value = value.ToString();
                                 }
@@ -227,17 +272,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
                     spanEvents.Add(new SpanEvent(name: "dd.graphql.query.error", attributes: eventAttributes));
                 }
-
-                builder.AppendLine("]");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating HotChocolate error message and Span Event.");
-                Util.StringBuilderCache.Release(builder);
-                return "errors: []";
+                Log.Error(ex, "Error creating GraphQL error SpanEvent.");
+                return spanEvents;
             }
 
-            return Util.StringBuilderCache.GetStringAndRelease(builder);
+            return spanEvents;
         }
 
         internal static List<IError> GetList(System.Collections.IEnumerable errors)

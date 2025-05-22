@@ -6,10 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -251,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                                             Util.StringBuilderCache.Release(builder);
                                         }
                                     }
-                                    else if (value is ulong or decimal || !SpanEventConverter.IsAllowedType(value))
+                                    else if (value is ulong or decimal || !Util.SpanEventConverter.IsAllowedType(value))
                                     {
                                         value = value.ToString();
                                     }
