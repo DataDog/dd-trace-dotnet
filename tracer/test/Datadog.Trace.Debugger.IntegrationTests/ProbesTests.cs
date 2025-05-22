@@ -757,10 +757,12 @@ public class ProbesTests : TestHelper
             throw new SkipException("Current test is not supported with unoptimized code.");
         }
 
+#if NETFRAMEWORK
         if (testDescription.TestType == typeof(ModuleUnloadTest) && testDescription.IsOptimized)
         {
             throw new SkipException("Current test is not supported with optimized code.");
         }
+#endif
     }
 
     private async Task RunSingleTestWithApprovals(ProbeTestDescription testDescription, int expectedNumberOfSnapshots, params ProbeDefinition[] probes)
