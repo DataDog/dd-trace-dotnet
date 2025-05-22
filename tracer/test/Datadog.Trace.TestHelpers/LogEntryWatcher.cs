@@ -129,14 +129,4 @@ public class LogEntryWatcher : IDisposable
     {
         _readers.Enqueue(OpenStream(e.FullPath));
     }
-
-    private FileInfo GetLastWrittenLogFile(string logFilePattern, string logPath)
-    {
-        var dir = new DirectoryInfo(logPath);
-        var lastFile = dir
-                      .GetFiles(logFilePattern)
-                      .OrderBy(info => info.LastWriteTime)
-                      .LastOrDefault();
-        return lastFile;
-    }
 }
