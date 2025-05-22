@@ -49,12 +49,19 @@ internal class TraceExporter : SafeHandle, IApi
                 };
 
                 var responsePtr = IntPtr.Zero;
-                using var error = NativeInterop.Exporter.Send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
-                if (!error.IsInvalid)
+                try
                 {
-                    var ex = error.ToException();
-                    _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, message: {Message}", ex.ErrorCode, ex.Message);
-                    throw ex;
+                    using var error = NativeInterop.Exporter.Send(this, tracesSlice, (UIntPtr)numberOfTraces, ref responsePtr);
+                    if (!error.IsInvalid)
+                    {
+                        var ex = error.ToException();
+                        _log.Error(ex, "An error occurred while sending data to the agent. Error Code: {ErrorCode}, message: {Message}", ex.ErrorCode, ex.Message);
+                        throw ex;
+                    }
+                }
+                catch (Exception ex) when (ex is not TraceExporterException)
+                {
+                    _log.Error(ex, "An error occurred while sending data to the agent.");
                 }
             }
         }
