@@ -74,11 +74,6 @@ public class ProbesTests : TestHelper
 #endif
     };
 
-    private static readonly Type[] _optimizedNotSupportedTypes = new[]
-    {
-        typeof(NonSupportedInstrumentationTest)
-    };
-
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
@@ -738,8 +733,9 @@ public class ProbesTests : TestHelper
         if (testDescription.TestType == typeof(AsyncWithGenericArgumentAndLocal)
          || testDescription.TestType == typeof(EmptyCtorTest)
          || testDescription.TestType == typeof(AsyncGenericClass)
-         || testDescription.TestType == typeof(AsyncGenericClass)
-         || testDescription.TestType == typeof(AsyncGenericMethodWithLineProbeTest))
+         || testDescription.TestType == typeof(AsyncGenericMethodWithLineProbeTest)
+         || testDescription.TestType == typeof(AsyncGenericStruct)
+         || testDescription.TestType == typeof(NonSupportedInstrumentationTest))
         {
             throw new SkipException("Probe status not found.");
         }
@@ -757,11 +753,6 @@ public class ProbesTests : TestHelper
         if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))
         {
             throw new SkipException("Current test is not supported with unoptimized code.");
-        }
-
-        if (testDescription.IsOptimized && _optimizedNotSupportedTypes.Contains(testDescription.TestType))
-        {
-            throw new SkipException("Current test is not supported with optimized code.");
         }
     }
 
