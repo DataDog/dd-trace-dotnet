@@ -27,8 +27,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -43,8 +42,7 @@
                         "value": "Harlem"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -62,8 +60,7 @@
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
-                                "type": "Place",
-                                "value": "Place"
+                                "type": "Place"
                               },
                               "HomeType": {
                                 "type": "BuildingType",
@@ -78,8 +75,7 @@
                                 "value": "Harlem"
                               }
                             },
-                            "type": "Address",
-                            "value": "Address"
+                            "type": "Address"
                           },
                           "Age": {
                             "type": "Double",
@@ -98,8 +94,7 @@
                             "value": "Ralph Jr."
                           }
                         },
-                        "type": "Person",
-                        "value": "Person"
+                        "type": "Person"
                       }
                     ],
                     "size": 1,
@@ -114,8 +109,7 @@
                     "value": "Ralph"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               },
               "someGenericObject": {
                 "fields": {
@@ -124,8 +118,7 @@
                     "value": "NestedAsyncGenericStruct"
                   }
                 },
-                "type": "Generic",
-                "value": "Generic"
+                "type": "Generic"
               },
               "this": {
                 "fields": {
@@ -139,8 +132,7 @@
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
-                            "type": "Place",
-                            "value": "Place"
+                            "type": "Place"
                           },
                           "HomeType": {
                             "type": "BuildingType",
@@ -155,8 +147,7 @@
                             "value": "Harlem"
                           }
                         },
-                        "type": "Address",
-                        "value": "Address"
+                        "type": "Address"
                       },
                       "Age": {
                         "type": "Double",
@@ -172,8 +163,7 @@
                               },
                               "Adrs": {
                                 "notCapturedReason": "depth",
-                                "type": "Address",
-                                "value": "Address"
+                                "type": "Address"
                               },
                               "Age": {
                                 "type": "Double",
@@ -192,8 +182,7 @@
                                 "value": "Ralph Jr."
                               }
                             },
-                            "type": "Person",
-                            "value": "Person"
+                            "type": "Person"
                           }
                         ],
                         "size": 1,
@@ -208,12 +197,10 @@
                         "value": "Ralph"
                       }
                     },
-                    "type": "Person",
-                    "value": "Person"
+                    "type": "Person"
                   }
                 },
-                "type": "NestedAsyncGenericStruct",
-                "value": "NestedAsyncGenericStruct"
+                "type": "NestedAsyncGenericStruct"
               }
             }
           },
@@ -238,8 +225,7 @@
                             "value": "City"
                           }
                         },
-                        "type": "Place",
-                        "value": "Place"
+                        "type": "Place"
                       },
                       "HomeType": {
                         "type": "BuildingType",
@@ -254,8 +240,7 @@
                         "value": "Harlem"
                       }
                     },
-                    "type": "Address",
-                    "value": "Address"
+                    "type": "Address"
                   },
                   "Age": {
                     "type": "Double",
@@ -273,8 +258,7 @@
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
-                                "type": "Place",
-                                "value": "Place"
+                                "type": "Place"
                               },
                               "HomeType": {
                                 "type": "BuildingType",
@@ -289,8 +273,7 @@
                                 "value": "Harlem"
                               }
                             },
-                            "type": "Address",
-                            "value": "Address"
+                            "type": "Address"
                           },
                           "Age": {
                             "type": "Double",
@@ -309,8 +292,7 @@
                             "value": "Ralph Jr."
                           }
                         },
-                        "type": "Person",
-                        "value": "Person"
+                        "type": "Person"
                       }
                     ],
                     "size": 1,
@@ -325,8 +307,7 @@
                     "value": "Ralph"
                   }
                 },
-                "type": "Person",
-                "value": "Person"
+                "type": "Person"
               },
               "someGenericObject": {
                 "fields": {
@@ -335,8 +316,7 @@
                     "value": "NestedAsyncGenericStruct"
                   }
                 },
-                "type": "Generic",
-                "value": "Generic"
+                "type": "Generic"
               },
               "this": {
                 "fields": {
@@ -350,8 +330,7 @@
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
-                            "type": "Place",
-                            "value": "Place"
+                            "type": "Place"
                           },
                           "HomeType": {
                             "type": "BuildingType",
@@ -366,8 +345,7 @@
                             "value": "Harlem"
                           }
                         },
-                        "type": "Address",
-                        "value": "Address"
+                        "type": "Address"
                       },
                       "Age": {
                         "type": "Double",
@@ -383,8 +361,7 @@
                               },
                               "Adrs": {
                                 "notCapturedReason": "depth",
-                                "type": "Address",
-                                "value": "Address"
+                                "type": "Address"
                               },
                               "Age": {
                                 "type": "Double",
@@ -403,8 +380,7 @@
                                 "value": "Ralph Jr."
                               }
                             },
-                            "type": "Person",
-                            "value": "Person"
+                            "type": "Person"
                           }
                         ],
                         "size": 1,
@@ -419,12 +395,10 @@
                         "value": "Ralph"
                       }
                     },
-                    "type": "Person",
-                    "value": "Person"
+                    "type": "Person"
                   }
                 },
-                "type": "NestedAsyncGenericStruct",
-                "value": "NestedAsyncGenericStruct"
+                "type": "NestedAsyncGenericStruct"
               }
             },
             "locals": {
@@ -440,8 +414,7 @@
                 "fields": {
                   "m_task": "ScrubbedValue"
                 },
-                "type": "TaskAwaiter",
-                "value": "TaskAwaiter"
+                "type": "TaskAwaiter"
               },
               "output": {
                 "type": "String",
@@ -463,8 +436,7 @@
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
-                            "type": "Place",
-                            "value": "Place"
+                            "type": "Place"
                           },
                           "HomeType": {
                             "type": "BuildingType",
@@ -479,8 +451,7 @@
                             "value": "Harlem"
                           }
                         },
-                        "type": "Address",
-                        "value": "Address"
+                        "type": "Address"
                       },
                       "Age": {
                         "type": "Double",
@@ -496,8 +467,7 @@
                               },
                               "Adrs": {
                                 "notCapturedReason": "depth",
-                                "type": "Address",
-                                "value": "Address"
+                                "type": "Address"
                               },
                               "Age": {
                                 "type": "Double",
@@ -516,8 +486,7 @@
                                 "value": "Ralph Jr."
                               }
                             },
-                            "type": "Person",
-                            "value": "Person"
+                            "type": "Person"
                           }
                         ],
                         "size": 1,
@@ -532,12 +501,10 @@
                         "value": "Ralph"
                       }
                     },
-                    "type": "Person",
-                    "value": "Person"
+                    "type": "Person"
                   }
                 },
-                "type": "NestedAsyncGenericStruct",
-                "value": "NestedAsyncGenericStruct"
+                "type": "NestedAsyncGenericStruct"
               }
             }
           }
@@ -590,8 +557,7 @@
                           "value": "City"
                         }
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "type": "Place"
                     },
                     "HomeType": {
                       "type": "BuildingType",
@@ -606,8 +572,7 @@
                       "type": "String"
                     }
                   },
-                  "type": "Address",
-                  "value": "Address"
+                  "type": "Address"
                 },
                 "children": {
                   "isNull": "true",
@@ -628,8 +593,7 @@
                       "value": "City"
                     }
                   },
-                  "type": "Place",
-                  "value": "Place"
+                  "type": "Place"
                 }
               }
             }
@@ -685,8 +649,7 @@
                           "value": "City"
                         }
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "type": "Place"
                     },
                     "HomeType": {
                       "type": "BuildingType",
@@ -701,8 +664,7 @@
                       "type": "String"
                     }
                   },
-                  "type": "Address",
-                  "value": "Address"
+                  "type": "Address"
                 },
                 "children": {
                   "isNull": "true",
@@ -723,8 +685,7 @@
                       "value": "City"
                     }
                   },
-                  "type": "Place",
-                  "value": "Place"
+                  "type": "Place"
                 }
               }
             }
@@ -780,8 +741,7 @@
                           "value": "City"
                         }
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "type": "Place"
                     },
                     "HomeType": {
                       "type": "BuildingType",
@@ -796,8 +756,7 @@
                       "value": "Harlem"
                     }
                   },
-                  "type": "Address",
-                  "value": "Address"
+                  "type": "Address"
                 },
                 "children": {
                   "isNull": "true",
@@ -818,8 +777,7 @@
                       "value": "City"
                     }
                   },
-                  "type": "Place",
-                  "value": "Place"
+                  "type": "Place"
                 }
               }
             }
@@ -875,8 +833,7 @@
                           "value": "City"
                         }
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "type": "Place"
                     },
                     "HomeType": {
                       "type": "BuildingType",
@@ -891,8 +848,7 @@
                       "value": "Harlem"
                     }
                   },
-                  "type": "Address",
-                  "value": "Address"
+                  "type": "Address"
                 },
                 "children": {
                   "elements": [],
@@ -914,8 +870,7 @@
                       "value": "City"
                     }
                   },
-                  "type": "Place",
-                  "value": "Place"
+                  "type": "Place"
                 }
               }
             }
@@ -971,8 +926,7 @@
                           "value": "City"
                         }
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "type": "Place"
                     },
                     "HomeType": {
                       "type": "BuildingType",
@@ -987,8 +941,7 @@
                       "value": "Harlem"
                     }
                   },
-                  "type": "Address",
-                  "value": "Address"
+                  "type": "Address"
                 },
                 "children": {
                   "elements": [
@@ -1011,8 +964,7 @@
                                   "value": "City"
                                 }
                               },
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -1027,8 +979,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -1047,8 +998,7 @@
                           "value": "Ralph Jr."
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   ],
                   "size": 1,
@@ -1069,8 +1019,7 @@
                       "value": "City"
                     }
                   },
-                  "type": "Place",
-                  "value": "Place"
+                  "type": "Place"
                 }
               }
             }
@@ -1126,8 +1075,7 @@
                           "value": "City"
                         }
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "type": "Place"
                     },
                     "HomeType": {
                       "type": "BuildingType",
@@ -1142,8 +1090,7 @@
                       "value": "Harlem"
                     }
                   },
-                  "type": "Address",
-                  "value": "Address"
+                  "type": "Address"
                 },
                 "children": {
                   "elements": [
@@ -1166,8 +1113,7 @@
                                   "value": "City"
                                 }
                               },
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -1182,8 +1128,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -1202,8 +1147,7 @@
                           "value": "Ralph Jr."
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   ],
                   "size": 1,
@@ -1228,8 +1172,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -1244,8 +1187,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -1263,8 +1205,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -1279,8 +1220,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -1299,8 +1239,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -1315,8 +1254,7 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "place": {
                   "fields": {
@@ -1329,8 +1267,7 @@
                       "value": "City"
                     }
                   },
-                  "type": "Place",
-                  "value": "Place"
+                  "type": "Place"
                 }
               }
             }
@@ -1392,8 +1329,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -1408,8 +1344,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -1427,8 +1362,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -1443,8 +1377,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -1463,8 +1396,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -1479,8 +1411,7 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "someGenericObject": {
                   "fields": {
@@ -1489,8 +1420,7 @@
                       "value": "NestedAsyncGenericStruct"
                     }
                   },
-                  "type": "Generic",
-                  "value": "Generic"
+                  "type": "Generic"
                 },
                 "this": {
                   "fields": {
@@ -1504,8 +1434,7 @@
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -1520,8 +1449,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -1537,8 +1465,7 @@
                                 },
                                 "Adrs": {
                                   "notCapturedReason": "depth",
-                                  "type": "Address",
-                                  "value": "Address"
+                                  "type": "Address"
                                 },
                                 "Age": {
                                   "type": "Double",
@@ -1557,8 +1484,7 @@
                                   "value": "Ralph Jr."
                                 }
                               },
-                              "type": "Person",
-                              "value": "Person"
+                              "type": "Person"
                             }
                           ],
                           "size": 1,
@@ -1573,12 +1499,10 @@
                           "value": "Ralph"
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   },
-                  "type": "NestedAsyncGenericStruct",
-                  "value": "NestedAsyncGenericStruct"
+                  "type": "NestedAsyncGenericStruct"
                 }
               },
               "locals": {
@@ -1590,8 +1514,7 @@
                   "fields": {
                     "m_task": "ScrubbedValue"
                   },
-                  "type": "TaskAwaiter",
-                  "value": "TaskAwaiter"
+                  "type": "TaskAwaiter"
                 },
                 "output": {
                   "isNull": "true",
@@ -1613,8 +1536,7 @@
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -1629,8 +1551,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -1646,8 +1567,7 @@
                                 },
                                 "Adrs": {
                                   "notCapturedReason": "depth",
-                                  "type": "Address",
-                                  "value": "Address"
+                                  "type": "Address"
                                 },
                                 "Age": {
                                   "type": "Double",
@@ -1666,8 +1586,7 @@
                                   "value": "Ralph Jr."
                                 }
                               },
-                              "type": "Person",
-                              "value": "Person"
+                              "type": "Person"
                             }
                           ],
                           "size": 1,
@@ -1682,12 +1601,10 @@
                           "value": "Ralph"
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   },
-                  "type": "NestedAsyncGenericStruct",
-                  "value": "NestedAsyncGenericStruct"
+                  "type": "NestedAsyncGenericStruct"
                 }
               }
             }
@@ -1749,8 +1666,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -1765,8 +1681,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -1784,8 +1699,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -1800,8 +1714,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -1820,8 +1733,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -1836,8 +1748,7 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "someGenericObject": {
                   "fields": {
@@ -1846,8 +1757,7 @@
                       "value": "NestedAsyncGenericStruct"
                     }
                   },
-                  "type": "Generic",
-                  "value": "Generic"
+                  "type": "Generic"
                 },
                 "this": {
                   "fields": {
@@ -1861,8 +1771,7 @@
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -1877,8 +1786,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -1894,8 +1802,7 @@
                                 },
                                 "Adrs": {
                                   "notCapturedReason": "depth",
-                                  "type": "Address",
-                                  "value": "Address"
+                                  "type": "Address"
                                 },
                                 "Age": {
                                   "type": "Double",
@@ -1914,8 +1821,7 @@
                                   "value": "Ralph Jr."
                                 }
                               },
-                              "type": "Person",
-                              "value": "Person"
+                              "type": "Person"
                             }
                           ],
                           "size": 1,
@@ -1930,12 +1836,10 @@
                           "value": "Ralph"
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   },
-                  "type": "NestedAsyncGenericStruct",
-                  "value": "NestedAsyncGenericStruct"
+                  "type": "NestedAsyncGenericStruct"
                 }
               },
               "locals": {
@@ -1947,8 +1851,7 @@
                   "fields": {
                     "m_task": "ScrubbedValue"
                   },
-                  "type": "TaskAwaiter",
-                  "value": "TaskAwaiter"
+                  "type": "TaskAwaiter"
                 },
                 "output": {
                   "type": "String",
@@ -1970,8 +1873,7 @@
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -1986,8 +1888,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -2003,8 +1904,7 @@
                                 },
                                 "Adrs": {
                                   "notCapturedReason": "depth",
-                                  "type": "Address",
-                                  "value": "Address"
+                                  "type": "Address"
                                 },
                                 "Age": {
                                   "type": "Double",
@@ -2023,8 +1923,7 @@
                                   "value": "Ralph Jr."
                                 }
                               },
-                              "type": "Person",
-                              "value": "Person"
+                              "type": "Person"
                             }
                           ],
                           "size": 1,
@@ -2039,12 +1938,10 @@
                           "value": "Ralph"
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   },
-                  "type": "NestedAsyncGenericStruct",
-                  "value": "NestedAsyncGenericStruct"
+                  "type": "NestedAsyncGenericStruct"
                 }
               }
             }
@@ -2106,8 +2003,7 @@
                               "value": "City"
                             }
                           },
-                          "type": "Place",
-                          "value": "Place"
+                          "type": "Place"
                         },
                         "HomeType": {
                           "type": "BuildingType",
@@ -2122,8 +2018,7 @@
                           "value": "Harlem"
                         }
                       },
-                      "type": "Address",
-                      "value": "Address"
+                      "type": "Address"
                     },
                     "Age": {
                       "type": "Double",
@@ -2141,8 +2036,7 @@
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
-                                  "type": "Place",
-                                  "value": "Place"
+                                  "type": "Place"
                                 },
                                 "HomeType": {
                                   "type": "BuildingType",
@@ -2157,8 +2051,7 @@
                                   "value": "Harlem"
                                 }
                               },
-                              "type": "Address",
-                              "value": "Address"
+                              "type": "Address"
                             },
                             "Age": {
                               "type": "Double",
@@ -2177,8 +2070,7 @@
                               "value": "Ralph Jr."
                             }
                           },
-                          "type": "Person",
-                          "value": "Person"
+                          "type": "Person"
                         }
                       ],
                       "size": 1,
@@ -2193,8 +2085,7 @@
                       "value": "Ralph"
                     }
                   },
-                  "type": "Person",
-                  "value": "Person"
+                  "type": "Person"
                 },
                 "someGenericObject": {
                   "fields": {
@@ -2203,8 +2094,7 @@
                       "value": "NestedAsyncGenericStruct"
                     }
                   },
-                  "type": "Generic",
-                  "value": "Generic"
+                  "type": "Generic"
                 },
                 "this": {
                   "fields": {
@@ -2218,8 +2108,7 @@
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -2234,8 +2123,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -2251,8 +2139,7 @@
                                 },
                                 "Adrs": {
                                   "notCapturedReason": "depth",
-                                  "type": "Address",
-                                  "value": "Address"
+                                  "type": "Address"
                                 },
                                 "Age": {
                                   "type": "Double",
@@ -2271,8 +2158,7 @@
                                   "value": "Ralph Jr."
                                 }
                               },
-                              "type": "Person",
-                              "value": "Person"
+                              "type": "Person"
                             }
                           ],
                           "size": 1,
@@ -2287,12 +2173,10 @@
                           "value": "Ralph"
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   },
-                  "type": "NestedAsyncGenericStruct",
-                  "value": "NestedAsyncGenericStruct"
+                  "type": "NestedAsyncGenericStruct"
                 }
               },
               "locals": {
@@ -2304,8 +2188,7 @@
                   "fields": {
                     "m_task": "ScrubbedValue"
                   },
-                  "type": "TaskAwaiter",
-                  "value": "TaskAwaiter"
+                  "type": "TaskAwaiter"
                 },
                 "output": {
                   "type": "String",
@@ -2327,8 +2210,7 @@
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
-                              "type": "Place",
-                              "value": "Place"
+                              "type": "Place"
                             },
                             "HomeType": {
                               "type": "BuildingType",
@@ -2343,8 +2225,7 @@
                               "value": "Harlem"
                             }
                           },
-                          "type": "Address",
-                          "value": "Address"
+                          "type": "Address"
                         },
                         "Age": {
                           "type": "Double",
@@ -2360,8 +2241,7 @@
                                 },
                                 "Adrs": {
                                   "notCapturedReason": "depth",
-                                  "type": "Address",
-                                  "value": "Address"
+                                  "type": "Address"
                                 },
                                 "Age": {
                                   "type": "Double",
@@ -2380,8 +2260,7 @@
                                   "value": "Ralph Jr."
                                 }
                               },
-                              "type": "Person",
-                              "value": "Person"
+                              "type": "Person"
                             }
                           ],
                           "size": 1,
@@ -2396,12 +2275,10 @@
                           "value": "Ralph"
                         }
                       },
-                      "type": "Person",
-                      "value": "Person"
+                      "type": "Person"
                     }
                   },
-                  "type": "NestedAsyncGenericStruct",
-                  "value": "NestedAsyncGenericStruct"
+                  "type": "NestedAsyncGenericStruct"
                 }
               }
             }

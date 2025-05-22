@@ -13,8 +13,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThanArgumentTrueAtExit",
-                "value": "GreaterThanArgumentTrueAtExit"
+                "type": "GreaterThanArgumentTrueAtExit"
               }
             },
             "locals": {

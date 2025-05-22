@@ -21,12 +21,10 @@
                         "value": "False"
                       }
                     },
-                    "type": "Lazy`1",
-                    "value": "Lazy`1"
+                    "type": "Lazy`1"
                   }
                 },
-                "type": "HasFieldLazyValueNotInitialized",
-                "value": "HasFieldLazyValueNotInitialized"
+                "type": "HasFieldLazyValueNotInitialized"
               }
             }
           },
@@ -45,12 +43,10 @@
                         "value": "False"
                       }
                     },
-                    "type": "Lazy`1",
-                    "value": "Lazy`1"
+                    "type": "Lazy`1"
                   }
                 },
-                "type": "HasFieldLazyValueNotInitialized",
-                "value": "HasFieldLazyValueNotInitialized"
+                "type": "HasFieldLazyValueNotInitialized"
               }
             },
             "locals": {

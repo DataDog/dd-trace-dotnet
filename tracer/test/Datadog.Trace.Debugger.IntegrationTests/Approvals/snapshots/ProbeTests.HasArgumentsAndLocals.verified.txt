@@ -19,8 +19,7 @@
                     "type": "String"
                   }
                 },
-                "type": "HasArgumentsAndLocals",
-                "value": "HasArgumentsAndLocals"
+                "type": "HasArgumentsAndLocals"
               }
             }
           },
@@ -37,8 +36,7 @@
                     "value": "First"
                   }
                 },
-                "type": "HasArgumentsAndLocals",
-                "value": "HasArgumentsAndLocals"
+                "type": "HasArgumentsAndLocals"
               }
             },
             "locals": {

@@ -9,16 +9,20 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "PinnedLocal",
-                "value": "PinnedLocal"
+                "type": "PinnedLocal"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "PinnedLocal",
-                "value": "PinnedLocal"
+                "type": "PinnedLocal"
+              }
+            },
+            "locals": {
+              "p": {
+                "type": "Char",
+                "value": "h"
               }
             }
           }

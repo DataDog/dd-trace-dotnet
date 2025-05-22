@@ -19,8 +19,7 @@
                     "value": "13"
                   }
                 },
-                "type": "GreaterThanField",
-                "value": "GreaterThanField"
+                "type": "GreaterThanField"
               }
             },
             "locals": {

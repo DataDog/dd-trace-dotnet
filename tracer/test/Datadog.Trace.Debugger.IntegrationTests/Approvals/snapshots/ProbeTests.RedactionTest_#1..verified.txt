@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "RedactionTest",
-                "value": "RedactionTest"
+                "type": "RedactionTest"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "RedactionTest",
-                "value": "RedactionTest"
+                "type": "RedactionTest"
               }
             },
             "locals": {
@@ -45,8 +43,7 @@
                     "type": "String"
                   }
                 },
-                "type": "OuterClass",
-                "value": "OuterClass"
+                "type": "OuterClass"
               },
               "b": {
                 "notCapturedReason": "redactedIdent",
@@ -59,8 +56,7 @@
                     "value": "You should see me IAmOkType"
                   }
                 },
-                "type": "IAmOkType",
-                "value": "IAmOkType"
+                "type": "IAmOkType"
               },
               "redactedTypeA": {
                 "notCapturedReason": "redactedType",

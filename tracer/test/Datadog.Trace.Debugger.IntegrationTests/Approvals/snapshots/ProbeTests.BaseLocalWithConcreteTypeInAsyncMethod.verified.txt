@@ -37,8 +37,7 @@
                     "value": "PiiBase"
                   }
                 },
-                "type": "Pii2",
-                "value": "Pii2"
+                "type": "Pii2"
               },
               "value": {
                 "type": "String",

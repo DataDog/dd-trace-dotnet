@@ -46,8 +46,7 @@
                   },
                   "StackTrace": "ScrubbedValue"
                 },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
+                "type": "InvalidOperationException"
               }
             },
             "throwable": {

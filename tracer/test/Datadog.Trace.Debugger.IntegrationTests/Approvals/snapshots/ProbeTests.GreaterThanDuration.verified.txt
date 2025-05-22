@@ -13,8 +13,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "GreaterThanDuration",
-                "value": "GreaterThanDuration"
+                "type": "GreaterThanDuration"
               }
             },
             "locals": {

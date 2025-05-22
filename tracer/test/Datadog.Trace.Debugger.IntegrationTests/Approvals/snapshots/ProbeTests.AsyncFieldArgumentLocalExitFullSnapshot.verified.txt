@@ -19,8 +19,7 @@
                     "value": "5"
                   }
                 },
-                "type": "AsyncFieldArgumentLocalExitFullSnapshot",
-                "value": "AsyncFieldArgumentLocalExitFullSnapshot"
+                "type": "AsyncFieldArgumentLocalExitFullSnapshot"
               }
             },
             "locals": {

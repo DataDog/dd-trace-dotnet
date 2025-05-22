@@ -19,8 +19,7 @@
                     "value": "IRun"
                   }
                 },
-                "type": "SimpleMethodWithLocalsAndArgsTest",
-                "value": "SimpleMethodWithLocalsAndArgsTest"
+                "type": "SimpleMethodWithLocalsAndArgsTest"
               }
             }
           },
@@ -37,8 +36,7 @@
                     "value": "IRun"
                   }
                 },
-                "type": "SimpleMethodWithLocalsAndArgsTest",
-                "value": "SimpleMethodWithLocalsAndArgsTest"
+                "type": "SimpleMethodWithLocalsAndArgsTest"
               }
             },
             "locals": {

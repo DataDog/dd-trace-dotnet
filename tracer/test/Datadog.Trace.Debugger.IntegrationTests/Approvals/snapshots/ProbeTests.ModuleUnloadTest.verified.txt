@@ -20,8 +20,7 @@
                       "value": "0"
                     }
                   },
-                  "type": "ExternalTest",
-                  "value": "ExternalTest"
+                  "type": "ExternalTest"
                 }
               }
             }
@@ -75,8 +74,7 @@
                       "value": "1208223660"
                     }
                   },
-                  "type": "ExternalTest",
-                  "value": "ExternalTest"
+                  "type": "ExternalTest"
                 }
               }
             }

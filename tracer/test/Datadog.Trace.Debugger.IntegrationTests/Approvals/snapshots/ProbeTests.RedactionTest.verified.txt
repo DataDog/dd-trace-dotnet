@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -9,16 +9,14 @@
           "entry": {
             "arguments": {
               "this": {
-                "type": "RedactionTest",
-                "value": "RedactionTest"
+                "type": "RedactionTest"
               }
             }
           },
           "return": {
             "arguments": {
               "this": {
-                "type": "RedactionTest",
-                "value": "RedactionTest"
+                "type": "RedactionTest"
               }
             },
             "locals": {
@@ -45,8 +43,7 @@
                     "type": "String"
                   }
                 },
-                "type": "OuterClass",
-                "value": "OuterClass"
+                "type": "OuterClass"
               },
               "b": {
                 "fields": {
@@ -63,8 +60,7 @@
                     "type": "String"
                   }
                 },
-                "type": "OuterClass",
-                "value": "OuterClass"
+                "type": "OuterClass"
               },
               "iamok": {
                 "fields": {
@@ -73,8 +69,7 @@
                     "value": "You should see me IAmOkType"
                   }
                 },
-                "type": "IAmOkType",
-                "value": "IAmOkType"
+                "type": "IAmOkType"
               },
               "redactedTypeA": {
                 "fields": {
@@ -83,8 +78,7 @@
                     "value": "You should not see me RedactMeTypeA"
                   }
                 },
-                "type": "RedactMeTypeA",
-                "value": "RedactMeTypeA"
+                "type": "RedactMeTypeA"
               },
               "redactedTypeB": {
                 "fields": {
@@ -93,8 +87,7 @@
                     "value": "You should not see me RedactMeTypeB"
                   }
                 },
-                "type": "RedactMeTypeB",
-                "value": "RedactMeTypeB"
+                "type": "RedactMeTypeB"
               },
               "redactedTypeC": {
                 "fields": {
@@ -103,8 +96,7 @@
                     "value": "You should not see me AnotherRedactMeTypeB"
                   }
                 },
-                "type": "AnotherRedactMeTypeB",
-                "value": "AnotherRedactMeTypeB"
+                "type": "AnotherRedactMeTypeB"
               }
             }
           }

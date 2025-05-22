@@ -13,8 +13,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "TemplateWithLocalAtExit",
-                "value": "TemplateWithLocalAtExit"
+                "type": "TemplateWithLocalAtExit"
               }
             },
             "staticFields": {
@@ -31,8 +30,7 @@
                 "value": "3"
               },
               "this": {
-                "type": "TemplateWithLocalAtExit",
-                "value": "TemplateWithLocalAtExit"
+                "type": "TemplateWithLocalAtExit"
               }
             },
             "locals": {
