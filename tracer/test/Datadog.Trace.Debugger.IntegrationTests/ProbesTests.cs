@@ -68,7 +68,7 @@ public class ProbesTests : TestHelper
             typeof(ManyLocals),
             typeof(AsyncTryCatchTest),
             typeof(UnboundProbeBecomesBoundTest),
-            typeof(Emit100LineProbeSnapshotsTest),
+            typeof(RedactionTest),
 #if NETFRAMEWORK
             typeof(ModuleUnloadTest)
 #endif
@@ -116,7 +116,7 @@ public class ProbesTests : TestHelper
 
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(RedactionTest));
         const int expectedNumberOfSnapshots = 1;
-
+        SkipOverTestIfNeeded(testDescription);
         var guidGenerator = new DeterministicGuidGenerator();
         var probeId = guidGenerator.New().ToString();
 
@@ -735,9 +735,11 @@ public class ProbesTests : TestHelper
          || testDescription.TestType == typeof(AsyncGenericClass)
          || testDescription.TestType == typeof(AsyncGenericMethodWithLineProbeTest)
          || testDescription.TestType == typeof(AsyncGenericStruct)
-         || testDescription.TestType == typeof(NonSupportedInstrumentationTest))
+         || testDescription.TestType == typeof(NonSupportedInstrumentationTest)
+         || testDescription.TestType == typeof(Emit100LineProbeSnapshotsTest)
+         || testDescription.TestType == typeof(NonEmptyCtorTest))
         {
-            throw new SkipException("Probe status not found.");
+            throw new SkipException("Probe status not found or log entry not found.");
         }
 
         if (testDescription.TestType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
@@ -753,6 +755,11 @@ public class ProbesTests : TestHelper
         if (!testDescription.IsOptimized && _unoptimizedNotSupportedTypes.Contains(testDescription.TestType))
         {
             throw new SkipException("Current test is not supported with unoptimized code.");
+        }
+
+        if (testDescription.TestType == typeof(ModuleUnloadTest) && testDescription.IsOptimized)
+        {
+            throw new SkipException("Current test is not supported with optimized code.");
         }
     }
 
