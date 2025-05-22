@@ -66,5 +66,14 @@ namespace Samples.AspNetMvc4.Controllers
             ViewBag.Message = "Identifier set to " + id;
             return View("About");
         }
+
+        public ActionResult PleaseSampleMeOut(int? id)
+        {
+            // this should be sampled out - the resource name sampled is /home/pleaseSampleMeOut/?
+            // however the one that will be shown is /home/pleaseSampleMeOut/{id} after MVC routes are replaced
+            // but we make the sampling decision BEFORE the MVC routes are known
+            ViewBag.Message = "This should be sampled out based on the ASP.NET Request resource name " + id;
+            return View("About");
+        }
     }
 }
