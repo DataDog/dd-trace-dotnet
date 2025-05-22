@@ -157,6 +157,26 @@ libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintp
     return make_success();
 }
 
+libdatadog::Success Profile::AddUpscalingRulePoisson(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
+                                                          uintptr_t sumValueOffset, uintptr_t countValueOffset, uint64_t sampling_distance)
+{
+    ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
+    ddog_CharSlice labelName_slice = to_char_slice(labelName);
+    ddog_CharSlice groupName_slice = to_char_slice(groupName);
+
+    auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_poisson(*_impl, offsets_slice, labelName_slice, groupName_slice, sumValueOffset, countValueOffset, sampling_distance);
+    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    {
+        auto error = make_error(upscalingRuleAdd.err);
+        std::stringstream ss;
+        ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sumValueOffset) << ", " << std::to_string(countValueOffset) << ", " << std::to_string(sampling_distance) << "]:"
+           << error.message();
+        return make_error(ss.str());
+    }
+
+    return make_success();
+}
+
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
 {
     std::vector<ddog_prof_ValueType> samplesTypes;

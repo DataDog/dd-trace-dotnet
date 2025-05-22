@@ -55,6 +55,7 @@ public:
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
+    void RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider) override;
     void RegisterApplication(std::string_view runtimeId) override;
 
     static std::string BuildAgentEndpoint(IConfiguration const* configuration);
@@ -100,10 +101,12 @@ private:
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     static void AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
+    static void AddUpscalingPoissonRules(libdatadog::Profile* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos);
     static fs::path CreatePprofOutputPath(IConfiguration* configuration);
 
     std::string CreateMetricsFileContent() const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
+    std::vector<UpscalingPoissonInfo> GetUpscalingPoissonInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadata() const;
@@ -135,6 +138,7 @@ private:
     fs::path _metricsFileFolder;
     IAllocationsRecorder* _allocationsRecorder;
     std::vector<IUpscaleProvider*> _upscaledProviders;
+    std::vector<IUpscalePoissonProvider*> _upscaledPoissonProviders;
     std::vector<ISamplesProvider*> _processSamplesProviders;
     IMetadataProvider* _metadataProvider;
     std::unique_ptr<libdatadog::Exporter> _exporter;
