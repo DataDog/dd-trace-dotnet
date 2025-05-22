@@ -530,7 +530,9 @@ internal static class MetricTags
         [Description("command:show_ref")] ShowRef,
         [Description("command:build_candidate_list")] BuildCandidateList,
         [Description("command:merge_base")] MergeBase,
-        [Description("command:rev_list")] RevList
+        [Description("command:rev_list")] RevList,
+        [Description("command:ls_remote")] LsRemote,
+        [Description("command:fetch")] Fetch
     }
 
     public enum CIVisibilityExitCodes

@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountCIVisibilityLength = 3169;
+    private const int CountCIVisibilityLength = 3187;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
@@ -2899,7 +2899,9 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "command:build_candidate_list" }),
             new(new[] { "command:merge_base" }),
             new(new[] { "command:rev_list" }),
-            // git.command_errors, index = 2869
+            new(new[] { "command:ls_remote" }),
+            new(new[] { "command:fetch" }),
+            // git.command_errors, index = 2871
             new(new[] { "command:get_repository", "exit_code:missing" }),
             new(new[] { "command:get_repository", "exit_code:unknown" }),
             new(new[] { "command:get_repository", "exit_code:-1" }),
@@ -3028,10 +3030,26 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "command:rev_list", "exit_code:127" }),
             new(new[] { "command:rev_list", "exit_code:128" }),
             new(new[] { "command:rev_list", "exit_code:129" }),
-            // git_requests.search_commits, index = 2997
+            new(new[] { "command:ls_remote", "exit_code:missing" }),
+            new(new[] { "command:ls_remote", "exit_code:unknown" }),
+            new(new[] { "command:ls_remote", "exit_code:-1" }),
+            new(new[] { "command:ls_remote", "exit_code:1" }),
+            new(new[] { "command:ls_remote", "exit_code:2" }),
+            new(new[] { "command:ls_remote", "exit_code:127" }),
+            new(new[] { "command:ls_remote", "exit_code:128" }),
+            new(new[] { "command:ls_remote", "exit_code:129" }),
+            new(new[] { "command:fetch", "exit_code:missing" }),
+            new(new[] { "command:fetch", "exit_code:unknown" }),
+            new(new[] { "command:fetch", "exit_code:-1" }),
+            new(new[] { "command:fetch", "exit_code:1" }),
+            new(new[] { "command:fetch", "exit_code:2" }),
+            new(new[] { "command:fetch", "exit_code:127" }),
+            new(new[] { "command:fetch", "exit_code:128" }),
+            new(new[] { "command:fetch", "exit_code:129" }),
+            // git_requests.search_commits, index = 3015
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // git_requests.search_commits_errors, index = 2999
+            // git_requests.search_commits_errors, index = 3017
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3043,10 +3061,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // git_requests.objects_pack, index = 3010
+            // git_requests.objects_pack, index = 3028
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // git_requests.objects_pack_errors, index = 3012
+            // git_requests.objects_pack_errors, index = 3030
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3058,10 +3076,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // git_requests.settings, index = 3023
+            // git_requests.settings, index = 3041
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // git_requests.settings_errors, index = 3025
+            // git_requests.settings_errors, index = 3043
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3073,7 +3091,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // git_requests.settings_response, index = 3036
+            // git_requests.settings_response, index = 3054
             new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true", "test_management_enabled:true" }),
             new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:true", "test_management_enabled:false" }),
             new(new[] { "coverage_enabled:true", "itrskip_enabled:true", "known_tests_enabled:true", "early_flake_detection_enabled:true", "flaky_test_retries_enabled:false", "test_management_enabled:true" }),
@@ -3138,10 +3156,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:true", "test_management_enabled:false" }),
             new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false", "test_management_enabled:true" }),
             new(new[] { "coverage_enabled:false", "itrskip_enabled:false", "known_tests_enabled:false", "early_flake_detection_enabled:false", "flaky_test_retries_enabled:false", "test_management_enabled:false" }),
-            // itr_skippable_tests.request, index = 3100
+            // itr_skippable_tests.request, index = 3118
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // itr_skippable_tests.request_errors, index = 3102
+            // itr_skippable_tests.request_errors, index = 3120
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3153,33 +3171,33 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // itr_skippable_tests.response_tests, index = 3113
+            // itr_skippable_tests.response_tests, index = 3131
             new(null),
-            // itr_skippable_tests.response_suites, index = 3114
+            // itr_skippable_tests.response_suites, index = 3132
             new(null),
-            // itr_skipped, index = 3115
+            // itr_skipped, index = 3133
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_unskippable, index = 3119
+            // itr_unskippable, index = 3137
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_forced_run, index = 3123
+            // itr_forced_run, index = 3141
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // code_coverage.is_empty, index = 3127
+            // code_coverage.is_empty, index = 3145
             new(null),
-            // code_coverage.errors, index = 3128
+            // code_coverage.errors, index = 3146
             new(null),
-            // known_tests.request, index = 3129
+            // known_tests.request, index = 3147
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // known_tests.request_errors, index = 3131
+            // known_tests.request_errors, index = 3149
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3191,10 +3209,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests_detection.request, index = 3142
+            // impacted_tests_detection.request, index = 3160
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // impacted_tests_detection.request_errors, index = 3144
+            // impacted_tests_detection.request_errors, index = 3162
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3206,12 +3224,12 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests_detection.is_modified, index = 3155
+            // impacted_tests_detection.is_modified, index = 3173
             new(null),
-            // test_management_tests.request, index = 3156
+            // test_management_tests.request, index = 3174
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // test_management_tests.request_errors, index = 3158
+            // test_management_tests.request_errors, index = 3176
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -3231,7 +3249,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
-        = new int[]{ 40, 2700, 60, 10, 10, 4, 1, 4, 22, 2, 16, 128, 2, 11, 2, 11, 2, 11, 64, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, 2, 11, };
+        = new int[]{ 40, 2700, 60, 10, 10, 4, 1, 4, 22, 2, 18, 144, 2, 11, 2, 11, 2, 11, 64, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, 2, 11, };
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
@@ -3300,140 +3318,140 @@ internal partial class CiVisibilityMetricsTelemetryCollector
 
     public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
     {
-        var index = 2869 + ((int)tag1 * 8) + (int)tag2;
+        var index = 2871 + ((int)tag1 * 8) + (int)tag2;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSearchCommits(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 2997 + (int)tag;
+        var index = 3015 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 2999 + (int)tag;
+        var index = 3017 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsObjectsPack(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 3010 + (int)tag;
+        var index = 3028 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 3012 + (int)tag;
+        var index = 3030 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettings(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 3023 + (int)tag;
+        var index = 3041 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 3025 + (int)tag;
+        var index = 3043 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_CoverageFeature tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_ItrSkippingFeature tag2, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_KnownTestsFeature tag3, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_EarlyFlakeDetectionFeature tag4, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_FlakyTestRetriesFeature tag5, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilitySettingsResponse_TestManagementFeature tag6, int increment = 1)
     {
-        var index = 3036 + ((int)tag1 * 32) + ((int)tag2 * 16) + ((int)tag3 * 8) + ((int)tag4 * 4) + ((int)tag5 * 2) + (int)tag6;
+        var index = 3054 + ((int)tag1 * 32) + ((int)tag2 * 16) + ((int)tag3 * 8) + ((int)tag4 * 4) + ((int)tag5 * 2) + (int)tag6;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 3100 + (int)tag;
+        var index = 3118 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 3102 + (int)tag;
+        var index = 3120 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[3113], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[3131], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[3114], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[3132], increment);
     }
 
     public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 3115 + (int)tag;
+        var index = 3133 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 3119 + (int)tag;
+        var index = 3137 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 3123 + (int)tag;
+        var index = 3141 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[3127], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[3145], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[3128], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[3146], increment);
     }
 
     public void RecordCountCIVisibilityKnownTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 3129 + (int)tag;
+        var index = 3147 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityKnownTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 3131 + (int)tag;
+        var index = 3149 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityImpactedTestsDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 3142 + (int)tag;
+        var index = 3160 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 3144 + (int)tag;
+        var index = 3162 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[3155], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[3173], increment);
     }
 
     public void RecordCountCIVisibilityTestManagementTestsRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
     {
-        var index = 3156 + (int)tag;
+        var index = 3174 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
     public void RecordCountCIVisibilityTestManagementTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 3158 + (int)tag;
+        var index = 3176 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 }
