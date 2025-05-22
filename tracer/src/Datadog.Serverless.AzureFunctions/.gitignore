@@ -1,0 +1,11 @@
+.idea/
+.vs/
+.vscode/
+bin/
+obj/
+temp/
+output/
+monitoring-home/
+*.nupkg
+*.suo
+*.user
