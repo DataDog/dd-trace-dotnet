@@ -563,6 +563,15 @@ void CorProfilerCallback::InitializeServices()
         _pExporter->RegisterUpscaleProvider(_pExceptionsProvider);
     }
 
+    if (_pAllocationsProvider != nullptr)
+    {
+        // use Poisson upscaling for .NET 10+ based on AllocationSampled events
+        if (_pRuntimeInfo->GetMajorVersion() >= 10)
+        {
+            _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
+        }
+    }
+
     _pSamplesCollector = RegisterService<SamplesCollector>(
         _pConfiguration.get(),
         _pThreadsCpuManager,
