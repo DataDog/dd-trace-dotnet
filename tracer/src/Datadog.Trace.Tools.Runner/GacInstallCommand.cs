@@ -55,7 +55,7 @@ internal class GacInstallCommand : CommandWithExamples
         }
         else
         {
-            Utils.WriteError($"Error installing '{assemblyPath}' in the GAC. HRESULT={hr}");
+            Utils.WriteError($"Error installing '{assemblyPath}' in the GAC. HRESULT={hr.ToStringOrHex()}");
         }
 
         context.ExitCode = (int)hr;

@@ -58,7 +58,7 @@ internal class GacGetCommand : CommandWithExamples
         }
         else
         {
-            Utils.WriteWarning($"Error getting '{assemblyName}' from the GAC. HRESULT={hr}");
+            Utils.WriteWarning($"Error getting '{assemblyName}' from the GAC. HRESULT={hr.ToStringOrHex()}");
         }
 
         context.ExitCode = (int)hr;

@@ -78,7 +78,7 @@ internal class GacUninstallCommand : CommandWithExamples
         }
         else
         {
-            Utils.WriteError($"Error uninstalling '{assemblyName}' from the GAC. HRESULT={result}");
+            Utils.WriteError($"Error uninstalling '{assemblyName}' from the GAC. HRESULT={result.ToStringOrHex()}");
         }
 
         context.ExitCode = (int)result;

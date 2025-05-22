@@ -67,4 +67,14 @@ internal enum Hresult : int
     /// One or more arguments are not valid
     /// </summary>
     E_INVALIDARG = unchecked((int)0x80070057),
+
+    /// <summary>
+    /// Strong name signature could not be verified. The assembly may have been tampered with, or it was delay signed but not fully signed with the correct private key.
+    /// </summary>
+    E_INVALIDSTRONGNAME = unchecked((int)0x80131045),
+
+    /// <summary>
+    /// The given assembly name or codebase was invalid.
+    /// </summary>
+    E_INVALIDASSEMBLY = unchecked((int)0x80131047)
 }
