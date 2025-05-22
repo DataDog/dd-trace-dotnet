@@ -107,6 +107,15 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
 
             resourceName ??= GetDefaultResourceName(request);
+
+            // GET /admin/warmup
+            // GET /admin/host/status
+            if (resourceName.StartsWith("GET /admin/", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"[dd-trace-dotnet] AspNetCoreHttpRequestHandler skipping: {resourceName}");
+                return null;
+            }
+
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
             InferredProxyScopePropagationContext? proxyContext = null;
 
