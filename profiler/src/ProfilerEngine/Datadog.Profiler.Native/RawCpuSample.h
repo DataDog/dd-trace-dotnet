@@ -36,6 +36,6 @@ public:
         sample->AddValue(Duration.count(), valueOffsets[0]);
         sample->AddValue(1, valueOffsets[1]);
     }
-
+ 
     std::chrono::nanoseconds Duration;
 };

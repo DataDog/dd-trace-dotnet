@@ -4,19 +4,14 @@
 #pragma once
 
 #include "CollectorBase.h"
+#include "RawSampleTransformer.h"
 #include "RawWallTimeSample.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 // forward declarations
 class IConfiguration;
-class IFrameStore;
-class IAppDomainStore;
-class IRuntimeIdStore;
 class IThreadsCpuManager;
-class IConfiguration;
-class SampleValueTypeProvider;
-
 
 class WallTimeProvider
     :
@@ -24,12 +19,8 @@ class WallTimeProvider
 {
 public:
     WallTimeProvider(
-        SampleValueTypeProvider& sampleValueTypeProvider,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IFrameStore* pFrameStore,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration,
+        SampleValueTypeProvider& sampleTypeProvider,
+        RawSampleTransformer* rawSampleTransformer,
         shared::pmr::memory_resource* memoryResource
         );
 

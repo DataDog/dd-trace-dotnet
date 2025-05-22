@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .Select(span => span.Tags[Tags.KafkaOffset])
                .Should()
                .OnlyContain(tag => Regex.IsMatch(tag, @"^[0-9]+$"))
-               .And.HaveCount(ExpectedSuccessProducerWithHandlerSpans + ExpectedTombstoneProducerWithHandlerSpans);
+               .And.HaveCount(ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
 
             // Only successful spans with a delivery handler will have a partition
             // Confirm partition is displayed correctly [0], [1]
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .Select(span => span.Tags[Tags.KafkaPartition])
                .Should()
                .OnlyContain(tag => Regex.IsMatch(tag, @"^\[[0-9]+\]$"))
-               .And.HaveCount(ExpectedSuccessProducerWithHandlerSpans + ExpectedTombstoneProducerWithHandlerSpans);
+               .And.HaveCount(ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
 
             successfulProducerSpans.Should().OnlyContain(span => span.Tags.ContainsKey(Tags.MessagingDestinationName) && span.Tags[Tags.MessagingDestinationName] == topic);
 

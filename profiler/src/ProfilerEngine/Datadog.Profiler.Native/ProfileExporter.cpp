@@ -88,7 +88,7 @@ ProfileExporter::ProfileExporter(
     _runtimeInfo{runtimeInfo},
     _ssiManager{ssiManager}
 {
-    _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
+    _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
     _metricsFileFolder = _configuration->GetProfilesOutputDirectory();
 }
@@ -171,7 +171,7 @@ void ProfileExporter::RegisterApplication(std::string_view runtimeId)
     GetOrCreateInfo(runtimeId);
 }
 
-libdatadog::Tags ProfileExporter::CreateTags(
+libdatadog::Tags ProfileExporter::CreateFixedTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers)
@@ -185,7 +185,6 @@ libdatadog::Tags ProfileExporter::CreateTags(
 
     tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
-    tags.Add("runtime_version", runtimeInfo->GetClrString());
 
     // list of enabled profilers
     std::string profilersTag = GetEnabledProfilersTag(enabledProfilers);
@@ -576,6 +575,8 @@ bool ProfileExporter::Export(bool lastCall)
 
         AddUpscalingRules(profile.get(), upscalingInfos);
 
+
+
         auto additionalTags = libdatadog::Tags{{"env", applicationInfo.Environment},
                                                {"version", applicationInfo.Version},
                                                {"service", applicationInfo.ServiceName},
@@ -583,6 +584,10 @@ bool ProfileExporter::Export(bool lastCall)
                                                {"profile_seq", std::to_string(exportsCount - 1)},
                                                // Optim we can cache the number of cores in a string
                                                {"number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount())}};
+
+        // .NET Framework version is known AFTER the ProfilerExporter gets created
+        // so we need to add it here
+        additionalTags.Add("runtime_version", _runtimeInfo->GetClrString());
 
         if (!applicationInfo.RepositoryUrl.empty())
         {

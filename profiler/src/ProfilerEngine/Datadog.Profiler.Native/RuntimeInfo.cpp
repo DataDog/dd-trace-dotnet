@@ -4,15 +4,17 @@
 #include "RuntimeInfo.h"
 #include <sstream>
 
-RuntimeInfo::RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework)
+RuntimeInfo::RuntimeInfo(uint16_t major, uint16_t minor, bool isFramework)
     :
 #ifdef LINUX
     _os("linux"),
 #else
     _os("windows"),
 #endif
-    _dotnetMajor(dotnetMajor),
-    _dotnetMinor(dotnetMinor),
+    _major(major),
+    _minor(minor),
+    _build(0),
+    _reviews(0),
     _isFramework(isFramework)
 {
 }
@@ -22,15 +24,23 @@ bool RuntimeInfo::IsDotnetFramework() const
     return _isFramework;
 }
 
-uint16_t RuntimeInfo::GetDotnetMajorVersion() const
+uint16_t RuntimeInfo::GetMajorVersion() const
 {
-    return _dotnetMajor;
+    return _major;
 }
 
-uint16_t RuntimeInfo::GetDotnetMinorVersion() const
+uint16_t RuntimeInfo::GetMinorVersion() const
 {
-    return _dotnetMinor;
+    return _minor;
 }
+
+void RuntimeInfo::SetMinorVersions(uint16_t minor, uint16_t build, uint16_t reviews)
+{
+    _minor = minor;
+    _build = build;
+    _reviews = reviews;
+}
+
 
 std::string RuntimeInfo::GetOs() const
 {
@@ -51,7 +61,11 @@ std::string RuntimeInfo::GetClrString() const
     {
         buffer << "core";
     }
-    buffer << "-" << std::dec << _dotnetMajor << "." << _dotnetMinor;
+    buffer << "-" << std::dec << _major << "." << _minor;
+    if (_build > 0)
+    {
+        buffer << "." << _build;
+    }
 
     return buffer.str();
 }

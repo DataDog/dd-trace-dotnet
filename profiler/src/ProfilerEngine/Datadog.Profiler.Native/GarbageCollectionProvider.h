@@ -14,6 +14,7 @@
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
+class RawSampleTransformer;
 class SampleValueTypeProvider;
 
 class GarbageCollectionProvider
@@ -23,11 +24,7 @@ class GarbageCollectionProvider
 public:
     GarbageCollectionProvider(
         SampleValueTypeProvider& valueTypeProvider,
-        IFrameStore* pFrameStore,
-        IThreadsCpuManager* pThreadsCpuManager,
-        IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration,
+        RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
         shared::pmr::memory_resource* memoryResource);
 

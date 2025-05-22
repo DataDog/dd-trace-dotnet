@@ -1065,6 +1065,22 @@ namespace Datadog.Trace.Tests.Configuration
             settings.TraceId128BitLoggingEnabled.Should().Be(expected);
         }
 
+        [Theory]
+        [PairwiseData]
+        public void IsRemoteConfigurationAvailable(bool? overrideValue, bool? isRunningInAas)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, AsString(isRunningInAas)),
+                (ConfigurationKeys.Rcm.RemoteConfigurationEnabled, AsString(overrideValue)));
+            var settings = new TracerSettings(source);
+
+            // Default is "rcm is enabled" and "we're not in AAS"
+            var expected = (overrideValue ?? true) && !(isRunningInAas ?? false);
+            settings.IsRemoteConfigurationAvailable.Should().Be(expected);
+
+            static string AsString(bool? value) => value.HasValue ? (value.Value ? "1" : "0") : string.Empty;
+        }
+
         [Fact]
         public void RecordsTelemetryAboutTfm()
         {

@@ -34,6 +34,9 @@ public class MockDataStreamsPayload
     [Key(nameof(Stats))]
     public MockDataStreamsBucket[] Stats { get; set; }
 
+    [Key(nameof(ProductMask))]
+    public long ProductMask { get; set; }
+
     public static MockDataStreamsPayload Normalize(IImmutableList<MockDataStreamsPayload> dataStreams)
     {
         // This is nasty and hacky, but it's the only way I could get any semblance

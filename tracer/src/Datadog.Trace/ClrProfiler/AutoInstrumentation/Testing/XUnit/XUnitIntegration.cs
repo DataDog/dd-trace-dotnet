@@ -143,6 +143,7 @@ internal static class XUnitIntegration
 
             // Test management feature
             var testManagementData = Common.SetTestManagementFeature(test, isRetry);
+            testCaseMetadata.IsRetry = isRetry;
             testCaseMetadata.IsQuarantinedTest = testManagementData.Quarantined;
             testCaseMetadata.IsDisabledTest = testManagementData.Disabled;
             testCaseMetadata.IsAttemptToFix = testManagementData.AttemptToFix;
@@ -177,7 +178,7 @@ internal static class XUnitIntegration
 
             if (TestCasesMetadata.TryGetValue(test, out var testCaseMetadata) && testCaseMetadata is not null)
             {
-                if (testCaseMetadata.EarlyFlakeDetectionEnabled == true)
+                if (testCaseMetadata.EarlyFlakeDetectionEnabled)
                 {
                     var testTags = test.GetTags();
                     if (testTags.TestIsNew == "true" && test.GetInternalSpan() is { } internalSpan)
@@ -197,17 +198,35 @@ internal static class XUnitIntegration
             {
                 if (exception.GetType().Name == "SkipException")
                 {
+                    if (testCaseMetadata?.TotalExecutions > 1)
+                    {
+                        testCaseMetadata.AllRetriesFailed = false;
+                    }
+
+                    WriteFinalTagsFromMetadata(test, testCaseMetadata);
                     var skipReason = exception.Message.Replace("$XunitDynamicSkip$", string.Empty);
                     test.Close(TestStatus.Skip, TimeSpan.Zero, skipReason);
                 }
                 else
                 {
+                    if (testCaseMetadata?.IsAttemptToFix == true)
+                    {
+                        testCaseMetadata.AllAttemptsPassed = false;
+                    }
+
+                    WriteFinalTagsFromMetadata(test, testCaseMetadata);
                     test.SetErrorInfo(exception);
                     test.Close(TestStatus.Fail, duration);
                 }
             }
             else
             {
+                if (testCaseMetadata?.TotalExecutions > 1)
+                {
+                    testCaseMetadata.AllRetriesFailed = false;
+                }
+
+                WriteFinalTagsFromMetadata(test, testCaseMetadata);
                 test.Close(TestStatus.Pass, duration);
             }
         }
@@ -222,6 +241,30 @@ internal static class XUnitIntegration
             {
                 exceptionAggregator?.Clear();
             }
+        }
+    }
+
+    private static void WriteFinalTagsFromMetadata(Test test, TestCaseMetadata? testCaseMetadata)
+    {
+        if (testCaseMetadata == null)
+        {
+            return;
+        }
+
+        var tags = test.GetTags();
+        if (!testCaseMetadata.IsLastRetry)
+        {
+            return;
+        }
+
+        if (testCaseMetadata.IsAttemptToFix)
+        {
+            tags.AttemptToFixPassed = testCaseMetadata.AllAttemptsPassed ? "true" : "false";
+        }
+
+        if (testCaseMetadata.AllRetriesFailed)
+        {
+            tags.HasFailedAllRetries = "true";
         }
     }
 
