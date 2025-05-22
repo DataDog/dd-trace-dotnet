@@ -69,7 +69,9 @@ public class ProbesTests : TestHelper
             typeof(AsyncTryCatchTest),
             typeof(UnboundProbeBecomesBoundTest),
             typeof(Emit100LineProbeSnapshotsTest),
+#if NETFRAMEWORK
             typeof(ModuleUnloadTest)
+#endif
     };
 
     private static readonly Type[] _optimizedNotSupportedTypes = new[]
