@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS;
@@ -78,7 +79,7 @@ internal static class HangfireCommon
             return;
         }
 
-        scope.Span.ResourceName = createContext.Job.ToString();
+        scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + createContext.Job;
     }
 
     internal static void PopulatePerformSpanTags(Scope scope, IPerformingContextProxy performingContext, IPerformContextProxy performContext)
@@ -89,7 +90,7 @@ internal static class HangfireCommon
             return;
         }
 
-        scope.Span.ResourceName = performContext.Job.ToString();
+        scope.Span.ResourceName = HangfireConstants.ResourceNamePrefix + performContext.Job;
         scope.Span.SetTag(HangfireConstants.JobIdTag, performContext.JobId);
         scope.Span.SetTag(HangfireConstants.JobCreatedAtTag, performContext.BackgroundJob.CreatedAt.ToString("O"));
     }

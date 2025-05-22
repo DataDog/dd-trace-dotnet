@@ -26,7 +26,7 @@ internal interface IPerformContextProxy : IDuckType
     /// <summary>
     /// Gets a value of Hangfire.BackgroundJob
     /// </summary>
-    DuckTypeBackgroundJobProxy BackgroundJob { get; }
+    IBackgroundJobProxy BackgroundJob { get; }
 
     /// <summary>
     /// Gets a value of System.String
@@ -82,16 +82,4 @@ internal interface IPerformContextProxy : IDuckType
     /// Calls method: T Hangfire.Server.PerformContext::GetJobParameter[T](System.String,System.Boolean)
     /// </summary>
     T GetJobParameter<T>(string name, bool allowStale);
-}
-
-/// <summary>
-/// DuckTyping struct for Hangfire.BackgroundJob
-/// </summary>
-[DuckCopy]
-internal struct DuckTypeBackgroundJobProxy
-{
-    /// <summary>
-    /// Gets a value of System.DateTime
-    /// </summary>
-    internal DateTime CreatedAt;
 }
