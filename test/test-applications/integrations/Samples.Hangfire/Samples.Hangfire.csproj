@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <!-- Target ARM Macs -->
+    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">1.7.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.Core" Version="1.8.20" />
+    <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+    <PackageReference Include="OpenTelemetry" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="$(ApiVersion)" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Hangfire" Version="1.6.0-beta.1" />
+  </ItemGroup>
+
+</Project>
