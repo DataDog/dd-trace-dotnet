@@ -132,13 +132,17 @@ namespace Datadog.Trace.Tests.Agent
             await _agentWriter.FlushAndCloseAsync();
         }
 
-        [Fact(Skip = "TODO: fix test so it doesn't compare raw serialized bytes")]
+        [Fact]
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDropsOne()
         {
             var api = new MockApi();
-            var statsAggregator = new NullStatsAggregator();
+            var statsAggregator = new Mock<IStatsAggregator>();
+            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
+            statsAggregator.Setup(x => x.ProcessTrace(It.IsAny<ArraySegment<Span>>())).Returns<ArraySegment<Span>>(x => x);
+            statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
+
             var settings = SpanSamplingRule("*", "operation");
-            var agentWriter = new AgentWriter(api, statsAggregator, statsd: null, automaticFlush: false);
+            var agentWriter = new AgentWriter(api, statsAggregator.Object, statsd: null, automaticFlush: false);
             var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
@@ -167,9 +171,6 @@ namespace Datadog.Trace.Tests.Agent
             var spans = spanList.ToArray();
 
             var traceChunk = new ArraySegment<Span>(spans, 5, 4);
-            // var expectedChunk = new ArraySegment<Span>([rootSpan, keptChildSpan]);
-            // var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
-
             agentWriter.WriteTrace(traceChunk);
             await agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
