@@ -31,6 +31,7 @@ namespace Datadog.Trace.Debugger
                 () => new DebuggerManager(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource()),
                 LazyThreadSafetyMode.ExecutionAndPublication);
 
+        private static volatile bool _discoveryServiceReady;
         private readonly SemaphoreSlim _semaphore;
         private readonly CancellationTokenSource _cancellationToken;
         private volatile bool _isShuttingDown;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.Debugger
         private DebuggerManager(DebuggerSettings debuggerSettings, ExceptionReplaySettings exceptionReplaySettings)
         {
             _initialized = 0;
+            _discoveryServiceReady = false;
             _isShuttingDown = false;
             _semaphore = new SemaphoreSlim(1, 1);
             DebuggerSettings = debuggerSettings;
@@ -75,14 +77,31 @@ namespace Datadog.Trace.Debugger
 
         // /!\ This method is called by reflection in the Samples.SampleHelpers
         // If you remove it then you need to provide an alternative way to wait for the discovery service
-        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
+        private static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService, CancellationToken cancellationToken)
         {
+            // We do not check this here so as not to interfere with the reflection usage of this method.
+            /*
+            if (_discoveryServiceReady)
+            {
+                return true;
+            }
+            */
+
             var tc = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            // Stop waiting if we're shutting down
-            LifetimeManager.Instance.AddShutdownTask(_ => tc.TrySetResult(false));
+
+            // Use the provided cancellation token to cancel the wait operation
+            using var registration = cancellationToken.Register(() => tc.TrySetResult(false));
 
             discoveryService.SubscribeToChanges(Callback);
-            return await tc.Task.ConfigureAwait(false);
+            var result = await tc.Task.ConfigureAwait(false);
+
+            // Cache the successful result
+            if (result)
+            {
+                _discoveryServiceReady = true;
+            }
+
+            return result;
 
             void Callback(AgentConfiguration x)
             {
@@ -227,21 +246,18 @@ namespace Datadog.Trace.Debugger
                     DynamicInstrumentation = DebuggerFactory.CreateDynamicInstrumentation(discoveryService, RcmSubscriptionManager.Instance, settings, Instance.ServiceName, Instance.DebuggerSettings, tracerManager.GitMetadataTagsProvider);
                     Log.Debug("Dynamic Instrumentation has created.");
 
-                    var sw = Stopwatch.StartNew();
-                    var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                    if (isDiscoverySuccessful)
+                    if (!_discoveryServiceReady)
                     {
-                        sw.Restart();
-                        DynamicInstrumentation.Initialize();
-                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
-                    }
-                    else
-                    {
-                        tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
-                        Log.Debug("Could not initialize Dynamic Instrumentation because waiting for discovery service has failed");
+                        var sw = Stopwatch.StartNew();
+                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService, this._cancellationToken.Token).ConfigureAwait(false);
+                        if (isDiscoverySuccessful)
+                        {
+                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+                            sw.Restart();
+                            DynamicInstrumentation.Initialize();
+                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
+                            tracerManager.Telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
+                        }
                     }
                 }
             }
