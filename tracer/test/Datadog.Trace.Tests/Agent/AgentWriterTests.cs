@@ -161,8 +161,6 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.CurrentTraceSettings.SpanSampler!.MakeSamplingDecision(rootSpan);
             traceContext.CurrentTraceSettings.SpanSampler!.MakeSamplingDecision(keptChildSpan);
 
-            rootSpan.SetMetric(Metrics.TracesKeepRate, 0);
-
             // create a trace chunk so that our array has an offset
             var unusedSpans = CreateTraceChunk(5, 10);
             var spanList = new List<Span>();
@@ -457,9 +455,6 @@ namespace Datadog.Trace.Tests.Agent
             calculator.UpdateBucket();
             agent.WriteTrace(spans);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
-
-            const double expectedTraceKeepRate = 0.75;
-            rootSpan.SetMetric(Metrics.TracesKeepRate, expectedTraceKeepRate);
 
             var traceChunk = new TraceChunkModel(spans);
             await agent.FlushAndCloseAsync();
