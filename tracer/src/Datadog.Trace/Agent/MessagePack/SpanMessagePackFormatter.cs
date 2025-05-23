@@ -853,7 +853,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (model.TraceChunk.TracesKeepRate is { } keepRate)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _keepRateNameBytes); // "_dd.keep_rate"
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _keepRateNameBytes); // "_dd.tracer_kr"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, keepRate);
                 }
             }
