@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Upload;
@@ -56,7 +57,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             InitSnapshotsSink();
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
-            LifetimeManager.Instance.AddShutdownTask(Shutdown);
             return true;
         }
 
@@ -139,15 +139,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _snapshotSink.Add(probeId, snapshot);
         }
 
-        public void Shutdown(Exception? ex)
-        {
-            _exceptionTrackManager?.Dispose();
-            _uploader?.Dispose();
-        }
-
         public void Dispose()
         {
-            Shutdown(null);
+            SafeDisposal.TryDispose(_exceptionTrackManager);
+            SafeDisposal.TryDispose(_uploader);
         }
     }
 }
