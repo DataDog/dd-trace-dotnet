@@ -48,7 +48,7 @@ internal class GacInstallCommand : CommandWithExamples
 
         using var gacMethods = GacNativeMethods.Create();
         var assemblyCache = gacMethods.CreateAssemblyCache();
-        var hr = assemblyCache.InstallAssembly(AssemblyCacheInstallFlags.IASSEMBLYCACHE_INSTALL_FLAG_REFRESH, assemblyPath, IntPtr.Zero);
+        var hr = assemblyCache.InstallAssembly(AssemblyCacheInstallFlags.None, assemblyPath, IntPtr.Zero);
         if (hr == Hresult.S_OK)
         {
             Utils.WriteSuccess($"Assembly '{assemblyPath}' was installed in the GAC successfully.");
