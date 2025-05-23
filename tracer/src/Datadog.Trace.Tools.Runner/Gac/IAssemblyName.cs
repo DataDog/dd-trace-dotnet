@@ -5,6 +5,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Datadog.Trace.Tools.Runner.Gac;
 
@@ -16,21 +17,21 @@ namespace Datadog.Trace.Tools.Runner.Gac;
 internal interface IAssemblyName
 {
     [PreserveSig]
-    int SetProperty(uint propertyId, IntPtr pvProperty, uint cbProperty);
+    Hresult SetProperty(int propertyId, IntPtr pvProperty, int cbProperty);
 
     [PreserveSig]
-    int GetProperty(uint propertyId, IntPtr pvProperty, ref uint pcbProperty);
+    Hresult GetProperty(int propertyId, out IntPtr pvProperty, ref int pcbProperty);
 
     [PreserveSig]
 #pragma warning disable CS0465 // Introducing a 'Finalize' method can interfere with destructor invocation
-    int Finalize();
+    Hresult Finalize();
 #pragma warning restore CS0465 // Introducing a 'Finalize' method can interfere with destructor invocation
 
     [PreserveSig]
-    int GetDisplayName(IntPtr szDisplayName, ref uint pccDisplayName, uint dwDisplayFlags);
+    Hresult GetDisplayName(StringBuilder szDisplayName, ref int pccDisplayName, AsmDisplayFlags dwDisplayFlags);
 
     [PreserveSig]
-    int BindToObject(
+    Hresult BindToObject(
         object /*REFIID*/ refIID,
         object /*IAssemblyBindSink*/ pAsmBindSink,
         IApplicationContext pApplicationContext,
@@ -41,14 +42,14 @@ internal interface IAssemblyName
         out int ppv);
 
     [PreserveSig]
-    int GetName(out uint lpcwBuffer, out int pwzName);
+    Hresult GetName(ref int lpcwBuffer, StringBuilder pwzName);
 
     [PreserveSig]
-    int GetVersion(out uint pdwVersionHi, out uint pdwVersionLow);
+    Hresult GetVersion(out int pdwVersionHi, out int pdwVersionLow);
 
     [PreserveSig]
-    int IsEqual(IAssemblyName pName, uint dwCmpFlags);
+    Hresult IsEqual(IAssemblyName pName, int dwCmpFlags);
 
     [PreserveSig]
-    int Clone(out IAssemblyName pName);
+    Hresult Clone(out IAssemblyName pName);
 }

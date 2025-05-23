@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         ReturnTypeName = "Amazon.Kinesis.Model.PutRecordResponse",
         ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordRequest" },
         MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

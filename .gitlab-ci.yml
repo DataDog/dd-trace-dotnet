@@ -1,4 +1,3 @@
-
 stages:
   - build
   - publish
@@ -21,7 +20,7 @@ build:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["windows-v2:2019"]
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -37,7 +36,7 @@ build:
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
-        datadog/dd-trace-dotnet-docker-build:9-0-203 `
+        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
@@ -60,7 +59,7 @@ publish:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
-  tags: ["runner:windows-docker", "windowsversion:1809"]
+  tags: ["windows-v2:2019"]
   dependencies:
     - build
   hooks:

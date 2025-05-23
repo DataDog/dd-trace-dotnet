@@ -112,24 +112,25 @@ const shared::WSTRING system_private_corelib_assemblyName = WStr("System.Private
 const shared::WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const shared::WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=3.16.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=3.17.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
 const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual");
 
-const shared::WSTRING nonwindows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
-const shared::WSTRING windows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
+#ifdef _WIN32
+const shared::WSTRING nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
+const shared::WSTRING appsec_nativemethods_type = WStr("");
+const shared::WSTRING debugger_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+Windows");
+const shared::WSTRING fault_tolerant_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+Windows");
+#else
+const shared::WSTRING nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
+const shared::WSTRING appsec_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
+const shared::WSTRING debugger_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+NonWindows");
+const shared::WSTRING fault_tolerant_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+NonWindows");
+#endif
 
-const shared::WSTRING appsec_nonwindows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
-const shared::WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+Windows");
 const shared::WSTRING profiler_nativemethods_type = WStr("Datadog.Trace.ContinuousProfiler.NativeInterop+NativeMethods");
 const shared::WSTRING native_loader_nativemethods_type = WStr("Datadog.Trace.NativeLoader+NativeMethods");
-
-const shared::WSTRING debugger_nonwindows_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+NonWindows");
-const shared::WSTRING debugger_windows_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+Windows");
-
-const shared::WSTRING fault_tolerant_nonwindows_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+NonWindows");
-const shared::WSTRING fault_tolerant_windows_nativemethods_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantNativeMethods+Windows");
 
 const shared::WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
@@ -166,7 +167,7 @@ const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
                   49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
                   233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
     160, 32772, 1)
-        .WithVersion(3, 16, 0, 0);
+        .WithVersion(3, 17, 0, 0);
 
 } // namespace trace
 

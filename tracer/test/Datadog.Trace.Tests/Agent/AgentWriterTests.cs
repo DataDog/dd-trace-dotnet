@@ -18,16 +18,19 @@ using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Agent
 {
     public class AgentWriterTests
     {
+        private readonly ITestOutputHelper _output;
         private readonly AgentWriter _agentWriter;
         private readonly Mock<IApi> _api;
 
-        public AgentWriterTests()
+        public AgentWriterTests(ITestOutputHelper output)
         {
+            _output = output;
             _api = new Mock<IApi>();
             _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: null);
         }
@@ -167,15 +170,18 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceChunk = new ArraySegment<Span>(spans, 5, 4);
             var expectedChunk = new ArraySegment<Span>(new[] { rootSpan, keptChildSpan });
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep), SpanFormatterResolver.Instance);
+            var tempBuffer = new byte[8192];
+            var spanBuffer = new SpanBuffer(64 * 1024, SpanFormatterResolver.Instance);
+            spanBuffer.TryWrite(expectedChunk, ref tempBuffer, samplingPriority: SamplingPriorityValues.UserKeep).Should().Be(SpanBuffer.WriteStatus.Success);
+            spanBuffer.Lock();
+            var expectedData1 = spanBuffer.Data;
 
             agent.WriteTrace(traceChunk);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 2;
-            // expecting a single trace, but there should have been two spans
-            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans), It.IsAny<bool>()), Times.Once);
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => EqualSegments(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.Is<long>(i => i == expectedDroppedP0Traces), It.Is<long>(i => i == expectedDroppedP0Spans), It.IsAny<bool>()), Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -558,6 +564,26 @@ namespace Datadog.Trace.Tests.Agent
             };
 
             return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
+        }
+
+        private bool EqualSegments(ArraySegment<byte> expected, ArraySegment<byte> actual)
+        {
+            if (expected.Count != actual.Count)
+            {
+                _output.WriteLine($"Segment count mismatch, Expected {expected.Count}, Actual {actual.Count}");
+                return false;
+            }
+
+            for (var ele = 0; ele < expected.Count; ele++)
+            {
+                if (expected.Array![expected.Offset + ele] != actual.Array![actual.Offset + ele])
+                {
+                    _output.WriteLine($"Element mismatch at entry {ele}, Expected {expected.Count}, Actual {actual.Count}");
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

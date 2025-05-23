@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <!-- for unit tests -->
-  <ItemGroup Condition="('$(TargetFramework)' == 'net462')">
+  <ItemGroup Condition="('$(TargetFramework)' == 'net48')">
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 </Project>

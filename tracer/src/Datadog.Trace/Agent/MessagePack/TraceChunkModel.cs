@@ -96,7 +96,7 @@ internal readonly struct TraceChunkModel
                 {
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata ?? null;
-                    IsApmEnabled = settings.ApmTracingEnabledInternal;
+                    IsApmEnabled = settings.ApmTracingEnabled;
                 }
 
                 if (tracer.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&

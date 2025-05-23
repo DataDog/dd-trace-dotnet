@@ -214,7 +214,7 @@ public class Worker : BackgroundService
         try
         {
             _logger.LogInformation("Sending very slow request to self");
-            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddSeconds(2));
+            await client.VerySlowAsync(new HelloRequest { Name = "GreeterClient" }, deadline: DateTime.UtcNow.AddMilliseconds(600));
 
             throw new Exception("Received reply, when should have exceeded deadline");
         }

@@ -13,6 +13,15 @@ namespace Datadog.Trace.Tools.Runner.Gac;
 internal enum AssemblyCacheInstallFlags
 {
     None = 0x0,
+
+    /// <summary>
+    /// Replace existing files in the side-by-side store with the files in the assembly being installed
+    /// if the version of the file in the assembly is greater than or equal to the version of the existing file.
+    /// </summary>
     IASSEMBLYCACHE_INSTALL_FLAG_REFRESH = 0x1,
+
+    /// <summary>
+    /// Replace existing files in the side-by-side store with the files in the assembly being installed.
+    /// </summary>
     IASSEMBLYCACHE_INSTALL_FLAG_FORCE_REFRESH = 0x2,
 }

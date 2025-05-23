@@ -43,5 +43,8 @@ internal sealed class TravisEnvironmentValues<TValueProvider>(TValueProvider val
         JobUrl = ValueProvider.GetValue(Constants.TravisJobWebUrl);
 
         Message = ValueProvider.GetValue(Constants.TravisCommitMessage);
+
+        PrBaseBranch = ValueProvider.GetValue(Constants.TravisPullRequestBranch);
+        PrBaseCommit = ValueProvider.GetValue(Constants.TravisPullRequestSha);
     }
 }

@@ -37,7 +37,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
                 "ddog_prof_Exporter_send failed: operation was canceled"
             };
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe);
-            if (framework == "net462")
+            if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }

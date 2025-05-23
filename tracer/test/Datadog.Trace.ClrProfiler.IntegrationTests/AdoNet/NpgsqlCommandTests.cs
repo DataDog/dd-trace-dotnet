@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
 
             var fileName = nameof(NpgsqlCommandTests);
-#if NET462
+#if NETFRAMEWORK
             fileName = fileName + ".Net462";
 #endif
             fileName = fileName + (dbmPropagation switch

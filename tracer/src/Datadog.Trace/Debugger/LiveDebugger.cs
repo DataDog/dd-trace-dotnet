@@ -25,6 +25,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
@@ -238,6 +239,7 @@ namespace Datadog.Trace.Debugger
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                     break;
                                 case LiveProbeResolveStatus.Error:
+                                    Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", probe.Id, message);
                                     fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
                                     break;
                             }
@@ -286,18 +288,17 @@ namespace Datadog.Trace.Debugger
 
         private static void SetRateLimit(ProbeDefinition probe)
         {
-            if (probe is not LogProbe logProbe)
+            switch (probe)
             {
-                return;
-            }
-
-            if (logProbe.Sampling is { } sampling)
-            {
-                ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
-            }
-            else
-            {
-                ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                case LogProbe { Sampling: { } sampling }:
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, (int)sampling.SnapshotsPerSecond);
+                    break;
+                case LogProbe logProbe:
+                    ProbeRateLimiter.Instance.SetRate(probe.Id, logProbe.CaptureSnapshot ? 1 : 5000);
+                    break;
+                case SpanDecorationProbe or MetricProbe:
+                    ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
+                    break;
             }
         }
 
@@ -516,6 +517,11 @@ namespace Datadog.Trace.Debugger
                     throw new ArgumentOutOfRangeException(
                         nameof(metricKind),
                         $"{metricKind} is not a valid value");
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Successfully sent metric {Metric}. ProbeId={ProbeId}", metricName, probeId);
             }
 
             SetProbeStatusToEmitting(probe);

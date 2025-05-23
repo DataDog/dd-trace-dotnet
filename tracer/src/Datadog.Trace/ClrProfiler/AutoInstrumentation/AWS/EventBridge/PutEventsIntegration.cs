@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
     ReturnTypeName = "Amazon.EventBridge.Model.PutEventsResponse",
     ParameterTypeNames = ["Amazon.EventBridge.Model.PutEventsRequest"],
     MinimumVersion = "3.3.0",
-    MaximumVersion = "3.*.*",
+    MaximumVersion = "4.*.*",
     IntegrationName = AwsEventBridgeCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

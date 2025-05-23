@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(PublishTrimmed)' != 'true'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;$(TargetFrameworks)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(PublishTrimmed)' != 'true' AND '$(OS)' == 'Windows_NT'">net462;$(TargetFrameworks)</TargetFrameworks>
+    <TargetFrameworks Condition="'$(PublishTrimmed)' != 'true' AND '$(OS)' == 'Windows_NT'">net48;$(TargetFrameworks)</TargetFrameworks>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -19,7 +19,8 @@
     <PackageReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' ">
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.Net.Http" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.3" />
   </ItemGroup>
