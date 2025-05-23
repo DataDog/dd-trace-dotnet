@@ -718,6 +718,16 @@ namespace Datadog.Trace.Configuration
             telemetry.Record(ConfigTelemetryData.SsiInjectionEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED"), recordValue: true, ConfigurationOrigins.EnvVars);
             telemetry.Record(ConfigTelemetryData.SsiAllowUnsupportedRuntimesEnabled, value: EnvironmentHelpers.GetEnvironmentVariable("DD_INJECT_FORCE"), recordValue: true, ConfigurationOrigins.EnvVars);
 
+            if (EnvironmentHelpers.GetEnvironmentVariable("DD_INJECTION_ENABLED")?.Contains("tracer") == true)
+            {
+                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "ssi", recordValue: true, ConfigurationOrigins.Default);
+            }
+            else
+            {
+                // TODO: capture `cmd_line/dd-trace tool` and `env_var` values
+                telemetry.Record(ConfigTelemetryData.InstrumentationSource, "unknown", recordValue: true, ConfigurationOrigins.Default);
+            }
+
             if (AzureAppServiceMetadata is not null)
             {
                 telemetry.Record(ConfigTelemetryData.AasConfigurationError, AzureAppServiceMetadata.IsUnsafeToTrace, ConfigurationOrigins.Default);
