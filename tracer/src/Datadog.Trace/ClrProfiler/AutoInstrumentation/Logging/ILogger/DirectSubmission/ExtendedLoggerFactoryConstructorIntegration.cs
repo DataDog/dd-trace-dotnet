@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class ExtendedLoggerFactoryConstructorIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TProviders, TEnrichers, TStaticEnrichers, TFilterOptions, TSampler, TFactoryOptions, TScopeProvider, TEnrichmentOptions, TRedactionOptions, TRedactorProvider, TLogBuffer>(TTarget instance, TProviders? providers, TEnrichers? enrichers, TStaticEnrichers? staticEnrichers, TFilterOptions? filterOptions, TSampler? sampler, TFactoryOptions? factoryOptions, TScopeProvider? scopeProvider, TEnrichmentOptions? enrichmentOptions, TRedactionOptions? redactionOptions, TRedactorProvider? redactorProviderref, ref TLogBuffer? logBuffer)
+    internal static CallTargetState OnMethodBegin<TTarget, TProviders, TEnrichers, TStaticEnrichers, TFilterOptions, TSampler, TFactoryOptions, TScopeProvider, TEnrichmentOptions, TRedactionOptions, TRedactorProvider, TLogBuffer>(TTarget instance, TProviders? providers, TEnrichers? enrichers, TStaticEnrichers? staticEnrichers, TFilterOptions? filterOptions, TSampler? sampler, TFactoryOptions? factoryOptions, TScopeProvider? scopeProvider, TEnrichmentOptions? enrichmentOptions, TRedactionOptions? redactionOptions, TRedactorProvider? redactorProviderref, TLogBuffer? logBuffer)
     {
         return new CallTargetState(scope: null, state: scopeProvider);
     }
