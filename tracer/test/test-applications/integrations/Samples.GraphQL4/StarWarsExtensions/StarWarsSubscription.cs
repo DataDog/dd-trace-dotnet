@@ -107,7 +107,36 @@ namespace Samples.GraphQL4.StarWarsExtensions
 #endif
         )
         {
-            throw new NotImplementedException("This API purposely throws a NotImplementedException");
+            try
+            {
+                throw new NotImplementedException("This API purposely throws a NotImplementedException");
+            }
+            catch (Exception ex)
+            {
+                var error = new ExecutionError("This API purposely throws a NotImplementedException", ex);
+#if GRAPHQL_7_0
+                error.Extensions = new Dictionary<string, object>
+                {
+                    { "int", 1 },
+                    { "float", 1.1f },
+                    { "str", "1" },
+                    { "bool", true },
+                    { "other", new object[] { 1, "foo" } },
+                    { "sbyte", (sbyte)-42 },
+                    { "byte", (byte)42 },
+                    { "short", (short)-1000 },
+                    { "ushort", (ushort)1000 },
+                    { "uint", (uint)4294967295 },
+                    { "long", (long)-9223372036854775808 },
+                    { "ulong", (ulong)18446744073709551615 },
+                    { "decimal", (decimal)3.1415926535897932384626433833 },
+                    { "double", 3.1415926535897932384626433833 },
+                    { "char", 'A' },
+                    { "not_captured", "This should not be captured" }
+                };
+#endif
+                throw error;
+            }
         }
     }
 }

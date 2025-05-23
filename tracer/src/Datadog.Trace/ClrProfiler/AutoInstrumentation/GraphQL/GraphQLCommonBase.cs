@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return scope;
         }
 
-        protected static void RecordExecutionErrors(Span span, string errorType, int errorCount, string errors)
+        protected static void RecordExecutionErrors(Span span, string errorType, int errorCount, string errors, List<SpanEvent> spanEvents)
         {
             if (errorCount > 0)
             {
@@ -48,23 +49,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
                 span.SetTag(Trace.Tags.ErrorType, errorType);
                 span.SetTag(Trace.Tags.ErrorStack, errors);
+
+                for (int i = 0; i < spanEvents.Count; i++)
+                {
+                    span.AddEvent(spanEvents[i]);
+                }
             }
         }
 
         protected static void ConstructErrorLocationsMessage(StringBuilder builder, string tab, IEnumerable locations)
         {
             builder.AppendLine($"{tab + tab}\"locations\": [");
-            if (locations != null)
+            foreach (var location in locations)
             {
-                foreach (var location in locations)
+                if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                 {
-                    if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
-                    {
-                        builder.AppendLine($"{tab + tab + tab}{{");
-                        builder.AppendLine($"{tab + tab + tab + tab}\"line\": {locationProxy.Line},");
-                        builder.AppendLine($"{tab + tab + tab + tab}\"column\": {locationProxy.Column}");
-                        builder.AppendLine($"{tab + tab + tab}}},");
-                    }
+                    builder.AppendLine($"{tab + tab + tab}{{");
+                    builder.AppendLine($"{tab + tab + tab + tab}\"line\": {locationProxy.Line},");
+                    builder.AppendLine($"{tab + tab + tab + tab}\"column\": {locationProxy.Column}");
+                    builder.AppendLine($"{tab + tab + tab}}},");
                 }
             }
 
