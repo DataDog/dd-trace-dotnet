@@ -204,6 +204,7 @@ internal static class EndpointDetector
 
                         break;
                     }
+
                 case HandleKind.MethodDefinition:
                     {
                         var ctor = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
@@ -211,6 +212,7 @@ internal static class EndpointDetector
                         fullName = GetFullTypeName(td.Namespace, td.Name, reader);
                         break;
                     }
+
                 default:
                     continue;
             }
