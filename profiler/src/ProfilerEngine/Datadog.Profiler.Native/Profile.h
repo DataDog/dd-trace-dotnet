@@ -33,6 +33,7 @@ public:
     void SetEndpoint(int64_t traceId, std::string const& endpoint);
     void AddEndpointCount(std::string const& endpoint, int64_t count);
     Success AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName, uint64_t sampled, uint64_t real);
+    Success AddUpscalingRulePoisson(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName, uintptr_t sumValueOffset, uintptr_t countValueOffset, uint64_t sampling_distance);
     std::string const& GetApplicationName() const;
 
 private:

@@ -9,6 +9,7 @@
 
 // forward declarations
 class IProfile;
+class IUpscalePoissonProvider;
 class IUpscaleProvider;
 class ISamplesProvider;
 class Sample;
@@ -21,6 +22,7 @@ public:
     virtual void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) = 0;
     virtual bool Export(bool lastCall = false) = 0;
     virtual void RegisterUpscaleProvider(IUpscaleProvider* provider) = 0;
+    virtual void RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider) = 0;
     virtual void RegisterProcessSamplesProvider(ISamplesProvider* provider) = 0;
     virtual void RegisterApplication(std::string_view runtimeId) = 0;
 };
