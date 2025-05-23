@@ -1,0 +1,20 @@
+{
+  "supportedConfigurations": [
+    {
+      "name" : "DD_TRACE_DEBUG",
+      "versions" : [ "ABC" ]
+    },
+    {
+      "name" : "DD_TRACE_DEBUG2",
+      "versions" : [ "AB", "BC" ]
+    },
+    {
+      "name" : "DD_TRACE_ENABLED",
+      "versions" :  [ "ABE", "BCD" ]
+    }
+  ],
+  "aliases": {
+    "DD_TRACE": "DD_TRACE_ENABLED",
+    "DD_ENABLED_TRACE": "DD_TRACE_ENABLED"
+  }
+}
