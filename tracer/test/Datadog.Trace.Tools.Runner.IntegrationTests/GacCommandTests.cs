@@ -54,9 +54,7 @@ public class GacCommandTests
 
         const string DummyAssemblyName = "DummyLibrary";
         var rootFolder = Path.GetDirectoryName(typeof(GacCommandTests).Assembly.Location)!;
-        var assemblyPathV1 = Path.GetFullPath(Path.Combine(rootFolder, $"{DummyAssemblyName}V1.dll"));
-        var assemblyPathTarget = Path.GetFullPath(Path.Combine(rootFolder, $"{DummyAssemblyName}.dll"));
-        File.Copy(assemblyPathV1, assemblyPathTarget, true);
+        var assemblyPathV1 = Path.GetFullPath(Path.Combine(rootFolder, "V1", $"{DummyAssemblyName}.dll"));
 
         // GET
         using (var consoleGet = ConsoleHelper.Redirect())
@@ -71,7 +69,7 @@ public class GacCommandTests
         // INSTALL
         using (var consoleInstall = ConsoleHelper.Redirect())
         {
-            var result = Program.Main($"gac install {assemblyPathTarget}".Split(' '));
+            var result = Program.Main($"gac install {assemblyPathV1}".Split(' '));
 
             // should be successful
             result.Should().Be(0);
@@ -118,9 +116,8 @@ public class GacCommandTests
 
         const string DummyAssemblyName = "DummyLibrary";
         var rootFolder = Path.GetDirectoryName(typeof(GacCommandTests).Assembly.Location)!;
-        var assemblyPathV1 = Path.GetFullPath(Path.Combine(rootFolder, $"{DummyAssemblyName}V1.dll"));
-        var assemblyPathV2 = Path.GetFullPath(Path.Combine(rootFolder, $"{DummyAssemblyName}V2.dll"));
-        var assemblyPathTarget = Path.GetFullPath(Path.Combine(rootFolder, $"{DummyAssemblyName}.dll"));
+        var assemblyPathV1 = Path.GetFullPath(Path.Combine(rootFolder, "V1", $"{DummyAssemblyName}.dll"));
+        var assemblyPathV2 = Path.GetFullPath(Path.Combine(rootFolder, "V2", $"{DummyAssemblyName}.dll"));
 
         // GET
         using (var consoleGet = ConsoleHelper.Redirect())
@@ -137,8 +134,7 @@ public class GacCommandTests
         // install the first one
         using (var consoleInstall = ConsoleHelper.Redirect())
         {
-            File.Copy(assemblyPathV1, assemblyPathTarget, true);
-            var result = Program.Main($"gac install {assemblyPathTarget}".Split(' '));
+            var result = Program.Main($"gac install {assemblyPathV1}".Split(' '));
 
             // should be successful
             result.Should().Be(0);
@@ -147,8 +143,7 @@ public class GacCommandTests
         // install the second one
         using (var consoleInstall = ConsoleHelper.Redirect())
         {
-            File.Copy(assemblyPathV2, assemblyPathTarget, true);
-            var result = Program.Main($"gac install {assemblyPathTarget}".Split(' '));
+            var result = Program.Main($"gac install {assemblyPathV2}".Split(' '));
 
             // should be successful
             result.Should().Be(0);
