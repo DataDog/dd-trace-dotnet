@@ -20,7 +20,7 @@ internal abstract class CommandBase : Command
     {
     }
 
-    protected bool IsValidEnvironment(CommandResult commandResult)
+    protected static bool IsValidEnvironment(CommandResult commandResult)
     {
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
@@ -39,7 +39,7 @@ internal abstract class CommandBase : Command
         return true;
     }
 
-    protected bool HasValidIIsVersion(ILogger commandResult, [NotNullWhen(false)] out string? errorMessage)
+    protected static bool HasValidIIsVersion([NotNullWhen(false)] out string? errorMessage)
     {
         if (!RegistryHelper.TryGetIisVersion(Log.Instance, out var version))
         {

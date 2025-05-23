@@ -106,7 +106,7 @@ internal class EnableIisInstrumentationCommand : CommandBase
         }
 
         // We can't enable iis instrumentation if IIS is not available or is to low a version
-        if (!HasValidIIsVersion(Log.Instance, out var errorMessage))
+        if (!HasValidIIsVersion(out var errorMessage))
         {
             commandResult.ErrorMessage = errorMessage;
             return;
