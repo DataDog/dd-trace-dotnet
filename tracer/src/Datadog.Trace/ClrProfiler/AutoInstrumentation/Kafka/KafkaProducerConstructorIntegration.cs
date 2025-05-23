@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -25,43 +27,50 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaProducerConstructorIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder consumer)
+    internal static CallTargetState OnMethodBegin<TTarget, TProducerBuilder>(TTarget instance, TProducerBuilder builder)
         where TProducerBuilder : IProducerBuilder
     {
-        if (Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
+        if (!Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId)
+            || instance is null
+            || builder.Instance is null
+            || builder.Config is null)
         {
-            string bootstrapServers = null;
-            var deliveryReportsEnabled = true;
-            foreach (var kvp in consumer.Config)
-            {
-                if (string.Equals(kvp.Key, KafkaHelper.BootstrapServersKey, StringComparison.Ordinal))
-                {
-                    if (!string.IsNullOrEmpty(kvp.Value))
-                    {
-                        bootstrapServers = kvp.Value;
-                    }
-                }
+            return CallTargetState.GetDefault();
+        }
 
-                if (string.Equals(kvp.Key, KafkaHelper.EnableDeliveryReportsField, StringComparison.Ordinal))
+        var bootstrapServers = string.Empty;
+        var deliveryReportsEnabled = true;
+        foreach (var kvp in builder.Config)
+        {
+            if (string.Equals(kvp.Key, KafkaHelper.BootstrapServersKey, StringComparison.Ordinal))
+            {
+                if (!string.IsNullOrEmpty(kvp.Value))
                 {
-                    if (!string.IsNullOrEmpty(kvp.Value))
-                    {
-                        deliveryReportsEnabled = bool.Parse(kvp.Value);
-                    }
+                    bootstrapServers = kvp.Value;
                 }
             }
 
-            if (deliveryReportsEnabled)
+            if (string.Equals(kvp.Key, KafkaHelper.EnableDeliveryReportsField, StringComparison.Ordinal))
             {
-                ProducerCache.AddDefaultDeliveryHandler(instance);
+                if (!string.IsNullOrEmpty(kvp.Value))
+                {
+                    deliveryReportsEnabled = bool.Parse(kvp.Value);
+                }
             }
+        }
 
-            if (!string.IsNullOrEmpty(bootstrapServers))
-            {
-                // Save the map between this producer and its bootstrap server config
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers);
-                return new CallTargetState(scope: null, state: instance);
-            }
+        if (deliveryReportsEnabled)
+        {
+            // TODO unsure about this - if bootstrapServers is empty we return a default calltargetstate
+            // but then we remove this instance from the producer cache as the state isn't set, but won't remove if no exception
+            ProducerCache.AddDefaultDeliveryHandler(instance);
+        }
+
+        if (!string.IsNullOrEmpty(bootstrapServers))
+        {
+            // Save the map between this builder and its bootstrap server config
+            ProducerCache.AddBootstrapServers(instance, bootstrapServers);
+            return new CallTargetState(scope: null, state: instance);
         }
 
         return CallTargetState.GetDefault();
@@ -70,7 +79,7 @@ public class KafkaProducerConstructorIntegration
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
     {
         // This method is called in the Producer constructor, so if we have an exception
-        // the consumer won't be created, so no point recording it.
+        // the builder won't be created, so no point recording it.
         if (exception is not null && state is { State: { } producer })
         {
             ProducerCache.RemoveProducer(producer);
