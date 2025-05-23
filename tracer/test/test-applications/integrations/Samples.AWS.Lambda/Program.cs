@@ -34,6 +34,13 @@ namespace Samples.AWS.Lambda
             // in the corresponding container. Each of the lambda instances are configured to use
             // ONE of the handler methods described in the #handler region below.
 
+            // Disabled
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_NO_PARAM_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DISABLED_TOPLEVEL_STATEMENT"));
+
+            // Param tests
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC"));
@@ -121,9 +128,10 @@ namespace Samples.AWS.Lambda
             // Toplevel Statements
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TOPLEVEL_STATEMENT"));
-            
+
             static async Task Post(string url)
             {
+                Console.WriteLine("Sending request to " + url);
                 HttpClient client = new HttpClient();
                 client.BaseAddress = new Uri(url);
                 client.DefaultRequestHeaders
