@@ -115,12 +115,12 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var enabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && DebuggerSettings.CodeOriginForSpansEnabled.Value;
-                var disabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && !DebuggerSettings.CodeOriginForSpansEnabled.Value;
+                var manuallyEnabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && DebuggerSettings.CodeOriginForSpansEnabled.Value;
+                var manuallyDisabled = DebuggerSettings.CodeOriginForSpansEnabled.HasValue && !DebuggerSettings.CodeOriginForSpansEnabled.Value;
                 var dynamicallyEnabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value;
                 var dynamicallyDisabled = DebuggerSettings.DynamicSettings.CodeOriginEnabled.HasValue && !DebuggerSettings.DynamicSettings.CodeOriginEnabled.Value;
 
-                if (disabled)
+                if (manuallyDisabled)
                 {
                     Log.Information("Code Origin for Spans is disabled by environment variable. To enable it, please set {CodeOriginForSpans} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.CodeOriginForSpansEnabled);
                     return;
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if ((enabled || dynamicallyEnabled) && CodeOrigin == null)
+                if ((manuallyEnabled || dynamicallyEnabled) && CodeOrigin == null)
                 {
                     CodeOrigin = new SpanCodeOrigin.SpanCodeOrigin(DebuggerSettings);
                 }
@@ -148,12 +148,12 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var enabled = ExceptionReplaySettings.Enabled.HasValue && ExceptionReplaySettings.Enabled.Value;
-                var disabled = ExceptionReplaySettings.Enabled.HasValue && !ExceptionReplaySettings.Enabled.Value;
+                var manuallyEnabled = ExceptionReplaySettings.Enabled.HasValue && ExceptionReplaySettings.Enabled.Value;
+                var manuallyDisabled = ExceptionReplaySettings.Enabled.HasValue && !ExceptionReplaySettings.Enabled.Value;
                 var dynamicallyEnabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value;
                 var dynamicallyDisabled = DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.HasValue && !DebuggerSettings.DynamicSettings.ExceptionReplayEnabled.Value;
 
-                if (disabled)
+                if (manuallyDisabled)
                 {
                     Log.Information("Exception Replay is disabled by environment variable. To enable it, please set {ExceptionReplayEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.ExceptionReplayEnabled);
                     return;
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if ((enabled || dynamicallyEnabled) && ExceptionReplay == null)
+                if ((manuallyEnabled || dynamicallyEnabled) && ExceptionReplay == null)
                 {
                     var exceptionReplay = ExceptionDebugging.Create(ExceptionReplaySettings);
 
@@ -193,12 +193,12 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var enabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value;
-                var disabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicInstrumentationEnabled.Value;
+                var manuallyEnabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicInstrumentationEnabled.Value;
+                var manuallyDisabled = DebuggerSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicInstrumentationEnabled.Value;
                 var dynamicallyEnabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value;
                 var dynamicallyDisabled = DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.HasValue && !DebuggerSettings.DynamicSettings.DynamicInstrumentationEnabled.Value;
 
-                if (disabled)
+                if (manuallyDisabled)
                 {
                     Log.Information("Dynamic Instrumentation is disabled by environment variable. To enable it, please set {DynamicInstrumentationEnabled} environment variable to '1'/'true'.", Datadog.Trace.Configuration.ConfigurationKeys.Debugger.DynamicInstrumentationEnabled);
                     return;
@@ -214,7 +214,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                if ((enabled || dynamicallyEnabled) && DynamicInstrumentation == null)
+                if ((manuallyEnabled || dynamicallyEnabled) && DynamicInstrumentation == null)
                 {
                     var tracerManager = TracerManager.Instance;
                     var settings = tracerManager.Settings;
