@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionCaseInstrumentationManager>();
         private static readonly ConcurrentDictionary<MethodUniqueIdentifier, ExceptionDebuggingProbe> MethodToProbe = new();
-        private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
+        private static readonly int MaxFramesToCapture = DebuggerManager.Instance.ExceptionReplay?.Settings.MaximumFramesToCapture ?? ExceptionReplaySettings.DefaultMaxFramesToCapture;
 
         internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId, string exceptionToString)
         {

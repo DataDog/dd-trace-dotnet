@@ -75,12 +75,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal ProbeData ProbeData { get; }
 
         /// <summary>
-        /// Gets the LiveDebugger SnapshotCreator
+        /// Gets the DynamicInstrumentation SnapshotCreator
         /// </summary>
         internal IDebuggerSnapshotCreator SnapshotCreator { get; }
 
         /// <summary>
-        /// Gets the LiveDebugger BeginMethod scope
+        /// Gets the DynamicInstrumentation BeginMethod scope
         /// </summary>
         internal Scope Scope => _scope;
 
