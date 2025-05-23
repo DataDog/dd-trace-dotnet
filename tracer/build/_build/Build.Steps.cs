@@ -2777,17 +2777,6 @@ partial class Build
             }
         }
 
-        // set variables for subsequent tests
-        var isSsiRun = Environment.GetEnvironmentVariable("IS_SSI_RUN");
-        if (!string.IsNullOrEmpty(isSsiRun) && string.Equals(isSsiRun, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            Logger.Information("Setting environment variables for SSI run");
-
-            // Not setting telemetry forwarder path because we don't have one to point to
-            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
-            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
-        }
-
         base.OnTargetRunning(target);
 
         static string PrettyPrint(long bytes)
