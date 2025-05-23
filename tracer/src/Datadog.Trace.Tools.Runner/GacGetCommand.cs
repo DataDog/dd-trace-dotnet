@@ -32,10 +32,11 @@ internal class GacGetCommand : CommandWithExamples
     private void Execute(InvocationContext context)
     {
         var assemblyName = _assemblyNameArgument.GetValue(context);
-        using var container = NativeMethods.CreateAssemblyCache();
+        using var gacMethods = GacNativeMethods.Create();
+        var assemblyCache = gacMethods.CreateAssemblyCache();
         var asmInfo = new AssemblyInfo();
-        var hr = container.AssemblyCache.QueryAssemblyInfo(QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, assemblyName!, ref asmInfo);
-        if (hr == 0)
+        var hr = assemblyCache.QueryAssemblyInfo(QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, assemblyName!, ref asmInfo);
+        if (hr == Hresult.S_OK)
         {
             var asmFlags = asmInfo.AssemblyFlags switch
             {
@@ -49,12 +50,17 @@ internal class GacGetCommand : CommandWithExamples
             AnsiConsole.WriteLine($"  Flag={asmFlags}");
             AnsiConsole.WriteLine($"  Path={asmInfo.CurrentAssemblyPath}");
             AnsiConsole.WriteLine($"  SizeInKb={asmInfo.AssemblySizeInKb}");
+
+            foreach (var asmName in gacMethods.GetAssemblyNames(assemblyName!))
+            {
+                AnsiConsole.WriteLine($"- FullName={asmName.FullName}");
+            }
         }
         else
         {
-            Utils.WriteWarning($"Error getting '{assemblyName}' from the GAC. HRESULT={hr}");
+            Utils.WriteWarning($"Error getting '{assemblyName}' from the GAC. HRESULT={hr.ToStringOrHex()}");
         }
 
-        context.ExitCode = hr;
+        context.ExitCode = (int)hr;
     }
 }

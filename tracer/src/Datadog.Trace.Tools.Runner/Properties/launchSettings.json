@@ -2,8 +2,28 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "ci run --tracer-home /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/shared/bin/monitoring-home -- dotnet test --collect:\"XPlat Code Coverage\"",
-      "workingDirectory": "/Users/tony.redondo/RiderProjects/TestProject3",
+      "commandLineArgs": "ci run --tracer-home X:\\github\\DataDog\\dd-trace-dotnet\\shared\\bin\\monitoring-home -- dotnet --version",
+      "workingDirectory": "X:\\",
+      "nativeDebugging": true,
+      "environmentVariables": {
+        "DD_ENV" : "ci",
+        "DD_TRACE_DEBUG" : "1"
+      }
+    },
+    "Datadog.Trace.Tools.Runner - gac get": {
+      "commandName": "Project",
+      "commandLineArgs": "gac get Datadog.Trace",
+      "workingDirectory": "X:\\",
+      "nativeDebugging": true,
+      "environmentVariables": {
+        "DD_ENV" : "ci",
+        "DD_TRACE_DEBUG" : "1"
+      }
+    },
+    "Datadog.Trace.Tools.Runner - gac uninstall": {
+      "commandName": "Project",
+      "commandLineArgs": "gac uninstall Datadog.Trace",
+      "workingDirectory": "X:\\",
       "nativeDebugging": true,
       "environmentVariables": {
         "DD_ENV" : "ci",
