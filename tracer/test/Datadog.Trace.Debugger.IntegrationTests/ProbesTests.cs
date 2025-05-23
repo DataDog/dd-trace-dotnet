@@ -280,17 +280,11 @@ public class ProbesTests : TestHelper
         }
     }
 
-    [SkippableFact]
+    [SkippableFact(Skip = "Too flaky, 'Log file was not found for path' error")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task LineProbeUnboundProbeBecomesBoundTest()
     {
-        var framework = EnvironmentHelper.GetTargetFramework();
-        if (framework != "net9.0")
-        {
-            throw new SkipException("This test should run on net9.0 only.");
-        }
-
         var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(UnboundProbeBecomesBoundTest));
         SkipOverTestIfNeeded(testDescription);
 
