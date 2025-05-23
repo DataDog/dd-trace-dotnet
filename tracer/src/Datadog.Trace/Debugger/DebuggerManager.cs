@@ -172,16 +172,8 @@ namespace Datadog.Trace.Debugger
                 if ((manuallyEnabled || dynamicallyEnabled) && ExceptionReplay == null)
                 {
                     var exceptionReplay = ExceptionDebugging.Create(ExceptionReplaySettings);
-
-                    if (exceptionReplay != null)
-                    {
-                        exceptionReplay.Initialize();
-                        ExceptionReplay = exceptionReplay;
-                    }
-                    else
-                    {
-                        Log.Information("Exception Replay is disabled.");
-                    }
+                    exceptionReplay.Initialize();
+                    ExceptionReplay = exceptionReplay;
                 }
             }
             catch (Exception ex)
