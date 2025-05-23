@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 Baggage.Current = propagationContext.Baggage;
             }
 
-            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, HangfireConstants.OnPerformOperation, SpanKinds.Server, parentContext);
+            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, HangfireConstants.OnPerformOperation, new HangfireTags(SpanKinds.Server), parentContext);
             if (scope is null)
             {
                 return;

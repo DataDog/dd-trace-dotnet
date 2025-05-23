@@ -26,7 +26,7 @@ internal static class HangfireCommon
     internal const string IntegrationName = nameof(Configuration.IntegrationId.Hangfire);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.Hangfire;
 
-    public static Scope CreateScope(Tracer tracer, string operationName, string spanKind, ISpanContext parentContext = null)
+    public static Scope CreateScope(Tracer tracer, string operationName, HangfireTags tags, ISpanContext parentContext = null, bool finishOnClose = true)
     {
         if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
         {
@@ -39,7 +39,7 @@ internal static class HangfireCommon
         try
         {
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, HangfireServiceName);
-            scope = tracer.StartActiveInternal(operationName, parent: parentContext, serviceName: serviceName);
+            scope = tracer.StartActiveInternal(operationName, parent: parentContext, serviceName: serviceName, tags: tags);
             var span = scope.Span;
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
         }

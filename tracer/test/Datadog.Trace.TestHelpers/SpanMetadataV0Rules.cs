@@ -436,6 +436,15 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "server"));
 
+        public static Result IsHangfireV0(this MockSpan span) => Result.FromSpan(span)
+           .Properties(
+                s => s
+                    .MatchesOneOf(Name, "Hangfire.onCreate", "Hangfire.onPerform")
+                    .Matches(Type, "Hangfire"))
+           .Tags(
+                s => s
+                   .Matches("component", "Hangfire"));
+
         public static Result IsHotChocolateV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .MatchesOneOf(Name, "graphql.execute", "graphql.validate")

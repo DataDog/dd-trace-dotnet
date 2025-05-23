@@ -11,10 +11,17 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class HangfireTags : InstrumentationTags
     {
-        [Tag("hangfire.job")]
-        public static string JobName { get; set; }
+        private const string ComponentName = "Hangfire";
+
+        public HangfireTags(string spanKind)
+        {
+            SpanKind = spanKind;
+        }
+
+        [Tag(Trace.Tags.InstrumentationName)]
+        public string InstrumentationName => ComponentName;
 
         [Tag(Trace.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Client;
+        public override string SpanKind { get; }
     }
 }
