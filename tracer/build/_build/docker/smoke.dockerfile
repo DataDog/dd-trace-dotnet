@@ -5,6 +5,8 @@ ARG RUNTIME_IMAGE
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
 
 RUN echo $(ldd --version ldd)
+RUN echo $(uname -r)
+RUN echo $(uname -a)
 
 # Build the smoke test app
 WORKDIR /src
