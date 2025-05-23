@@ -140,7 +140,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return true;
     }
 
-    private Model.Scope[]? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
+    private Model.Scope[]? GetLocalSymbols(MethodDefinition methodDefinition, ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
     {
         List<Model.Scope>? scopes = null;
         var generatedClassPrefix = GeneratedClassPrefix.AsSpan();
