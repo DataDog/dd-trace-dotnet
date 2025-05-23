@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples
@@ -400,7 +401,7 @@ namespace Samples
             }
 
             var result = DebuggerManagerType?.GetMethod("WaitForDiscoveryService", BindingFlags.NonPublic | BindingFlags.Static)
-                                            ?.Invoke(null, new[] { discoveryService });
+                                            ?.Invoke(null, new[] { discoveryService, CancellationToken.None });
 
             return result as Task ?? Task.CompletedTask;
         }
