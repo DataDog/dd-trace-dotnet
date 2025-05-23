@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal ExceptionReplaySettings Settings { get; }
 
-        internal static ExceptionDebugging? Create(ExceptionReplaySettings settings)
+        internal static ExceptionDebugging Create(ExceptionReplaySettings settings)
         {
             return new ExceptionDebugging(settings);
         }
