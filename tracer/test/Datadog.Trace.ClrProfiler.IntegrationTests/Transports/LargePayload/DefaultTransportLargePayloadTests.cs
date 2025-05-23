@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,8 +18,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableFact]
+        [SkippableTheory]
+        [InlineData(false)]
+        [InlineData(true)]
         [Trait("RunOnWindows", "True")]
-        public Task SubmitsTraces() => RunTest();
+        public Task SubmitsTraces(bool dataPipelineEnabled) => RunTest(TestTransports.Tcp, dataPipelineEnabled);
     }
 }
