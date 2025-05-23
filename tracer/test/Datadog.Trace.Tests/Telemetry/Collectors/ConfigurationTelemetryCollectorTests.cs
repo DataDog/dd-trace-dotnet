@@ -20,6 +20,7 @@ using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
+[Collection(nameof(EnvironmentVariablesTestCollection))]
 public class ConfigurationTelemetryCollectorTests
 {
     public static IEnumerable<object[]> GetPropagatorConfigurations()
@@ -239,20 +240,30 @@ public class ConfigurationTelemetryCollectorTests
     [Fact]
     public void ConfigurationDataShouldReportSSIValues()
     {
-        var collector = new ConfigurationTelemetry();
-        var source = new NameValueConfigurationSource(new NameValueCollection
+        // Store original variable
+        var originalInjectionEnabled = Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED");
+        var originalInjectionForce = Environment.GetEnvironmentVariable("DD_INJECT_FORCE");
+        // Set environment variable to override
+        try
         {
-            { "DD_INJECTION_ENABLED", "tracer" },
-            { "DD_INJECT_FORCE", "true" }
-        });
+            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
 
-        _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
-        _ = new SecuritySettings(source, collector);
-
-        var data = collector.GetData();
-        GetLatestValueFromConfig(data, "ssi_injection_enabled", ConfigurationOrigins.Default).Should().Be("tracer");
-        GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("ssi");
-        GetLatestValueFromConfig(data, "ssi_forced_injection_enabled", ConfigurationOrigins.Default).Should().Be("true");
+            var collector = new ConfigurationTelemetry();
+            var source = new NameValueConfigurationSource(new NameValueCollection{});
+            _ = new ImmutableTracerSettings(new TracerSettings(source, collector));
+            _ = new SecuritySettings(source, collector);
+            var data = collector.GetData();
+            GetLatestValueFromConfig(data, "ssi_injection_enabled", ConfigurationOrigins.Default).Should().Be("tracer");
+            GetLatestValueFromConfig(data, "instrumentation_source", ConfigurationOrigins.Default).Should().Be("ssi");
+            GetLatestValueFromConfig(data, "ssi_forced_injection_enabled", ConfigurationOrigins.Default).Should().Be("true");
+        }
+        finally
+        {
+            // Restore original variable
+            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", originalInjectionEnabled);
+            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", originalInjectionForce);
+        }
     }
 
 #if NETFRAMEWORK
