@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         {
             var creatingContext = context.DuckCast<ICreatingContextProxy>();
             var createContext = context.DuckCast<ICreateContextProxy>();
-            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, HangfireConstants.OnCreateOperation, SpanKinds.Client);
+            Scope scope = HangfireCommon.CreateScope(Tracer.Instance, HangfireConstants.OnCreateOperation, new HangfireTags(SpanKinds.Client));
             if (scope is not null)
             {
                 if (createContext is not null && creatingContext is not null)
