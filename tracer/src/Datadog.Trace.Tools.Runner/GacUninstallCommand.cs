@@ -46,8 +46,8 @@ internal class GacUninstallCommand : CommandWithExamples
         var installedAssemblyNames = gacMethods.GetAssemblyNames(assemblyName!);
         if (installedAssemblyNames.Count == 0)
         {
-            Utils.WriteWarning($"Assembly '{assemblyName}' is not installed the GAC.");
-            context.ExitCode = 1;
+            Utils.WriteSuccess($"Assembly '{assemblyName}' is not installed in the GAC.");
+            context.ExitCode = 0;
             return;
         }
 
