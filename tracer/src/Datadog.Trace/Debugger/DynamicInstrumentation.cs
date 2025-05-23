@@ -140,21 +140,9 @@ namespace Datadog.Trace.Debugger
 
         private void StartInBackground()
         {
-            LifetimeManager.Instance.AddShutdownTask(ShutdownTask);
-
             _probeStatusPoller.StartPolling();
             _diagnosticsUploader.StartFlushingAsync();
             _snapshotUploader.StartFlushingAsync();
-        }
-
-        private void ShutdownTask(Exception? ex)
-        {
-            if (ex != null)
-            {
-                Log.Error(ex, "Shutdown task for DynamicInstrumentation is running with exception");
-            }
-
-            Dispose();
         }
 
         internal void UpdateAddedProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes)
@@ -204,7 +192,7 @@ namespace Datadog.Trace.Debugger
                                         fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
                                         break;
                                     case LiveProbeResolveStatus.Error:
-										Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", probe.Id, message);
+                                        Log.Warning("ProbeID {ProbeID} error resolving live. Error: {Error}", probe.Id, message);
                                         fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
                                         break;
                                 }
@@ -550,20 +538,15 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            try
-            {
-                AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
-                _discoveryService.RemoveSubscription(DiscoveryCallback);
-                _snapshotUploader.Dispose();
-                _diagnosticsUploader.Dispose();
-                _probeStatusPoller.Dispose();
-                _subscriptionManager.Unsubscribe(_subscription);
-                _dogStats.Dispose();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Fail to dispose DynamicInstrumentation");
-            }
+            AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
+            SafeDisposal.New()
+                        .Execute(() => _discoveryService.RemoveSubscription(DiscoveryCallback), "removing discovery service subscription")
+                        .Execute(() => _subscriptionManager.Unsubscribe(_subscription), "unsubscribing from RCM")
+                        .Add(_snapshotUploader)
+                        .Add(_diagnosticsUploader)
+                        .Add(_probeStatusPoller)
+                        .Add(_dogStats)
+                        .DisposeAll();
         }
     }
 }

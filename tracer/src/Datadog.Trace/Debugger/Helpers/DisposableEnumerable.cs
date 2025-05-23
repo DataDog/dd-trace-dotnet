@@ -17,16 +17,14 @@ namespace Datadog.Trace.Debugger.Helpers
 
         public void Dispose()
         {
-            foreach (var item in _items)
+            if (_items == null)
             {
-                try
-                {
-                    item.Dispose();
-                }
-                catch
-                {
-                    // ignored
-                }
+                return;
+            }
+
+            foreach (var item in this._items)
+            {
+                SafeDisposal.TryDispose(item);
             }
         }
     }

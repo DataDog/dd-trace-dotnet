@@ -30,7 +30,7 @@ using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionTrackManager
+    internal class ExceptionTrackManager : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ExceptionTrackManager>();
         private readonly ConcurrentDictionary<ExceptionIdentifier, TrackedExceptionCase> _trackedExceptionCases;
