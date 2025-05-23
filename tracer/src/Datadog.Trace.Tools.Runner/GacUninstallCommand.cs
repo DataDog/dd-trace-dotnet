@@ -64,6 +64,9 @@ internal class GacUninstallCommand : CommandWithExamples
                 case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_STILL_IN_USE:
                     Utils.WriteWarning($"Assembly '{installedAssemblyName.FullName}' is still in use.");
                     break;
+                case UninstallDisposition.IASSEMBLYCACHE_UNINSTALL_DISPOSITION_HAS_INSTALL_REFERENCES:
+                    Utils.WriteWarning($"Assembly '{installedAssemblyName.FullName}' have not been removed because the side-by-side store contains a reference to the assembly by another application.");
+                    break;
             }
 
             if (hr != Hresult.S_OK)
