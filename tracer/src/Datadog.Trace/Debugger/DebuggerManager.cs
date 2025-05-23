@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
@@ -329,15 +330,23 @@ namespace Datadog.Trace.Debugger
             _ = InitializeSymbolUploader();
         }
 
-        private void ShutdownTasks(Exception? arg)
+        private void ShutdownTasks(Exception? ex)
         {
             _isShuttingDown = true;
-            _cancellationToken.Cancel();
-            _cancellationToken.Dispose();
-            DynamicInstrumentation?.Dispose();
-            ExceptionReplay?.Dispose();
-            SymbolsUploader?.Dispose();
-            _semaphore.Dispose();
+
+            if (ex != null)
+            {
+                Log.Error(ex, "Shutdown task for DebuggerManager is running with exception");
+            }
+
+            SafeDisposal.New()
+                        .Execute(() => _cancellationToken?.Cancel(), "cancelling DebuggerManager operations")
+                        .Add(DynamicInstrumentation)
+                        .Add(ExceptionReplay)
+                        .Add(SymbolsUploader)
+                        .Add(_cancellationToken)
+                        .Add(_semaphore)
+                        .DisposeAll();
         }
     }
 }
