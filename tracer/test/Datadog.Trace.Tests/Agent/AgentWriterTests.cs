@@ -418,7 +418,7 @@ namespace Datadog.Trace.Tests.Agent
             return agent.FlushAndCloseAsync();
         }
 
-        [Fact(Skip = "TODO: fix test so it doesn't compare raw serialized bytes")]
+        [Fact]
         public async Task AddsTraceKeepRateMetricToRootSpan()
         {
             // Traces should be dropped when both buffers are full
@@ -436,10 +436,8 @@ namespace Datadog.Trace.Tests.Agent
             var sizeOfTrace = ComputeSize(spans);
 
             // Make the buffer size big enough for a single trace
-            var api = new Mock<IApi>();
-            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-               .ReturnsAsync(() => true);
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true);
+            var api = new MockApi();
+            var agent = new AgentWriter(api, statsAggregator: null, statsd: null, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100, apmTracingEnabled: true);
 
             // Fill both buffers
             agent.WriteTrace(spans);
@@ -452,8 +450,7 @@ namespace Datadog.Trace.Tests.Agent
             // Write another one
             agent.WriteTrace(spans);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
-            api.Verify();
-            api.Invocations.Clear();
+            api.TraceCount.Should().Be(3);
 
             // Write trace and update keep rate
             calculator.UpdateBucket();
@@ -464,10 +461,11 @@ namespace Datadog.Trace.Tests.Agent
             rootSpan.SetMetric(Metrics.TracesKeepRate, expectedTraceKeepRate);
 
             var traceChunk = new TraceChunkModel(spans);
-            var expectedData = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
             await agent.FlushAndCloseAsync();
 
-            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Once);
+            api.TraceCount.Should().Be(4); // previous value + 1
+            api.Traces.Count.Should().Be(4);
+            api.Traces.Last().Count.Should().Be(traceChunk.SpanCount);
         }
 
         [Fact]
