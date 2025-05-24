@@ -171,5 +171,18 @@ public class DatadogLoggingFactoryTests
             var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
             config.File.HasValue.Should().BeFalse();
         }
+
+        [Theory]
+        [InlineData("console")]
+        [InlineData("file,console")]
+        [InlineData("console, file")]
+        [InlineData("unknown,console")]
+        public void WhenConsoleSinkIsIncluded_UsesConsoleSink(string sinks)
+        {
+            var source = new NameValueConfigurationSource(new() { { ConfigurationKeys.LogSinks, sinks } });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source);
+            config.Console.HasValue.Should().BeTrue();
+        }
     }
 }
