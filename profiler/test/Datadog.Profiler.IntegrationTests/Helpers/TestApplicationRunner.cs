@@ -68,7 +68,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetApplicationOutputFolderPath(string appName)
         {
-            var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
+            var appTargetPlatform = EnvironmentHelper.GetPlatform();
+
+            var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{(appTargetPlatform == "Arm64" ? "AnyCPU" : appTargetPlatform)}";
             var binPath = EnvironmentHelper.GetBinOutputPath();
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }
