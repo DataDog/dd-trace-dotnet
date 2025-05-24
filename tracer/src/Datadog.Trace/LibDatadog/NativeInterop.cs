@@ -66,7 +66,7 @@ internal class NativeInterop
         // internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
     }
 
-    internal static class ServiceDiscovery
+    internal static class Common
     {
         [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
         internal static extern TracerMemfdHandleResult StoreTracerMetadata(
@@ -78,5 +78,8 @@ internal class NativeInterop
             CharSlice serviceName,
             CharSlice serviceEnv,
             CharSlice serviceVersion);
+
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropError(ref Error errorHandle);
     }
 }

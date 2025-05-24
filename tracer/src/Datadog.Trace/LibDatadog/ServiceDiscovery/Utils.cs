@@ -26,7 +26,7 @@ internal class Utils
         var serviceEnvCharSlice = CharSlice.CreateCharSlice(serviceEnv);
         var serviceVersionCharSlice = CharSlice.CreateCharSlice(serviceVersion);
 
-        var result = NativeInterop.ServiceDiscovery.StoreTracerMetadata(1, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
+        var result = NativeInterop.Common.StoreTracerMetadata(1, runtimeIdCharSlice, tracerLanguageCharSlice, tracerVersionCharSlice, hostnameCharSlice, serviceNameCharSlice, serviceEnvCharSlice, serviceVersionCharSlice);
         CharSlice.FreeCharSlice(tracerLanguageCharSlice);
         CharSlice.FreeCharSlice(tracerVersionCharSlice);
         CharSlice.FreeCharSlice(hostnameCharSlice);

@@ -8,6 +8,8 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Core;
 
 namespace Datadog.Trace.LibDatadog.ServiceDiscovery;
 
@@ -22,10 +24,10 @@ public struct TracerMemfdHandleResult
     [FieldOffset(0)]
     public ResultTag Tag;
 
-    [FieldOffset(4)] // Ensure proper alignment
+    [FieldOffset(8)] // Ensure proper alignment
     public TracerMemfdHandle Ok;
 
-    [FieldOffset(4)]
+    [FieldOffset(8)]
     public Error Err;
 }
 
@@ -38,25 +40,28 @@ public enum ResultTag
 [StructLayout(LayoutKind.Sequential)]
 public struct Error
 {
-    public CharSlice ErrorMessage;
+    public VecU8 ErrorMessage;
 
-    public string Message()
+    internal static string ReadAndDrop(ref Error resultErr)
     {
-        if (ErrorMessage.Ptr == IntPtr.Zero)
+        var message = resultErr.ErrorMessage;
+        if (message.Length == UIntPtr.Zero)
         {
             return string.Empty;
         }
 
-        var bytes = new byte[ErrorMessage.Length.ToUInt32()];
-        Marshal.Copy(ErrorMessage.Ptr, bytes, 0, bytes.Length);
-        var errorMessage = Encoding.UTF8.GetString(bytes);
-        // NativeInterop.Ddcommon.DropCharSlice(ref message);
+        var buffer = new byte[(int)resultErr.ErrorMessage.Length];
+        Marshal.Copy(message.Ptr, buffer, 0, (int)message.Length);
+
+        var errorMessage = Encoding.UTF8.GetString(buffer);
+        NativeInterop.Common.DropError(ref resultErr);
         return errorMessage;
     }
 
-    // Clean up the error using the FFI function
+// Clean up the error using the FFI function
     public void Dispose()
     {
+        var uintPtr = new UIntPtr(34);
         // NativeMethods.ddog_Error_drop(ref this);
     }
 }
@@ -100,8 +105,17 @@ public struct CharSlice
             Marshal.FreeHGlobal(slice.Ptr);
         }
     }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning restore SA1600
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VecU8
+{
+    public IntPtr Ptr; // const uint8_t*
+
+    public UIntPtr Length; // size_t
+
+    public UIntPtr Capacity; // size_t
 }
 #pragma warning restore SA1401
+#pragma warning restore SA1600
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

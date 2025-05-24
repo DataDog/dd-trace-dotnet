@@ -596,6 +596,22 @@ namespace Datadog.Trace
 
                     writer.WriteEndArray();
 
+#if true
+                    try
+                    {
+                        var tracerSettings = instanceSettings;
+                        var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
+                        if (result.Tag == ResultTag.Err)
+                        {
+                            Log.Error("Failed to store tracer metadata with message: {Error}", Error.ReadAndDrop(ref result.Err));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, "Failed to store tracer metadata");
+                    }
+#endif
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -690,21 +706,6 @@ namespace Datadog.Trace
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
-
-#if true
-            try
-            {
-                var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
-                if (result.Tag == ResultTag.Err)
-                {
-                    Log.Error("Failed to store tracer metadata with message: {Error}", result.Err.Message());
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Failed to store tracer metadata");
-            }
-#endif
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
