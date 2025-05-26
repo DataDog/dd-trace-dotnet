@@ -116,12 +116,6 @@ download-single-step-artifacts:
     expire_in: 2 weeks
     paths:
       - artifacts
-  
-check_config_inversion_local_file:
-  rules:
-    - when: on_success
-  variables:
-    LOCAL_JSON_PATH: "tracer/build/artifacts/local_configurations.json" # must be set in implementing libray e.g. "tracer/build/artifacts/local_config_inversion.json"
 
 requirements_json_test:
   rules:
