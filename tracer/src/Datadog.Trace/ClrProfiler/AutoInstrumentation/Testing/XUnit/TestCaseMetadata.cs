@@ -35,5 +35,13 @@ internal class TestCaseMetadata
 
     public bool IsAttemptToFix { get; set; }
 
+    public bool IsRetry { get; set; }
+
+    public bool IsLastRetry => IsRetry && CountDownExecutionNumber == 0;
+
+    public bool AllAttemptsPassed { get; set; } = true;
+
+    public bool AllRetriesFailed { get; set; } = true;
+
     public string UniqueID { get; }
 }

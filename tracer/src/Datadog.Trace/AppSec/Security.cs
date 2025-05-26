@@ -597,7 +597,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal void SetTraceSamplingPriority(Span span)
+        internal void SetTraceSamplingPriority(Span span, bool setSource = true)
         {
             if (!_settings.KeepTraces)
             {
@@ -608,7 +608,10 @@ namespace Datadog.Trace.AppSec
             else if (_rateLimiter?.Allowed(span) ?? false)
             {
                 span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-                span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                if (setSource)
+                {
+                    span.Context.TraceContext?.Tags.EnableTraceSources(TraceSources.Asm);
+                }
             }
         }
 

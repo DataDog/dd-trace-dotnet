@@ -17,7 +17,7 @@ namespace ServiceBus.Minimal.NServiceBus
         internal static readonly CountdownEvent Countdown = new CountdownEvent(NumMessagesToSend);
         private static readonly string EndpointName = "ServiceBus.Minimal.NServiceBus";
 
-        static async Task Main()
+        static async Task<int> Main()
         {
             var connectionString = GetSqlServerConnectionString("NsbSamplesSqlPersistence");
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
@@ -30,7 +30,11 @@ namespace ServiceBus.Minimal.NServiceBus
                     return new SqlConnection(connectionString);
                 });
 
-            EnsureDatabaseExists(connectionString);
+            if (!EnsureDatabaseExists(connectionString))
+            {
+                Console.WriteLine("No SQL connection could be established. Exiting with skip code (13)");
+                return 13;
+            }
 
             var storageDirectory = Path.Combine(Path.GetTempPath(), "learningtransport");
 
@@ -47,6 +51,8 @@ namespace ServiceBus.Minimal.NServiceBus
             await endpointInstance.Stop()
                 .ConfigureAwait(false);
             Console.WriteLine("App completed successfully");
+
+            return 0;
         }
 
         static async Task SendMessagesAsync(string storageDirectory)
@@ -100,26 +106,38 @@ namespace ServiceBus.Minimal.NServiceBus
             return builder.ConnectionString;
         }
 
-        static void EnsureDatabaseExists(string connectionString)
+        static bool EnsureDatabaseExists(string connectionString)
         {
             var builder = new SqlConnectionStringBuilder(connectionString);
             var database = builder.InitialCatalog;
 
             var masterConnection = connectionString.Replace(builder.InitialCatalog, "master");
 
-            using (var connection = new SqlConnection(masterConnection))
+            try
             {
-                connection.Open();
-
-                using (var command = connection.CreateCommand())
+                using (var connection = new SqlConnection(masterConnection))
                 {
-                    command.CommandText = $@"
+                    connection.Open();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = $@"
     if(db_id('{database}') is null)
         create database [{database}]
     ";
-                    command.ExecuteNonQuery();
+                        command.ExecuteNonQuery();
+                    }
+
+                    return true;
                 }
             }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex);
+                Console.WriteLine($"Unable to open connection to connection string {connectionString}");
+            }
+
+            return false;
         }
     }
 }
