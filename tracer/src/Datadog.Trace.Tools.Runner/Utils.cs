@@ -11,6 +11,7 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tools.Runner.Gac;
 using Datadog.Trace.Util;
 using Spectre.Console;
 
@@ -633,23 +635,45 @@ namespace Datadog.Trace.Tools.Runner
                 if (platform == Platform.Windows && datadogTraceDllPath is not null)
                 {
 #pragma warning disable CA1416
-                    using var container = Gac.NativeMethods.CreateAssemblyCache();
+                    const string datadogTraceAssemblyName = "Datadog.Trace";
+                    var datadogTraceAssemblyNameInfo = AssemblyName.GetAssemblyName(datadogTraceDllPath);
+                    using var gacMethods = Gac.GacNativeMethods.Create();
+                    var assemblyCache = gacMethods.CreateAssemblyCache();
                     var asmInfo = new Gac.AssemblyInfo();
-                    var hr = container.AssemblyCache.QueryAssemblyInfo(Gac.QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, "Datadog.Trace", ref asmInfo);
+                    var hr = assemblyCache.QueryAssemblyInfo(Gac.QueryAssemblyInfoFlag.QUERYASMINFO_FLAG_GETSIZE, datadogTraceAssemblyName, ref asmInfo);
                     if (hr == 0 && asmInfo.AssemblyFlags == Gac.AssemblyInfoFlags.ASSEMBLYINFO_FLAG_INSTALLED)
                     {
-                        // Datadog.Trace is in the GAC, do nothing
-                        Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace is already installed in the gac.");
-                        return true;
+                        try
+                        {
+                            // Datadog.Trace is in the GAC, let's get the version
+                            var installedAssemblyNames = gacMethods.GetAssemblyNames(datadogTraceAssemblyName);
+                            var hasSameVersionInstalled = false;
+                            foreach (var installedAssemblyName in installedAssemblyNames)
+                            {
+                                Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace version {Version} installed.", installedAssemblyName.Version);
+                                hasSameVersionInstalled |= installedAssemblyName.Version == datadogTraceAssemblyNameInfo.Version;
+                            }
+
+                            if (hasSameVersionInstalled)
+                            {
+                                // the same version of Datadog.Trace is in the GAC, do nothing
+                                Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace version {Version} is already installed in the gac.", datadogTraceAssemblyNameInfo.Version);
+                                return true;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error getting the installed assembly names.");
+                        }
                     }
 
-                    Log.Warning("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace is not in the GAC, let's try to install it.");
+                    Log.Warning("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace ({Version}) is not in the GAC, let's try to install it.", datadogTraceAssemblyNameInfo.Version);
 
                     if (Gac.AdministratorHelper.IsElevated)
                     {
                         WriteInfo("Datadog.Trace is not installed in the GAC, installing it...");
 
-                        hr = container.AssemblyCache.InstallAssembly(0, datadogTraceDllPath, IntPtr.Zero);
+                        hr = assemblyCache.InstallAssembly(AssemblyCacheInstallFlags.IASSEMBLYCACHE_INSTALL_FLAG_FORCE_REFRESH, datadogTraceDllPath, IntPtr.Zero);
                         if (hr == 0)
                         {
                             Log.Information("EnsureDatadogTraceIsInTheGac [Built-in]: Datadog.Trace was installed in the gac.");
@@ -666,6 +690,12 @@ namespace Datadog.Trace.Tools.Runner
 #else
                         var processPath = Environment.GetCommandLineArgs()[0];
 #endif
+                        // If we get the .dll filepath we change it to the .exe one
+                        if (string.Equals(Path.GetExtension(processPath), ".dll", StringComparison.OrdinalIgnoreCase))
+                        {
+                            processPath = Path.ChangeExtension(processPath, ".exe");
+                        }
+
                         if (ProcessHelpers.RunCommand(new ProcessHelpers.Command(processPath, $"gac install {datadogTraceDllPath}", verb: "runas")) is { } cmdGacInstallResponse &&
                             cmdGacInstallResponse.ExitCode == 0)
                         {

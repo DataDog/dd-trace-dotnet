@@ -69,7 +69,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
 
   IntegrationTests.IIS.MultipleAppsInDomain:
     build:
@@ -114,7 +113,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
 
   smoke-tests.windows:
     build:
