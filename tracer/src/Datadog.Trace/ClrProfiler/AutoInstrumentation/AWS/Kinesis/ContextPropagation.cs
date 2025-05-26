@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             where TRecordRequest : IContainsData
         {
             Dictionary<string, object> propagatedContext = new Dictionary<string, object>();
-            Log.Information("### Inject trace info data");
+            Console.WriteLine($"### Inject trace info data {scope?.Span.Context == null}, {streamName}");
             if (scope?.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
                 Log.Information("### Span context is present");
