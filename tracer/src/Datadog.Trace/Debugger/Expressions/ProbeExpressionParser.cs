@@ -81,13 +81,10 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters)
     {
-        Expression Combine(Expression leftOperand, Expression rightOperand) =>
-            leftOperand == null ? rightOperand : combiner(leftOperand, rightOperand.Type != ProbeExpressionParserHelper.UndefinedValueType ? rightOperand : Expression.Constant(true));
-
         _arrayStack++;
         reader.Read();
         var right = ParseTree(reader, parameters, null);
-        var left = Combine(null, right);
+        var left = Combine(null, right, combiner);
 
         while (reader.Read())
         {
@@ -113,10 +110,22 @@ internal partial class ProbeExpressionParser<T>
             }
 
             right = ParseTree(reader, parameters, null, false);
-            left = Combine(left, right);
+            left = Combine(left, right, combiner);
         }
 
         return left;
+    }
+
+    private static Expression Combine(Expression leftOperand, Expression rightOperand, Combiner combiner)
+    {
+        return leftOperand is null ? AsBoolean(rightOperand) : combiner(AsBoolean(leftOperand), AsBoolean(rightOperand));
+
+        Expression AsBoolean(Expression operand)
+        {
+            return operand?.Type == ProbeExpressionParserHelper.UndefinedValueType
+                       ? Expression.Constant(true)
+                       : operand;
+        }
     }
 
     private Expression ParseTree(
