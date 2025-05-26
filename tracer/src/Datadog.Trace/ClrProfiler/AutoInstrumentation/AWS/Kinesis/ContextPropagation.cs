@@ -42,11 +42,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             where TRecordRequest : IContainsData
         {
             Dictionary<string, object> propagatedContext = new Dictionary<string, object>();
+            Log.Information("### Inject trace info data");
             if (scope?.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
+                Log.Information("### Span context is present");
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
+                    Log.Information("### DSM manager is enabled");
                     var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
                     scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                     var adapter = new KinesisContextAdapter();
