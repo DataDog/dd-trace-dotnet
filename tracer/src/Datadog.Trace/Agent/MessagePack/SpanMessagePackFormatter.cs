@@ -69,31 +69,21 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
-
         private readonly byte[] _gitCommitShaNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitCommitSha);
         private readonly byte[] _gitRepositoryUrlNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.GitRepositoryUrl);
-
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
-
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
         private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
-
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
-
         private readonly byte[] _agentSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingAgentDecision);
-
         private readonly byte[] _ruleSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingRuleDecision);
-
         private readonly byte[] _limitSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingLimitDecision);
-
         private readonly byte[] _keepRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.TracesKeepRate);
-
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
-
         private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.ApmEnabled);
 
         // ASM tags
