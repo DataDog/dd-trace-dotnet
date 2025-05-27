@@ -26,6 +26,7 @@ namespace Datadog.Trace.Debugger
     internal class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
+
         private static readonly Lazy<DebuggerManager> _lazyInstance =
             new(
                 () => new DebuggerManager(DebuggerSettings.FromDefaultSource(), ExceptionReplaySettings.FromDefaultSource()),
@@ -289,7 +290,7 @@ namespace Datadog.Trace.Debugger
             bool semaphoreAcquired = false;
             try
             {
-                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(5), _cancellationToken.Token).ConfigureAwait(false);
+                semaphoreAcquired = await _semaphore.WaitAsync(TimeSpan.FromSeconds(30), _cancellationToken.Token).ConfigureAwait(false);
                 if (!semaphoreAcquired || _isShuttingDown)
                 {
                     Log.Debug("Skipping update debugger state due to semaphore timed out");
