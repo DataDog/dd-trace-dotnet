@@ -90,7 +90,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _appSecEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.AppSecEnabled);
         private readonly byte[] _wafRuleFileVersionBytes = StringEncoding.UTF8.GetBytes(Tags.AppSecRuleFileVersion);
         private readonly byte[] _runtimeFamilyBytes = StringEncoding.UTF8.GetBytes(Tags.RuntimeFamily);
-        private Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
+        private readonly Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
 
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
