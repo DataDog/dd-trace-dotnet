@@ -7,7 +7,7 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.AppSec
 {
-    internal class AppSecRateLimiter : RateLimiter
+    internal sealed class AppSecRateLimiter : RateLimiter
     {
         public AppSecRateLimiter(int? maxTracesPerInterval)
             : base(maxTracesPerInterval)
