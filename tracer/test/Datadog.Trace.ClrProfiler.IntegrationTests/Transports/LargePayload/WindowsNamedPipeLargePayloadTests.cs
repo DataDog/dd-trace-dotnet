@@ -21,13 +21,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// <summary>
         /// To be enabled when Windows Named Pipes is available in the MockTracerAgent
         /// </summary>
-        [SkippableFact(Skip = "Windows named pipes are not yet supported in the MockTracerAgent")]
+        [SkippableTheory(Skip = "Windows named pipes are not yet supported in the MockTracerAgent")]
+        [InlineData(false)]
+        [InlineData(true)]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
-        public async Task SubmitsTraces()
+        public async Task SubmitsTraces(bool dataPipelineEnabled)
         {
-            EnvironmentHelper.EnableWindowsNamedPipes();
-            await RunTest();
+            await RunTest(TestTransports.WindowsNamedPipe, dataPipelineEnabled);
         }
     }
 }

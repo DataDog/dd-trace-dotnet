@@ -286,6 +286,7 @@ partial class Build : NukeBuild
         .Description("Builds the integration tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -334,6 +335,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
         .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _

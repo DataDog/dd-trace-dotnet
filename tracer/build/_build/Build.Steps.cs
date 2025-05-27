@@ -84,7 +84,7 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
-    readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
+    readonly string[] WindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
@@ -546,7 +546,7 @@ partial class Build
         {
             if (IsWin)
             {
-                foreach (var architecture in WafWindowsArchitectureFolders)
+                foreach (var architecture in WindowsArchitectureFolders)
                 {
                     var source = LibDdwafDirectory() / "runtimes" / architecture / "native" / "ddwaf.dll";
                     var dest = MonitoringHomeDirectory / architecture;
@@ -642,6 +642,42 @@ partial class Build
                     }
                 });
 
+    Target CopyNativeFilesForTests => _ => _
+        .Unlisted()
+        .After(Clean)
+        .After(BuildTracerHome)
+        .Executes(() =>
+        {
+            foreach(var projectName in Projects.NativeFilesDependentTests)
+            {
+                var project = Solution.GetProject(projectName);
+                var testDir = project.Directory;
+                var frameworks = project.GetTargetFrameworks();
+                var testBinFolder = testDir / "bin" / BuildConfiguration;
+
+                if (IsWin)
+                {
+                    foreach (var fmk in frameworks)
+                    {
+                        var (arch, ext) = GetWinArchitectureAndExtension(fmk);
+                        var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
+                        var dest = testBinFolder / fmk / "LibDatadog.dll";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                }
+                else
+                {
+                    var (arch, ext) = GetUnixArchitectureAndExtension();
+                    var source = MonitoringHomeDirectory / arch / $"libdatadog_profiling.{ext}";
+                    foreach (var fmk in frameworks)
+                    {
+                        var dest = testBinFolder / fmk / $"LibDatadog.{ext}";
+                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                }
+            }
+        });
+
     Target CopyNativeFilesForAppSecUnitTests => _ => _
                 .Unlisted()
                 .After(Clean)
@@ -662,7 +698,7 @@ partial class Build
                         {
                             var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
                             await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
-                            foreach (var arch in WafWindowsArchitectureFolders)
+                            foreach (var arch in WindowsArchitectureFolders)
                             {
                                 var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
                                 var source = MonitoringHomeDirectory / arch;
@@ -938,7 +974,8 @@ partial class Build
         .Executes(() =>
         {
             // extract debug info from everything in monitoring home and copy it to the linux symbols directory
-            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so");
+            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so")
+                .Where(file => !Path.GetFileName(file).Contains("libdatadog_profiling.so"));
 
             foreach (var file in files)
             {
@@ -1263,6 +1300,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
+        .DependsOn(CopyNativeFilesForTests)
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
@@ -2707,6 +2745,17 @@ partial class Build
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
 
+    private (string Arch, string Ext) GetWinArchitectureAndExtension(string fmk)
+    {
+        return RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X86 => ("win-x86", "dll"),
+            Architecture.X64 => ("win-x64", "dll"),
+            Architecture.Arm64 => ("win-arm64", "dll"),
+            _ => ("win-x86", "dll") // Default to x86 for unknown architectures
+        };
+    }
+
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
     {
@@ -2841,7 +2890,7 @@ partial class Build
             .CombineWith(projPaths, (settings, projPath) => settings.SetProjectFile(projPath)));
     }
 
-    
+
     private async Task<string> GetVcpkg()
     {
         var vcpkgFilePath = string.Empty;
