@@ -82,7 +82,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                         {
                             null => absolutePath,
                             string resourcePath when absolutePath == "/" => resourcePath,
-                            string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
+                            string resourcePath when absolutePath is not null => UriHelpers.Combine(absolutePath, resourcePath),
+                            string resourcePath => resourcePath, // absolutePath is null, use resourcePath directly
                         };
 
                         // The request object is populated later by the Marshaller,
