@@ -181,21 +181,40 @@ internal static class EndpointDetector
         {
             string fullName;
             var attribute = reader.GetCustomAttribute(attributeHandle);
-            if (attribute.Constructor.Kind == HandleKind.MemberReference)
+            switch (attribute.Constructor.Kind)
             {
-                var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
-                var attributeType = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
-                fullName = GetFullTypeName(attributeType.Namespace, attributeType.Name, reader);
-            }
-            else if (attribute.Constructor.Kind == HandleKind.MethodDefinition)
-            {
-                var ctor = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
-                var attributeType = reader.GetTypeDefinition(ctor.GetDeclaringType());
-                fullName = GetFullTypeName(attributeType.Namespace, attributeType.Name, reader);
-            }
-            else
-            {
-                continue;
+                case HandleKind.MemberReference:
+                    {
+                        var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                        switch (ctor.Parent.Kind)
+                        {
+                            case HandleKind.TypeReference:
+                                var tr = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
+                                fullName = GetFullTypeName(tr.Namespace, tr.Name, reader);
+                                break;
+
+                            case HandleKind.TypeDefinition:
+                                var td = reader.GetTypeDefinition((TypeDefinitionHandle)ctor.Parent);
+                                fullName = GetFullTypeName(td.Namespace, td.Name, reader);
+                                break;
+
+                            default:
+                                continue;
+                        }
+
+                        break;
+                    }
+
+                case HandleKind.MethodDefinition:
+                    {
+                        var ctor = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
+                        var td = reader.GetTypeDefinition(ctor.GetDeclaringType());
+                        fullName = GetFullTypeName(td.Namespace, td.Name, reader);
+                        break;
+                    }
+
+                default:
+                    continue;
             }
 
             if (attributeNames.Contains(fullName))
