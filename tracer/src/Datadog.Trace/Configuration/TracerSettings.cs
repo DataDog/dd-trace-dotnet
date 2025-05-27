@@ -590,8 +590,6 @@ namespace Datadog.Trace.Configuration
                                  .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
 
-<<<<<<< Updated upstream
-=======
             BaggageTagKeys = config
                             .WithKeys(ConfigurationKeys.BaggageTagKeys)
                             .AsString(defaultValue: "user.id,session.id,account.id");
@@ -602,7 +600,6 @@ namespace Datadog.Trace.Configuration
                 DisabledIntegrationNamesInternal.Add(nameof(IntegrationId.OpenTelemetry));
             }
 
->>>>>>> Stashed changes
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
             TraceMethods = config
