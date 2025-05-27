@@ -8,7 +8,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Sampling
 {
-    internal class TracerRateLimiter : RateLimiter
+    internal sealed class TracerRateLimiter : RateLimiter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerRateLimiter>();
         private bool _warningWritten;

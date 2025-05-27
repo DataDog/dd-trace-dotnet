@@ -11,7 +11,7 @@ namespace Datadog.Trace.Sampling
     /// Represents a <see cref="RateLimiter" /> specifically for single span ingestion.
     /// See <see cref="TracerRateLimiter" /> for trace-based rate limiting.
     /// </summary>
-    internal class SpanRateLimiter : RateLimiter
+    internal sealed class SpanRateLimiter : RateLimiter
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanRateLimiter>();
 
