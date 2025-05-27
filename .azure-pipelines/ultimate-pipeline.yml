@@ -1511,6 +1511,8 @@ stages:
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
+          env:
+            SampleName: $(IntegrationTestSampleName)
 
         - publish: $(outputDir)/bin
           displayName: Upload artifact samples (bin only)
@@ -1556,6 +1558,9 @@ stages:
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples -Framework $(framework) -TestAllPackageVersions
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
+          env:
+            SampleName: $(IntegrationTestSampleName)
+            IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
 
         - publish: $(outputDir)/publish
           displayName: Upload artifact samples (publish only)
@@ -1593,6 +1598,8 @@ stages:
         - script: ./tracer/build.sh CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
+          env:
+            SampleName: $(IntegrationTestSampleName)
 
         - publish: artifacts/build_data
           displayName: Uploading logs
