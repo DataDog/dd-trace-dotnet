@@ -493,8 +493,8 @@ partial class Build
 
         using var client = new HttpClient();
 
-        const int maxRetries = 3;
-        const int timeoutSeconds = 5;
+        const int maxRetries = 5;
+        const int timeoutSeconds = 15;
 
         for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
