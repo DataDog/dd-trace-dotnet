@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using OperationCanceledException = System.OperationCanceledException;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -86,8 +87,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 snapshotBatchUploader: snapshotBatchUploader,
                 debuggerSettings);
 
-            Task.Run(() => _uploader.StartFlushingAsync())
-                .ContinueWith(t => Log.Error(t.Exception, "Error in flushing task"), TaskContinuationOptions.OnlyOnFaulted);
+            // this will canceled in Dispose
+            _ = Task.Run(() => _uploader.StartFlushingAsync())
+                    .ContinueWith(
+                         t =>
+                         {
+                             if (t.Exception?.GetType() != typeof(OperationCanceledException))
+                             {
+                                 Log.Error(t.Exception, "Error in flushing task");
+                             }
+                         },
+                         TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public void Report(Span span, Exception exception)
