@@ -78,9 +78,9 @@ internal static class SamplingMechanism
     /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     /// <remarks>
-    /// Note that this value is <see cref="int"/> because it is used in a numeric tag.
+    /// Note that this value is <see cref="double"/> because it is used in a numeric tag.
     /// </remarks>
-    public const int SpanSamplingRule = 8;
+    public const double SpanSamplingRule = 8;
 
     /// <summary>
     /// A sampling decision was made using the OTLP-compatible probabilistic sampling in the Agent.
