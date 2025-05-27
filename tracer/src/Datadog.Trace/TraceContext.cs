@@ -315,15 +315,16 @@ namespace Datadog.Trace
 
             if (SamplingPriorityValues.IsKeep(p) && mechanism != null)
             {
-                // report sampling mechanism only if decision is to keep the trace.
+                // report sampling mechanism as trace tag only if decision is to keep the trace.
                 // report only the original sampling mechanism, do not override.
                 SamplingMechanism ??= mechanism;
                 Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
-                // remove sampling mechanism if decision is to drop the trace
-                SamplingMechanism = null;
+                // remove sampling mechanism trace tag if decision is to drop the trace.
+                // do not set SamplingMechanism = null because that would allow changing the mechanism later,
+                // which is not allowed.
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
