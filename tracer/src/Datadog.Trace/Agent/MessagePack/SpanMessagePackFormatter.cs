@@ -84,7 +84,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _limitSamplingRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingLimitDecision);
         private readonly byte[] _keepRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.TracesKeepRate);
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
-        private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.ApmEnabled);
+        private readonly byte[] _apmEnabledNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ApmEnabled);
 
         // ASM tags
         private readonly byte[] _appSecEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.AppSecEnabled);
@@ -853,7 +853,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (!model.TraceChunk.IsApmEnabled && model.IsLocalRoot)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledNameBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
