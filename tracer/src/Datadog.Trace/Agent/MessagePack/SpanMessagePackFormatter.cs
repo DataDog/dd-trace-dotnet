@@ -85,6 +85,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _keepRateNameBytes = StringEncoding.UTF8.GetBytes(Metrics.TracesKeepRate);
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
         private readonly byte[] _apmEnabledNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ApmEnabled);
+        private readonly byte[] _topLevelSpanNameBytes = StringEncoding.UTF8.GetBytes(Metrics.TopLevelSpan);
 
         // ASM tags
         private readonly byte[] _appSecEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.AppSecEnabled);
@@ -877,9 +878,9 @@ namespace Datadog.Trace.Agent.MessagePack
             var testOptimization = Ci.TestOptimization.Instance;
             if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
-                // TODO: don't use WriteMetric()?
                 count++;
-                WriteMetric(ref bytes, ref offset, Trace.Metrics.TopLevelSpan, 1.0, tagProcessors);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _topLevelSpanNameBytes); // "_dd.top_level"
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, 1);
             }
 
             if (count > 0)
