@@ -251,6 +251,7 @@ partial class Build
             EnsureExistingDirectory(BuildDataDirectory);
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
             EnsureExistingDirectory(SymbolsDirectory);
+            EnsureExistingDirectory(BuildArtifactsDirectory / "publish");
         });
 
     Target Restore => _ => _
