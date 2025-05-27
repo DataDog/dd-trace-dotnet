@@ -1493,6 +1493,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    performComprehensiveTesting: $[eq(variables.perform_comprehensive_testing, 'true')]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -1560,7 +1561,7 @@ stages:
           retryCountOnTaskFailure: 1
           env:
             SampleName: $(IntegrationTestSampleName)
-            IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
+            IncludeMinorPackageVersions: $(performComprehensiveTesting)
 
         - publish: $(outputDir)/publish
           displayName: Upload artifact samples (publish only)
