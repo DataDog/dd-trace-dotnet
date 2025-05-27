@@ -25,11 +25,11 @@ namespace Datadog.Trace.Agent.MessagePack
         // Cache the UTF-8 bytes for string constants (like tag names)
         // and values that are constant within the lifetime of a service (like process id).
         //
-        // Don't make these static to avoid the additional redirection when this
+        // Don't make these fields static to avoid the additional redirection when this
         // assembly is loaded in the shared domain. We only create a single instance of
-        // this class so that's fine.
+        // this class, so that's fine.
 
-        // top-level span fields
+        // span fields
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _traceIdHighBytes = StringEncoding.UTF8.GetBytes("trace_id_high");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
@@ -880,8 +880,6 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
-
-                // sampling priority must be serialized as msgpack float64 (Double in .NET).
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
