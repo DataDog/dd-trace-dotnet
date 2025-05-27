@@ -20,12 +20,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableFact]
+        [SkippableTheory]
+        [InlineData(false)]
+        [InlineData(true)]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
+        public async Task SubmitsTraces(bool dataPipelineEnabled)
         {
-            EnvironmentHelper.EnableUnixDomainSockets();
-            await RunTest();
+            await RunTest(TestTransports.Uds, dataPipelineEnabled);
         }
     }
 }

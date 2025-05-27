@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -31,10 +32,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        [SkippableFact]
+        [SkippableTheory]
+        [InlineData(false)]
+        [InlineData(true)]
         [Trait("Category", "ArmUnsupported")]
         [Trait("Category", "Lambda")]
-        public async Task SubmitsTraces()
+        public async Task SubmitsTraces(bool dataPipelineEnabled)
         {
             // See documentation at docs/development/Serverless.md for examples and diagrams
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")))
@@ -43,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 return;
             }
 
+            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
             using var extensionWithContext = new MockLambdaExtension(shouldSendContext: true, port: 9004, Output);
             using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
@@ -89,7 +93,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddRegexScrubber(StackRegex, "$1 Cannot assign requested address (SocketException)$2");
                 settings.AddRegexScrubber(ErrorMsgRegex, "$1 Cannot assign requested address$2");
 
+                foreach (var span in allSpans)
+                {
+                    Output.WriteLine(span.ToString());
+                }
+
                 await VerifyHelper.VerifySpans(allSpans, settings)
+                                  .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(AwsLambdaTests));
             }
         }
