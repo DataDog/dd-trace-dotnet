@@ -593,13 +593,11 @@ namespace Datadog.Trace
                     }
 
                     writer.WriteEndArray();
-
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
-
                 OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
                 instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
             }
@@ -671,7 +669,7 @@ namespace Datadog.Trace
             if (_firstInitialization)
             {
                 _firstInitialization = false;
-                OneTimeSetup();
+                OneTimeSetup(newManager.Settings);
             }
 
             if (newManager.Settings.StartupDiagnosticLogEnabled)
@@ -682,13 +680,32 @@ namespace Datadog.Trace
             return newManager;
         }
 
-        private static void OneTimeSetup()
+        private static void OneTimeSetup(TracerSettings tracerSettings)
         {
             // Register callbacks to make sure we flush the traces before exiting
             LifetimeManager.Instance.AddAsyncShutdownTask(RunShutdownTasksAsync);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
+
+ #if LINUX
+            if (Environment.Is64BitProcess)
+            {
+                try
+                {
+                    var tracerSettings = instanceSettings;
+                    var result = Utils.StoreTracerMetadata(1, Tracer.RuntimeId, TracerConstants.Language, TracerConstants.ThreePartVersion, Environment.MachineName, tracerSettings.ServiceName, tracerSettings.Environment, tracerSettings.ServiceVersion);
+                    if (result.Tag == ResultTag.Err)
+                    {
+                        Log.Error("Failed to store tracer metadata with message: {Error}", Error.ReadAndDrop(ref result.Err));
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Failed to store tracer metadata due to an unexpected error");
+                }
+            }
+ #endif
         }
 
         private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
