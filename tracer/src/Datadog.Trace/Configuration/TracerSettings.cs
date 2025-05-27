@@ -594,12 +594,6 @@ namespace Datadog.Trace.Configuration
                             .WithKeys(ConfigurationKeys.BaggageTagKeys)
                             .AsString(defaultValue: "user.id,session.id,account.id");
 
-            // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
-            if (!IsActivityListenerEnabled)
-            {
-                DisabledIntegrationNamesInternal.Add(nameof(IntegrationId.OpenTelemetry));
-            }
-
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 
             TraceMethods = config
