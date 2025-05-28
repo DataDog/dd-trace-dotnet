@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Debugger
+namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
     [UsesVerify]
     public class SnapshotSlicerTests

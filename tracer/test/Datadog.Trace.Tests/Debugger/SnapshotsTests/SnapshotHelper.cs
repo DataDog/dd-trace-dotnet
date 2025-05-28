@@ -10,7 +10,7 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Tests.Debugger;
+namespace Datadog.Trace.Tests.Debugger.SnapshotsTests;
 
 internal static class SnapshotHelper
 {
@@ -70,7 +70,7 @@ internal static class SnapshotHelper
 
         snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
 
-        var snapshot = snapshotCreator.GetSnapshotJson();
+        var snapshot = snapshotCreator.GetSnapshotJsonAndDispose();
         return prettify ? JsonPrettify(snapshot) : snapshot;
     }
 
@@ -82,5 +82,19 @@ internal static class SnapshotHelper
         var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
         jsonWriter.WriteToken(jsonReader);
         return stringWriter.ToString();
+    }
+
+    internal static NestedObject CreateDeeplyNestedObject(int depth)
+    {
+        if (depth <= 0)
+        {
+            return new NestedObject { Value = "leaf" };
+        }
+
+        return new NestedObject
+        {
+            Value = $"depth-{depth}",
+            Child = CreateDeeplyNestedObject(depth - 1)
+        };
     }
 }
