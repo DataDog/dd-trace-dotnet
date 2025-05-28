@@ -4,7 +4,7 @@ parameters:
     default: ''
 
 steps:
-- template: steps/download-artifact.yml
+- template: download-artifact.yml
   parameters:
     artifact: samples-standalone
     path: $(outputDir)/bin
