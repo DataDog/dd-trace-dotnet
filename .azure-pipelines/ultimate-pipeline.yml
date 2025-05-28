@@ -2722,7 +2722,6 @@ stages:
 
     - template: steps/download-artifact.yml
       parameters:
-      inputs:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
         displayName: Download linux monitoring home
@@ -4226,9 +4225,9 @@ stages:
 
       - template: steps/download-artifact.yml
         parameters:
-        displayName: Download coverage report
-        patterns: '**/coverage.cobertura.xml'
-        path: $(Build.SourcesDirectory)/cover
+          displayName: Download coverage report
+          patterns: '**/coverage.cobertura.xml'
+          path: $(Build.SourcesDirectory)/cover
 
       - task: reportgenerator@4
         inputs:
@@ -4419,7 +4418,7 @@ stages:
         artifact: windows-profiler-home
         path: $(monitoringHome)
         displayName: Download profiler windows native binary
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4510,7 +4509,7 @@ stages:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
         displayName: Download profiler linux native binary
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
