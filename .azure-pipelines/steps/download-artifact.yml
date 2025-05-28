@@ -6,7 +6,7 @@ parameters:
   displayName: ''
   condition: ''
   # Defaults
-  timeoutInMinutes: 20
+  timeoutInMinutes: 45
   retryCountOnTaskFailure: 3
 
 steps:
