@@ -124,6 +124,11 @@ requirements_json_test:
     REQUIREMENTS_BLOCK_JSON_PATH: "tracer/build/artifacts/requirements_block.json"
     REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
 
+check_config_inversion_local_file:
+  extends: .check_config_inversion_local_file
+  variables:
+    LOCAL_JSON_PATH: "tracer/build/artifacts/local_configurations.json"
+
 package-oci:
   needs: [ download-single-step-artifacts ]
 
