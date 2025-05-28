@@ -53,7 +53,7 @@ internal struct CharSlice
 {
     public IntPtr Ptr; // const char*
 
-    public uint Length; // size_t
+    public nuint Length; // size_t
 
     public static CharSlice CreateCharSlice(string? str)
     {
@@ -74,7 +74,7 @@ internal struct CharSlice
         return new CharSlice
         {
             Ptr = unmanagedPtr,
-            Length = (uint)utf8Bytes.Length
+            Length = (nuint)utf8Bytes.Length
         };
     }
 
@@ -92,7 +92,7 @@ internal struct VecU8
 {
     public IntPtr Ptr; // const uint8_t*
 
-    public uint Length; // size_t
+    public nuint Length; // size_t
 
-    public uint Capacity; // size_t
+    public nuint Capacity; // size_t
 }
