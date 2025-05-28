@@ -373,7 +373,8 @@ namespace Datadog.Trace
                     telemetryClientConfiguration = new TelemetryClientConfiguration
                     {
                         Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
-                        RuntimeId = new CharSlice(Tracer.RuntimeId)
+                        RuntimeId = new CharSlice(Tracer.RuntimeId),
+                        DebugEnabled = telemetrySettings.DebugEnabled
                     };
                 }
 
@@ -382,7 +383,7 @@ namespace Datadog.Trace
                 // when APM is disabled but ASM is enabled.
                 var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
 
-                var configuration = new TraceExporterConfiguration
+                using var configuration = new TraceExporterConfiguration
                 {
                     Url = GetUrl(settings),
                     TraceVersion = TracerConstants.AssemblyVersion,

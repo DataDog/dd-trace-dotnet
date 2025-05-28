@@ -14,7 +14,7 @@ namespace Datadog.Trace.LibDatadog;
 /// Represents a slice of a UTF-8 encoded string in memory.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-internal struct CharSlice
+internal struct CharSlice : IDisposable
 {
     /// <summary>
     /// Pointer to the start of the slice.
@@ -24,7 +24,7 @@ internal struct CharSlice
     /// <summary>
     /// Length of the slice.
     /// </summary>
-    internal UIntPtr Len;
+    internal nuint Len;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharSlice"/> struct.
@@ -46,5 +46,10 @@ internal struct CharSlice
             Marshal.Copy(bytes, 0, Ptr, bytes.Length);
             Len = (UIntPtr)bytes.Length;
         }
+    }
+
+    public void Dispose()
+    {
+        Marshal.FreeHGlobal(Ptr);
     }
 }

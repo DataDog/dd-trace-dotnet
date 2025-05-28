@@ -24,5 +24,5 @@ internal struct ByteSlice
     /// <summary>
     /// Length of the slice.
     /// </summary>
-    internal UIntPtr Len;
+    internal nuint Len;
 }
