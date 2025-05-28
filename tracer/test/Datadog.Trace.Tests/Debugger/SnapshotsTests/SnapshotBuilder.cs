@@ -10,9 +10,55 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+
 #pragma warning disable CS0414 // Field is assigned but its value is never used
 
+#nullable enable
+
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests;
+
+internal enum CaptureType
+{
+    Instance,
+    Argument,
+    Local
+}
+
+/// <summary>
+/// Types of snapshot construction violations for testing error handling
+/// </summary>
+internal enum SnapshotViolation
+{
+    /// <summary>
+    /// Adding locals to entry section (should only have arguments)
+    /// </summary>
+    LocalsInEntry,
+
+    /// <summary>
+    /// Adding arguments before locals in return section (wrong order)
+    /// </summary>
+    ArgumentsBeforeLocalsInReturn,
+
+    /// <summary>
+    /// Missing instance capture for instance method
+    /// </summary>
+    MissingInstanceForInstanceMethod,
+
+    /// <summary>
+    /// Starting entry section twice
+    /// </summary>
+    DoubleEntry,
+
+    /// <summary>
+    /// Starting return without entry
+    /// </summary>
+    ReturnWithoutEntry,
+
+    /// <summary>
+    /// Creating incomplete JSON by not finalizing properly
+    /// </summary>
+    IncompleteJson
+}
 
 /// <summary>
 /// Flexible snapshot builder that allows testing different snapshot construction patterns
@@ -29,11 +75,7 @@ internal class SnapshotBuilder
 
     public SnapshotBuilder(CaptureLimitInfo? limitInfo = null, bool isFullSnapshot = true, ProbeLocation location = ProbeLocation.Method)
     {
-        var actualLimitInfo = limitInfo ?? new CaptureLimitInfo(
-            MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
-            MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
-            MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
-            MaxLength: DebuggerSettings.DefaultMaxStringLength);
+        var actualLimitInfo = limitInfo ?? CaptureLimitInfo.Default;
 
         _snapshotCreator = new DebuggerSnapshotCreator(
             isFullSnapshot: isFullSnapshot,
@@ -50,23 +92,43 @@ internal class SnapshotBuilder
         int? maxDepth = null,
         int? maxCollectionSize = null,
         int? maxFieldCount = null,
-        int? maxStringLength = null)
+        int? maxStringLength = null,
+        int? timeoutInMilliSeconds = null)
     {
         return new CaptureLimitInfo(
-            MaxReferenceDepth: maxDepth ?? DebuggerSettings.DefaultMaxDepthToSerialize,
-            MaxCollectionSize: maxCollectionSize ?? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
-            MaxFieldCount: maxFieldCount ?? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
-            MaxLength: maxStringLength ?? DebuggerSettings.DefaultMaxStringLength);
+            maxReferenceDepth: maxDepth ?? DebuggerSettings.DefaultMaxDepthToSerialize,
+            maxCollectionSize: maxCollectionSize ?? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+            maxFieldCount: maxFieldCount ?? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
+            maxLength: maxStringLength ?? DebuggerSettings.DefaultMaxStringLength,
+            timeoutInMilliSeconds: timeoutInMilliSeconds ?? DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds);
     }
 
     /// <summary>
-    /// Configure limits that will trigger timeout (very low serialization time)
+    /// Convenience method that mimics the old SnapshotHelper.GenerateSnapshot behavior
+    /// for easy migration of existing tests.
     /// </summary>
-    public static CaptureLimitInfo CreateTimeoutLimits()
+    public static string GenerateSnapshot(object instance, bool prettify = true)
     {
-        // Note: Timeout is controlled by DebuggerSnapshotSerializer._maximumSerializationTime
-        // We can't directly control it here, but we can create conditions that are likely to timeout
-        return CreateLimitInfo(maxDepth: 1000, maxCollectionSize: 10000, maxFieldCount: 1000);
+        return new SnapshotBuilder()
+              .AddReturnLocal(instance, "local0")
+              .Build(prettify);
+    }
+
+    /// <summary>
+    /// Create a deeply nested object for testing depth limits
+    /// </summary>
+    public static NestedObject CreateDeeplyNestedObject(int depth)
+    {
+        if (depth <= 0)
+        {
+            return new NestedObject { Value = "leaf" };
+        }
+
+        return new NestedObject
+        {
+            Value = $"depth-{depth}",
+            Child = CreateDeeplyNestedObject(depth - 1)
+        };
     }
 
     /// <summary>
@@ -85,7 +147,7 @@ internal class SnapshotBuilder
     /// <summary>
     /// Add an argument capture to entry section
     /// </summary>
-    public SnapshotBuilder AddEntryArgument(object value, string name, Type type = null)
+    public SnapshotBuilder AddEntryArgument(object value, string name, Type? type = null)
     {
         _entryActions.Add(new CaptureAction(CaptureType.Argument, value, type ?? value?.GetType() ?? typeof(object), name));
         return this;
@@ -94,7 +156,7 @@ internal class SnapshotBuilder
     /// <summary>
     /// Add a local capture to entry section (this should normally fail validation)
     /// </summary>
-    public SnapshotBuilder AddEntryLocal(object value, string name, Type type = null)
+    public SnapshotBuilder AddEntryLocal(object value, string name, Type? type = null)
     {
         _entryActions.Add(new CaptureAction(CaptureType.Local, value, type ?? value?.GetType() ?? typeof(object), name));
         return this;
@@ -116,7 +178,7 @@ internal class SnapshotBuilder
     /// <summary>
     /// Add an argument capture to return section
     /// </summary>
-    public SnapshotBuilder AddReturnArgument(object value, string name, Type type = null)
+    public SnapshotBuilder AddReturnArgument(object value, string name, Type? type = null)
     {
         _returnActions.Add(new CaptureAction(CaptureType.Argument, value, type ?? value?.GetType() ?? typeof(object), name));
         return this;
@@ -125,7 +187,7 @@ internal class SnapshotBuilder
     /// <summary>
     /// Add a local capture to return section
     /// </summary>
-    public SnapshotBuilder AddReturnLocal(object value, string name, Type type = null)
+    public SnapshotBuilder AddReturnLocal(object value, string name, Type? type = null)
     {
         _returnActions.Add(new CaptureAction(CaptureType.Local, value, type ?? value?.GetType() ?? typeof(object), name));
         return this;
@@ -281,32 +343,14 @@ internal class SnapshotBuilder
         }
     }
 
-    /// <summary>
-    /// Convenience method that mimics the old SnapshotHelper.GenerateSnapshot behavior
-    /// for easy migration of existing tests.
-    /// </summary>
-    public static string GenerateSnapshot(object instance, bool prettify = true)
+    private static string JsonPrettify(string json)
     {
-        return new SnapshotBuilder()
-            .AddReturnLocal(instance, "local0")
-            .Build(prettify);
-    }
-
-    /// <summary>
-    /// Create a deeply nested object for testing depth limits
-    /// </summary>
-    public static NestedObject CreateDeeplyNestedObject(int depth)
-    {
-        if (depth <= 0)
-        {
-            return new NestedObject { Value = "leaf" };
-        }
-
-        return new NestedObject
-        {
-            Value = $"depth-{depth}",
-            Child = CreateDeeplyNestedObject(depth - 1)
-        };
+        using var stringReader = new StringReader(json);
+        using var stringWriter = new StringWriter();
+        var jsonReader = new JsonTextReader(stringReader);
+        var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
+        jsonWriter.WriteToken(jsonReader);
+        return stringWriter.ToString();
     }
 
     private void ExecuteAction(CaptureAction action)
@@ -327,23 +371,6 @@ internal class SnapshotBuilder
         }
     }
 
-    private static string JsonPrettify(string json)
-    {
-        using var stringReader = new StringReader(json);
-        using var stringWriter = new StringWriter();
-        var jsonReader = new JsonTextReader(stringReader);
-        var jsonWriter = new JsonTextWriter(stringWriter) { Formatting = Formatting.Indented };
-        jsonWriter.WriteToken(jsonReader);
-        return stringWriter.ToString();
-    }
-
-    private enum CaptureType
-    {
-        Instance,
-        Argument,
-        Local
-    }
-
     private record CaptureAction(CaptureType Type, object Value, Type ValueType, string Name)
     {
         public CaptureType Type { get; } = Type;
@@ -354,40 +381,4 @@ internal class SnapshotBuilder
 
         public string Name { get; } = Name;
     }
-}
-
-/// <summary>
-/// Types of snapshot construction violations for testing error handling
-/// </summary>
-public enum SnapshotViolation
-{
-    /// <summary>
-    /// Adding locals to entry section (should only have arguments)
-    /// </summary>
-    LocalsInEntry,
-
-    /// <summary>
-    /// Adding arguments before locals in return section (wrong order)
-    /// </summary>
-    ArgumentsBeforeLocalsInReturn,
-
-    /// <summary>
-    /// Missing instance capture for instance method
-    /// </summary>
-    MissingInstanceForInstanceMethod,
-
-    /// <summary>
-    /// Starting entry section twice
-    /// </summary>
-    DoubleEntry,
-
-    /// <summary>
-    /// Starting return without entry
-    /// </summary>
-    ReturnWithoutEntry,
-
-    /// <summary>
-    /// Creating incomplete JSON by not finalizing properly
-    /// </summary>
-    IncompleteJson
 }

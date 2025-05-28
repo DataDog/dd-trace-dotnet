@@ -1,4 +1,4 @@
-// <copyright file="DebuggerSnapshotCreatorTests.cs" company="Datadog">
+// <copyright file="DebuggerSnapshotCollectionTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,8 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,27 +16,10 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
-    /// <summary>
-    /// This class has been refactored. Individual test methods have been moved to specialized test classes:
-    /// - DebuggerSnapshotLimitsTests: Basic limits tests
-    /// - DebuggerSnapshotObjectStructureTests: Basic object structure tests
-    /// - DebuggerSnapshotSpecialTypesTests: Special types tests
-    /// - DebuggerSnapshotComplexObjectTests: Complex object tests
-    /// - DebuggerSnapshotCollectionTests: Collection tests
-    /// - DebuggerSnapshotPropertyFieldTests: Property and field tests
-    /// - DebuggerSnapshotGenericTypesTests: Generic types tests
-    /// - DebuggerSnapshotAdvancedTypesTests: Advanced types tests
-    /// - DebuggerSnapshotErrorHandlingTests: Error handling tests
-    /// - DebuggerSnapshotLimitEnforcementTests: Limit enforcement tests
-    /// - DebuggerSnapshotNotCapturedReasonTests: NotCapturedReason tests
-    /// - DebuggerSnapshotJsonStructureTests: JSON structure integrity tests
-    ///
-    /// This class now serves as a base class with shared helper methods.
-    /// </summary>
     [UsesVerify]
-    public class DebuggerSnapshotCreatorTests
+    public class DebuggerSnapshotCollectionTests
     {
-        static DebuggerSnapshotCreatorTests()
+        static DebuggerSnapshotCollectionTests()
         {
             // Configure Verify to use the Snapshots subdirectory
             VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
@@ -48,24 +29,72 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                     methodName: method.Name));
         }
 
-        /// <summary>
-        /// Validate that we produce valid json for a specific value, and that the output conforms to the given set of limits on capture.
-        /// </summary>
-        internal async Task ValidateSingleValue(object local)
+        [Fact]
+        public async Task JsonStructure_ShouldBeValid_WhenSerializingCollectionsWithNulls()
         {
-            var snapshot = SnapshotBuilder.GenerateSnapshot(local);
+            var collectionWithNulls = new List<string> { "item1", null, "item3", null };
+            var snapshot = SnapshotBuilder.GenerateSnapshot(collectionWithNulls);
+
+            // Verify JSON is valid
+            var json = ValidateJsonStructure(snapshot);
 
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
-            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
-            await Verifier.Verify(localVariableAsJson, verifierSettings);
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task JsonStructure_ShouldBeValid_WhenSerializingEmptyCollections()
+        {
+            var emptyCollections = new EmptyCollections();
+            var snapshot = SnapshotBuilder.GenerateSnapshot(emptyCollections);
+
+            // Verify JSON is valid
+            var json = ValidateJsonStructure(snapshot);
+
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task JsonStructure_ShouldBeValid_WhenSerializingDictionariesWithComplexKeys()
+        {
+            var complexDict = new Dictionary<ComplexKey, string>
+            {
+                { new ComplexKey { Id = 1, Name = "Key1" }, "Value1" },
+                { new ComplexKey { Id = 2, Name = "Key2" }, "Value2" }
+            };
+
+            var snapshot = SnapshotBuilder.GenerateSnapshot(complexDict);
+
+            // Verify JSON is valid
+            var json = ValidateJsonStructure(snapshot);
+
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task JsonStructure_ShouldBeValid_WhenSerializingConcurrentCollections()
+        {
+            var concurrentCollections = new ConcurrentCollections();
+            var snapshot = SnapshotBuilder.GenerateSnapshot(concurrentCollections);
+
+            // Verify JSON is valid
+            var json = ValidateJsonStructure(snapshot);
+
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
         /// <summary>
         /// Validates JSON using both Newtonsoft.Json and System.Text.Json to catch malformed JSON
         /// that might be accepted by one but not the other.
         /// </summary>
-        protected static JObject ValidateJsonStructure(string jsonString)
+        private static JObject ValidateJsonStructure(string jsonString)
         {
             // Test with Newtonsoft.Json (more lenient)
             var newtonsoftJson = JObject.Parse(jsonString);
@@ -88,7 +117,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             return newtonsoftJson;
         }
 
-        protected static string NormalizeStackElement(string snapshot)
+        private static string NormalizeStackElement(string snapshot)
         {
             var json = JObject.Parse(snapshot);
             var stackToken = json.SelectToken("debugger.snapshot.stack");

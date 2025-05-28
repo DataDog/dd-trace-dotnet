@@ -5,44 +5,27 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Expressions;
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests;
 
 /// <summary>
 /// Helper class to control timeout scenarios for testing serialization timeout behavior.
-/// This uses reflection to temporarily modify the internal timeout settings.
+/// This uses CaptureLimitInfo to set custom timeout values instead of reflection.
 /// </summary>
 internal static class TimeoutTestHelper
 {
-    private static readonly FieldInfo MaxSerializationTimeField;
-    private static int? _originalTimeout;
-
-    static TimeoutTestHelper()
-    {
-        // Get the private static field that controls serialization timeout
-        MaxSerializationTimeField = typeof(DebuggerSnapshotSerializer)
-            .GetField("_maximumSerializationTime", BindingFlags.NonPublic | BindingFlags.Static);
-    }
-
     /// <summary>
-    /// Temporarily set a very low timeout to trigger timeout scenarios
+    /// Create a CaptureLimitInfo with a very low timeout to trigger timeout scenarios
     /// </summary>
-    public static IDisposable SetLowTimeout(int timeoutMs = 1)
+    public static CaptureLimitInfo CreateLowTimeoutLimitInfo(int timeoutMs = 1)
     {
-        if (MaxSerializationTimeField == null)
-        {
-            throw new InvalidOperationException("Could not find _maximumSerializationTime field. The implementation may have changed.");
-        }
-
-        // Store original value
-        _originalTimeout = (int)MaxSerializationTimeField.GetValue(null);
-
-        // Set very low timeout
-        MaxSerializationTimeField.SetValue(null, timeoutMs);
-
-        return new TimeoutRestorer();
+        return new CaptureLimitInfo(
+            maxReferenceDepth: null, // Use defaults
+            maxCollectionSize: null, // Use defaults
+            maxLength: null, // Use defaults
+            maxFieldCount: null, // Use defaults
+            timeoutInMilliSeconds: timeoutMs);
     }
 
     /// <summary>
@@ -51,29 +34,6 @@ internal static class TimeoutTestHelper
     public static object CreateSlowSerializationObject()
     {
         return new SlowToStringObject();
-    }
-
-    private static void RestoreOriginalTimeout()
-    {
-        if (MaxSerializationTimeField != null && _originalTimeout.HasValue)
-        {
-            MaxSerializationTimeField.SetValue(null, _originalTimeout.Value);
-            _originalTimeout = null;
-        }
-    }
-
-    private class TimeoutRestorer : IDisposable
-    {
-        private bool _disposed = false;
-
-        public void Dispose()
-        {
-            if (!_disposed)
-            {
-                RestoreOriginalTimeout();
-                _disposed = true;
-            }
-        }
     }
 
     /// <summary>

@@ -469,51 +469,47 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         [Fact]
         public async Task TimeoutScenario_SlowSerialization_ShouldProduceTimeoutNotCapturedReason()
         {
-            using (TimeoutTestHelper.SetLowTimeout(1)) // 1ms timeout
-            {
-                var slowObject = TimeoutTestHelper.CreateSlowSerializationObject();
+            var slowObject = TimeoutTestHelper.CreateSlowSerializationObject();
+            var limitInfo = TimeoutTestHelper.CreateLowTimeoutLimitInfo(1); // 1ms timeout
 
-                var snapshot = new SnapshotBuilder()
-                    .AddReturnLocal(slowObject, "local0")
-                    .Build();
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(slowObject, "local0")
+                .Build();
 
-                var json = ValidateJsonStructure(snapshot);
+            var json = ValidateJsonStructure(snapshot);
 
-                // Should contain notCapturedReason: timeout
-                var jsonString = snapshot;
-                Assert.Contains("notCapturedReason", jsonString);
-                Assert.Contains("timeout", jsonString);
+            // Should contain notCapturedReason: timeout
+            var jsonString = snapshot;
+            Assert.Contains("notCapturedReason", jsonString);
+            Assert.Contains("timeout", jsonString);
 
-                var verifierSettings = new VerifySettings();
-                verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
-                await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
-            }
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
         [Fact]
         public async Task TimeoutScenario_ComplexObjectWithTimeout_ShouldHandleGracefully()
         {
-            using (TimeoutTestHelper.SetLowTimeout(5)) // 5ms timeout
-            {
-                var complexObject = new MultipleIssuesObject();
+            var complexObject = new MultipleIssuesObject();
+            var limitInfo = TimeoutTestHelper.CreateLowTimeoutLimitInfo(5); // 5ms timeout
 
-                var snapshot = new SnapshotBuilder()
-                    .AddEntryInstance(complexObject)
-                    .AddEntryArgument("test", "arg0")
-                    .AddReturnLocal(complexObject, "local0")
-                    .AddReturnArgument("test", "arg0")
-                    .AddReturnInstance(complexObject)
-                    .Build();
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddEntryInstance(complexObject)
+                .AddEntryArgument("test", "arg0")
+                .AddReturnLocal(complexObject, "local0")
+                .AddReturnArgument("test", "arg0")
+                .AddReturnInstance(complexObject)
+                .Build();
 
-                var json = ValidateJsonStructure(snapshot);
+            var json = ValidateJsonStructure(snapshot);
 
-                // Should still produce valid JSON even with timeout
-                Assert.NotNull(json["debugger"]);
+            // Should still produce valid JSON even with timeout
+            Assert.NotNull(json["debugger"]);
 
-                var verifierSettings = new VerifySettings();
-                verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
-                await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
-            }
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
         #endregion

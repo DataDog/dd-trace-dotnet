@@ -1,0 +1,74 @@
+// <copyright file="DebuggerSnapshotLimitsTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using VerifyTests;
+using VerifyXunit;
+using Xunit;
+
+namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
+{
+    [UsesVerify]
+    public class DebuggerSnapshotLimitsTests
+    {
+        static DebuggerSnapshotLimitsTests()
+        {
+            // Configure Verify to use the Snapshots subdirectory
+            VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
+                new PathInfo(
+                    directory: Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots"),
+                    typeName: type.Name,
+                    methodName: method.Name));
+        }
+
+        [Fact]
+        public async Task Limits_LargeCollection()
+        {
+            await ValidateSingleValue(Enumerable.Range(1, 2000).ToArray());
+        }
+
+        [SkippableFact]
+        public async Task Limits_LargeDictionary()
+        {
+            // throw new SkipException("This test fails sometimes, but it's not clear why. It's not a high priority to investigate, so we're skipping it for now.");
+
+            await ValidateSingleValue(Enumerable.Range(1, 2000).ToDictionary(k => k.ToString(), k => k));
+        }
+
+        [Fact]
+        public async Task Limits_FieldsCount()
+        {
+            await ValidateSingleValue(new ClassWithLotsOFields());
+        }
+
+        [Fact]
+        public async Task Limits_StringLength()
+        {
+            await ValidateSingleValue(new string('f', 5000));
+        }
+
+        [Fact]
+        public async Task Limits_Depth()
+        {
+            await ValidateSingleValue(new InfiniteRecursion());
+        }
+
+        /// <summary>
+        /// Validate that we produce valid json for a specific value, and that the output conforms to the given set of limits on capture.
+        /// </summary>
+        internal async Task ValidateSingleValue(object local)
+        {
+            var snapshot = SnapshotBuilder.GenerateSnapshot(local);
+
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
+            await Verifier.Verify(localVariableAsJson, verifierSettings);
+        }
+    }
+}
