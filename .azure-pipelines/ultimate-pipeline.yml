@@ -4336,13 +4336,13 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/download-artifact.yml
-      inputs:
+      parameters:
         artifact: execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
         displayName: Download HttpMessageHandler
 
     - template: steps/download-artifact.yml
-      inputs:
+      parameters:
         artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
         displayName: Download FakeDbCommand
@@ -4415,7 +4415,7 @@ stages:
         includeX86: true
 
     - template: steps/download-artifact.yml
-      inputs:
+      parameters:
         artifact: windows-profiler-home
         path: $(monitoringHome)
         displayName: Download profiler windows native binary
@@ -4506,7 +4506,7 @@ stages:
         targetBranch: $(targetBranch)
 
     - template: steps/download-artifact.yml
-      inputs:
+      parameters:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
         displayName: Download profiler linux native binary
@@ -5483,7 +5483,6 @@ stages:
         targetBranch: $(targetBranch)
 
     - template: steps/download-artifact.yml
-      displayName: Download bundle nuget
       parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
