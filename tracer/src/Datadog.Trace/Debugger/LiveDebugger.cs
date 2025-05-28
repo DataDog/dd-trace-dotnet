@@ -142,7 +142,6 @@ namespace Datadog.Trace.Debugger
                 Log.Information("Live Debugger initialization started");
                 _subscriptionManager.SubscribeToChanges(_subscription);
 
-                DebuggerSnapshotSerializer.SetConfig(Settings);
                 Redaction.Instance.SetConfig(Settings.RedactedIdentifiers, Settings.RedactedExcludedIdentifiers, Settings.RedactedTypes);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
 

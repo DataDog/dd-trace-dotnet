@@ -45,19 +45,4 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public CaptureLimitInfo CaptureLimitInfo { get; } = CaptureLimitInfo;
     }
-
-    internal readonly record struct CaptureLimitInfo(
-        int MaxReferenceDepth,
-        int MaxCollectionSize,
-        int MaxLength,
-        int MaxFieldCount)
-    {
-        public int MaxReferenceDepth { get; } = MaxReferenceDepth;
-
-        public int MaxCollectionSize { get; } = MaxCollectionSize;
-
-        public int MaxLength { get; } = MaxLength;
-
-        public int MaxFieldCount { get; } = MaxFieldCount;
-    }
 }

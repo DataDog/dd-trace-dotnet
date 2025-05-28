@@ -64,7 +64,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var debuggerSettings = DebuggerSettings.FromDefaultSource();
 
             // Set configs relevant for DI and Exception Debugging, using DI's environment keys.
-            DebuggerSnapshotSerializer.SetConfig(debuggerSettings);
             Redaction.Instance.SetConfig(debuggerSettings.RedactedIdentifiers, debuggerSettings.RedactedExcludedIdentifiers, debuggerSettings.RedactedTypes);
 
             // Set up the snapshots sink.

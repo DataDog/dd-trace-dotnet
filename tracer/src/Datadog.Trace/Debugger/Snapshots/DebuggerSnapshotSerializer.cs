@@ -22,13 +22,6 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
 
-        private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
-
-        internal static void SetConfig(DebuggerSettings debuggerSettings)
-        {
-            _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
-        }
-
         /// <summary>
         /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Serialize takes part in the MethodDebuggerInvoker process).
         /// </summary>
@@ -39,13 +32,13 @@ namespace Datadog.Trace.Debugger.Snapshots
             JsonWriter jsonWriter,
             CaptureLimitInfo limitInfo)
         {
-            using var cts = CreateCancellationTimeout();
+            using var cts = CreateCancellationTimeout(limitInfo.TimeoutInMs);
             SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo);
         }
 
         public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo)
         {
-            using var cts = CreateCancellationTimeout();
+            using var cts = CreateCancellationTimeout(limitInfo.TimeoutInMs);
             WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo);
         }
 
@@ -520,12 +513,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        private static CancellationTokenSource CreateCancellationTimeout()
+        private static CancellationTokenSource CreateCancellationTimeout(int timeoutInMilliSeconds)
         {
             var cts = new CancellationTokenSource();
             if (!System.Diagnostics.Debugger.IsAttached)
             {
-                cts.CancelAfter(_maximumSerializationTime);
+                cts.CancelAfter(timeoutInMilliSeconds);
             }
 
             return cts;

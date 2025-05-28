@@ -73,15 +73,12 @@ namespace Datadog.Trace.Debugger.Expressions
             var capture = (probe as LogProbe)?.Capture;
             var maxInfo = capture != null
                 ? new CaptureLimitInfo(
-                    MaxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
-                    MaxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
-                    MaxFieldCount: capture.Value.MaxFieldCount <= 0 ? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy : capture.Value.MaxFieldCount,
-                    MaxLength: capture.Value.MaxLength <= 0 ? DebuggerSettings.DefaultMaxStringLength : capture.Value.MaxLength)
-                : new CaptureLimitInfo(
-                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
-                    MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
-                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
-                    MaxLength: DebuggerSettings.DefaultMaxStringLength);
+                    maxReferenceDepth: capture.Value.MaxReferenceDepth <= 0 ? DebuggerSettings.DefaultMaxDepthToSerialize : capture.Value.MaxReferenceDepth,
+                    maxCollectionSize: capture.Value.MaxCollectionSize <= 0 ? DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy : capture.Value.MaxCollectionSize,
+                    maxFieldCount: capture.Value.MaxFieldCount <= 0 ? DebuggerSettings.DefaultMaxNumberOfFieldsToCopy : capture.Value.MaxFieldCount,
+                    maxLength: capture.Value.MaxLength <= 0 ? DebuggerSettings.DefaultMaxStringLength : capture.Value.MaxLength,
+                    timeoutInMilliSeconds: DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds)
+                : CaptureLimitInfo.Default;
 
             ProbeInfo = new ProbeInfo(
                 probe.Id,

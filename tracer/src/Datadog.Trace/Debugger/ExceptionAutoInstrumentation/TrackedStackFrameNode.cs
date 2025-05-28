@@ -128,11 +128,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
 
-            var limitInfo = new CaptureLimitInfo(
-                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
-                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
-                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy,
-                MaxLength: DebuggerSettings.DefaultMaxStringLength);
+            var limitInfo = CaptureLimitInfo.Default;
 
             var snapshotCreator = new ExceptionReplaySnapshotCreator(isFullSnapshot: true, location: ProbeLocation.Method, hasCondition: false, Array.Empty<string>(), members, limitInfo: limitInfo);
 
