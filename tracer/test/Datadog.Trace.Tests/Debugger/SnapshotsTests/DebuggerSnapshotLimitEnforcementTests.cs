@@ -4,29 +4,17 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
     [UsesVerify]
-    public class DebuggerSnapshotLimitEnforcementTests
+    public class DebuggerSnapshotLimitEnforcementTests : DebuggerSnapshotCreatorTests
     {
-        static DebuggerSnapshotLimitEnforcementTests()
-        {
-            // Configure Verify to use the Snapshots subdirectory
-            VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
-                new PathInfo(
-                    directory: Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots"),
-                    typeName: type.Name,
-                    methodName: method.Name));
-        }
-
         [Fact]
         public void FieldCount_ShouldRespectLimits_WhenSerializingObjectsWithManyFields()
         {
@@ -90,31 +78,130 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             Assert.Contains("depth", snapshot);
         }
 
-        /// <summary>
-        /// Validates JSON using both Newtonsoft.Json and System.Text.Json to catch malformed JSON
-        /// that might be accepted by one but not the other.
-        /// </summary>
-        private static JObject ValidateJsonStructure(string jsonString)
+        [Fact]
+        public async Task ConfigurableLimits_CustomDepthLimit_ShouldRespectLimit()
         {
-            // Test with Newtonsoft.Json (more lenient)
-            var newtonsoftJson = JObject.Parse(jsonString);
-            Assert.NotNull(newtonsoftJson);
+            var deepObject = SnapshotBuilder.CreateDeeplyNestedObject(10);
+            var limitInfo = SnapshotBuilder.CreateLimitInfo(maxDepth: 2);
 
-#if NET5_0_OR_GREATER
-            // Test with System.Text.Json (stricter, follows JSON spec more closely)
-            // Only available in .NET 5.0 and later
-            try
-            {
-                using var document = System.Text.Json.JsonDocument.Parse(jsonString);
-                // JsonElement is a value type, so we just check if parsing succeeded
-            }
-            catch (System.Text.Json.JsonException ex)
-            {
-                throw new InvalidOperationException($"JSON is malformed according to System.Text.Json: {ex.Message}. This indicates the debugger is producing invalid JSON that may not be parseable by all JSON parsers.", ex);
-            }
-#endif
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(deepObject, "local0")
+                .Build();
 
-            return newtonsoftJson;
+            var json = ValidateJsonStructure(snapshot);
+
+            // Should contain notCapturedReason: depth
+            var jsonString = snapshot;
+            Assert.Contains("notCapturedReason", jsonString);
+            Assert.Contains("depth", jsonString);
+
+            var verifierSettings = CreateStandardVerifierSettings();
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task ConfigurableLimits_CustomCollectionSizeLimit_ShouldRespectLimit()
+        {
+            var largeCollection = Enumerable.Range(1, 50).ToList();
+            var limitInfo = SnapshotBuilder.CreateLimitInfo(maxCollectionSize: 5);
+
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(largeCollection, "local0")
+                .Build();
+
+            var json = ValidateJsonStructure(snapshot);
+
+            // Should contain notCapturedReason: collectionSize
+            var jsonString = snapshot;
+            Assert.Contains("notCapturedReason", jsonString);
+            Assert.Contains("collectionSize", jsonString);
+
+            // Verify collection is limited to 5 elements
+            var elementsToken = json.SelectToken("debugger.snapshot.captures.return.locals.local0.elements");
+            if (elementsToken is JArray elementsArray)
+            {
+                Assert.True(elementsArray.Count <= 5, $"Collection size {elementsArray.Count} exceeds limit of 5");
+            }
+
+            var verifierSettings = CreateStandardVerifierSettings();
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task ConfigurableLimits_CustomFieldCountLimit_ShouldRespectLimit()
+        {
+            var manyFieldsObject = new ClassWithLotsOFields();
+            var limitInfo = SnapshotBuilder.CreateLimitInfo(maxFieldCount: 5);
+
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(manyFieldsObject, "local0")
+                .Build();
+
+            var json = ValidateJsonStructure(snapshot);
+
+            // Should contain notCapturedReason: fieldCount
+            var jsonString = snapshot;
+            Assert.Contains("notCapturedReason", jsonString);
+            Assert.Contains("fieldCount", jsonString);
+
+            // Verify field count is limited to 5
+            var fieldsToken = json.SelectToken("debugger.snapshot.captures.return.locals.local0.fields");
+            if (fieldsToken is JObject fieldsObject)
+            {
+                Assert.True(fieldsObject.Properties().Count() <= 5, $"Field count {fieldsObject.Properties().Count()} exceeds limit of 5");
+            }
+
+            var verifierSettings = CreateStandardVerifierSettings();
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task ConfigurableLimits_CustomStringLengthLimit_ShouldRespectLimit()
+        {
+            var longString = new string('x', 100);
+            var limitInfo = SnapshotBuilder.CreateLimitInfo(maxStringLength: 10);
+
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(longString, "local0")
+                .Build();
+
+            var json = ValidateJsonStructure(snapshot);
+
+            // Verify string is truncated to 10 characters
+            var valueToken = json.SelectToken("debugger.snapshot.captures.return.locals.local0.value");
+            if (valueToken != null)
+            {
+                var value = valueToken.ToString();
+                Assert.True(value.Length <= 10, $"String length {value.Length} exceeds limit of 10");
+            }
+
+            var verifierSettings = CreateStandardVerifierSettings();
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
+        }
+
+        [Fact]
+        public async Task ConfigurableLimits_MultipleLimitsTriggered_ShouldHandleGracefully()
+        {
+            var problematicObject = new MultipleIssuesObject();
+            var limitInfo = SnapshotBuilder.CreateLimitInfo(
+                maxDepth: 2,
+                maxCollectionSize: 3,
+                maxFieldCount: 3,
+                maxStringLength: 10);
+
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(problematicObject, "local0")
+                .Build();
+
+            var json = ValidateJsonStructure(snapshot);
+
+            // Should contain multiple notCapturedReason entries
+            var jsonString = snapshot;
+            var notCapturedCount = jsonString.Split(new[] { "notCapturedReason" }, StringSplitOptions.None).Length - 1;
+            Assert.True(notCapturedCount > 0, "Should contain at least one notCapturedReason");
+
+            var verifierSettings = CreateStandardVerifierSettings();
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
     }
 }

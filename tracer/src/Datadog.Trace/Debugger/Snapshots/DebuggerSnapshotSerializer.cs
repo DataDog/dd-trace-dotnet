@@ -516,11 +516,9 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static CancellationTokenSource CreateCancellationTimeout(int timeoutInMilliSeconds)
         {
             var cts = new CancellationTokenSource();
-            if (!System.Diagnostics.Debugger.IsAttached)
-            {
-                cts.CancelAfter(timeoutInMilliSeconds);
-            }
 
+            // for debugging comment this:
+            cts.CancelAfter(timeoutInMilliSeconds);
             return cts;
         }
     }

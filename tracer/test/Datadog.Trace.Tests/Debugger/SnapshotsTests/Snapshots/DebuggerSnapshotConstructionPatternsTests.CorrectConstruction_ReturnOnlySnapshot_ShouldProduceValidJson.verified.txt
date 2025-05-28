@@ -1,0 +1,257 @@
+﻿{
+  "debugger": {
+    "snapshot": {
+      "captures": {
+        "return": {
+          "locals": {
+            "local0": {
+              "type": "String",
+              "value": "return only"
+            }
+          },
+          "arguments": {
+            "this": {
+              "type": "ComplexTestObject",
+              "value": "ComplexTestObject",
+              "fields": {
+                "stringField": {
+                  "type": "String",
+                  "value": "test"
+                },
+                "intField": {
+                  "type": "Int32",
+                  "value": "42"
+                },
+                "listField": {
+                  "type": "List`1",
+                  "size": 3,
+                  "elements": [
+                    {
+                      "type": "String",
+                      "value": "a"
+                    },
+                    {
+                      "type": "String",
+                      "value": "b"
+                    },
+                    {
+                      "type": "String",
+                      "value": "c"
+                    }
+                  ]
+                },
+                "dictField": {
+                  "type": "Dictionary`2",
+                  "size": 1,
+                  "entries": [
+                    [
+                      {
+                        "type": "String",
+                        "value": "key"
+                      },
+                      {
+                        "type": "Int32",
+                        "value": "1"
+                      }
+                    ]
+                  ]
+                },
+                "nestedField": {
+                  "type": "NestedObject",
+                  "value": "NestedObject",
+                  "fields": {
+                    "Value": {
+                      "type": "String",
+                      "value": "nested"
+                    },
+                    "Child": {
+                      "type": "NestedObject",
+                      "isNull": "true"
+                    }
+                  }
+                },
+                "arrayField": {
+                  "type": "String[]",
+                  "size": 3,
+                  "elements": [
+                    {
+                      "type": "String",
+                      "value": "x"
+                    },
+                    {
+                      "type": "String",
+                      "value": "y"
+                    },
+                    {
+                      "type": "String",
+                      "value": "z"
+                    }
+                  ]
+                },
+                "StringValue": {
+                  "type": "String",
+                  "value": "Test String"
+                },
+                "IntValue": {
+                  "type": "Int32",
+                  "value": "42"
+                },
+                "DoubleValue": {
+                  "type": "Double",
+                  "value": "3.14159"
+                },
+                "BoolValue": {
+                  "type": "Boolean",
+                  "value": "True"
+                },
+                "DateTimeValue": {
+                  "type": "DateTime",
+                  "value": "1/1/2023 12:00:00 AM"
+                },
+                "ListValue": {
+                  "type": "List`1",
+                  "size": 3,
+                  "elements": [
+                    {
+                      "type": "String",
+                      "value": "item1"
+                    },
+                    {
+                      "type": "String",
+                      "value": "item2"
+                    },
+                    {
+                      "type": "String",
+                      "value": "item3"
+                    }
+                  ]
+                },
+                "DictValue": {
+                  "type": "Dictionary`2",
+                  "size": 2,
+                  "entries": [
+                    [
+                      {
+                        "type": "String",
+                        "value": "key1"
+                      },
+                      {
+                        "type": "Int32",
+                        "value": "1"
+                      }
+                    ],
+                    [
+                      {
+                        "type": "String",
+                        "value": "key2"
+                      },
+                      {
+                        "type": "Int32",
+                        "value": "2"
+                      }
+                    ]
+                  ]
+                },
+                "NestedObject": {
+                  "type": "NestedObject",
+                  "value": "NestedObject",
+                  "fields": {
+                    "Value": {
+                      "type": "String",
+                      "value": "Nested Value"
+                    },
+                    "Child": {
+                      "type": "NestedObject",
+                      "value": "NestedObject",
+                      "fields": {
+                        "Value": {
+                          "type": "String",
+                          "isNull": "true"
+                        },
+                        "Child": {
+                          "type": "NestedObject",
+                          "isNull": "true"
+                        }
+                      }
+                    }
+                  }
+                },
+                "ArrayValue": {
+                  "type": "Int32[]",
+                  "size": 5,
+                  "elements": [
+                    {
+                      "type": "Int32",
+                      "value": "1"
+                    },
+                    {
+                      "type": "Int32",
+                      "value": "2"
+                    },
+                    {
+                      "type": "Int32",
+                      "value": "3"
+                    },
+                    {
+                      "type": "Int32",
+                      "value": "4"
+                    },
+                    {
+                      "type": "Int32",
+                      "value": "5"
+                    }
+                  ]
+                },
+                "NullValue": {
+                  "type": "String",
+                  "isNull": "true"
+                },
+                "DeepObject": {
+                  "type": "NestedObject",
+                  "value": "NestedObject",
+                  "fields": {
+                    "Value": {
+                      "type": "String",
+                      "value": "depth-15"
+                    },
+                    "Child": {
+                      "type": "NestedObject",
+                      "value": "NestedObject",
+                      "fields": {
+                        "Value": {
+                          "type": "String",
+                          "value": "depth-14"
+                        },
+                        "Child": {
+                          "type": "NestedObject",
+                          "value": "NestedObject",
+                          "notCapturedReason": "depth"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "stack": [
+        {
+          "function": "TestFunction",
+          "lineNumber": 0
+        }
+      ],
+      "language": "dotnet"
+    }
+  },
+  "logger": {
+    "thread_name": null,
+    "version": "2",
+    "name": "TestClass",
+    "method": "TestMethod"
+  },
+  "service": "",
+  "ddsource": "dd_debugger",
+  "message": null
+}

@@ -1,0 +1,38 @@
+﻿{
+  "debugger": {
+    "snapshot": {
+      "captures": {
+        "return": {
+          "arguments": {
+            "arg0": {
+              "type": "String",
+              "value": "arg value"
+            }
+          },
+          "locals": {
+            "local0": {
+              "type": "String",
+              "value": "local value"
+            }
+          }
+        }
+      },
+      "stack": [
+        {
+          "function": "TestFunction",
+          "lineNumber": 0
+        }
+      ],
+      "language": "dotnet"
+    }
+  },
+  "logger": {
+    "thread_name": null,
+    "version": "2",
+    "name": "TestClass",
+    "method": "TestMethod"
+  },
+  "service": "",
+  "ddsource": "dd_debugger",
+  "message": null
+}

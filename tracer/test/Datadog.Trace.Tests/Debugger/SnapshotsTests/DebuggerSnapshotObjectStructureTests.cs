@@ -4,28 +4,15 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
     [UsesVerify]
-    public class DebuggerSnapshotObjectStructureTests
+    public class DebuggerSnapshotObjectStructureTests : DebuggerSnapshotCreatorTests
     {
-        static DebuggerSnapshotObjectStructureTests()
-        {
-            // Configure Verify to use the Snapshots subdirectory
-            VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
-                new PathInfo(
-                    directory: Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots"),
-                    typeName: type.Name,
-                    methodName: method.Name));
-        }
-
         [Fact]
         public async Task ObjectStructure_Null()
         {
@@ -44,17 +31,18 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             await ValidateSingleValue(new List<int>());
         }
 
-        /// <summary>
-        /// Validate that we produce valid json for a specific value, and that the output conforms to the given set of limits on capture.
-        /// </summary>
-        internal async Task ValidateSingleValue(object local)
+        [Fact]
+        public async Task EdgeCase_NullValues_ShouldProduceValidJson()
         {
-            var snapshot = SnapshotBuilder.GenerateSnapshot(local);
+            var snapshot = new SnapshotBuilder()
+                .AddEntryArgument(null, "arg0")
+                .AddReturnLocal(null, "local0")
+                .Build();
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
-            var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
-            await Verifier.Verify(localVariableAsJson, verifierSettings);
+            var json = ValidateJsonStructure(snapshot);
+
+            var verifierSettings = CreateStandardVerifierSettings();
+            await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
     }
 }

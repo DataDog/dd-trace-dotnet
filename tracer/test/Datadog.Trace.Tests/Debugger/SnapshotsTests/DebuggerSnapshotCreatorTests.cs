@@ -19,7 +19,8 @@ using Xunit;
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
     /// <summary>
-    /// This class has been refactored. Individual test methods have been moved to specialized test classes:
+    /// Base class for all debugger snapshot tests with shared helper methods.
+    /// Individual test methods have been moved to specialized test classes:
     /// - DebuggerSnapshotLimitsTests: Basic limits tests
     /// - DebuggerSnapshotObjectStructureTests: Basic object structure tests
     /// - DebuggerSnapshotSpecialTypesTests: Special types tests
@@ -32,11 +33,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
     /// - DebuggerSnapshotLimitEnforcementTests: Limit enforcement tests
     /// - DebuggerSnapshotNotCapturedReasonTests: NotCapturedReason tests
     /// - DebuggerSnapshotJsonStructureTests: JSON structure integrity tests
-    ///
-    /// This class now serves as a base class with shared helper methods.
+    /// - SnapshotConstructionTests: Snapshot construction patterns and violations
     /// </summary>
     [UsesVerify]
-    public class DebuggerSnapshotCreatorTests
+    public abstract class DebuggerSnapshotCreatorTests
     {
         static DebuggerSnapshotCreatorTests()
         {
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         /// <summary>
         /// Validate that we produce valid json for a specific value, and that the output conforms to the given set of limits on capture.
         /// </summary>
-        internal async Task ValidateSingleValue(object local)
+        protected static async Task ValidateSingleValue(object local)
         {
             var snapshot = SnapshotBuilder.GenerateSnapshot(local);
 
@@ -88,6 +88,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             return newtonsoftJson;
         }
 
+        /// <summary>
+        /// Normalizes stack elements in snapshots for consistent testing by keeping only the first stack element
+        /// and normalizing the function name to avoid framework version differences.
+        /// </summary>
         protected static string NormalizeStackElement(string snapshot)
         {
             var json = JObject.Parse(snapshot);
@@ -117,6 +121,40 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             }
 
             return json.ToString(Formatting.Indented);
+        }
+
+        /// <summary>
+        /// Creates standard verifier settings with common scrubbing rules for snapshot tests.
+        /// </summary>
+        protected static VerifySettings CreateStandardVerifierSettings()
+        {
+            var verifierSettings = new VerifySettings();
+            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            return verifierSettings;
+        }
+
+        /// <summary>
+        /// Asserts that the snapshot contains at least one occurrence of the specified NotCapturedReason.
+        /// This method searches through the entire JSON structure to find any notCapturedReason field
+        /// with the expected value.
+        /// </summary>
+        /// <param name="snapshot">The snapshot JSON string to search</param>
+        /// <param name="expectedReason">The expected NotCapturedReason value (e.g., "timeout", "depth", "fieldCount")</param>
+        protected static void AssertContainsNotCapturedReason(string snapshot, string expectedReason)
+        {
+            var json = JObject.Parse(snapshot);
+
+            // Search for all notCapturedReason fields in the JSON
+            var notCapturedReasonTokens = json.SelectTokens("$..notCapturedReason");
+
+            var foundReasons = notCapturedReasonTokens
+                .Select(token => token.Value<string>())
+                .Where(reason => !string.IsNullOrEmpty(reason))
+                .ToList();
+
+            Assert.True(
+                foundReasons.Any(reason => reason.Equals(expectedReason, StringComparison.OrdinalIgnoreCase)),
+                $"Expected to find NotCapturedReason '{expectedReason}' in snapshot, but found: [{string.Join(", ", foundReasons)}]");
         }
     }
 }

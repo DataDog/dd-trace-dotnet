@@ -1,0 +1,78 @@
+﻿{
+  "debugger": {
+    "snapshot": {
+      "captures": {
+        "entry": {
+          "arguments": {
+            "intArg": {
+              "type": "Int32",
+              "value": "42"
+            },
+            "stringArg": {
+              "type": "String",
+              "value": "string"
+            },
+            "listArg": {
+              "type": "List`1",
+              "size": 3,
+              "elements": [
+                {
+                  "type": "Int32",
+                  "value": "1"
+                },
+                {
+                  "type": "Int32",
+                  "value": "2"
+                },
+                {
+                  "type": "Int32",
+                  "value": "3"
+                }
+              ]
+            }
+          }
+        },
+        "return": {
+          "locals": {
+            "doubleLocal": {
+              "type": "Double",
+              "value": "3.14"
+            },
+            "dictLocal": {
+              "type": "Dictionary`2",
+              "size": 1,
+              "entries": [
+                [
+                  {
+                    "type": "String",
+                    "value": "key"
+                  },
+                  {
+                    "type": "Int32",
+                    "value": "1"
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "stack": [
+        {
+          "function": "TestFunction",
+          "lineNumber": 0
+        }
+      ],
+      "language": "dotnet"
+    }
+  },
+  "logger": {
+    "thread_name": null,
+    "version": "2",
+    "name": "TestClass",
+    "method": "TestMethod"
+  },
+  "service": "",
+  "ddsource": "dd_debugger",
+  "message": null
+}

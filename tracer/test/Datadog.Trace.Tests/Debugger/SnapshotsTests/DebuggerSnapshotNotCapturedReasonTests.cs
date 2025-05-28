@@ -4,45 +4,33 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
     [UsesVerify]
-    public class DebuggerSnapshotNotCapturedReasonTests
+    public class DebuggerSnapshotNotCapturedReasonTests : DebuggerSnapshotCreatorTests
     {
-        static DebuggerSnapshotNotCapturedReasonTests()
-        {
-            // Configure Verify to use the Snapshots subdirectory
-            VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
-                new PathInfo(
-                    directory: Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots"),
-                    typeName: type.Name,
-                    methodName: method.Name));
-        }
-
         [Fact]
         public async Task JsonStructure_ShouldBeValid_WhenSerializationTimesOut()
         {
             // Create an object that would take a very long time to serialize
-            var slowObject = new SlowSerializationObject();
-            var snapshot = SnapshotBuilder.GenerateSnapshot(slowObject);
+            var slowObject = TimeoutTestHelper.CreateSlowSerializationObject();
+            var limitInfo = TimeoutTestHelper.CreateLowTimeoutLimitInfo(1); // 1ms timeout
+
+            var snapshot = new SnapshotBuilder(limitInfo)
+                .AddReturnLocal(slowObject, "local0")
+                .Build();
 
             var json = ValidateJsonStructure(snapshot);
 
-            // Should contain notCapturedReason: timeout somewhere in the structure
-            var jsonString = snapshot.ToString();
-            Assert.Contains("notCapturedReason", jsonString);
+            // Assert that the snapshot contains NotCapturedReason.timeout
+            AssertContainsNotCapturedReason(snapshot, "timeout");
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var verifierSettings = CreateStandardVerifierSettings();
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
@@ -54,13 +42,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 
             var json = ValidateJsonStructure(snapshot);
 
-            // Should contain notCapturedReason: fieldCount
-            var jsonString = snapshot.ToString();
-            Assert.Contains("notCapturedReason", jsonString);
-            Assert.Contains("fieldCount", jsonString);
+            // Assert that the snapshot contains NotCapturedReason.fieldCount
+            AssertContainsNotCapturedReason(snapshot, "fieldCount");
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var verifierSettings = CreateStandardVerifierSettings();
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
@@ -72,13 +57,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 
             var json = ValidateJsonStructure(snapshot);
 
-            // Should contain notCapturedReason: collectionSize
-            var jsonString = snapshot.ToString();
-            Assert.Contains("notCapturedReason", jsonString);
-            Assert.Contains("collectionSize", jsonString);
+            // Assert that the snapshot contains NotCapturedReason.collectionSize
+            AssertContainsNotCapturedReason(snapshot, "collectionSize");
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var verifierSettings = CreateStandardVerifierSettings();
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
@@ -90,12 +72,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 
             var json = ValidateJsonStructure(snapshot);
 
-            // Should contain notCapturedReason: depth
-            Assert.Contains("notCapturedReason", snapshot);
-            Assert.Contains("depth", snapshot);
+            // Assert that the snapshot contains NotCapturedReason.depth
+            AssertContainsNotCapturedReason(snapshot, "depth");
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var verifierSettings = CreateStandardVerifierSettings();
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
@@ -111,8 +91,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             var jsonString = snapshot.ToString();
             Assert.Contains("notCapturedReason", jsonString);
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var verifierSettings = CreateStandardVerifierSettings();
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
         }
 
@@ -130,67 +109,8 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             var notCapturedCount = jsonString.Split(new[] { "notCapturedReason" }, StringSplitOptions.None).Length - 1;
             Assert.True(notCapturedCount > 0, "Should contain at least one notCapturedReason");
 
-            var verifierSettings = new VerifySettings();
-            verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
+            var verifierSettings = CreateStandardVerifierSettings();
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
-        }
-
-        /// <summary>
-        /// Validates JSON using both Newtonsoft.Json and System.Text.Json to catch malformed JSON
-        /// that might be accepted by one but not the other.
-        /// </summary>
-        private static JObject ValidateJsonStructure(string jsonString)
-        {
-            // Test with Newtonsoft.Json (more lenient)
-            var newtonsoftJson = JObject.Parse(jsonString);
-            Assert.NotNull(newtonsoftJson);
-
-#if NET5_0_OR_GREATER
-            // Test with System.Text.Json (stricter, follows JSON spec more closely)
-            // Only available in .NET 5.0 and later
-            try
-            {
-                using var document = System.Text.Json.JsonDocument.Parse(jsonString);
-                // JsonElement is a value type, so we just check if parsing succeeded
-            }
-            catch (System.Text.Json.JsonException ex)
-            {
-                throw new InvalidOperationException($"JSON is malformed according to System.Text.Json: {ex.Message}. This indicates the debugger is producing invalid JSON that may not be parseable by all JSON parsers.", ex);
-            }
-#endif
-
-            return newtonsoftJson;
-        }
-
-        private static string NormalizeStackElement(string snapshot)
-        {
-            var json = JObject.Parse(snapshot);
-            var stackToken = json.SelectToken("debugger.snapshot.stack");
-
-            if (stackToken is JArray { Count: > 0 } stackArray)
-            {
-                // Keep only the first stack element
-                var firstElement = stackArray[0];
-
-                // Normalize the function name to avoid framework version differences
-                if (firstElement is JObject stackElement && stackElement["function"] != null)
-                {
-                    stackElement["function"] = "TestFunction";
-                }
-                else
-                {
-                    throw new Exception("stack element should have function name");
-                }
-
-                stackArray.Clear();
-                stackArray.Add(firstElement);
-            }
-            else
-            {
-                throw new Exception("stack should be an array");
-            }
-
-            return json.ToString(Formatting.Indented);
         }
     }
 }
