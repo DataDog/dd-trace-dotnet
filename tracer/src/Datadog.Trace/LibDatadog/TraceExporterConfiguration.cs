@@ -15,7 +15,7 @@ namespace Datadog.Trace.LibDatadog;
 /// </summary>
 internal class TraceExporterConfiguration : SafeHandle
 {
-    private readonly IntPtr _telemetryClientConfigurationHandle;
+    private IntPtr _telemetryConfigPtr;
 
     public TraceExporterConfiguration()
         : base(IntPtr.Zero, true)
@@ -30,7 +30,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetUrl(this, new CharSlice(value));
+            using var url = new CharSlice(value);
+            using var error = NativeInterop.Config.SetUrl(this, url);
             error.ThrowIfError();
         }
     }
@@ -39,7 +40,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetTracerVersion(this, new CharSlice(value));
+            using var tracerVersion = new CharSlice(value);
+            using var error = NativeInterop.Config.SetTracerVersion(this, tracerVersion);
             error.ThrowIfError();
         }
     }
@@ -48,7 +50,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetLanguage(this, new CharSlice(value));
+            using var language = new CharSlice(value);
+            using var error = NativeInterop.Config.SetLanguage(this, language);
             error.ThrowIfError();
         }
     }
@@ -57,7 +60,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetLanguageVersion(this, new CharSlice(value));
+            using var languageVersion = new CharSlice(value);
+            using var error = NativeInterop.Config.SetLanguageVersion(this, languageVersion);
             error.ThrowIfError();
         }
     }
@@ -66,7 +70,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetInterpreter(this, new CharSlice(value));
+            using var interpreter = new CharSlice(value);
+            using var error = NativeInterop.Config.SetInterpreter(this, interpreter);
             error.ThrowIfError();
         }
     }
@@ -75,7 +80,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetHostname(this, new CharSlice(value));
+            using var hostname = new CharSlice(value);
+            using var error = NativeInterop.Config.SetHostname(this, hostname);
             error.ThrowIfError();
         }
     }
@@ -84,7 +90,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetEnv(this, new CharSlice(value));
+            using var env = new CharSlice(value);
+            using var error = NativeInterop.Config.SetEnv(this, env);
             error.ThrowIfError();
         }
     }
@@ -93,7 +100,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetVersion(this, new CharSlice(value));
+            using var version = new CharSlice(value);
+            using var error = NativeInterop.Config.SetVersion(this, version);
             error.ThrowIfError();
         }
     }
@@ -102,7 +110,8 @@ internal class TraceExporterConfiguration : SafeHandle
     {
         init
         {
-            using var error = NativeInterop.Config.SetService(this, new CharSlice(value));
+            using var service = new CharSlice(value);
+            using var error = NativeInterop.Config.SetService(this, service);
             error.ThrowIfError();
         }
     }
@@ -113,10 +122,9 @@ internal class TraceExporterConfiguration : SafeHandle
         {
             if (value.HasValue)
             {
-                _telemetryClientConfigurationHandle = Marshal.AllocHGlobal(Marshal.SizeOf(value.Value));
-                Marshal.StructureToPtr(value.Value, _telemetryClientConfigurationHandle, true);
-
-                using var error = NativeInterop.Config.EnableTelemetry(this, _telemetryClientConfigurationHandle);
+                _telemetryConfigPtr = Marshal.AllocHGlobal(Marshal.SizeOf(value.Value));
+                Marshal.StructureToPtr(value.Value, _telemetryConfigPtr, false);
+                using var error = NativeInterop.Config.EnableTelemetry(this, _telemetryConfigPtr);
                 error.ThrowIfError();
             }
         }
@@ -142,8 +150,13 @@ internal class TraceExporterConfiguration : SafeHandle
 
     protected override bool ReleaseHandle()
     {
+        if (_telemetryConfigPtr != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(_telemetryConfigPtr);
+            _telemetryConfigPtr = IntPtr.Zero;
+        }
+
         NativeInterop.Config.Free(handle);
-        Marshal.FreeHGlobal(_telemetryClientConfigurationHandle);
         return true;
     }
 }

@@ -15,7 +15,6 @@ namespace Datadog.Trace.LibDatadog;
 
 internal class TraceExporter : SafeHandle, IApi
 {
-    private readonly TraceExporterConfiguration _configuration;
     private readonly IDatadogLogger _log;
 
     public TraceExporter(
@@ -24,10 +23,9 @@ internal class TraceExporter : SafeHandle, IApi
         : base(IntPtr.Zero, true)
     {
         _log = log ?? DatadogLogging.GetLoggerFor<TraceExporter>();
-        _configuration = configuration;
 
         _log.Debug("Creating new TraceExporter");
-        using var errPtr = NativeInterop.Exporter.New(out var ptr, _configuration);
+        using var errPtr = NativeInterop.Exporter.New(out var ptr, configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
     }
