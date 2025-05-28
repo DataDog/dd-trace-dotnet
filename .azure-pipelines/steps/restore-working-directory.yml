@@ -4,7 +4,7 @@ parameters:
     default: 'build-windows-working-directory'
 
 steps:
-- template: steps/download-artifact.yml
+- template: download-artifact.yml
   parameters:
     artifact: ${{ parameters.artifact }}
     patterns: "**/@(bin|obj|packages)/**"
