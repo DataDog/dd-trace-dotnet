@@ -39,9 +39,12 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    [Flaky("The explicitly disabled tests often hang on x86 .NET and .NET 8, when the debugger is disabled. Needs investigation.")]
     public async Task LiveDebuggerDisabled_DebuggerDisabledByDefault_NoDebuggerTypesCreated()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         await RunTest();
     }
 
@@ -50,9 +53,12 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    [Flaky("The explicitly disabled tests often hang on x86 .NET and .NET 8, when the debugger is disabled. Needs investigation.")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
         await RunTest();
     }
