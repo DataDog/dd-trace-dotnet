@@ -22,7 +22,7 @@ using ProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator, IDisposable
+    internal class DebuggerSnapshotCreator : IDebuggerSnapshotCreator
     {
         private const string LoggerVersion = "2";
         private const string DDSource = "dd_debugger";
@@ -665,57 +665,51 @@ namespace Datadog.Trace.Debugger.Snapshots
         // Finalize snapshot
         internal string FinalizeLineSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
         {
-            using (this)
-            {
-                var methodName = info.MethodState == MethodState.EndLineAsync
-                                     ? info.AsyncCaptureInfo.KickoffMethod?.Name
-                                     : info.Method?.Name;
+            var methodName = info.MethodState == MethodState.EndLineAsync
+                                 ? info.AsyncCaptureInfo.KickoffMethod?.Name
+                                 : info.Method?.Name;
 
-                var typeFullName = info.MethodState == MethodState.EndLineAsync
-                                       ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
-                                       : info.InvocationTargetType?.FullName;
+            var typeFullName = info.MethodState == MethodState.EndLineAsync
+                                   ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
+                                   : info.InvocationTargetType?.FullName;
 
-                AddEvaluationErrors()
-                   .AddProbeInfo(
-                        probeId,
-                        probeVersion,
-                        info.LineCaptureInfo.LineNumber,
-                        info.LineCaptureInfo.ProbeFilePath)
-                   .FinalizeSnapshot(
-                        methodName,
-                        typeFullName,
-                        info.LineCaptureInfo.ProbeFilePath);
+            AddEvaluationErrors()
+               .AddProbeInfo(
+                    probeId,
+                    probeVersion,
+                    info.LineCaptureInfo.LineNumber,
+                    info.LineCaptureInfo.ProbeFilePath)
+               .FinalizeSnapshot(
+                    methodName,
+                    typeFullName,
+                    info.LineCaptureInfo.ProbeFilePath);
 
-                var snapshot = GetSnapshotJson();
-                return snapshot;
-            }
+            var snapshot = GetSnapshotJsonAndDispose();
+            return snapshot;
         }
 
         internal string FinalizeMethodSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
         {
-            using (this)
-            {
-                var methodName = info.MethodState == MethodState.ExitEndAsync
-                                     ? info.AsyncCaptureInfo.KickoffMethod?.Name
-                                     : info.Method?.Name;
+            var methodName = info.MethodState == MethodState.ExitEndAsync
+                                 ? info.AsyncCaptureInfo.KickoffMethod?.Name
+                                 : info.Method?.Name;
 
-                var typeFullName = info.MethodState == MethodState.ExitEndAsync
-                                       ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
-                                       : info.InvocationTargetType?.FullName;
-                AddEvaluationErrors()
-                   .AddProbeInfo(
-                        probeId,
-                        probeVersion,
-                        methodName,
-                        typeFullName)
-                   .FinalizeSnapshot(
-                        methodName,
-                        typeFullName,
-                        null);
+            var typeFullName = info.MethodState == MethodState.ExitEndAsync
+                                   ? info.AsyncCaptureInfo.KickoffInvocationTargetType?.FullName
+                                   : info.InvocationTargetType?.FullName;
+            AddEvaluationErrors()
+               .AddProbeInfo(
+                    probeId,
+                    probeVersion,
+                    methodName,
+                    typeFullName)
+               .FinalizeSnapshot(
+                    methodName,
+                    typeFullName,
+                    null);
 
-                var snapshot = GetSnapshotJson();
-                return snapshot;
-            }
+            var snapshot = GetSnapshotJsonAndDispose();
+            return snapshot;
         }
 
         internal void FinalizeSnapshot(string methodName, string typeFullName, string probeFilePath)
@@ -898,18 +892,22 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal string GetSnapshotJson()
+        internal string GetSnapshotJsonAndDispose()
         {
+            JsonWriter?.Close();
+            Dispose();
             return StringBuilderCache.GetStringAndRelease(_jsonUnderlyingString);
         }
 
-        public void Dispose()
+        internal void Dispose()
         {
             try
             {
                 Stop();
-                _scopeMembersPool.Return(MethodScopeMembers);
-                JsonWriter?.Close();
+                if (MethodScopeMembers != null)
+                {
+                    _scopeMembersPool.Return(MethodScopeMembers);
+                }
             }
             catch
             {
