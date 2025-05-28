@@ -29,6 +29,33 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         private Dictionary<string, int> dictField = new() { { "key", 1 } };
         private NestedObject nestedField = new() { Value = "nested" };
         private string[] arrayField = { "x", "y", "z" };
+
+        public ComplexTestObject()
+        {
+            StringValue = "Test String";
+            IntValue = 42;
+            DoubleValue = 3.14159;
+            BoolValue = true;
+            DateTimeValue = new DateTime(2023, 1, 1);
+            ListValue = new List<string> { "item1", "item2", "item3" };
+            DictValue = new Dictionary<string, int> { { "key1", 1 }, { "key2", 2 } };
+            NestedObject = new SimpleTestObject { Name = "Nested", Value = 100 };
+            ArrayValue = new[] { 1, 2, 3, 4, 5 };
+            NullValue = null;
+            DeepObject = SnapshotBuilder.CreateDeeplyNestedObject(15);
+        }
+
+        public string StringValue { get; set; }
+        public int IntValue { get; set; }
+        public double DoubleValue { get; set; }
+        public bool BoolValue { get; set; }
+        public DateTime DateTimeValue { get; set; }
+        public List<string> ListValue { get; set; }
+        public Dictionary<string, int> DictValue { get; set; }
+        public NestedObject NestedObject { get; set; }
+        public int[] ArrayValue { get; set; }
+        public string NullValue { get; set; }
+        public NestedObject DeepObject { get; set; }
     }
 
     internal class ObjectWithNulls
@@ -195,7 +222,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             }
 
             // Create deep nesting that might trigger depth limits
-            DeepNesting = SnapshotHelper.CreateDeeplyNestedObject(50);
+            DeepNesting = SnapshotBuilder.CreateDeeplyNestedObject(50);
         }
 
         // Object designed to potentially trigger timeout during serialization
@@ -258,15 +285,23 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 
         public MultipleIssuesObject()
         {
-            LargeCollection = Enumerable.Range(1, 200).Select(i => $"item{i}").ToList();
-            DeepObject = SnapshotHelper.CreateDeeplyNestedObject(15);
+            LargeCollection = Enumerable.Range(1, 100).ToList();
+            LargeString = new string('x', 1000);
+            DeepNesting = SnapshotBuilder.CreateDeeplyNestedObject(50);
+            ManyFields = new ClassWithLotsOFields();
         }
 
         // Large collection to trigger collectionSize limit
-        public List<string> LargeCollection { get; set; }
+        public List<int> LargeCollection { get; set; }
 
         // Deep nesting to trigger depth limit
-        public NestedObject DeepObject { get; set; }
+        public NestedObject DeepNesting { get; set; }
+
+        // Large string to trigger string length limit
+        public string LargeString { get; set; }
+
+        // Object with many fields to trigger field count limit
+        public ClassWithLotsOFields ManyFields { get; set; }
 
         // Throwing property
         public string ThrowingProperty => throw new InvalidOperationException("Intentional exception");

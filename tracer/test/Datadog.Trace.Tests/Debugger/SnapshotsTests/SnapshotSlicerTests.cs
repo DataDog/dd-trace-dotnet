@@ -30,34 +30,37 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         [Fact]
         public async Task SnapshotBiggerThanMaxSize_OneLevel_LevelSliced()
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(new ComplexClass(), false);
-            var slicer = GetSlicer(3, snapshot.Length - 1);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(new SimpleClass(), false);
+            var slicedSnapshot = SnapshotSlicer.SliceIfNeeded(snapshot, 200);
 
-            var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            await Verifier.Verify(slicedSnapshot);
         }
 
         [Fact]
         public async Task SnapshotBiggerThanMaxSize_TwoLevel_OneSliced()
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } }, false);
-            var slicer = GetSlicer(3, snapshot.Length - 1);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(new ComplexClass(), false);
+            var slicedSnapshot = SnapshotSlicer.SliceIfNeeded(snapshot, 400);
 
-            var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            await Verifier.Verify(slicedSnapshot);
         }
 
         [Fact]
         public async Task SnapshotBiggerThanMaxSize_ThreeLevel_AllSliced()
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { Class = new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } } }, false);
-            var slicer = GetSlicer(3, snapshot.Length - 326);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } }, false);
+            var slicedSnapshot = SnapshotSlicer.SliceIfNeeded(snapshot, 150);
 
-            var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            await Verifier.Verify(slicedSnapshot);
+        }
+
+        [Fact]
+        public async Task SnapshotBiggerThanMaxSize_FourLevel_AllSliced()
+        {
+            var snapshot = SnapshotBuilder.GenerateSnapshot(new VeryComplexClass() { Class = new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } } }, false);
+            var slicedSnapshot = SnapshotSlicer.SliceIfNeeded(snapshot, 150);
+
+            await Verifier.Verify(slicedSnapshot);
         }
 
         private SnapshotSlicer GetSlicer(int maxDepth, int maxSize)

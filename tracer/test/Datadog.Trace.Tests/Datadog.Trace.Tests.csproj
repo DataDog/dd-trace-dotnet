@@ -61,4 +61,8 @@
     <None Remove="Telemetry\Metrics\*.json" />
     <EmbeddedResource Include="Telemetry\Metrics\*.json" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Debugger\SnapshotsTests\Snapshots\" />
+  </ItemGroup>
 </Project>

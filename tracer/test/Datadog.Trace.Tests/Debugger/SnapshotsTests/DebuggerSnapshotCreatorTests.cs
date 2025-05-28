@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingComplexObjects()
         {
             var complexObject = new ComplexTestObject();
-            var snapshot = SnapshotHelper.GenerateSnapshot(complexObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(complexObject);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingNullValues()
         {
             var objectWithNulls = new ObjectWithNulls();
-            var snapshot = SnapshotHelper.GenerateSnapshot(objectWithNulls);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(objectWithNulls);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             var circular = new CircularReference();
             circular.Self = circular;
 
-            var snapshot = SnapshotHelper.GenerateSnapshot(circular);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(circular);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingExceptions()
         {
             var exception = new InvalidOperationException("Test exception", new ArgumentException("Inner exception"));
-            var snapshot = SnapshotHelper.GenerateSnapshot(exception);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(exception);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -170,7 +170,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingCollectionsWithNulls()
         {
             var collectionWithNulls = new List<string> { "item1", null, "item3", null };
-            var snapshot = SnapshotHelper.GenerateSnapshot(collectionWithNulls);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(collectionWithNulls);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingEmptyCollections()
         {
             var emptyCollections = new EmptyCollections();
-            var snapshot = SnapshotHelper.GenerateSnapshot(emptyCollections);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(emptyCollections);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 { new ComplexKey { Id = 2, Name = "Key2" }, "Value2" }
             };
 
-            var snapshot = SnapshotHelper.GenerateSnapshot(complexDict);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(complexDict);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingConcurrentCollections()
         {
             var concurrentCollections = new ConcurrentCollections();
-            var snapshot = SnapshotHelper.GenerateSnapshot(concurrentCollections);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(concurrentCollections);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -235,7 +235,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingObjectsWithProperties()
         {
             var objectWithProps = new ObjectWithProperties();
-            var snapshot = SnapshotHelper.GenerateSnapshot(objectWithProps);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(objectWithProps);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -249,7 +249,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingStaticFields()
         {
             var objectWithStatics = new ObjectWithStaticFields();
-            var snapshot = SnapshotHelper.GenerateSnapshot(objectWithStatics);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(objectWithStatics);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingObjectsWithBackingFields()
         {
             var autoPropsObject = new ObjectWithAutoProperties();
-            var snapshot = SnapshotHelper.GenerateSnapshot(autoPropsObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(autoPropsObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -287,7 +287,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 GenericDict = new Dictionary<string, int> { { "key1", 1 }, { "key2", 2 } }
             };
 
-            var snapshot = SnapshotHelper.GenerateSnapshot(genericObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(genericObject);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -305,7 +305,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingLazyObjects()
         {
             var lazyObjects = new LazyObjects();
-            var snapshot = SnapshotHelper.GenerateSnapshot(lazyObjects);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(lazyObjects);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -319,7 +319,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingTaskObjects()
         {
             var taskObjects = new TaskObjects();
-            var snapshot = SnapshotHelper.GenerateSnapshot(taskObjects);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(taskObjects);
 
             // Verify JSON is valid
             var json = ValidateJsonStructure(snapshot);
@@ -337,7 +337,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializingObjectsWithThrowingProperties()
         {
             var throwingObject = new ObjectWithThrowingProperties();
-            var snapshot = SnapshotHelper.GenerateSnapshot(throwingObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(throwingObject);
 
             // Verify JSON is valid - should not throw and should handle property exceptions gracefully
             var json = ValidateJsonStructure(snapshot);
@@ -351,7 +351,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenSerializationThrowsException()
         {
             var throwingObject = new ObjectWithThrowingProperties();
-            var snapshot = SnapshotHelper.GenerateSnapshot(throwingObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(throwingObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -365,7 +365,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenCollectionModifiedDuringSerialization()
         {
             var modifiableCollection = new ConcurrentModificationCollection();
-            var snapshot = SnapshotHelper.GenerateSnapshot(modifiableCollection);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(modifiableCollection);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -382,7 +382,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public void FieldCount_ShouldRespectLimits_WhenSerializingObjectsWithManyFields()
         {
             var manyFieldsObject = new ClassWithLotsOFields();
-            var snapshot = SnapshotHelper.GenerateSnapshot(manyFieldsObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(manyFieldsObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -399,7 +399,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public void CollectionSize_ShouldRespectLimits_WhenSerializingLargeCollections()
         {
             var largeCollection = Enumerable.Range(1, 200).ToList();
-            var snapshot = SnapshotHelper.GenerateSnapshot(largeCollection);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(largeCollection);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -415,7 +415,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public void StringLength_ShouldRespectLimits_WhenSerializingLongStrings()
         {
             var longString = new string('x', 2000);
-            var snapshot = SnapshotHelper.GenerateSnapshot(longString);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(longString);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -431,13 +431,14 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         [Fact]
         public void Depth_ShouldRespectLimits_WhenSerializingDeeplyNestedObjects()
         {
-            var deepObject = CreateDeeplyNestedObject(10);
-            var snapshot = SnapshotHelper.GenerateSnapshot(deepObject);
+            var deepObject = SnapshotBuilder.CreateDeeplyNestedObject(10);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(deepObject);
 
             var json = ValidateJsonStructure(snapshot);
 
-            // The serialization should complete without stack overflow
-            // and should respect depth limits
+            // Should contain notCapturedReason: depth
+            Assert.Contains("notCapturedReason", snapshot);
+            Assert.Contains("depth", snapshot);
         }
 
         #endregion
@@ -449,7 +450,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             // Create an object that would take a very long time to serialize
             var slowObject = new SlowSerializationObject();
-            var snapshot = SnapshotHelper.GenerateSnapshot(slowObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(slowObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -466,7 +467,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenFieldCountLimitExceeded()
         {
             var manyFieldsObject = new ClassWithLotsOFields();
-            var snapshot = SnapshotHelper.GenerateSnapshot(manyFieldsObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(manyFieldsObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -484,7 +485,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenCollectionSizeLimitExceeded()
         {
             var largeCollection = Enumerable.Range(1, 500).ToList();
-            var snapshot = SnapshotHelper.GenerateSnapshot(largeCollection);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(largeCollection);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -501,15 +502,14 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         [Fact]
         public async Task JsonStructure_ShouldBeValid_WhenDepthLimitExceeded()
         {
-            var deepObject = CreateDeeplyNestedObject(20); // Exceeds typical depth limit
-            var snapshot = SnapshotHelper.GenerateSnapshot(deepObject);
+            var deepObject = SnapshotBuilder.CreateDeeplyNestedObject(20); // Exceeds typical depth limit
+            var snapshot = SnapshotBuilder.GenerateSnapshot(deepObject);
 
             var json = ValidateJsonStructure(snapshot);
 
             // Should contain notCapturedReason: depth
-            var jsonString = snapshot.ToString();
-            Assert.Contains("notCapturedReason", jsonString);
-            Assert.Contains("depth", jsonString);
+            Assert.Contains("notCapturedReason", snapshot);
+            Assert.Contains("depth", snapshot);
 
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
@@ -520,7 +520,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task JsonStructure_ShouldBeValid_WhenRedactionOccurs()
         {
             var redactedObject = new ObjectWithRedactedFields();
-            var snapshot = SnapshotHelper.GenerateSnapshot(redactedObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(redactedObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -538,7 +538,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             // Create an object that triggers multiple NotCapturedReason conditions
             var problematicObject = new MultipleIssuesObject();
-            var snapshot = SnapshotHelper.GenerateSnapshot(problematicObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(problematicObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -561,7 +561,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             // Test the most critical scenario: JSON structure completeness
             var problematicObject = new MultipleIssuesObject();
-            var snapshot = SnapshotHelper.GenerateSnapshot(problematicObject);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(problematicObject);
 
             var json = ValidateJsonStructure(snapshot);
 
@@ -644,7 +644,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         /// </summary>
         internal async Task ValidateSingleValue(object local)
         {
-            var snapshot = SnapshotHelper.GenerateSnapshot(local);
+            var snapshot = SnapshotBuilder.GenerateSnapshot(local);
 
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
