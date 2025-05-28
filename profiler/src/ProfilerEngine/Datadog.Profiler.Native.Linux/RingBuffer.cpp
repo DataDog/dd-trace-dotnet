@@ -16,7 +16,6 @@
 #include <ostream>
 #include <tuple>
 
-#define _GNU_SOURCE
 #include <sys/mman.h>
 
 using namespace std::chrono_literals;
@@ -96,6 +95,10 @@ RingBuffer::RingBuffer(std::size_t size)
     }
 }
 
+static inline int memfd_create(const char *name, unsigned int flags) {
+  return syscall(SYS_memfd_create, name, flags);
+}
+
 std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::size_t requestedSize)
 {
     // TODO debug log parameters
@@ -123,7 +126,7 @@ std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::
         });
 
     // FUTURE @TODO: have a name that takes into account the number of ring buffers
-    rb->mapfd = memfd_create("dd_profiler_ring_buffer", MFD_CLOEXEC);
+    rb->mapfd = memfd_create("dd_profiler_ring_buffer", 1U /*MFD_CLOEXEC*/);
 
     std::stringstream errorBuff;
     if (rb->mapfd < 0)
