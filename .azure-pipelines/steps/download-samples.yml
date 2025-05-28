@@ -5,7 +5,7 @@ parameters:
 
 steps:
 - template: steps/download-artifact.yml
-  inputs:
+  parameters:
     artifact: samples-standalone
     path: $(outputDir)/bin
     displayName: Download standalone samples
@@ -13,7 +13,7 @@ steps:
 
 - ${{ if ne(parameters.framework, '') }}:
   - template: steps/download-artifact.yml
-    inputs:
+    parameters:
       artifact: samples-multi-version-${{ parameters.framework }}
       path: $(outputDir)/publish
       displayName: Download multi-version samples
