@@ -18,7 +18,11 @@ jobs:
       actions: read # read secrets
       issues: write # change milestones 
     env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      # Have to use external token with explicit workflow permissions because we are creating
+      # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
+      # work in that scenario, so using an external token is required. See issue
+      # https://github.com/cli/cli/issues/9514 for more details.
+      GITHUB_TOKEN: "${{ secrets.GH_EXTERNAL_TOKEN }}"
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
 
     steps:
