@@ -1033,6 +1033,7 @@
       <type fullname="System.Threading.ManualResetEventSlim" />
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
+      <type fullname="System.Threading.ReaderWriterLock" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
       <type fullname="System.Threading.SemaphoreSlim" />
       <type fullname="System.Threading.SpinLock" />

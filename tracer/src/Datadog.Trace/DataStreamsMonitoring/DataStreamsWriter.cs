@@ -25,7 +25,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly Task _processTask;
-    private readonly AsyncManualResetEvent _processingMutex = new(set: false);
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
@@ -82,35 +81,28 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Add(in StatsPoint point)
     {
-        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
-         && _buffer.TryEnqueue(point))
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
-            if (!_processingMutex.IsSet)
+            if (_buffer.TryEnqueue(point))
             {
-                _processingMutex.Set();
+                return;
             }
         }
-        else
-        {
-            // TODO: Monitor with telemetry
-            Interlocked.Increment(ref _pointsDropped);
-        }
+
+        Interlocked.Increment(ref _pointsDropped);
     }
 
     public void AddBacklog(in BacklogPoint point)
     {
-        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
-         && _backlogBuffer.TryEnqueue(point))
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
         {
-            if (!_processingMutex.IsSet)
+            if (_backlogBuffer.TryEnqueue(point))
             {
-                _processingMutex.Set();
+                return;
             }
         }
-        else
-        {
-            Interlocked.Increment(ref _pointsDropped);
-        }
+
+        Interlocked.Increment(ref _pointsDropped);
     }
 
     public async Task DisposeAsync()
@@ -151,10 +143,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private void RequestFlush()
     {
         Interlocked.Exchange(ref _flushRequested, 1);
-        if (!_processingMutex.IsSet)
-        {
-            _processingMutex.Set();
-        }
     }
 
     private async Task WriteToApiAsync()
@@ -234,11 +222,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 // do one more loop to make sure everything is flushed
                 RequestFlush();
                 isFinalFlush = true;
-                continue;
             }
-
-            await _processingMutex.WaitAsync().ConfigureAwait(false);
-            _processingMutex.Reset();
         }
     }
 
