@@ -104,6 +104,7 @@ jobs:
           draft: true
           name: "${{steps.versions.outputs.full_version}}"
           tag_name: "v${{steps.versions.outputs.full_version}}"
+          target_commitish: "${{steps.set_sha.outputs.sha}}"
           prerelease: ${{steps.versions.outputs.isprerelease}}
           body: ${{steps.release_notes.outputs.release_notes}}
           fail_on_unmatched_files: true
