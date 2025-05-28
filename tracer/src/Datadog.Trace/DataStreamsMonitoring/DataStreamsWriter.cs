@@ -206,6 +206,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                     await WriteToApiAsync().ConfigureAwait(false);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
+
+                Thread.Sleep(1);
             }
             catch (Exception ex)
             {
