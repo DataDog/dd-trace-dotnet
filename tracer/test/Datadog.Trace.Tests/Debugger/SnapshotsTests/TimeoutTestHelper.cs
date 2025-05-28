@@ -38,10 +38,10 @@ internal static class TimeoutTestHelper
 
         // Store original value
         _originalTimeout = (int)MaxSerializationTimeField.GetValue(null);
-        
+
         // Set very low timeout
         MaxSerializationTimeField.SetValue(null, timeoutMs);
-        
+
         return new TimeoutRestorer();
     }
 
@@ -81,10 +81,6 @@ internal static class TimeoutTestHelper
     /// </summary>
     private class SlowToStringObject
     {
-        public string Name { get; set; } = "SlowObject";
-        public List<SlowToStringObject> Children { get; set; } = new();
-        public Dictionary<string, SlowToStringObject> ChildrenDict { get; set; } = new();
-
         public SlowToStringObject()
         {
             // Create a structure that will be slow to serialize
@@ -95,7 +91,7 @@ internal static class TimeoutTestHelper
                     Name = $"Child{i}",
                     Children = new List<SlowToStringObject>()
                 };
-                
+
                 // Add some nested children
                 for (int j = 0; j < 10; j++)
                 {
@@ -104,11 +100,17 @@ internal static class TimeoutTestHelper
                         Name = $"Grandchild{i}_{j}"
                     });
                 }
-                
+
                 Children.Add(child);
                 ChildrenDict[$"key{i}"] = child;
             }
         }
+
+        public string Name { get; set; } = "SlowObject";
+
+        public List<SlowToStringObject> Children { get; set; } = new();
+
+        public Dictionary<string, SlowToStringObject> ChildrenDict { get; set; } = new();
 
         public override string ToString()
         {
@@ -117,4 +119,4 @@ internal static class TimeoutTestHelper
             return $"SlowObject({Name})";
         }
     }
-} 
+}

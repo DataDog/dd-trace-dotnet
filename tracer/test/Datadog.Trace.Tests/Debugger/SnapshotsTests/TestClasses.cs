@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 #pragma warning disable CS0414
 #pragma warning disable SA1401
+#pragma warning disable SA1402
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 {
@@ -39,22 +40,32 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             DateTimeValue = new DateTime(2023, 1, 1);
             ListValue = new List<string> { "item1", "item2", "item3" };
             DictValue = new Dictionary<string, int> { { "key1", 1 }, { "key2", 2 } };
-            NestedObject = new SimpleTestObject { Name = "Nested", Value = 100 };
+            NestedObject = new NestedObject() { Child = new NestedObject(), Value = "Nested Value" };
             ArrayValue = new[] { 1, 2, 3, 4, 5 };
             NullValue = null;
             DeepObject = SnapshotBuilder.CreateDeeplyNestedObject(15);
         }
 
         public string StringValue { get; set; }
+
         public int IntValue { get; set; }
+
         public double DoubleValue { get; set; }
+
         public bool BoolValue { get; set; }
+
         public DateTime DateTimeValue { get; set; }
+
         public List<string> ListValue { get; set; }
+
         public Dictionary<string, int> DictValue { get; set; }
+
         public NestedObject NestedObject { get; set; }
+
         public int[] ArrayValue { get; set; }
+
         public string NullValue { get; set; }
+
         public NestedObject DeepObject { get; set; }
     }
 
@@ -94,8 +105,8 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             unchecked
             {
                 var hash = 17;
-                hash = hash * 23 + Id.GetHashCode();
-                hash = hash * 23 + (Name?.GetHashCode() ?? 0);
+                hash = (hash * 23) + Id.GetHashCode();
+                hash = (hash * 23) + (Name?.GetHashCode() ?? 0);
                 return hash;
             }
         }
@@ -201,7 +212,61 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
     internal class NestedObject
     {
         public string Value;
+
         public NestedObject Child;
+    }
+
+    internal class SimpleTestObject
+    {
+        public string Name { get; set; }
+
+        public int Value { get; set; }
+    }
+
+    internal class ClassWithLotsOFields
+    {
+        // This class is designed to trigger fieldCount limits
+        private string field1 = "value1";
+        private string field2 = "value2";
+        private string field3 = "value3";
+        private string field4 = "value4";
+        private string field5 = "value5";
+        private string field6 = "value6";
+        private string field7 = "value7";
+        private string field8 = "value8";
+        private string field9 = "value9";
+        private string field10 = "value10";
+        private string field11 = "value11";
+        private string field12 = "value12";
+        private string field13 = "value13";
+        private string field14 = "value14";
+        private string field15 = "value15";
+        private string field16 = "value16";
+        private string field17 = "value17";
+        private string field18 = "value18";
+        private string field19 = "value19";
+        private string field20 = "value20";
+        private string field21 = "value21";
+        private string field22 = "value22";
+        private string field23 = "value23";
+        private string field24 = "value24";
+        private string field25 = "value25";
+        private string field26 = "value26";
+        private string field27 = "value27";
+        private string field28 = "value28";
+        private string field29 = "value29";
+        private string field30 = "value30";
+
+        // Add some public properties too
+        public string PublicField1 { get; set; } = "public1";
+
+        public string PublicField2 { get; set; } = "public2";
+
+        public string PublicField3 { get; set; } = "public3";
+
+        public string PublicField4 { get; set; } = "public4";
+
+        public string PublicField5 { get; set; } = "public5";
     }
 
     internal class SlowSerializationObject

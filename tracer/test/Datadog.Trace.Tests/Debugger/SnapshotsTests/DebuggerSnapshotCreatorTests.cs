@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,16 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
     [UsesVerify]
     public class DebuggerSnapshotCreatorTests
     {
+        static DebuggerSnapshotCreatorTests()
+        {
+            // Configure Verify to use the Snapshots subdirectory
+            VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
+                new PathInfo(
+                    directory: Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots"),
+                    typeName: type.Name,
+                    methodName: method.Name));
+        }
+
         #region Basic Limits Tests
 
         [Fact]

@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -16,13 +18,23 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
     [UsesVerify]
     public class SnapshotConstructionTests
     {
+        static SnapshotConstructionTests()
+        {
+            // Configure Verify to use the Snapshots subdirectory
+            VerifierSettings.DerivePathInfo((sourceFile, projectDirectory, type, method) =>
+                new PathInfo(
+                    directory: Path.Combine(Path.GetDirectoryName(sourceFile)!, "Snapshots"),
+                    typeName: type.Name,
+                    methodName: method.Name));
+        }
+
         #region Correct Construction Pattern Tests
 
         [Fact]
         public async Task CorrectConstruction_StandardMethodSnapshot_ShouldProduceValidJson()
         {
             var testObject = new ComplexTestObject();
-            
+
             var snapshot = new SnapshotBuilder()
                 .AddEntryInstance(testObject)
                 .AddEntryArgument(42, "arg0")
@@ -34,11 +46,11 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Verify correct structure
             Assert.NotNull(json["debugger"]["snapshot"]["captures"]["entry"]);
             Assert.NotNull(json["debugger"]["snapshot"]["captures"]["return"]);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -56,11 +68,11 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should not have instance captures
             Assert.Null(json.SelectToken("debugger.snapshot.captures.entry.arguments.this"));
             Assert.Null(json.SelectToken("debugger.snapshot.captures.return.arguments.this"));
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -75,11 +87,11 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should have entry but no return
             Assert.NotNull(json["debugger"]["snapshot"]["captures"]["entry"]);
             Assert.Null(json["debugger"]["snapshot"]["captures"]["return"]);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -94,11 +106,11 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should have return but no entry
             Assert.Null(json["debugger"]["snapshot"]["captures"]["entry"]);
             Assert.NotNull(json["debugger"]["snapshot"]["captures"]["return"]);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -113,18 +125,18 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             var deepObject = SnapshotBuilder.CreateDeeplyNestedObject(10);
             var limitInfo = SnapshotBuilder.CreateLimitInfo(maxDepth: 2);
-            
+
             var snapshot = new SnapshotBuilder(limitInfo)
                 .AddReturnLocal(deepObject, "local0")
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should contain notCapturedReason: depth
             var jsonString = snapshot;
             Assert.Contains("notCapturedReason", jsonString);
             Assert.Contains("depth", jsonString);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -135,25 +147,25 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             var largeCollection = Enumerable.Range(1, 50).ToList();
             var limitInfo = SnapshotBuilder.CreateLimitInfo(maxCollectionSize: 5);
-            
+
             var snapshot = new SnapshotBuilder(limitInfo)
                 .AddReturnLocal(largeCollection, "local0")
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should contain notCapturedReason: collectionSize
             var jsonString = snapshot;
             Assert.Contains("notCapturedReason", jsonString);
             Assert.Contains("collectionSize", jsonString);
-            
+
             // Verify collection is limited to 5 elements
             var elementsToken = json.SelectToken("debugger.snapshot.captures.return.locals.local0.elements");
             if (elementsToken is JArray elementsArray)
             {
                 Assert.True(elementsArray.Count <= 5, $"Collection size {elementsArray.Count} exceeds limit of 5");
             }
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -164,25 +176,25 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             var manyFieldsObject = new ClassWithLotsOFields();
             var limitInfo = SnapshotBuilder.CreateLimitInfo(maxFieldCount: 5);
-            
+
             var snapshot = new SnapshotBuilder(limitInfo)
                 .AddReturnLocal(manyFieldsObject, "local0")
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should contain notCapturedReason: fieldCount
             var jsonString = snapshot;
             Assert.Contains("notCapturedReason", jsonString);
             Assert.Contains("fieldCount", jsonString);
-            
+
             // Verify field count is limited to 5
             var fieldsToken = json.SelectToken("debugger.snapshot.captures.return.locals.local0.fields");
             if (fieldsToken is JObject fieldsObject)
             {
                 Assert.True(fieldsObject.Properties().Count() <= 5, $"Field count {fieldsObject.Properties().Count()} exceeds limit of 5");
             }
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -193,13 +205,13 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         {
             var longString = new string('x', 100);
             var limitInfo = SnapshotBuilder.CreateLimitInfo(maxStringLength: 10);
-            
+
             var snapshot = new SnapshotBuilder(limitInfo)
                 .AddReturnLocal(longString, "local0")
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Verify string is truncated to 10 characters
             var valueToken = json.SelectToken("debugger.snapshot.captures.return.locals.local0.value");
             if (valueToken != null)
@@ -207,7 +219,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 var value = valueToken.ToString();
                 Assert.True(value.Length <= 10, $"String length {value.Length} exceeds limit of 10");
             }
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -222,18 +234,18 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 maxCollectionSize: 3,
                 maxFieldCount: 3,
                 maxStringLength: 10);
-            
+
             var snapshot = new SnapshotBuilder(limitInfo)
                 .AddReturnLocal(problematicObject, "local0")
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should contain multiple notCapturedReason entries
             var jsonString = snapshot;
             var notCapturedCount = jsonString.Split(new[] { "notCapturedReason" }, StringSplitOptions.None).Length - 1;
             Assert.True(notCapturedCount > 0, "Should contain at least one notCapturedReason");
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -251,11 +263,11 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             {
                 var snapshot = new SnapshotBuilder()
                     .BuildWithViolations(SnapshotViolation.LocalsInEntry);
-                
+
                 // If no exception is thrown, validate the JSON is still well-formed
                 ValidateJsonStructure(snapshot);
             });
-            
+
             // The system should either throw an exception or handle it gracefully
             // Both are acceptable behaviors, but the JSON should never be malformed
         }
@@ -268,10 +280,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             {
                 var snapshot = new SnapshotBuilder()
                     .BuildWithViolations(SnapshotViolation.ArgumentsBeforeLocalsInReturn);
-                
+
                 ValidateJsonStructure(snapshot);
             });
-            
+
             // Should handle gracefully - order might matter for some consumers
         }
 
@@ -283,10 +295,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             {
                 var snapshot = new SnapshotBuilder()
                     .BuildWithViolations(SnapshotViolation.MissingInstanceForInstanceMethod);
-                
+
                 ValidateJsonStructure(snapshot);
             });
-            
+
             // Should handle gracefully - missing instance is a valid scenario for static methods
         }
 
@@ -299,7 +311,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 var snapshot = new SnapshotBuilder()
                     .BuildWithViolations(SnapshotViolation.DoubleEntry);
             });
-            
+
             // This should either throw an exception or handle it gracefully
             // The important thing is that it doesn't produce malformed JSON
         }
@@ -312,10 +324,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             {
                 var snapshot = new SnapshotBuilder()
                     .BuildWithViolations(SnapshotViolation.ReturnWithoutEntry);
-                
+
                 ValidateJsonStructure(snapshot);
             });
-            
+
             // Should handle gracefully - return-only snapshots are valid
         }
 
@@ -325,10 +337,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             // This tests what happens when we don't finalize properly
             var snapshot = new SnapshotBuilder()
                 .BuildWithViolations(SnapshotViolation.IncompleteJson);
-            
+
             // Even incomplete snapshots should produce valid JSON
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Verify essential structure is present
             Assert.NotNull(json["debugger"]);
         }
@@ -347,7 +359,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -363,7 +375,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -373,7 +385,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task OrderSensitivity_InstanceAtDifferentPositions_ShouldProduceValidJson()
         {
             var testObject = new ComplexTestObject();
-            
+
             // Test instance at beginning
             var snapshot1 = new SnapshotBuilder()
                 .AddEntryInstance(testObject)
@@ -388,11 +400,11 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 
             var json1 = ValidateJsonStructure(snapshot1);
             var json2 = ValidateJsonStructure(snapshot2);
-            
+
             // Both should be valid, but structure might differ
             Assert.NotNull(json1["debugger"]["snapshot"]["captures"]["entry"]["arguments"]["this"]);
             Assert.NotNull(json2["debugger"]["snapshot"]["captures"]["entry"]["arguments"]["this"]);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(new { InstanceFirst = NormalizeStackElement(snapshot1), InstanceLast = NormalizeStackElement(snapshot2) }, verifierSettings);
@@ -406,12 +418,12 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
         public async Task EdgeCase_EmptySnapshot_ShouldProduceValidJson()
         {
             var snapshot = new SnapshotBuilder().Build();
-            
+
             var json = ValidateJsonStructure(snapshot);
-            
+
             // Should have basic structure even with no captures
             Assert.NotNull(json["debugger"]);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -426,7 +438,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -444,7 +456,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                 .Build();
 
             var json = ValidateJsonStructure(snapshot);
-            
+
             var verifierSettings = new VerifySettings();
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -460,18 +472,18 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             using (TimeoutTestHelper.SetLowTimeout(1)) // 1ms timeout
             {
                 var slowObject = TimeoutTestHelper.CreateSlowSerializationObject();
-                
+
                 var snapshot = new SnapshotBuilder()
                     .AddReturnLocal(slowObject, "local0")
                     .Build();
 
                 var json = ValidateJsonStructure(snapshot);
-                
+
                 // Should contain notCapturedReason: timeout
                 var jsonString = snapshot;
                 Assert.Contains("notCapturedReason", jsonString);
                 Assert.Contains("timeout", jsonString);
-                
+
                 var verifierSettings = new VerifySettings();
                 verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
                 await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -484,7 +496,7 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
             using (TimeoutTestHelper.SetLowTimeout(5)) // 5ms timeout
             {
                 var complexObject = new MultipleIssuesObject();
-                
+
                 var snapshot = new SnapshotBuilder()
                     .AddEntryInstance(complexObject)
                     .AddEntryArgument("test", "arg0")
@@ -494,10 +506,10 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
                     .Build();
 
                 var json = ValidateJsonStructure(snapshot);
-                
+
                 // Should still produce valid JSON even with timeout
                 Assert.NotNull(json["debugger"]);
-                
+
                 var verifierSettings = new VerifySettings();
                 verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
                 await Verifier.Verify(NormalizeStackElement(snapshot), verifierSettings);
@@ -568,4 +580,4 @@ namespace Datadog.Trace.Tests.Debugger.SnapshotsTests
 
         #endregion
     }
-} 
+}

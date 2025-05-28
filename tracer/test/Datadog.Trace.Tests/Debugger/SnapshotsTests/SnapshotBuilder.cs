@@ -1,4 +1,4 @@
-// <copyright file="FlexibleSnapshotBuilder.cs" company="Datadog">
+// <copyright file="SnapshotBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,6 +10,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+#pragma warning disable CS0414 // Field is assigned but its value is never used
 
 namespace Datadog.Trace.Tests.Debugger.SnapshotsTests;
 
@@ -77,6 +78,7 @@ internal class SnapshotBuilder
         {
             _entryActions.Add(new CaptureAction(CaptureType.Instance, instance, instance.GetType(), "this"));
         }
+
         return this;
     }
 
@@ -107,6 +109,7 @@ internal class SnapshotBuilder
         {
             _returnActions.Add(new CaptureAction(CaptureType.Instance, instance, instance.GetType(), "this"));
         }
+
         return this;
     }
 
@@ -189,6 +192,7 @@ internal class SnapshotBuilder
                     // Ignore cleanup errors
                 }
             }
+
             throw;
         }
     }
@@ -272,25 +276,8 @@ internal class SnapshotBuilder
                     // Ignore cleanup errors
                 }
             }
-            throw;
-        }
-    }
 
-    private void ExecuteAction(CaptureAction action)
-    {
-        switch (action.Type)
-        {
-            case CaptureType.Instance:
-                _snapshotCreator.CaptureInstance(action.Value, action.ValueType);
-                break;
-            case CaptureType.Argument:
-                _snapshotCreator.CaptureArgument(action.Value, action.Name, action.ValueType);
-                break;
-            case CaptureType.Local:
-                _snapshotCreator.CaptureLocal(action.Value, action.Name, action.ValueType);
-                break;
-            default:
-                throw new ArgumentException($"Unknown capture type: {action.Type}");
+            throw;
         }
     }
 
@@ -322,6 +309,24 @@ internal class SnapshotBuilder
         };
     }
 
+    private void ExecuteAction(CaptureAction action)
+    {
+        switch (action.Type)
+        {
+            case CaptureType.Instance:
+                _snapshotCreator.CaptureInstance(action.Value, action.ValueType);
+                break;
+            case CaptureType.Argument:
+                _snapshotCreator.CaptureArgument(action.Value, action.Name, action.ValueType);
+                break;
+            case CaptureType.Local:
+                _snapshotCreator.CaptureLocal(action.Value, action.Name, action.ValueType);
+                break;
+            default:
+                throw new ArgumentException($"Unknown capture type: {action.Type}");
+        }
+    }
+
     private static string JsonPrettify(string json)
     {
         using var stringReader = new StringReader(json);
@@ -332,13 +337,22 @@ internal class SnapshotBuilder
         return stringWriter.ToString();
     }
 
-    private record CaptureAction(CaptureType Type, object Value, Type ValueType, string Name);
-
     private enum CaptureType
     {
         Instance,
         Argument,
         Local
+    }
+
+    private record CaptureAction(CaptureType Type, object Value, Type ValueType, string Name)
+    {
+        public CaptureType Type { get; } = Type;
+
+        public object Value { get; } = Value;
+
+        public Type ValueType { get; } = ValueType;
+
+        public string Name { get; } = Name;
     }
 }
 
@@ -376,4 +390,4 @@ public enum SnapshotViolation
     /// Creating incomplete JSON by not finalizing properly
     /// </summary>
     IncompleteJson
-} 
+}
