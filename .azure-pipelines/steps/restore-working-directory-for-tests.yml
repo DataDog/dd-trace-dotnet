@@ -16,7 +16,7 @@ steps:
     echo "setting universalArtifactSuffix to ${output}"
     echo "##vso[task.setvariable variable=universalArtifactSuffix]${output}"
 
-- template: ./steps/download-artifact.yml
+- template: ./download-artifact.yml
   parameters:
     displayName: Download universal home binaries
     artifact: linux-universal-home-$(universalArtifactSuffix)

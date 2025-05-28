@@ -12,7 +12,7 @@ steps:
     retryCountOnTaskFailure: 5
 
 - ${{ if ne(parameters.framework, '') }}:
-  - template: steps/download-artifact.yml
+  - template: download-artifact.yml
     parameters:
       artifact: samples-multi-version-${{ parameters.framework }}
       path: $(outputDir)/publish
