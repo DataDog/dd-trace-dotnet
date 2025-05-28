@@ -848,9 +848,9 @@ namespace Datadog.Trace.Debugger.Symbols
             public SourceLocationInfo(int startLine, int endLine, string? path)
                 : this()
             {
-                this.StartLine = startLine;
-                this.EndLine = endLine;
-                this.Path = path;
+                StartLine = startLine;
+                EndLine = endLine;
+                Path = path;
             }
         }
     }
