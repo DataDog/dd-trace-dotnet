@@ -128,6 +128,8 @@ TEST(RingBufferTest, AddFakeSamplesAsMuchAsPossible)
         ASSERT_EQ(sample->_second, rank + j++);
         ASSERT_EQ(sample->_third, std::to_string(rank + j++));
         ASSERT_EQ(sample->_fourth, rank + j++);
+        // we have to release memory allocate by std::string
+        std::destroy_at(const_cast<FakeSample*>(sample));
     }
 
     ASSERT_EQ(r.AvailableSamples(sizeof(FakeSample)), 0);

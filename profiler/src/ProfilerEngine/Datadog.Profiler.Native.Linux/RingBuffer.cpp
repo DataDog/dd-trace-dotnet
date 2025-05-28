@@ -123,6 +123,8 @@ std::pair<RingBuffer::RingBufferUniquePtr, std::string> RingBuffer::Create(std::
                 munmap(ptr, rbSize);
                 munmap(ptr, 2 * rbSize - rb->meta_size);
             }
+
+            delete rb;
         });
 
     // FUTURE @TODO: have a name that takes into account the number of ring buffers
