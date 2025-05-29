@@ -37,17 +37,7 @@ public class StartSpanIntegration
         // This is only used by the OpenTracing public API
         if (instance.AutomaticTracer is not Datadog.Trace.Tracer tracer)
         {
-            if (instance.AutomaticTracer is null)
-            {
-                Log.Error("Error: instance.AutomaticTracer is null. This should never happen, and indicates a problem with automatic instrumentation.");
-            }
-            else
-            {
-                Log.Error(
-                    "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
-                    instance.AutomaticTracer?.GetType());
-            }
-
+            StartActiveImplementationIntegration.LogInvalidAutomaticTracer(instance.AutomaticTracer);
             return CallTargetState.GetDefault();
         }
 
