@@ -27,6 +27,11 @@ internal class BoundedChannel<T>
 
     public bool TryEnqueue(T item)
     {
+        if (_backgroundTask.IsCompleted)
+        {
+            return false;
+        }
+
         return _buffer.TryEnqueue(item);
     }
 
