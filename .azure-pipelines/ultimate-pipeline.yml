@@ -582,42 +582,36 @@ stages:
 
     # Download _both_ musl and glibc if we're building the universal package
     # but only the musl package if we're building alpine package
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux native binary (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-x64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-x64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-x64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-x64
         path: $(monitoringHome)/linux-x64
+        condition: eq(variables['artifactSuffix'], 'linux-x64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux native binary (linux-musl-x64)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-x64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary (linux-musl-x64)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-x64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet (linux-musl-x64)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-x64
         path: $(monitoringHome)/linux-musl-x64
 
@@ -627,9 +621,8 @@ stages:
         chmod +x $(monitoringHome)/linux-x64/dd-dotnet | :
       displayName: chmod dd-dotnet
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-x64
         path: $(monitoringHome)/$(artifactSuffix)
 
@@ -864,42 +857,36 @@ stages:
       
       # Download _both_ musl and glibc if we're building the universal package
       # but only the musl package if we're building alpine package
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer arm64 native binary
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-arm64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler arm64 native binary
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-arm64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-arm64
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
+        condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux-musl-arm64 native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-arm64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux-musl-arm64 native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-arm64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-musl-arm64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
@@ -909,9 +896,8 @@ stages:
         chmod +x $(monitoringHome)/linux-arm64/dd-dotnet | :
       displayName: chmod dd-dotnet
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/$(artifactSuffix)
 
@@ -994,15 +980,13 @@ stages:
     steps:
     - checkout: none
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download native tracer
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: build-macos-native_tracer
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download native loader and managed
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: build-macos-native_loader
         path: $(monitoringHome)
 
@@ -1030,15 +1014,13 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/restore-working-directory.yml
 
-      - task: DownloadPipelineArtifact@2
-        displayName: Download windows profiler home
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: windows-profiler-home
           path: $(monitoringHome)
 
-      - task: DownloadPipelineArtifact@2
-        displayName: Download dd-dotnet win-x64
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: dd-dotnet-win-x64
           path: $(monitoringHome)/win-x64
 
@@ -1367,9 +1349,8 @@ stages:
           artifact: build-macos-working-directory
 
       # The native tracer is built and uploaded separately for perf reasons, so needs to be explicitly downloaded here
-      - task: DownloadPipelineArtifact@2
-        displayName: Download native tracer
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: build-macos-native_tracer
           path: $(monitoringHome)
 
@@ -2024,12 +2005,11 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download MSI
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)$(relativeMsiOutputDirectory)
+        patterns: '**/*-$(targetPlatform).msi'
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
@@ -2619,12 +2599,11 @@ stages:
         targetBranch: $(targetBranch)
 
     # windows-tracer-home.zip file contains profiler, tracer...
-    - task: DownloadPipelineArtifact@2
-      displayName: Download monitoring home zip
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-tracer-home.zip
-        patterns: "windows-tracer-home.zip"
         path: $(Agent.TempDirectory)
+        patterns: "windows-tracer-home.zip"
 
     - task: ExtractFiles@1
       inputs:
@@ -2695,15 +2674,13 @@ stages:
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux debug symbols
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-symbols-$(artifactSuffix)
         path: $(monitoringHome)
 
@@ -2905,6 +2882,7 @@ stages:
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
 
+ 
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -3339,154 +3317,134 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     # download _everything_ not just the bin/obj/package files
-    - task: DownloadPipelineArtifact@2
-      displayName: Download working dir
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: build-windows-working-directory
         path: $(System.DefaultWorkingDirectory)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     # Download everything to monitoring home
     # BuildBundleNuget moves everything to the required folders
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-x64
         patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-x64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download arm64 tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine arm64 tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download osx tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: macos-tracer-home
-        patterns:  |
+        patterns: |
           **/*.dylib
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-profiler-home
         patterns: "**/*.dll"
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-x64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-x64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download arm64 profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine arm64 profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet win-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-win-x64
         path: $(monitoringHome)/win-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-x64
         path: $(monitoringHome)/linux-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-musl-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-x64
         path: $(monitoringHome)/linux-musl-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-arm64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-musl-arm64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts 
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-x64
         path: $(monitoringHome)/linux-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts 
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-x64
         path: $(monitoringHome)/linux-musl-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts 
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
@@ -3570,27 +3528,23 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-profiler-home
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-dotnet-tool
         path: $(runnerTool)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download standalone runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet win-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-win-x64
         path: $(monitoringHome)/win-x64
 
@@ -3680,33 +3634,28 @@ stages:
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-dotnet-tool
         path: $(runnerTool)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download standalone runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(artifactSuffix)
         path: $(Agent.TempDirectory)/runner
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet $(artifactSuffix)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-$(artifactSuffix)
         path: $(monitoringHome)/$(artifactSuffix)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-$(targetArch)
         path: $(monitoringHome)/$(artifactSuffix)
 
@@ -3767,23 +3716,20 @@ stages:
       steps:
         - checkout: none
         # Linux packages
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Alpine tar packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-musl-x64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux x64 packages
-          inputs:
-            artifact: linux-packages-linux-x64
-            patterns: "*.tar.gz"
-            path: $(Build.ArtifactStagingDirectory)
+        - template: steps/download-artifact.yml
+          parameters:
+              artifact: linux-packages-linux-x64
+              patterns: "*.tar.gz"
+              path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Arm64 packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
@@ -3810,27 +3756,23 @@ stages:
       steps:
         - checkout: none
         # Download the files to the expected locations
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless tracer home x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-home-linux-x64-r2r
             path: $(Build.ArtifactStagingDirectory)/x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless universal home x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-home-linux-x64
             path: $(Build.ArtifactStagingDirectory)/x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless tracer home arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-home-linux-arm64-r2r
             path: $(Build.ArtifactStagingDirectory)/arm64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless universal home arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-home-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/arm64
 
@@ -3855,9 +3797,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download NuGet packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: nuget-packages
             path: $(Build.ArtifactStagingDirectory)
 
@@ -3870,112 +3811,94 @@ stages:
           displayName: Extract version number
 
         # Linux packages
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Alpine packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux x64 packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-x64
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Arm64 packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-arm64
             path: $(Build.ArtifactStagingDirectory)
 
         # Linux symbols
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler Alpine symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler Alpine Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-musl-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer Alpine symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer Alpine Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-musl-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux musl x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux musl arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-arm64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download dd-dotnet linux-x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: dd-dotnet-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download dd-dotnet linux-musl-x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: dd-dotnet-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download dd-dotnet linux-arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: dd-dotnet-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
@@ -3988,9 +3911,8 @@ stages:
 
 
         # NuGet
-        - task: DownloadPipelineArtifact@2
-          displayName: Download bundle nuget package
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
@@ -4003,44 +3925,38 @@ stages:
 #            path: $(Build.ArtifactStagingDirectory)
 
         # runner tool
-        - task: DownloadPipelineArtifact@2
-          displayName: Download runner dotnet tool
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-dotnet-tool
             patterns: "*.nupkg"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool win-x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-win-x64
             patterns: "*.zip"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-x64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-musl-x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-musl-x64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-musl-arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-musl-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
@@ -4054,23 +3970,20 @@ stages:
         # not signed, and we use the windows-tracer-home.zip file from
         # GitLab so that it matches the native symbols file,
         # but we include them all in the push to Azure
-        - task: DownloadPipelineArtifact@2
-          displayName: Download Windows tracer home
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-tracer-home.zip
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download x64 MSI
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
 
         # Download the artifacts required by the serverless layer and create the zip file
         # This exapands the directory - but we want a zip file, so re-zip it!
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless artifacts
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: serverless-artifacts
             path: $(Agent.TempDirectory)/serverless-artifacts
 
@@ -4183,8 +4096,8 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-latest-dotnet-sdk.yml
 
-      - task: DownloadPipelineArtifact@2
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           patterns: '**/coverage.cobertura.xml'
           path: $(Build.SourcesDirectory)/cover
 
@@ -4240,12 +4153,11 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-tracer-home
         path: $(monitoringHome)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4293,15 +4205,13 @@ stages:
 
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download HttpMessageHandler
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download FakeDbCommand
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
 
@@ -4372,12 +4282,11 @@ stages:
       parameters:
         includeX86: true
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler windows native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-profiler-home
         path: $(monitoringHome)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4463,12 +4372,11 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4618,9 +4526,8 @@ stages:
           name: create_matrix
           workingDirectory: system-tests
           
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux-packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-x64
             patterns: '**/*tar.gz'
             path: $(Build.ArtifactStagingDirectory)
@@ -4681,9 +4588,8 @@ stages:
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
         
-      - task: DownloadPipelineArtifact@2
-        displayName: Download Docker images
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: system-test-docker-images
           path: $(Build.SourcesDirectory)
 
@@ -4746,9 +4652,8 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download artifacts to smoke test directory
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: $(linuxArtifacts)
         path: $(smokeTestAppDir)/artifacts
 
@@ -4830,9 +4735,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
@@ -4904,15 +4808,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download bundle nuget
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace package
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: nuget-packages
         path: $(smokeTestAppDir)/artifacts
 
@@ -4995,15 +4897,13 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download installer artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(packageName) package
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: nuget-packages
             itemPattern: "$(packageName).$(ToolVersion)$(packageVersionSuffix).nupkg"
             path: $(smokeTestAppDir)/artifacts
@@ -5070,9 +4970,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner-dotnet-tool
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-dotnet-tool
         path: $(smokeTestAppDir)/artifacts
 
@@ -5135,9 +5034,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner-standalone-$(platformSuffix)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(platformSuffix)
         patterns: "*.tar.gz"
         path: $(Agent.TempDirectory)
@@ -5208,15 +5106,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download artifacts to smoke test directory
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: $(linuxArtifacts)
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner-standalone-$(platformSuffix)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(platformSuffix)
         patterns: "*.tar.gz"
         path: $(Agent.TempDirectory)
@@ -5282,9 +5178,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
@@ -5366,9 +5261,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
@@ -5440,15 +5334,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download bundle nuget
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace package
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: nuget-packages
         path: $(smokeTestAppDir)/artifacts
 
@@ -5527,9 +5419,8 @@ stages:
       name: azure-managed-linux-arm64-2
 
     steps:
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dotnet tool
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(platformSuffix)
         patterns: "*.tar.gz"
         path: $(Agent.TempDirectory)
@@ -5601,15 +5492,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download bundle nuget
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace package
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: nuget-packages
         path: $(smokeTestAppDir)/artifacts
 
@@ -5700,9 +5589,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dotnet tool
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-win-x64
         patterns: "dd-trace-win-x64.zip"
         path: $(Agent.TempDirectory)
@@ -5774,9 +5662,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download MSI to temp directory
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-msi-$(targetPlatform)
         patterns: '**/*-$(targetPlatform).msi'
         path: $(Agent.TempDirectory)
@@ -5848,9 +5735,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download MSI to temp directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-msi-$(targetPlatform)
             patterns: '**/*-$(targetPlatform).msi'
             path: $(Agent.TempDirectory)
@@ -5926,9 +5812,8 @@ stages:
         mkdir -p $(smokeTestAppDir)/artifacts
       displayName: Create test data directories
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer home zip
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-tracer-home.zip
         path: $(smokeTestAppDir)/artifacts
 
@@ -5991,15 +5876,13 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download tracer home zip
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-tracer-home.zip
             path: $(smokeTestAppDir)/artifacts
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download fleet installer to temp directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: fleet-installer
             path: $(smokeTestAppDir)/artifacts/installer
 
@@ -6071,9 +5954,8 @@ stages:
           parameters:
             packageType: sdk # have to install the SDK (instead of runtime) so we get the aspnetcore runtime
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download tool runner-dotnet-tool
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-dotnet-tool
             path: $(smokeTestAppDir)/artifacts
 
