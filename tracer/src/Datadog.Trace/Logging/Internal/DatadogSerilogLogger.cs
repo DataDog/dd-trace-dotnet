@@ -220,11 +220,7 @@ namespace Datadog.Trace.Logging
                     // RFC suggests we should always add the "messages skipped" line, but feels like unnecessary noise
                     if (skipCount > 0)
                     {
-                        var newArgs = new object[args.Length + 1];
-                        Array.Copy(args, newArgs, args.Length);
-                        newArgs[args.Length] = skipCount;
-
-                        _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", newArgs);
+                        _logger.Write(level, exception, messageTemplate + ", {SkipCount} additional messages skipped", [.. args, skipCount]);
                     }
                     else
                     {
@@ -234,19 +230,7 @@ namespace Datadog.Trace.Logging
             }
             catch
             {
-                try
-                {
-                    var ex = exception is null ? string.Empty : $"; {exception}";
-                    var properties = args.Length == 0
-                        ? string.Empty
-                        : "; " + string.Join(", ", args);
-
-                    Console.Error.WriteLine($"{messageTemplate}{properties}{ex}");
-                }
-                catch
-                {
-                    // ignore
-                }
+                WriteToStdErr(exception, messageTemplate, args);
             }
 
             static MetricTags.LogLevel LevelToTag(LogEventLevel logLevel)
@@ -258,6 +242,23 @@ namespace Datadog.Trace.Logging
                     LogEventLevel.Warning => MetricTags.LogLevel.Warning,
                     _ => MetricTags.LogLevel.Error,
                 };
+
+            static void WriteToStdErr(Exception? e, string template, object?[] objects)
+            {
+                try
+                {
+                    var ex = e is null ? string.Empty : $"; {e}";
+                    var properties = objects.Length == 0
+                                         ? string.Empty
+                                         : "; " + string.Join(", ", objects);
+
+                    Console.Error.WriteLine($"{template}{properties}{ex}");
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
         }
     }
 }
