@@ -21,6 +21,7 @@ var rootCommand = new CommandWithExamples(CommandWithExamples.Command);
 
 var builder = new CommandLineBuilder(rootCommand)
     .UseHelp()
+    .UseVersionOption()
     .UseCustomErrorReporting()
     .CancelOnProcessTermination();
 
