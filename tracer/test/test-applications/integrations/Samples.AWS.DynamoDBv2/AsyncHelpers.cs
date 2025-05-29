@@ -118,7 +118,7 @@ namespace Samples.AWS.DynamoDBv2
             };
             var batchWriteItemRequest = new BatchWriteItemRequest
             {
-                RequestItems =
+                RequestItems = new()
                 {
                     { TableName, writeRequestList }
                 }
@@ -168,7 +168,7 @@ namespace Samples.AWS.DynamoDBv2
             };
             var batchGetItemRequest = new BatchGetItemRequest
             {
-                RequestItems =
+                RequestItems = new()
                 {
                     { TableName, keysAndAttributes }
                 }
@@ -216,7 +216,7 @@ namespace Samples.AWS.DynamoDBv2
             
             var batchWriteItemRequest = new BatchWriteItemRequest
             {
-                RequestItems =
+                RequestItems = new()
                 {
                     { TableName, writeRequestList }
                 }

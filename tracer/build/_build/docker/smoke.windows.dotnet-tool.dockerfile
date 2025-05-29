@@ -17,12 +17,12 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 WORKDIR /app
 
 ARG CHANNEL_32_BIT
-COPY ./build/_build/bootstrap/dotnet-install.ps1 .
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
+    curl 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1' -o dotnet-install.ps1; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
-    }; rm ./dotnet-install.ps1;
+    rm ./dotnet-install.ps1; }
 
 # Copy the tracer home file from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 COPY --from=builder /src/artifacts /install
@@ -39,6 +39,7 @@ RUN mkdir /logs; \
 ENV DD_PROFILING_ENABLED=1 \
     DD_TRACE_DEBUG=1 \
     DD_APPSEC_ENABLED=1 \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
 

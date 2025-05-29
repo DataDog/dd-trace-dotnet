@@ -222,11 +222,6 @@ namespace PrepareRelease
                     "samples/WindowsContainer/Dockerfile",
                     text => Regex.Replace(text, $"ARG TRACER_VERSION={VersionPattern()}", $"ARG TRACER_VERSION={VersionString()}"));
 
-                // Pipeline monitor
-                SynchronizeVersion(
-                    "tools/PipelineMonitor/PipelineMonitor.csproj",
-                    DatadogTraceNugetDependencyVersionReplace);
-
                 Console.WriteLine($"Completed synchronizing package versions to {VersionString()}");
             }
 

@@ -9,6 +9,7 @@
 #include "IConfiguration.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
+#include "RawSampleTransformer.h"
 #include "ScopeFinalizer.h"
 #include "SampleValueTypeProvider.h"
 #include "shared/src/native-src/com_ptr.h"
@@ -26,14 +27,12 @@ ExceptionsProvider::ExceptionsProvider(
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
     IConfiguration* pConfiguration,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
+    RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
     CallstackProvider callstackProvider,
     shared::pmr::memory_resource* memoryResource)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), rawSampleTransformer, memoryResource),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -206,9 +205,9 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-UpscalingInfo ExceptionsProvider::GetInfo()
+std::list<UpscalingInfo> ExceptionsProvider::GetInfos()
 {
-    return {GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()};
+    return {{GetValueOffsets(), Sample::ExceptionTypeLabel, _sampler.GetGroups()}};
 }
 
 bool ExceptionsProvider::LoadExceptionMetadata()

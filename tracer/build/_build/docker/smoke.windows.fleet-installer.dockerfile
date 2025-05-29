@@ -41,6 +41,7 @@ RUN mkdir /logs; \
 ENV DD_PROFILING_ENABLED=1 \
     DD_TRACE_DEBUG=1 \
     DD_APPSEC_ENABLED=1 \
+    DD_REMOTE_CONFIGURATION_ENABLED=0 \
     DD_TRACE_LOG_DIRECTORY="C:\logs"
 
 # Set a random env var we should ignore

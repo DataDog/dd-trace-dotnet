@@ -10,10 +10,12 @@
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
 
+class RawSampleTransformer;
+
 class GCThreadsCpuProvider : public NativeThreadsCpuProviderBase
 {
 public:
-    GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider, MetricsRegistry& metricsRegistry);
+    GCThreadsCpuProvider(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* cpuSampleTransformer, MetricsRegistry& metricsRegistry);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;

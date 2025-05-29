@@ -10,7 +10,7 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class ProcessCommandStartTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.ProcessComponent)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public static string Component => "process";
 
         [Tag(Trace.Tags.SpanKind)]

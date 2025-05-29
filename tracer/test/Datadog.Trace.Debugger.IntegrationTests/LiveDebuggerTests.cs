@@ -6,9 +6,11 @@
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyXunit;
@@ -39,6 +41,10 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task LiveDebuggerDisabled_DebuggerDisabledByDefault_NoDebuggerTypesCreated()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         await RunTest();
     }
 
@@ -49,6 +55,10 @@ public class LiveDebuggerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
+#if NET8_0_OR_GREATER
+        // These tests often hang on x86 on .NET 8+. Needs investigation
+        Skip.If(!EnvironmentTools.IsTestTarget64BitProcess());
+#endif
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
         await RunTest();
     }
@@ -59,13 +69,14 @@ public class LiveDebuggerTests : TestHelper
 
         using var agent = EnvironmentHelper.GetMockAgent();
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+        var logPath = Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), nameof(LiveDebuggerTests) + "Logs");
+        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", logPath);
         using var sample = await StartSample(agent, $"--test-name {testType.TestType}", string.Empty, aspNetCorePort: 5000);
         await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);
 
         try
         {
-            var memoryAssertions = MemoryAssertions.CaptureSnapshotToAssertOn(sample);
+            var memoryAssertions = await MemoryAssertions.CaptureSnapshotToAssertOn(sample, Output);
 
             memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();

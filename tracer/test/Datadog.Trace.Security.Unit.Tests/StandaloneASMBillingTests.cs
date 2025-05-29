@@ -22,7 +22,7 @@ public class StandaloneASMBillingTests
             { ConfigurationKeys.ApmTracingEnabled, false }
         });
         var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
-        Assert.False(tracerSettings.ApmTracingEnabledInternal);
+        Assert.False(tracerSettings.ApmTracingEnabled);
     }
 
     [Fact]
