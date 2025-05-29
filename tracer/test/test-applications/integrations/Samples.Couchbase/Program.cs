@@ -23,7 +23,6 @@ namespace Samples.Couchbase
             { InnerException: { } inner } => ContainsAuthenticationException(inner),
             _ => false,
         }
-        }
 
         private static async Task<int> Main()
         {
