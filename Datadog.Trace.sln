@@ -617,6 +617,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.OpenTelemetry.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks.OpenTelemetry.InstrumentedApi", "tracer\test\benchmarks\Benchmarks.OpenTelemetry.InstrumentedApi\Benchmarks.OpenTelemetry.InstrumentedApi.csproj", "{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Hangfire", "test\test-applications\integrations\Samples.Hangfire\Samples.Hangfire.csproj", "{79F3090D-0FAD-4E35-984A-59CB031AD7B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1489,6 +1491,10 @@ Global
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79F3090D-0FAD-4E35-984A-59CB031AD7B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79F3090D-0FAD-4E35-984A-59CB031AD7B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79F3090D-0FAD-4E35-984A-59CB031AD7B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79F3090D-0FAD-4E35-984A-59CB031AD7B3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1731,6 +1737,7 @@ Global
 		{4A74A771-F903-4A2E-AA97-902D64CD311A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{501AD343-1951-FF43-0C7F-3FE3FDF5A660} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{BD7ADF79-C948-5CC7-6BE8-A7FF8DF882C3} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
+		{79F3090D-0FAD-4E35-984A-59CB031AD7B3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
