@@ -24,6 +24,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
+    private readonly ManualResetEventSlim _manualResetEvent = new(false);
     private readonly Task _processTask;
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
@@ -85,6 +86,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             if (_buffer.TryEnqueue(point))
             {
+                if (!_manualResetEvent.IsSet)
+                {
+                    _manualResetEvent.Set();
+                }
+
                 return;
             }
         }
@@ -98,6 +104,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
         {
             if (_backlogBuffer.TryEnqueue(point))
             {
+                if (!_manualResetEvent.IsSet)
+                {
+                    _manualResetEvent.Set();
+                }
+
                 return;
             }
         }
@@ -143,6 +154,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private void RequestFlush()
     {
         Interlocked.Exchange(ref _flushRequested, 1);
+        if (!_manualResetEvent.IsSet)
+        {
+            _manualResetEvent.Set();
+        }
     }
 
     private async Task WriteToApiAsync()
@@ -207,7 +222,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
 
-                Thread.Sleep(1);
+                _manualResetEvent.Wait();
+                _manualResetEvent.Reset();
             }
             catch (Exception ex)
             {
