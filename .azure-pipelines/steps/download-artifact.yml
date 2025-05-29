@@ -11,7 +11,7 @@ parameters:
 
 steps:
 - task: DownloadPipelineArtifact@2
-  displayName: ${{ parameters.displayName }}
+  displayName: "Download ${{ parameters.artifact }}"
   condition: ${{ parameters.condition }}
   timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
   retryCountOnTaskFailure: ${{ parameters.retryCountOnTaskFailure }}
