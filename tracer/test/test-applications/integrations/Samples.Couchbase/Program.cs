@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 using Couchbase;
@@ -15,6 +16,17 @@ namespace Samples.Couchbase
         ICluster _cluster;
         IBucket _bucket;
 
+        private static bool ContainsAuthenticationException(Exception ex)
+        {
+            if (ex is AuthenticationException)
+                return true;
+
+            if (ex is AggregateException aggEx)
+                return aggEx.InnerExceptions.Any(ContainsAuthenticationException);
+
+            return ex.InnerException != null && ContainsAuthenticationException(ex.InnerException);
+        }
+
         private static async Task<int> Main()
         {
             Program p = new Program();
@@ -23,17 +35,14 @@ namespace Samples.Couchbase
             {
                 await p.RunAllExamples();
             }
-            catch (AggregateException ex)
+            catch (Exception ex)
             {
                 Console.WriteLine("Exception during execution " + ex);
 
-                foreach (var exception in ex.InnerExceptions)
+                if (ContainsAuthenticationException(ex))
                 {
-                    if (exception is AuthenticationException)
-                    {
-                        Console.WriteLine("Exiting with skip code (13)");
-                        return 13;
-                    }
+                    Console.WriteLine("Exiting with skip code (13)");
+                    return 13;
                 }
             }
 
