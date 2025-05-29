@@ -69,7 +69,7 @@ public class StartActiveImplementationIntegration
         try
         {
             // Throwing and catching to grab to call stack and redact it for telemetry
-            throw new Exception("instance.AutomaticTracer is null");
+            throw new Exception("instance.AutomaticTracer was not a Datadog.Trace.Tracer");
         }
         catch (Exception ex)
         {
