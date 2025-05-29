@@ -4,10 +4,11 @@
           Condition="'$(RemoveUnusedDatadogFiles)' == 'true'">
     <ItemGroup>
       <!-- These are the .NET Core/5+ runtimes we target in Datadog.Trace.dll (we handle .NET Framework separately).
-           When we add new TFMs, add them here as well. Keep these in order from most oldest to newest. We will select the last compatible TFM from this list. -->
+           When we add new TFMs, add them here as well. Keep these in order from oldest to newest. We will select the last compatible TFM from this list. -->
       <DotNetCoreLibDirectories Include="netstandard2.0;netcoreapp3.1;net6.0"
                                 Condition="'$(TargetFrameworkIdentifier)' != '.NETFramework'" />
 
+      <!-- From the list in DotNetCoreLibDirectories above, select the TFMs that are compatible with TargetFramework -->
       <CompatibleDotNetCoreLibDirectories Include="@(DotNetCoreLibDirectories)"
                                           Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', '%(DotNetCoreLibDirectories.Identity)'))" />
     </ItemGroup>
@@ -19,7 +20,7 @@
                                          $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net461'))">net461</DatadogTargetFramework>
 
       <!-- .NET Core/5+ -->
-      <!-- This syntax select the last item from the CompatibleDotNetCoreLibDirectories list, so the order of DotNetCoreLibDirectories is important. -->
+      <!-- This syntax selects the last item from the CompatibleDotNetCoreLibDirectories list, so the order of DotNetCoreLibDirectories is important. -->
       <DatadogTargetFramework Condition="'$(DatadogTargetFramework)' == '' AND
                                          '$(TargetFrameworkIdentifier)' != '.NETFramework'">%(CompatibleDotNetCoreLibDirectories.Identity)</DatadogTargetFramework>
 
@@ -42,8 +43,8 @@
          see https://github.com/dotnet/sdk/blob/67f43d9366503d46a1063319a93a388b705ae8a5/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Publish.targets#L504
          The following lines remove the files we DON'T want published from ResolvedFileToPublish -->
     <ItemGroup>
-      <!-- if $(DatadogRuntimeIdentifier) is set, remove files that don't match -->
-      <!-- note: currently there are two osx directories: "osx" and "osx-x64", so we can't use "osx-*" -->
+      <!-- if DatadogRuntimeIdentifier is set, remove files that don't match -->
+      <!-- note: currently there are two osx directories: "osx" and "osx-x64", so we remove "osx*" instead of "osx-*" -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="'$(DatadogRuntimeIdentifier)' != '' AND
                                          ($([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\win-')) OR
@@ -51,7 +52,7 @@
                                           $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\osx'))) AND
                                        !$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\$(DatadogRuntimeIdentifier)'))" />
 
-      <!-- if $(DatadogTargetFramework) is set, remove the managed library directories that don't match -->
+      <!-- if DatadogTargetFramework is set, remove the managed library directories ("net*") that don't match -->
       <DatadogFilesToRemove Include="@(ResolvedFileToPublish)"
                             Condition="'$(DatadogTargetFramework)' != '' AND
                                         $([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\net')) AND
@@ -59,7 +60,7 @@
 
       <ResolvedFileToPublish Remove="@(DatadogFilesToRemove)" />
 
-      <!-- used in messages below -->
+      <!-- these items are used in the output messages below -->
       <DatadogKeptDirectories Include="$([System.IO.Path]::GetDirectoryName('%(ResolvedFileToPublish.RelativePath)'))"
                               Condition="$([System.String]::new('%(ResolvedFileToPublish.RelativePath)').ToLower().StartsWith('datadog\'))"
                               Exclude="datadog"
