@@ -10,15 +10,12 @@ namespace Samples.Couchbase3
 {
     internal class Program
     {
-        private static bool ContainsAuthenticationException(Exception ex)
+        private static bool ContainsAuthenticationException(Exception ex) => ex switch
         {
-            if (ex is AuthenticationException)
-                return true;
-
-            if (ex is AggregateException aggEx)
-                return aggEx.InnerExceptions.Any(ContainsAuthenticationException);
-
-            return ex.InnerException != null && ContainsAuthenticationException(ex.InnerException);
+            AuthenticationException => true,
+            AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsAuthenticationException),
+            { InnerException: { } inner } => ContainsAuthenticationException(inner),
+            _ => false,
         }
 
         private static async Task<int> Main()
