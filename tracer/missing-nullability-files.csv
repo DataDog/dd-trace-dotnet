@@ -103,6 +103,7 @@ src/Datadog.Trace/ContinuousProfiler/Profiler.cs
 src/Datadog.Trace/ContinuousProfiler/ProfilerStatus.cs
 src/Datadog.Trace/DatabaseMonitoring/MultiPartIdentifier.cs
 src/Datadog.Trace/DatabaseMonitoring/VendoredSqlHelpers.cs
+src/Datadog.Trace/DataStreamsMonitoring/BoundedChannel.cs
 src/Datadog.Trace/DataStreamsMonitoring/CheckpointKind.cs
 src/Datadog.Trace/Debugger/ILineProbeResolver.cs
 src/Datadog.Trace/Debugger/LiveDebugger.cs

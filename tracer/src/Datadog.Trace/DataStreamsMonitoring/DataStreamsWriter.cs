@@ -22,8 +22,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
-    private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
-    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
+    private readonly BoundedChannel<StatsPoint> _buffer;
+    private readonly BoundedChannel<BacklogPoint> _backlogBuffer;
     private readonly Task _processTask;
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
@@ -45,6 +45,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _api = api;
         _discoveryService = discoveryService;
         _discoveryService.SubscribeToChanges(HandleConfigUpdate);
+
+        // create channels to add data points to aggregator
+        _buffer = new BoundedChannel<StatsPoint>(10_000, point => { _aggregator.Add(point); });
+        _backlogBuffer = new BoundedChannel<BacklogPoint>(10_00, point => { _aggregator.AddBacklog(point); });
 
         _processTask = Task.Run(ProcessQueueLoopAsync);
         _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
@@ -114,6 +118,10 @@ internal class DataStreamsWriter : IDataStreamsWriter
         _flushTimer.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
+
+        // close channels
+        _buffer.Close();
+        _backlogBuffer.Close();
     }
 
     private async Task FlushAndCloseAsync()
@@ -185,21 +193,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task ProcessQueueLoopAsync()
     {
+        var spinner = new SpinWait();
         var isFinalFlush = false;
         while (true)
         {
             try
             {
-                while (_buffer.TryDequeue(out var statsPoint))
-                {
-                    _aggregator.Add(in statsPoint);
-                }
-
-                while (_backlogBuffer.TryDequeue(out var backlogPoint))
-                {
-                    _aggregator.AddBacklog(in backlogPoint);
-                }
-
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
                 if (flushRequested == 1)
                 {
@@ -224,7 +223,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 isFinalFlush = true;
             }
 
-            Thread.Sleep(1);
+            spinner.SpinOnce();
         }
     }
 
