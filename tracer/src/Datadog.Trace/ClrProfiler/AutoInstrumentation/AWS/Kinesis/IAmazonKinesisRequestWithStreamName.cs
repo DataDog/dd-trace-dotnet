@@ -16,5 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// Gets the Name of the Stream
         /// </summary>
         string? StreamName { get; }
+
+        string? StreamARN { get; }
     }
 }

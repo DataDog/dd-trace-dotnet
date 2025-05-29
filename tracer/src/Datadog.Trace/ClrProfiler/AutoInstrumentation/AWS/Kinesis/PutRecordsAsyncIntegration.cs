@@ -56,6 +56,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
+            Console.WriteLine("Inside PutRecordsAsyncIntegration StreamName: " + request.StreamName + " StreamARN: " + request.StreamARN);
+
             ContextPropagation.InjectTraceIntoRecords(request, scope, request.StreamName);
 
             return new CallTargetState(scope);
