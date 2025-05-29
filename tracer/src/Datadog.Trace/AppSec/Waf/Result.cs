@@ -12,16 +12,33 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
+        public Result(ref DdwafObjectStruct returnStruct, WafReturnCode returnCode, ref ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings, bool isRasp = false)
         {
             ReturnCode = returnCode;
-            Actions = returnStruct.Actions.DecodeMap();
-            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
-            var derivatives = returnStruct.Derivatives.DecodeMap();
-            BuildDerivatives(derivatives);
-            if (ShouldReportSecurityResult)
+
+            var returnValues = returnStruct.DecodeMap();
+            returnValues.TryGetValue("timeout", out var timeoutObj);
+            returnValues.TryGetValue("keep", out var keepObj);
+            returnValues.TryGetValue("duration", out var durationObj);
+            returnValues.TryGetValue("events", out var eventsObj);
+            returnValues.TryGetValue("actions", out var actionsObj);
+            returnValues.TryGetValue("attributes", out var attributesObj);
+
+            if (durationObj is ulong durationNanos and > 0)
             {
-                Data = returnStruct.Events.DecodeObjectArray();
+                aggregatedTotalRuntime += durationNanos / 1000; // Convert from nanoseconds to microseconds
+            }
+
+            Actions = (Dictionary<string, object?>?)actionsObj;
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
+            if (attributesObj is Dictionary<string, object?> attributesValue)
+            {
+                BuildDerivatives(attributesValue);
+            }
+
+            if (ShouldReportSecurityResult && eventsObj is IReadOnlyCollection<object> eventsValue)
+            {
+                Data = eventsValue;
             }
 
             if (Actions is { Count: > 0 })
@@ -55,7 +72,10 @@ namespace Datadog.Trace.AppSec.Waf
                 AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             }
 
-            Timeout = returnStruct.Timeout > 0;
+            if (timeoutObj is bool timeoutValue and true)
+            {
+                Timeout = timeoutValue;
+            }
         }
 
         public WafReturnCode ReturnCode { get; }
