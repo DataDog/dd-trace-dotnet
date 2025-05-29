@@ -221,9 +221,6 @@ internal class DataStreamsWriter : IDataStreamsWriter
                     await WriteToApiAsync().ConfigureAwait(false);
                     FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
-
-                _manualResetEvent.Wait();
-                _manualResetEvent.Reset();
             }
             catch (Exception ex)
             {
@@ -240,7 +237,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 // do one more loop to make sure everything is flushed
                 RequestFlush();
                 isFinalFlush = true;
+                continue;
             }
+            
+            _manualResetEvent.Wait();
+            _manualResetEvent.Reset();
         }
     }
 
