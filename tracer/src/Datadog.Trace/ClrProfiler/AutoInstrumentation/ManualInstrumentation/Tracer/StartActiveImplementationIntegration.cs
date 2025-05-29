@@ -40,9 +40,17 @@ public class StartActiveImplementationIntegration
 
         if (instance.AutomaticTracer is not Datadog.Trace.Tracer tracer)
         {
-            Log.Error(
-                "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
-                instance.AutomaticTracer?.GetType());
+            if (instance.AutomaticTracer is null)
+            {
+                Log.Error("Error: instance.AutomaticTracer is null. This should never happen, and indicates a problem with automatic instrumentation.");
+            }
+            else
+            {
+                Log.Error(
+                    "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
+                    instance.AutomaticTracer?.GetType());
+            }
+
             return CallTargetState.GetDefault();
         }
 
