@@ -2,10 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <OutputType>Exe</OutputType>
-    <!-- Target ARM Macs -->
-    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <!-- System.Runtime.CompilerServices.Unsafe doesn't support netcoreapp2.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/-->
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.7.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='1.2.0'">$(DefineConstants);OTEL_1_2</DefineConstants>
@@ -13,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Hangfire.Core" Version="1.8.20" />
     <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.1.1" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.12" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
     <PackageReference Include="OpenTelemetry" Version="$(ApiVersion)" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="$(ApiVersion)" />
