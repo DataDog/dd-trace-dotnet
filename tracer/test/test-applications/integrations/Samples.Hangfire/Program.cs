@@ -16,18 +16,12 @@ namespace Samples.Hangfire
 
         static void Main(string[] args)
         {
-            // Set up OpenTelemetry
-            // using var tracer = Sdk.CreateTracerProviderBuilder()
-            //                       .AddHangfireInstrumentation()
-            //                       .AddConsoleExporter()
-            //                       .Build();
-
             // Configure Hangfire
-            using var tracer = Sdk
-                              .CreateTracerProviderBuilder()
-                              .AddHangfireInstrumentation()
-                              .AddConsoleExporter()
-                              .Build();
+            // using var tracer = Sdk
+            //                   .CreateTracerProviderBuilder()
+            //                   .AddHangfireInstrumentation()
+            //                   .AddConsoleExporter()
+            //                   .Build();
 
             GlobalConfiguration.Configuration
                                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
