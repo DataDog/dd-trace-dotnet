@@ -370,7 +370,7 @@ namespace Datadog.Trace.Tests.Logging
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void RedactedErrorLogs_ExcludesSpecificMessages(bool withException)
+        public void RedactedErrorLogs_ExcludesIfSkipTelemetryIsSet(bool withException)
         {
             var collector = new RedactedErrorLogCollector();
 
@@ -383,26 +383,15 @@ namespace Datadog.Trace.Tests.Logging
 
             logger.Should().NotBeNull();
 
-            // These errors should not be written
+            // These errors should not be written to error log
             if (withException)
             {
-                logger.Error(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
+                logger.ErrorSkipTelemetry(new Exception(), Api.FailedToSendMessageTemplate, "http://localhost:8126");
             }
             else
             {
-                logger.Error(Api.FailedToSendMessageTemplate, "http://localhost:8126");
+                logger.ErrorSkipTelemetry(Api.FailedToSendMessageTemplate, "http://localhost:8126");
             }
-
-#if NETFRAMEWORK
-            if (withException)
-            {
-                logger.Error(new Exception(), PerformanceCountersListener.InsufficientPermissionsMessageTemplate);
-            }
-            else
-            {
-                logger.Error(PerformanceCountersListener.InsufficientPermissionsMessageTemplate);
-            }
-#endif
 
             collector.GetLogs().Should().BeNull();
         }
