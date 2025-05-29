@@ -22,7 +22,7 @@ namespace Samples.Couchbase
             AggregateException aggEx => aggEx.InnerExceptions.Any(ContainsAuthenticationException),
             { InnerException: { } inner } => ContainsAuthenticationException(inner),
             _ => false,
-        }
+        };
 
         private static async Task<int> Main()
         {
