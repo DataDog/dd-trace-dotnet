@@ -239,7 +239,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 isFinalFlush = true;
                 continue;
             }
-            
+
             _manualResetEvent.Wait();
             _manualResetEvent.Reset();
         }
