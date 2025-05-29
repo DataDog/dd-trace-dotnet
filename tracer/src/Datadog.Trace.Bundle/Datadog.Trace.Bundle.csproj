@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- do not build this project, only pack -->
+    <!-- do not build this project (no C# code), only pack -->
     <NoBuild>true</NoBuild>
 
     <Version>3.18.0</Version>
