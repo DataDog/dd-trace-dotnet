@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -18,6 +19,7 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
+using Datadog.Trace.Configuration.StableConfiguration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -99,7 +101,6 @@ namespace Datadog.Trace.Configuration
             _telemetry = telemetry;
             ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source, _telemetry);
-
             ExperimentalFeaturesEnabled = config
                     .WithKeys(ConfigurationKeys.ExperimentalFeaturesEnabled)
                     .AsString()?.Trim() switch

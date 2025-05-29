@@ -17,6 +17,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.Configuration.StableConfiguration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
@@ -597,6 +598,8 @@ namespace Datadog.Trace
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
+
+                var configs = Utils.GetConfigurations();
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
 

@@ -282,7 +282,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
-    <ClInclude Include="configuration.h" />
+    <ClInclude Include="library_configuration_helper.h" />
     <ClInclude Include="fault_tolerant_cor_profiler_function_control.h" />
     <ClInclude Include="fault_tolerant_tokens.h" />
     <ClInclude Include="fault_tolerant_envionrment_variables_util.h" />
@@ -291,7 +291,7 @@
     <ClInclude Include="fault_tolerant_rewriter.h" />
     <ClInclude Include="fault_tolerant_tracker.h" />
     <ClInclude Include="function_control_wrapper.h" />
-    <ClCompile Include="configuration.cpp" />
+    <ClCompile Include="library_configuration_helper.cpp" />
     <ClCompile Include="Generated\generated_callsites.g.cpp" />
     <ClCompile Include="Generated\generated_calltargets.g.cpp" />
     <ClInclude Include="Generated\generated_definitions.h" />

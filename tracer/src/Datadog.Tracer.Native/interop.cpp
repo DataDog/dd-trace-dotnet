@@ -268,6 +268,11 @@ EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHA
     return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationId, products);
 }
 
+EXTERN_C ddog_Vec_LibraryConfig STDAPICALLTYPE GetConfigurations()
+{
+    return trace::profiler->GetConfigurations();
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

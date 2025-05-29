@@ -119,7 +119,7 @@
     <ClCompile Include="signature_builder.cpp" />
     <ClCompile Include="Generated\generated_callsites.g.cpp" />
     <ClCompile Include="Generated\generated_calltargets.g.cpp" />
-    <ClCompile Include="configuration.cpp" />
+    <ClCompile Include="library_configuration_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -272,7 +272,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
     <ClInclude Include="Generated\generated_definitions.h" />
     <ClInclude Include="signature_builder.h" />
-    <ClInclude Include="configuration.h" />
+    <ClInclude Include="library_configuration_helper.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">

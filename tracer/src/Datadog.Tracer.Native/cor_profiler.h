@@ -23,6 +23,7 @@
 #include "Synchronized.hpp"
 #include "fault_tolerant_method_duplicator.h"
 #include "fault_tolerant_rewriter.h"
+#include "library_configuration_helper.h"
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -80,7 +81,12 @@ private:
     bool call_target_bubble_up_exception_function_available = false;
     bool call_target_state_skip_method_body_function_available = false;
 
+
+    // Configuration
     //
+    datadog::shared::LibraryConfigurationHelper configuration;
+
+
     // Debugger Members
     //
     std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
@@ -153,7 +159,8 @@ public:
 
     void GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
                                     int* symbolsSize) ;
-
+    
+    ddog_Vec_LibraryConfig GetConfigurations();
     //
     // ICorProfilerCallback methods
     //

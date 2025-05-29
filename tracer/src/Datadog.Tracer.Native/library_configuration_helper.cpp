@@ -1,16 +1,26 @@
-#include "configuration.h"
-#include "logger.h"
+#include "library_configuration_helper.h"
 #include "log.h"
+#include "logger.h"
+#include <cstdlib>
 #include <datadog/common.h>
 #include <datadog/library-config.h>
-#include <cstdlib> 
 
 namespace datadog::shared
 {
 
 // Implementation of the ReadFile method
-void Configuration::ReadFile()
+void LibraryConfigurationHelper::ReadConfigurations()
 {
+//#ifndef LINUX
+//    configs_loaded = true;
+//    return;
+//#endif
+
+    if (configs_loaded)
+    {
+        return;
+    }
+
     ddog_CharSlice language = {.ptr = (char*) "dotnet", .len = 6};
     ddog_Configurator* configurator = ddog_library_configurator_new(true, language);
 
@@ -20,9 +30,9 @@ void Configuration::ReadFile()
         return;
     }
 
-    std::string pathToAgent = "/etc/datadog-agent/";
-    std::string pathToLocalFile = pathToAgent + "application_monitoring.yaml";
-    std::string pathToManagedFile = pathToAgent + "managed/datadog-agent/stable/application_monitoring.yaml";
+    std::string pathToAgent = "C:/ProgramData/Datadog/";
+    std::string pathToLocalFile = pathToAgent + "1.yaml";
+    std::string pathToManagedFile = pathToAgent + "remote/2.yaml";
 
     ddog_library_configurator_with_local_path(configurator, from_null_terminated(pathToLocalFile.c_str()));
     ddog_library_configurator_with_fleet_path(configurator, from_null_terminated(pathToManagedFile.c_str()));
@@ -41,35 +51,19 @@ void Configuration::ReadFile()
     }
     else
     {
-        ddog_Vec_LibraryConfig configs = config_result.ok;
-        configs_map.reserve(configs.len); // Access the public member configs_map
-
-        for (int i = 0; i < configs.len; i++)
-        {
-            const ddog_LibraryConfig* cfg = &configs.ptr[i];
-        }
-        ddog_library_config_drop(configs);
+        cached_configs = config_result.ok;
     }
+    configs_loaded = true;
     ddog_library_configurator_drop(configurator);
-    fileRead = true;
 }
 
-ddog_CStr Configuration::from_null_terminated(const char* str)
+ddog_Vec_LibraryConfig LibraryConfigurationHelper::GetConfigs()
+{
+    return cached_configs;
+}
+
+ddog_CStr LibraryConfigurationHelper::from_null_terminated(const char* str)
 {
     return ddog_CStr{const_cast<char*>(str), strlen(str)};
 }
-
-std::string Configuration::GetValue(std::string const& varname)
-{
-    if (!fileRead)
-    {
-        ReadFile();
-    }
-    auto it = configs_map.find(varname);
-    if (it != configs_map.end())
-    {
-        return it->second; // Directly access the value from the iterator
-    }
-    return "";
-}
-}
+} // namespace datadog::shared
