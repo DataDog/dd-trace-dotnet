@@ -9,5 +9,4 @@ steps:
     artifact: ${{ parameters.artifact }}
     patterns: "**/@(bin|obj|packages)/**"
     path: $(System.DefaultWorkingDirectory)
-    displayName: 'Download working dir'
     retryCountOnTaskFailure: 5

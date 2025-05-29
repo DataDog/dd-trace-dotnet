@@ -14,5 +14,4 @@ steps:
     parameters:
       artifact: samples-multi-version-${{ parameters.framework }}
       path: $(outputDir)/publish
-      displayName: Download multi-version samples
       retryCountOnTaskFailure: 5

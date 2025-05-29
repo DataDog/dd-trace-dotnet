@@ -3,7 +3,6 @@ parameters:
   artifact: ''
   path: ''
   patterns: ''
-  displayName: ''
   condition: ''
   # Defaults
   timeoutInMinutes: 10

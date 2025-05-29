@@ -18,12 +18,10 @@ steps:
 
 - template: download-artifact.yml
   parameters:
-    displayName: Download universal home binaries
     artifact: linux-universal-home-$(universalArtifactSuffix)
     path: $(monitoringHome)/${{ parameters.artifactSuffix }}
 
 - template: download-artifact.yml
   parameters:
-    displayName: Download profiler binaries
     artifact: linux-profiler-home-${{ parameters.artifactSuffix }}
     path: $(monitoringHome)
