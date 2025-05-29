@@ -8,8 +8,6 @@ steps:
   parameters:
     artifact: samples-standalone
     path: $(outputDir)/bin
-    displayName: Download standalone samples
-    retryCountOnTaskFailure: 5
 
 - ${{ if ne(parameters.framework, '') }}:
   - template: download-artifact.yml
