@@ -163,7 +163,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.Telemetry.Should().NotBeEmpty();
         }
 
-#if NETCOREAPP && !NETCOREAPP3_1_OR_GREATER
+        // We don't instrument .NET Framework by default with SSI, so treat it as "EOL"
+#if (NETCOREAPP && !NETCOREAPP3_1_OR_GREATER) || NETFRAMEWORK
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task InstrumentRunsOnEolFramework()
@@ -179,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var scope = new AssertionScope();
             var allFiles = Directory.GetFiles(logDir);
             AddFilesAsReportable(logDir, scope, allFiles);
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-"));
         }
 
         [SkippableFact]
@@ -214,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var scope = new AssertionScope();
             var allFiles = Directory.GetFiles(logDir);
             AddFilesAsReportable(logDir, scope, allFiles);
-            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            allFiles.Should().Contain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-"));
         }
 
         [SkippableFact]
@@ -271,10 +272,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
             AssertNotInstrumented(agent, logDir);
 
-            var pointsJson = """
+#if NETFRAMEWORK
+            // We bail out of .NET Framework by default in SSI, so tweak expected telemetry
+            var abortReason = "incompatible_runtime";
+#else
+            var abortReason = "eol_runtime";
+#endif
+            var pointsJson = $$"""
                              [{
                                "name": "library_entrypoint.abort", 
-                               "tags": ["reason:eol_runtime"]
+                               "tags": ["reason:{{abortReason}}"]
                              },{
                                "name": "library_entrypoint.abort.runtime"
                              }]
@@ -456,7 +463,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var allFiles = Directory.GetFiles(logDir);
             AddFilesAsReportable(logDir, scope, allFiles);
 
-            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-dotnet-"));
+            allFiles.Should().NotContain(filename => Path.GetFileName(filename).StartsWith("dotnet-tracer-managed-"));
             mockTracerAgent.Spans.Should().BeEmpty();
             mockTracerAgent.Telemetry.Should().BeEmpty();
         }
@@ -468,7 +475,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AddFilesAsReportable(logDir, scope, allFiles);
 
             var nativeLoaderLogFilenames = allFiles
-                                  .Where(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-dotnet-"))
+                                  .Where(filename => Path.GetFileName(filename).StartsWith("dotnet-native-loader-"))
                                   .ToList();
             nativeLoaderLogFilenames.Should().NotBeEmpty();
             var nativeLoaderLogFiles = nativeLoaderLogFilenames.Select(File.ReadAllText).ToList();

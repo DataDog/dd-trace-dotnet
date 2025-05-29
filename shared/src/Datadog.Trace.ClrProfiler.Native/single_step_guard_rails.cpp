@@ -117,13 +117,22 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
         return HandleUnsupportedNetCoreVersion(eol, "2.0.0", true);
     }
 
-    // For .NET Framework, we require .NET Framework 4.6.1 or higher
-    if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
+    // For .NET Framework, we require .NET Framework 4.6.1 or higher, but we check for 4.7.2 too, just for telemetry reasons
+    if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
     {
-        // supported
+        // technically supported, but we don't want to auto-inject into .NET Framework apps in SSI by default yet,
+        // as that's to broad.
         tstVerProfilerInfo->Release();
-        Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET Framework runtime version detected, continuing with single step instrumentation");
-        return S_OK;
+        Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET Framework runtime version detected, but SSI instrumentation is not yet supported");
+        return HandleUnsupportedNetFrameworkVersion(".NET Framework", "4.7.2", false);
+    }
+    else if (S_OK == pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
+    {
+        // technically supported, but we don't want to auto-inject into .NET Framework apps in SSI by default yet,
+        // as that's to broad.
+        tstVerProfilerInfo->Release();
+        Log::Debug("SingleStepGuardRails::CheckRuntime: Supported .NET Framework runtime version detected, but SSI instrumentation is not yet supported");
+        return HandleUnsupportedNetFrameworkVersion(".NET Framework", "4.6.1", false);
     }
 
     return HandleUnsupportedNetFrameworkVersion(".NET Framework 4.6.0 or lower", "4.6.0", true);
