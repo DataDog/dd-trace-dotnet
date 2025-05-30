@@ -12134,6 +12134,31 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
     "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteDbDataReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
     "TargetMethodName": "ExecuteNonQuery",
     "TargetReturnType": "System.Int32",
     "TargetParameterTypes": [],
@@ -12148,6 +12173,30 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteNonQueryAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -12202,6 +12251,101 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
     "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.DataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.DataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.DataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.DataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
     "TargetMethodName": "ExecuteScalar",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [],
@@ -12216,6 +12360,30 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteScalarAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -12410,6 +12578,56 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.ManagedDataAccess",
     "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteDbDataReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteDbDataReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
     "TargetMethodName": "ExecuteNonQuery",
     "TargetReturnType": "System.Int32",
     "TargetParameterTypes": [],
@@ -12446,6 +12664,54 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteNonQueryAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteNonQueryAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -12546,6 +12812,196 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.ManagedDataAccess",
     "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteReaderAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Oracle.ManagedDataAccess.Client.OracleDataReader]",
+    "TargetParameterTypes": [
+      "System.Data.CommandBehavior",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
     "TargetMethodName": "ExecuteScalar",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [],
@@ -12582,6 +13038,54 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteScalarAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetMethodName": "ExecuteScalarAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
