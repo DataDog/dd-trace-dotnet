@@ -21,6 +21,7 @@ internal static class HangfireCommon
 {
     private const string Component = "Hangfire.Core";
     private const string HangfireServiceName = "Hangfire";
+    private const string HangfireType = "Hangfire";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HangfireCommon));
 
     internal const string IntegrationName = nameof(Configuration.IntegrationId.Hangfire);
@@ -41,6 +42,7 @@ internal static class HangfireCommon
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, HangfireServiceName);
             scope = tracer.StartActiveInternal(operationName, parent: parentContext, serviceName: serviceName, tags: tags);
             var span = scope.Span;
+            span.Type = HangfireType;
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
         }
         catch (Exception ex)

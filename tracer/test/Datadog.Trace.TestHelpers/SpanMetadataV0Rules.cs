@@ -441,9 +441,12 @@ namespace Datadog.Trace.TestHelpers
                 s => s
                     .MatchesOneOf(Name, "Hangfire.onCreate", "Hangfire.onPerform")
                     .Matches(Type, "Hangfire"))
-           .Tags(
-                s => s
-                   .Matches("component", "Hangfire"));
+           .Tags(s => s
+                     .Matches("component", "Hangfire")
+                     .IsOptional("_dd.base_service")
+                     .IsOptional("job.ID")
+                     .IsOptional("job.CreatedAt")
+                     .IsPresent("span.kind"));
 
         public static Result IsHotChocolateV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
