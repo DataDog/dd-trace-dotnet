@@ -11,7 +11,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -19,6 +18,12 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using Xunit.Abstractions;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 namespace Datadog.Trace.Tests.Debugger
 {
