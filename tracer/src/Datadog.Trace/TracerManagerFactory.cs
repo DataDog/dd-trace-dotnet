@@ -363,43 +363,50 @@ namespace Datadog.Trace
         {
             if (settings.DataPipelineEnabled)
             {
-                var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
-                TelemetryClientConfiguration? telemetryClientConfiguration = null;
-
-                // We don't know how to handle telemetry in Agentless mode yet
-                // so we disable telemetry in this case
-                if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
+                try
                 {
-                    telemetryClientConfiguration = new TelemetryClientConfiguration
+                    var telemetrySettings = TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config, settings, isAgentAvailable: null);
+                    TelemetryClientConfiguration? telemetryClientConfiguration = null;
+
+                    // We don't know how to handle telemetry in Agentless mode yet
+                    // so we disable telemetry in this case
+                    if (telemetrySettings.TelemetryEnabled && telemetrySettings.Agentless == null)
                     {
-                        Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
-                        RuntimeId = new CharSlice(Tracer.RuntimeId),
-                        DebugEnabled = telemetrySettings.DebugEnabled
+                        telemetryClientConfiguration = new TelemetryClientConfiguration
+                        {
+                            Interval = (ulong)telemetrySettings.HeartbeatInterval.Milliseconds,
+                            RuntimeId = new CharSlice(Tracer.RuntimeId),
+                            DebugEnabled = telemetrySettings.DebugEnabled
+                        };
+                    }
+
+                    // When APM is disabled, we don't want to compute stats at all
+                    // A common use case is in Application Security Monitoring (ASM) scenarios:
+                    // when APM is disabled but ASM is enabled.
+                    var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
+
+                    using var configuration = new TraceExporterConfiguration
+                    {
+                        Url = GetUrl(settings),
+                        TraceVersion = TracerConstants.AssemblyVersion,
+                        Env = settings.Environment,
+                        Version = settings.ServiceVersion,
+                        Service = settings.ServiceName,
+                        Hostname = HostMetadata.Instance.Hostname,
+                        Language = ".NET",
+                        LanguageVersion = FrameworkDescription.Instance.ProductVersion,
+                        LanguageInterpreter = FrameworkDescription.Instance.Name,
+                        ComputeStats = settings.StatsComputationEnabled,
+                        TelemetryClientConfiguration = telemetryClientConfiguration,
+                        ClientComputedStats = clientComputedStats
                     };
+
+                    return new TraceExporter(configuration);
                 }
-
-                // When APM is disabled, we don't want to compute stats at all
-                // A common use case is in Application Security Monitoring (ASM) scenarios:
-                // when APM is disabled but ASM is enabled.
-                var clientComputedStats = !settings.StatsComputationEnabled && !settings.ApmTracingEnabled;
-
-                using var configuration = new TraceExporterConfiguration
+                catch (Exception ex)
                 {
-                    Url = GetUrl(settings),
-                    TraceVersion = TracerConstants.AssemblyVersion,
-                    Env = settings.Environment,
-                    Version = settings.ServiceVersion,
-                    Service = settings.ServiceName,
-                    Hostname = HostMetadata.Instance.Hostname,
-                    Language = ".NET",
-                    LanguageVersion = FrameworkDescription.Instance.ProductVersion,
-                    LanguageInterpreter = FrameworkDescription.Instance.Name,
-                    ComputeStats = settings.StatsComputationEnabled,
-                    TelemetryClientConfiguration = telemetryClientConfiguration,
-                    ClientComputedStats = clientComputedStats
-                };
-
-                return new TraceExporter(configuration);
+                    Log.Error(ex, "Failed to create native Trace Exporter, falling back to managed API");
+                }
             }
 
             return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
