@@ -32,6 +32,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
+    private readonly TaskCompletionSource<bool> _completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
@@ -120,7 +121,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task FlushAndCloseAsync()
     {
-        if (!_processExit.TrySetResult(true))
+        if (!_processExit.TrySetResult(true) || !_completionSource.TrySetResult(true))
         {
             return;
         }
@@ -228,7 +229,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            _resetEvent.Wait(_waitTimeSpan);
+            if (!_completionSource.Task.IsCompleted)
+            {
+                await _completionSource.Task.WaitAsync(_waitTimeSpan).ConfigureAwait(false);
+            }
+
+            // _resetEvent.Wait(_waitTimeSpan);
         }
     }
 
