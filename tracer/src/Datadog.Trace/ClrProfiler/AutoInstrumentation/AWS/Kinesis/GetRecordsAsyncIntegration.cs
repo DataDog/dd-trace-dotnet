@@ -49,6 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             {
                 tags.StreamName = streamName;
             }
+            Console.WriteLine("Inside GetRecordsAsync StreamName: " + request.StreamName + " StreamARN: " + request.StreamARN);
 
             return new CallTargetState(scope, streamName);
         }
