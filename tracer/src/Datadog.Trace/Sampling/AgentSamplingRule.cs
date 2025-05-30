@@ -24,7 +24,7 @@ namespace Datadog.Trace.Sampling
 
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
-        public int SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
+        public string SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
                                             Datadog.Trace.Sampling.SamplingMechanism.Default :
                                             Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
@@ -32,41 +32,26 @@ namespace Datadog.Trace.Sampling
 
         public float GetSamplingRate(Span span)
         {
-            var service = span.ServiceName;
-            var env = span.Context.TraceContext.Environment ?? string.Empty;
-
             if (_sampleRates.Count > 0)
             {
+                var service = span.ServiceName;
+                var env = span.Context.TraceContext.Environment ?? string.Empty;
                 var key = new SampleRateKey(service, env);
 
                 if (_sampleRates.TryGetValue(key, out var matchingRate))
                 {
-                    SetSamplingRateTag(span, matchingRate);
                     return matchingRate;
                 }
             }
 
             if (_defaultSamplingRate is { } defaultRate)
             {
-                SetSamplingRateTag(span, defaultRate);
                 return defaultRate;
             }
 
             // we don't have sampling rates from the agent yet (cold start),
             // fallback to 100% sampling rate, don't add "_dd.agent_psr" numeric tag
             return 1;
-
-            static void SetSamplingRateTag(Span span, float sampleRate)
-            {
-                if (span.Tags is CommonTags commonTags)
-                {
-                    commonTags.SamplingAgentDecision = sampleRate;
-                }
-                else
-                {
-                    span.SetMetric(Metrics.SamplingAgentDecision, sampleRate);
-                }
-            }
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
@@ -136,14 +121,14 @@ namespace Datadog.Trace.Sampling
 
                 var serviceParts = parts[0].Split(ValueSeparator, 2);
 
-                if (serviceParts.Length != 2)
+                if (serviceParts.Length != 2 || !string.Equals(serviceParts[0], "service", StringComparison.OrdinalIgnoreCase))
                 {
                     return null;
                 }
 
                 var envParts = parts[1].Split(ValueSeparator, 2);
 
-                if (envParts.Length != 2)
+                if (envParts.Length != 2 || !string.Equals(envParts[0], "env", StringComparison.OrdinalIgnoreCase))
                 {
                     return null;
                 }
