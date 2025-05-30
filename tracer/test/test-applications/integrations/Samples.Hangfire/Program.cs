@@ -11,19 +11,24 @@ namespace Samples.Hangfire
         static async Task Main(string[] args)
         {
             GlobalConfiguration.Configuration
-                               .UseMemoryStorage();
-
-            using var server = new BackgroundJobServer();
+                               .UseMemoryStorage()
+                               .UseFilter(new AutomaticRetryAttribute
+                                {
+                                    Attempts = 1, // customize retry count
+                                    OnAttemptsExceeded = AttemptsExceededAction.Fail // or Delete, depending on your needs
+                                });
 
             // Enqueue a simple job
             BackgroundJob.Enqueue(() => ExecuteTracedJob("from Main"));
-
+            
             // Run additional jobs
             await Should_Create_Activity();
             await Should_Create_Activity_With_Status_Error_When_Job_Failed();
 
-            Console.WriteLine("Press Enter to exit...");
-            Console.ReadLine();
+            using (var server = new BackgroundJobServer())
+            {
+                Console.ReadLine();
+            }
         }
 
         public static void ExecuteTracedJob(string additionText)
@@ -34,13 +39,13 @@ namespace Samples.Hangfire
         public static async Task Should_Create_Activity()
         {
             var jobId = BackgroundJob.Enqueue<TestJob>(x => x.Execute());
-            await WaitJobProcessedAsync(jobId, 5);
+            await WaitJobProcessedAsync(jobId, 1);
         }
-
+        
         public static async Task Should_Create_Activity_With_Status_Error_When_Job_Failed()
         {
             var jobId = BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
-            await WaitJobProcessedAsync(jobId, 5);
+            await WaitJobProcessedAsync(jobId, 1);
         }
 
         private static async Task WaitJobProcessedAsync(string jobId, int maxSeconds)

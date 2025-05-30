@@ -29,6 +29,8 @@ public class HangfireTests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
+    public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHangfire(metadataSchemaVersion);
+
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     public async Task SubmitsTraces()
@@ -37,15 +39,15 @@ public class HangfireTests : TracingIntegrationTest
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent))
         {
-            const int expectedSpanCount = 0;
+            const int expectedSpanCount = 7;
             var spans = agent.WaitForSpans(expectedSpanCount);
 
             using var s = new AssertionScope();
             spans.Count.Should().Be(expectedSpanCount);
 
-            var myServiceNameSpans = spans.Where(s => s.Service == "MyServiceName");
+            var myServiceNameSpans = spans.Where(s => s.Service == "Samples.Hangfire-Hangfire");
 
-            ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
+            ValidateIntegrationSpans(myServiceNameSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.Hangfire-Hangfire", isExternalSpan: false);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
             var traceIdRegexHigh = new Regex("TraceIdLow: [0-9]+");
@@ -60,6 +62,4 @@ public class HangfireTests : TracingIntegrationTest
             telemetry.AssertIntegrationEnabled(IntegrationId.Hangfire);
         }
     }
-
-    public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHangfire(metadataSchemaVersion);
 }
