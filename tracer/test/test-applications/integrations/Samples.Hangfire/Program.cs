@@ -1,61 +1,53 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Hangfire;
-using Hangfire.Common;
 using Hangfire.MemoryStorage;
-using OpenTelemetry;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 
 namespace Samples.Hangfire
 {
     internal class Program
     {
-        // Define a shared ActivitySource for tracing
-        //private static readonly ActivitySource ActivitySource = new("Samples.Hangfire");
-
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            // Configure Hangfire
-            // using var tracer = Sdk
-            //                   .CreateTracerProviderBuilder()
-            //                   .AddHangfireInstrumentation()
-            //                   .AddConsoleExporter()
-            //                   .Build();
-
             GlobalConfiguration.Configuration
-                               .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                               .UseSimpleAssemblyNameTypeSerializer()
-                               .UseRecommendedSerializerSettings()
                                .UseMemoryStorage();
 
-            BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
+            using var server = new BackgroundJobServer();
 
-            //GlobalJobFilters.Filters.Add(new LogEverythingAttribute());
+            // Enqueue a simple job
+            BackgroundJob.Enqueue(() => ExecuteTracedJob("from Main"));
 
-            // Start Hangfire server
+            // Run additional jobs
+            await Should_Create_Activity();
+            await Should_Create_Activity_With_Status_Error_When_Job_Failed();
 
-            // Create a span for enqueuing the job
-
-            // BackgroundJob.Schedule(() => ExecuteTracedJob("scheduled-job"), TimeSpan.FromSeconds(10));
-            // BackgroundJob.Enqueue(() => ExecuteTracedJob("enqueued-job"));
-            // BackgroundJob.Enqueue(() => Console.WriteLine("Hello, world!"));
-            //
-            
-
-            // RecurringJob.AddOrUpdate("SomeJobId",() => ExecuteTracedJob("recurring-job"), "*/5 * * * * ? ");
-            using (var server = new BackgroundJobServer())
-            {
-                Console.ReadLine();
-            }
-
+            Console.WriteLine("Press Enter to exit...");
+            Console.ReadLine();
         }
 
         public static void ExecuteTracedJob(string additionText)
         {
-            //using var activity = ActivitySource.StartActivity("ExecuteTracedJob.Function");
-            Console.WriteLine("Hello from the Hangfire job! " +  additionText);
-            //System.Threading.Thread.Sleep(1000); // Simulate work
+            Console.WriteLine("Hello from the Hangfire job! " + additionText);
+        }
+
+        public static async Task Should_Create_Activity()
+        {
+            var jobId = BackgroundJob.Enqueue<TestJob>(x => x.Execute());
+            await WaitJobProcessedAsync(jobId, 5);
+        }
+
+        public static async Task Should_Create_Activity_With_Status_Error_When_Job_Failed()
+        {
+            var jobId = BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
+            await WaitJobProcessedAsync(jobId, 5);
+        }
+
+        private static async Task WaitJobProcessedAsync(string jobId, int maxSeconds)
+        {
+            // Just simulate a wait for now
+            await Task.Delay(1000 * maxSeconds);
         }
     }
+    
 }
