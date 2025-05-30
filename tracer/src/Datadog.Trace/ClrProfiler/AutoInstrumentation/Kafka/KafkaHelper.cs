@@ -363,7 +363,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
         }
 
-        internal static void DisableHeadersIfUnsupportedBroker(Exception exception)
+        internal static void DisableHeadersIfUnsupportedBroker(Exception? exception)
         {
             if (_headersInjectionEnabled && exception is not null && exception.Message.IndexOf("Unknown broker error", StringComparison.OrdinalIgnoreCase) != -1)
             {
