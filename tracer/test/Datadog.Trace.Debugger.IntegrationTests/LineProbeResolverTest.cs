@@ -7,10 +7,15 @@ using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Collections.Immutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+#endif
 
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
