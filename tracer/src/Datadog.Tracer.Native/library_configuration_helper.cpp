@@ -30,18 +30,6 @@ void LibraryConfigurationHelper::ReadConfigurations()
         return;
     }
 
-    std::string pathToAgent = "C:/ProgramData/Datadog/";
-    std::string pathToLocalFile = pathToAgent + "1.yaml";
-    std::string pathToManagedFile = pathToAgent + "remote/2.yaml";
-
-    ddog_library_configurator_with_local_path(configurator, from_null_terminated(pathToLocalFile.c_str()));
-    ddog_library_configurator_with_fleet_path(configurator, from_null_terminated(pathToManagedFile.c_str()));
-    ddog_ProcessInfo process_info{
-        .args = {nullptr, 0},
-        .envp = {nullptr, 0},
-        .language = language,
-    };
-
     ddog_Result_VecLibraryConfig config_result = ddog_library_configurator_get(configurator);
 
     if (config_result.tag == DDOG_RESULT_VEC_LIBRARY_CONFIG_ERR_VEC_LIBRARY_CONFIG)
