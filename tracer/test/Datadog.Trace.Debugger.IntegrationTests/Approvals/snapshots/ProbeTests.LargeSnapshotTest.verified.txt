@@ -67904,19 +67904,13 @@
                                           "value": "BigObject"
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
-                                          "notCapturedReason": "depth",
-                                          "type": "BigObject",
-                                          "value": "BigObject"
+                                          "pruned": true
                                         },
                                         {
                                           "pruned": true

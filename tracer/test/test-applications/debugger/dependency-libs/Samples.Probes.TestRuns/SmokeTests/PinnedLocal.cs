@@ -17,7 +17,14 @@ namespace Samples.Probes.TestRuns.SmokeTests
         {
             fixed (char* p = "hello")
             {
-                Console.WriteLine(*p);
+                if (*p == 'h')
+                {
+                    Console.WriteLine(*p);
+                }
+                else
+                {
+                    Console.WriteLine((*p).GetHashCode());
+                }
             }
         }
     }

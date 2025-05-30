@@ -18,7 +18,11 @@ jobs:
       actions: read # read secrets
       issues: write # change milestones 
     env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      # Have to use external token with explicit workflow permissions because we are creating
+      # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
+      # work in that scenario, so using an external token is required. See issue
+      # https://github.com/cli/cli/issues/9514 for more details.
+      GITHUB_TOKEN: "${{ secrets.GH_EXTERNAL_TOKEN }}"
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
 
     steps:
@@ -98,17 +102,13 @@ jobs:
         env:
           Version: ${{steps.versions.outputs.full_version}}
 
-      - name: "Create and push git tag"
-        run: |
-          git tag "v${{steps.versions.outputs.full_version}}"
-          git push origin "v${{steps.versions.outputs.full_version}}"
-
       - name: Create Release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v1.0.0
         with:
           draft: true
           name: "${{steps.versions.outputs.full_version}}"
           tag_name: "v${{steps.versions.outputs.full_version}}"
+          target_commitish: "${{steps.set_sha.outputs.sha}}"
           prerelease: ${{steps.versions.outputs.isprerelease}}
           body: ${{steps.release_notes.outputs.release_notes}}
           fail_on_unmatched_files: true

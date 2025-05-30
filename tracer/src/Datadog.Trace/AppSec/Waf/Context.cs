@@ -30,7 +30,7 @@ internal class Context : IContext
     private readonly IEncoder _encoder;
     private readonly UserEventsState _userEventsState = new();
     private bool _disposed;
-    private ulong _totalRuntimeOverRuns;
+    private ulong _totalRuntimeOverRuns = 0;
 
     // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
     private Context(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -124,7 +124,7 @@ internal class Context : IContext
 
     private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
     {
-        DdwafResultStruct retNative = default;
+        DdwafObjectStruct retNative = default;
 
         if (_waf.Disposed)
         {
@@ -191,9 +191,8 @@ internal class Context : IContext
         }
 
         _stopwatch.Stop();
-        _totalRuntimeOverRuns += retNative.TotalRuntime / 1000;
-        var result = new Result(retNative, code, _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp);
-        _wafLibraryInvoker.ResultFree(ref retNative);
+        var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp);
+        _wafLibraryInvoker.ObjectFree(ref retNative);
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {

@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using CodeGenerators;
 using Mono.Cecil;
@@ -64,9 +65,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.24.1";
+    const string LibDdwafVersion = "1.25.0";
 
-    string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
+    string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0", "1.23.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -251,6 +252,7 @@ partial class Build
             EnsureExistingDirectory(BuildDataDirectory);
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
             EnsureExistingDirectory(SymbolsDirectory);
+            EnsureExistingDirectory(BuildArtifactsDirectory / "publish");
         });
 
     Target Restore => _ => _
@@ -490,33 +492,44 @@ partial class Build
         );
         var libDdwafZip = TempDirectory / "libddwaf.zip";
 
-        using (var client = new HttpClient())
+        using var client = new HttpClient();
+
+        const int maxRetries = 5;
+        const int timeoutSeconds = 15;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
         {
-            var keepTrying = true;
-            var nbTries = 0;
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
 
-            while (keepTrying)
+            try
             {
-                nbTries++;
-                try
-                {
-                    var response = await client.GetAsync(libDdwafUri);
+                Console.WriteLine($"Attempt {attempt}: Downloading {libDdwafUri}...");
+                var response = await client.GetAsync(libDdwafUri, cts.Token);
+                response.EnsureSuccessStatusCode();
 
-                    response.EnsureSuccessStatusCode();
+                await using var file = File.Create(libDdwafZip);
+                await using var stream = await response.Content.ReadAsStreamAsync(cts.Token);
+                await stream.CopyToAsync(file, cts.Token);
 
-                    await using var file = File.Create(libDdwafZip);
-                    await using var stream = await response.Content.ReadAsStreamAsync();
-                    await stream.CopyToAsync(file);
-                    keepTrying = false;
-                }
-                catch (HttpRequestException)
-                {
-                    if (nbTries > 3)
-                    {
-                        throw;
-                    }
-                }
+                Console.WriteLine($"Download succeeded on attempt {attempt}.");
+                break; // Exit loop on success
             }
+            catch (OperationCanceledException) when (cts.IsCancellationRequested)
+            {
+                Console.WriteLine($"Attempt {attempt} timed out after {timeoutSeconds} seconds.");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"Attempt {attempt} failed: {ex.Message}");
+            }
+
+            if (attempt == maxRetries)
+            {
+                throw new Exception($"Failed to download {libDdwafUri} after {maxRetries} attempts.");
+            }
+
+            // Exponential backoff before retrying
+            await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
         }
 
         uncompressFolderTarget ??= LibDdwafDirectory(libddwafVersion);
@@ -2775,17 +2788,6 @@ partial class Build
             {
                 Logger.Information($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
-        }
-
-        // set variables for subsequent tests
-        var isSsiRun = Environment.GetEnvironmentVariable("IS_SSI_RUN");
-        if (!string.IsNullOrEmpty(isSsiRun) && string.Equals(isSsiRun, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            Logger.Information("Setting environment variables for SSI run");
-
-            // Not setting telemetry forwarder path because we don't have one to point to
-            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
-            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
         }
 
         base.OnTargetRunning(target);

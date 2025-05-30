@@ -13,7 +13,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        [LogMethodProbeTestData]
+        [LogMethodProbeTestData(skipOnFrameworks: ["net48", "net462"])]
         public async Task<int> Foo(string value)
         {
             var result = value.Length > 10 ? "some value" : "some other value";

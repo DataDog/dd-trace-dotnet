@@ -1,11 +1,10 @@
-// <copyright file="NativeMethods.cs" company="Datadog">
+﻿// <copyright file="GacNativeMethods.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32;
@@ -16,13 +15,43 @@ namespace Datadog.Trace.Tools.Runner.Gac;
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
-internal sealed class NativeMethods
+internal sealed partial class GacNativeMethods : IDisposable
 {
     private const string NetFrameworkSubKey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
 
-    private delegate int CreateAssemblyCacheDelegate(out IAssemblyCache ppAsmCache, int reserved);
+    private IntPtr _libPointer;
 
-    internal static AssemblyCacheContainer CreateAssemblyCache()
+    private GacNativeMethods(IntPtr libPointer)
+    {
+        _libPointer = libPointer;
+    }
+
+    public static GacNativeMethods Create()
+    {
+        var fusionFullPath = GetFusionFullPath();
+        var lPointer = NativeLibrary.Load(fusionFullPath);
+
+        if (lPointer == IntPtr.Zero)
+        {
+            throw new Exception($"Error loading fusion library.");
+        }
+
+        return new GacNativeMethods(lPointer);
+    }
+
+    public void Dispose()
+    {
+        var lPointer = _libPointer;
+        if (lPointer == IntPtr.Zero)
+        {
+            return;
+        }
+
+        _libPointer = IntPtr.Zero;
+        NativeLibrary.Free(lPointer);
+    }
+
+    private static string GetFusionFullPath()
     {
         string fusionFullPath;
         using (var ndpKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32).OpenSubKey(NetFrameworkSubKey))
@@ -41,16 +70,17 @@ internal sealed class NativeMethods
             throw new FileNotFoundException($"{fusionFullPath} cannot be found.");
         }
 
-        var libPointer = NativeLibrary.Load(fusionFullPath);
-        var createAssemblyCachePointer = NativeLibrary.GetExport(libPointer, nameof(CreateAssemblyCache));
-        var createAssemblyCache = Marshal.GetDelegateForFunctionPointer<CreateAssemblyCacheDelegate>(createAssemblyCachePointer);
-        var hr = createAssemblyCache(out var ppAsmCache, 0);
-        if (hr != 0)
+        return fusionFullPath;
+    }
+
+    private IntPtr GetPointer()
+    {
+        var lPointer = _libPointer;
+        if (lPointer == IntPtr.Zero)
         {
-            NativeLibrary.Free(libPointer);
-            throw new TargetInvocationException($"Error creating AssemblyCache. HRESULT = {hr}", null);
+            throw new Exception("Fusion library has not been loaded.");
         }
 
-        return new AssemblyCacheContainer(libPointer, ppAsmCache);
+        return lPointer;
     }
 }
