@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             {
                 streamName = StreamNameFromARN(request.StreamARN);
             }
+
             return streamName;
         }
 

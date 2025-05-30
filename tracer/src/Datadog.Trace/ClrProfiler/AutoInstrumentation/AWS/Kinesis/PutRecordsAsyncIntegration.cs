@@ -12,7 +12,6 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
@@ -77,7 +76,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
         {
-            Console.WriteLine("Response from PutRecordsAsync: " + Newtonsoft.Json.JsonConvert.SerializeObject(obj));
             state.Scope.DisposeWithException(exception);
             return response;
         }
