@@ -8,15 +8,19 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// Interface for duck typing AmazonKinesisRequest implementations with the StreamName property
+    /// Interface for duck typing AmazonKinesisRequest implementations that have either a StreamName or StreamARN property.
+    /// At least one of these properties must be set for the request to be valid.
     /// </summary>
-    internal interface IAmazonKinesisRequestWithStreamName
+    internal interface IAmazonKinesisRequest
     {
         /// <summary>
-        /// Gets the Name of the Stream
+        /// Gets the Name of the Stream. This may be null if StreamARN is set instead.
         /// </summary>
         string? StreamName { get; }
 
+        /// <summary>
+        /// Gets the ARN of the Stream. This may be null if StreamName is set instead.
+        /// </summary>
         string? StreamARN { get; }
     }
 }
