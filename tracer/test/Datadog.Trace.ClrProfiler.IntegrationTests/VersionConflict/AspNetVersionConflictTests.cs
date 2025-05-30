@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             {
                 var samplingPriority = string.Empty;
 
-                if (span.Metrics.ContainsKey(Metrics.SamplingPriority))
+                if (span.Metrics != null && span.Metrics.ContainsKey(Metrics.SamplingPriority))
                 {
                     samplingPriority = span.Metrics[Metrics.SamplingPriority].ToString();
                 }

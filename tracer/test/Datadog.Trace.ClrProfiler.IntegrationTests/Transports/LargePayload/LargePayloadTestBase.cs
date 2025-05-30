@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,8 +31,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int ExpectedSpans => TracesToTrigger + (TracesToTrigger * SpansPerTrace);
 
-        protected async Task RunTest()
+        protected async Task RunTest(TestTransports transport, bool dataPipelineEnabled)
         {
+            if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
+            {
+                throw new SkipException("Can't use UnixDomainSocket on non-Linux with data pipeline enabled");
+            }
+
+            EnvironmentHelper.EnableTransport(transport);
+            EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             {
                 using (var sample = await RunSampleAndWaitForExit(agent, arguments: $" -t {TracesToTrigger} -s {SpansPerTrace} -f {FillerTagLength}"))
