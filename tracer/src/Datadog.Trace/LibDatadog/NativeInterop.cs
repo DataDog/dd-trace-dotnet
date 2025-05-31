@@ -7,6 +7,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.LibDatadog.ServiceDiscovery;
 
 namespace Datadog.Trace.LibDatadog;
 
@@ -63,5 +64,22 @@ internal class NativeInterop
 
         // [DllImport(DllName, EntryPoint = "ddog_trace_exporter_config_set_service")]
         // internal static extern ErrorHandle SetService(SafeHandle config, CharSlice service);
+    }
+
+    internal static class Common
+    {
+        [DllImport(DllName, EntryPoint = "ddog_store_tracer_metadata")]
+        internal static extern TracerMemfdHandleResult StoreTracerMetadata(
+            byte schemaVersion,
+            CharSlice runtimeId,
+            CharSlice tracerLanguage,
+            CharSlice tracerVersion,
+            CharSlice hostname,
+            CharSlice serviceName,
+            CharSlice serviceEnv,
+            CharSlice serviceVersion);
+
+        [DllImport(DllName, EntryPoint = "ddog_Error_drop")]
+        internal static extern void DropError(ref Error errorHandle);
     }
 }
