@@ -99,7 +99,12 @@ Configuration::Configuration()
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
-    _isHttpProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HttpProfilingEnabled, false);
+    _isHttpProfilingEnabled =
+        GetEnvironmentValue(
+            EnvironmentVariables::HttpProfilingEnabled,
+            GetEnvironmentValue(EnvironmentVariables::HttpProfilingInternalEnabled, false // support previous internal env var
+            )
+        );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
