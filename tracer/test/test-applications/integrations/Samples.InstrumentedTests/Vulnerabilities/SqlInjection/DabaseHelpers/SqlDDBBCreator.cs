@@ -12,7 +12,7 @@ internal static class SqlDDBBCreator
         // Linux does not support localDB
         if (!InstrumentationTestsBase.IsWindows())
         {
-            return new SqlConnection("Data Source=.\\DUMMY;Initial Catalog=Dummy");
+            return new SqlConnection("Data Source=.\\DUMMY;Initial Catalog=Dummy;MultipleActiveResultSets=true");
         }
 
         var connection = OpenConnection();
@@ -47,7 +47,7 @@ internal static class SqlDDBBCreator
     private static SqlConnection OpenConnection()
     {
         int numAttempts = 3;
-        var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+        var connectionString = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60;MultipleActiveResultSets=true";
 
         for (int i = 0; i < numAttempts; i++)
         {
