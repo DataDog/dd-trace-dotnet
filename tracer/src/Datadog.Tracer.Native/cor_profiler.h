@@ -21,6 +21,7 @@
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
 #include "Synchronized.hpp"
+#include "SynchronizedRW.hpp"
 #include "fault_tolerant_method_duplicator.h"
 #include "fault_tolerant_rewriter.h"
 
@@ -102,7 +103,7 @@ private:
     //
     // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
     //
-    Synchronized<std::vector<ModuleID>> module_ids;
+    SynchronizedRW<std::vector<ModuleID>> module_ids;
     std::vector<ModuleID> managedInternalModules_;
     mdMethodDef getDistributedTraceMethodDef_;
     mdMethodDef getNativeTracerVersionMethodDef_;
