@@ -3,6 +3,7 @@ on: [push]
 
 jobs:
   check-quality:
+    if: github.actor != 'dependabot[bot]'  # secrets are not available to dependabot
     runs-on: ubuntu-latest
     name: Datadog Static Analyzer
     permissions:
