@@ -8,72 +8,116 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
+
+internal struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollection
 {
-    internal struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollection
+    private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KinesisContextAdapter>();
+    private readonly Dictionary<string, List<string>> headers = new();
+
+    public KinesisContextAdapter()
     {
-        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KinesisContextAdapter>();
-        private Dictionary<string, List<string>> headers = new Dictionary<string, List<string>>();
+    }
 
-        public KinesisContextAdapter()
+    public Dictionary<string, object> GetDictionary()
+    {
+        // Convert to Dictionary<string, object> to satisfy IHeadersCollection
+        return headers.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
+    }
+
+    public IEnumerable<string> GetValues(string name)
+    {
+        if (headers.TryGetValue(name, out var value))
         {
+            return value;
         }
 
-        public Dictionary<string, object> GetDictionary()
+        return Enumerable.Empty<string>();
+    }
+
+    public void Set(string name, string value)
+    {
+        headers[name] = new List<string> { value };
+    }
+
+    public void Add(string name, string value)
+    {
+        if (headers.TryGetValue(name, out var oldValues))
         {
-            // Convert to Dictionary<string, object> to satisfy IHeadersCollection
-            return headers.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
+            oldValues.Add(value);
         }
-
-        public IEnumerable<string> GetValues(string name)
-        {
-            if (headers.TryGetValue(name, out var value))
-            {
-                return value;
-            }
-
-            return Enumerable.Empty<string>();
-        }
-
-        public void Set(string name, string value)
+        else
         {
             headers[name] = new List<string> { value };
         }
+    }
 
-        public void Add(string name, string value)
+    public void Remove(string name)
+    {
+        headers.Remove(name);
+    }
+
+    public byte[] TryGetLastBytes(string name)
+    {
+        if (headers.TryGetValue(name, out var value))
         {
-            if (headers.TryGetValue(name, out var oldValues))
+            return Convert.FromBase64String(value[value.Count - 1]);
+        }
+
+        return new byte[0];
+    }
+
+    public void Add(string name, byte[] value)
+    {
+        Add(name, Convert.ToBase64String(value));
+    }
+
+    public void SetDictionary(Dictionary<string, object> dictionary)
+    {
+        Console.WriteLine($"[KinesisContextAdapter] SetDictionary called with dictionary: {(dictionary == null ? "null" : $"count={dictionary.Count}")}");
+
+        if (dictionary == null)
+        {
+            Console.WriteLine("[KinesisContextAdapter] Dictionary is null, returning early");
+            return;
+        }
+
+        Console.WriteLine("[KinesisContextAdapter] Clearing existing headers");
+        headers.Clear();
+
+        foreach (var kvp in dictionary)
+        {
+            Console.WriteLine($"[KinesisContextAdapter] Processing key: {kvp.Key}, value type: {kvp.Value?.GetType().Name ?? "null"}");
+
+            if (kvp.Value is string stringValue)
             {
-                oldValues.Add(value);
+                Console.WriteLine($"[KinesisContextAdapter] Setting string value: {stringValue}");
+                Set(kvp.Key, stringValue);
+            }
+            else if (kvp.Value is byte[] bytes)
+            {
+                Console.WriteLine($"[KinesisContextAdapter] Setting byte array of length: {bytes.Length}");
+                Add(kvp.Key, bytes);
+            }
+            else if (kvp.Value != null)
+            {
+                var stringRepresentation = kvp.Value.ToString();
+                Console.WriteLine($"[KinesisContextAdapter] Converting to string: {stringRepresentation}");
+                Set(kvp.Key, stringRepresentation);
             }
             else
             {
-                headers[name] = new List<string> { value };
+                Console.WriteLine("[KinesisContextAdapter] Skipping null value");
             }
         }
 
-        public void Remove(string name)
+        Console.WriteLine($"[KinesisContextAdapter] SetDictionary complete. Final header count: {headers.Count}");
+        foreach (var header in headers)
         {
-            headers.Remove(name);
-        }
-
-        public byte[] TryGetLastBytes(string name)
-        {
-            if (headers.TryGetValue(name, out var value))
-            {
-                return Convert.FromBase64String(value[value.Count - 1]);
-            }
-
-            return new byte[0];
-        }
-
-        public void Add(string name, byte[] value)
-        {
-            Add(name, Convert.ToBase64String(value));
+            Console.WriteLine($"[KinesisContextAdapter] Header: {header.Key} = {string.Join(", ", header.Value)}");
         }
     }
 }
