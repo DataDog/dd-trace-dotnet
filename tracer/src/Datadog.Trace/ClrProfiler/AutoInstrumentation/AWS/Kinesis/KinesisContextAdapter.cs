@@ -105,6 +105,12 @@ internal struct KinesisContextAdapter : IHeadersCollection, IBinaryHeadersCollec
             else if (kvp.Value != null)
             {
                 var stringRepresentation = kvp.Value.ToString();
+                if (stringRepresentation == null)
+                {
+                    Console.WriteLine("[KinesisContextAdapter] String representation is null, skipping");
+                    continue;
+                }
+
                 Console.WriteLine($"[KinesisContextAdapter] Converting to string: {stringRepresentation}");
                 Set(kvp.Key, stringRepresentation);
             }
