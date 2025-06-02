@@ -86,8 +86,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 record.Data = memoryStreamData;
                 Console.WriteLine("InjectTraceIntoData -- Propagated Data " + propagatedContext);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.WriteLine("InjectTraceIntoData -- Propagated Data " + propagatedContext + ", Exception: " + e);
                 Log.Debug("Unable to inject trace context to Kinesis data.");
             }
         }
