@@ -745,7 +745,6 @@ partial class Build
         .DependsOn(BuildProfilerSampleForSanitiserTests)
         .DependsOn(RunSampleWithProfilerUbsan);
 
-
     Target CompileProfilerWithUbsanLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
@@ -770,6 +769,40 @@ partial class Build
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
+
+    Target BuildProfilerTsanTest => _ => _
+        .Unlisted()
+        .Description("Compile the profiler with Clang Thread sanitizer")
+        .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileProfilerWithTsanLinux)
+        .DependsOn(BuildNativeWrapper)
+        .DependsOn(PublishNativeWrapper)
+        .DependsOn(PublishProfiler);
+
+    Target CompileProfilerWithTsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Before(PublishProfiler)
+        .Triggers(RunUnitTestsWithTsanLinux)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
+
+            CMake.Value(
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_TSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
+        });
+
+    Target RunUnitTestsWithTsanLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Tsan);
+        });
 
     Target BuildProfilerSampleForSanitiserTests => _ => _
         .Unlisted()
@@ -856,7 +889,8 @@ partial class Build
     {
         None,
         Asan,
-        Ubsan
+        Ubsan,
+        Tsan
     };
 
     void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
