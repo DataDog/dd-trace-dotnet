@@ -11,7 +11,6 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
@@ -33,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     public class PutRecordAsyncIntegration
     {
         private const string Operation = "PutRecord";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PutRecordAsyncIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -58,8 +56,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             {
                 tags.StreamName = streamName;
             }
-
-            Console.WriteLine($"Inside PutRecordAsyncIntegration - StreamName: {request.StreamName}, StreamARN: {request.StreamARN}, Deduced StreamName: {streamName}");
 
             ContextPropagation.InjectTraceIntoData(request, scope, streamName);
 
