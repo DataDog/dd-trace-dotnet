@@ -33,10 +33,13 @@ public:
     public:
         ~Writer() = default;
 
+        #ifdef DD_TEST
+        Writer() = default;
+        #endif
         Writer(Writer const&) = delete;
         Writer& operator=(Writer const&) = delete;
-        Writer(Writer&&) = delete;
-        Writer& operator=(Writer&&) = delete;
+        Writer(Writer&&) = default;
+        Writer& operator=(Writer&&) = default;
 
         Buffer Reserve(std::size_t size, bool* timeout = nullptr) const;
         void Commit(Buffer);
