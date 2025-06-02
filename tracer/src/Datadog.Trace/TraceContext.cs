@@ -312,12 +312,12 @@ namespace Datadog.Trace
             // report only the original rates, do not override
             AppliedSamplingRate ??= rate;
             RateLimiterRate ??= limiterRate;
+            SamplingMechanism ??= mechanism;
 
             if (SamplingPriorityValues.IsKeep(p) && mechanism != null)
             {
                 // report sampling mechanism as trace tag only if decision is to keep the trace.
                 // report only the original sampling mechanism, do not override.
-                SamplingMechanism ??= mechanism;
                 Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, mechanism);
             }
             else if (SamplingPriorityValues.IsDrop(p))
