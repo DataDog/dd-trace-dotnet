@@ -44,11 +44,9 @@ public:
     private:
         friend class RingBuffer;
         explicit Writer(RingBufferImpl* rb);
-        inline void UpdateTail();
 
         static constexpr std::chrono::milliseconds ReserveTimeout{100ms};
         RingBufferImpl* _rb;
-        std::uint64_t _tail;
     };
 
     class Reader
