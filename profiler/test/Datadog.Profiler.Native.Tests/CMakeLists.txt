@@ -25,6 +25,10 @@ if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
 endif()
 
+if (RUN_TSAN)
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
+endif()
+
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()
@@ -73,6 +77,10 @@ endif()
 
 if (RUN_UBSAN)
     target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=undefined)
+endif()
+
+if (RUN_TSAN)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=thread)
 endif()
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
