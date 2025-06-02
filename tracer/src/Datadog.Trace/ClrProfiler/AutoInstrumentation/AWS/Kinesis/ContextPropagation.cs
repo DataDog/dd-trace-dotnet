@@ -41,14 +41,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, Scope? scope, string? streamName)
             where TRecordRequest : IContainsData
         {
-            Console.WriteLine("Start InjectTraceIntoData");
             Dictionary<string, object> propagatedContext = new Dictionary<string, object>();
             if (scope?.Span.Context != null && !string.IsNullOrEmpty(streamName))
             {
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
                 {
-                    Console.WriteLine("Injecting Outbound Kinesis DSM Trace");
                     var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
                     scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                     var adapter = new KinesisContextAdapter();
@@ -60,14 +58,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
             if (record.Data is null)
             {
-                Console.WriteLine("InjectTraceIntoData -- No Record Data");
                 return;
             }
 
             var jsonData = ParseDataObject(record.Data);
             if (jsonData is null || jsonData.Count == 0)
             {
-                Console.WriteLine("InjectTraceIntoData -- No JSON Data");
                 return;
             }
 
@@ -79,16 +75,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 var memoryStreamData = DictionaryToMemoryStream(jsonData);
                 if (memoryStreamData.Length > MaxKinesisDataSize)
                 {
-                    Console.WriteLine("InjectTraceIntoData -- Max Kinesis Data Size");
                     return;
                 }
 
                 record.Data = memoryStreamData;
-                Console.WriteLine("InjectTraceIntoData -- Propagated Data " + propagatedContext);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine("InjectTraceIntoData -- Propagated Data " + propagatedContext + ", Exception: " + e);
                 Log.Debug("Unable to inject trace context to Kinesis data.");
             }
         }
