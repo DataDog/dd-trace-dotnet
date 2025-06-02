@@ -112,27 +112,27 @@ namespace Datadog.Trace.Sampling
             int priority;
             float? limiterRate = null;
 
-            switch (mechanism)
+            if (mechanism is SamplingMechanism.AgentRate or SamplingMechanism.Default)
             {
-                case SamplingMechanism.AgentRate or SamplingMechanism.Default:
-                    // default sampling rule based on sampling rates from agent response or from a cold start.
-                    // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
-                    priority = sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject;
-                    break;
-                default:
-                    // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
-                    // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
-                    if (sample)
-                    {
-                        priority = _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
-                        limiterRate = _limiter.GetEffectiveRate();
-                    }
-                    else
-                    {
-                        priority = SamplingPriorityValues.UserReject;
-                    }
+                // default sampling rule based on sampling rates from agent response or from a cold start.
+                // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
+                priority = sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject;
+            }
+            else
+            {
+                // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
+                // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
+                if (sample)
+                {
+                    priority = _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
 
-                    break;
+                    // report the rate limiter's effective rate if the rate limiter is used
+                    limiterRate = _limiter.GetEffectiveRate();
+                }
+                else
+                {
+                    priority = SamplingPriorityValues.UserReject;
+                }
             }
 
             return new SamplingDecision(priority, mechanism, rate, limiterRate);
