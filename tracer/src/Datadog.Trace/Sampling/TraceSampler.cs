@@ -122,8 +122,16 @@ namespace Datadog.Trace.Sampling
                 default:
                     // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
                     // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
-                    priority = sample && _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
-                    limiterRate = _limiter.GetEffectiveRate();
+                    if (sample)
+                    {
+                        priority = _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject;
+                        limiterRate = _limiter.GetEffectiveRate();
+                    }
+                    else
+                    {
+                        priority = SamplingPriorityValues.UserReject;
+                    }
+
                     break;
             }
 
