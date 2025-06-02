@@ -81,6 +81,7 @@ update-bp-infra:
       - runner_system_failure
       - scheduler_failure
       - api_failure
+      - script_failure
   rules:
     - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
@@ -263,6 +264,7 @@ profiler_cpu_timer_create:
       - runner_system_failure
       - scheduler_failure
       - api_failure
+      - script_failure
   rules:
     - when: on_success
   image: $MACROBENCHMARKS_CI_IMAGE
@@ -450,7 +452,17 @@ profiler_cpu_timer_create-arm64:
   needs: ["check_azure_pipeline"]
   tags: ["arch:amd64"]
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dotnet-macrobenchmarks
+  interruptible: true
   timeout: 2h
+  retry:
+    max: 2
+    when:
+      - unknown_failure
+      - data_integrity_failure
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
+      - script_failure
   rules:
     - when: on_success
   artifacts:

@@ -119,7 +119,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.18.0
+  ToolVersion: 3.19.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -1631,7 +1631,16 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Build integration tests
+      retryCountOnTaskFailure: 3
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1690,7 +1699,15 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd BuildDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Build integration tests
+      retryCountOnTaskFailure: 3
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd RunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1746,7 +1763,15 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Build Integration Tests
+      retryCountOnTaskFailure: 3
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2013,6 +2038,7 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
+      retryCountOnTaskFailure: 3
 
     - powershell: |
         mkdir -Force ./artifacts/build_data/snapshots
@@ -2086,6 +2112,7 @@ stages:
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: BuildWindowsIntegrationTests
+      retryCountOnTaskFailure: 3
 
     - script: tracer\build.cmd RunIntegrationTests -filter FleetInstaller=True -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisIntegrationTests
@@ -2157,6 +2184,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2232,6 +2260,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
@@ -2345,6 +2374,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2352,6 +2382,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
         
     - script: |
         # Include the serverless dockerfile
@@ -2521,6 +2552,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2916,6 +2948,7 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 3
 
         - script: |
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
@@ -2985,6 +3018,7 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 3
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64
