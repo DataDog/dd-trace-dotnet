@@ -146,4 +146,86 @@ TEST(RingBufferTest, StaleLock)
     ASSERT_TRUE(w.Reserve(4, &timeout).empty());
     ASSERT_TRUE(timeout);
 }
+
+
+struct MyStruct
+{
+    std::uint8_t ProducerId;
+    double IthElement;
+    std::uint16_t Other;
+};
+
+void writer_fun(RingBuffer* rb, std::uint64_t nbElements, std::size_t producerIdx)
+{
+    for(auto i = 0; i < nbElements; i++)
+    {
+        Buffer buffer;
+        RingBuffer::Writer w;
+        do
+        {
+            w = rb->GetWriter();
+            buffer = w.Reserve(sizeof(MyStruct));
+            if (!buffer.empty())
+            {
+                break;
+            }
+            sched_yield();
+        } while (true);
+
+        ASSERT_EQ(buffer.size(), sizeof(MyStruct));
+        auto* item = reinterpret_cast<MyStruct*>(buffer.data());
+
+        item->ProducerId = producerIdx;
+        item->IthElement = i;
+        item->Other = i * producerIdx;
+
+        w.Commit(buffer);
+    }
+}
+
+void reader_fun(RingBuffer* rb, std::uint64_t nbElements, std::uint64_t nbProducers)
+{
+    auto totalReadElements = 0;
+
+    std::vector<std::size_t> producers(nbProducers);
+
+    while(totalReadElements < nbProducers * nbElements)
+    {
+        auto r = rb->GetReader();
+
+        for (auto buffer = r.Read(); !buffer.empty(); buffer = r.Read())
+        {
+            auto* item = reinterpret_cast<const MyStruct*>(buffer.data());
+
+            auto producerId = item->ProducerId;
+            auto& count = producers[producerId];
+
+            ASSERT_EQ(item->IthElement, count);
+            ASSERT_EQ(item->Other, count * producerId);
+            ++count;
+            ++totalReadElements;
+        }
+    }
+}
+
+TEST(RingBufferTest, MultipleProducersSingleConsumer)
+{
+    auto nbElements = 1000;
+    auto nbProducers = 8;
+
+    auto rb = RingBuffer(4096);
+    std::vector<std::thread> threads;
+    for (auto i = 0; i < nbProducers; i++)
+    {
+        threads.emplace_back(writer_fun, &rb, nbElements, i);
+    }
+
+    threads.emplace_back(reader_fun, &rb, nbElements, nbProducers);
+
+    for(auto &thread : threads)
+    {
+        thread.join();
+    }
+}
+
 #endif
