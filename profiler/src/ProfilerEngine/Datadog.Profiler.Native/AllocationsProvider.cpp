@@ -16,6 +16,7 @@
 #include "Log.h"
 #include "MetricsRegistry.h"
 #include "OsSpecificApi.h"
+#include "RawSampleTransformer.h"
 #include "SampleValueTypeProvider.h"
 
 #include <chrono>
@@ -42,9 +43,7 @@ AllocationsProvider::AllocationsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
+    RawSampleTransformer* rawSampleTransformer,
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
@@ -56,7 +55,7 @@ AllocationsProvider::AllocationsProvider(
             ? valueTypeProvider.GetOrRegister(FrameworkSampleTypeDefinitions)
             : valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         pCorProfilerInfo, pManagedThreadList, pFrameStore,
-        pThreadsCpuManager, pAppDomainStore, pRuntimeIdStore,
+        rawSampleTransformer,
         pConfiguration,
         pListener,
         metricsRegistry,
@@ -70,15 +69,13 @@ AllocationsProvider::AllocationsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
+    RawSampleTransformer* rawSampleTransformer,
     IConfiguration* pConfiguration,
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry,
     CallstackProvider pool,
     shared::pmr::memory_resource* memoryResource) :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource),
+    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), rawSampleTransformer, memoryResource),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                         var path = request.ResourcePath switch
                         {
                             null => absolutePath,
-                            string resourcePath when absolutePath == "/" => resourcePath,
+                            string resourcePath when absolutePath is null or "/" => resourcePath,
                             string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
                         };
 

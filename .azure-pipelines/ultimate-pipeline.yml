@@ -38,8 +38,8 @@ schedules:
         - master
         - release/*
         - hotfix/*
-        - /benchmarks/*
       exclude:
+        - release/2.x
         - release/1.x
     always: true
 
@@ -48,13 +48,6 @@ schedules:
   # to catch any debug-specific issues
   - cron: "0 4 * * *"
     displayName: Daily Debug Run
-    branches:
-      include:
-        - master
-    always: true
-
-  - cron: "0 4 * * *"
-    displayName: Daily SSI Run
     branches:
       include:
         - master
@@ -76,7 +69,6 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY_PROD)
-  isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -86,8 +78,6 @@ variables:
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
-  # For scheduled builds, only run benchmarks and throughput (and deps). Always do a full build on master.
-  isBenchmarksOnlyBuild: ${{ and(eq(variables['Build.Reason'], 'Schedule'), not(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'))) }} # only works if you have a main branch
   dotnetToolTag: build-dotnet-tool
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
@@ -129,9 +119,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
-  IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.17.0
+  ToolVersion: 3.19.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -139,7 +127,6 @@ variables:
   DOTNET_CLI_UI_LANGUAGE: 'en'
   DOTNET_MULTILEVEL_LOOKUP: 0
   NUGET_XMLDOC_MODE: 'skip'
-  DOTNET_GENERATE_ASPNET_CERTIFICATE: false
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -178,7 +165,7 @@ stages:
   - job: fetch
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-task-scale-set
+      name: azure-managed-linux-tasks
 
     steps:
     - checkout: none
@@ -220,14 +207,13 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - powershell: |
         tracer/build.ps1 GenerateVariables
@@ -247,13 +233,12 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
@@ -293,13 +278,12 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
@@ -349,7 +333,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -412,7 +396,7 @@ stages:
       timeoutInMinutes: 60 #default value
       dependsOn: []
       pool:
-        name: azure-linux-scale-set-2
+        name: azure-managed-linux-x64-1
       
       steps:
         - template: steps/clone-repo.yml
@@ -475,7 +459,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -488,7 +472,7 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: false
+        useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -526,7 +510,7 @@ stages:
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -588,7 +572,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -598,42 +582,36 @@ stages:
 
     # Download _both_ musl and glibc if we're building the universal package
     # but only the musl package if we're building alpine package
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux native binary (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-x64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-x64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-x64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet (linux-x64)
-      condition: eq(variables['artifactSuffix'], 'linux-x64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-x64
         path: $(monitoringHome)/linux-x64
+        condition: eq(variables['artifactSuffix'], 'linux-x64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux native binary (linux-musl-x64)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-x64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary (linux-musl-x64)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-x64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet (linux-musl-x64)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-x64
         path: $(monitoringHome)/linux-musl-x64
 
@@ -643,9 +621,8 @@ stages:
         chmod +x $(monitoringHome)/linux-x64/dd-dotnet | :
       displayName: chmod dd-dotnet
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-x64
         path: $(monitoringHome)/$(artifactSuffix)
 
@@ -880,42 +857,36 @@ stages:
       
       # Download _both_ musl and glibc if we're building the universal package
       # but only the musl package if we're building alpine package
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer arm64 native binary
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-arm64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler arm64 native binary
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-arm64
         path: $(monitoringHome)
+        condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-arm64
-      condition: eq(variables['artifactSuffix'], 'linux-arm64')
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
+        condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer linux-musl-arm64 native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-arm64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux-musl-arm64 native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-arm64
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-musl-arm64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
@@ -925,9 +896,8 @@ stages:
         chmod +x $(monitoringHome)/linux-arm64/dd-dotnet | :
       displayName: chmod dd-dotnet
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/$(artifactSuffix)
 
@@ -948,7 +918,6 @@ stages:
       artifact: linux-monitoring-home-$(artifactSuffix)
 
 - stage: build_macos
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1011,15 +980,13 @@ stages:
     steps:
     - checkout: none
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download native tracer
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: build-macos-native_tracer
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download native loader and managed
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: build-macos-native_loader
         path: $(monitoringHome)
 
@@ -1028,13 +995,12 @@ stages:
       artifact: macos-tracer-home
 
 - stage: package_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [ build_windows_tracer, build_windows_profiler, build_dd_dotnet_windows, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-2
+    name: azure-managed-windows-x64-2
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1046,18 +1012,15 @@ stages:
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
-      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
-      - task: DownloadPipelineArtifact@2
-        displayName: Download windows profiler home
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: windows-profiler-home
           path: $(monitoringHome)
 
-      - task: DownloadPipelineArtifact@2
-        displayName: Download dd-dotnet win-x64
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: dd-dotnet-win-x64
           path: $(monitoringHome)/win-x64
 
@@ -1082,7 +1045,6 @@ stages:
         artifact: fleet-installer
 
 - stage: build_dd_dotnet_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1097,15 +1059,14 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - script: tracer\build.cmd BuildDdDotnet -framework=$(targetFramework)
       displayName: Build dd-dotnet
 
@@ -1118,7 +1079,6 @@ stages:
       artifact: dd-dotnet-symbols-win-x64
 
 - stage: build_dd_dotnet_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1140,14 +1100,13 @@ stages:
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -1166,7 +1125,6 @@ stages:
       artifact: dd-dotnet-symbols-$(artifactSuffix)
 
 - stage: build_dd_dotnet_linux_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1196,8 +1154,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -1240,7 +1197,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
       - template: steps/clone-repo.yml
@@ -1276,13 +1233,12 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     steps:
       - template: steps/clone-repo.yml
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
-      - template: steps/install-latest-dotnet-sdk.yml
 
       - script: tracer\build.cmd Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug
         displayName: Build tracer home in debug
@@ -1325,13 +1281,12 @@ stages:
         retryCountOnTaskFailure: 1
 
 - stage: unit_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-2
+    name: azure-managed-windows-x64-2
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1347,7 +1302,6 @@ stages:
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
-      - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
@@ -1368,7 +1322,6 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_macos, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1396,9 +1349,8 @@ stages:
           artifact: build-macos-working-directory
 
       # The native tracer is built and uploaded separately for perf reasons, so needs to be explicitly downloaded here
-      - task: DownloadPipelineArtifact@2
-        displayName: Download native tracer
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: build-macos-native_tracer
           path: $(monitoringHome)
 
@@ -1421,7 +1373,6 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1437,7 +1388,7 @@ stages:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1470,7 +1421,6 @@ stages:
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_arm64_tracer, merge_commit_id, generate_variables]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1524,6 +1474,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    performComprehensiveTesting: $[eq(variables.perform_comprehensive_testing, 'true')]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -1532,17 +1483,18 @@ stages:
     - job: standalone
       timeoutInMinutes: 60 #default value
       pool:
-        name: azure-windows-scale-set-2
+        name: azure-managed-windows-x64-2
       steps:
         - template: steps/clone-repo.yml
           parameters:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
-        - template: steps/install-latest-dotnet-sdk.yml
 
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
+          env:
+            SampleName: $(IntegrationTestSampleName)
 
         - publish: $(outputDir)/bin
           displayName: Upload artifact samples (bin only)
@@ -1578,17 +1530,19 @@ stages:
           net9.0:
             framework: net9.0
       pool:
-        name: azure-windows-scale-set-2
+        name: azure-managed-windows-x64-2
       steps:
         - template: steps/clone-repo.yml
           parameters:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
-        - template: steps/install-latest-dotnet-sdk.yml
 
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples -Framework $(framework) -TestAllPackageVersions
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
+          env:
+            SampleName: $(IntegrationTestSampleName)
+            IncludeMinorPackageVersions: $(performComprehensiveTesting)
 
         - publish: $(outputDir)/publish
           displayName: Upload artifact samples (publish only)
@@ -1626,6 +1580,8 @@ stages:
         - script: ./tracer/build.sh CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
+          env:
+            SampleName: $(IntegrationTestSampleName)
 
         - publish: artifacts/build_data
           displayName: Uploading logs
@@ -1635,7 +1591,6 @@ stages:
 
 
 - stage: integration_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1647,7 +1602,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1657,9 +1612,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
     - template: steps/download-samples.yml
 
@@ -1679,7 +1631,16 @@ stages:
       displayName: 'Initialize LocalDB'
       workingDirectory: $(Build.Repository.LocalPath)
 
-    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd CompileTrimmingSamples BuildWindowsIntegrationTests BuildWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Build integration tests
+      retryCountOnTaskFailure: 3
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1713,7 +1674,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
@@ -1727,7 +1687,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1737,13 +1697,17 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
-
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd BuildDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Build integration tests
+      retryCountOnTaskFailure: 3
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd RunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1773,7 +1737,6 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -1789,7 +1752,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1798,12 +1761,17 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+    - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+      displayName: Build Integration Tests
+      retryCountOnTaskFailure: 3
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
+
+    - script: tracer\build.cmd RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1848,14 +1816,13 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
     # This is a hack because otherwise Azure Functions _always_ tries to use the one from program files otherwise
     - script: |
         cd /D %PROGRAMFILES%/dotnet
@@ -1926,7 +1893,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -1964,7 +1931,6 @@ stages:
   condition: >
     and(
       succeeded(), 
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -1978,7 +1944,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -1996,8 +1962,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-latest-dotnet-sdk.yml
-
     - script: tracer\build.cmd RunCppCheckProfiler RunClangTidyProfiler
       displayName: Run CppCheck and Clang-Tidy on Profiler
 
@@ -2013,14 +1977,13 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2041,7 +2004,6 @@ stages:
       continueOnError: true
 
 - stage: msi_integration_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2057,7 +2019,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     variables:
       relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
@@ -2066,20 +2028,17 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download MSI
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-msi-$(targetPlatform)
-        patterns: '**/*-$(targetPlatform).msi'
         path: $(System.DefaultWorkingDirectory)$(relativeMsiOutputDirectory)
+        patterns: '**/*-$(targetPlatform).msi'
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
+      retryCountOnTaskFailure: 3
 
     - powershell: |
         mkdir -Force ./artifacts/build_data/snapshots
@@ -2140,7 +2099,7 @@ stages:
   - job: fleet_installer_tests
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
     variables:
       framework: net48
 
@@ -2149,11 +2108,11 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd BuildWindowsIntegrationTests  -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: BuildWindowsIntegrationTests
+      retryCountOnTaskFailure: 3
 
     - script: tracer\build.cmd RunIntegrationTests -filter FleetInstaller=True -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: RunWindowsIisIntegrationTests
@@ -2183,7 +2142,6 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2203,7 +2161,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2226,6 +2184,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2278,7 +2237,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2301,6 +2260,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
@@ -2393,7 +2353,7 @@ stages:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2414,6 +2374,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2421,6 +2382,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
         apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
         
     - script: |
         # Include the serverless dockerfile
@@ -2549,7 +2511,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
   dependsOn: [build_linux_tracer, build_linux_universal, build_linux_profiler, generate_variables, merge_commit_id]
@@ -2571,7 +2532,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2591,6 +2552,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
         apikey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
@@ -2633,7 +2595,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
         eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
@@ -2661,7 +2622,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2669,17 +2630,12 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
-
     # windows-tracer-home.zip file contains profiler, tracer...
-    - task: DownloadPipelineArtifact@2
-      displayName: Download monitoring home zip
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-tracer-home.zip
-        patterns: "windows-tracer-home.zip"
         path: $(Agent.TempDirectory)
+        patterns: "windows-tracer-home.zip"
 
     - task: ExtractFiles@1
       inputs:
@@ -2707,7 +2663,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
         eq(variables.isMainOrReleaseBranch, true),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
@@ -2739,7 +2694,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
@@ -2751,15 +2706,13 @@ stages:
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux debug symbols
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-symbols-$(artifactSuffix)
         path: $(monitoringHome)
 
@@ -2816,7 +2769,6 @@ stages:
   condition: >
     and(
       succeeded(), 
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2833,15 +2785,13 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2879,17 +2829,13 @@ stages:
     condition: false
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
-    - template: steps/install-latest-dotnet-sdk.yml
-      parameters:
-        includeX86: true
 
     - script: tracer\build.cmd RunProfilerAsanTest -Framework net8.0
       displayName: Run Profiler ASAN test
@@ -2905,7 +2851,6 @@ stages:
   condition: > 
     and(
       succeeded(), 
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
     )
   dependsOn: [merge_commit_id, generate_variables]
@@ -2921,7 +2866,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     steps:
 
@@ -2929,8 +2874,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
-    - template: steps/install-latest-dotnet-sdk.yml
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -2964,7 +2907,6 @@ stages:
       continueOnError: false
 
 - stage: integration_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2972,6 +2914,7 @@ stages:
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
 
+ 
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -3005,6 +2948,7 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 3
 
         - script: |
             docker-compose -f docker-compose.yml -f docker-compose.serverless.yml -p $(DockerComposeProjectName) \
@@ -3074,6 +3018,7 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
+            retryCountForRunCommand: 3
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64
@@ -3145,7 +3090,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
   dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id]
@@ -3226,7 +3170,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
@@ -3248,7 +3191,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3259,8 +3202,6 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-
-    - template: steps/install-dotnet-sdks.yml
 
     - template: steps/restore-working-directory.yml
 
@@ -3285,7 +3226,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
@@ -3307,7 +3247,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-managed-linux-x64-1
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3390,7 +3330,6 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_linux_universal, build_arm64_universal, build_macos, build_dd_dotnet_windows, build_dd_dotnet_linux, build_dd_dotnet_linux_arm64, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3404,163 +3343,142 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
     # download _everything_ not just the bin/obj/package files
-    - task: DownloadPipelineArtifact@2
-      displayName: Download working dir
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: build-windows-working-directory
         path: $(System.DefaultWorkingDirectory)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     # Download everything to monitoring home
     # BuildBundleNuget moves everything to the required folders
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-x64
         patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-x64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download arm64 tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine arm64 tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-tracer-home-linux-musl-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download osx tracer home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: macos-tracer-home
-        patterns:  |
+        patterns: |
           **/*.dylib
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-profiler-home
         patterns: "**/*.dll"
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-x64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-x64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download arm64 profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine arm64 profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-musl-arm64
-        patterns:  |
+        patterns: |
           **/*.so
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet win-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-win-x64
         path: $(monitoringHome)/win-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-x64
         path: $(monitoringHome)/linux-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-musl-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-x64
         path: $(monitoringHome)/linux-musl-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-arm64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet linux-musl-arm64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-linux-musl-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts 
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-x64
         path: $(monitoringHome)/linux-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts 
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-x64
         path: $(monitoringHome)/linux-musl-x64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts 
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux universal artifacts
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
@@ -3635,39 +3553,32 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-dotnet-sdks.yml
-      parameters:
-        includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-profiler-home
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-dotnet-tool
         path: $(runnerTool)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download standalone runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet win-x64
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-win-x64
         path: $(monitoringHome)/win-x64
 
@@ -3726,12 +3637,12 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-linux-scale-set-2
+          poolName: azure-managed-linux-x64-1
           targetArch: x64
         alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-linux-scale-set-2
+          poolName: azure-managed-linux-x64-1
           targetArch: x64
         arm64:
           baseImage: debian
@@ -3757,33 +3668,28 @@ stages:
       parameters:
         artifact: build-$(artifactSuffix)-working-directory
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-dotnet-tool
         path: $(runnerTool)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download standalone runner
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(artifactSuffix)
         path: $(Agent.TempDirectory)/runner
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dd-dotnet $(artifactSuffix)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: dd-dotnet-$(artifactSuffix)
         path: $(monitoringHome)/$(artifactSuffix)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-universal-home-linux-$(targetArch)
         path: $(monitoringHome)/$(artifactSuffix)
 
@@ -3832,7 +3738,6 @@ stages:
       condition: succeededOrFailed()
 
 - stage: store_ssi_artifacts
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, package_arm64, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3845,23 +3750,20 @@ stages:
       steps:
         - checkout: none
         # Linux packages
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Alpine tar packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-musl-x64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux x64 packages
-          inputs:
-            artifact: linux-packages-linux-x64
-            patterns: "*.tar.gz"
-            path: $(Build.ArtifactStagingDirectory)
+        - template: steps/download-artifact.yml
+          parameters:
+              artifact: linux-packages-linux-x64
+              patterns: "*.tar.gz"
+              path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Arm64 packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
@@ -3879,7 +3781,6 @@ stages:
           artifact: ssi-artifacts
 
 - stage: store_serverless_artifacts
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [build_linux_tracer_r2r, build_arm64_tracer_r2r, build_linux_universal, build_arm64_universal]
   jobs:
     - job: combine
@@ -3889,27 +3790,23 @@ stages:
       steps:
         - checkout: none
         # Download the files to the expected locations
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless tracer home x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-home-linux-x64-r2r
             path: $(Build.ArtifactStagingDirectory)/x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless universal home x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-home-linux-x64
             path: $(Build.ArtifactStagingDirectory)/x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless tracer home arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-home-linux-arm64-r2r
             path: $(Build.ArtifactStagingDirectory)/arm64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless universal home arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-home-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/arm64
 
@@ -3919,7 +3816,6 @@ stages:
           artifact: serverless-artifacts
 
 - stage: upload_to_azure
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, merge_commit_id, store_serverless_artifacts]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3935,9 +3831,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download NuGet packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: nuget-packages
             path: $(Build.ArtifactStagingDirectory)
 
@@ -3950,112 +3845,94 @@ stages:
           displayName: Extract version number
 
         # Linux packages
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Alpine packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux x64 packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-x64
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Arm64 packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-arm64
             path: $(Build.ArtifactStagingDirectory)
 
         # Linux symbols
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler Alpine symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler Alpine Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-profiler-symbols-linux-musl-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer Alpine symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer Alpine Arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-tracer-symbols-linux-musl-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux musl x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux universal libraries linux musl arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-universal-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-arm64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download dd-dotnet linux-x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: dd-dotnet-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download dd-dotnet linux-musl-x64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: dd-dotnet-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download dd-dotnet linux-arm64 symbols
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: dd-dotnet-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
@@ -4068,9 +3945,8 @@ stages:
 
 
         # NuGet
-        - task: DownloadPipelineArtifact@2
-          displayName: Download bundle nuget package
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
@@ -4083,44 +3959,38 @@ stages:
 #            path: $(Build.ArtifactStagingDirectory)
 
         # runner tool
-        - task: DownloadPipelineArtifact@2
-          displayName: Download runner dotnet tool
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-dotnet-tool
             patterns: "*.nupkg"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool win-x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-win-x64
             patterns: "*.zip"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-x64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-musl-x64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-musl-x64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-musl-arm64
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-standalone-linux-musl-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
@@ -4134,23 +4004,20 @@ stages:
         # not signed, and we use the windows-tracer-home.zip file from
         # GitLab so that it matches the native symbols file,
         # but we include them all in the push to Azure
-        - task: DownloadPipelineArtifact@2
-          displayName: Download Windows tracer home
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-tracer-home.zip
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download x64 MSI
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-msi-x64
             path: $(Build.ArtifactStagingDirectory)
 
         # Download the artifacts required by the serverless layer and create the zip file
         # This exapands the directory - but we want a zip file, so re-zip it!
-        - task: DownloadPipelineArtifact@2
-          displayName: Download serverless artifacts
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: serverless-artifacts
             path: $(Agent.TempDirectory)/serverless-artifacts
 
@@ -4207,7 +4074,7 @@ stages:
 
 # Only run these on merges to master etc
 - stage: upload_container_images
-  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainOrReleaseBranch, true))
   dependsOn: [upload_to_azure]
   jobs:
     - job: upload
@@ -4231,7 +4098,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: coverage
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
+  condition: and(succeeded(), eq(variables['runCodeCoverage'], 'True'))
   dependsOn:
     - integration_tests_windows
     - integration_tests_windows_iis
@@ -4263,8 +4130,8 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-latest-dotnet-sdk.yml
 
-      - task: DownloadPipelineArtifact@2
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           patterns: '**/coverage.cobertura.xml'
           path: $(Build.SourcesDirectory)/cover
 
@@ -4290,7 +4157,6 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: execution_benchmarks
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [build_windows_tracer, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4321,12 +4187,11 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-tracer-home
         path: $(monitoringHome)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4374,15 +4239,13 @@ stages:
 
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download HttpMessageHandler
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download FakeDbCommand
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
         path: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
 
@@ -4398,7 +4261,6 @@ stages:
       artifact: execution_time_report
 
 - stage: profiler_execution_benchmarks
-  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [merge_commit_id, build_windows_profiler, build_linux_profiler]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4454,12 +4316,11 @@ stages:
       parameters:
         includeX86: true
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler windows native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-profiler-home
         path: $(monitoringHome)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4545,12 +4406,11 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download profiler linux native binary
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
-      retryCountOnTaskFailure: 5
+        retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -4623,13 +4483,12 @@ stages:
     #   artifact: execution_time_report
 
 - stage: system_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     scenarioGroups: "appsec"
-    additionalScenarios: '[\"PARAMETRIC\", \"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
+    additionalScenarios: '[\"REMOTE_CONFIG_SCENARIOS\", \"TELEMETRY_SCENARIOS\", \"DEFAULT\", \"INTEGRATIONS\", \"INTEGRATIONS_AWS\", \"CROSSED_TRACING_LIBRARIES\", \"DEBUGGER_SCENARIOS\", \"+S PROFILING +S TRACE_PROPAGATION_STYLE_W3C +S LIBRARY_CONF_CUSTOM_HEADER_TAGS\"]'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -4661,44 +4520,48 @@ stages:
             set -e
             
             source venv/bin/activate
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) > out.txt
+            # Try to get each workflow to take 15 mins = 900s
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) -t 900 > out.txt
 
-            endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
-            parametric_scenarios=$(grep 'parametric_scenarios' out.txt | sed 's/.*=//g')
+            endtoend_scenario_groups=$(grep 'endtoend_defs_parallel_jobs' out.txt | sed 's/.*=//g')
             endtoend_weblogs=$(grep 'endtoend_weblogs' out.txt | sed 's/.*=//g')
+            additional_scenarios="$(additionalScenarios)"
 
-            echo "Found scenarios: $endtoend_scenarios"
-            echo "Found parametric scenarios: $parametric_scenarios"
+            echo "Found scenario groups: $endtoend_scenario_groups"
             echo "Found weblogs: $endtoend_weblogs"
-            echo "Additional manual scenarios: $(additionalScenarios)"
+            echo "Additional manual scenarios: $additional_scenarios"
             
             # Write the weblogs to a file (for later use to generate the docker images)
             python -c "import json; variants = json.loads('$endtoend_weblogs'); print('\n'.join(variants))" > /tmp/weblogs_list.txt
-        
-            # Inline python script to cross the data into a json
-            echo "import json" > cross.py
-            echo "script_scenarios = json.loads('$endtoend_scenarios')" >> cross.py
-            echo "script_parametric_scenarios = json.loads('$parametric_scenarios')" >> cross.py
-            echo "script_weblogs   = json.loads('$endtoend_weblogs')" >> cross.py
-            echo "extra_scenarios  = json.loads('$(additionalScenarios)')" >> cross.py
-            echo 'combined_scenarios = script_scenarios + script_parametric_scenarios + extra_scenarios' >> cross.py
-            echo 'matrix_items = {}' >> cross.py
-            echo 'for s in combined_scenarios:' >> cross.py
-            echo '    for w in script_weblogs:' >> cross.py
-            echo '        matrix_items[s + " (" + w + ")"] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
-            echo 'print(json.dumps(matrix_items))' >> cross.py
-            
-            python cross.py > matrix.json
-            
+            # Generate matrix and write to file
+            jq -c -n --argjson main "$endtoend_scenario_groups" --argjson webs "$endtoend_weblogs" --argjson extra "$additional_scenarios" '
+              (
+                $main | map({
+                  ("APPSEC (" + .weblog + ") " + (.weblog_instance|tostring)): {
+                    SCENARIO: (.scenarios | map("+S " + .) | join(" ")), N: 1, I: 1,
+                    WEBLOG_VARIANT: .weblog
+                  }
+                })
+              ) + (
+                [ $extra[] as $scenario | $webs[] as $weblog |
+                  { ($scenario + " (" + $weblog + ") 1"): { SCENARIO: $scenario, WEBLOG_VARIANT: $weblog, N: 1, I: 1 } }
+                ]
+              ) + (
+              [ $webs[] as $weblog | range(1; 4) as $i |
+                { ("PARAMETRIC (" + $weblog + ") \($i)"): {
+                  SCENARIO: "PARAMETRIC", WEBLOG_VARIANT: $weblog, N: 3, I: $i
+                }}
+              ]
+              ) | add
+            ' > matrix.json            
             echo "##vso[task.setvariable variable=matrixJson;isOutput=true]$(cat matrix.json)"
             echo "Json: $(cat matrix.json)"
           displayName: Generate scenarios matrix JSON
           name: create_matrix
           workingDirectory: system-tests
           
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux-packages
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: linux-packages-linux-x64
             patterns: '**/*tar.gz'
             path: $(Build.ArtifactStagingDirectory)
@@ -4759,9 +4622,8 @@ stages:
       - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
         
-      - task: DownloadPipelineArtifact@2
-        displayName: Download Docker images
-        inputs:
+      - template: steps/download-artifact.yml
+        parameters:
           artifact: system-test-docker-images
           path: $(Build.SourcesDirectory)
 
@@ -4781,7 +4643,7 @@ stages:
         displayName: Install runner
         workingDirectory: system-tests
 
-      - script: ./run.sh $(SCENARIO)
+      - script: ./run.sh $(SCENARIO) --splits=$(N) --group=$(I)
         workingDirectory: system-tests
         displayName: Run tests
         env:
@@ -4801,7 +4663,6 @@ stages:
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4818,16 +4679,15 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download artifacts to smoke test directory
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: $(linuxArtifacts)
         path: $(smokeTestAppDir)/artifacts
 
@@ -4885,7 +4745,6 @@ stages:
         apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: installer_chiseled_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4902,7 +4761,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
       
       steps:
         - template: steps/clone-repo.yml
@@ -4910,9 +4769,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
@@ -4959,7 +4817,7 @@ stages:
           continueOnError: true
 
 - stage: nuget_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4976,7 +4834,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -4984,15 +4842,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download bundle nuget
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace package
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: nuget-packages
         path: $(smokeTestAppDir)/artifacts
 
@@ -5051,7 +4907,6 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: trimmed_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_windows, package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5068,7 +4923,7 @@ stages:
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
-        name: azure-linux-smoke-scale-set
+        name: azure-managed-linux-smoke
 
       steps:
         - template: steps/clone-repo.yml
@@ -5076,15 +4931,13 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download installer artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download $(packageName) package
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: nuget-packages
             itemPattern: "$(packageName).$(ToolVersion)$(packageVersionSuffix).nupkg"
             path: $(smokeTestAppDir)/artifacts
@@ -5126,7 +4979,7 @@ stages:
             command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5143,7 +4996,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5151,9 +5004,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner-dotnet-tool
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-dotnet-tool
         path: $(smokeTestAppDir)/artifacts
 
@@ -5191,7 +5043,7 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_smoke_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5208,7 +5060,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5216,9 +5068,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner-standalone-$(platformSuffix)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(platformSuffix)
         patterns: "*.tar.gz"
         path: $(Agent.TempDirectory)
@@ -5260,7 +5111,7 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_self_instrument_smoke_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5281,7 +5132,7 @@ stages:
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
       linuxArtifacts: "linux-packages-linux-x64"
     pool:
-      name: azure-linux-smoke-scale-set
+      name: azure-managed-linux-smoke
 
     steps:
     - template: steps/clone-repo.yml
@@ -5289,15 +5140,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download artifacts to smoke test directory
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: $(linuxArtifacts)
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tool runner-standalone-$(platformSuffix)
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(platformSuffix)
         patterns: "*.tar.gz"
         path: $(Agent.TempDirectory)
@@ -5339,7 +5188,6 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: installer_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5364,9 +5212,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
@@ -5423,7 +5270,7 @@ stages:
             command: "CheckSmokeTestsForErrors"
 
 - stage: installer_chiseled_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [package_arm64, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5448,9 +5295,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download artifacts to smoke test directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
@@ -5497,7 +5343,7 @@ stages:
           continueOnError: true
 
 - stage: nuget_installer_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5522,15 +5368,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download bundle nuget
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace package
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: nuget-packages
         path: $(smokeTestAppDir)/artifacts
 
@@ -5589,7 +5433,7 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5609,9 +5453,8 @@ stages:
       name: azure-managed-linux-arm64-2
 
     steps:
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dotnet tool
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-$(platformSuffix)
         patterns: "*.tar.gz"
         path: $(Agent.TempDirectory)
@@ -5653,7 +5496,7 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: nuget_installer_smoke_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5683,15 +5526,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download bundle nuget
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download Datadog.Trace package
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: nuget-packages
         path: $(smokeTestAppDir)/artifacts
 
@@ -5752,7 +5593,7 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: dotnet_tool_smoke_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5782,9 +5623,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download dotnet tool
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: runner-standalone-win-x64
         patterns: "dd-trace-win-x64.zip"
         path: $(Agent.TempDirectory)
@@ -5826,7 +5666,7 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: msi_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5856,9 +5696,8 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download MSI to temp directory
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-msi-$(targetPlatform)
         patterns: '**/*-$(targetPlatform).msi'
         path: $(Agent.TempDirectory)
@@ -5899,7 +5738,7 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: dd_dotnet_msi_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5930,9 +5769,8 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download MSI to temp directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-msi-$(targetPlatform)
             patterns: '**/*-$(targetPlatform).msi'
             path: $(Agent.TempDirectory)
@@ -5973,7 +5811,6 @@ stages:
           displayName: CheckSmokeTestsForErrors
 
 - stage: tracer_home_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5991,7 +5828,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-managed-windows-x64-2
 
     steps:
     - template: steps/install-docker-compose-v1.yml
@@ -6009,9 +5846,8 @@ stages:
         mkdir -p $(smokeTestAppDir)/artifacts
       displayName: Create test data directories
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tracer home zip
-      inputs:
+    - template: steps/download-artifact.yml
+      parameters:
         artifact: windows-tracer-home.zip
         path: $(smokeTestAppDir)/artifacts
 
@@ -6045,7 +5881,6 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: fleet_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -6075,15 +5910,13 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download tracer home zip
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: windows-tracer-home.zip
             path: $(smokeTestAppDir)/artifacts
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download fleet installer to temp directory
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: fleet-installer
             path: $(smokeTestAppDir)/artifacts/installer
 
@@ -6124,7 +5957,7 @@ stages:
           displayName: CheckSmokeTestsForErrors
 
 - stage: dotnet_tool_nuget_smoke_tests_macos
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -6155,9 +5988,8 @@ stages:
           parameters:
             packageType: sdk # have to install the SDK (instead of runtime) so we get the aspnetcore runtime
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download tool runner-dotnet-tool
-          inputs:
+        - template: steps/download-artifact.yml
+          parameters:
             artifact: runner-dotnet-tool
             path: $(smokeTestAppDir)/artifacts
 
@@ -6259,7 +6091,6 @@ stages:
           continueOnError: true
 
 - stage: dd_dotnet_installer_failure_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -6313,7 +6144,7 @@ stages:
           displayName: Run artifact test (expecting failure)
 
 - stage: dd_dotnet_installer_failure_tests_linux_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]

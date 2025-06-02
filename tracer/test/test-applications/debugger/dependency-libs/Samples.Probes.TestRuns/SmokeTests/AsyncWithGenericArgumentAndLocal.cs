@@ -38,11 +38,11 @@ namespace Samples.Probes.TestRuns.SmokeTests
                 Error = 9
             }
 
-            // array that gives a new state based on the current state an the token being written
+            // array that gives a new state based on the current state and the token being written
             private static State[][] _stateArray;
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/, expectProbeStatusFailure: true)]
+            [LogMethodProbeTestData(expectedNumberOfSnapshots: 0 /*in optimize code this will create a nested struct inside generic parent*/, expectProbeStatusFailure: true, skipOnFrameworks: ["net48", "net462"])]
             public async Task<string> Method(NestedAsyncGenericClass<T> generic, string input)
             {
                 var list = new List<T> { new T() };

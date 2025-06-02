@@ -391,3 +391,12 @@ datadog-coverage-*
 
 # dotnet tool config file
 .config/dotnet-tools.json
+
+# tools/dumps
+tools/dumps/
+!tools/dumps/README_ALPINE_ARM64.md
+!tools/dumps/start_alpine-arm64.cmd
+!tools/dumps/start_alpine-arm64.sh
+!tools/dumps/README_DEBIAN_ARM64.md
+!tools/dumps/start_debian-arm64.cmd
+!tools/dumps/start_debian-arm64.sh

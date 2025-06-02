@@ -58,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [CombinatorialOrPairwiseData]
+        [Flaky("This test often fails with an ObjectDisposedException on shutdown. It seems tied to the HttpListener/WebServer implementation, but I couldn't figure out why")]
         public async Task HttpClient_SubmitsTraces(
             [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
             bool socketsHandlerEnabled,

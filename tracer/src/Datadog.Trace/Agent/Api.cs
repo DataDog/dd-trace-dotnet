@@ -163,7 +163,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry || success == SendResult.Failed_DontRetry)
                     {
                         // stop retrying
-                        _log.Error(exception, FailedToSendMessageTemplate, _apiRequestFactory.Info(endpoint));
+                        _log.ErrorSkipTelemetry(exception, FailedToSendMessageTemplate, _apiRequestFactory.Info(endpoint));
                         return false;
                     }
                     else if (_log.IsEnabled(LogEventLevel.Debug))

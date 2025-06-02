@@ -3,23 +3,17 @@
 
 #include "ThreadLifetimeProvider.h"
 #include "SampleValueTypeProvider.h"
-#include "GarbageCollectionProvider.h"
 #include "OpSysTools.h"
+#include "RawSampleTransformer.h"
 #include "TimelineSampleType.h"
 
 ThreadLifetimeProvider::ThreadLifetimeProvider(
     SampleValueTypeProvider& valueTypeProvider,
-    IFrameStore* pFrameStore,
-    IThreadsCpuManager* pThreadsCpuManager,
-    IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore,
-    IConfiguration* pConfiguration,
+    RawSampleTransformer* rawSampleTransformer,
     shared::pmr::memory_resource* memoryResource)
     :
     CollectorBase<RawThreadLifetimeSample>(
-        "ThreadLifetimeProvider",
-        valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions),
-        pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, memoryResource)
+        "ThreadLifetimeProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
 {
 }
 
