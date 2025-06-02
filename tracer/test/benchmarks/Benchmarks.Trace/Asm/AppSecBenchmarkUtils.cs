@@ -1,4 +1,4 @@
-﻿// <copyright file="AppSecBenchmarkUtils.cs" company="Datadog">
+// <copyright file="AppSecBenchmarkUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,8 @@ internal class AppSecBenchmarkUtils
             _ => throw new Exception($"RID not detected or supported: {fDesc.OSPlatform} / {fDesc.ProcessArchitecture}")
         };
 
-        var folder = new DirectoryInfo(Environment.CurrentDirectory);
+        var initialFolder = new DirectoryInfo(Environment.CurrentDirectory);
+        var folder = initialFolder;
         var path = Environment.CurrentDirectory;
         while (folder.Exists)
         {
@@ -53,6 +54,11 @@ internal class AppSecBenchmarkUtils
             }
 
             folder = folder.Parent;
+
+            if (folder is null)
+            {
+                throw new DirectoryNotFoundException($"The Path: './shared/bin/monitoring-home' was not found. Initially looking from {initialFolder}");
+            }
         }
 
         path = Path.Combine(path, $"./{rid}/");
