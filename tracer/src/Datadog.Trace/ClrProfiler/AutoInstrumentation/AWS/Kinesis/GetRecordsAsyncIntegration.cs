@@ -6,127 +6,77 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
-
-/// <summary>
-///     AWSSDK.Kinesis GetRecordsAsync CallTarget instrumentation
-/// </summary>
-[InstrumentMethod(
-    AssemblyName = "AWSSDK.Kinesis",
-    TypeName = "Amazon.Kinesis.AmazonKinesisClient",
-    MethodName = "GetRecordsAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.GetRecordsResponse]",
-    ParameterTypeNames = new[] { "Amazon.Kinesis.Model.GetRecordsRequest", ClrNames.CancellationToken },
-    MinimumVersion = "3.0.0",
-    MaximumVersion = "4.*.*",
-    IntegrationName = AwsKinesisCommon.IntegrationName)]
-[Browsable(browsable: false)]
-[EditorBrowsable(EditorBrowsableState.Never)]
-public class GetRecordsAsyncIntegration
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
-    private const string Operation = "GetRecords";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GetRecordsAsyncIntegration));
-
-    internal static CallTargetState OnMethodBegin<TTarget, TGetRecordsRequest>(TTarget instance, TGetRecordsRequest request, CancellationToken cancellationToken)
-        where TGetRecordsRequest : IGetRecordsRequest, IDuckType
+    /// <summary>
+    /// AWSSDK.Kinesis GetRecordsAsync CallTarget instrumentation
+    /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "AWSSDK.Kinesis",
+        TypeName = "Amazon.Kinesis.AmazonKinesisClient",
+        MethodName = "GetRecordsAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.GetRecordsResponse]",
+        ParameterTypeNames = new[] { "Amazon.Kinesis.Model.GetRecordsRequest", ClrNames.CancellationToken },
+        MinimumVersion = "3.0.0",
+        MaximumVersion = "4.*.*",
+        IntegrationName = AwsKinesisCommon.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public class GetRecordsAsyncIntegration
     {
-        if (request.Instance is null)
+        private const string Operation = "GetRecords";
+
+        internal static CallTargetState OnMethodBegin<TTarget, TGetRecordsRequest>(TTarget instance, TGetRecordsRequest request, CancellationToken cancellationToken)
+            where TGetRecordsRequest : IGetRecordsRequest, IDuckType
         {
-            return CallTargetState.GetDefault();
-        }
-
-        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Consumer, parentContext: null, out var tags);
-
-        var streamName = AwsKinesisCommon.StreamNameFromARN(request.StreamARN);
-        if (tags is not null && streamName is not null)
-        {
-            tags.StreamName = streamName;
-        }
-
-        return new CallTargetState(scope, streamName);
-    }
-
-    internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
-        where TResponse : IGetRecordsResponse, IDuckType
-    {
-        Console.WriteLine("[GetRecordsAsyncIntegration] OnAsyncMethodEnd called");
-
-        if (response.Instance != null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
-        {
-            Console.WriteLine($"[GetRecordsAsyncIntegration] Processing {response.Records.Count} records");
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (dataStreamsManager is { IsEnabled: true })
+            if (request.Instance is null)
             {
-                var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:kinesis" };
-                Console.WriteLine($"[GetRecordsAsyncIntegration] Edge tags: {string.Join(", ", edgeTags)}");
+                return CallTargetState.GetDefault();
+            }
 
-                foreach (var o in response.Records)
+            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Consumer, null, out var tags);
+
+            string? streamName = AwsKinesisCommon.StreamNameFromARN(request.StreamARN);
+            if (tags is not null && streamName is not null)
+            {
+                tags.StreamName = streamName;
+            }
+
+            return new CallTargetState(scope, streamName);
+        }
+
+        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
+            where TResponse : IGetRecordsResponse, IDuckType
+        {
+            if (response.Instance != null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
+            {
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                if (dataStreamsManager is { IsEnabled: true })
                 {
-                    var record = o.DuckCast<IRecord>();
-                    if (record == null || record.Data == null)
+                    var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:kinesis" };
+                    foreach (var o in response.Records)
                     {
-                        Console.WriteLine("[GetRecordsAsyncIntegration] Skipping null record or data");
-                        continue; // should not happen
-                    }
-
-                    Console.WriteLine("[GetRecordsAsyncIntegration] Processing record");
-                    PathwayContext? parentPathway = null;
-                    try
-                    {
-                        var jsonData = ContextPropagation.ParseDataObject(record.Data);
-                        Console.WriteLine($"[GetRecordsAsyncIntegration] Parsed JSON data: {(jsonData == null ? "null" : $"count={jsonData.Count}")}");
-
-                        if (jsonData != null && jsonData.TryGetValue(ContextPropagation.KinesisKey, out var datadogContext))
+                        var record = o.DuckCast<IRecord>();
+                        if (record == null)
                         {
-                            Console.WriteLine("[GetRecordsAsyncIntegration] Found _datadog key in JSON");
-                            var adapter = new KinesisContextAdapter();
-                            if (datadogContext is Dictionary<string, object> contextDict)
-                            {
-                                Console.WriteLine($"[GetRecordsAsyncIntegration] Converting context to dictionary with {contextDict.Count} items");
-                                adapter.SetDictionary(contextDict);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"[GetRecordsAsyncIntegration] Context is not a dictionary, type: {datadogContext?.GetType().Name ?? "null"}");
-                            }
-
-                            parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
-                            Console.WriteLine($"[GetRecordsAsyncIntegration] Extracted pathway context: {(parentPathway == null ? "null" : "success")}");
+                            continue; // should not happen
                         }
-                        else
-                        {
-                            Console.WriteLine("[GetRecordsAsyncIntegration] No _datadog key found in JSON");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[GetRecordsAsyncIntegration] Error extracting PathwayContext: {ex.Message}");
-                        Log.Error(ex, "Error extracting PathwayContext from Kinesis record");
-                    }
 
-                    Console.WriteLine("[GetRecordsAsyncIntegration] Setting data streams checkpoint");
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parentPathway);
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                    }
                 }
             }
-            else
-            {
-                Console.WriteLine("[GetRecordsAsyncIntegration] DataStreamsManager is not enabled");
-            }
-        }
-        else
-        {
-            Console.WriteLine("[GetRecordsAsyncIntegration] No records to process or invalid state");
-        }
 
-        state.Scope.DisposeWithException(exception);
-        return response;
+            state.Scope.DisposeWithException(exception);
+            return response;
+        }
     }
 }
