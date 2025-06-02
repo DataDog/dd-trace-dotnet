@@ -284,7 +284,6 @@ inline constexpr size_t RingBufferAlignment{8};
 RingBuffer::Writer::Writer(RingBufferImpl* rb) :
     _rb(rb)
 {
-    UpdateTail();
 }
 
 Buffer RingBuffer::Writer::Reserve(std::size_t size, bool* timeout) const
@@ -313,8 +312,10 @@ Buffer RingBuffer::Writer::Reserve(std::size_t size, bool* timeout) const
     std::uint64_t const writer_pos = *rb->writer_pos;
 
     std::uint64_t const new_writer_pos = writer_pos + n2;
+
     // Check that there is enough free space
-    if (rb->mask < new_writer_pos - _tail)
+    std::uint64_t tail = __atomic_load_n(_rb->reader_pos, __ATOMIC_ACQUIRE);
+    if (rb->mask < new_writer_pos - tail)
     {
         return {};
     }
@@ -341,13 +342,6 @@ void RingBuffer::Writer::Commit(Buffer buf)
     // Needs release ordering to make sure that all previous writes are
     // visible to the reader once reader acquires `hdr->size`.
     __atomic_store_n(&hdr->size, new_size, __ATOMIC_RELEASE);
-
-    UpdateTail();
-}
-
-inline void RingBuffer::Writer::UpdateTail()
-{
-    _tail = __atomic_load_n(_rb->reader_pos, __ATOMIC_ACQUIRE);
 }
 
 RingBuffer::Reader::Reader(RingBufferImpl* rb) :
