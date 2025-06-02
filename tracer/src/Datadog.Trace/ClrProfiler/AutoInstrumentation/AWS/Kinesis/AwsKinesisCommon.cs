@@ -56,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
+                Console.WriteLine("CreateScope integration disabled");
                 return null;
             }
 
@@ -76,6 +77,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.Operation = operation;
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+
+                Console.WriteLine("Created Kinesis Scope");
             }
             catch (Exception ex)
             {
