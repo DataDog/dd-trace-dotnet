@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     internal static class ContextPropagation
     {
-        private const string KinesisKey = "_datadog";
+        public const string KinesisKey = "_datadog";
         private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
