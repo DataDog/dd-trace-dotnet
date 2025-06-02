@@ -285,13 +285,13 @@ namespace Datadog.Trace
                                        ? sampler.MakeSamplingDecision(span)
                                        : SamplingDecision.Default;
 
-            SetSamplingPriority(samplingDecision.Priority, samplingDecision.Mechanism);
-            return samplingDecision.Priority;
-        }
+            SetSamplingPriority(
+                samplingDecision.Priority,
+                samplingDecision.Mechanism,
+                samplingDecision.Rate,
+                samplingDecision.LimiterRate);
 
-        public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
-        {
-            SetSamplingPriority(decision.Priority, decision.Mechanism, decision.Rate, decision.LimiterRate, notifyDistributedTracer);
+            return samplingDecision.Priority;
         }
 
         public void SetSamplingPriority(
