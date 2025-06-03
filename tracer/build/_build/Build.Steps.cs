@@ -659,10 +659,12 @@ partial class Build
                 {
                     foreach (var framework in frameworks)
                     {
-                        var arch = GetWinArchitecture();
-                        var source = MonitoringHomeDirectory / $"win-{arch}" / "datadog_profiling_ffi.dll";
-                        var dest = testBinFolder / framework / "LibDatadog.dll";
-                        CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                        foreach (var arch in WindowsArchitectureFolders)
+                        {
+                            var source = MonitoringHomeDirectory / $"win-{arch}" / "datadog_profiling_ffi.dll";
+                            var dest = testBinFolder / framework / "LibDatadog.dll";
+                            CopyFile(source, dest, FileExistsPolicy.Overwrite);
+                         }
                     }
                 }
                 else
@@ -2745,17 +2747,6 @@ partial class Build
             (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
-
-    private string GetWinArchitecture()
-    {
-        return RuntimeInformation.ProcessArchitecture switch
-        {
-            Architecture.X86 => "x86",
-            Architecture.X64 => "x64",
-            Architecture.Arm64 => "arm64",
-            _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}")
-        };
-    }
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxOrOsxProfilerDirFudge(string project)
