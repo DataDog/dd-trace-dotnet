@@ -44,7 +44,7 @@ public class AwsKinesisCommonTests
     {
         var request = new Mock<IAmazonKinesisRequest>();
         request.Setup(x => x.StreamName).Returns(streamName);
-        request.Setup(x => x.StreamARN).Returns(streamArn);
+        request.Setup(x => x.StreamArn).Returns(streamArn);
 
         AwsKinesisCommon.GetStreamName(request.Object).Should().Be(expected);
     }
