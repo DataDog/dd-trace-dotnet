@@ -34,16 +34,18 @@ internal abstract class LambdaCommon
                 Log("Lambda shutdown signal received - starting final flush", debug: false);
                 try
                 {
-                    // Give a final chance to flush any remaining traces
-                    Log("Attempting final trace flush during shutdown", debug: false);
-                    await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
-                        .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
+                    Log("Attempting final flush during shutdown", debug: false);
+                    await Task.WhenAll(
+                        Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                            .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
+                        Tracer.Instance.TracerManager.DataStreamsManager.DisposeAsync()
+                            .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
                         .ConfigureAwait(false);
-                    Log("Final trace flush completed successfully", debug: false);
+                    Log("Final flush completed successfully", debug: false);
                 }
                 catch (Exception ex)
                 {
-                    Log("Could not flush traces during Lambda shutdown", ex, false);
+                    Log("Could not flush during Lambda shutdown", ex, false);
                 }
             });
             Log("Lambda shutdown handler registered successfully", debug: false);
@@ -107,12 +109,14 @@ internal abstract class LambdaCommon
         Log("Starting end invocation async process", debug: false);
         try
         {
-            // Try to flush traces immediately for this invocation
-            Log("Attempting to flush traces for current invocation", debug: false);
-            await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
-                        .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
-                        .ConfigureAwait(false);
-            Log("Successfully flushed traces for current invocation", debug: false);
+            Log("Attempting to flush for current invocation", debug: false);
+            await Task.WhenAll(
+                Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)),
+                Tracer.Instance.TracerManager.DataStreamsManager.DisposeAsync()
+                    .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)))
+                .ConfigureAwait(false);
+            Log("Successfully flushed for current invocation", debug: false);
         }
         catch (Exception ex)
         {
