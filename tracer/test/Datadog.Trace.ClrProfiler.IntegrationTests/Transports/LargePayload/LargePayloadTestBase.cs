@@ -33,11 +33,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected async Task RunTest(TestTransports transport, bool dataPipelineEnabled)
         {
-            if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
-            {
-                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported on Linux when data pipeline is enabled");
-            }
-
             EnvironmentHelper.EnableTransport(transport);
             EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
 

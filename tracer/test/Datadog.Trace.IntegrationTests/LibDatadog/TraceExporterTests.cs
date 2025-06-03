@@ -35,9 +35,9 @@ public class TraceExporterTests
             throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
         }
 
-        if (transport == TestTransports.Uds && !EnvironmentTools.IsLinux())
+        if (transport == TestTransports.Uds && EnvironmentTools.IsWindows())
         {
-                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported on Linux when data pipeline is enabled");
+            throw new SkipException("Unix Domain Sockets (UDS) transport is only supported on Linux and OSX when data pipeline is enabled");
         }
 
         var pipeName = $"trace-{Guid.NewGuid()}";

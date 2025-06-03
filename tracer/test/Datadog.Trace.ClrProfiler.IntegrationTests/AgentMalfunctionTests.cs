@@ -60,12 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 throw new SkipException("WindowsNamedPipe transport is only supported on Windows");
             }
 
-            if (transportType == TestTransports.Uds && !EnvironmentTools.IsLinux() && dataPipelineEnabled)
-            {
-                throw new SkipException("Unix Domain Sockets (UDS) transport is only supported
-            }
-
-            EnvironmentHelper.EnableTransport(transportType)only supported
+            EnvironmentHelper.EnableTransport(transportType);
             EnvironmentHelper.CustomEnvironmentVariables[ConfigurationKeys.TraceDataPipelineEnabled] = dataPipelineEnabled.ToString();
 
             using var agent = EnvironmentHelper.GetMockAgent();

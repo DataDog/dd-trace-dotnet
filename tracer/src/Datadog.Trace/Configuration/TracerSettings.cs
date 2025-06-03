@@ -13,6 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ClrProfiler;
@@ -417,17 +418,32 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
                                   .AsBool(defaultValue: true);
 
-            // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
-            // as it may lead to different stats results than the managed one.
-            if (DataPipelineEnabled && StatsComputationEnabled)
+            if (DataPipelineEnabled)
             {
-                DataPipelineEnabled = false;
-                Log.Warning(
-                    "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
-                    ConfigurationKeys.TraceDataPipelineEnabled,
-                    ConfigurationKeys.StatsComputationEnabled,
-                    ConfigurationKeys.TraceDataPipelineEnabled);
-                _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
+                // as it may lead to different stats results than the managed one.
+                if (StatsComputationEnabled)
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but {StatsComputationEnabled} is enabled. Disabling {TraceDataPipelineEnabled}.",
+                        ConfigurationKeys.TraceDataPipelineEnabled,
+                        ConfigurationKeys.StatsComputationEnabled,
+                        ConfigurationKeys.TraceDataPipelineEnabled);
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
+
+                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
+                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
+                if (Exporter.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
+                {
+                    DataPipelineEnabled = false;
+                    Log.Warning(
+                        "{ConfigurationKey} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling {TraceDataPipelineEnabled}.",
+                        ConfigurationKeys.TraceDataPipelineEnabled,
+                        ConfigurationKeys.TraceDataPipelineEnabled);
+                    _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                }
             }
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
