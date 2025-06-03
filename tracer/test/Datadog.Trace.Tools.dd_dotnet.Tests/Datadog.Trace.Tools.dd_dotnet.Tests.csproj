@@ -49,4 +49,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.Tests\Configuration\ExporterSettingsTests.Shared.cs">
+      <Link>ExporterSettingsTests.Shared.cs</Link>
+    </Compile>
+    <Compile Remove="NameValueConfigurationSource.cs" />
+  </ItemGroup>
 </Project>
