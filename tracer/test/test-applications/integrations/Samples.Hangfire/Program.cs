@@ -22,8 +22,8 @@ namespace Samples.Hangfire
             BackgroundJob.Enqueue(() => ExecuteTracedJob("from Main"));
             
             // Run additional jobs
-            await Should_Create_Activity();
-            await Should_Create_Activity_With_Status_Error_When_Job_Failed();
+            await Should_Create_Span();
+            await Should_Create_Span_With_Status_Error_When_Job_Failed();
 
             using (var server = new BackgroundJobServer())
             {
@@ -36,19 +36,19 @@ namespace Samples.Hangfire
             Console.WriteLine("Hello from the Hangfire job! " + additionText);
         }
 
-        public static async Task Should_Create_Activity()
+        public static async Task Should_Create_Span()
         {
             var jobId = BackgroundJob.Enqueue<TestJob>(x => x.Execute());
-            await WaitJobProcessedAsync(jobId, 1);
+            await WaitJobProcessedAsync(1);
         }
         
-        public static async Task Should_Create_Activity_With_Status_Error_When_Job_Failed()
+        public static async Task Should_Create_Span_With_Status_Error_When_Job_Failed()
         {
             var jobId = BackgroundJob.Enqueue<TestJob>(x => x.ThrowException());
-            await WaitJobProcessedAsync(jobId, 1);
+            await WaitJobProcessedAsync(1);
         }
 
-        private static async Task WaitJobProcessedAsync(string jobId, int maxSeconds)
+        private static async Task WaitJobProcessedAsync(int maxSeconds)
         {
             // Just simulate a wait for now
             await Task.Delay(1000 * maxSeconds);
