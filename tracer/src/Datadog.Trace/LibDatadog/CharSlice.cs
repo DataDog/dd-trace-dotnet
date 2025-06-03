@@ -19,7 +19,7 @@ internal struct CharSlice : IDisposable
     /// <summary>
     /// Pointer to the start of the slice.
     /// </summary>
-    internal IntPtr Ptr;
+    internal nint Ptr;
 
     /// <summary>
     /// Length of the slice.
