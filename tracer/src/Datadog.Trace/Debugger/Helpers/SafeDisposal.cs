@@ -14,7 +14,8 @@ namespace Datadog.Trace.Debugger.Helpers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SafeDisposal));
 
-        internal static void TryDispose<T>(T? disposable, string? component = null) where T : IDisposable
+        internal static void TryDispose<T>(T? disposable, string? component = null)
+            where T : IDisposable
         {
             if (disposable == null)
             {
@@ -55,7 +56,8 @@ namespace Datadog.Trace.Debugger.Helpers
         {
             private readonly List<Action> _actions = [];
 
-            internal DisposalBuilder Add<T>(T? disposable, string? name = null) where T : class, IDisposable
+            internal DisposalBuilder Add<T>(T? disposable, string? name = null)
+                where T : class, IDisposable
             {
                 _actions.Add(() => TryDispose(disposable, name));
                 return this;
