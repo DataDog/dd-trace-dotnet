@@ -659,8 +659,8 @@ partial class Build
                 {
                     foreach (var framework in frameworks)
                     {
-                        var (arch, ext) = GetWinArchitectureAndExtension();
-                        var source = MonitoringHomeDirectory / arch / "datadog_profiling_ffi.dll";
+                        var arch = GetWinArchitecture();
+                        var source = MonitoringHomeDirectory / $"win-{arch}" / "datadog_profiling_ffi.dll";
                         var dest = testBinFolder / framework / "LibDatadog.dll";
                         CopyFile(source, dest, FileExistsPolicy.Overwrite);
                     }
@@ -2746,14 +2746,14 @@ partial class Build
             (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
 
-    private (string Arch, string Ext) GetWinArchitectureAndExtension()
+    private string GetWinArchitecture()
     {
         return RuntimeInformation.ProcessArchitecture switch
         {
-            Architecture.X86 => ("win-x86", "dll"),
-            Architecture.X64 => ("win-x64", "dll"),
-            Architecture.Arm64 => ("win-arm64", "dll"),
-            _ => ("win-x86", "dll") // Default to x86 for unknown architectures
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm64 => "arm64",
+            _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}")
         };
     }
 
