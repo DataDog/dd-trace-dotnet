@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                                 {
                                     Console.WriteLine($"[GetRecordsIntegration] Context is not a dictionary, type: {datadogContext?.GetType().Name ?? "null"}");
                                 }
-                                
+
                                 parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
                                 Console.WriteLine($"[GetRecordsIntegration] Extracted pathway context: {(parentPathway == null ? "null" : "success")}");
                             }
