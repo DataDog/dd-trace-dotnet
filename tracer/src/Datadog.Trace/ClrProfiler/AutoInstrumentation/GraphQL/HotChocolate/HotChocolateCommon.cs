@@ -221,7 +221,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     {
                         var configuredExtensions = Tracer.Instance.Settings.GraphQLErrorExtensions;
 
-                        var keys = extensions.Keys.ToList();
                         foreach (var extension in extensions)
                         {
                             if (configuredExtensions.Contains(extension.Key))
@@ -260,7 +259,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                                         Util.StringBuilderCache.Release(builder);
                                     }
                                 }
-                                else if (value is ulong or decimal || !Util.SpanEventConverter.IsAllowedType(value))
+                                else if (!Util.SpanEventConverter.IsAllowedType(value))
                                 {
                                     value = value.ToString();
                                 }
