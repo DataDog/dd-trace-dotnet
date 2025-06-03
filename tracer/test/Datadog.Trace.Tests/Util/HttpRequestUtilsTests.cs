@@ -8,48 +8,47 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Util.Http;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Util
+namespace Datadog.Trace.Tests.Util;
+
+public class HttpRequestUtilsTests
 {
-    public class HttpRequestUtilsTests
+    [Fact]
+    public void GetUrl_WithAbsoluteUri_ReturnsCorrectUrl()
     {
-        [Fact]
-        public void GetUrl_WithAbsoluteUri_ReturnsCorrectUrl()
-        {
-            // Arrange
-            var uri = new Uri("https://example.com:8080/path/to/resource?query=123");
+        // Arrange
+        var uri = new Uri("https://example.com:8080/path/to/resource?query=123");
 
-            // Act
-            var result = HttpRequestUtils.GetUrl(uri);
+        // Act
+        var result = HttpRequestUtils.GetUrl(uri);
 
-            // Assert
-            Assert.Equal("https://example.com:8080/path/to/resource", result);
-        }
+        // Assert
+        Assert.Equal("https://example.com:8080/path/to/resource", result);
+    }
 
-        [Fact]
-        public void GetUrl_WithAbsoluteUriAndQueryStringManager_ReturnsProcessedUrl()
-        {
-            // Arrange
-            var uri = new Uri("https://example.com/path?secret=ee123");
-            var queryStringManager = new QueryStringManager(true, 1000, 1000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+    [Fact]
+    public void GetUrl_WithAbsoluteUriAndQueryStringManager_ReturnsProcessedUrl()
+    {
+        // Arrange
+        var uri = new Uri("https://example.com/path?secret=ee123");
+        var queryStringManager = new QueryStringManager(true, 1000, 1000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
-            // Act
-            var result = HttpRequestUtils.GetUrl(uri, queryStringManager);
+        // Act
+        var result = HttpRequestUtils.GetUrl(uri, queryStringManager);
 
-            // Assert
-            Assert.Equal("https://example.com/path?<redacted>", result);
-        }
+        // Assert
+        Assert.Equal("https://example.com/path?<redacted>", result);
+    }
 
-        [Fact]
-        public void GetUrl_WithRelativeUri_ReturnsUriAsString()
-        {
-            // Arrange
-            var uri = new Uri("/relative/path?query=123", UriKind.Relative);
+    [Fact]
+    public void GetUrl_WithRelativeUri_ReturnsUriAsString()
+    {
+        // Arrange
+        var uri = new Uri("/relative/path?query=123", UriKind.Relative);
 
-            // Act
-            var result = HttpRequestUtils.GetUrl(uri);
+        // Act
+        var result = HttpRequestUtils.GetUrl(uri);
 
-            // Assert
-            Assert.Equal("/relative/path?query=123", result);
-        }
+        // Assert
+        Assert.Equal("/relative/path?query=123", result);
     }
 }
