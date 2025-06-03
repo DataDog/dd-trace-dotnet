@@ -93,11 +93,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddRegexScrubber(StackRegex, "$1 Cannot assign requested address (SocketException)$2");
                 settings.AddRegexScrubber(ErrorMsgRegex, "$1 Cannot assign requested address$2");
 
-                foreach (var span in allSpans)
-                {
-                    Output.WriteLine(span.ToString());
-                }
-
                 await VerifyHelper.VerifySpans(allSpans, settings)
                                   .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(AwsLambdaTests));
