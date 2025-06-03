@@ -105,19 +105,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static long GetMessageSize<T>(T message)
             where T : IMessage
         {
-            if (((IDuckType)message).Instance is null)
-            {
-                return 0;
-            }
-
-            var size = MessageSizeHelper.TryGetSize(message.Key);
-            size += MessageSizeHelper.TryGetSize(message.Value);
-
+            return 0;
+            // if (((IDuckType)message).Instance is null)
+            // {
+            //     return 0;
+            // }
+            //
+            // var size = MessageSizeHelper.TryGetSize(message.Key);
+            // size += MessageSizeHelper.TryGetSize(message.Value);
+            //
             // if (message.Headers == null)
             // {
             //     return size;
             // }
-
+            //
             // for (var i = 0; i < message.Headers.Count; i++)
             // {
             //     var header = message.Headers[i];
@@ -128,8 +129,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             //         size += value.Length;
             //     }
             // }
-
-            return size;
+            //
+            // return size;
         }
 
         internal static Scope? CreateConsumerScope(
