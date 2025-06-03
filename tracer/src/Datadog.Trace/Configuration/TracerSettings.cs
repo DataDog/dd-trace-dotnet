@@ -422,6 +422,11 @@ namespace Datadog.Trace.Configuration
             if (DataPipelineEnabled && StatsComputationEnabled)
             {
                 DataPipelineEnabled = false;
+                Log.Warning(
+                    "{ConfigurationKey} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling {ConfigurationKeys.TraceDataPipelineEnabled}.",
+                    ConfigurationKeys.TraceDataPipelineEnabled,
+                    ConfigurationKeys.StatsComputationEnabled,
+                    ConfigurationKeys.TraceDataPipelineEnabled);
                 _telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
             }
 
