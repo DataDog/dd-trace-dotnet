@@ -44,7 +44,7 @@ internal struct CharSlice : IDisposable
             var bytes = System.Text.Encoding.UTF8.GetBytes(str);
             Ptr = Marshal.AllocHGlobal(bytes.Length);
             Marshal.Copy(bytes, 0, Ptr, bytes.Length);
-            Len = (UIntPtr)bytes.Length;
+            Len = (nuint)bytes.Length;
         }
     }
 
